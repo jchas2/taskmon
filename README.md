@@ -1,6 +1,6 @@
 <h1>
   <img src="./docs/images/app_icon.png" alt="taskmgr-cli icon" height="40" align="left" />
-  taskmgr-cli
+  Task Monitor
 </h1>
 A powerful, cross-platform terminal-based task monitor designed to provide real-time monitoring and management of a computer's performance, active processes, and resource utilization. 
 Originally inspired by tools like top, htop and the Windows Task Manager, it provides performance monitoring for system resources (including CPU, GPU, Memory, Disk and Network) and process
