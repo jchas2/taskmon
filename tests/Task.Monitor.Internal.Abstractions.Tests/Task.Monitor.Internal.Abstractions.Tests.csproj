@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\eng\Test.props" />
+    <Import Project="..\..\eng\Lang.props" />
+    <Import Project="..\..\eng\TargetFramework.props" />
+    
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Task.Monitor.Internal.Abstractions\Task.Monitor.Internal.Abstractions.csproj" />
+      <ProjectReference Include="..\Task.Monitor.Tests.Common\Task.Monitor.Tests.Common.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\eng\Test.props" />
+    <Import Project="..\..\eng\Lang.props" />
+    <Import Project="..\..\eng\TargetFramework.props" />
+    <Import Project="..\..\eng\Preprocessor.props" />
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+</Project>

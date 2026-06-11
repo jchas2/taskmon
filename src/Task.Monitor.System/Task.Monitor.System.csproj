@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\Task.Monitor.Cli.Utils\Task.Monitor.Cli.Utils.csproj" />
+      <ProjectReference Include="..\Task.Monitor.Internal.Abstractions\Task.Monitor.Internal.Abstractions.csproj" />
+      <ProjectReference Include="..\Task.Monitor.Interop.Mach\Task.Monitor.Interop.Mach.csproj" />
+      <ProjectReference Include="..\Task.Monitor.Interop.Win32\Task.Monitor.Interop.Win32.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0-rc.2.25502.107" />
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Task.Monitor.System.Tests" />
+    </ItemGroup>
+
+</Project>

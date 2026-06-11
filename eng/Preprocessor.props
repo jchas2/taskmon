@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+      <DefineConstants>__WIN32__</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('MacOS'))">
+      <DefineConstants>__APPLE__</DefineConstants>
+  </PropertyGroup>
+</Project>

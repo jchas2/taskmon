@@ -1,0 +1,31 @@
+<Project>
+    <PropertyGroup>
+        <!-- Check for RELEASE_VERSION environment variable for semantic versioning in CI -->
+        <ReleaseVersion Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</ReleaseVersion>
+
+        <!-- Dynamic versioning for development builds -->
+        <MajorVersion>1</MajorVersion>
+        <MinorVersion>2</MinorVersion>
+        <BaseDate>$([System.DateTime]::Parse('2000-01-01'))</BaseDate>
+        <Now>$([System.DateTime]::Now)</Now>
+        <BuildDays>$([System.DateTime]::Now.Subtract($(BaseDate)).Days)</BuildDays>
+        <SecondsSinceMidnight>$([System.DateTime]::Now.TimeOfDay.TotalSeconds)</SecondsSinceMidnight>
+        <Revision>$([System.Math]::Floor($([MSBuild]::Divide($(SecondsSinceMidnight), 2))))</Revision>
+
+        <!-- Use RELEASE_VERSION if set, otherwise use dynamic versioning -->
+        <GeneratedVersion Condition="'$(ReleaseVersion)' != ''">$(ReleaseVersion)</GeneratedVersion>
+        <GeneratedVersion Condition="'$(ReleaseVersion)' == ''">$(MajorVersion).$(MinorVersion).$(BuildDays).$(Revision)</GeneratedVersion>
+
+        <AssemblyVersion>$(GeneratedVersion)</AssemblyVersion>
+        <FileVersion>$(GeneratedVersion)</FileVersion>
+        <InformationalVersion>$(GeneratedVersion)</InformationalVersion>
+
+        <!-- <MajorVersion>1</MajorVersion>
+        <MinorVersion>2</MinorVersion>
+        <PatchVersion>0</PatchVersion>
+        <Version>$(MajorVersion).$(MinorVersion).$(PatchVersion).$([System.DateTime]::UtcNow.ToString(HHmm))</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <FileVersion>$(Version)</FileVersion>
+        <InformationalVersion>$(Version)</InformationalVersion> -->
+    </PropertyGroup>
+</Project>

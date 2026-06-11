@@ -1,0 +1,10 @@
+  <Project>
+    <PropertyGroup>
+      <!-- Allow all lang features -->
+      <LangVersion>preview</LangVersion>
+      <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+</Project>
