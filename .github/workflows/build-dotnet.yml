@@ -12,14 +12,13 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    # runs-on: ubuntu-latest (need .sh scripts)
 
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Restore dependencies
       run: ./eng/build.ps1 -restore
     - name: Build
