@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Exit immediately if any command fails, and propagate failures through pipes.
+# Without this, a failing `dotnet test` is masked by the final `echo` (exit 0),
+# causing CI to report a false-positive green build.
+set -e
+set -o pipefail
+
 configuration="Debug"
 runtime="osx-arm64"
 
