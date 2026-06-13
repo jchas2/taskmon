@@ -1,0 +1,3 @@
+# Build outputs produced by build-choco.ps1
+dist/
+staging/

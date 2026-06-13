@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>taskmon</id>
+    <!-- Version is a placeholder; the real version is supplied via `choco pack version`. -->
+    <version>0.0.0</version>
+    <packageSourceUrl>https://github.com/jchas2/taskmon/tree/main/packaging/choco</packageSourceUrl>
+    <owners>jchas2</owners>
+    <title>Task Monitor (taskmon)</title>
+    <authors>jchas2</authors>
+    <projectUrl>https://github.com/jchas2/taskmon</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/jchas2/taskmon/main/docs/images/app_icon.png</iconUrl>
+    <licenseUrl>https://github.com/jchas2/taskmon/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/jchas2/taskmon</projectSourceUrl>
+    <docsUrl>https://github.com/jchas2/taskmon/blob/main/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/jchas2/taskmon/issues</bugTrackerUrl>
+    <tags>taskmon task-monitor cli htop top task-manager process-monitor cpu gpu memory disk network system-monitor admin foss</tags>
+    <summary>A powerful, cross-platform terminal-based task monitor.</summary>
+    <description>
+Task Monitor (taskmon) is a powerful, cross-platform terminal-based task monitor that provides
+real-time monitoring and management of system performance, active processes, and resource
+utilization. Inspired by tools like top, htop and the Windows Task Manager.
+
+### Features
+- Real-time process monitoring (CPU, GPU, memory, disk I/O, network I/O, thread counts)
+- Advanced process information including module lists, thread states and command-line arguments
+- Multi-process selection and termination
+- Filtering by process name, username or PID, and flexible column sorting
+- Rich system metrics with visual meters
+- Keyboard-driven interface with F1-F10 hotkey support
+- Built-in themes, layouts and configurable colors
+- Native performance using platform-specific APIs
+
+### Package notes
+This package installs a self-contained, natively compiled (AOT) single-file executable.
+It automatically selects the x64 or ARM64 build to match your machine. The `taskmon`
+command is shimmed onto your PATH by Chocolatey.
+
+taskmon does not require elevated permission for system monitoring, however some system
+process detail won't be available unless run as Administrator.
+    </description>
+    <releaseNotes>https://github.com/jchas2/taskmon/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
