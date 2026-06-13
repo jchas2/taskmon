@@ -193,7 +193,7 @@ jobs:
         run: |
           cd homebrew-tap
           cat > Formula/taskmon.rb << 'EOF'
-          class taskmon < Formula
+          class Taskmon < Formula
             desc "Task Monitor for the command line"
             homepage "https://github.com/jchas2/taskmon"
             version "${{ needs.create-release.outputs.version }}"
