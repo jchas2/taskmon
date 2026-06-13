@@ -31,6 +31,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Make build script executable
+      run: chmod +x ./eng/build.sh
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
