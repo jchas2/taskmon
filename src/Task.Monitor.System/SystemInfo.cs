@@ -59,7 +59,11 @@ public static partial class SystemInfo
         systemStatistics.CpuCores = (ulong)Environment.ProcessorCount;
         
         bool result = GetCpuInfoInternal(ref systemStatistics);
-        result &= GetGpuCoresInternal(ref systemStatistics);
+
+        // GPU core count relies on a GPU being exposed via the platform's device registry, 
+        // which is not the case in headless/virtualized environments (e.g. CI
+        // runners). A failure here leaves GpuCores at 0 but must not fail the whole gather.
+        GetGpuCoresInternal(ref systemStatistics);
 
         IPAddress? ip = GetPreferredIpAddress();
         
