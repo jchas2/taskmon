@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
@@ -25,4 +25,20 @@ jobs:
       run: ./eng/build.ps1 -build -config Debug
     - name: Test
       run: ./eng/build.ps1 -test
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Restore dependencies
+      run: ./eng/build.sh --restore
+    - name: Build
+      run: ./eng/build.sh --build --config Debug
+    - name: Test
+      run: ./eng/build.sh --test
 
