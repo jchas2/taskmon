@@ -195,10 +195,10 @@ jobs:
           cat > Formula/taskmon.rb << 'EOF'
           class taskmon < Formula
             desc "Task Monitor for the command line"
-            homepage "https://github.com/jchas2/taskmon-cli"
+            homepage "https://github.com/jchas2/taskmon"
             version "${{ needs.create-release.outputs.version }}"
 
-            url "https://github.com/jchas2/taskmon-cli/releases/download/v#{version}/taskmon-#{version}-macos-arm64.tar.gz"
+            url "https://github.com/jchas2/taskmon/releases/download/v#{version}/taskmon-#{version}-macos-arm64.tar.gz"
             sha256 "${{ steps.sha.outputs.sha256 }}"
 
             def install
