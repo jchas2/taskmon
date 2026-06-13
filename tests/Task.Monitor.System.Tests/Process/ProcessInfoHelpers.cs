@@ -38,7 +38,9 @@ public static class ProcessInfoHelpers
         Assert.NotNull(processInfo.UserName);
         Assert.NotEmpty(processInfo.UserName);
 
-        Assert.InRange(processInfo.BasePriority, 0, long.MaxValue);
+        long minBasePriority = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 0 : -20;
+        Assert.InRange(processInfo.BasePriority, minBasePriority, long.MaxValue);
+        
         Assert.InRange(processInfo.DiskReadBytes, 0U, ulong.MaxValue);
         Assert.InRange(processInfo.DiskWriteBytes, 0U, ulong.MaxValue);
         Assert.InRange(processInfo.DiskOperations, 0U, ulong.MaxValue);
