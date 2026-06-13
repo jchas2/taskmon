@@ -22,7 +22,7 @@ management functions.
 
 ### Customization
 
-- **5 Built-in Themes** - Colour, Mono, MS-DOS, Tokyo Night, and Matrix
+- **Built-in Themes** - Colour, Mono, MS-DOS, Tokyo Night, and Matrix
 - **Configurable UI** - 26 customizable color keys per theme
 - **Adjustable Performance** - Configurable update intervals and process display limits
 - **IRIX Mode** - Toggle between per-core and total CPU reporting per process
@@ -34,7 +34,7 @@ management functions.
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using native APIs (Win32,  Mach kernel, IOKit, IOReport, CoreFoundation)
-- No generic cross-platform wrappers - direct system calls for maximum performance
+- Minimal generic cross-platform wrappers - direct system calls for maximum performance
 
 ## Installation
 
@@ -56,9 +56,24 @@ brew upgrade taskmon
 
 Taskmgr does not require sudo permission on MacOS for system monitoring, however some system process detail won't be available unless run with sudo.
 
-### Windows
+### Windows (Chocolatey)
+
+The easiest way to install on Windows (x64 and ARM64):
+
+```powershell
+choco install taskmon
+```
+
+To update to the latest version:
+
+```powershell
+choco upgrade taskmon
+```
+
+### Windows (Direct Download)
 
 - [Windows x64](https://github.com/jchas2/taskmon/releases/latest)
+- [Windows ARM64](https://github.com/jchas2/taskmon/releases/latest)
 
 After downloading:
 1. Extract the archive

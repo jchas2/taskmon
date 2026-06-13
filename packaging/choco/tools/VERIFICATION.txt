@@ -1,0 +1,28 @@
+VERIFICATION
+
+Verification is intended to assist the Chocolatey moderators and community in verifying
+that this package's contents are trustworthy.
+
+This package is published by the software author (jchas2) and downloads the official
+release binaries from the project's GitHub Releases page at install time:
+
+  https://github.com/jchas2/taskmon/releases
+
+The installer (tools\chocolateyinstall.ps1) downloads the architecture-appropriate archive:
+
+  x64:    https://github.com/jchas2/taskmon/releases/download/v<version>/taskmon-<version>-windows-x64.zip
+  ARM64:  https://github.com/jchas2/taskmon/releases/download/v<version>/taskmon-<version>-windows-arm64.zip
+
+The embedded SHA256 checksums in chocolateyinstall.ps1 match the .sha256 files published
+alongside each archive on the GitHub Release. To verify manually:
+
+  1. Download the archive for your architecture from the release URL above.
+  2. Run:  Get-FileHash -Algorithm SHA256 .\taskmon-<version>-windows-<arch>.zip
+  3. Compare the hash to the value in chocolateyinstall.ps1 and to the published
+     taskmon-<version>-windows-<arch>.zip.sha256 file on the release.
+
+The binaries are built from source by the project's GitHub Actions release workflow:
+
+  https://github.com/jchas2/taskmon/blob/main/.github/workflows/release.yml
+
+LICENSE: see LICENSE.txt in this directory and https://github.com/jchas2/taskmon
