@@ -5,6 +5,7 @@ using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Process;
 using Task.Monitor.System;
 using Task.Monitor.System.Process;
+using Task.Monitor.System.Tests.Controls;
 
 namespace Task.Monitor.Tests;
 
@@ -36,7 +37,7 @@ internal class RunContextHelper
     internal RunContext GetRunContext() =>
         new RunContext(
             fileSystem.Object,
-            terminal.Object,
+            new ForwardingTerminal(terminal.Object),
             processService.Object,
             moduleService.Object,
             threadService.Object,

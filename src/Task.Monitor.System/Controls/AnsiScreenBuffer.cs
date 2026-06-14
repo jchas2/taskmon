@@ -6,12 +6,16 @@ public sealed class AnsiScreenBuffer
 {
     private const char Escape = '';
 
+    private const string BoldOn = "[1m";
+    private const string BoldOff = "[22m";
+
     private char[] buffer;
     private int length;
     private ConsoleColor foreground;
-    
+
     private ConsoleColor background;
     private bool colourSet;
+    private bool bold;
 
     public AnsiScreenBuffer(int capacity = 1024) =>
         buffer = new char[Math.Max(1, capacity)];
@@ -24,6 +28,7 @@ public sealed class AnsiScreenBuffer
     {
         length = 0;
         colourSet = false;
+        bold = false;
     }
 
     public void MoveTo(int left, int top)
@@ -58,10 +63,21 @@ public sealed class AnsiScreenBuffer
         colourSet = true;
     }
 
+    public void SetBold(bool enabled)
+    {
+        if (bold == enabled) {
+            return;
+        }
+
+        Append(enabled ? BoldOn : BoldOff);
+        bold = enabled;
+    }
+
     public void ResetColour()
     {
         Append(AnsiConsoleStringExtensions.Reset);
         colourSet = false;
+        bold = false;
     }
 
     public void Append(char ch)

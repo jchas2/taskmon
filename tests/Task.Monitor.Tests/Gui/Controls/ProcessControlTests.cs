@@ -139,26 +139,26 @@ public sealed class ProcessControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("DISK"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("PATH"))), Times.Once);
 
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("app1"))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("app1"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("45"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("_user1"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("8 "))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("8 "))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("20.61%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("19"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("12.22%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("81.1 MB"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("0.0 MB/s"))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("0.0 MB/s"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("//usr//bin//app1"))), Times.Once);
 
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("sysmond"))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("sysmond"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("431"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("root"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("8 "))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("8 "))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("00.35%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("13"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("00.00%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("216.4 MB"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("0.0 MB/s"))), Times.Exactly(2));
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("0.0 MB/s"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("//usr//libexec//sysmond"))), Times.Once);
 
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);

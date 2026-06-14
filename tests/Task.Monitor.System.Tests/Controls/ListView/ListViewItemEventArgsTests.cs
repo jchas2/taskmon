@@ -1,6 +1,6 @@
 ﻿using Task.Monitor.System.Controls.ListView;
 
-namespace Task.Monitor.Tests.Controls;
+namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewItemEventArgsTests
 {
