@@ -2,6 +2,7 @@ using Moq;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Task.Monitor.Tests.Process;
 using Xunit.Abstractions;
@@ -75,9 +76,11 @@ public sealed class HeaderControlTests
 
         processorFake.AddSystemStats(statistics);
         
+        // Wrap the mock terminal so the Chart's ReadOnlySpan<char> blit doesn't hit the Moq
+        // proxy (which can't proxy ref-struct params); other writes still forward to the mock.
         HeaderControl ctrl = new(
             processorFake,
-            runContext.Terminal, 
+            new ForwardingTerminal(runContext.Terminal),
             runContext.AppConfig) {
             Width = 256,
             Height = 32

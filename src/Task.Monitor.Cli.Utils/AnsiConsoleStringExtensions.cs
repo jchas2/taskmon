@@ -2,7 +2,7 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class AnsiConsoleStringExtensions
 {
-    private const string Reset = "\u001b[0m";
+    public const string Reset = "\u001b[0m";
     
     private const string BlackBackground = "\u001b[40m";
     private const string DarkBlueBackground = "\u001b[44m";
@@ -38,7 +38,7 @@ public static class AnsiConsoleStringExtensions
     private const string YellowForeground = "\u001b[93m";
     private const string WhiteForeground = "\u001b[97m";
     
-    private static ReadOnlySpan<char> GetBackgroundCode(ConsoleColor background) => background switch
+    public static ReadOnlySpan<char> GetBackgroundCode(ConsoleColor background) => background switch
     {
         ConsoleColor.Black => BlackBackground,
         ConsoleColor.DarkBlue => DarkBlueBackground,
@@ -59,7 +59,7 @@ public static class AnsiConsoleStringExtensions
         _ => throw new ArgumentOutOfRangeException(nameof(background))
     };
 
-    private static ReadOnlySpan<char> GetForegroundCode(ConsoleColor foreground) => foreground switch
+    public static ReadOnlySpan<char> GetForegroundCode(ConsoleColor foreground) => foreground switch
     {
         ConsoleColor.Black => BlackForeground,
         ConsoleColor.DarkBlue => DarkBlueForeground,

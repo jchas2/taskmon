@@ -1,7 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Task.Monitor.Cli.Utils;
-
-namespace Task.Monitor.System.Controls.Chart;
+﻿namespace Task.Monitor.System.Controls.Chart;
 
 public sealed class Chart : Control
 {
@@ -21,6 +18,7 @@ public sealed class Chart : Control
     private int dataCount = 0;
     private double dataMax = 0.0;
     private readonly object dataLock = new();
+    private readonly AnsiScreenBuffer frame = new();
     
     public Chart(ISystemTerminal terminal) : base(terminal) { }
 
@@ -80,8 +78,6 @@ public sealed class Chart : Control
     
     protected override void OnDraw()
     {
-        using TerminalColourRestorer _ = new();
-
         double[] samples;
         double snapshotMax;
 
@@ -99,25 +95,22 @@ public sealed class Chart : Control
         int chartWidth = Math.Max(0, Width - 2);
         int totalSubRows = chartHeight * 4;
         int sampleCount = samples.Length;
-        
-        double displayScale = AutoScale 
-            ? 1.0 / snapshotMax 
+
+        double displayScale = AutoScale
+            ? 1.0 / snapshotMax
             : 1.0;
 
-        SetConsoleDefaultColours();
-        Terminal.SetCursorPosition(X, Y);
-        Terminal.Write('\u256D');
+        frame.Clear();
+        frame.MoveTo(X, Y);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append('\u256D');
+        frame.Append('\u2500', chartWidth);
+        frame.Append('\u256E');
         
-        for (int i = 0; i < chartWidth; i++) {
-            Terminal.Write('\u2500');
-        }
-        
-        Terminal.Write('\u256E');
-
         for (int row = 0; row < chartHeight; row++) {
-            Terminal.SetCursorPosition(X, Y + 1 + row);
-            SetConsoleDefaultColours();
-            Terminal.Write('\u2502');
+            frame.MoveTo(X, Y + 1 + row);
+            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.Append('\u2502');
 
             int rowFromBottom = chartHeight - 1 - row;
 
@@ -126,8 +119,8 @@ public sealed class Chart : Control
                 int sampleIndex = sampleCount - chartWidth + col;
 
                 if (sampleIndex < 0) {
-                    SetConsoleDefaultColours();
-                    Terminal.Write('\u2800');
+                    frame.SetColour(ForegroundColour, BackgroundColour);
+                    frame.Append('\u2800');
                     continue;
                 }
 
@@ -139,7 +132,7 @@ public sealed class Chart : Control
                 double ratio = (double)barSubRows / (double)totalSubRows;
 
                 ConsoleColor chartColour;
-                
+
                 if (ratio > 0.8) {
                     chartColour = ColourHigh;
                 }
@@ -150,9 +143,6 @@ public sealed class Chart : Control
                     chartColour = ColourLow;
                 }
 
-                Terminal.ForegroundColor = MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour;
-                Terminal.BackgroundColor = MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour;
-                
                 char ch = MetreStyle switch {
                     MetreControlStyle.Bars => BarChar,
                     MetreControlStyle.Blocks => BlockChar,
@@ -163,26 +153,30 @@ public sealed class Chart : Control
                     if (MetreStyle == MetreControlStyle.Dots) {
                         ch = BrailleChars[4];
                     }
+
+                    SetCellColour(chartColour);
                 }
                 else if (rowFromBottom == fullRows && partialDots > 0) {
                     if (MetreStyle == MetreControlStyle.Dots) {
                         ch = BrailleChars[partialDots];
                     }
+
+                    SetCellColour(chartColour);
                 }
                 else {
-                    SetConsoleDefaultColours();
+                    frame.SetColour(ForegroundColour, BackgroundColour);
                     ch = '\u2800';
                 }
 
-                Terminal.Write(ch);
+                frame.Append(ch);
             }
 
-            SetConsoleDefaultColours();
-            Terminal.Write('\u2502');
+            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.Append('\u2502');
         }
 
-        Terminal.SetCursorPosition(X, Y + Height - 1);
-        SetConsoleDefaultColours();
+        frame.MoveTo(X, Y + Height - 1);
+        frame.SetColour(ForegroundColour, BackgroundColour);
 
         string label = string.IsNullOrEmpty(LabelSeries)
             ? Text
@@ -193,20 +187,19 @@ public sealed class Chart : Control
         int leftDashes = (chartWidth - labelLen) / 2;
         int rightDashes = chartWidth - labelLen - leftDashes;
 
-        Terminal.Write('\u2570');
-        
-        for (int i = 0; i < leftDashes; i++) {
-            Terminal.Write('\u2500');
-        }
-        
-        Terminal.Write(labelLen < labelPadded.Length ? labelPadded[..labelLen] : labelPadded);
+        frame.Append('\u2570');
+        frame.Append('\u2500', leftDashes);
+        frame.Append(labelLen < labelPadded.Length ? labelPadded[..labelLen] : labelPadded);
+        frame.Append('\u2500', rightDashes);
+        frame.Append('\u256F');
 
-        for (int i = 0; i < rightDashes; i++) {
-            Terminal.Write('\u2500');
-        }
-        
-        Terminal.Write('\u256F');
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
+
+    private void SetCellColour(ConsoleColor chartColour) => frame.SetColour(
+        MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,
+        MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour);
 
     protected override void OnResize()
     {
@@ -233,12 +226,5 @@ public sealed class Chart : Control
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SetConsoleDefaultColours()
-    {
-        Terminal.BackgroundColor = BackgroundColour;
-        Terminal.ForegroundColor = ForegroundColour;
-    }
-    
     public string Text { get; set; } = string.Empty;
 }
