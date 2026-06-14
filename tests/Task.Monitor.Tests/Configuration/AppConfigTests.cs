@@ -17,7 +17,8 @@ public sealed class AppConfigTests
         Constants.Sections.ThemeMono,
         Constants.Sections.ThemeMatrix,
         Constants.Sections.ThemeTokyoNight,
-        Constants.Sections.ThemeMsDos
+        Constants.Sections.ThemeMsDos,
+        Constants.Sections.ThemeSolar
     };
 
     private static int ThemeCount = PredefinedThemes.Length;
