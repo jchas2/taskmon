@@ -1,6 +1,4 @@
 ﻿using System.Drawing;
-using System.Text;
-using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.ListView;
 
@@ -20,8 +18,8 @@ public class ListView : Control
 
     private ViewPort viewPort = new();
 
-    private ISystemTerminal terminal;
-    
+    private readonly AnsiScreenBuffer frame = new();
+
     private const int DefaultColumnWidth = 30;
     private const int DefaultHeaderWidth = 80;
 
@@ -36,7 +34,6 @@ public class ListView : Control
     public ListView(ISystemTerminal terminal)
         : base(terminal)
     {
-        this.terminal = terminal ?? throw new ArgumentNullException(nameof(terminal));
         itemCollection = new ListViewItemCollection(this);
         columnHeaderCollection = new ListViewColumnHeaderCollection(this);
 
@@ -148,13 +145,10 @@ public class ListView : Control
 
     private void DrawEmptyListView()
     {
-        using TerminalColourRestorer _ = new();
-        
-        terminal.BackgroundColor = BackgroundColour;
-
         for (int i = 0; i < Height - 1; i++) {
-            terminal.SetCursorPosition(viewPort.Bounds.X, viewPort.Bounds.Y + i);
-            terminal.WriteEmptyLineTo(viewPort.Bounds.Width);
+            frame.MoveTo(viewPort.Bounds.X, viewPort.Bounds.Y + i);
+            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.Append(' ', viewPort.Bounds.Width);
         }
 
         if (string.IsNullOrWhiteSpace(EmptyListViewText)) {
@@ -164,33 +158,31 @@ public class ListView : Control
         if (EmptyListViewText.Length > Width) {
             EmptyListViewText = EmptyListViewText[..Width];
         }
-        
+
         Point p = new Point((X + (Width - EmptyListViewText.Length)) / 2, Y + (Height / 2));
-        
-        terminal.SetCursorPosition(p.X, p.Y);
-        terminal.Write(EmptyListViewText);
+
+        frame.MoveTo(p.X, p.Y);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(EmptyListViewText);
     }
     
     private void DrawHeader()
     {
-        using TerminalColourRestorer _ = new();
-
-        terminal.SetCursorPosition(viewPort.Bounds.X, viewPort.Bounds.Y - 1);
-        terminal.BackgroundColor = HeaderBackgroundColour;
-        terminal.ForegroundColor = HeaderForegroundColour;
+        frame.MoveTo(viewPort.Bounds.X, viewPort.Bounds.Y - 1);
+        frame.SetColour(HeaderForegroundColour, HeaderBackgroundColour);
 
         if (ColumnHeaderCount == 0) {
-            terminal.WriteEmptyLineTo(viewPort.Bounds.Width);
+            frame.Append(' ', viewPort.Bounds.Width);
             return;
         }
-        
+
         int c = 0;
 
         if (ShowCheckboxes) {
-            terminal.WriteEmptyLineTo(CheckboxWidth);
+            frame.Append(' ', CheckboxWidth);
             c += CheckboxWidth;
         }
-        
+
         for (int i = 0; i < ColumnHeaderCount; i++) {
             if (columnHeaders[i].Width == 0) {
                 continue;
@@ -230,26 +222,29 @@ public class ListView : Control
             ConsoleColor foreground = columnHeaders[i].ForegroundColour ?? HeaderForegroundColour;
             ConsoleColor background = columnHeaders[i].BackgroundColour ?? HeaderBackgroundColour;
 
-            terminal.Write(columnStr.ToBold().ToColour(foreground, background));
+            frame.SetColour(foreground, background);
+            frame.SetBold(true);
+            frame.Append(columnStr);
             c += colWidth;
         }
-        
-        Terminal.BackgroundColor = HeaderBackgroundColour;
-        terminal.WriteEmptyLineTo(viewPort.Bounds.Width - c);
+
+        frame.SetBold(false);
+        frame.SetColour(HeaderForegroundColour, HeaderBackgroundColour);
+        frame.Append(' ', viewPort.Bounds.Width - c);
     }
 
     private void DrawItem(
         ListViewItem item,
+        int top,
         bool highlight)
     {
-        using TerminalColourRestorer _ = new();
-        Terminal.BackgroundColor = BackgroundColour;
-        Terminal.ForegroundColor = ForegroundColour;
+        frame.MoveTo(viewPort.Bounds.X, top);
 
         int c = 0;
 
         if (ShowCheckboxes) {
-            terminal.Write(item.Checked ? CheckedText : UnCheckedText);
+            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.Append(item.Checked ? CheckedText : UnCheckedText);
             c += CheckboxWidth;
         }
 
@@ -312,12 +307,13 @@ public class ListView : Control
                     : subItem.BackgroundColor
                 : subItem.BackgroundColor;
 
-            terminal.Write(columnStr.ToColour(foregroundColour, backgroundColour));
+            frame.SetColour(foregroundColour, backgroundColour);
+            frame.Append(columnStr);
             c += columnWidth;
         }
 
-        terminal.BackgroundColor = item.SubItems[item.SubItemCount - 1].BackgroundColor;
-        terminal.WriteEmptyLineTo(viewPort.Bounds.Width - c);
+        frame.SetColour(ForegroundColour, item.SubItems[item.SubItemCount - 1].BackgroundColor);
+        frame.Append(' ', viewPort.Bounds.Width - c);
     }
 
     private void DrawItems()
@@ -331,17 +327,15 @@ public class ListView : Control
 
             if (pid < ItemCount) {
                 ListViewItem item = Items[pid];
-                terminal.SetCursorPosition(viewPort.Bounds.X, viewPort.Bounds.Y + n);
-                DrawItem(item, highlight: pid == viewPort.SelectedIndex);
+                DrawItem(item, viewPort.Bounds.Y + n, highlight: pid == viewPort.SelectedIndex);
                 n++;
             }
         }
 
-        terminal.BackgroundColor = BackgroundColour;
-
         for (int i = n; i < Height - 1; i++) {
-            terminal.SetCursorPosition(viewPort.Bounds.X, viewPort.Bounds.Y + i);
-            terminal.WriteEmptyLineTo(viewPort.Bounds.Width);
+            frame.MoveTo(viewPort.Bounds.X, viewPort.Bounds.Y + i);
+            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.Append(' ', viewPort.Bounds.Width);
         }
     }
 
@@ -359,6 +353,15 @@ public class ListView : Control
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, columnHeaders.Count, nameof(index));
         
         return columnHeaders[index];
+    }
+
+    private void FrameClear() =>
+        frame.Clear();
+
+    private void FrameWrite()
+    {
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
     
     internal ListViewItem GetItemByIndex(int index)
@@ -430,8 +433,10 @@ public class ListView : Control
     
     protected override void OnDraw()
     {
-        CalculateViewPortBounds();
+        FrameClear();
         
+        CalculateViewPortBounds();
+
         if (ShowColumnHeaders) {
             DrawHeader();
         }
@@ -442,6 +447,8 @@ public class ListView : Control
         else {
             DrawEmptyListView();
         }
+
+        FrameWrite();
     }
 
     protected void OnItemClicked(ListViewItem item) =>
@@ -468,8 +475,11 @@ public class ListView : Control
                 DoScroll(keyInfo.Key, out bool redrawAllItems);
 
                 if (redrawAllItems) {
+                    frame.Clear();
                     DrawHeader();
                     DrawItems();
+                    frame.ResetColour();
+                    Terminal.Write(frame.AsSpan());
                 }
                 else {
                     RedrawItem();
@@ -511,16 +521,24 @@ public class ListView : Control
 
     private void RedrawItem()
     {
-        terminal.SetCursorPosition(X, viewPort.Bounds.Y + viewPort.SelectedIndex - viewPort.CurrentIndex);
-        ListViewItem selectedItem = items[viewPort.SelectedIndex];
+        frame.Clear();
 
-        DrawItem(selectedItem, highlight: true);
+        ListViewItem selectedItem = items[viewPort.SelectedIndex];
+        DrawItem(
+            selectedItem,
+            viewPort.Bounds.Y + viewPort.SelectedIndex - viewPort.CurrentIndex,
+            highlight: true);
 
         if (viewPort.PreviousSelectedIndex != viewPort.SelectedIndex) {
-            terminal.SetCursorPosition(X, viewPort.Bounds.Y + viewPort.PreviousSelectedIndex - viewPort.CurrentIndex);
             ListViewItem previousSelectedItem = items[viewPort.PreviousSelectedIndex];
-            DrawItem(previousSelectedItem, highlight: false);
+            DrawItem(
+                previousSelectedItem,
+                viewPort.Bounds.Y + viewPort.PreviousSelectedIndex - viewPort.CurrentIndex,
+                highlight: false);
         }
+
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
     
     internal void RemoveAt(int index)

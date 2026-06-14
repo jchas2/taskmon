@@ -1,19 +1,18 @@
 ﻿using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.Tests.Common;
+using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewTests
 {
-    private readonly Mock<ISystemTerminal> terminal;
+    private readonly RecordingTerminal terminal = new();
 
-    public ListViewTests() =>
-        terminal = TerminalMock.Setup();
-    
-    private Monitor.System.Controls.ListView.ListView GetDefaultListView()
+    private ListViewControl GetDefaultListView()
     {
-        Monitor.System.Controls.ListView.ListView listView = new(terminal.Object) {
+        ListViewControl listView = new(terminal) {
             Width = 80,
             Height = 24,
             X = 0,
@@ -25,13 +24,13 @@ public sealed class ListViewTests
     
     [Fact]
     public void ListView_Canary_Test() =>
-        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<Monitor.System.Controls.ListView.ListView>());
+        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<ListViewControl>());
     
     [Fact]
     public void Should_Construct_Default()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        Monitor.System.Controls.ListView.ListView listView = new(terminal.Object);
+        ListViewControl listView = new(terminal.Object);
         
         Assert.Equal(ConsoleColor.Black, listView.BackgroundColour);
         Assert.Equal(ConsoleColor.White, listView.BackgroundHighlightColour);
@@ -63,7 +62,7 @@ public sealed class ListViewTests
     public void Should_Set_Initial_Properties()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        Monitor.System.Controls.ListView.ListView listView = new(terminal.Object) {
+        ListViewControl listView = new(terminal.Object) {
             BackgroundColour = ConsoleColor.Gray,
             BackgroundHighlightColour = ConsoleColor.DarkGray,
             EmptyListViewText = "No Items",
@@ -99,7 +98,7 @@ public sealed class ListViewTests
     [Fact]
     public void SelectedIndex_Throws_ArgumentOutOfRangeException_For_Invalid_Index()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item = new ("Item 0");
         listView.Items.Add(item);
 
@@ -110,7 +109,7 @@ public sealed class ListViewTests
     [Fact]
     public void SelectedIndex_Sets_Correctly()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.Items.Add(new ListViewItem("Item 0"));
         listView.Items.Add(new ListViewItem("Item 1"));
         listView.SelectedIndex = 1;
@@ -121,7 +120,7 @@ public sealed class ListViewTests
     [Fact]
      public void SelectedItem_Returns_Correct_Item()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item0 = new("Item 0");
         ListViewItem item1 = new("Item 1");
         listView.Items.Add(item0);
@@ -134,7 +133,7 @@ public sealed class ListViewTests
     [Fact]
     public void Item_Add_Should_Update_Item_Count()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
 
         Assert.Equal(0, listView.ItemCount);
         
@@ -146,7 +145,7 @@ public sealed class ListViewTests
     [Fact]
     public void Item_Remove_Should_Update_Item_Count()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item = new("Item 0");
         listView.Items.Add(item);
         
@@ -160,7 +159,7 @@ public sealed class ListViewTests
     [Fact]
     public void Get_Item_By_Index_Should_Return_Item()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item0 = new("Item 0");
         ListViewItem item1 = new("Item 1");
         listView.Items.Add(item0);
@@ -173,7 +172,7 @@ public sealed class ListViewTests
     [Fact]
     public void Get_Item_By_Index_Throws_ArgumentOutOfRangeException_For_Invalid_Index()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.Items.Add(new ListViewItem("Item 0"));
         
         Assert.Throws<ArgumentOutOfRangeException>(() => listView.GetItemByIndex(-1));
@@ -183,7 +182,7 @@ public sealed class ListViewTests
     [Fact]
     public void InsertItem_Inserts_At_Correct_Index()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.Items.Add(new ListViewItem("Item 0"));
         listView.Items.Add(new ListViewItem("Item 2"));
         ListViewItem newItem = new("Item 1");
@@ -196,7 +195,7 @@ public sealed class ListViewTests
     [Fact]
     public void ClearColumnHeaders_Removes_All_Headers_From_List()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.ColumnHeaders.Add(new ListViewColumnHeader("Header 0"));
         listView.ColumnHeaders.Add(new ListViewColumnHeader("Header 1"));
         listView.ClearColumnHeaders();
@@ -207,7 +206,7 @@ public sealed class ListViewTests
     [Fact]
     public void ColumnHeaders_Add_Should_Update_ColumnHeader_Count()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.ColumnHeaders.Add(new ListViewColumnHeader("Header 0"));
         listView.ColumnHeaders.Add(new ListViewColumnHeader("Header 1"));
 
@@ -217,7 +216,7 @@ public sealed class ListViewTests
     [Fact]
     public void OnKeyPressed_Should_Return_False_With_No_Items()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         bool handled = false;
         listView.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.A), ref handled);
         
@@ -239,7 +238,7 @@ public sealed class ListViewTests
     [MemberData(nameof(ArrowKeyScrollData))]
     public void Should_Scroll_On_Arrow_Keys(ConsoleKeyInfo keyInfo, int selectIndex, int selectedIndex)
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
 
         string[] items = new string[] { "Item 0", "Item 1", "Item 2", "Item 3", "Item 4" };
         foreach (var item in items) {
@@ -270,7 +269,7 @@ public sealed class ListViewTests
     [MemberData(nameof(ArrowKeyNoScrollData))]
     public void Should_Not_Scroll_When_EnableScroll_Is_False(ConsoleKeyInfo keyInfo, int selectIndex)
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         listView.EnableScroll = false;
         listView.Items.Add(new ListViewItem("Item 0"));
         listView.Items.Add(new ListViewItem("Item 1"));
@@ -286,20 +285,25 @@ public sealed class ListViewTests
         Assert.Equal(selectIndex, listView.SelectedIndex);
     }
     
-    [Fact]
-    public void Should_Draw_Header_And_Items()
-    {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+    private const char Esc = (char)27;
 
-        ListViewColumnHeader header0 = new("Header 0") {
-            Width = 16
+    private static string Fg(ConsoleColor c) => AnsiConsoleStringExtensions.GetForegroundCode(c).ToString();
+    private static string Bg(ConsoleColor c) => AnsiConsoleStringExtensions.GetBackgroundCode(c).ToString();
+
+    private static ListViewControl CreatePopulatedListView(RecordingTerminal terminal)
+    {
+        ListViewControl listView = new(terminal) {
+            Width = 80,
+            Height = 24,
+            X = 0,
+            Y = 0
         };
-        ListViewColumnHeader header1 = new("Header 1") {
-            Width = 32
-        };
-        
-        listView.ColumnHeaders.AddRange(new[] { header0, header1 });
-        
+
+        listView.ColumnHeaders.AddRange(new[] {
+            new ListViewColumnHeader("Header 0") { Width = 16 },
+            new ListViewColumnHeader("Header 1") { Width = 32 }
+        });
+
         listView.Items.AddRange(new[] {
             new ListViewItem("Item 0"),
             new ListViewItem("Item 1")
@@ -307,24 +311,102 @@ public sealed class ListViewTests
 
         listView.Items[0].SubItems.Add(new ListViewSubItem(listView.Items[0], "0 SubItem1"));
         listView.Items[1].SubItems.Add(new ListViewSubItem(listView.Items[1], "1 SubItem1"));
+
+        return listView;
+    }
+
+        [Fact]
+    public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
+
+        // Confirm double buffering is used. 
+        Assert.Equal(1, terminal.WriteSpanCalls);
+        Assert.Equal(0, terminal.WriteCharCalls);
+        Assert.Equal(0, terminal.WriteStringCalls);
+    }
+
+    [Fact]
+    public void OnDraw_Does_Not_Use_The_Console_Colour_Or_Cursor_Apis()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
+
+        // Confirm double buffering is used. 
+        Assert.Equal(0, terminal.SetCursorPositionCalls);
+        Assert.Equal(0, terminal.ForegroundColorSets);
+        Assert.Equal(0, terminal.BackgroundColorSets);
+    }
+
+    [Fact]
+    public void OnDraw_Emits_The_Header_Cursor_Move_Header_Colour_And_Trailing_Reset()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
+
+        string output = terminal.Output;
+
+        // The header is rendered one row above the scrollable region, at the top-left cell.
+        Assert.Contains(Esc + "[1;1H", output);
+        Assert.Contains(Fg(listView.HeaderForegroundColour), output);
+        Assert.Contains(Bg(listView.HeaderBackgroundColour), output);
+        Assert.EndsWith(AnsiConsoleStringExtensions.Reset, output);
+    }
+
+    [Fact]
+    public void OnDraw_Renders_The_Header_In_Bold()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
+
+        Assert.Contains(Esc + "[1m", terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Highlights_The_Selected_Row()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
         
-        listView.Draw();        
+        string output = terminal.Output;
         
-        terminal.Verify(t => t.SetCursorPosition(0, 0), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Header 0"))), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Header 1"))), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Item 0"))), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("0 SubItem1"))), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Item 1"))), Times.Once);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("1 SubItem1"))), Times.Once);
+        // The default selection is row 0. Unfocused, the highlight background is Gray
+        // and the highlight foreground is the configured ForegroundHighlightColour.
+        Assert.Contains(Fg(listView.ForegroundHighlightColour), output);
+        Assert.Contains(Bg(ConsoleColor.Gray), output);
+    }
+    
+    [Fact]
+    public void Should_Draw_Header_And_Items()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Draw();
+
+        // Confirm double buffering is used. 
+        Assert.Equal(1, terminal.WriteSpanCalls);
+        Assert.Equal(0, terminal.WriteCharCalls);
+        Assert.Equal(0, terminal.WriteStringCalls);
+        Assert.Equal(0, terminal.SetCursorPositionCalls);
+        Assert.Equal(0, terminal.ForegroundColorSets);
+        Assert.Equal(0, terminal.BackgroundColorSets);
+
+        string output = terminal.Output;
+        Assert.Contains("Header 0", output);
+        Assert.Contains("Header 1", output);
+        Assert.Contains("Item 0", output);
+        Assert.Contains("0 SubItem1", output);
+        Assert.Contains("Item 1", output);
+        Assert.Contains("1 SubItem1", output);
     }
 
     [Fact]
     public void Should_Raise_ItemSelected_EventHandler()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item0 = new("Item 0");
         ListViewItem item1 = new("Item 1");
+        
         listView.Items.Add(item0);
         listView.Items.Add(item1);
         listView.SelectedIndex = 1;
@@ -345,9 +427,10 @@ public sealed class ListViewTests
     [Fact]
     public void Should_Raise_ItemClicked_EventHandler()
     {
-        Monitor.System.Controls.ListView.ListView listView = GetDefaultListView();
+        ListViewControl listView = GetDefaultListView();
         ListViewItem item0 = new("Item 0");
         ListViewItem item1 = new("Item 1");
+        
         listView.Items.Add(item0);
         listView.Items.Add(item1);
         listView.SelectedIndex = 0;

@@ -122,6 +122,51 @@ public sealed class AnsiScreenBufferTests
     }
 
     [Fact]
+    public void SetBold_Emits_Bold_On_Then_Off()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetBold(true);
+        buffer.Append('x');
+        buffer.SetBold(false);
+
+        Assert.Equal(Esc + "[1m" + "x" + Esc + "[22m", buffer.AsSpan().ToString());
+    }
+
+    [Fact]
+    public void SetBold_Is_Skipped_When_State_Is_Unchanged()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetBold(true);
+        int afterFirst = buffer.Length;
+
+        buffer.SetBold(true);
+
+        Assert.Equal(afterFirst, buffer.Length);
+    }
+
+    [Fact]
+    public void Clear_Forces_Next_SetBold_To_Emit()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetBold(true);
+        buffer.Clear();
+        buffer.SetBold(true);
+
+        Assert.Equal(Esc + "[1m", buffer.AsSpan().ToString());
+    }
+
+    [Fact]
+    public void ResetColour_Clears_Bold_State()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetBold(true);
+        buffer.ResetColour();
+        buffer.SetBold(true);
+
+        Assert.Equal(Esc + "[1m" + AnsiConsoleStringExtensions.Reset + Esc + "[1m", buffer.AsSpan().ToString());
+    }
+
+    [Fact]
     public void Growth_Preserves_Content_Beyond_Initial_Capacity()
     {
         AnsiScreenBuffer buffer = new(capacity: 4);
