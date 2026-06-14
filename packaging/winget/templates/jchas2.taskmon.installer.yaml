@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# Installer manifest. Version, release date, and per-arch SHA256 are stamped at build
+# time by build-winget.ps1. The release archives are plain zips that each contain a single
+# portable taskmon.exe, so winget treats this as a zip installer with a nested portable
+# executable and shims `taskmon` onto PATH.
+PackageIdentifier: jchas2.taskmon
+PackageVersion: __VERSION__
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: taskmon.exe
+    PortableCommandAlias: taskmon
+Commands:
+  - taskmon
+ReleaseDate: __RELEASE_DATE__
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/jchas2/taskmon/releases/download/v__VERSION__/taskmon-__VERSION__-windows-x64.zip
+    InstallerSha256: __SHA_X64__
+  - Architecture: arm64
+    InstallerUrl: https://github.com/jchas2/taskmon/releases/download/v__VERSION__/taskmon-__VERSION__-windows-arm64.zip
+    InstallerSha256: __SHA_ARM64__
+ManifestType: installer
+ManifestVersion: 1.6.0

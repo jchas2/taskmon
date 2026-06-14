@@ -2,10 +2,10 @@
 
 Distribution packaging for `taskmon`. Each package manager lives in its own subfolder.
 
-| Folder  | Manager                | Status      |
-|---------|------------------------|-------------|
-| `choco` | Chocolatey (Windows)   | Implemented |
-| `scoop` | Scoop (Windows)        | Planned     |
+| Folder   | Manager                | Status      |
+|----------|------------------------|-------------|
+| `choco`  | Chocolatey (Windows)   | Implemented |
+| `winget` | winget (Windows)       | Implemented |
 
 The macOS Homebrew formula is published to a separate tap repository
 (`jchas2/homebrew-taskmon`) and is updated directly by the release workflow.
@@ -56,7 +56,21 @@ taskmon --version
 choco uninstall taskmon -y
 ```
 
-## Scoop (`scoop/`) — planned
+## winget (`winget/`)
 
-Scoop support will add a manifest (`taskmon.json`) here, published either to a Scoop bucket
-repo or this repo. It can reuse the same GitHub Release archives and SHA256 checksums.
+```
+winget/
+  taskmon.* manifests        Version, installer, and locale YAML templates (in templates/)
+  build-winget.ps1           Stamps version + checksums into dist/ for submission
+```
+
+The package is published to the [Windows Package Manager Community
+Repository](https://github.com/microsoft/winget-pkgs) under the identifier
+`jchas2.taskmon`, reusing the same GitHub Release archives and SHA256 checksums as the
+Chocolatey package. Because winget has no per-project feed, releases are shipped by
+opening a PR to `microsoft/winget-pkgs` via `wingetcreate`.
+
+On a `v*.*.*` tag, the `publish-winget` job stamps the manifests and submits the PR using
+the `WINGET_TOKEN` secret. The **first** version of a new package must be bootstrapped
+manually. See [`winget/README.md`](winget/README.md) for setup, secrets, and local
+testing.

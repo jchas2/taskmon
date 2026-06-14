@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+# Default locale manifest. Only __VERSION__ is stamped at build time.
+PackageIdentifier: jchas2.taskmon
+PackageVersion: __VERSION__
+PackageLocale: en-US
+Publisher: jchas2
+PublisherUrl: https://github.com/jchas2
+PublisherSupportUrl: https://github.com/jchas2/taskmon/issues
+Author: Jason Chase
+PackageName: Task Monitor (taskmon)
+PackageUrl: https://github.com/jchas2/taskmon
+License: MIT
+LicenseUrl: https://github.com/jchas2/taskmon/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Jason Chase
+ShortDescription: A powerful, cross-platform terminal-based task monitor.
+Description: >-
+  Task Monitor (taskmon) is a powerful, cross-platform terminal-based task monitor that
+  provides real-time monitoring and management of system performance, active processes,
+  and resource utilization. Inspired by tools like top, htop and the Windows Task Manager.
+  It installs a self-contained, natively compiled (AOT) single-file executable and
+  automatically selects the x64 or ARM64 build to match your machine. taskmon does not
+  require elevated permission for system monitoring, however some system process detail
+  won't be available unless run as Administrator.
+Moniker: taskmon
+Tags:
+  - cli
+  - cpu
+  - disk
+  - foss
+  - gpu
+  - htop
+  - memory
+  - network
+  - process-monitor
+  - system-monitor
+  - task-manager
+  - task-monitor
+  - top
+ReleaseNotesUrl: https://github.com/jchas2/taskmon/releases
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

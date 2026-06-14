@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.6.0.schema.json
+# Version manifest. Tokens (__VERSION__) are stamped at build time by build-winget.ps1.
+PackageIdentifier: jchas2.taskmon
+PackageVersion: __VERSION__
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0
