@@ -168,6 +168,34 @@ public sealed class AppConfig
         { Constants.Keys.RangeMidForeground,    "darkgreen"   },
         { Constants.Keys.HeaderBackground,      "green"       },
         { Constants.Keys.HeaderForeground,      "black"       }};
+    
+    private readonly string[,] solarMap = {
+        { Constants.Keys.Background,            "black"       },
+        { Constants.Keys.BackgroundHighlight,   "yellow"      },
+        { Constants.Keys.ColCmdNormalUserSpace, "darkgray"    },
+        { Constants.Keys.ColCmdLowPriority,     "darkyellow"  },
+        { Constants.Keys.ColCmdHighCpu,         "red"         },
+        { Constants.Keys.ColCmdIoBound,         "darkyellow"  },
+        { Constants.Keys.ColCmdScript,          "yellow"      },
+        { Constants.Keys.ColUserCurrentNonRoot, "yellow"      },
+        { Constants.Keys.ColUserOtherNonRoot,   "yellow"      },
+        { Constants.Keys.ColUserSystem,         "white"       },
+        { Constants.Keys.ColUserRoot,           "white"       },
+        { Constants.Keys.CommandForeground,     "black"       },
+        { Constants.Keys.CommandBackground,     "darkyellow"  },
+        { Constants.Keys.Error,                 "red"         },
+        { Constants.Keys.Foreground,            "yellow"      },
+        { Constants.Keys.ForegroundHighlight,   "black"       },
+        { Constants.Keys.MenubarForeground,     "black"       },
+        { Constants.Keys.MenubarBackground,     "darkyellow"  },
+        { Constants.Keys.RangeHighBackground,   "red"         },
+        { Constants.Keys.RangeLowBackground,    "yellow"      },
+        { Constants.Keys.RangeMidBackground,    "darkyellow"  },
+        { Constants.Keys.RangeHighForeground,   "black"       },
+        { Constants.Keys.RangeLowForeground,    "black"       },
+        { Constants.Keys.RangeMidForeground,    "darkyellow"  },
+        { Constants.Keys.HeaderBackground,      "darkyellow"  },
+        { Constants.Keys.HeaderForeground,      "black"       }};
 
     private readonly string[,] layoutAll = {
         { Constants.Keys.Ratio,   "0.4" },
@@ -512,7 +540,8 @@ public sealed class AppConfig
             [Constants.Sections.ThemeMono] = monoMap,
             [Constants.Sections.ThemeMsDos] = msDosMap,
             [Constants.Sections.ThemeTokyoNight] = tokyoNightMap,
-            [Constants.Sections.ThemeMatrix] = matrixMap
+            [Constants.Sections.ThemeMatrix] = matrixMap,
+            [Constants.Sections.ThemeSolar] = solarMap
         };
 
         foreach (string themeName in themeMap.Keys) {

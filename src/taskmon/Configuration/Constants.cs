@@ -15,6 +15,7 @@ public sealed class Constants
         public const string ThemeMsDos = "theme-msdos";
         public const string ThemeTokyoNight = "theme-tokyo-night";
         public const string ThemeMatrix = "theme-matrix";
+        public const string ThemeSolar = "theme-solar";
 
         public const string LayoutAll = "layout-all";
         public const string LayoutAllLarge = "layout-all-large";
