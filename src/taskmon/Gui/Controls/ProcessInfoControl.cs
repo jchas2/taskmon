@@ -276,10 +276,15 @@ public partial class ProcessInfoControl : Control
         threadsView.ColumnHeaders[(int)ThreadColumns.State].Width = ColumnThreadStateWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.Reason].Width = ColumnThreadReasonWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.Priority].Width = ColumnThreadPriorityWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.Priority].RightAligned = true;
         threadsView.ColumnHeaders[(int)ThreadColumns.StartAddress].Width = ColumnThreadStartAddressWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuKernelTime].Width = ColumnThreadCpuKernelTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuKernelTime].RightAligned = true;
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].Width = ColumnThreadCpuUserTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].RightAligned = true;
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].Width = ColumnThreadCpuTotalTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].RightAligned = true;
+        
         threadsView.Resize();
         
         handlesView.Resize();
