@@ -21,6 +21,9 @@ public class Processor : IProcessor
     private readonly List<ProcessorInfo> allProcessorInfosCopy;
     private readonly Dictionary<int, ProcessInfo> processInfoMap;
     private readonly Dictionary<int, ProcessInfo> newProcessInfoMap;
+    private readonly Dictionary<int, ProcessAverage> averageState;
+    private readonly HashSet<int> currentPids;
+    private readonly List<int> stalePids;
     private WorkerTask? workerTask;
     private WorkerTask? monitorTask;
     private CancellationTokenSource? cancellationTokenSource;
@@ -43,6 +46,9 @@ public class Processor : IProcessor
         allProcessorInfosCopy = new List<ProcessorInfo>(InitialCapacity);
         processInfoMap = new Dictionary<int, ProcessInfo>(InitialCapacity);
         newProcessInfoMap = new Dictionary<int, ProcessInfo>(InitialCapacity);
+        averageState = new Dictionary<int, ProcessAverage>(InitialCapacity);
+        currentPids = new HashSet<int>(InitialCapacity);
+        stalePids = new List<int>(InitialCapacity);
         @lock = new Lock();
         isWindows = OperatingSystem.IsWindows();
     }
@@ -122,6 +128,7 @@ public class Processor : IProcessor
             allProcessorInfos.Clear();
             processInfoMap.Clear();
             newProcessInfoMap.Clear();
+            currentPids.Clear();
             processCount = 0;
             threadCount = 0;
 
@@ -257,8 +264,36 @@ public class Processor : IProcessor
                 systemStatistics.TotalDiskReadBytes += (long)processorInfo.DiskReadBytes;
                 systemStatistics.TotalDiskWriteBytes += (long)processorInfo.DiskWriteBytes;
                 systemStatistics.DiskUsage += processorInfo.DiskUsage;
-                
+
+                if (!averageState.TryGetValue(pid, out ProcessAverage? average)) {
+                    average = new ProcessAverage();
+                    averageState.Add(pid, average);
+                }
+
+                average.Add(processorInfo);
+
+                processorInfo.CpuTimePercentAvg = average.CpuTimePercent;
+                processorInfo.GpuTimePercentAvg = average.GpuTimePercent;
+                processorInfo.UsedMemoryAvg = average.UsedMemory;
+                processorInfo.DiskUsageAvg = average.DiskUsage;
+
+                currentPids.Add(pid);
+
                 allProcessorInfos.Add(processorInfo);
+            }
+
+            if (averageState.Count > currentPids.Count) {
+                stalePids.Clear();
+
+                foreach (int pid in averageState.Keys) {
+                    if (!currentPids.Contains(pid)) {
+                        stalePids.Add(pid);
+                    }
+                }
+
+                for (int i = 0; i < stalePids.Count; i++) {
+                    averageState.Remove(stalePids[i]);
+                }
             }
 
             systemStatistics.CpuPercentUserTime = (double)sysTimesDeltas.User / (double)totalSysTime;

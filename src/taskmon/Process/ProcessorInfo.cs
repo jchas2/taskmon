@@ -25,6 +25,12 @@ public class ProcessorInfo
     public double CpuTimePercent { get; set; }
     public double CpuUserTimePercent { get; set; }
     public double CpuKernelTimePercent { get; set; }
-    
+
     public double GpuTimePercent { get; set; }
+
+    // Cumulative running averages, accumulated per-process across sampling cycles.
+    public double CpuTimePercentAvg { get; set; }
+    public double GpuTimePercentAvg { get; set; }
+    public long UsedMemoryAvg { get; set; }
+    public long DiskUsageAvg { get; set; }
 }

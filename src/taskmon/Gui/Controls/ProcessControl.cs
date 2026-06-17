@@ -31,6 +31,7 @@ public sealed partial class ProcessControl : Control
     private Columns sortColumn;
     private readonly Lock allProcessesLock;
     private bool sortAscending = false;
+    private Statistics visibleColumns;
 
     private const int SortControlWidth = 20;
     private const int ControlGutter = 1;
@@ -93,10 +94,14 @@ public sealed partial class ProcessControl : Control
             .Add(new ListViewColumnHeader(Columns.User.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Priority.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Cpu.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.AvgCpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Threads.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Gpu.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.AvgGpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Memory.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.AvgMemory.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Disk.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.AvgDisk.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.CommandLine.GetTitle()));
 
         Controls
@@ -226,42 +231,66 @@ public sealed partial class ProcessControl : Control
         processView.Width = pWidth;
         processView.Height = Height;
 
-        processView.ColumnHeaders[(int)Columns.Process].Width = ColumnProcessWidth;
-        processView.ColumnHeaders[(int)Columns.Pid].Width = ColumnPidWidth;
-        processView.ColumnHeaders[(int)Columns.User].Width = ColumnUserWidth;
-        processView.ColumnHeaders[(int)Columns.Priority].Width = ColumnPriorityWidth;
-        processView.ColumnHeaders[(int)Columns.Priority].RightAligned = true;
-        processView.ColumnHeaders[(int)Columns.Cpu].Width = ColumnCpuWidth;
-        processView.ColumnHeaders[(int)Columns.Cpu].RightAligned = true;
-        processView.ColumnHeaders[(int)Columns.Threads].Width = ColumnThreadsWidth;
-        processView.ColumnHeaders[(int)Columns.Threads].RightAligned = true;
-        processView.ColumnHeaders[(int)Columns.Gpu].Width = ColumnGpuWidth;
-        processView.ColumnHeaders[(int)Columns.Gpu].RightAligned = true;
-        processView.ColumnHeaders[(int)Columns.Memory].Width = ColumnMemoryWidth;
-        processView.ColumnHeaders[(int)Columns.Memory].RightAligned = true;
-        processView.ColumnHeaders[(int)Columns.Disk].Width = ColumnDiskWidth;
-        processView.ColumnHeaders[(int)Columns.Disk].RightAligned = true;
+        visibleColumns = appConfig.VisibleColumns;
+
+        int SetWidth(Columns column, int width, bool rightAligned = false)
+        {
+            int effectiveWidth = IsColumnVisible(column) ? width : 0;
+            processView.ColumnHeaders[(int)column].Width = effectiveWidth;
+            processView.ColumnHeaders[(int)column].RightAligned = rightAligned;
+            return effectiveWidth;
+        }
 
         int total =
-            ColumnProcessWidth +
-            ColumnPidWidth +
-            ColumnUserWidth +
-            ColumnPriorityWidth +
-            ColumnCpuWidth +
-            ColumnThreadsWidth +
-            ColumnGpuWidth +
-            ColumnMemoryWidth +
-            ColumnDiskWidth;
+            SetWidth(Columns.Process, ColumnProcessWidth) +
+            SetWidth(Columns.Pid, ColumnPidWidth) +
+            SetWidth(Columns.User, ColumnUserWidth) +
+            SetWidth(Columns.Priority, ColumnPriorityWidth, rightAligned: true) +
+            SetWidth(Columns.Cpu, ColumnCpuWidth, rightAligned: true) +
+            SetWidth(Columns.AvgCpu, ColumnAvgCpuWidth, rightAligned: true) +
+            SetWidth(Columns.Threads, ColumnThreadsWidth, rightAligned: true) +
+            SetWidth(Columns.Gpu, ColumnGpuWidth, rightAligned: true) +
+            SetWidth(Columns.AvgGpu, ColumnAvgGpuWidth, rightAligned: true) +
+            SetWidth(Columns.Memory, ColumnMemoryWidth, rightAligned: true) +
+            SetWidth(Columns.AvgMemory, ColumnAvgMemoryWidth, rightAligned: true) +
+            SetWidth(Columns.Disk, ColumnDiskWidth, rightAligned: true) +
+            SetWidth(Columns.AvgDisk, ColumnAvgDiskWidth, rightAligned: true);
 
         int processViewWidth =
             processView.ShowCheckboxes ? processView.Width - ListView.CheckboxWidth : processView.Width;
 
-        processView.ColumnHeaders[(int)Columns.CommandLine].Width = total + ColumnCommandlineWidth < processViewWidth
-            ? processView.ColumnHeaders[(int)Columns.CommandLine].Width = processViewWidth - total
-            : processView.ColumnHeaders[(int)Columns.CommandLine].Width = ColumnCommandlineWidth;
+        int commandLineWidth = total + ColumnCommandlineWidth < processViewWidth
+            ? processViewWidth - total
+            : ColumnCommandlineWidth;
+
+        processView.ColumnHeaders[(int)Columns.CommandLine].Width =
+            IsColumnVisible(Columns.CommandLine) ? commandLineWidth : 0;
 
         processView.Resize();
     }
+
+    // Process and Pid are always shown.
+    private bool IsColumnVisible(Columns column) =>
+        column is Columns.Process or Columns.Pid ||
+        (visibleColumns & ToStatistic(column)) != 0;
+
+    private static Statistics ToStatistic(Columns column) => column switch {
+        Columns.Process => Statistics.Process,
+        Columns.Pid => Statistics.Pid,
+        Columns.User => Statistics.User,
+        Columns.Priority => Statistics.Pri,
+        Columns.Cpu => Statistics.Cpu,
+        Columns.AvgCpu => Statistics.AvgCpu,
+        Columns.Threads => Statistics.Thrd,
+        Columns.Gpu => Statistics.Gpu,
+        Columns.AvgGpu => Statistics.AvgGpu,
+        Columns.Memory => Statistics.Mem,
+        Columns.AvgMemory => Statistics.AvgMem,
+        Columns.Disk => Statistics.Disk,
+        Columns.AvgDisk => Statistics.AvgDisk,
+        Columns.CommandLine => Statistics.Path,
+        _ => default
+    };
 
     protected override void OnUnload()
     {
@@ -409,13 +438,17 @@ public sealed partial class ProcessControl : Control
 
             List<ProcessorInfo> sortedProcesses = (sortColumn switch {
                 Columns.Cpu => Sort(p => p.CpuTimePercent),
+                Columns.AvgCpu => Sort(p => p.CpuTimePercentAvg),
                 Columns.Disk => Sort(p => p.DiskUsage),
+                Columns.AvgDisk => Sort(p => p.DiskUsageAvg),
                 Columns.Memory => Sort(p => p.UsedMemory),
+                Columns.AvgMemory => Sort(p => p.UsedMemoryAvg),
                 Columns.Pid => Sort(p => p.Pid),
                 Columns.Priority => Sort(p => p.BasePriority),
                 Columns.Process => Sort(p => p.FileDescription),
                 Columns.Threads => Sort(p => p.ThreadCount),
                 Columns.Gpu => Sort(p => p.GpuTimePercent),
+                Columns.AvgGpu => Sort(p => p.GpuTimePercentAvg),
                 Columns.User => Sort(p => p.UserName),
                 Columns.CommandLine => Sort(p => p.CmdLine),
                 _ => filteredProcesses.OrderByDescending(p => p.CpuTimePercent)
