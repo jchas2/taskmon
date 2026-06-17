@@ -15,6 +15,7 @@ public class SetupScreen : Screen
     private readonly ListView headerView;
     private readonly ListView menuView;
     private readonly ListView generalView;
+    private readonly ListView columnsView;
     private readonly ListView themeView;
     private readonly ListView layoutView;
     private readonly ListView metreView;
@@ -28,6 +29,22 @@ public class SetupScreen : Screen
     private const int ControlGutter = 1;
     private const int MenuViewWidth = 22;
     private const int CommandLength = 10;
+
+    private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
+    [
+        (Statistics.User, "User"),
+        (Statistics.Pri, "Priority"),
+        (Statistics.Cpu, "CPU %"),
+        (Statistics.AvgCpu, "Average CPU %"),
+        (Statistics.Thrd, "Threads"),
+        (Statistics.Gpu, "GPU %"),
+        (Statistics.AvgGpu, "Average GPU %"),
+        (Statistics.Mem, "Memory"),
+        (Statistics.AvgMem, "Average Memory"),
+        (Statistics.Disk, "Disk"),
+        (Statistics.AvgDisk, "Average Disk"),
+        (Statistics.Path, "Path"),
+    ];
 
     public SetupScreen(RunContext runContext) : base(runContext.Terminal)
     {
@@ -64,6 +81,19 @@ public class SetupScreen : Screen
 
         generalView.ColumnHeaders.Add(new ListViewColumnHeader("General Settings"));
         generalView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
+
+        columnsView = new(runContext.Terminal) {
+            Name = nameof(columnsView),
+            EnableScroll = true,
+            ShowCheckboxes = true,
+            ShowColumnHeaders = true,
+            TabIndex = 3,
+            TabStop = true,
+            Visible = false
+        };
+
+        columnsView.ColumnHeaders.Add(new ListViewColumnHeader("Visible Columns"));
+        columnsView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
 
         themeView = new(runContext.Terminal) {
             Name = nameof(themeView),
@@ -135,6 +165,7 @@ public class SetupScreen : Screen
             .Add(headerView)
             .Add(menuView)
             .Add(generalView)
+            .Add(columnsView)
             .Add(themeView)
             .Add(layoutView)
             .Add(metreView)
@@ -144,7 +175,8 @@ public class SetupScreen : Screen
         
         tabControls.AddRange(new [] {
             generalView,
-            themeView, 
+            columnsView,
+            themeView,
             layoutView,
             metreView,
             delayView, 
@@ -247,13 +279,28 @@ public class SetupScreen : Screen
             runContext.AppConfig.UseIrixReporting);
     }
     
+    private void LoadColumnsSection()
+    {
+        Statistics visibleColumns = runContext.AppConfig.VisibleColumns;
+
+        foreach ((Statistics statistic, string label) in toggleableColumns) {
+            columnsView.Items.Add(new ListViewItem([label, statistic.ToString()]));
+            columnsView.Items[^1].Checked = (visibleColumns & statistic) != 0;
+        }
+    }
+
     private void LoadMenuItems()
     {
         menuView.Items.Add(
             new MenuListViewItem(
                 generalView,
                 "GENERAL"));
-        
+
+        menuView.Items.Add(
+            new MenuListViewItem(
+                columnsView,
+                "COLUMNS"));
+
         menuView.Items.Add(
             new MenuListViewItem(
                 themeView, 
@@ -370,6 +417,16 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowMetreNetworkNumerically = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
         runContext.AppConfig.UseLargeCharts = GetItemValueByKey(Constants.Keys.UseLargeCharts).Checked;
         runContext.AppConfig.UseIrixReporting = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
+
+        Statistics visibleColumns = Statistics.Process | Statistics.Pid;
+
+        foreach (ListViewItem item in columnsView.Items) {
+            if (item.Checked && Enum.TryParse(item.SubItems[1].Text, out Statistics statistic)) {
+                visibleColumns |= statistic;
+            }
+        }
+
+        runContext.AppConfig.VisibleColumns = visibleColumns;
         
         if (themeView.SelectedItem?.Text != null) {
             runContext.AppConfig.DefaultTheme = runContext.AppConfig.Themes.First(
@@ -504,6 +561,7 @@ public class SetupScreen : Screen
         LoadHeaderView();
         LoadMenuItems();
         LoadGeneralSection();
+        LoadColumnsSection();
         LoadUxSection();
         
         LoadSectionConfigListView(
@@ -567,6 +625,7 @@ public class SetupScreen : Screen
         }
 
         generalView.ColumnHeaders[1].Width = 0;
+        columnsView.ColumnHeaders[1].Width = 0;
     }
 
     protected override void OnUnload()

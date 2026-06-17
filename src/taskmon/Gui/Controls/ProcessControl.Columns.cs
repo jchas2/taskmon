@@ -9,10 +9,14 @@ public partial class ProcessControl
     internal const int ColumnUserWidth = 16;
     internal const int ColumnPriorityWidth = 4;
     internal const int ColumnCpuWidth = 7;
+    internal const int ColumnAvgCpuWidth = 9;
     internal const int ColumnThreadsWidth = 7;
     internal const int ColumnGpuWidth = 7;
+    internal const int ColumnAvgGpuWidth = 9;
     internal const int ColumnMemoryWidth = 10;
+    internal const int ColumnAvgMemoryWidth = 10;
     internal const int ColumnDiskWidth = 12;
+    internal const int ColumnAvgDiskWidth = 12;
     internal const int ColumnCommandlineWidth = 32;
 
     public enum Columns
@@ -39,6 +43,9 @@ public partial class ProcessControl
         [ColumnProperty("CpuTimePercent")]
         [ColumnSortKey(ConsoleKey.P)]
         Cpu,
+        [ColumnTitle("AVG CPU%")]
+        [ColumnProperty("CpuTimePercentAvg")]
+        AvgCpu,
         [ColumnTitle("THRDS")]
         [ColumnProperty("ThreadCount")]
         Threads,
@@ -46,14 +53,23 @@ public partial class ProcessControl
         [ColumnProperty("GpuTimePercent")]
         [ColumnSortKey(ConsoleKey.G)]
         Gpu,
+        [ColumnTitle("AVG GPU%")]
+        [ColumnProperty("GpuTimePercentAvg")]
+        AvgGpu,
         [ColumnTitle("MEM")]
         [ColumnProperty("UsedMemory")]
         [ColumnSortKey(ConsoleKey.M)]
         Memory,
+        [ColumnTitle("AVG MEM")]
+        [ColumnProperty("UsedMemoryAvg")]
+        AvgMemory,
         [ColumnTitle("DISK")]
         [ColumnProperty("DiskUsage")]
         [ColumnSortKey(ConsoleKey.D)]
         Disk,
+        [ColumnTitle("AVG DISK")]
+        [ColumnProperty("DiskUsageAvg")]
+        AvgDisk,
         [ColumnTitle("PATH")]
         [ColumnProperty("CmdLine")]
         CommandLine,

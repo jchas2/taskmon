@@ -387,6 +387,17 @@ public sealed class AppConfig
         set => statsSection?.Add(Constants.Keys.NProcs, value.ToString());
     }
 
+    public const Statistics DefaultVisibleColumns =
+        Statistics.Process | Statistics.Pid | Statistics.User | Statistics.Pri |
+        Statistics.Cpu | Statistics.Thrd | Statistics.Gpu | Statistics.Mem |
+        Statistics.Path | Statistics.Disk;
+
+    public Statistics VisibleColumns
+    {
+        get => statsSection?.GetEnum(Constants.Keys.Cols, DefaultVisibleColumns) ?? DefaultVisibleColumns;
+        set => statsSection?.Add(Constants.Keys.Cols, value.ToString());
+    }
+
     public Statistics SortColumn
     {
         get => sortSection?.GetEnum(Constants.Keys.Col, Statistics.Cpu) ?? Statistics.Cpu;
@@ -501,7 +512,7 @@ public sealed class AppConfig
             : new ConfigSection(Constants.Sections.Stats);
 
         statsSection
-            .AddIfMissing(Constants.Keys.Cols, string.Join(", ", Enum.GetNames<Statistics>()))
+            .AddIfMissing(Constants.Keys.Cols, DefaultVisibleColumns.ToString())
             .AddIfMissing(Constants.Keys.Delay, Processor.DefaultDelayInMilliseconds.ToString())
             .AddIfMissing(Constants.Keys.NProcs, "-1");
 

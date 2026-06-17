@@ -14,5 +14,9 @@ public enum Statistics
     Gpu     = 1 << 6,
     Mem     = 1 << 7,
     Path    = 1 << 8,
-    Disk    = 1 << 9
+    Disk    = 1 << 9,
+    AvgCpu  = 1 << 10,
+    AvgGpu  = 1 << 11,
+    AvgMem  = 1 << 12,
+    AvgDisk = 1 << 13
 }

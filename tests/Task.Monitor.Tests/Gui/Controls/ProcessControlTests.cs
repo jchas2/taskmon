@@ -1,4 +1,5 @@
 using Moq;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Process;
 using Task.Monitor.System;
@@ -115,12 +116,15 @@ public sealed class ProcessControlTests
         
         processorFake.AddSystemStats(statistics);
         processorFake.AddProcessorInfos(pinfos);
-        
+
+        runContext.AppConfig.VisibleColumns = AppConfig.DefaultVisibleColumns |
+            Statistics.AvgCpu | Statistics.AvgGpu | Statistics.AvgMem | Statistics.AvgDisk;
+
         ProcessControl ctrl = new(
             processorFake,
             runContext.Terminal, 
             runContext.AppConfig) {
-            Width = 142,
+            Width = 200,
             Height = 9
         };
         
@@ -133,10 +137,14 @@ public sealed class ProcessControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("USER"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("NI") || s.Contains("PRI"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("CPU%"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG CPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("THRDS"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("GPU%"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG GPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MEM"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG MEM"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("DISK"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG DISK"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("PATH"))), Times.Once);
 
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("app1"))), Times.Once);

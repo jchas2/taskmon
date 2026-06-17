@@ -99,12 +99,20 @@ public sealed class SetupScreenTests
     public static TheoryData<string, string> ControlSettingData()
         => new() {
             { "GENERAL",                                           "menuView" },
+            { "COLUMNS",                                           "menuView" },
             { "THEMES",                                            "menuView" },
             { "METRES",                                            "menuView" },
             { "DELAY",                                             "menuView" },
             { "LIMIT",                                             "menuView" },
             { "PROCESSES",                                         "menuView" },
-            
+
+            { "CPU %",                                             "columnsView" },
+            { "Average CPU %",                                     "columnsView" },
+            { "Average GPU %",                                     "columnsView" },
+            { "Average Memory",                                    "columnsView" },
+            { "Average Disk",                                      "columnsView" },
+            { "Path",                                              "columnsView" },
+
             { "Confirm Task delete",                               "generalView" },
 #if __WIN32__
             { "Highlight Windows Services",                        "generalView" },
