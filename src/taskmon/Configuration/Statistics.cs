@@ -18,5 +18,9 @@ public enum Statistics
     AvgCpu  = 1 << 10,
     AvgGpu  = 1 << 11,
     AvgMem  = 1 << 12,
-    AvgDisk = 1 << 13
+    AvgDisk = 1 << 13,
+    MaxCpu  = 1 << 14,
+    MaxGpu  = 1 << 15,
+    MaxMem  = 1 << 16,
+    MaxDisk = 1 << 17
 }

@@ -10,13 +10,17 @@ public partial class ProcessControl
     internal const int ColumnPriorityWidth = 4;
     internal const int ColumnCpuWidth = 7;
     internal const int ColumnAvgCpuWidth = 9;
+    internal const int ColumnMaxCpuWidth = 9;
     internal const int ColumnThreadsWidth = 7;
     internal const int ColumnGpuWidth = 7;
     internal const int ColumnAvgGpuWidth = 9;
+    internal const int ColumnMaxGpuWidth = 9;
     internal const int ColumnMemoryWidth = 10;
     internal const int ColumnAvgMemoryWidth = 10;
+    internal const int ColumnMaxMemoryWidth = 10;
     internal const int ColumnDiskWidth = 12;
     internal const int ColumnAvgDiskWidth = 12;
+    internal const int ColumnMaxDiskWidth = 12;
     internal const int ColumnCommandlineWidth = 32;
 
     public enum Columns
@@ -46,6 +50,9 @@ public partial class ProcessControl
         [ColumnTitle("AVG CPU%")]
         [ColumnProperty("CpuTimePercentAvg")]
         AvgCpu,
+        [ColumnTitle("MAX CPU%")]
+        [ColumnProperty("CpuTimePercentMax")]
+        MaxCpu,
         [ColumnTitle("THRDS")]
         [ColumnProperty("ThreadCount")]
         Threads,
@@ -56,6 +63,9 @@ public partial class ProcessControl
         [ColumnTitle("AVG GPU%")]
         [ColumnProperty("GpuTimePercentAvg")]
         AvgGpu,
+        [ColumnTitle("MAX GPU%")]
+        [ColumnProperty("GpuTimePercentMax")]
+        MaxGpu,
         [ColumnTitle("MEM")]
         [ColumnProperty("UsedMemory")]
         [ColumnSortKey(ConsoleKey.M)]
@@ -63,6 +73,9 @@ public partial class ProcessControl
         [ColumnTitle("AVG MEM")]
         [ColumnProperty("UsedMemoryAvg")]
         AvgMemory,
+        [ColumnTitle("MAX MEM")]
+        [ColumnProperty("UsedMemoryMax")]
+        MaxMemory,
         [ColumnTitle("DISK")]
         [ColumnProperty("DiskUsage")]
         [ColumnSortKey(ConsoleKey.D)]
@@ -70,6 +83,9 @@ public partial class ProcessControl
         [ColumnTitle("AVG DISK")]
         [ColumnProperty("DiskUsageAvg")]
         AvgDisk,
+        [ColumnTitle("MAX DISK")]
+        [ColumnProperty("DiskUsageMax")]
+        MaxDisk,
         [ColumnTitle("PATH")]
         [ColumnProperty("CmdLine")]
         CommandLine,

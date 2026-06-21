@@ -116,4 +116,44 @@ public sealed class ProcessAverageTests
 
         Assert.Equal(expected, average.CpuTimePercent, Precision);
     }
+
+    [Fact]
+    public void Single_Sample_Max_Equals_The_Sample()
+    {
+        ProcessAverage average = new();
+
+        average.Add(Sample(cpu: 0.42, gpu: 0.17, memory: 123456, disk: 789));
+
+        Assert.Equal(0.42, average.CpuTimePercentMax, Precision);
+        Assert.Equal(0.17, average.GpuTimePercentMax, Precision);
+        Assert.Equal(123456, average.UsedMemoryMax);
+        Assert.Equal(789, average.DiskUsageMax);
+    }
+
+    [Fact]
+    public void Max_Tracks_The_Highest_Value_Across_Samples()
+    {
+        ProcessAverage average = new();
+
+        average.Add(Sample(cpu: 0.10, gpu: 0.90, memory: 3000, disk: 30));
+        average.Add(Sample(cpu: 0.50, gpu: 0.20, memory: 1000, disk: 10));
+        average.Add(Sample(cpu: 0.30, gpu: 0.40, memory: 2000, disk: 20));
+
+        // Each metric peaks in a different sample, independently of the others.
+        Assert.Equal(0.50, average.CpuTimePercentMax, Precision);
+        Assert.Equal(0.90, average.GpuTimePercentMax, Precision);
+        Assert.Equal(3000, average.UsedMemoryMax);
+        Assert.Equal(30, average.DiskUsageMax);
+    }
+
+    [Fact]
+    public void Max_Is_Not_Reduced_By_Later_Smaller_Samples()
+    {
+        ProcessAverage average = new();
+
+        average.Add(Sample(cpu: 0.80));
+        average.Add(Sample(cpu: 0.10));
+
+        Assert.Equal(0.80, average.CpuTimePercentMax, Precision);
+    }
 }

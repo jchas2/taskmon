@@ -36,13 +36,17 @@ public class SetupScreen : Screen
         (Statistics.Pri, "Priority"),
         (Statistics.Cpu, "CPU %"),
         (Statistics.AvgCpu, "Average CPU %"),
+        (Statistics.MaxCpu, "Max CPU %"),
         (Statistics.Thrd, "Threads"),
         (Statistics.Gpu, "GPU %"),
         (Statistics.AvgGpu, "Average GPU %"),
+        (Statistics.MaxGpu, "Max GPU %"),
         (Statistics.Mem, "Memory"),
         (Statistics.AvgMem, "Average Memory"),
+        (Statistics.MaxMem, "Max Memory"),
         (Statistics.Disk, "Disk"),
         (Statistics.AvgDisk, "Average Disk"),
+        (Statistics.MaxDisk, "Max Disk"),
         (Statistics.Path, "Path"),
     ];
 
@@ -471,7 +475,7 @@ public class SetupScreen : Screen
         Terminal.BackgroundColor = previewTheme.MenubarBackground;
         Terminal.ForegroundColor = previewTheme.MenubarForeground;
 
-        string menubar = "Task.MonitorSETUP";
+        string menubar = "TASK MONITOR SETUP";
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
         
         Terminal.WriteEmptyLineTo(offsetX);
@@ -609,7 +613,7 @@ public class SetupScreen : Screen
         headerView.ColumnHeaders[0].Width = Width;
         
         menuView.X = X;
-        menuView.Y = headerView.Y + headerView.Height + 2;
+        menuView.Y = headerView.Y + headerView.Height;
         menuView.Height = Height - (headerView.Height + 4) - ControlGutter;
         menuView.Width = MenuViewWidth;
         menuView.ColumnHeaders[0].Width = MenuViewWidth;

@@ -65,7 +65,7 @@ public sealed class MainScreen : Screen
             .AddCommand(ConsoleKey.F6, () => new EndTaskCommand("End Task", this, runContext.AppConfig))
             .AddCommand(ConsoleKey.F7, () => new ThemeCommand("Theme", this, runContext.AppConfig))
             .AddCommand(ConsoleKey.F8, () => new LayoutCommand("Layout", this, runContext.AppConfig))
-            .AddCommand(ConsoleKey.F9, () => new AboutCommand("About", this))
+            .AddCommand(ConsoleKey.F9, () => new AboutCommand("About", screenApp))
             .AddCommand(ConsoleKey.F10, () => new ExitCommand("Quit"));
 
         filterControl = new FilterControl(runContext.Terminal, runContext.AppConfig) {
@@ -177,25 +177,12 @@ public sealed class MainScreen : Screen
         footerControl.Height = FooterHeight;
         footerControl.Resize();
     }
-
-    protected override void OnShown()
-    {
-        base.OnShown();
-        
-        runContext.Processor.Delay = runContext.AppConfig.DelayInMilliseconds;
-        runContext.Processor.IrixMode = runContext.AppConfig.UseIrixReporting;
-        runContext.Processor.IterationLimit = runContext.AppConfig.IterationLimit;
-        runContext.Processor.Run();
-    }
-
+    
     protected override void OnUnload()
     {
         base.OnUnload();
         
-        runContext.Processor.Stop();
-        
         processControl.ProcessItemSelected -= OnProcessItemSelected;
-        
         Terminal.CursorVisible = true;
     }
 

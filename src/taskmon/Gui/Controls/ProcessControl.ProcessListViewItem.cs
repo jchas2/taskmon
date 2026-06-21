@@ -43,13 +43,17 @@ public partial class ProcessControl
                 new ListViewSubItem(this, processorInfo.BasePriority.ToString()),
                 new ListViewSubItem(this, processorInfo.CpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture)),
                 new ListViewSubItem(this, processorInfo.CpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture)),
+                new ListViewSubItem(this, processorInfo.CpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture)),
                 new ListViewSubItem(this, processorInfo.ThreadCount.ToString()),
                 new ListViewSubItem(this, processorInfo.GpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture)),
                 new ListViewSubItem(this, processorInfo.GpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture)),
+                new ListViewSubItem(this, processorInfo.GpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture)),
                 new ListViewSubItem(this, processorInfo.UsedMemory.ToFormattedByteSize()),
                 new ListViewSubItem(this, processorInfo.UsedMemoryAvg.ToFormattedByteSize()),
+                new ListViewSubItem(this, processorInfo.UsedMemoryMax.ToFormattedByteSize()),
                 new ListViewSubItem(this, processorInfo.DiskUsage.ToFormattedMbpsFromBytes()),
                 new ListViewSubItem(this, processorInfo.DiskUsageAvg.ToFormattedMbpsFromBytes()),
+                new ListViewSubItem(this, processorInfo.DiskUsageMax.ToFormattedMbpsFromBytes()),
                 new ListViewSubItem(this, processorInfo.CmdLine));
         }
 
@@ -188,13 +192,17 @@ public partial class ProcessControl
             SubItems[(int)Columns.Priority].Text = processorInfo.BasePriority.ToString();
             SubItems[(int)Columns.Cpu].Text = processorInfo.CpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
             SubItems[(int)Columns.AvgCpu].Text = processorInfo.CpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.MaxCpu].Text = processorInfo.CpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
             SubItems[(int)Columns.Threads].Text = processorInfo.ThreadCount.ToString();
             SubItems[(int)Columns.Gpu].Text = processorInfo.GpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
             SubItems[(int)Columns.AvgGpu].Text = processorInfo.GpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.MaxGpu].Text = processorInfo.GpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
             SubItems[(int)Columns.Memory].Text = processorInfo.UsedMemory.ToFormattedByteSize();
             SubItems[(int)Columns.AvgMemory].Text = processorInfo.UsedMemoryAvg.ToFormattedByteSize();
+            SubItems[(int)Columns.MaxMemory].Text = processorInfo.UsedMemoryMax.ToFormattedByteSize();
             SubItems[(int)Columns.Disk].Text = processorInfo.DiskUsage.ToFormattedMbpsFromBytes();
             SubItems[(int)Columns.AvgDisk].Text = processorInfo.DiskUsageAvg.ToFormattedMbpsFromBytes();
+            SubItems[(int)Columns.MaxDisk].Text = processorInfo.DiskUsageMax.ToFormattedMbpsFromBytes();
             
             FormatSubItems(processorInfo, ref systemStatistics);
         }

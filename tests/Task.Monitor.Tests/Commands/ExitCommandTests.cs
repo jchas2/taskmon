@@ -9,7 +9,7 @@ public sealed class ExitCommandTests
     public void Exit_Command_Should_Be_Enabled()
     {
         MainScreen mainScreen = CommandHelper.SetupMainScreen();
-        AboutCommand cmd = new("Exit", mainScreen);
+        ExitCommand cmd = new("Exit");
 
         Assert.True(cmd.IsEnabled);
     }

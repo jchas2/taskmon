@@ -1,21 +1,14 @@
 ﻿using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui;
 using Task.Monitor.System.Controls.MessageBox;
+using Task.Monitor.System.Screens;
 
 namespace Task.Monitor.Commands;
 
-public sealed class AboutCommand(string text, MainScreen mainScreen) : AbstractCommand(text)
+public sealed class AboutCommand(string text, ScreenApplication screenApp) : AbstractCommand(text)
 {
-    public override void Execute()
-    {
-        string version = AssemblyVersionInfo.GetVersion();
-
-        mainScreen.ShowMessageBox(
-            "About Task Monitor",
-            $"\nVersion {version}",
-            MessageBoxButtons.Ok,
-            () => { });
-    }
+    public override void Execute() =>
+        screenApp.ShowScreen<AboutScreen>();
 
     public override bool IsEnabled => true;
 }

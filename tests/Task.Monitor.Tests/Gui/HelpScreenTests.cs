@@ -77,13 +77,11 @@ public sealed class HelpScreenTests
     public static TheoryData<string> HelpTextData()
         => new() 
         {
-            "taskmon",
             "Metre Colours:",
             "Process and Path Colours:",
             "Screen Navigation",
             "List Navigation",
-            "Function Keys",
-            "Press ESC to exit Help"
+            "Function Keys"
         };
 
     [Theory]

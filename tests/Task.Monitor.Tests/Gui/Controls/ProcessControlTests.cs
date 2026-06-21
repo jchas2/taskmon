@@ -118,13 +118,14 @@ public sealed class ProcessControlTests
         processorFake.AddProcessorInfos(pinfos);
 
         runContext.AppConfig.VisibleColumns = AppConfig.DefaultVisibleColumns |
-            Statistics.AvgCpu | Statistics.AvgGpu | Statistics.AvgMem | Statistics.AvgDisk;
+            Statistics.AvgCpu | Statistics.AvgGpu | Statistics.AvgMem | Statistics.AvgDisk |
+            Statistics.MaxCpu | Statistics.MaxGpu | Statistics.MaxMem | Statistics.MaxDisk;
 
         ProcessControl ctrl = new(
             processorFake,
-            runContext.Terminal, 
+            runContext.Terminal,
             runContext.AppConfig) {
-            Width = 200,
+            Width = 240,
             Height = 9
         };
         
@@ -138,13 +139,17 @@ public sealed class ProcessControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("NI") || s.Contains("PRI"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("CPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG CPU%"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MAX CPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("THRDS"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("GPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG GPU%"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MAX GPU%"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MEM"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG MEM"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MAX MEM"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("DISK"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("AVG DISK"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("MAX DISK"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("PATH"))), Times.Once);
 
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("app1"))), Times.Once);
