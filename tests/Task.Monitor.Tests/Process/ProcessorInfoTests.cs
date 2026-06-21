@@ -8,7 +8,7 @@ public sealed class ProcessorInfoTests
 {
     [Fact]
     public void ProcessorInfo_Canary_Test() =>
-        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<ProcessorInfo>());
+        Assert.Equal(28, CanaryTestHelper.GetPropertyCount<ProcessorInfo>());
     
     [Fact]                                                                                                                             
     public void Default_Constructor_Initializes_With_Default_Values()                                                                  
@@ -39,6 +39,10 @@ public sealed class ProcessorInfoTests
         Assert.Equal(0.0, info.GpuTimePercentAvg);
         Assert.Equal(0, info.UsedMemoryAvg);
         Assert.Equal(0, info.DiskUsageAvg);
+        Assert.Equal(0.0, info.CpuTimePercentMax);
+        Assert.Equal(0.0, info.GpuTimePercentMax);
+        Assert.Equal(0, info.UsedMemoryMax);
+        Assert.Equal(0, info.DiskUsageMax);
     }
                                                                                                                                          
     [Fact]                                                                                                                             
@@ -70,6 +74,10 @@ public sealed class ProcessorInfoTests
             GpuTimePercentAvg = 3.6,
             UsedMemoryAvg = 4096,
             DiskUsageAvg = 512,
+            CpuTimePercentMax = 33.3,
+            GpuTimePercentMax = 9.9,
+            UsedMemoryMax = 8192,
+            DiskUsageMax = 2048,
         };
                                                                                                                                      
         Assert.Equal(1234, info.Pid);                                                                                                  
@@ -96,5 +104,9 @@ public sealed class ProcessorInfoTests
         Assert.Equal(3.6, info.GpuTimePercentAvg);
         Assert.Equal(4096, info.UsedMemoryAvg);
         Assert.Equal(512, info.DiskUsageAvg);
+        Assert.Equal(33.3, info.CpuTimePercentMax);
+        Assert.Equal(9.9, info.GpuTimePercentMax);
+        Assert.Equal(8192, info.UsedMemoryMax);
+        Assert.Equal(2048, info.DiskUsageMax);
     }
 }

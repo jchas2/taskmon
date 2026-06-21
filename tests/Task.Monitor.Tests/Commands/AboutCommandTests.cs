@@ -1,5 +1,6 @@
 ﻿using Task.Monitor.Commands;
 using Task.Monitor.Gui;
+using Task.Monitor.System.Screens;
 
 namespace Task.Monitor.Tests.Commands;
 
@@ -8,8 +9,8 @@ public sealed class AboutCommandTests
     [Fact]
     public void About_Command_Should_Be_Enabled()
     {
-        MainScreen mainScreen = CommandHelper.SetupMainScreen();
-        AboutCommand cmd = new("About", mainScreen);
+        (ScreenApplication screenApp, MainScreen _) = CommandHelper.SetupMainScreenWithScreenApp();
+        AboutCommand cmd = new("About", screenApp);
         
         Assert.True(cmd.IsEnabled);
     }

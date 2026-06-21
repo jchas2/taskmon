@@ -160,6 +160,10 @@ public class Processor : IProcessor
             GetSystemTimes(ref currSysTimes);
             GetNetworkStats(ref currNetworkStats);
 
+            // Timestamp for any peaks recorded this cycle; the metrics reflect the
+            // interval that just elapsed, so stamp them as observed now.
+            DateTime sampleTimeUtc = DateTime.UtcNow;
+
             sysTimesDeltas.Idle = currSysTimes.Idle - prevSysTimes.Idle;
             sysTimesDeltas.Kernel = currSysTimes.Kernel - prevSysTimes.Kernel;
             sysTimesDeltas.User = currSysTimes.User - prevSysTimes.User;
@@ -221,7 +225,7 @@ public class Processor : IProcessor
                 }
 
                 // Irix mode is consistent with Mac Activity Monitor, where 100% is full utilisation of a SINGLE cpu core on the system.
-                // Non-Irix Mode is consistent with Windows Task.Monitor where 100% is full utilisation of ALL cores on the system.
+                // Non-Irix Mode is consistent with Windows Task Manager where 100% is full utilisation of ALL cores on the system.
                 irixFactor = IrixMode ? Environment.ProcessorCount : 1;
 #if __WIN32__
                 processorInfo.CpuTimePercent = irixFactor * (double)totalProc / (double)totalSysTime;
@@ -277,23 +281,13 @@ public class Processor : IProcessor
                 processorInfo.UsedMemoryAvg = average.UsedMemory;
                 processorInfo.DiskUsageAvg = average.DiskUsage;
 
+                processorInfo.CpuTimePercentMax = average.CpuTimePercentMax;
+                processorInfo.GpuTimePercentMax = average.GpuTimePercentMax;
+                processorInfo.UsedMemoryMax = average.UsedMemoryMax;
+                processorInfo.DiskUsageMax = average.DiskUsageMax;
+                
                 currentPids.Add(pid);
-
                 allProcessorInfos.Add(processorInfo);
-            }
-
-            if (averageState.Count > currentPids.Count) {
-                stalePids.Clear();
-
-                foreach (int pid in averageState.Keys) {
-                    if (!currentPids.Contains(pid)) {
-                        stalePids.Add(pid);
-                    }
-                }
-
-                for (int i = 0; i < stalePids.Count; i++) {
-                    averageState.Remove(stalePids[i]);
-                }
             }
 
             systemStatistics.CpuPercentUserTime = (double)sysTimesDeltas.User / (double)totalSysTime;
@@ -315,6 +309,20 @@ public class Processor : IProcessor
                 (ulong)((double)(currNetworkStats.NetworkPacketsReceived - prevNetworkStats.NetworkPacketsReceived) * (1000.0 / (double)Delay)); 
             systemStatistics.NetworkPacketsSendTime =
                 (ulong)((double)(currNetworkStats.NetworkPacketsSent - prevNetworkStats.NetworkPacketsSent) * (1000.0 / (double)Delay)); 
+            
+            if (averageState.Count > currentPids.Count) {
+                stalePids.Clear();
+
+                foreach (int pid in averageState.Keys) {
+                    if (!currentPids.Contains(pid)) {
+                        stalePids.Add(pid);
+                    }
+                }
+
+                for (int i = 0; i < stalePids.Count; i++) {
+                    averageState.Remove(stalePids[i]);
+                }
+            }
             
             lock (@lock) {
                 allProcessorInfosCopy.Clear();

@@ -313,7 +313,7 @@ public sealed class HeaderControl : Control
 
     private void OnProcessorUpdated(object? sender, ProcessorEventArgs e)
     {
-        systemStatistics = e.SystemStatistics;
+        systemStatistics = e.Statistics;
         Draw();
     }
     

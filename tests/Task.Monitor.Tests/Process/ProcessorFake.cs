@@ -6,16 +6,16 @@ namespace Task.Monitor.Tests.Process;
 public sealed class ProcessorFake : IProcessor
 {
     private SystemStatistics statistics;
-    private List<ProcessorInfo> procInfos = []; 
-    
+    private List<ProcessorInfo> procInfos = [];
+
     public event EventHandler<ProcessorEventArgs>? ProcessorUpdated;
 
     public void AddProcessorInfos(List<ProcessorInfo> procInfos) =>
         this.procInfos = procInfos;
-    
+
     public void AddSystemStats(SystemStatistics statistics) =>
         this.statistics = statistics;
-    
+
     public int Delay { get; set; }
     
     public bool IrixMode { get; set; }

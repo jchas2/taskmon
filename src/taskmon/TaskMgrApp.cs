@@ -10,7 +10,7 @@ namespace Task.Monitor;
 
 public sealed class TaskMgrApp(RunContext runContext)
 {
-    private const string MutexId = "Task-Mgr-d3f8e2a1-4b6f-4e8a-9b2d-1c3e4f5a6b7c";
+    private const string MutexId = "Task-Mon-d3f8e2a1-4b6f-4e8a-9b2d-1c3e4f5a6b7c";
 
     private static Mutex? mutex = null;
 
@@ -138,15 +138,25 @@ public sealed class TaskMgrApp(RunContext runContext)
         SystemTerminal terminal = new();
         ScreenApplication screenApp = new(terminal);
 
-        MainScreen mainScreen = new(screenApp, runContext); 
-        HelpScreen helpScreen = new(runContext);
-        SetupScreen setupScreen = new(runContext);
+        Screen[] screens = {
+            new MainScreen(screenApp, runContext),
+            new HelpScreen(runContext),
+            new SetupScreen(runContext),
+            new AboutScreen(runContext)
+        };
+
+        foreach (Screen screen in screens) {
+            screenApp.RegisterScreen(screen);
+        }
         
-        screenApp.RegisterScreen(mainScreen);
-        screenApp.RegisterScreen(helpScreen);
-        screenApp.RegisterScreen(setupScreen);
+        runContext.Processor.Delay = runContext.AppConfig.DelayInMilliseconds;
+        runContext.Processor.IrixMode = runContext.AppConfig.UseIrixReporting;
+        runContext.Processor.IterationLimit = runContext.AppConfig.IterationLimit;
+        runContext.Processor.Run();
+
+        screenApp.Run(screens[0]);
         
-        screenApp.Run(mainScreen);
+        runContext.Processor.Stop();
         
         return 0;
     }

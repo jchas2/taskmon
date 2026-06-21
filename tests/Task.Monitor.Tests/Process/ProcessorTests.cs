@@ -61,13 +61,13 @@ public sealed class ProcessorTests
           Assert.True(processInfo.ThreadCount > 0, "Process should have at least one thread");                                                  
           Assert.Equal(processInfo.ThreadCount, processor.ThreadCount);          
 
-          Assert.Equal(1, capturedArgs.SystemStatistics.ProcessCount);                                                                   
+          Assert.Equal(1, capturedArgs.Statistics.ProcessCount);                                                                   
 
-          Assert.True(capturedArgs.SystemStatistics.CpuPercentIdleTime >= 0.0);                                                          
-          Assert.True(capturedArgs.SystemStatistics.CpuPercentUserTime >= 0.0);                                                          
-          Assert.True(capturedArgs.SystemStatistics.CpuPercentKernelTime >= 0.0); 
-          Assert.True(capturedArgs.SystemStatistics.TotalPhysical > 0);                                                                  
-          Assert.True(capturedArgs.SystemStatistics.AvailablePhysical > 0);
+          Assert.True(capturedArgs.Statistics.CpuPercentIdleTime >= 0.0);                                                          
+          Assert.True(capturedArgs.Statistics.CpuPercentUserTime >= 0.0);                                                          
+          Assert.True(capturedArgs.Statistics.CpuPercentKernelTime >= 0.0); 
+          Assert.True(capturedArgs.Statistics.TotalPhysical > 0);                                                                  
+          Assert.True(capturedArgs.Statistics.AvailablePhysical > 0);
       }
       
       [Fact]                                                                                                                                    

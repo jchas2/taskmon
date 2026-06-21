@@ -95,13 +95,17 @@ public sealed partial class ProcessControl : Control
             .Add(new ListViewColumnHeader(Columns.Priority.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Cpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.AvgCpu.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.MaxCpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Threads.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Gpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.AvgGpu.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.MaxGpu.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Memory.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.AvgMemory.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.MaxMemory.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.Disk.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.AvgDisk.GetTitle()))
+            .Add(new ListViewColumnHeader(Columns.MaxDisk.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.CommandLine.GetTitle()));
 
         Controls
@@ -121,6 +125,11 @@ public sealed partial class ProcessControl : Control
 
         return targetControl;
     }
+    
+    // Process and Pid are always shown.
+    private bool IsColumnVisible(Columns column) =>
+        column is Columns.Process or Columns.Pid ||
+        (visibleColumns & ToStatistic(column)) != 0;
 
     private void LoadSortItems()
     {
@@ -248,13 +257,17 @@ public sealed partial class ProcessControl : Control
             SetWidth(Columns.Priority, ColumnPriorityWidth, rightAligned: true) +
             SetWidth(Columns.Cpu, ColumnCpuWidth, rightAligned: true) +
             SetWidth(Columns.AvgCpu, ColumnAvgCpuWidth, rightAligned: true) +
+            SetWidth(Columns.MaxCpu, ColumnMaxCpuWidth, rightAligned: true) +
             SetWidth(Columns.Threads, ColumnThreadsWidth, rightAligned: true) +
             SetWidth(Columns.Gpu, ColumnGpuWidth, rightAligned: true) +
             SetWidth(Columns.AvgGpu, ColumnAvgGpuWidth, rightAligned: true) +
+            SetWidth(Columns.MaxGpu, ColumnMaxGpuWidth, rightAligned: true) +
             SetWidth(Columns.Memory, ColumnMemoryWidth, rightAligned: true) +
             SetWidth(Columns.AvgMemory, ColumnAvgMemoryWidth, rightAligned: true) +
+            SetWidth(Columns.MaxMemory, ColumnMaxMemoryWidth, rightAligned: true) +
             SetWidth(Columns.Disk, ColumnDiskWidth, rightAligned: true) +
-            SetWidth(Columns.AvgDisk, ColumnAvgDiskWidth, rightAligned: true);
+            SetWidth(Columns.AvgDisk, ColumnAvgDiskWidth, rightAligned: true) +
+            SetWidth(Columns.MaxDisk, ColumnMaxDiskWidth, rightAligned: true);
 
         int processViewWidth =
             processView.ShowCheckboxes ? processView.Width - ListView.CheckboxWidth : processView.Width;
@@ -268,29 +281,6 @@ public sealed partial class ProcessControl : Control
 
         processView.Resize();
     }
-
-    // Process and Pid are always shown.
-    private bool IsColumnVisible(Columns column) =>
-        column is Columns.Process or Columns.Pid ||
-        (visibleColumns & ToStatistic(column)) != 0;
-
-    private static Statistics ToStatistic(Columns column) => column switch {
-        Columns.Process => Statistics.Process,
-        Columns.Pid => Statistics.Pid,
-        Columns.User => Statistics.User,
-        Columns.Priority => Statistics.Pri,
-        Columns.Cpu => Statistics.Cpu,
-        Columns.AvgCpu => Statistics.AvgCpu,
-        Columns.Threads => Statistics.Thrd,
-        Columns.Gpu => Statistics.Gpu,
-        Columns.AvgGpu => Statistics.AvgGpu,
-        Columns.Memory => Statistics.Mem,
-        Columns.AvgMemory => Statistics.AvgMem,
-        Columns.Disk => Statistics.Disk,
-        Columns.AvgDisk => Statistics.AvgDisk,
-        Columns.CommandLine => Statistics.Path,
-        _ => default
-    };
 
     protected override void OnUnload()
     {
@@ -307,7 +297,7 @@ public sealed partial class ProcessControl : Control
             allProcesses = e.ProcessInfos;
         }
 
-        systemStatistics = e.SystemStatistics;
+        systemStatistics = e.Statistics;
 
         Draw();
     }
@@ -404,6 +394,28 @@ public sealed partial class ProcessControl : Control
         Resize();
         Draw();
     }
+    
+    private static Statistics ToStatistic(Columns column) => column switch {
+        Columns.Process => Statistics.Process,
+        Columns.Pid => Statistics.Pid,
+        Columns.User => Statistics.User,
+        Columns.Priority => Statistics.Pri,
+        Columns.Cpu => Statistics.Cpu,
+        Columns.AvgCpu => Statistics.AvgCpu,
+        Columns.MaxCpu => Statistics.MaxCpu,
+        Columns.Threads => Statistics.Thrd,
+        Columns.Gpu => Statistics.Gpu,
+        Columns.AvgGpu => Statistics.AvgGpu,
+        Columns.MaxGpu => Statistics.MaxGpu,
+        Columns.Memory => Statistics.Mem,
+        Columns.AvgMemory => Statistics.AvgMem,
+        Columns.MaxMemory => Statistics.MaxMem,
+        Columns.Disk => Statistics.Disk,
+        Columns.AvgDisk => Statistics.AvgDisk,
+        Columns.MaxDisk => Statistics.MaxDisk,
+        Columns.CommandLine => Statistics.Path,
+        _ => default
+    };
 
     private void UpdateListViewItems()
     {
@@ -439,16 +451,20 @@ public sealed partial class ProcessControl : Control
             List<ProcessorInfo> sortedProcesses = (sortColumn switch {
                 Columns.Cpu => Sort(p => p.CpuTimePercent),
                 Columns.AvgCpu => Sort(p => p.CpuTimePercentAvg),
+                Columns.MaxCpu => Sort(p => p.CpuTimePercentMax),
                 Columns.Disk => Sort(p => p.DiskUsage),
                 Columns.AvgDisk => Sort(p => p.DiskUsageAvg),
+                Columns.MaxDisk => Sort(p => p.DiskUsageMax),
                 Columns.Memory => Sort(p => p.UsedMemory),
                 Columns.AvgMemory => Sort(p => p.UsedMemoryAvg),
+                Columns.MaxMemory => Sort(p => p.UsedMemoryMax),
                 Columns.Pid => Sort(p => p.Pid),
                 Columns.Priority => Sort(p => p.BasePriority),
                 Columns.Process => Sort(p => p.FileDescription),
                 Columns.Threads => Sort(p => p.ThreadCount),
                 Columns.Gpu => Sort(p => p.GpuTimePercent),
                 Columns.AvgGpu => Sort(p => p.GpuTimePercentAvg),
+                Columns.MaxGpu => Sort(p => p.GpuTimePercentMax),
                 Columns.User => Sort(p => p.UserName),
                 Columns.CommandLine => Sort(p => p.CmdLine),
                 _ => filteredProcesses.OrderByDescending(p => p.CpuTimePercent)

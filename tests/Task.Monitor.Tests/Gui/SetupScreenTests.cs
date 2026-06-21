@@ -108,9 +108,13 @@ public sealed class SetupScreenTests
 
             { "CPU %",                                             "columnsView" },
             { "Average CPU %",                                     "columnsView" },
+            { "Max CPU %",                                         "columnsView" },
             { "Average GPU %",                                     "columnsView" },
+            { "Max GPU %",                                         "columnsView" },
             { "Average Memory",                                    "columnsView" },
+            { "Max Memory",                                        "columnsView" },
             { "Average Disk",                                      "columnsView" },
+            { "Max Disk",                                          "columnsView" },
             { "Path",                                              "columnsView" },
 
             { "Confirm Task delete",                               "generalView" },

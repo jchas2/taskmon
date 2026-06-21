@@ -59,7 +59,7 @@ col=Cpu
 asc=False
 
 [stats]
-cols=Process, Pid, User, Pri, Cpu, Thrd, Mem, Path, Disk
+cols=Process, Pid, User, Pri, Cpu, Thrd, Gpu, Mem, Path, Disk, AvgCpu, AvgGpu, AvgMem, AvgDisk, MaxCpu, MaxGpu, MaxMem, MaxDisk
 delay=1500
 nprocs=-1
 
@@ -195,7 +195,7 @@ col=Mem
 asc=True
 
 [stats]
-cols=Process, Pid, User, Pri, Cpu, Thrd, Mem, Path, Disk
+cols=Process, Pid, User, Pri, Cpu, Thrd, Gpu, Mem, Path, Disk, AvgCpu, AvgGpu, AvgMem, AvgDisk, MaxCpu, MaxGpu, MaxMem, MaxDisk
 delay=2000
 nprocs=5
 

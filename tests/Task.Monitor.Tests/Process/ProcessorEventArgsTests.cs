@@ -12,13 +12,12 @@ public sealed class ProcessorEventArgsTests
             new ProcessorInfo { Pid = 1234, ProcessName = "test.exe" }                                                                                                                     
         };
         
-        SystemStatistics stats = new() { ProcessCount = 1 };                                                                                                                               
-                                                                                                                                                                                         
-        ProcessorEventArgs args = new(processInfos, stats);                                                                                                                                
-                                                                                                                                                                                         
-        Assert.NotNull(args.ProcessInfos);                                                                                                                                                 
-        Assert.Same(processInfos, args.ProcessInfos);                                                                                                                                      
-    }                                                                                                                                                                                      
+        SystemStatistics stats = new() { ProcessCount = 1 };
+        ProcessorEventArgs args = new(processInfos, stats);
+
+        Assert.NotNull(args.ProcessInfos);
+        Assert.Same(processInfos, args.ProcessInfos);
+    }
                                                                                                                                                                                          
     [Fact]                                                                                                                                                                                 
     public void Constructor_Initializes_SystemStatistics_Field()                                                                                                                           
@@ -30,9 +29,9 @@ public sealed class ProcessorEventArgsTests
             CpuCores = 8                                                                                                                                                                   
         };                                                                                                                                                                                 
                                                                                                                                                                                          
-        ProcessorEventArgs args = new(processInfos, stats);                                                                                                                                
-                                                                                                                                                                                         
-        Assert.Equal(stats, args.SystemStatistics);                                                                                                                                        
-        Assert.Equal(8UL, args.SystemStatistics.CpuCores);                                                                                                                                 
-    }                                      
+        ProcessorEventArgs args = new(processInfos, stats);
+
+        Assert.Equal(stats, args.Statistics);
+        Assert.Equal(8UL, args.Statistics.CpuCores);
+    }
 }

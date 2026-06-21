@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Security.Authentication;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 
@@ -26,6 +27,7 @@ public static class KeyBindControl
         terminal.ForegroundColor = enabled ? theme.CommandForeground : ConsoleColor.DarkGray;
         terminal.Write(text.CentreWithLength(width).ToBold());
         terminal.BackgroundColor = theme.Background;
+        terminal.ForegroundColor = theme.Foreground;
         nchars += width;
 
         return nchars;
