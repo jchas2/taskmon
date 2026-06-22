@@ -92,13 +92,6 @@ public sealed class AboutScreen : Screen
 
     private void DrawInternal()
     {
-        DrawRectangle(
-            X,
-            Y,
-            Width,
-            Height,
-            runContext.AppConfig.DefaultTheme.Background);
-
         runContext.Terminal.SetCursorPosition(X, Y);
         runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.MenubarBackground;
         runContext.Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.MenubarForeground;
