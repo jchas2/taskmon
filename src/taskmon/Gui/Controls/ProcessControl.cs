@@ -133,8 +133,10 @@ public sealed partial class ProcessControl : Control
 
     private void LoadSortItems()
     {
+        sortView.Items.Clear();
+
         IEnumerable<string> columns = Enum.GetValues<Columns>()
-            .Where(c => c != Columns.Count)
+            .Where(c => c != Columns.Count && IsColumnVisible(c))
             .Select(c => c.GetTitle());
 
         foreach (var column in columns) {
@@ -146,10 +148,6 @@ public sealed partial class ProcessControl : Control
     {
         try {
             Control.DrawingLockAcquire();
-
-            if (sortView.Items.Count == 0) {
-                LoadSortItems();
-            }
 
             UpdateListViewItems();
             sortView.Visible = mode == ControlMode.SortSelection;
@@ -189,6 +187,8 @@ public sealed partial class ProcessControl : Control
     {
         base.OnLoad();
 
+        visibleColumns = appConfig.VisibleColumns;
+
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
 
@@ -216,6 +216,8 @@ public sealed partial class ProcessControl : Control
         sortView.ItemSelected += SortViewOnItemSelected;
         processView.ItemSelected += ProcessViewOnItemSelected;
         processor.ProcessorUpdated += ProcessorOnProcessorUpdated;
+
+        LoadSortItems();
     }
 
     protected override void OnResize()
