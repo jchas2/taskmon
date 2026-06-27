@@ -1,5 +1,7 @@
+using System.Drawing;
 using Task.Monitor.System;
 
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls;
 
 public sealed class ForwardingTerminal(ISystemTerminal inner) : ISystemTerminal
@@ -8,11 +10,11 @@ public sealed class ForwardingTerminal(ISystemTerminal inner) : ISystemTerminal
     // Write() function. This class will simply convert the chars to a string and pass to the inner mock Write(string). 
     public void Write(ReadOnlySpan<char> chars) => inner.Write(chars.ToString());
 
-    public ConsoleColor BackgroundColor { get => inner.BackgroundColor; set => inner.BackgroundColor = value; }
+    public Color BackgroundColor { get => inner.BackgroundColor; set => inner.BackgroundColor = value; }
     public int CursorLeft { get => inner.CursorLeft; set => inner.CursorLeft = value; }
     public int CursorTop { get => inner.CursorTop; set => inner.CursorTop = value; }
     public bool CursorVisible { get => inner.CursorVisible; set => inner.CursorVisible = value; }
-    public ConsoleColor ForegroundColor { get => inner.ForegroundColor; set => inner.ForegroundColor = value; }
+    public Color ForegroundColor { get => inner.ForegroundColor; set => inner.ForegroundColor = value; }
     public bool KeyAvailable => inner.KeyAvailable;
     public TextWriter StdError => inner.StdError;
     public TextReader StdIn => inner.StdIn;

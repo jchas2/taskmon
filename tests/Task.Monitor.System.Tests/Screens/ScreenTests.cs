@@ -3,6 +3,8 @@ using Task.Monitor.System.Screens;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Screens;
 
 public sealed class ScreenTests
@@ -20,10 +22,10 @@ public sealed class ScreenTests
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
         TestScreen1 testScreen = new(terminalMock.Object);
 
-        Assert.Equal(ConsoleColor.Black, testScreen.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, testScreen.BackgroundColour);
         Assert.Empty(testScreen.Controls);
         Assert.True(testScreen.CursorVisible);
-        Assert.Equal(ConsoleColor.White, testScreen.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, testScreen.ForegroundColour);
         Assert.Equal(0, testScreen.Height);
         Assert.NotNull(testScreen.Name);
         Assert.Empty(testScreen.Name);

@@ -1,12 +1,13 @@
-﻿namespace Task.Monitor.System.Controls.ListView;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
+
+namespace Task.Monitor.System.Controls.ListView;
 
 public class ListViewItem
 {
-    //
     // The Collection acts as a proxy for updates to the underlying List<T>.
     // This provides a clean api for interacting with Collections on the ListViewItem
     // control, similar to the Win32 ListView common control.
-    // 
     private readonly ListViewSubItemCollection subItemCollection;
 
     // The containers holding the List<T> for rendering. We don't expose them via a public api.
@@ -20,8 +21,8 @@ public class ListViewItem
 
     public ListViewItem(
         string text,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
         : this(text)
     {
         BackgroundColour = backgroundColor;
@@ -40,8 +41,8 @@ public class ListViewItem
 
     public ListViewItem(
         string[] items,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
         : this(items)
     {
         BackgroundColour = backgroundColor;
@@ -61,22 +62,22 @@ public class ListViewItem
 
     public ListViewItem(
         ListViewSubItem[] subItems,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
         : this(subItems)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;
     }
 
-    public ConsoleColor BackgroundColour
+    public Color BackgroundColour
     {
         get {
             if (SubItemCount != 0) {
                 return SubItems[0].BackgroundColor;
             }
             
-            return Parent?.BackgroundColour ?? ConsoleColor.Black;
+            return Parent?.BackgroundColour ?? ConsolePalette.Black;
         }
         set => SubItems[0].BackgroundColor = value;
     }
@@ -88,14 +89,14 @@ public class ListViewItem
     internal bool Contains(ListViewSubItem subItem) =>
         subItems.Contains(subItem);
 
-    public ConsoleColor ForegroundColour 
+    public Color ForegroundColour
     {
         get {
             if (SubItemCount != 0) {
                 return SubItems[0].ForegroundColor;
             }
             
-            return Parent?.ForegroundColour ?? ConsoleColor.White;
+            return Parent?.ForegroundColour ?? ConsolePalette.White;
         }
         set => SubItems[0].ForegroundColor = value;
     }

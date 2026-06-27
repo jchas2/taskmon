@@ -72,7 +72,7 @@ public partial class ProcessControl
             }
             
             if (!SubItems[(int)Columns.User].Text.Equals(Environment.UserName, StringComparison.OrdinalIgnoreCase)) {
-                SubItems[(int)Columns.User].ForegroundColor = ConsoleColor.DarkGray;
+                SubItems[(int)Columns.User].ForegroundColor = ConsolePalette.DarkGray;
             }
             
             if (AppConfig.HighlightStatisticsColumnUpdate) {

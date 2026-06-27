@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System;
 using Task.Monitor.System.Screens;
 using SysThreading = System.Threading;
@@ -7,14 +8,12 @@ namespace Task.Monitor.System.Controls;
 
 public class Control
 {
-    /*
-     * The Collection acts as a proxy for updates to the underlying List<T>.
-     * This provides a clean api for interacting with the Collection on the
-     * control, similar to the WinForms Controls Collection.
-     */
+    // The Collection acts as a proxy for updates to the underlying List<T>.
+    // This provides a clean api for interacting with the Collection on the
+    // control, similar to the WinForms Controls Collection.
     private readonly ControlCollection controlCollection;
 
-    /* The container holding the List<T> for rendering. We don't expose it via a public api. */
+    // The container holding the List<T> for rendering. We don't expose it via a public api.
     private List<Control> controls = [];
 
     private string? name = null;
@@ -30,7 +29,7 @@ public class Control
         controlCollection = new ControlCollection(this);
     }
 
-    public ConsoleColor BackgroundColour { get; set; } = ConsoleColor.Black;
+    public Color BackgroundColour { get; set; } = ConsolePalette.Black;
 
     private bool CanFocus => Visible && TabStop;
 
@@ -60,9 +59,9 @@ public class Control
     protected void DrawRectangle(
         int x, 
         int y, 
-        int width, 
-        int height, 
-        ConsoleColor colour)
+        int width,
+        int height,
+        Color colour)
     {
         using TerminalColourRestorer _ = new();
         Terminal.BackgroundColor = colour;
@@ -91,7 +90,7 @@ public class Control
 
     internal bool Focused { get; set; } = false;
     
-    public ConsoleColor ForegroundColour { get; set; } = ConsoleColor.White;
+    public Color ForegroundColour { get; set; } = ConsolePalette.White;
     
     internal Control GetControlByIndex(int index)
     {

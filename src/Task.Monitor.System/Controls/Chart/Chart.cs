@@ -1,4 +1,7 @@
-﻿namespace Task.Monitor.System.Controls.Chart;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
+
+namespace Task.Monitor.System.Controls.Chart;
 
 public sealed class Chart : Control
 {
@@ -66,11 +69,11 @@ public sealed class Chart : Control
 
     public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
     
-    public ConsoleColor ColourHigh { get; set; } = ConsoleColor.Red;
-    
-    public ConsoleColor ColourLow { get; set; } = ConsoleColor.DarkGreen;
-    
-    public ConsoleColor ColourMid { get; set; } = ConsoleColor.Yellow;
+    public Color ColourHigh { get; set; } = ConsolePalette.Red;
+
+    public Color ColourLow { get; set; } = ConsolePalette.DarkGreen;
+
+    public Color ColourMid { get; set; } = ConsolePalette.Yellow;
 
     private double DataAt(int i) => data[(dataHead + i) % data.Length]; 
     
@@ -131,7 +134,7 @@ public sealed class Chart : Control
 
                 double ratio = (double)barSubRows / (double)totalSubRows;
 
-                ConsoleColor chartColour;
+                Color chartColour;
 
                 if (ratio > 0.8) {
                     chartColour = ColourHigh;
@@ -197,7 +200,7 @@ public sealed class Chart : Control
         Terminal.Write(frame.AsSpan());
     }
 
-    private void SetCellColour(ConsoleColor chartColour) => frame.SetColour(
+    private void SetCellColour(Color chartColour) => frame.SetColour(
         MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,
         MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour);
 

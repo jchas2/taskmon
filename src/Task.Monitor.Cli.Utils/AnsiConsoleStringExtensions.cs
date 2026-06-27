@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace Task.Monitor.Cli.Utils;
 
 public static class AnsiConsoleStringExtensions
@@ -38,48 +40,6 @@ public static class AnsiConsoleStringExtensions
     private const string YellowForeground = "\u001b[93m";
     private const string WhiteForeground = "\u001b[97m";
     
-    public static ReadOnlySpan<char> GetBackgroundCode(ConsoleColor background) => background switch
-    {
-        ConsoleColor.Black => BlackBackground,
-        ConsoleColor.DarkBlue => DarkBlueBackground,
-        ConsoleColor.DarkGreen => DarkGreenBackground,
-        ConsoleColor.DarkCyan => DarkCyanBackground,
-        ConsoleColor.DarkRed => DarkRedBackground,
-        ConsoleColor.DarkMagenta => DarkMagentaBackground,
-        ConsoleColor.DarkYellow => DarkYellowBackground,
-        ConsoleColor.Gray => GrayBackground,
-        ConsoleColor.DarkGray => DarkGrayBackground,
-        ConsoleColor.Blue => BlueBackground,
-        ConsoleColor.Green => GreenBackground,
-        ConsoleColor.Cyan => CyanBackground,
-        ConsoleColor.Red => RedBackground,
-        ConsoleColor.Magenta => MagentaBackground,
-        ConsoleColor.Yellow => YellowBackground,
-        ConsoleColor.White => WhiteBackground,
-        _ => throw new ArgumentOutOfRangeException(nameof(background))
-    };
-
-    public static ReadOnlySpan<char> GetForegroundCode(ConsoleColor foreground) => foreground switch
-    {
-        ConsoleColor.Black => BlackForeground,
-        ConsoleColor.DarkBlue => DarkBlueForeground,
-        ConsoleColor.DarkGreen => DarkGreenForeground,
-        ConsoleColor.DarkCyan => DarkCyanForeground,
-        ConsoleColor.DarkRed => DarkRedForeground,
-        ConsoleColor.DarkMagenta => DarkMagentaForeground,
-        ConsoleColor.DarkYellow => DarkYellowForeground,
-        ConsoleColor.Gray => GrayForeground,
-        ConsoleColor.DarkGray => DarkGrayForeground,
-        ConsoleColor.Blue => BlueForeground,
-        ConsoleColor.Green => GreenForeground,
-        ConsoleColor.Cyan => CyanForeground,
-        ConsoleColor.Red => RedForeground,
-        ConsoleColor.Magenta => MagentaForeground,
-        ConsoleColor.Yellow => YellowForeground,
-        ConsoleColor.White => WhiteForeground,
-        _ => throw new ArgumentOutOfRangeException(nameof(foreground))
-    };
-    
     public static string ToBold(this string str) => $"\u001b[1m{str}\u001b[1m";
     
     private static string ToColor(this string str, string colourCode)
@@ -103,38 +63,16 @@ public static class AnsiConsoleStringExtensions
             });
     }
     
-    public static string ToColour(this string str, ConsoleColor foreground, ConsoleColor background)
+    public static string ToColour(this string str, Color foreground, Color background)
     {
-        if (string.IsNullOrEmpty(str))
+        if (string.IsNullOrEmpty(str)) {
             return str;
-    
-        ReadOnlySpan<char> bgCode = GetBackgroundCode(background);
-        ReadOnlySpan<char> fgCode = GetForegroundCode(foreground);
-        ReadOnlySpan<char> reset = Reset;
-        ReadOnlySpan<char> text = str;
-    
-        return string.Create(
-            bgCode.Length + fgCode.Length + text.Length + reset.Length,
-            (background, foreground, str),
-            (span, state) =>
-            {
-                ReadOnlySpan<char> backgroundSpan = GetBackgroundCode(state.background);
-                ReadOnlySpan<char> foregroundSpan = GetForegroundCode(state.foreground);
-                ReadOnlySpan<char> strSpan = state.str;
-                ReadOnlySpan<char> resetSpan = Reset;
-            
-                int pos = 0;
-                backgroundSpan.CopyTo(span.Slice(pos));
-                pos += backgroundSpan.Length;
-            
-                foregroundSpan.CopyTo(span.Slice(pos));
-                pos += foregroundSpan.Length;
-            
-                strSpan.CopyTo(span.Slice(pos));
-                pos += strSpan.Length;
-            
-                resetSpan.CopyTo(span.Slice(pos));
-            });
+        }
+
+        return ConsolePalette.BackgroundSgr(background) +
+               ConsolePalette.ForegroundSgr(foreground) +
+               str +
+               Reset;
     }
 
     public static string ToBlack(this string str) => str.ToColor(BlackForeground);

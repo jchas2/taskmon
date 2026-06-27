@@ -1,6 +1,7 @@
 using Task.Monitor.Cli.Utils;
 using ChartControl = Task.Monitor.System.Controls.Chart.Chart;
 
+using System.Drawing;
 namespace Task.Monitor.System.Tests.Controls.Chart;
 
 public sealed class ChartTests
@@ -76,8 +77,8 @@ public sealed class ChartTests
         Assert.Contains('╰', output);
         Assert.Contains('╯', output);
 
-        Assert.Contains(AnsiConsoleStringExtensions.GetForegroundCode(chart.ForegroundColour).ToString(), output);
-        Assert.Contains(AnsiConsoleStringExtensions.GetBackgroundCode(chart.BackgroundColour).ToString(), output);
+        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ForegroundColour), output);
+        Assert.Contains(ConsolePalette.BackgroundSgr(chart.BackgroundColour), output);
 
         Assert.EndsWith(AnsiConsoleStringExtensions.Reset, output);
     }
@@ -95,7 +96,7 @@ public sealed class ChartTests
         chart.Draw();
 
         Assert.Contains(
-            AnsiConsoleStringExtensions.GetForegroundCode(chart.ColourLow).ToString(),
+            ConsolePalette.ForegroundSgr(chart.ColourLow),
             terminal.Output);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Task.Monitor.System.Controls;
+﻿using System.Drawing;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 
 namespace Task.Monitor.Gui.Controls;
@@ -11,8 +12,8 @@ public class MenuListViewItem : ListViewItem
     public MenuListViewItem(
         Control associatedControl, 
         string text,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor) 
+        Color backgroundColor,
+        Color foregroundColor)
         : base(
             text,
             backgroundColor,

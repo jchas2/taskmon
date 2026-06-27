@@ -1,5 +1,7 @@
+using System.Drawing;
 using System.Text;
 
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls;
 
 public sealed class RecordingTerminal : ISystemTerminal
@@ -46,16 +48,16 @@ public sealed class RecordingTerminal : ISystemTerminal
 
     public void SetCursorPosition(int left, int top) => SetCursorPositionCalls++;
 
-    private ConsoleColor backgroundColor = ConsoleColor.Black;
-    private ConsoleColor foregroundColor = ConsoleColor.White;
+    private Color backgroundColor = Color.Black;
+    private Color foregroundColor = Color.White;
 
-    public ConsoleColor BackgroundColor
+    public Color BackgroundColor
     {
         get => backgroundColor;
         set { backgroundColor = value; BackgroundColorSets++; }
     }
 
-    public ConsoleColor ForegroundColor
+    public Color ForegroundColor
     {
         get => foregroundColor;
         set { foregroundColor = value; ForegroundColorSets++; }

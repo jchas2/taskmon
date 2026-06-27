@@ -1,13 +1,15 @@
+using System.Drawing;
+
 namespace Task.Monitor.System;
 
 public interface ISystemTerminal
 {
-    ConsoleColor BackgroundColor { get; set; }
+    Color BackgroundColor { get; set; }
     int CursorLeft { get; set; }
     int CursorTop { get; set; }
     bool CursorVisible { get; set; }
-    void EnableAnsiTerminalCodes(); 
-    ConsoleColor ForegroundColor { get; set; }
+    void EnableAnsiTerminalCodes();
+    Color ForegroundColor { get; set; }
     bool KeyAvailable { get; }
     TextWriter StdError { get; }
     TextReader StdIn { get; }

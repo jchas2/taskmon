@@ -1,6 +1,8 @@
-﻿using Task.Monitor.Internal.Abstractions;
+﻿using Task.Monitor.Cli.Utils;
+using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
 
+using System.Drawing;
 namespace Task.Monitor.System.Tests.Configuration;
 
 public sealed class ConfigParserTests
@@ -88,21 +90,22 @@ console-color-white=white
         Assert.False(configParser.Sections[0].GetBool("bool-false"));
         Assert.Equal(12345678, configParser.Sections[0].GetInt("int-key1"));
         Assert.Equal(-12345678, configParser.Sections[0].GetInt("int-key2"));
-        Assert.Equal(ConsoleColor.Black, configParser.Sections[0].GetColour("console-color-black"));
-        Assert.Equal(ConsoleColor.DarkBlue, configParser.Sections[0].GetColour("console-color-darkblue"));
-        Assert.Equal(ConsoleColor.DarkGreen, configParser.Sections[0].GetColour("console-color-darkgreen"));
-        Assert.Equal(ConsoleColor.DarkCyan, configParser.Sections[0].GetColour("console-color-darkcyan"));
-        Assert.Equal(ConsoleColor.DarkRed, configParser.Sections[0].GetColour("console-color-darkred"));
-        Assert.Equal(ConsoleColor.DarkMagenta, configParser.Sections[0].GetColour("console-color-darkmagenta"));
-        Assert.Equal(ConsoleColor.DarkYellow, configParser.Sections[0].GetColour("console-color-darkyellow"));
-        Assert.Equal(ConsoleColor.Gray, configParser.Sections[0].GetColour("console-color-gray"));
-        Assert.Equal(ConsoleColor.DarkGray, configParser.Sections[0].GetColour("console-color-darkgray"));
-        Assert.Equal(ConsoleColor.Blue, configParser.Sections[0].GetColour("console-color-blue"));
-        Assert.Equal(ConsoleColor.Green, configParser.Sections[0].GetColour("console-color-green"));
-        Assert.Equal(ConsoleColor.Cyan, configParser.Sections[0].GetColour("console-color-cyan"));
-        Assert.Equal(ConsoleColor.Red, configParser.Sections[0].GetColour("console-color-red"));
-        Assert.Equal(ConsoleColor.Magenta, configParser.Sections[0].GetColour("console-color-magenta"));
-        Assert.Equal(ConsoleColor.Yellow, configParser.Sections[0].GetColour("console-color-yellow"));
-        Assert.Equal(ConsoleColor.White, configParser.Sections[0].GetColour("console-color-white"));
+        // Legacy colour names still parse, via the name-fallback in ConsolePalette.FromHex.
+        Assert.Equal(ConsolePalette.Black.ToArgb(), configParser.Sections[0].GetColour("console-color-black").ToArgb());
+        Assert.Equal(ConsolePalette.DarkBlue.ToArgb(), configParser.Sections[0].GetColour("console-color-darkblue").ToArgb());
+        Assert.Equal(ConsolePalette.DarkGreen.ToArgb(), configParser.Sections[0].GetColour("console-color-darkgreen").ToArgb());
+        Assert.Equal(ConsolePalette.DarkCyan.ToArgb(), configParser.Sections[0].GetColour("console-color-darkcyan").ToArgb());
+        Assert.Equal(ConsolePalette.DarkRed.ToArgb(), configParser.Sections[0].GetColour("console-color-darkred").ToArgb());
+        Assert.Equal(ConsolePalette.DarkMagenta.ToArgb(), configParser.Sections[0].GetColour("console-color-darkmagenta").ToArgb());
+        Assert.Equal(ConsolePalette.DarkYellow.ToArgb(), configParser.Sections[0].GetColour("console-color-darkyellow").ToArgb());
+        Assert.Equal(ConsolePalette.Gray.ToArgb(), configParser.Sections[0].GetColour("console-color-gray").ToArgb());
+        Assert.Equal(ConsolePalette.DarkGray.ToArgb(), configParser.Sections[0].GetColour("console-color-darkgray").ToArgb());
+        Assert.Equal(ConsolePalette.Blue.ToArgb(), configParser.Sections[0].GetColour("console-color-blue").ToArgb());
+        Assert.Equal(ConsolePalette.Green.ToArgb(), configParser.Sections[0].GetColour("console-color-green").ToArgb());
+        Assert.Equal(ConsolePalette.Cyan.ToArgb(), configParser.Sections[0].GetColour("console-color-cyan").ToArgb());
+        Assert.Equal(ConsolePalette.Red.ToArgb(), configParser.Sections[0].GetColour("console-color-red").ToArgb());
+        Assert.Equal(ConsolePalette.Magenta.ToArgb(), configParser.Sections[0].GetColour("console-color-magenta").ToArgb());
+        Assert.Equal(ConsolePalette.Yellow.ToArgb(), configParser.Sections[0].GetColour("console-color-yellow").ToArgb());
+        Assert.Equal(ConsolePalette.White.ToArgb(), configParser.Sections[0].GetColour("console-color-white").ToArgb());
     }
 }

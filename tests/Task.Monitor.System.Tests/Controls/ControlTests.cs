@@ -1,6 +1,8 @@
 ﻿using Moq;
 using Task.Monitor.System.Controls;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls;
 
 public class ControlTests
@@ -13,10 +15,10 @@ public class ControlTests
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
         Control control = new(terminalMock.Object);
 
-        Assert.Equal(ConsoleColor.Black, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Equal(0, control.ControlCount);
         Assert.Empty(control.Controls);
-        Assert.Equal(ConsoleColor.White, control.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
         Assert.Equal(0, control.Height);
         Assert.True(control.Visible);
         Assert.Equal(0, control.Width);

@@ -17,14 +17,16 @@ public static class KeyBindControl
         bool enabled,
         ISystemTerminal terminal)
     {
+        Console.ResetColor();
+        
         terminal.SetCursorPosition(x, y);
         terminal.BackgroundColor = theme.Background;
-        terminal.ForegroundColor = enabled ? theme.Foreground : ConsoleColor.DarkGray;
+        terminal.ForegroundColor = enabled ? theme.Foreground : ConsolePalette.DarkGray;
         terminal.Write(keyBinding + " ");
         int nchars = keyBinding.Length + 1;
         
         terminal.BackgroundColor = theme.CommandBackground;
-        terminal.ForegroundColor = enabled ? theme.CommandForeground : ConsoleColor.DarkGray;
+        terminal.ForegroundColor = enabled ? theme.CommandForeground : ConsolePalette.DarkGray;
         terminal.Write(text.CentreWithLength(width).ToBold());
         terminal.BackgroundColor = theme.Background;
         terminal.ForegroundColor = theme.Foreground;

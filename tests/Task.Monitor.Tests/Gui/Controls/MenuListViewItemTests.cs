@@ -3,6 +3,8 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class MenuListViewItemTests
@@ -25,8 +27,8 @@ public sealed class MenuListViewItemTests
     {
         Control control = new(terminal.Object);
         string text = "Colored Menu Item";
-        ConsoleColor backgroundColor = ConsoleColor.Blue;
-        ConsoleColor foregroundColor = ConsoleColor.White;
+        Color backgroundColor = ConsolePalette.Blue;
+        Color foregroundColor = ConsolePalette.White;
 
         MenuListViewItem menuItem = new(
             control,
@@ -51,14 +53,19 @@ public sealed class MenuListViewItemTests
         Assert.Same(control, menuItem.AssociatedControl);
     }
     
+    public static TheoryData<Color, Color> ColourCombinations() => new()
+    {
+        { ConsolePalette.Black, ConsolePalette.White },
+        { ConsolePalette.Red, ConsolePalette.Yellow },
+        { ConsolePalette.Green, ConsolePalette.Black },
+        { ConsolePalette.DarkGray, ConsolePalette.Cyan },
+    };
+
     [Theory]
-    [InlineData(ConsoleColor.Black, ConsoleColor.White)]
-    [InlineData(ConsoleColor.Red, ConsoleColor.Yellow)]
-    [InlineData(ConsoleColor.Green, ConsoleColor.Black)]
-    [InlineData(ConsoleColor.DarkGray, ConsoleColor.Cyan)]
+    [MemberData(nameof(ColourCombinations))]
     public void Constructor_WithVariousColorCombinations_SetsColorsCorrectly(
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
     {
         Control control = new(terminal.Object);
         string text = "Colored Item";

@@ -3,6 +3,8 @@ using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.Tests.Common;
 using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.MessageBox;
 
 public sealed class MessageBoxTests
@@ -17,9 +19,9 @@ public sealed class MessageBoxTests
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         MessageBoxControl control = new(terminal.Object);
         
-        Assert.Equal(ConsoleColor.Black, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Empty(control.Controls);
-        Assert.Equal(ConsoleColor.White, control.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
         Assert.Equal(0, control.Height);
         Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
         Assert.NotNull(control.Name);
@@ -45,8 +47,8 @@ public sealed class MessageBoxTests
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
         MessageBoxControl control = new(terminal.Object) {
-            BackgroundColour = ConsoleColor.Gray,
-            ForegroundColour = ConsoleColor.Black,
+            BackgroundColour = ConsolePalette.Gray,
+            ForegroundColour = ConsolePalette.Black,
             Buttons = MessageBoxButtons.OkCancel,
             Height = 12,
             Text = text,
@@ -57,8 +59,8 @@ public sealed class MessageBoxTests
             Y = 10
         };
 
-        Assert.Equal(ConsoleColor.Gray, control.BackgroundColour);
-        Assert.Equal(ConsoleColor.Black, control.ForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
         Assert.True(control.Buttons == MessageBoxButtons.OkCancel);
         Assert.Equal(12, control.Height);
         Assert.Equal(text, control.Text);

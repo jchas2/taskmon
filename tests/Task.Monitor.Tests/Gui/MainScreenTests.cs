@@ -4,6 +4,8 @@ using Task.Monitor.System;
 using Task.Monitor.System.Screens;
 using Task.Monitor.Tests.Common;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class MainScreenTests
@@ -42,10 +44,10 @@ public sealed class MainScreenTests
         ScreenApplication screenApp = new(terminalMock.Object);
         MainScreen mainScreen = new(screenApp, runContext);
 
-        Assert.Equal(ConsoleColor.Black, mainScreen.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, mainScreen.BackgroundColour);
         Assert.NotEmpty(mainScreen.Controls);
         Assert.True(mainScreen.CursorVisible);
-        Assert.Equal(ConsoleColor.White, mainScreen.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, mainScreen.ForegroundColour);
         Assert.Equal(0, mainScreen.Height);
         Assert.NotNull(mainScreen.Name);
         Assert.Empty(mainScreen.Name);

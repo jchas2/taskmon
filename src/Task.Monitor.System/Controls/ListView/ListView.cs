@@ -1,14 +1,13 @@
 ﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.ListView;
 
 public class ListView : Control
 {
-    //
     // The Collections act as a proxy for updates to the underlying List<T>.
     // This provides a clean api for interacting with Collections on the ListView
     // control, similar to the Win32 ListView common control. 
-    //
     private readonly ListViewColumnHeaderCollection columnHeaderCollection;
     private readonly ListViewItemCollection itemCollection;
 
@@ -42,7 +41,7 @@ public class ListView : Control
         ShowColumnHeaders = true; 
     }
     
-    public ConsoleColor BackgroundHighlightColour { get; set; } = ConsoleColor.White;
+    public Color BackgroundHighlightColour { get; set; } = ConsolePalette.White;
 
     private void CalculateViewPortBounds()
     {
@@ -219,8 +218,8 @@ public class ListView : Control
                 span[width - 1] = ' ';
             });
             
-            ConsoleColor foreground = columnHeaders[i].ForegroundColour ?? HeaderForegroundColour;
-            ConsoleColor background = columnHeaders[i].BackgroundColour ?? HeaderBackgroundColour;
+            Color foreground = columnHeaders[i].ForegroundColour ?? HeaderForegroundColour;
+            Color background = columnHeaders[i].BackgroundColour ?? HeaderBackgroundColour;
 
             frame.SetColour(foreground, background);
             frame.SetBold(true);
@@ -291,17 +290,17 @@ public class ListView : Control
                 span[width - 1] = ' ';
             });
 
-            ConsoleColor backgroundHighlightColour = Focused
+            Color backgroundHighlightColour = Focused
                 ? BackgroundHighlightColour
-                : ConsoleColor.Gray;
-            
-            ConsoleColor foregroundColour = highlight
+                : ConsolePalette.Gray;
+
+            Color foregroundColour = highlight
                 ? EnableRowSelect
                     ? ForegroundHighlightColour
                     : subItem.ForegroundColor
                 : subItem.ForegroundColor;
 
-            ConsoleColor backgroundColour = highlight
+            Color backgroundColour = highlight
                 ? EnableRowSelect
                     ? backgroundHighlightColour
                     : subItem.BackgroundColor
@@ -345,7 +344,7 @@ public class ListView : Control
     
     public bool EnableScroll { get; set; }
     
-    public ConsoleColor ForegroundHighlightColour { get; set; } = ConsoleColor.Cyan;
+    public Color ForegroundHighlightColour { get; set; } = ConsolePalette.Cyan;
 
     internal ListViewColumnHeader GetColumnHeaderByIndex(int index)
     {
@@ -372,9 +371,9 @@ public class ListView : Control
         return items[index];
     }
 
-    public ConsoleColor HeaderBackgroundColour { get; set; } = ConsoleColor.Black;
+    public Color HeaderBackgroundColour { get; set; } = ConsolePalette.Black;
     
-    public ConsoleColor HeaderForegroundColour { get; set; } = ConsoleColor.White;
+    public Color HeaderForegroundColour { get; set; } = ConsolePalette.White;
     
     internal int IndexOfColumnHeader(ListViewColumnHeader columnHeader)
     {

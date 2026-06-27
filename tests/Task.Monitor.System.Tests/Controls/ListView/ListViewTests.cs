@@ -4,6 +4,7 @@ using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.Tests.Common;
 using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 
+using System.Drawing;
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewTests
@@ -32,17 +33,17 @@ public sealed class ListViewTests
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         ListViewControl listView = new(terminal.Object);
         
-        Assert.Equal(ConsoleColor.Black, listView.BackgroundColour);
-        Assert.Equal(ConsoleColor.White, listView.BackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.Black, listView.BackgroundColour);
+        Assert.Equal(ConsolePalette.White, listView.BackgroundHighlightColour);
         Assert.Empty(listView.ColumnHeaders);
         Assert.Empty(listView.Controls);
         Assert.Empty(listView.EmptyListViewText);
         Assert.True(listView.EnableRowSelect);
         Assert.True(listView.EnableScroll);
-        Assert.Equal(ConsoleColor.White, listView.ForegroundColour);
-        Assert.Equal(ConsoleColor.Cyan, listView.ForegroundHighlightColour);
-        Assert.Equal(ConsoleColor.Black, listView.HeaderBackgroundColour);
-        Assert.Equal(ConsoleColor.White, listView.HeaderForegroundColour);        
+        Assert.Equal(ConsolePalette.White, listView.ForegroundColour);
+        Assert.Equal(ConsolePalette.Cyan, listView.ForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.Black, listView.HeaderBackgroundColour);
+        Assert.Equal(ConsolePalette.White, listView.HeaderForegroundColour);        
         Assert.Equal(0, listView.Height);
         Assert.Empty(listView.Items);
         Assert.NotNull(listView.Name);
@@ -63,15 +64,15 @@ public sealed class ListViewTests
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         ListViewControl listView = new(terminal.Object) {
-            BackgroundColour = ConsoleColor.Gray,
-            BackgroundHighlightColour = ConsoleColor.DarkGray,
+            BackgroundColour = ConsolePalette.Gray,
+            BackgroundHighlightColour = ConsolePalette.DarkGray,
             EmptyListViewText = "No Items",
             EnableRowSelect = false,
             EnableScroll = false,
-            ForegroundColour = ConsoleColor.Blue,
-            ForegroundHighlightColour = ConsoleColor.DarkGray,
-            HeaderBackgroundColour = ConsoleColor.Green,
-            HeaderForegroundColour = ConsoleColor.Black,
+            ForegroundColour = ConsolePalette.Blue,
+            ForegroundHighlightColour = ConsolePalette.DarkGray,
+            HeaderBackgroundColour = ConsolePalette.Green,
+            HeaderForegroundColour = ConsolePalette.Black,
             Height = 24,
             Visible =  true,
             Width = 80,
@@ -79,15 +80,15 @@ public sealed class ListViewTests
             Y = 2
         };
         
-        Assert.Equal(ConsoleColor.Gray, listView.BackgroundColour);
-        Assert.Equal(ConsoleColor.DarkGray, listView.BackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.Gray, listView.BackgroundColour);
+        Assert.Equal(ConsolePalette.DarkGray, listView.BackgroundHighlightColour);
         Assert.Equal("No Items", listView.EmptyListViewText);
         Assert.False(listView.EnableRowSelect);
         Assert.False(listView.EnableScroll);
-        Assert.Equal(ConsoleColor.Blue, listView.ForegroundColour);
-        Assert.Equal(ConsoleColor.DarkGray, listView.ForegroundHighlightColour);
-        Assert.Equal(ConsoleColor.Green, listView.HeaderBackgroundColour);
-        Assert.Equal(ConsoleColor.Black, listView.HeaderForegroundColour);
+        Assert.Equal(ConsolePalette.Blue, listView.ForegroundColour);
+        Assert.Equal(ConsolePalette.DarkGray, listView.ForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.Green, listView.HeaderBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, listView.HeaderForegroundColour);
         Assert.Equal(24, listView.Height);
         Assert.True(listView.Visible);
         Assert.Equal(80, listView.Width);
@@ -287,8 +288,8 @@ public sealed class ListViewTests
     
     private const char Esc = (char)27;
 
-    private static string Fg(ConsoleColor c) => AnsiConsoleStringExtensions.GetForegroundCode(c).ToString();
-    private static string Bg(ConsoleColor c) => AnsiConsoleStringExtensions.GetBackgroundCode(c).ToString();
+    private static string Fg(Color c) => ConsolePalette.ForegroundSgr(c);
+    private static string Bg(Color c) => ConsolePalette.BackgroundSgr(c);
 
     private static ListViewControl CreatePopulatedListView(RecordingTerminal terminal)
     {
@@ -374,7 +375,7 @@ public sealed class ListViewTests
         // The default selection is row 0. Unfocused, the highlight background is Gray
         // and the highlight foreground is the configured ForegroundHighlightColour.
         Assert.Contains(Fg(listView.ForegroundHighlightColour), output);
-        Assert.Contains(Bg(ConsoleColor.Gray), output);
+        Assert.Contains(Bg(ConsolePalette.Gray), output);
     }
     
     [Fact]

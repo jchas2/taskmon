@@ -64,7 +64,7 @@ public class ConfigParser : IDisposable
                 continue;
             }
 
-            if (ch == '#' || ch == ';') {
+            if (ch == ';') {
                 inComment = true;
                 continue;
             }
@@ -201,7 +201,7 @@ public class ConfigParser : IDisposable
                 continue;
             }
 
-            if (ch == '#' || ch == ';') {
+            if (ch == ';') {
                 inComment = true;
                 continue;
             }

@@ -1,4 +1,5 @@
 using System.CodeDom;
+using System.Drawing;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
@@ -55,8 +56,8 @@ public class HelpScreen : Screen
     {
         Terminal.CursorVisible = false;
         
-        ConsoleColor fg = runContext.AppConfig.DefaultTheme.Foreground;
-        ConsoleColor bg = runContext.AppConfig.DefaultTheme.Background;
+        Color fg = runContext.AppConfig.DefaultTheme.Foreground;
+        Color bg = runContext.AppConfig.DefaultTheme.Background;
         Theme theme = runContext.AppConfig.DefaultTheme;
         
         helpText.Clear();

@@ -2,6 +2,7 @@ using System.Runtime.Versioning;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 
+using System.Drawing;
 namespace Task.Monitor.System.Tests;
 
 public sealed class SystemTerminalTests

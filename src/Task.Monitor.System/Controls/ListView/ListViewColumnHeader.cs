@@ -1,4 +1,6 @@
-﻿namespace Task.Monitor.System.Controls.ListView;
+﻿using System.Drawing;
+
+namespace Task.Monitor.System.Controls.ListView;
 
 public class ListViewColumnHeader
 {
@@ -10,16 +12,16 @@ public class ListViewColumnHeader
 
     public ListViewColumnHeader(
         string text,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
         : this(text)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;
     }
 
-    public ConsoleColor? BackgroundColour { get; set; }
-    public ConsoleColor? ForegroundColour { get; set; }
+    public Color? BackgroundColour { get; set; }
+    public Color? ForegroundColour { get; set; }
     public bool RightAligned { get; set; } = false;
     
     public string Text
