@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.MessageBox;
 
@@ -14,9 +15,9 @@ public sealed class MessageBox : Control
     private bool okFocused = true;
     
     // TODO: Theme.
-    private ConsoleColor dialogColour = ConsoleColor.Gray;
-    private ConsoleColor dialogShadowColour = ConsoleColor.DarkGray;
-    private ConsoleColor dialogTitleColour = ConsoleColor.White;
+    private Color dialogColour = ConsolePalette.Gray;
+    private Color dialogShadowColour = ConsolePalette.DarkGray;
+    private Color dialogTitleColour = ConsolePalette.White;
     
     public MessageBox(ISystemTerminal terminal) : base(terminal) { }
 
@@ -41,7 +42,7 @@ public sealed class MessageBox : Control
         
         string centredText = text.CentreWithLength(width);
         Terminal.BackgroundColor = dialogTitleColour;
-        Terminal.ForegroundColor = ConsoleColor.Black;
+        Terminal.ForegroundColor = ConsolePalette.Black;
         
         Terminal.SetCursorPosition(x, y);
 
@@ -55,9 +56,9 @@ public sealed class MessageBox : Control
             else {
                 
                 if (isHighlightChar && selected) {
-                    Terminal.ForegroundColor = ConsoleColor.Red;
+                    Terminal.ForegroundColor = ConsolePalette.Red;
                     Terminal.Write(ch);
-                    Terminal.ForegroundColor = ConsoleColor.Black;
+                    Terminal.ForegroundColor = ConsolePalette.Black;
                     isHighlightChar = false;
                     continue;
                 }
@@ -93,13 +94,13 @@ public sealed class MessageBox : Control
 
          string centredTitle = Title.CentreWithLength(Width);
          Terminal.BackgroundColor = dialogTitleColour;
-         Terminal.ForegroundColor = ConsoleColor.Black;
+         Terminal.ForegroundColor = ConsolePalette.Black;
          Terminal.SetCursorPosition(X, y);
          Terminal.Write(centredTitle);
         
          string spacer = new(' ', Width);
          Terminal.BackgroundColor = dialogColour;
-         Terminal.ForegroundColor = ConsoleColor.Black;
+         Terminal.ForegroundColor = ConsolePalette.Black;
          Terminal.SetCursorPosition(X, ++y);
          Terminal.Write(spacer);
         

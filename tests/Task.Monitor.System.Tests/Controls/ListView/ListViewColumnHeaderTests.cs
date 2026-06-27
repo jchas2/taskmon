@@ -1,5 +1,7 @@
 ﻿using Task.Monitor.System.Controls.ListView;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewColumnHeaderTests
@@ -27,8 +29,8 @@ public sealed class ListViewColumnHeaderTests
     public void Constructor_With_All_Parameters_Initialises_Correctly()
     {
         string headerText = "Full Header";
-        ConsoleColor bgColor = ConsoleColor.Blue;
-        ConsoleColor fgColor = ConsoleColor.Yellow;
+        Color bgColor = ConsolePalette.Blue;
+        Color fgColor = ConsolePalette.Yellow;
         var header = new ListViewColumnHeader(headerText, bgColor, fgColor);
         
         Assert.Equal(headerText, header.Text);
@@ -40,8 +42,8 @@ public sealed class ListViewColumnHeaderTests
     [Fact]
     public void Constructor_With_All_Parameters_Accepts_Empty_Text()
     {
-        ConsoleColor bgColor = ConsoleColor.Blue;
-        ConsoleColor fgColor = ConsoleColor.Yellow;
+        Color bgColor = ConsolePalette.Blue;
+        Color fgColor = ConsolePalette.Yellow;
 
         ListViewColumnHeader header = new(string.Empty, bgColor, fgColor);
         Assert.True(header.Text == String.Empty);

@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 
@@ -57,18 +58,10 @@ public sealed class ConfigSection
         return keys[key];
     }
 
-    public ConsoleColor GetColour(string key) => GetColour(key, ConsoleColor.Black);
+    public Color GetColour(string key) => GetColour(key, ConsolePalette.Black);
 
-    public ConsoleColor GetColour(string key, ConsoleColor defaultValue)
-    {
-        string colourName = GetString(key, string.Empty);
-
-        if (string.IsNullOrEmpty(colourName)) {
-            return defaultValue;
-        }
-        
-        return ConsoleColorUtils.FromName(colourName, defaultValue);   
-    }
+    public Color GetColour(string key, Color defaultValue) =>
+        ConsolePalette.FromHex(GetString(key, string.Empty), defaultValue);
 
     public float GetFloat(string key, float defaultValue) => TryParse(key, float.Parse, 0);
     

@@ -3,6 +3,8 @@ using Moq;
 using Task.Monitor.Gui;
 using Task.Monitor.Tests.Common;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class HelpScreenTests
@@ -37,10 +39,10 @@ public sealed class HelpScreenTests
     {
         HelpScreen helpScreen = new(runContext);
 
-        Assert.Equal(ConsoleColor.Black, helpScreen.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, helpScreen.BackgroundColour);
         Assert.Empty(helpScreen.Controls);
         Assert.True(helpScreen.CursorVisible);
-        Assert.Equal(ConsoleColor.White, helpScreen.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, helpScreen.ForegroundColour);
         Assert.Equal(0, helpScreen.Height);
         Assert.NotNull(helpScreen.Name);
         Assert.Empty(helpScreen.Name);
@@ -110,16 +112,16 @@ public sealed class HelpScreenTests
             Height = 25
         };
         
-        ConsoleColor? capturedBg = null;
-        ConsoleColor? capturedFg = null;
+        Color? capturedBg = null;
+        Color? capturedFg = null;
 
-        runContextHelper.terminal.Object.BackgroundColor = ConsoleColor.Cyan;
-        runContextHelper.terminal.Object.ForegroundColor = ConsoleColor.Magenta;
+        runContextHelper.terminal.Object.BackgroundColor = ConsolePalette.Cyan;
+        runContextHelper.terminal.Object.ForegroundColor = ConsolePalette.Magenta;
 
-        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<ConsoleColor>())
-            .Callback<ConsoleColor>(color => capturedBg = color);
-        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<ConsoleColor>())
-            .Callback<ConsoleColor>(color => capturedFg = color);
+        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedBg = color);
+        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedFg = color);
 
         helpScreen.Load();
         helpScreen.Draw();

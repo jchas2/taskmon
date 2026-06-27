@@ -1,3 +1,4 @@
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls;
@@ -11,9 +12,9 @@ public sealed class AnsiScreenBuffer
 
     private char[] buffer;
     private int length;
-    private ConsoleColor foreground;
+    private Color foreground;
 
-    private ConsoleColor background;
+    private Color background;
     private bool colourSet;
     private bool bold;
 
@@ -49,18 +50,62 @@ public sealed class AnsiScreenBuffer
         Append('H');
     }
 
-    public void SetColour(ConsoleColor fg, ConsoleColor bg)
+    public void SetColour(Color fg, Color bg)
     {
-        if (colourSet && fg == foreground && bg == background) {
+        if (colourSet && fg.ToArgb() == foreground.ToArgb() && bg.ToArgb() == background.ToArgb()) {
             return;
         }
 
-        Append(AnsiConsoleStringExtensions.GetBackgroundCode(bg));
-        Append(AnsiConsoleStringExtensions.GetForegroundCode(fg));
+        AppendBackground(bg);
+        AppendForeground(fg);
 
         foreground = fg;
         background = bg;
         colourSet = true;
+    }
+
+    // Emits the background SGR directly into the buffer.
+    // Important: Alpha 0 -> 49 (terminal default / transparent), else 48;2;r;g;b.
+    private void AppendBackground(Color colour)
+    {
+        Append(Escape);
+        Append('[');
+
+        if (colour.A == 0) {
+            Append("49");
+        }
+        else {
+            Append("48;2;");
+            AppendInt(colour.R);
+            Append(';');
+            AppendInt(colour.G);
+            Append(';');
+            AppendInt(colour.B);
+        }
+
+        Append('m');
+    }
+
+    // Alpha 0 -> 39 (terminal default foreground), else 38;2;r;g;b.
+    private void AppendForeground(Color colour)
+    {
+        Append(Escape);
+        Append('[');
+
+        if (colour.A == 0) {
+            Append('3');
+            Append('9');
+        }
+        else {
+            Append("38;2;");
+            AppendInt(colour.R);
+            Append(';');
+            AppendInt(colour.G);
+            Append(';');
+            AppendInt(colour.B);
+        }
+
+        Append('m');
     }
 
     public void SetBold(bool enabled)

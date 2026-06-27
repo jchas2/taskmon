@@ -2,6 +2,8 @@
 using Task.Monitor.System.Controls.ListView;
 using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewSubItemTests
@@ -13,8 +15,8 @@ public sealed class ListViewSubItemTests
         ListViewSubItem subItem = new(item, "Sub Item");
         
         Assert.Equal("Sub Item", subItem.Text);
-        Assert.True(ConsoleColor.Black == subItem.BackgroundColor);
-        Assert.True(ConsoleColor.White == subItem.ForegroundColor);
+        Assert.True(ConsolePalette.Black == subItem.BackgroundColor);
+        Assert.True(ConsolePalette.White == subItem.ForegroundColor);
     }
     
     [Fact]
@@ -25,12 +27,12 @@ public sealed class ListViewSubItemTests
         ListViewSubItem subItem = new(
             item,
             "Sub Item", 
-            ConsoleColor.Green, 
-            ConsoleColor.Black);
+            ConsolePalette.Green, 
+            ConsolePalette.Black);
         
         Assert.Equal("Sub Item", subItem.Text);
-        Assert.True(ConsoleColor.Green == subItem.BackgroundColor);
-        Assert.True(ConsoleColor.Black == subItem.ForegroundColor);
+        Assert.True(ConsolePalette.Green == subItem.BackgroundColor);
+        Assert.True(ConsolePalette.Black == subItem.ForegroundColor);
     }
 }
 

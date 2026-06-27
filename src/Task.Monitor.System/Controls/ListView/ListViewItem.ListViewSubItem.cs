@@ -1,4 +1,7 @@
-﻿namespace Task.Monitor.System.Controls.ListView;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
+
+namespace Task.Monitor.System.Controls.ListView;
 
 public class ListViewSubItem
 {
@@ -15,8 +18,8 @@ public class ListViewSubItem
     public ListViewSubItem(
         ListViewItem owner,
         string text,
-        ConsoleColor backgroundColor,
-        ConsoleColor foregroundColor)
+        Color backgroundColor,
+        Color foregroundColor)
     {
         this.owner = owner;
         this.text = text;
@@ -27,14 +30,14 @@ public class ListViewSubItem
         };
     }
 
-    public ConsoleColor BackgroundColor
+    public Color BackgroundColor
     {
         get {
             if (style != null) {
                 return style.BackgroundColour;
             }
 
-            return owner.Parent?.BackgroundColour ?? ConsoleColor.Black;
+            return owner.Parent?.BackgroundColour ?? ConsolePalette.Black;
         }
         set {
             style ??= new SubItemStyle();
@@ -51,14 +54,14 @@ public class ListViewSubItem
         set => owner = value;
     }
     
-    public ConsoleColor ForegroundColor
+    public Color ForegroundColor
     {
         get {
             if (style != null) {
                 return style.ForegroundColour;
             }
 
-            return owner.Parent?.ForegroundColour ?? ConsoleColor.White;
+            return owner.Parent?.ForegroundColour ?? ConsolePalette.White;
         }
         set {
             style ??= new SubItemStyle();

@@ -4,6 +4,8 @@ using Task.Monitor.System.Controls.InputBox;
 using Task.Monitor.Tests.Common;
 using InputBoxControl = Task.Monitor.System.Controls.InputBox.InputBox;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.InputBox;
 
 public sealed class InputBoxTests
@@ -18,9 +20,9 @@ public sealed class InputBoxTests
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         InputBoxControl control = new(terminal.Object);
         
-        Assert.Equal(ConsoleColor.Black, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Empty(control.Controls);
-        Assert.Equal(ConsoleColor.White, control.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
         Assert.Equal(0, control.Height);
         Assert.NotNull(control.Name);
         Assert.Empty(control.Name);
@@ -43,8 +45,8 @@ public sealed class InputBoxTests
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
         InputBoxControl control = new(terminal.Object) {
-            BackgroundColour = ConsoleColor.Gray,
-            ForegroundColour = ConsoleColor.Black,
+            BackgroundColour = ConsolePalette.Gray,
+            ForegroundColour = ConsolePalette.Black,
             Height = 1,
             Title = "Enter Text",
             Visible =  true,
@@ -53,8 +55,8 @@ public sealed class InputBoxTests
             Y = 10
         };
 
-        Assert.Equal(ConsoleColor.Gray, control.BackgroundColour);
-        Assert.Equal(ConsoleColor.Black, control.ForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
         Assert.Equal(1, control.Height);
         Assert.Equal("Enter Text", control.Title);
         Assert.True(control.Visible);

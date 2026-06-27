@@ -4,6 +4,8 @@ using Task.Monitor.Gui;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.Tests.Common;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class SetupScreenTests
@@ -38,10 +40,10 @@ public sealed class SetupScreenTests
     {
         SetupScreen setupScreen = new(runContext);
 
-        Assert.Equal(ConsoleColor.Black, setupScreen.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, setupScreen.BackgroundColour);
         Assert.NotEmpty(setupScreen.Controls);
         Assert.True(setupScreen.CursorVisible);
-        Assert.Equal(ConsoleColor.White, setupScreen.ForegroundColour);
+        Assert.Equal(ConsolePalette.White, setupScreen.ForegroundColour);
         Assert.Equal(0, setupScreen.Height);
         Assert.NotNull(setupScreen.Name);
         Assert.Empty(setupScreen.Name);
@@ -202,8 +204,8 @@ public sealed class SetupScreenTests
     [Fact]
     public void Draw_Uses_Theme_Colours()
     {
-        runContext.AppConfig.DefaultTheme.Background = ConsoleColor.Magenta;
-        runContext.AppConfig.DefaultTheme.Foreground = ConsoleColor.DarkCyan;
+        runContext.AppConfig.DefaultTheme.Background = ConsolePalette.Magenta;
+        runContext.AppConfig.DefaultTheme.Foreground = ConsolePalette.DarkCyan;
         
         SetupScreen setupScreen = new(runContext)
         {
@@ -212,21 +214,21 @@ public sealed class SetupScreenTests
             Height = 25
         };
 
-        List<ConsoleColor> capturedBgColors = [];
-        List<ConsoleColor> capturedFgColors = [];
+        List<Color> capturedBgColors = [];
+        List<Color> capturedFgColors = [];
 
-        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<ConsoleColor>())
-            .Callback<ConsoleColor>(color => capturedBgColors.Add(color));
-        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<ConsoleColor>())
-            .Callback<ConsoleColor>(color => capturedFgColors.Add(color));
+        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedBgColors.Add(color));
+        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedFgColors.Add(color));
 
         setupScreen.Load();
         setupScreen.Draw();
 
         Assert.NotEmpty(capturedBgColors);
         Assert.NotEmpty(capturedFgColors);
-        Assert.Contains(ConsoleColor.Magenta, capturedBgColors);
-        Assert.Contains(ConsoleColor.DarkCyan, capturedFgColors);
+        Assert.Contains(ConsolePalette.Magenta, capturedBgColors);
+        Assert.Contains(ConsolePalette.DarkCyan, capturedFgColors);
     }
     
     [Fact]

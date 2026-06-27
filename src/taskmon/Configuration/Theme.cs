@@ -1,4 +1,6 @@
-﻿using Task.Monitor.System.Configuration;
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.System.Configuration;
 
 namespace Task.Monitor.Configuration;
 
@@ -14,159 +16,211 @@ public sealed class Theme
 
     public void Update(ConfigSection configSection) => themeSection = configSection;
 
-    public ConsoleColor Background
+    private static readonly string[] ColourKeys =
+    [
+        Constants.Keys.Background,
+        Constants.Keys.BackgroundHighlight,
+        Constants.Keys.ColCmdNormalUserSpace,
+        Constants.Keys.ColCmdLowPriority,
+        Constants.Keys.ColCmdHighCpu,
+        Constants.Keys.ColCmdIoBound,
+        Constants.Keys.ColCmdScript,
+        Constants.Keys.ColUserCurrentNonRoot,
+        Constants.Keys.ColUserOtherNonRoot,
+        Constants.Keys.ColUserSystem,
+        Constants.Keys.ColUserRoot,
+        Constants.Keys.CommandBackground,
+        Constants.Keys.CommandForeground,
+        Constants.Keys.Error,
+        Constants.Keys.Foreground,
+        Constants.Keys.ForegroundHighlight,
+        Constants.Keys.HeaderBackground,
+        Constants.Keys.HeaderForeground,
+        Constants.Keys.MenubarBackground,
+        Constants.Keys.MenubarForeground,
+        Constants.Keys.RangeHighBackground,
+        Constants.Keys.RangeLowBackground,
+        Constants.Keys.RangeMidBackground,
+        Constants.Keys.RangeHighForeground,
+        Constants.Keys.RangeLowForeground,
+        Constants.Keys.RangeMidForeground,
+    ];
+
+    private Color GetColour(string key, Color fallback) =>
+        themeSection?.GetColour(key, fallback) ?? fallback;
+
+    private void SetColour(string key, Color value) =>
+        themeSection?.Add(key, ConsolePalette.ToHex(value));
+
+    // Rewrites every colour value to hex, so legacy colour names (e.g. "Black") are persisted as
+    // hex on the next save. 
+    public void Normalize()
     {
-        get => themeSection?.GetColour(Constants.Keys.Background, ConsoleColor.Black) ?? ConsoleColor.Black;
-        set => themeSection?.Add(Constants.Keys.Background, value.ToString());
+        if (themeSection is null) {
+            return;
+        }
+
+        foreach (string key in ColourKeys) {
+            if (themeSection.Contains(key)) {
+                Color colour = ConsolePalette.FromHex(themeSection.GetString(key), ConsolePalette.Black);
+                themeSection.Add(key, ConsolePalette.ToHex(colour));
+            }
+        }
     }
 
-    public ConsoleColor BackgroundHighlight
+    public Color Background
     {
-        get => themeSection?.GetColour(Constants.Keys.BackgroundHighlight, ConsoleColor.Cyan) ?? ConsoleColor.Cyan;
-        set => themeSection?.Add(Constants.Keys.BackgroundHighlight, value.ToString());
+        get => GetColour(Constants.Keys.Background, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.Background, value);
     }
 
-    public ConsoleColor ColumnCommandNormalUserSpace
+    public Color BackgroundHighlight
     {
-        get => themeSection?.GetColour(Constants.Keys.ColCmdNormalUserSpace, ConsoleColor.Green) ?? ConsoleColor.Green;
-        set => themeSection?.Add(Constants.Keys.ColCmdNormalUserSpace, value.ToString());
+        get => GetColour(Constants.Keys.BackgroundHighlight, ConsolePalette.Cyan);
+        set => SetColour(Constants.Keys.BackgroundHighlight, value);
     }
 
-    public ConsoleColor ColumnCommandLowPriority
+    public Color ColumnCommandNormalUserSpace
     {
-        get => themeSection?.GetColour(Constants.Keys.ColCmdLowPriority, ConsoleColor.Blue) ?? ConsoleColor.Blue;
-        set => themeSection?.Add(Constants.Keys.ColCmdLowPriority, value.ToString());
+        get => GetColour(Constants.Keys.ColCmdNormalUserSpace, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.ColCmdNormalUserSpace, value);
     }
 
-    public ConsoleColor ColumnCommandHighCpu
+    public Color ColumnCommandLowPriority
     {
-        get => themeSection?.GetColour(Constants.Keys.ColCmdHighCpu, ConsoleColor.Red) ?? ConsoleColor.Red;
-        set => themeSection?.Add(Constants.Keys.ColCmdHighCpu, value.ToString());
+        get => GetColour(Constants.Keys.ColCmdLowPriority, ConsolePalette.Blue);
+        set => SetColour(Constants.Keys.ColCmdLowPriority, value);
     }
 
-    public ConsoleColor ColumnCommandIoBound
+    public Color ColumnCommandHighCpu
     {
-        get => themeSection?.GetColour(Constants.Keys.ColCmdIoBound, ConsoleColor.Cyan) ?? ConsoleColor.Cyan;
-        set => themeSection?.Add(Constants.Keys.ColCmdIoBound, value.ToString());
+        get => GetColour(Constants.Keys.ColCmdHighCpu, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.ColCmdHighCpu, value);
     }
 
-    public ConsoleColor ColumnCommandScript
+    public Color ColumnCommandIoBound
     {
-        get => themeSection?.GetColour(Constants.Keys.ColCmdScript, ConsoleColor.Yellow) ?? ConsoleColor.Yellow;
-        set => themeSection?.Add(Constants.Keys.ColCmdScript, value.ToString());
+        get => GetColour(Constants.Keys.ColCmdIoBound, ConsolePalette.Cyan);
+        set => SetColour(Constants.Keys.ColCmdIoBound, value);
     }
 
-    public ConsoleColor ColumnUserCurrentNonRoot
+    public Color ColumnCommandScript
     {
-        get => themeSection?.GetColour(Constants.Keys.ColUserCurrentNonRoot, ConsoleColor.Green) ?? ConsoleColor.Green;
-        set => themeSection?.Add(Constants.Keys.ColUserCurrentNonRoot, value.ToString());
+        get => GetColour(Constants.Keys.ColCmdScript, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.ColCmdScript, value);
     }
 
-    public ConsoleColor ColumnUserOtherNonRoot
+    public Color ColumnUserCurrentNonRoot
     {
-        get => themeSection?.GetColour(Constants.Keys.ColUserOtherNonRoot, ConsoleColor.Magenta) ?? ConsoleColor.Magenta;
-        set => themeSection?.Add(Constants.Keys.ColUserOtherNonRoot, value.ToString());
+        get => GetColour(Constants.Keys.ColUserCurrentNonRoot, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.ColUserCurrentNonRoot, value);
     }
 
-    public ConsoleColor ColumnUserSystem
+    public Color ColumnUserOtherNonRoot
     {
-        get => themeSection?.GetColour(Constants.Keys.ColUserSystem, ConsoleColor.Gray) ?? ConsoleColor.Gray;
-        set => themeSection?.Add(Constants.Keys.ColUserSystem, value.ToString());
+        get => GetColour(Constants.Keys.ColUserOtherNonRoot, ConsolePalette.Magenta);
+        set => SetColour(Constants.Keys.ColUserOtherNonRoot, value);
     }
 
-    public ConsoleColor ColumnUserRoot
+    public Color ColumnUserSystem
     {
-        get => themeSection?.GetColour(Constants.Keys.ColUserRoot, ConsoleColor.White) ?? ConsoleColor.White;
-        set => themeSection?.Add(Constants.Keys.ColUserRoot, value.ToString());
+        get => GetColour(Constants.Keys.ColUserSystem, ConsolePalette.Gray);
+        set => SetColour(Constants.Keys.ColUserSystem, value);
     }
 
-    public ConsoleColor CommandBackground
+    public Color ColumnUserRoot
     {
-        get => themeSection?.GetColour(Constants.Keys.CommandBackground, ConsoleColor.Cyan) ?? ConsoleColor.Cyan;
-        set => themeSection?.Add(Constants.Keys.CommandBackground, value.ToString());
+        get => GetColour(Constants.Keys.ColUserRoot, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ColUserRoot, value);
     }
 
-    public ConsoleColor CommandForeground
+    public Color CommandBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.CommandForeground, ConsoleColor.Black) ?? ConsoleColor.Black;
-        set => themeSection?.Add(Constants.Keys.CommandForeground, value.ToString());
+        get => GetColour(Constants.Keys.CommandBackground, ConsolePalette.Cyan);
+        set => SetColour(Constants.Keys.CommandBackground, value);
     }
 
-    public ConsoleColor Error
+    public Color CommandForeground
     {
-        get => themeSection?.GetColour(Constants.Keys.Error, ConsoleColor.Red) ?? ConsoleColor.Red;
-        set => themeSection?.Add(Constants.Keys.Error, value.ToString());
+        get => GetColour(Constants.Keys.CommandForeground, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.CommandForeground, value);
     }
 
-    public ConsoleColor Foreground
+    public Color Error
     {
-        get => themeSection?.GetColour(Constants.Keys.Foreground, ConsoleColor.White) ?? ConsoleColor.White;
-        set => themeSection?.Add(Constants.Keys.Foreground, value.ToString());
+        get => GetColour(Constants.Keys.Error, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.Error, value);
     }
 
-    public ConsoleColor ForegroundHighlight
+    public Color Foreground
     {
-        get => themeSection?.GetColour(Constants.Keys.ForegroundHighlight, ConsoleColor.Black) ?? ConsoleColor.Black;
-        set => themeSection?.Add(Constants.Keys.ForegroundHighlight, value.ToString());
+        get => GetColour(Constants.Keys.Foreground, ConsolePalette.White);
+        set => SetColour(Constants.Keys.Foreground, value);
     }
 
-    public ConsoleColor HeaderBackground
+    public Color ForegroundHighlight
     {
-        get => themeSection?.GetColour(Constants.Keys.HeaderBackground, ConsoleColor.DarkGreen) ?? ConsoleColor.DarkGreen;
-        set => themeSection?.Add(Constants.Keys.HeaderBackground, value.ToString());
+        get => GetColour(Constants.Keys.ForegroundHighlight, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.ForegroundHighlight, value);
     }
 
-    public ConsoleColor HeaderForeground
+    public Color HeaderBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.HeaderForeground, ConsoleColor.Black) ?? ConsoleColor.Black;
-        set => themeSection?.Add(Constants.Keys.HeaderForeground, value.ToString());
+        get => GetColour(Constants.Keys.HeaderBackground, ConsolePalette.DarkGreen);
+        set => SetColour(Constants.Keys.HeaderBackground, value);
     }
 
-    public ConsoleColor MenubarBackground
+    public Color HeaderForeground
     {
-        get => themeSection?.GetColour(Constants.Keys.MenubarBackground, ConsoleColor.DarkBlue) ?? ConsoleColor.DarkBlue;
-        set => themeSection?.Add(Constants.Keys.MenubarBackground, value.ToString());
+        get => GetColour(Constants.Keys.HeaderForeground, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.HeaderForeground, value);
     }
 
-    public ConsoleColor MenubarForeground
+    public Color MenubarBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.MenubarForeground, ConsoleColor.White) ?? ConsoleColor.White;
-        set => themeSection?.Add(Constants.Keys.MenubarForeground, value.ToString());
+        get => GetColour(Constants.Keys.MenubarBackground, ConsolePalette.DarkBlue);
+        set => SetColour(Constants.Keys.MenubarBackground, value);
     }
 
-    public ConsoleColor RangeHighBackground
+    public Color MenubarForeground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeHighBackground, ConsoleColor.Red) ?? ConsoleColor.Red;
-        set => themeSection?.Add(Constants.Keys.RangeHighBackground, value.ToString());
+        get => GetColour(Constants.Keys.MenubarForeground, ConsolePalette.White);
+        set => SetColour(Constants.Keys.MenubarForeground, value);
     }
 
-    public ConsoleColor RangeLowBackground
+    public Color RangeHighBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeLowBackground, ConsoleColor.Green) ?? ConsoleColor.Green;
-        set => themeSection?.Add(Constants.Keys.RangeLowBackground, value.ToString());
+        get => GetColour(Constants.Keys.RangeHighBackground, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.RangeHighBackground, value);
     }
 
-    public ConsoleColor RangeMidBackground
+    public Color RangeLowBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeMidBackground, ConsoleColor.Yellow) ?? ConsoleColor.Yellow;
-        set => themeSection?.Add(Constants.Keys.RangeMidBackground, value.ToString());
+        get => GetColour(Constants.Keys.RangeLowBackground, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.RangeLowBackground, value);
     }
 
-    public ConsoleColor RangeHighForeground
+    public Color RangeMidBackground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeHighForeground, ConsoleColor.White) ?? ConsoleColor.White;
-        set => themeSection?.Add(Constants.Keys.RangeHighForeground, value.ToString());
+        get => GetColour(Constants.Keys.RangeMidBackground, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.RangeMidBackground, value);
     }
 
-    public ConsoleColor RangeLowForeground
+    public Color RangeHighForeground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeLowForeground, ConsoleColor.White) ?? ConsoleColor.White;
-        set => themeSection?.Add(Constants.Keys.RangeLowForeground, value.ToString());
+        get => GetColour(Constants.Keys.RangeHighForeground, ConsolePalette.White);
+        set => SetColour(Constants.Keys.RangeHighForeground, value);
     }
 
-    public ConsoleColor RangeMidForeground
+    public Color RangeLowForeground
     {
-        get => themeSection?.GetColour(Constants.Keys.RangeMidForeground, ConsoleColor.DarkYellow) ?? ConsoleColor.DarkYellow;
-        set => themeSection?.Add(Constants.Keys.RangeMidForeground, value.ToString());
+        get => GetColour(Constants.Keys.RangeLowForeground, ConsolePalette.White);
+        set => SetColour(Constants.Keys.RangeLowForeground, value);
+    }
+
+    public Color RangeMidForeground
+    {
+        get => GetColour(Constants.Keys.RangeMidForeground, ConsolePalette.DarkYellow);
+        set => SetColour(Constants.Keys.RangeMidForeground, value);
     }
 }

@@ -31,7 +31,6 @@ public sealed partial class ProcessControl : Control
     private Columns sortColumn;
     private readonly Lock allProcessesLock;
     private bool sortAscending = false;
-    private Statistics visibleColumns;
 
     private const int SortControlWidth = 20;
     private const int ControlGutter = 1;
@@ -129,7 +128,7 @@ public sealed partial class ProcessControl : Control
     // Process and Pid are always shown.
     private bool IsColumnVisible(Columns column) =>
         column is Columns.Process or Columns.Pid ||
-        (visibleColumns & ToStatistic(column)) != 0;
+        (appConfig.VisibleColumns & ToStatistic(column)) != 0;
 
     private void LoadSortItems()
     {
@@ -148,7 +147,6 @@ public sealed partial class ProcessControl : Control
     {
         try {
             Control.DrawingLockAcquire();
-
             UpdateListViewItems();
             sortView.Visible = mode == ControlMode.SortSelection;
             sortView.Draw();
@@ -186,8 +184,6 @@ public sealed partial class ProcessControl : Control
     protected override void OnLoad()
     {
         base.OnLoad();
-
-        visibleColumns = appConfig.VisibleColumns;
 
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
@@ -241,9 +237,7 @@ public sealed partial class ProcessControl : Control
         processView.Y = Y;
         processView.Width = pWidth;
         processView.Height = Height;
-
-        visibleColumns = appConfig.VisibleColumns;
-
+        
         int SetWidth(Columns column, int width, bool rightAligned = false)
         {
             int effectiveWidth = IsColumnVisible(column) ? width : 0;
@@ -370,6 +364,10 @@ public sealed partial class ProcessControl : Control
 
         this.mode = mode;
         sortView.Visible = this.mode == ControlMode.SortSelection;
+
+        if (sortView.Visible) {
+            LoadSortItems();
+        }
 
         Control? targetControl = GetTargetControl();
         targetControl?.SetFocus();

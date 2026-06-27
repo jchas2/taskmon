@@ -4,6 +4,8 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Process;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class ThreadsListViewItemTests
@@ -66,22 +68,22 @@ public sealed class ThreadsListViewItemTests
         }                                                                                                                                                                                  
     }                                                                                                                                                                                      
                                                                                                                                                                                              
-    public static TheoryData<int, ConsoleColor> ThreadColourData()                                                                                                                              
+    public static TheoryData<int, Color> ThreadColourData()                                                                                                                              
         => new() {                                                                                                                                                                         
-            { (int)ProcessInfoControl.ThreadColumns.State, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.Reason, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.Priority, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuKernelTime, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuUserTime, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuTotalTime, ConsoleColor.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.Id, ConsoleColor.White }                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.State, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.Reason, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.Priority, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.CpuKernelTime, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.CpuUserTime, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.CpuTotalTime, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.Id, ConsolePalette.White }                                                                                                                     
         };                                                                                                                                                                                 
                                                                                                                                                                                          
     [Theory]                                                                                                                                                                               
     [MemberData(nameof(ThreadColourData))]                                                                                                                                                   
     public void Constructor_Sets_Foreground_Color_Changed_For_All_SubItems(
         int column, 
-        ConsoleColor foregroundColour)                                                                                                                       
+        Color foregroundColour)                                                                                                                       
     {                                                                                                                                                                                      
         ThreadInfo threadInfo = new() {                                                                                                                                                    
             ThreadId = 12345,                                                                                                                                                              

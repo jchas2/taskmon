@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.InputBox;
 
@@ -8,7 +9,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
     private const int MinHeight = 1;
 
     private readonly TextBuffer textBuffer = new();
-    private readonly ConsoleColor boxColour = ConsoleColor.Gray;
+    private readonly Color boxColour = ConsolePalette.Gray;
 
     protected override void OnDraw()
     {
@@ -29,7 +30,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
         if (!string.IsNullOrEmpty(Text)) {
             Terminal.BackgroundColor = boxColour;
-            Terminal.ForegroundColor = ConsoleColor.Black;
+            Terminal.ForegroundColor = ConsolePalette.Black;
             Terminal.Write(Text);
         }
     }
@@ -42,7 +43,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
         using TerminalColourRestorer _ = new();
 
         Terminal.BackgroundColor = boxColour;
-        Terminal.ForegroundColor = ConsoleColor.Black;
+        Terminal.ForegroundColor = ConsolePalette.Black;
         
         switch (keyInfo.Key) {
             case ConsoleKey.Enter:

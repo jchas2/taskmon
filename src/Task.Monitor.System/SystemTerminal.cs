@@ -1,21 +1,32 @@
-﻿using System.Text;
+﻿using System.Drawing;
+using System.Text;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System;
 
 public partial class SystemTerminal : ISystemTerminal
 {
     private const int MaxStackChars = 256;
-    
+
+    // Truecolor can't be read back from the terminal, so the current colours are
+    // tracked here. They default to transparent (the terminal's own default).
+    private Color backgroundColour = ConsolePalette.Transparent;
+    private Color foregroundColour = ConsolePalette.Transparent;
+
     public SystemTerminal()
     {
         Console.OutputEncoding = Encoding.UTF8;
         EnableAnsiTerminalCodesInternal();
     }
 
-    public ConsoleColor BackgroundColor
+    public Color BackgroundColor
     {
-        get => Console.BackgroundColor;
-        set => Console.BackgroundColor = value;
+        get => backgroundColour;
+        set
+        {
+            backgroundColour = value;
+            Console.Out.Write(ConsolePalette.BackgroundSgr(value));
+        }
     }
 
     public int CursorLeft
@@ -38,10 +49,14 @@ public partial class SystemTerminal : ISystemTerminal
 
     public void EnableAnsiTerminalCodes() => EnableAnsiTerminalCodesInternal();
     
-    public ConsoleColor ForegroundColor
+    public Color ForegroundColor
     {
-        get => Console.ForegroundColor;
-        set => Console.ForegroundColor = value;
+        get => foregroundColour;
+        set
+        {
+            foregroundColour = value;
+            Console.Out.Write(ConsolePalette.ForegroundSgr(value));
+        }
     }
 
     public bool KeyAvailable => Console.KeyAvailable;
@@ -54,7 +69,7 @@ public partial class SystemTerminal : ISystemTerminal
 
     public void SetCursorPosition(int left, int top)
     {
-        // During Resize events this will throw on windows if we don't mitigate the difference
+        // During Resize events this will throw on Windows if we don't mitigate the difference
         // between window size and buffer size. Ensure left, top are within buffer range.
         left = Math.Clamp(left, 0, Math.Max(0, Console.BufferWidth - 1));
         top = Math.Clamp(top, 0, Math.Max(0, Console.BufferHeight - 1));

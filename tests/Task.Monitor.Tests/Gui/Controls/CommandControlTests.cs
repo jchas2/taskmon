@@ -4,6 +4,8 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class CommandControlTests
@@ -30,10 +32,10 @@ public sealed class CommandControlTests
     {                                                                                                                                             
         CommandControl control = new(runContext.Terminal, runContext.AppConfig);                                                                  
                                                                                                                                                 
-        Assert.Equal(ConsoleColor.Black, control.BackgroundColour);                                                                               
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);                                                                               
         Assert.Equal(0, control.Controls.Count);                                                                                                    
         Assert.Empty(control.Controls);                                                                                                           
-        Assert.Equal(ConsoleColor.White, control.ForegroundColour);                                                                               
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);                                                                               
         Assert.Equal(0, control.Height);                                                                                                          
         Assert.True(control.Visible);                                                                                                             
         Assert.Equal(0, control.Width);                                                                                                           

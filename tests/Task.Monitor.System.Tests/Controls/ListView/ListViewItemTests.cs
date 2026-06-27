@@ -1,5 +1,7 @@
 ﻿using Task.Monitor.System.Controls.ListView;
 
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewItemTests
@@ -15,11 +17,11 @@ public sealed class ListViewItemTests
     [Fact]
     public void Constructor_With_Text_And_Colours_Initialises_Correctly()
     {
-        ListViewItem item = new ListViewItem("Item", ConsoleColor.Green, ConsoleColor.Yellow);
+        ListViewItem item = new ListViewItem("Item", ConsolePalette.Green, ConsolePalette.Yellow);
         
         Assert.Equal("Item", item.Text);
-        Assert.Equal(ConsoleColor.Green, item.BackgroundColour);
-        Assert.Equal(ConsoleColor.Yellow, item.ForegroundColour);
+        Assert.Equal(ConsolePalette.Green, item.BackgroundColour);
+        Assert.Equal(ConsolePalette.Yellow, item.ForegroundColour);
     }
     
     [Fact]
@@ -38,15 +40,15 @@ public sealed class ListViewItemTests
     {
         ListViewItem item = new ListViewItem(
             new[] { "Apples", "Oranges", "Bananas" },
-            ConsoleColor.Green,
-            ConsoleColor.Yellow);
+            ConsolePalette.Green,
+            ConsolePalette.Yellow);
         
         Assert.Equal("Apples", item.Text);
         Assert.Equal("Apples", item.SubItems[0].Text);
         Assert.Equal("Oranges", item.SubItems[1].Text);
         Assert.Equal("Bananas", item.SubItems[2].Text);
-        Assert.Equal(ConsoleColor.Green, item.BackgroundColour);
-        Assert.Equal(ConsoleColor.Yellow, item.ForegroundColour);
+        Assert.Equal(ConsolePalette.Green, item.BackgroundColour);
+        Assert.Equal(ConsolePalette.Yellow, item.ForegroundColour);
     }
 }
 
