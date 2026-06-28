@@ -80,10 +80,10 @@ public sealed class TaskMgrApp(RunContext runContext)
             }            
             
             // First load configuration from disk.
-            string? configPath = runContext.AppConfig.DefaultConfigPath;
+            string? configPath = runContext.AppConfig.DefaultConfigFilePath;
             
             if (!string.IsNullOrEmpty(configPath)) {
-                if (runContext.FileSystem.Exists(configPath)) {
+                if (runContext.FileSystem.FileExists(configPath)) {
                     runContext.AppConfig.TryLoad(configPath);
                 }
                 else {

@@ -1,8 +1,10 @@
 ﻿namespace Task.Monitor.Internal.Abstractions;
 
-public interface IFileSystem 
-{ 
-    public bool Exists(string? path);
+public interface IFileSystem
+{
+    public bool TryCreateDirectory(string path);
+    public bool DirectoryExists(string? path);
+    public bool FileExists(string? path);
     public string ReadAllText(string path);
     public void WriteAllText(string path, string? contents);
 }
