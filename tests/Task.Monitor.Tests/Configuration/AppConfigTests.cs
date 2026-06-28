@@ -124,10 +124,12 @@ header-foreground=black
         Assert.NotNull(iniConfig);
 
         AppConfig appConfig = new(fileSystem.Object, iniConfig);
+        
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         Assert.True(appConfig.ConfirmTaskDelete);
-        Assert.NotNull(appConfig.DefaultConfigPath);
-        Assert.NotEmpty(appConfig.DefaultConfigPath);
+        Assert.NotNull(appConfig.DefaultConfigFilePath);
+        Assert.NotEmpty(appConfig.DefaultConfigFilePath);
 
         Assert.NotNull(appConfig.DefaultTheme);
         Assert.Equal("theme-colour", appConfig.DefaultTheme.Name);
@@ -255,10 +257,12 @@ header-foreground=darkgray
         Assert.NotNull(iniConfig);
         
         AppConfig appConfig = new(fileSystem.Object, iniConfig);
+        
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         Assert.False(appConfig.ConfirmTaskDelete);
-        Assert.NotNull(appConfig.DefaultConfigPath);
-        Assert.NotEmpty(appConfig.DefaultConfigPath);
+        Assert.NotNull(appConfig.DefaultConfigFilePath);
+        Assert.NotEmpty(appConfig.DefaultConfigFilePath);
         
         Assert.NotNull(appConfig.DefaultTheme);
         Assert.Equal("theme-custom", appConfig.DefaultTheme.Name);
@@ -401,7 +405,7 @@ header-foreground=darkgray
     {
         AppConfig appConfig = new(fileSystem.Object);
         
-        fileSystem.Setup(fs => fs.Exists(testConfigPath)).Returns(true);
+        fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
         fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Returns(DefaultIniFile);
 
         bool result = appConfig.TryLoad(testConfigPath);
@@ -414,7 +418,7 @@ header-foreground=darkgray
     {
         AppConfig appConfig = new(fileSystem.Object);
         
-        fileSystem.Setup(fs => fs.Exists(testConfigPath)).Returns(false);
+        fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(false);
         fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Throws(new FileNotFoundException());
 
         bool result = appConfig.TryLoad(testConfigPath);
@@ -447,10 +451,13 @@ header-foreground=darkgray
     }
 
     [Fact]
-    public void DefaultConfigPath_ReturnsNonNullPath()
+    public void DefaultConfigFilePath_ReturnsNonNullPath()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        string? result = appConfig.DefaultConfigPath;
+
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        
+        string? result = appConfig.DefaultConfigFilePath;
 
         Assert.NotNull(result);
         Assert.Contains("taskmon.ini", result);

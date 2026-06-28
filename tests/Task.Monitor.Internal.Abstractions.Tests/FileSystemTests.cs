@@ -30,7 +30,7 @@ Line2";
         
         FileSystem fileSystem = new();
         fileSystem.WriteAllText(fileName, FileText);
-        bool exists = fileSystem.Exists(fileName);
+        bool exists = fileSystem.FileExists(fileName);
         
         Assert.True(exists);
     }

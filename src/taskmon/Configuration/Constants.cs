@@ -2,6 +2,8 @@ namespace Task.Monitor.Configuration;
 
 public sealed class Constants
 {
+    public const string AppName = "taskmon";
+    
     public sealed class Sections
     {
         public const string Filter = "filter";

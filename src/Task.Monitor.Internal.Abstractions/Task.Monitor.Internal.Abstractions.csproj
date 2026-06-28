@@ -1,3 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <ItemGroup>
+    <ProjectReference Include="..\Task.Monitor.Cli.Utils\Task.Monitor.Cli.Utils.csproj" />
+  </ItemGroup>
 </Project>

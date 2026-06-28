@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Process;
 using Task.Monitor.System.Configuration;
@@ -27,7 +28,7 @@ public sealed class AppConfig
     private ConfigSection? statsSection;
     private ConfigSection? uxSection;
     
-    private const string ConfigFile = "taskmon.ini";
+    private const string ConfigFile = $"{Constants.AppName}.ini";
     
     private readonly string[,] colourMap = {
         { Constants.Keys.Background,            "transparent" },
@@ -293,14 +294,44 @@ public sealed class AppConfig
         set => uxSection?.Add(Constants.Keys.ConfirmTaskDelete, value.ToString());
     }
 
+    public string? DefaultConfigFilePath
+    {
+        get {
+            string? configPath = DefaultConfigPath;
+
+            return !string.IsNullOrEmpty(configPath) 
+                ? Path.Combine(configPath, ConfigFile) 
+                : null;
+        }
+    }
+
     public string? DefaultConfigPath
     {
         get {
             try {
-                return Path.Combine(AppContext.BaseDirectory, ConfigFile);
+                string userPath = string.Empty;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    userPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config",
+                        Constants.AppName);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    userPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+                        Constants.AppName);
+                }
+
+                if (fileSystem.DirectoryExists(userPath)) {
+                    return userPath;
+                }
+
+                if (fileSystem.TryCreateDirectory(userPath)) {
+                    return userPath;
+                }
+
+                string appPath = AppContext.BaseDirectory;
+                return fileSystem.DirectoryExists(appPath) ? appPath : null;
             }
-            catch (Exception ex) {
-                ExceptionHelper.HandleException(ex);
+            catch {
                 return null;
             }
         }

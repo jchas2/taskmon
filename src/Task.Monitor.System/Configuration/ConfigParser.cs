@@ -20,7 +20,7 @@ public class ConfigParser : IDisposable
 
     public ConfigParser(IFileSystem fileSys, string path)
     {
-        if (!fileSys.Exists(path)) {
+        if (!fileSys.FileExists(path)) {
             throw new FileNotFoundException(path);
         }
 

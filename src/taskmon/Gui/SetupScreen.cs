@@ -340,7 +340,7 @@ public class SetupScreen : Screen
     {
         headerView.Items.AddRange(
             new ListViewItem("Changes are saved to the following config file:"),
-            new ListViewItem(runContext.AppConfig.DefaultConfigPath ?? string.Empty));
+            new ListViewItem(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty));
     }
     
     private void LoadSectionConfigListView<T>(
@@ -654,7 +654,7 @@ public class SetupScreen : Screen
     {
         MapControlsToConfig();
                 
-        if (!runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigPath ?? string.Empty)) {
+        if (!runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty)) {
             ShowMessageBox(
                 "Save Failed",
                 "An error occurred saving config.",
