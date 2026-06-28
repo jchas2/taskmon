@@ -83,6 +83,7 @@ public sealed class ConsolePaletteTests
     public void ToHex_FromHex_RoundTrips(string value)
     {
         Color colour = ConsolePalette.FromHex(value, Fallback);
+        
         Assert.Equal(value, ConsolePalette.ToHex(colour));
     }
 
@@ -108,5 +109,94 @@ public sealed class ConsolePaletteTests
     public void ForegroundSgr_Emits_Default_When_Transparent()
     {
         Assert.Equal(Esc + "[39m", ConsolePalette.ForegroundSgr(ConsolePalette.Transparent));
+    }
+
+    public static IEnumerable<object[]> StandardColours()
+    {
+        yield return new object[] { ConsolePalette.Black,       0 };
+        yield return new object[] { ConsolePalette.DarkRed,     1 };
+        yield return new object[] { ConsolePalette.DarkGreen,   2 };
+        yield return new object[] { ConsolePalette.DarkYellow,  3 };
+        yield return new object[] { ConsolePalette.DarkBlue,    4 };
+        yield return new object[] { ConsolePalette.DarkMagenta, 5 };
+        yield return new object[] { ConsolePalette.DarkCyan,    6 };
+        yield return new object[] { ConsolePalette.Gray,        7 };
+        yield return new object[] { ConsolePalette.DarkGray,    8 };
+        yield return new object[] { ConsolePalette.Red,         9 };
+        yield return new object[] { ConsolePalette.Green,       10 };
+        yield return new object[] { ConsolePalette.Yellow,      11 };
+        yield return new object[] { ConsolePalette.Blue,        12 };
+        yield return new object[] { ConsolePalette.Magenta,     13 };
+        yield return new object[] { ConsolePalette.Cyan,        14 };
+        yield return new object[] { ConsolePalette.White,       15 };
+    }
+
+    [Theory]
+    [MemberData(nameof(StandardColours))]
+    public void TryGetAnsiIndex_Maps_Each_Standard_Colour(Color colour, int expectedIndex)
+    {
+        Assert.True(ConsolePalette.TryGetAnsiIndex(colour, out int index));
+        Assert.Equal(expectedIndex, index);
+    }
+
+    [Fact]
+    public void TryGetAnsiIndex_Fails_For_NonPalette_Colour()
+    {
+        Assert.False(ConsolePalette.TryGetAnsiIndex(Color.FromArgb(255, 10, 20, 30), out _));
+    }
+
+    [Fact]
+    public void TryGetAnsiIndex_Fails_For_Transparent()
+    {
+        Assert.False(ConsolePalette.TryGetAnsiIndex(ConsolePalette.Transparent, out _));
+    }
+
+    [Theory]
+    [MemberData(nameof(StandardColours))]
+    public void ForegroundSgr_Emits_Indexed_Code_When_Preferred(Color colour, int index)
+    {
+        int expected = index < 8 ? 30 + index : 90 + (index - 8);
+        
+        WithIndexedColours(() =>
+            Assert.Equal(Esc + "[" + expected + "m", ConsolePalette.ForegroundSgr(colour)));
+    }
+
+    [Theory]
+    [MemberData(nameof(StandardColours))]
+    public void BackgroundSgr_Emits_Indexed_Code_When_Preferred(Color colour, int index)
+    {
+        int expected = index < 8 ? 40 + index : 100 + (index - 8);
+        
+        WithIndexedColours(() =>
+            Assert.Equal(Esc + "[" + expected + "m", ConsolePalette.BackgroundSgr(colour)));
+    }
+
+    [Fact]
+    public void ForegroundSgr_Stays_TrueColour_For_NonPalette_Colour_When_Preferred()
+    {
+        WithIndexedColours(() =>
+            Assert.Equal(
+                Esc + "[38;2;255;136;0m",
+                ConsolePalette.ForegroundSgr(Color.FromArgb(255, 255, 136, 0))));
+    }
+
+    [Fact]
+    public void ForegroundSgr_Stays_TrueColour_For_Palette_Colour_When_Not_Preferred()
+    {
+        // Default (true colour) behaviour must not emit indexed codes from the palette.
+        Assert.Equal(Esc + "[38;2;0;0;255m", ConsolePalette.ForegroundSgr(ConsolePalette.Blue));
+    }
+
+    private static void WithIndexedColours(Action action)
+    {
+        bool previous = ConsolePalette.PreferIndexedColours;
+        ConsolePalette.PreferIndexedColours = true;
+
+        try {
+            action();
+        }
+        finally {
+            ConsolePalette.PreferIndexedColours = previous;
+        }
     }
 }

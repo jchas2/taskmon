@@ -84,7 +84,10 @@ class Program
         FileSystem fileSystem = new();
         Processor processor = new(processService);
         AppConfig appConfig = new(fileSystem);
-        
+
+        ConsolePalette.PreferIndexedColours =
+            TerminalCapabilities.ResolvePreferIndexed(appConfig.ColourMode, Environment.GetEnvironmentVariable);
+
         try {
             RunContext runContext = new(
                 fileSystem,

@@ -1,3 +1,4 @@
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Process;
@@ -118,8 +119,8 @@ public sealed class AboutScreen : Screen
 
         for (int i = 0; i < Art.Length; i++) {
             var (text, _) = Art[i];
-            var (r, g, b) = HexToRgb(colors[i]);
-            string colourCode = $"\u001b[38;2;{r};{g};{b}m";
+            Color colour = ConsolePalette.FromHex(colors[i], ConsolePalette.Black);
+            string colourCode = ConsolePalette.ForegroundSgr(colour);
             runContext.Terminal.WriteEmptyLineTo(logoX);
             runContext.Terminal.WriteLine(colourCode + text + "\u001b[K");
         }
@@ -219,14 +220,6 @@ public sealed class AboutScreen : Screen
             runContext.AppConfig.DefaultTheme,
             enabled: true,
             runContext.Terminal);
-    }
-    
-    private (byte r, byte g, byte b) HexToRgb(string hex)
-    {
-        byte r = Convert.ToByte(hex.Substring(0, 2), 16);
-        byte g = Convert.ToByte(hex.Substring(2, 2), 16);
-        byte b = Convert.ToByte(hex.Substring(4, 2), 16);
-        return (r, g, b);
     }
     
     protected override void OnDraw()

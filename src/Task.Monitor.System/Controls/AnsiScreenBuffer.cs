@@ -64,15 +64,17 @@ public sealed class AnsiScreenBuffer
         colourSet = true;
     }
 
-    // Emits the background SGR directly into the buffer.
-    // Important: Alpha 0 -> 49 (terminal default / transparent), else 48;2;r;g;b.
     private void AppendBackground(Color colour)
     {
         Append(Escape);
         Append('[');
 
+        // Alpha 0 -> 49 (terminal default / transparent), else 48;2;r;g;b.
         if (colour.A == 0) {
             Append("49");
+        }
+        else if (ConsolePalette.PreferIndexedColours && ConsolePalette.TryGetAnsiIndex(colour, out int index)) {
+            AppendInt(index < 8 ? 40 + index : 100 + (index - 8));
         }
         else {
             Append("48;2;");
@@ -86,15 +88,17 @@ public sealed class AnsiScreenBuffer
         Append('m');
     }
 
-    // Alpha 0 -> 39 (terminal default foreground), else 38;2;r;g;b.
     private void AppendForeground(Color colour)
     {
         Append(Escape);
         Append('[');
 
+        // Alpha 0 -> 39 (terminal default foreground), else 38;2;r;g;b.
         if (colour.A == 0) {
-            Append('3');
-            Append('9');
+            Append("39");
+        }
+        else if (ConsolePalette.PreferIndexedColours && ConsolePalette.TryGetAnsiIndex(colour, out int index)) {
+            AppendInt(index < 8 ? 30 + index : 90 + (index - 8));
         }
         else {
             Append("38;2;");
