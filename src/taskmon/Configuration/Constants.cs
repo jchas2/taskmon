@@ -49,6 +49,7 @@ public sealed class Constants
         public const string NProcs = "nprocs";
 
         // UX Keys.
+        public const string ColourMode = "colour-mode";
         public const string ConfirmTaskDelete = "confirm-task-delete";
         public const string DefaultTheme = "default-theme";
         public const string DefaultLayout = "default-layout";

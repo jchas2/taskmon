@@ -281,6 +281,12 @@ public sealed class AppConfig
         LoadSections();
     }
 
+    public ColourMode ColourMode
+    {
+        get => uxSection?.GetEnum(Constants.Keys.ColourMode, ColourMode.Auto) ?? ColourMode.Auto;
+        set => uxSection?.Add(Constants.Keys.ColourMode, value.ToString());
+    }
+
     public bool ConfirmTaskDelete
     {
         get => uxSection?.GetBool(Constants.Keys.ConfirmTaskDelete, true) ?? true;
@@ -525,6 +531,7 @@ public sealed class AppConfig
             : new ConfigSection(Constants.Sections.UX);
 
         uxSection
+            .AddIfMissing(Constants.Keys.ColourMode, ColourMode.Auto.ToString())
             .AddIfMissing(Constants.Keys.ConfirmTaskDelete, true.ToString())
             .AddIfMissing(Constants.Keys.DefaultLayout, Constants.Sections.LayoutAll)
             .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeColour)

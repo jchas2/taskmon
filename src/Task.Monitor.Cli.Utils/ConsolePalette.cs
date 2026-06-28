@@ -5,6 +5,8 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class ConsolePalette
 {
+    private const string Esc = "";
+
     public static readonly Color Black       = Color.FromArgb(0, 0, 0);
     public static readonly Color DarkBlue    = Color.FromArgb(0, 0, 128);
     public static readonly Color DarkGreen   = Color.FromArgb(0, 128, 0);
@@ -24,6 +26,12 @@ public static class ConsolePalette
 
     // Alpha 0 sentinel: render as the terminal default transparent background.
     public static readonly Color Transparent = Color.FromArgb(0, 0, 0, 0);
+
+    // When true, the 16 standard palette colours are emitted as 4-bit ANSI
+    // indexed SGR codes (30-37 / 90-97 and 40-47 / 100-107) instead of 24-bit
+    // true colour, so modern terminals can apply their own palette and contrast
+    // softening. Any colour outside the standard 16 always stays true colour.
+    public static bool PreferIndexedColours { get; set; }
 
     private static readonly Dictionary<string, Color> NamedColours = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -49,7 +57,41 @@ public static class ConsolePalette
         ["none"]        = Transparent,
     };
 
+    // Maps each standard palette colour (by opaque ARGB) to its 4-bit ANSI
+    // colour index (0-15). 
+    private static readonly Dictionary<int, int> AnsiIndexLookup = new()
+    {
+        [Black.ToArgb()]       = 0,
+        [DarkRed.ToArgb()]     = 1,
+        [DarkGreen.ToArgb()]   = 2,
+        [DarkYellow.ToArgb()]  = 3,
+        [DarkBlue.ToArgb()]    = 4,
+        [DarkMagenta.ToArgb()] = 5,
+        [DarkCyan.ToArgb()]    = 6,
+        [Gray.ToArgb()]        = 7,
+        [DarkGray.ToArgb()]    = 8,
+        [Red.ToArgb()]         = 9,
+        [Green.ToArgb()]       = 10,
+        [Yellow.ToArgb()]      = 11,
+        [Blue.ToArgb()]        = 12,
+        [Magenta.ToArgb()]     = 13,
+        [Cyan.ToArgb()]        = 14,
+        [White.ToArgb()]       = 15,
+    };
+
     public static bool IsTransparent(this Color colour) => colour.A == 0;
+
+    // True when the (opaque) colour is one of the 16 standard palette colours,
+    // returning its 4-bit ANSI index (0-15). Transparent or custom colours fail.
+    public static bool TryGetAnsiIndex(Color colour, out int index)
+    {
+        if (colour.A != 255) {
+            index = -1;
+            return false;
+        }
+
+        return AnsiIndexLookup.TryGetValue(colour.ToArgb(), out index);
+    }
 
     public static Color FromHex(string? value, Color fallback)
     {
@@ -91,13 +133,31 @@ public static class ConsolePalette
             : $"#{colour.A:X2}{colour.R:X2}{colour.G:X2}{colour.B:X2}";
     }
 
-    public static string BackgroundSgr(Color colour) =>
-        colour.A == 0
-            ? "[49m"
-            : $"[48;2;{colour.R};{colour.G};{colour.B}m";
+    public static string BackgroundSgr(Color colour)
+    {
+        if (colour.A == 0) {
+            return Esc + "[49m";
+        }
 
-    public static string ForegroundSgr(Color colour) =>
-        colour.A == 0
-            ? "[39m"
-            : $"[38;2;{colour.R};{colour.G};{colour.B}m";
+        if (PreferIndexedColours && TryGetAnsiIndex(colour, out int index)) {
+            int code = index < 8 ? 40 + index : 100 + (index - 8);
+            return Esc + "[" + code + "m";
+        }
+
+        return Esc + $"[48;2;{colour.R};{colour.G};{colour.B}m";
+    }
+
+    public static string ForegroundSgr(Color colour)
+    {
+        if (colour.A == 0) {
+            return Esc + "[39m";
+        }
+
+        if (PreferIndexedColours && TryGetAnsiIndex(colour, out int index)) {
+            int code = index < 8 ? 30 + index : 90 + (index - 8);
+            return Esc + "[" + code + "m";
+        }
+
+        return Esc + $"[38;2;{colour.R};{colour.G};{colour.B}m";
+    }
 }
