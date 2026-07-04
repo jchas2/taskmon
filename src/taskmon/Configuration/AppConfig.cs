@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
@@ -31,76 +32,6 @@ public sealed class AppConfig
     private ConfigSection? uxSection;
     
     private const string ConfigFile = $"{Constants.AppName}.ini";
-
-    private readonly string[,] layoutAll = {
-        { Constants.Keys.Ratio,   "0.4" },
-        { Constants.Keys.NumRows, "2" },
-        { Constants.Keys.NumCols, "4" },
-        { Constants.Keys.Charts,  "0,1,2,3,4,5,6,7" }
-    };
-    
-    private readonly string[,] layoutAllLarge = {
-        { Constants.Keys.Ratio,   "0.75" },
-        { Constants.Keys.NumRows, "2" },
-        { Constants.Keys.NumCols, "4" },
-        { Constants.Keys.Charts,  "0,1,2,3,4,5,6,7" }
-    };
-
-    private readonly string[,] layoutCpuAndMemory = {
-        { Constants.Keys.Ratio,   "0.4" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "0,4" }
-    };
-
-    private readonly string[,] layoutCpuAndMemoryLarge = {
-        { Constants.Keys.Ratio,   "0.75" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "0,4" }
-    };
-
-    private readonly string[,] layoutGpuAndMemory = {
-        { Constants.Keys.Ratio,   "0.4" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "1,5" }
-    };
-    
-    private readonly string[,] layoutGpuAndMemoryLarge = {
-        { Constants.Keys.Ratio,   "0.75" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "1,5" }
-    };
-    
-    private readonly string[,] layoutNetSendReceive = {
-        { Constants.Keys.Ratio,   "0.4" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "3,7" }
-    };
-    
-    private readonly string[,] layoutNetSendReceiveLarge = {
-        { Constants.Keys.Ratio,   "0.75" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "2" },
-        { Constants.Keys.Charts,  "3,7" }
-    };
-
-    private readonly string[,] layoutDisk = {
-        { Constants.Keys.Ratio,   "0.4" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "1" },
-        { Constants.Keys.Charts,  "2" }
-    };
-    
-    private readonly string[,] layoutDiskLarge = {
-        { Constants.Keys.Ratio,   "0.75" },
-        { Constants.Keys.NumRows, "1" },
-        { Constants.Keys.NumCols, "1" },
-        { Constants.Keys.Charts,  "2" }
-    };
     
     public AppConfig(IFileSystem fileSystem)
     {
@@ -108,6 +39,7 @@ public sealed class AppConfig
         this.iniConfig = new();
         LoadSections();
         LoadThemes();
+        LoadLayouts();
     }
 
     public AppConfig(IFileSystem fileSystem, Config iniConfig)
@@ -116,6 +48,7 @@ public sealed class AppConfig
         this.iniConfig = iniConfig;
         LoadSections();
         LoadThemes();
+        LoadLayouts();
     }
     
     public bool ConfirmTaskDelete
@@ -338,6 +271,79 @@ public sealed class AppConfig
         set => uxSection?.Add(Constants.Keys.UseIrixCpuReporting, value.ToString());
     }
 
+    private void LoadLayouts()
+    {
+        bool validLayoutPath = true;
+        
+        string layoutPath = !string.IsNullOrEmpty(DefaultConfigPath)
+            ? Path.Combine(DefaultConfigPath, Constants.LayoutDirectory)
+            : string.Empty;
+
+        validLayoutPath = !string.IsNullOrEmpty(layoutPath);
+        
+        if (validLayoutPath && !fileSystem.DirectoryExists(layoutPath)) {
+            if (!fileSystem.TryCreateDirectory(layoutPath)) {
+                validLayoutPath = false;
+            }
+        }
+
+        if (validLayoutPath) {
+            string[] layoutFiles = fileSystem.GetFiles(layoutPath);
+            
+            foreach (string layoutFile in layoutFiles) {
+                string layoutText = fileSystem.ReadAllText(layoutFile);
+                
+                if (!TryParseIni(layoutText, out Layout? layout)) {
+                    continue;
+                }
+                
+                if (!allLayouts.Any(t => t.Name.Equals(layout!.Name))) {
+                    allLayouts.Add(layout!);
+                }
+            }
+        }
+        
+        Assembly asm = Assembly.GetExecutingAssembly();
+        
+        foreach (string name in asm.GetManifestResourceNames()) {
+            if (!name.EndsWith(Constants.LayoutExtension)) {
+                continue;
+            }
+
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            string layoutText = reader.ReadToEnd();
+
+            if (!TryParseIni(layoutText, out Layout? layout)) {
+                Debug.Fail($"Failed to parse manifest asset {name}");
+                continue;
+            }
+            
+            if (!allLayouts.Any(t => t.Name.Equals(layout!.Name))) {
+                allLayouts.Add(layout!);
+                string layoutFilePath = Path.Combine(layoutPath, $"{layout!.Name}{Constants.LayoutExtension}");
+                fileSystem.WriteAllText(layoutFilePath, layoutText);
+            }
+        }
+
+        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
+
+        if (allLayouts.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultLayout), StringComparison.CurrentCultureIgnoreCase))) {
+            DefaultLayout = allLayouts
+                .Where(t => t.Name == uxSection.GetString(Constants.Keys.DefaultLayout))
+                .First();
+        }
+        else {
+            // Handle the case where the config file has been edited with a default-layout name that has not been loaded.
+            Debug.Assert(allLayouts.Contains(defaultLayout));
+            
+            if (!allLayouts.Contains(defaultLayout)) {
+                allLayouts.Add(defaultLayout);
+            }
+
+            DefaultLayout = defaultLayout;
+        }
+    }
+    
     private void LoadSections()
     {
         filterSection = iniConfig.ContainsSection(Constants.Sections.Filter)
@@ -394,7 +400,7 @@ public sealed class AppConfig
 
         uxSection
             .AddIfMissing(Constants.Keys.ConfirmTaskDelete, true.ToString())
-            .AddIfMissing(Constants.Keys.DefaultLayout, Constants.Sections.LayoutAll)
+            .AddIfMissing(Constants.Keys.DefaultLayout, Constants.Sections.LayoutAllCharts)
             .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeTaskmonDefault)
             .AddIfMissing(Constants.Keys.HighlightDaemons, true.ToString())
             .AddIfMissing(Constants.Keys.HighlightStatsColUpdate, true.ToString())
@@ -412,51 +418,6 @@ public sealed class AppConfig
 
         if (!iniConfig.ContainsSection(uxSection.Name)) {
             iniConfig.AddConfigSection(uxSection);
-        }
-
-        var layoutMap = new Dictionary<string, string[,]> {
-            [Constants.Sections.LayoutAll] = layoutAll,
-            [Constants.Sections.LayoutAllLarge] = layoutAllLarge,
-            [Constants.Sections.LayoutCpuAndMemory] = layoutCpuAndMemory,
-            [Constants.Sections.LayoutCpuAndMemoryLarge] = layoutCpuAndMemoryLarge,
-            [Constants.Sections.LayoutGpuAndMemory] = layoutGpuAndMemory,
-            [Constants.Sections.LayoutGpuAndMemoryLarge] = layoutGpuAndMemoryLarge,
-            [Constants.Sections.LayoutNetSendReceive] = layoutNetSendReceive,
-            [Constants.Sections.LayoutNetSendReceiveLarge] = layoutNetSendReceiveLarge,
-            [Constants.Sections.LayoutDisk] = layoutDisk,
-            [Constants.Sections.LayoutDiskLarge] = layoutDiskLarge
-        };
-
-        foreach (string layoutName in layoutMap.Keys) {
-            if (!iniConfig.ContainsSection(layoutName)) {
-                ConfigSection layoutSection = new(layoutName);
-                
-                for (int i = 0; i < layoutMap[layoutName].GetLength(dimension: 0); i++) {
-                    layoutSection.AddIfMissing(layoutMap[layoutName][i, 0], layoutMap[layoutName][i, 1]);
-                }
-
-                iniConfig.AddConfigSection(layoutSection);
-            }
-        }
-
-        List<ConfigSection> layoutSections = iniConfig.ConfigSections
-            .Where(cs => cs.Name.StartsWith("layout-", StringComparison.CurrentCultureIgnoreCase))
-            .ToList();
-
-        foreach (ConfigSection configSection in layoutSections) {
-            Layout? layout = allLayouts.FirstOrDefault(t => t.Name.Equals(configSection.Name, StringComparison.CurrentCultureIgnoreCase));
-            if (layout != null) {
-                layout.Update(configSection);
-            }
-            else {
-                allLayouts.Add(new Layout(configSection));
-            }
-        }
-        
-        if (allLayouts.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultLayout), StringComparison.CurrentCultureIgnoreCase))) {
-            defaultLayout = allLayouts
-                .Where(l => l.Name == uxSection.GetString(Constants.Keys.DefaultLayout))
-                .First();
         }
     }
 
@@ -482,7 +443,7 @@ public sealed class AppConfig
             foreach (string themeFile in themeFiles) {
                 string themeText = fileSystem.ReadAllText(themeFile);
                 
-                if (!TryParseTheme(themeText, out Theme? theme)) {
+                if (!TryParseIni(themeText, out Theme? theme)) {
                     continue;
                 }
 
@@ -504,7 +465,7 @@ public sealed class AppConfig
             using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
             string themeText = reader.ReadToEnd();
 
-            if (!TryParseTheme(themeText, out Theme? theme)) {
+            if (!TryParseIni(themeText, out Theme? theme)) {
                 Debug.Fail($"Failed to parse manifest asset {name}");
                 continue;
             }
@@ -539,23 +500,6 @@ public sealed class AppConfig
 
     public List<Layout> Layouts => allLayouts;
 
-    private bool TryParseTheme(string themeText, out Theme? theme)
-    {
-        theme = null;
-
-        try {
-            ConfigParser parser = new(themeText);
-            parser.Parse();
-            theme = new(parser.Sections[0]);
-            theme.Normalize();
-            return true;
-        }
-        catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
-            return false;
-        }
-    }
-    
     public List<Theme> Themes => allThemes;
 
     public bool TryLoad(Config config)
@@ -586,6 +530,23 @@ public sealed class AppConfig
         }
 
         return false;
+    }
+
+    private bool TryParseIni<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(
+        string text, out T? instance) where T : class
+    {
+        instance = null;
+
+        try {
+            ConfigParser parser = new(text);
+            parser.Parse();
+            instance = (T?)Activator.CreateInstance(typeof(T), parser.Sections[0]);
+            return true;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.HandleException(ex);
+            return false;
+        }
     }
 
     public bool TrySave(string path)

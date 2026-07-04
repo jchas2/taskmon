@@ -83,6 +83,7 @@ public sealed class HeaderControl : Control
             AutoScale = true
         };
 
+        // Important: Order is critical to align with .layout files.
         charts = [cpuChart, gpuChart, diskChart, networkSentChart, memoryChart, gpuMemChart, virtualMemoryChart, networkRecdChart];
 
         foreach (Chart ctrl in charts) {

@@ -385,8 +385,8 @@ public class SetupScreen : Screen
         AddItems(themeView, themeNames, val => runContext.AppConfig.DefaultTheme.Name.Equals(val));
         
         List<string> layoutNames = runContext.AppConfig.Layouts
-            .Where(t => t.Name.StartsWith("layout-", StringComparison.CurrentCultureIgnoreCase))
-            .Select(t => t.Name)
+            .OrderBy(l => l.Name)
+            .Select(l => l.Name)
             .ToList();
 
         AddItems(layoutView, layoutNames, val => runContext.AppConfig.DefaultLayout.Name.Equals(val));

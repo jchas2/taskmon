@@ -5,6 +5,8 @@ public sealed class Constants
     public const string AppName = "taskmon";
     public const string ThemeDirectory = "themes";
     public const string ThemeExtension = ".theme";
+    public const string LayoutDirectory = "layouts";
+    public const string LayoutExtension = ".layout";
     
     public sealed class Sections
     {
@@ -15,24 +17,9 @@ public sealed class Constants
         public const string Iterations = "iterations";
 
         public const string ThemeTaskmonDefault = "Taskmon Default";
-        public const string ThemeDefault = "Default";
         public const string ThemeMsDos = "MSDOS";
-        public const string ThemeTokyoNight = "Tokyo Night";
 
-        public const string ThemeMono = "theme-mono";
-        public const string ThemeMatrix = "theme-matrix";
-        public const string ThemeSolar = "theme-solar";
-
-        public const string LayoutAll = "layout-all";
-        public const string LayoutAllLarge = "layout-all-large";
-        public const string LayoutCpuAndMemory = "layout-cpu-and-memory";
-        public const string LayoutCpuAndMemoryLarge = "layout-cpu-and-memory-large";
-        public const string LayoutGpuAndMemory = "layout-gpu-and-memory";
-        public const string LayoutGpuAndMemoryLarge = "layout-gpu-and-memory-large";
-        public const string LayoutNetSendReceive = "layout-net-send-receive";
-        public const string LayoutNetSendReceiveLarge = "layout-net-send-receive-large";
-        public const string LayoutDisk = "layout-disk";
-        public const string LayoutDiskLarge = "layout-disk-large";
+        public const string LayoutAllCharts = "All Charts";
     }
 
     public sealed class Keys

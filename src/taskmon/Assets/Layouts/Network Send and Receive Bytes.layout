@@ -1,0 +1,7 @@
+﻿[Network Send and Receive Bytes]
+ratio=0.4
+num-rows=1
+num-cols=2
+; Chart index
+; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
+charts=3,7
