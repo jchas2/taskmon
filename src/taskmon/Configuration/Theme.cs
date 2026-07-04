@@ -12,7 +12,7 @@ public sealed class Theme
 
     public Theme(ConfigSection configSection) => themeSection = configSection;
 
-    public string Name => themeSection?.Name ?? string.Empty;
+    public string Name => themeSection?.Name ?? Constants.Sections.ThemeDefault;
 
     public void Update(ConfigSection configSection) => themeSection = configSection;
 
@@ -31,6 +31,7 @@ public sealed class Theme
         Constants.Keys.ColUserRoot,
         Constants.Keys.CommandBackground,
         Constants.Keys.CommandForeground,
+        Constants.Keys.DeltaHighlightColour,
         Constants.Keys.Error,
         Constants.Keys.Foreground,
         Constants.Keys.ForegroundHighlight,
@@ -67,6 +68,8 @@ public sealed class Theme
             }
         }
     }
+
+    public ColourMode ColourMode => themeSection?.GetEnum(Constants.Keys.ColourMode, ColourMode.Auto) ?? ColourMode.Auto;
 
     public Color Background
     {
@@ -144,6 +147,12 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.CommandForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.CommandForeground, value);
+    }
+
+    public Color DeltaHighlightColour
+    {
+        get => GetColour(Constants.Keys.DeltaHighlightColour, ConsolePalette.DarkYellow);
+        set => SetColour(Constants.Keys.DeltaHighlightColour, value);
     }
 
     public Color Error

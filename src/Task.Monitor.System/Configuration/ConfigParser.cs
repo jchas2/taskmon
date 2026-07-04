@@ -100,7 +100,6 @@ public class ConfigParser : IDisposable
             char ch = (char)character;
             
             if (character == EndOfFile) {
-                buffer.Append(ch);
                 throw new ConfigParseException($"End-of-file found reading section name {buffer} before closing ']'.");
             }
 
@@ -110,15 +109,15 @@ public class ConfigParser : IDisposable
 
             if (char.IsWhiteSpace(ch)) {
                 buffer.Append(ch);
-                throw new ConfigParseException($"Unexpected white space char in section name {buffer}.");
+                continue;
             }
 
-            if (!(char.IsLetterOrDigit(ch) || ch == '-')) {
+            if (char.IsLetterOrDigit(ch) || ch == '-') {
                 buffer.Append(ch);
-                throw new ConfigParseException($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
+                continue;
             }
 
-            buffer.Append(ch);
+            throw new ConfigParseException($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
         }
 
         if (buffer.Length == 0) {
@@ -140,7 +139,6 @@ public class ConfigParser : IDisposable
             ch = (char)character;
             
             if (character == EndOfFile) {
-                keyBuffer.Append(ch);
                 throw new ConfigParseException($"End-of-file found reading key name {keyBuffer}.");
             }
             

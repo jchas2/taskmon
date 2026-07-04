@@ -289,23 +289,21 @@ public class ListView : Control
 
                 span[width - 1] = ' ';
             });
+            
+            bool selected = highlight && EnableRowSelect;
 
-            Color backgroundHighlightColour = Focused
-                ? BackgroundHighlightColour
-                : ConsolePalette.Gray;
-
-            Color foregroundColour = highlight
-                ? EnableRowSelect
-                    ? ForegroundHighlightColour
-                    : subItem.ForegroundColor
+            Color foregroundColour = selected
+                ? Focused 
+                    ? ForegroundHighlightColour 
+                    : ConsolePalette.Black
                 : subItem.ForegroundColor;
 
-            Color backgroundColour = highlight
-                ? EnableRowSelect
-                    ? backgroundHighlightColour
-                    : subItem.BackgroundColor
+            Color backgroundColour = selected
+                ? Focused 
+                    ? BackgroundHighlightColour 
+                    : ConsolePalette.Gray
                 : subItem.BackgroundColor;
-
+            
             frame.SetColour(foregroundColour, backgroundColour);
             frame.Append(columnStr);
             c += columnWidth;

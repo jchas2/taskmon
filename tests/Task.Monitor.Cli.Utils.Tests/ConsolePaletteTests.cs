@@ -181,10 +181,10 @@ public sealed class ConsolePaletteTests
     }
 
     [Fact]
-    public void ForegroundSgr_Stays_TrueColour_For_Palette_Colour_When_Not_Preferred()
+    public void ForegroundSgr_Stays_Indexed_For_Palette_Colour_When_Default()
     {
-        // Default (true colour) behaviour must not emit indexed codes from the palette.
-        Assert.Equal(Esc + "[38;2;0;0;255m", ConsolePalette.ForegroundSgr(ConsolePalette.Blue));
+        // Default (Indexed) behaviour must not emit true colour codes from the palette.
+        Assert.Equal(Esc + "[94m", ConsolePalette.ForegroundSgr(ConsolePalette.Blue));
     }
 
     private static void WithIndexedColours(Action action)

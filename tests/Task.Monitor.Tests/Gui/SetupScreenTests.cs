@@ -143,11 +143,8 @@ public sealed class SetupScreenTests
 #if __APPLE__
             { "Use Irix mode for process CPU% (Activity Monitor)", "generalView" },
 #endif
-            { Constants.Sections.ThemeColour,                      "themeView" },
-            { Constants.Sections.ThemeMono,                        "themeView" },
+            { Constants.Sections.ThemeTaskmonDefault,                 "themeView" },
             { Constants.Sections.ThemeMsDos,                       "themeView" },
-            { Constants.Sections.ThemeTokyoNight,                  "themeView" },
-            { Constants.Sections.ThemeMatrix,                      "themeView" },
             
             { "Blocks",                                            "metreView" },
             { "Bars",                                              "metreView" },
