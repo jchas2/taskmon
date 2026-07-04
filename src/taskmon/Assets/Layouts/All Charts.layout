@@ -1,0 +1,7 @@
+﻿[All Charts]
+ratio=0.4
+num-rows=2
+num-cols=4
+; Chart index
+; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
+charts=0,1,2,3,4,5,6,7

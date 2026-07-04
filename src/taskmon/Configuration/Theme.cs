@@ -12,7 +12,7 @@ public sealed class Theme
 
     public Theme(ConfigSection configSection) => themeSection = configSection;
 
-    public string Name => themeSection?.Name ?? Constants.Sections.ThemeDefault;
+    public string Name => themeSection?.Name ?? Constants.Sections.ThemeTaskmonDefault;
 
     public void Update(ConfigSection configSection) => themeSection = configSection;
 

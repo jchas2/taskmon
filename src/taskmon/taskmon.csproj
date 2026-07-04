@@ -42,6 +42,26 @@
       <EmbeddedResource Include="Assets\Themes\Amber.theme" />
       <None Remove="Assets\Themes\Green.theme" />
       <EmbeddedResource Include="Assets\Themes\Green.theme" />
+      <None Remove="Assets\Layouts\All Charts.layout" />
+      <EmbeddedResource Include="Assets\Layouts\All Charts.layout" />
+      <None Remove="Assets\Layouts\All Charts Large.layout" />
+      <EmbeddedResource Include="Assets\Layouts\All Charts Large.layout" />
+      <None Remove="Assets\Layouts\Cpu and Memory.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Cpu and Memory.layout" />
+      <None Remove="Assets\Layouts\Cpu and Memory Large.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Cpu and Memory Large.layout" />
+      <None Remove="Assets\Layouts\Disk Read and Write Bytes.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Disk Read and Write Bytes.layout" />
+      <None Remove="Assets\Layouts\Disk Read and Write Bytes Large.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Disk Read and Write Bytes Large.layout" />
+      <None Remove="Assets\Layouts\Gpu and Gpu Memory.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Gpu and Gpu Memory.layout" />
+      <None Remove="Assets\Layouts\Gpu and Gpu Memory Large.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Gpu and Gpu Memory Large.layout" />
+      <None Remove="Assets\Layouts\Network Send and Receive Bytes.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes.layout" />
+      <None Remove="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
     </ItemGroup>
 
 </Project>
