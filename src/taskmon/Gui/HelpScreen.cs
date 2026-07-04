@@ -72,13 +72,13 @@ public class HelpScreen : Screen
         helpText.AppendLine("Process and Path Colours:".ToColour(fg, bg));
         helpText.AppendLine("Normal process".ToColour(theme.ColumnCommandNormalUserSpace, bg));
         helpText.AppendLine("Low priority (nice) process".ToColour(theme.ColumnCommandLowPriority, bg));
-        helpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.ForegroundHighlight, theme.RangeHighBackground));
+        helpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
         helpText.AppendLine("I/O bound process".ToColour(theme.ColumnCommandIoBound, bg));
         helpText.Append("Metric ".ToColour(fg, bg));
-        helpText.Append("Low ".ToColour(theme.ForegroundHighlight, theme.RangeLowBackground));
-        helpText.Append("Mid ".ToColour(theme.ForegroundHighlight, theme.RangeMidBackground));
-        helpText.AppendLine("High".ToColour(theme.ForegroundHighlight, theme.RangeHighBackground));
-        helpText.AppendLine("Metric changed".ToColour(theme.RangeMidForeground, bg));
+        helpText.Append("Low ".ToColour(theme.RangeLowForeground, theme.RangeLowBackground));
+        helpText.Append("Mid ".ToColour(theme.RangeMidForeground, theme.RangeMidBackground));
+        helpText.AppendLine("High".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
+        helpText.AppendLine("Metric changed".ToColour(theme.DeltaHighlightColour, bg));
         helpText.AppendLine();
         helpText.AppendLine("Screen Navigation".ToColour(fg, bg));
         helpText.AppendLine("\u2190    Move left to next screen component".ToColour(fg, bg));

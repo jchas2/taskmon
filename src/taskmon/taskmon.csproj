@@ -18,4 +18,30 @@
         <InternalsVisibleTo Include="Task.Monitor.Tests" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Assets\Themes\Classic HTop.theme" />
+      <None Remove="Assets\Themes\MSDOS.theme" />
+      <EmbeddedResource Include="Assets\Themes\MSDOS.theme" />
+      <None Remove="Assets\Themes\Github Dark.theme" />
+      <EmbeddedResource Include="Assets\Themes\Github Dark.theme" />
+      <None Remove="Assets\Themes\Tokyo Night.theme" />
+      <EmbeddedResource Include="Assets\Themes\Tokyo Night.theme" />
+      <None Remove="Assets\Themes\Taskmon Default.theme" />
+      <EmbeddedResource Include="Assets\Themes\Taskmon Default.theme" />
+      <None Remove="Assets\Themes\One Dark Pro.theme" />
+      <EmbeddedResource Include="Assets\Themes\One Dark Pro.theme" />
+      <None Remove="Assets\Themes\Dracula Official.theme" />
+      <EmbeddedResource Include="Assets\Themes\Dracula Official.theme" />
+      <None Remove="Assets\Themes\Catppuccin.theme" />
+      <EmbeddedResource Include="Assets\Themes\Catppuccin.theme" />
+      <None Remove="Assets\Themes\Ayu.theme" />
+      <EmbeddedResource Include="Assets\Themes\Ayu.theme" />
+      <None Remove="Assets\Themes\Monochrome.theme" />
+      <EmbeddedResource Include="Assets\Themes\Monochrome.theme" />
+      <None Remove="Assets\Themes\Amber.theme" />
+      <EmbeddedResource Include="Assets\Themes\Amber.theme" />
+      <None Remove="Assets\Themes\Green.theme" />
+      <EmbeddedResource Include="Assets\Themes\Green.theme" />
+    </ItemGroup>
+
 </Project>

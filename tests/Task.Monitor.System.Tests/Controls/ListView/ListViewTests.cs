@@ -373,8 +373,8 @@ public sealed class ListViewTests
         string output = terminal.Output;
         
         // The default selection is row 0. Unfocused, the highlight background is Gray
-        // and the highlight foreground is the configured ForegroundHighlightColour.
-        Assert.Contains(Fg(listView.ForegroundHighlightColour), output);
+        // and the highlight foreground is Black.
+        Assert.Contains(Fg(ConsolePalette.Black), output);
         Assert.Contains(Bg(ConsolePalette.Gray), output);
     }
     

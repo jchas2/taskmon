@@ -103,6 +103,7 @@ public sealed class AboutScreen : Screen
         Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
 
         runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
+        runContext.Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.Foreground;
 
         offsetX = Terminal.WindowWidth / 2 - version.Length / 2;
         Terminal.WriteEmptyLineTo(offsetX);

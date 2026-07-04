@@ -31,7 +31,7 @@ public static class ConsolePalette
     // indexed SGR codes (30-37 / 90-97 and 40-47 / 100-107) instead of 24-bit
     // true colour, so modern terminals can apply their own palette and contrast
     // softening. Any colour outside the standard 16 always stays true colour.
-    public static bool PreferIndexedColours { get; set; }
+    public static bool PreferIndexedColours { get; set; } = true;
 
     private static readonly Dictionary<string, Color> NamedColours = new(StringComparer.OrdinalIgnoreCase)
     {

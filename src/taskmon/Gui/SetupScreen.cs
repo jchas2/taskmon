@@ -25,6 +25,7 @@ public class SetupScreen : Screen
     private readonly List<ListView> tabControls = [];
 
     private Theme previewTheme;
+    private bool preferIndexedColours;
 
     private const int ControlGutter = 1;
     private const int MenuViewWidth = 22;
@@ -377,7 +378,7 @@ public class SetupScreen : Screen
         }
         
         List<string> themeNames = runContext.AppConfig.Themes
-            .Where(t => t.Name.StartsWith("theme-", StringComparison.CurrentCultureIgnoreCase))
+            .OrderBy(t => t.Name)
             .Select(t => t.Name)
             .ToList();
 
@@ -521,6 +522,9 @@ public class SetupScreen : Screen
         Control? focusedControl = GetFocusedControl;
 
         switch (keyInfo.Key) {
+            case ConsoleKey.Escape:
+                ConsolePalette.PreferIndexedColours = preferIndexedColours;
+                break;
             case ConsoleKey.LeftArrow:
                 menuView.SetFocus();
 
@@ -584,6 +588,7 @@ public class SetupScreen : Screen
             runContext.AppConfig.IterationLimit);
 
         previewTheme = runContext.AppConfig.DefaultTheme;
+        preferIndexedColours = ConsolePalette.PreferIndexedColours;
         generalView.Visible = true;
         menuView.SetFocus();
         
@@ -596,8 +601,12 @@ public class SetupScreen : Screen
         Theme theme = runContext.AppConfig.Themes
             .Where(t => t.Name.Equals(e.Item.Text, StringComparison.CurrentCultureIgnoreCase))
             .First();
-
+        
         previewTheme = theme;
+        
+        ConsolePalette.PreferIndexedColours = 
+            TerminalCapabilities.ResolvePreferIndexed(previewTheme.ColourMode, Environment.GetEnvironmentVariable);
+
         Draw();
     }
 

@@ -3,6 +3,8 @@ namespace Task.Monitor.Configuration;
 public sealed class Constants
 {
     public const string AppName = "taskmon";
+    public const string ThemeDirectory = "themes";
+    public const string ThemeExtension = ".theme";
     
     public sealed class Sections
     {
@@ -12,10 +14,12 @@ public sealed class Constants
         public const string Sort = "sort";
         public const string Iterations = "iterations";
 
-        public const string ThemeColour = "theme-colour";
+        public const string ThemeTaskmonDefault = "Taskmon Default";
+        public const string ThemeDefault = "Default";
+        public const string ThemeMsDos = "MSDOS";
+        public const string ThemeTokyoNight = "Tokyo Night";
+
         public const string ThemeMono = "theme-mono";
-        public const string ThemeMsDos = "theme-msdos";
-        public const string ThemeTokyoNight = "theme-tokyo-night";
         public const string ThemeMatrix = "theme-matrix";
         public const string ThemeSolar = "theme-solar";
 
@@ -85,6 +89,9 @@ public sealed class Constants
 
         public const string CommandBackground = "command-background";
         public const string CommandForeground = "command-foreground";
+
+        public const string DeltaHighlightColour = "delta-highlight-colour";
+        
         public const string Error = "error";
         public const string Foreground = "foreground";
         public const string ForegroundHighlight = "foreground-highlight";

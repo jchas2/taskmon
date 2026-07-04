@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Process;
@@ -29,174 +31,6 @@ public sealed class AppConfig
     private ConfigSection? uxSection;
     
     private const string ConfigFile = $"{Constants.AppName}.ini";
-    
-    private readonly string[,] colourMap = {
-        { Constants.Keys.Background,            "transparent" },
-        { Constants.Keys.BackgroundHighlight,   "#00FFFF"        },
-        { Constants.Keys.ColCmdNormalUserSpace, "#00FF00"       },
-        { Constants.Keys.ColCmdLowPriority,     "#0000FF"        },
-        { Constants.Keys.ColCmdHighCpu,         "#FF0000"         },
-        { Constants.Keys.ColCmdIoBound,         "#00FFFF"        },
-        { Constants.Keys.ColCmdScript,          "#FFFF00"      },
-        { Constants.Keys.ColUserCurrentNonRoot, "#00FF00"       },
-        { Constants.Keys.ColUserOtherNonRoot,   "#FF00FF"     },
-        { Constants.Keys.ColUserSystem,         "#C0C0C0"        },
-        { Constants.Keys.ColUserRoot,           "#FFFFFF"       },
-        { Constants.Keys.CommandForeground,     "#000000"       },
-        { Constants.Keys.CommandBackground,     "#00FFFF"        },
-        { Constants.Keys.Error,                 "#FF0000"         },
-        { Constants.Keys.Foreground,            "#FFFFFF"       },
-        { Constants.Keys.ForegroundHighlight,   "#000000"       },
-        { Constants.Keys.MenubarForeground,     "#FFFFFF"       },
-        { Constants.Keys.MenubarBackground,     "#000080"    },
-        { Constants.Keys.RangeHighBackground,   "#FF0000"         },
-        { Constants.Keys.RangeLowBackground,    "#00FF00"       },
-        { Constants.Keys.RangeMidBackground,    "#FFFF00"      },
-        { Constants.Keys.RangeHighForeground,   "#FFFFFF"       },
-        { Constants.Keys.RangeLowForeground,    "#FFFFFF"       },
-        { Constants.Keys.RangeMidForeground,    "#808000"  },
-        { Constants.Keys.HeaderBackground,      "#008000"   },
-        { Constants.Keys.HeaderForeground,      "#000000"       }};
-
-    private readonly string[,] monoMap = {
-        { Constants.Keys.Background,            "transparent" },
-        { Constants.Keys.BackgroundHighlight,   "#808080"    },
-        { Constants.Keys.ColCmdNormalUserSpace, "#C0C0C0"        },
-        { Constants.Keys.ColCmdLowPriority,     "#808080"    },
-        { Constants.Keys.ColCmdHighCpu,         "#FFFFFF"       },
-        { Constants.Keys.ColCmdIoBound,         "#FFFFFF"       },
-        { Constants.Keys.ColCmdScript,          "#808080"    },
-        { Constants.Keys.ColUserCurrentNonRoot, "#808080"    },
-        { Constants.Keys.ColUserOtherNonRoot,   "#808080"    },
-        { Constants.Keys.ColUserSystem,         "#C0C0C0"        },
-        { Constants.Keys.ColUserRoot,           "#FFFFFF"       },
-        { Constants.Keys.CommandForeground,     "#000000"       },
-        { Constants.Keys.CommandBackground,     "#C0C0C0"        },
-        { Constants.Keys.Error,                 "#C0C0C0"        },
-        { Constants.Keys.Foreground,            "#808080"    },
-        { Constants.Keys.ForegroundHighlight,   "#FFFFFF"       },
-        { Constants.Keys.MenubarForeground,     "#FFFFFF"       },
-        { Constants.Keys.MenubarBackground,     "#C0C0C0"        },
-        { Constants.Keys.RangeHighBackground,   "#C0C0C0"        },
-        { Constants.Keys.RangeLowBackground,    "#C0C0C0"        },
-        { Constants.Keys.RangeMidBackground,    "#C0C0C0"        },
-        { Constants.Keys.RangeHighForeground,   "#808080"    },
-        { Constants.Keys.RangeLowForeground,    "#808080"    },
-        { Constants.Keys.RangeMidForeground,    "#808080"    },
-        { Constants.Keys.HeaderBackground,      "#808080"    },
-        { Constants.Keys.HeaderForeground,      "#FFFFFF"       }};
-
-    private readonly string[,] msDosMap = {
-        { Constants.Keys.Background,            "#000080"    },
-        { Constants.Keys.BackgroundHighlight,   "#00FFFF"        },
-        { Constants.Keys.ColCmdNormalUserSpace, "#FFFF00"      },
-        { Constants.Keys.ColCmdLowPriority,     "#C0C0C0"        },
-        { Constants.Keys.ColCmdHighCpu,         "#FF0000"         },
-        { Constants.Keys.ColCmdIoBound,         "#FF0000"         },
-        { Constants.Keys.ColCmdScript,          "#FFFF00"      },
-        { Constants.Keys.ColUserCurrentNonRoot, "#C0C0C0"        },
-        { Constants.Keys.ColUserOtherNonRoot,   "#808080"    },
-        { Constants.Keys.ColUserSystem,         "#FFFF00"      },
-        { Constants.Keys.ColUserRoot,           "#FF0000"         },
-        { Constants.Keys.CommandForeground,     "#FFFF00"      },
-        { Constants.Keys.CommandBackground,     "#008080"    },
-        { Constants.Keys.Error,                 "#FF0000"         },
-        { Constants.Keys.Foreground,            "#808080"    },
-        { Constants.Keys.ForegroundHighlight,   "#000000"       },
-        { Constants.Keys.MenubarForeground,     "#FFFF00"      },
-        { Constants.Keys.MenubarBackground,     "#008080"    },
-        { Constants.Keys.RangeHighBackground,   "#FF0000"         },
-        { Constants.Keys.RangeLowBackground,    "#00FF00"       },
-        { Constants.Keys.RangeMidBackground,    "#FFFF00"      },
-        { Constants.Keys.RangeHighForeground,   "#FF0000"         },
-        { Constants.Keys.RangeLowForeground,    "#00FFFF"        },
-        { Constants.Keys.RangeMidForeground,    "#FFFF00"      },
-        { Constants.Keys.HeaderBackground,      "#008080"    },
-        { Constants.Keys.HeaderForeground,      "#FFFF00"      }};
-
-    private readonly string[,] tokyoNightMap = {
-        { Constants.Keys.Background,            "transparent" },
-        { Constants.Keys.BackgroundHighlight,   "#00FFFF"        },
-        { Constants.Keys.ColCmdNormalUserSpace, "#808080"    },
-        { Constants.Keys.ColCmdLowPriority,     "#C0C0C0"        },
-        { Constants.Keys.ColCmdHighCpu,         "#FF0000"         },
-        { Constants.Keys.ColCmdIoBound,         "#00FFFF"        },
-        { Constants.Keys.ColCmdScript,          "#FFFF00"      },
-        { Constants.Keys.ColUserCurrentNonRoot, "#FFFF00"      },
-        { Constants.Keys.ColUserOtherNonRoot,   "#FF00FF"     },
-        { Constants.Keys.ColUserSystem,         "#C0C0C0"        },
-        { Constants.Keys.ColUserRoot,           "#FFFFFF"       },
-        { Constants.Keys.CommandForeground,     "#FF00FF"     },
-        { Constants.Keys.CommandBackground,     "#000080"    },
-        { Constants.Keys.Error,                 "#FF0000"         },
-        { Constants.Keys.Foreground,            "#00FFFF"        },
-        { Constants.Keys.ForegroundHighlight,   "#800080" },
-        { Constants.Keys.MenubarForeground,     "#FF00FF"     },
-        { Constants.Keys.MenubarBackground,     "#000080"    },
-        { Constants.Keys.RangeHighBackground,   "#FF0000"         },
-        { Constants.Keys.RangeLowBackground,    "#FF00FF"     },
-        { Constants.Keys.RangeMidBackground,    "#FF00FF"     },
-        { Constants.Keys.RangeHighForeground,   "#00FFFF"        },
-        { Constants.Keys.RangeLowForeground,    "#00FFFF"        },
-        { Constants.Keys.RangeMidForeground,    "#00FFFF"        },
-        { Constants.Keys.HeaderBackground,      "#0000FF"        },
-        { Constants.Keys.HeaderForeground,      "#FF00FF"     }};
-
-    private readonly string[,] matrixMap = {
-        { Constants.Keys.Background,            "transparent" },
-        { Constants.Keys.BackgroundHighlight,   "#00FF00"       },
-        { Constants.Keys.ColCmdNormalUserSpace, "#00FF00"       },
-        { Constants.Keys.ColCmdLowPriority,     "#008000"   },
-        { Constants.Keys.ColCmdHighCpu,         "#00FF00"       },
-        { Constants.Keys.ColCmdIoBound,         "#00FF00"       },
-        { Constants.Keys.ColCmdScript,          "#008000"   },
-        { Constants.Keys.ColUserCurrentNonRoot, "#008000"   },
-        { Constants.Keys.ColUserOtherNonRoot,   "#008000"   },
-        { Constants.Keys.ColUserSystem,         "#C0C0C0"        },
-        { Constants.Keys.ColUserRoot,           "#00FF00"       },
-        { Constants.Keys.CommandForeground,     "#000000"       },
-        { Constants.Keys.CommandBackground,     "#008000"   },
-        { Constants.Keys.Error,                 "#FF0000"         },
-        { Constants.Keys.Foreground,            "#00FF00"       },
-        { Constants.Keys.ForegroundHighlight,   "#000000"       },
-        { Constants.Keys.MenubarForeground,     "#000000"       },
-        { Constants.Keys.MenubarBackground,     "#008000"   },
-        { Constants.Keys.RangeHighBackground,   "#008000"   },
-        { Constants.Keys.RangeLowBackground,    "#00FF00"       },
-        { Constants.Keys.RangeMidBackground,    "#008000"   },
-        { Constants.Keys.RangeHighForeground,   "#000000"       },
-        { Constants.Keys.RangeLowForeground,    "#000000"       },
-        { Constants.Keys.RangeMidForeground,    "#008000"   },
-        { Constants.Keys.HeaderBackground,      "#00FF00"       },
-        { Constants.Keys.HeaderForeground,      "#000000"       }};
-    
-    private readonly string[,] solarMap = {
-        { Constants.Keys.Background,            "transparent" },
-        { Constants.Keys.BackgroundHighlight,   "#FFFF00"      },
-        { Constants.Keys.ColCmdNormalUserSpace, "#808080"    },
-        { Constants.Keys.ColCmdLowPriority,     "#808000"  },
-        { Constants.Keys.ColCmdHighCpu,         "#FF0000"         },
-        { Constants.Keys.ColCmdIoBound,         "#808000"  },
-        { Constants.Keys.ColCmdScript,          "#FFFF00"      },
-        { Constants.Keys.ColUserCurrentNonRoot, "#FFFF00"      },
-        { Constants.Keys.ColUserOtherNonRoot,   "#FFFF00"      },
-        { Constants.Keys.ColUserSystem,         "#FFFFFF"       },
-        { Constants.Keys.ColUserRoot,           "#FFFFFF"       },
-        { Constants.Keys.CommandForeground,     "#000000"       },
-        { Constants.Keys.CommandBackground,     "#808000"  },
-        { Constants.Keys.Error,                 "#FF0000"         },
-        { Constants.Keys.Foreground,            "#FFFF00"      },
-        { Constants.Keys.ForegroundHighlight,   "#000000"       },
-        { Constants.Keys.MenubarForeground,     "#000000"       },
-        { Constants.Keys.MenubarBackground,     "#808000"  },
-        { Constants.Keys.RangeHighBackground,   "#FF0000"         },
-        { Constants.Keys.RangeLowBackground,    "#FFFF00"      },
-        { Constants.Keys.RangeMidBackground,    "#808000"  },
-        { Constants.Keys.RangeHighForeground,   "#000000"       },
-        { Constants.Keys.RangeLowForeground,    "#000000"       },
-        { Constants.Keys.RangeMidForeground,    "#808000"  },
-        { Constants.Keys.HeaderBackground,      "#808000"  },
-        { Constants.Keys.HeaderForeground,      "#000000"       }};
 
     private readonly string[,] layoutAll = {
         { Constants.Keys.Ratio,   "0.4" },
@@ -273,6 +107,7 @@ public sealed class AppConfig
         this.fileSystem = fileSystem;
         this.iniConfig = new();
         LoadSections();
+        LoadThemes();
     }
 
     public AppConfig(IFileSystem fileSystem, Config iniConfig)
@@ -280,14 +115,9 @@ public sealed class AppConfig
         this.fileSystem = fileSystem;
         this.iniConfig = iniConfig;
         LoadSections();
+        LoadThemes();
     }
-
-    public ColourMode ColourMode
-    {
-        get => uxSection?.GetEnum(Constants.Keys.ColourMode, ColourMode.Auto) ?? ColourMode.Auto;
-        set => uxSection?.Add(Constants.Keys.ColourMode, value.ToString());
-    }
-
+    
     public bool ConfirmTaskDelete
     {
         get => uxSection?.GetBool(Constants.Keys.ConfirmTaskDelete, true) ?? true;
@@ -363,9 +193,10 @@ public sealed class AppConfig
 
             defaultTheme = value;
             
-            if (iniConfig.ConfigSections.Any(cs => cs.Name.Equals(value.Name, StringComparison.CurrentCultureIgnoreCase))) {
-                uxSection?.Add(Constants.Keys.DefaultTheme, value.Name);
-            }
+            ConsolePalette.PreferIndexedColours = 
+                TerminalCapabilities.ResolvePreferIndexed(defaultTheme.ColourMode, Environment.GetEnvironmentVariable);
+            
+            uxSection?.Add(Constants.Keys.DefaultTheme, defaultTheme.Name);
         }
     }
     
@@ -562,10 +393,9 @@ public sealed class AppConfig
             : new ConfigSection(Constants.Sections.UX);
 
         uxSection
-            .AddIfMissing(Constants.Keys.ColourMode, ColourMode.Auto.ToString())
             .AddIfMissing(Constants.Keys.ConfirmTaskDelete, true.ToString())
             .AddIfMissing(Constants.Keys.DefaultLayout, Constants.Sections.LayoutAll)
-            .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeColour)
+            .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeTaskmonDefault)
             .AddIfMissing(Constants.Keys.HighlightDaemons, true.ToString())
             .AddIfMissing(Constants.Keys.HighlightStatsColUpdate, true.ToString())
             .AddIfMissing(Constants.Keys.MetreStyle, MetreControlStyle.Dots.ToString())
@@ -582,51 +412,6 @@ public sealed class AppConfig
 
         if (!iniConfig.ContainsSection(uxSection.Name)) {
             iniConfig.AddConfigSection(uxSection);
-        }
-        
-        var themeMap = new Dictionary<string, string[,]> { 
-            [Constants.Sections.ThemeColour] = colourMap,
-            [Constants.Sections.ThemeMono] = monoMap,
-            [Constants.Sections.ThemeMsDos] = msDosMap,
-            [Constants.Sections.ThemeTokyoNight] = tokyoNightMap,
-            [Constants.Sections.ThemeMatrix] = matrixMap,
-            [Constants.Sections.ThemeSolar] = solarMap
-        };
-
-        foreach (string themeName in themeMap.Keys) {
-            if (!iniConfig.ContainsSection(themeName)) {
-                ConfigSection themeSection = new(themeName);
-                
-                for (int i = 0; i < themeMap[themeName].GetLength(dimension: 0); i++) {
-                    themeSection.AddIfMissing(themeMap[themeName][i, 0], themeMap[themeName][i, 1]);
-                }
-
-                iniConfig.AddConfigSection(themeSection);
-            }
-        }
-
-        List<ConfigSection> themeSections = iniConfig.ConfigSections
-            .Where(cs => cs.Name.StartsWith("theme-", StringComparison.CurrentCultureIgnoreCase))
-            .ToList();
-
-        foreach (ConfigSection configSection in themeSections) {
-            Theme? theme = allThemes.FirstOrDefault(t => t.Name.Equals(configSection.Name, StringComparison.CurrentCultureIgnoreCase));
-            if (theme != null) {
-                theme.Update(configSection);
-            }
-            else {
-                theme = new Theme(configSection);
-                allThemes.Add(theme);
-            }
-
-            // Convert any colour names to hex so they persist as hex on save.
-            theme.Normalize();
-        }
-
-        if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
-            defaultTheme = allThemes
-                .Where(t => t.Name == uxSection.GetString(Constants.Keys.DefaultTheme))
-                .First();
         }
 
         var layoutMap = new Dictionary<string, string[,]> {
@@ -675,7 +460,101 @@ public sealed class AppConfig
         }
     }
 
+    private void LoadThemes()
+    {
+        bool validThemePath = true;
+        
+        string themePath = !string.IsNullOrEmpty(DefaultConfigPath)
+            ? Path.Combine(DefaultConfigPath, Constants.ThemeDirectory)
+            : string.Empty;
+
+        validThemePath = !string.IsNullOrEmpty(themePath);
+        
+        if (validThemePath && !fileSystem.DirectoryExists(themePath)) {
+            if (!fileSystem.TryCreateDirectory(themePath)) {
+                validThemePath = false;
+            }
+        }
+
+        if (validThemePath) {
+            string[] themeFiles = fileSystem.GetFiles(themePath);
+            
+            foreach (string themeFile in themeFiles) {
+                string themeText = fileSystem.ReadAllText(themeFile);
+                
+                if (!TryParseTheme(themeText, out Theme? theme)) {
+                    continue;
+                }
+
+                theme!.Normalize();
+                
+                if (!allThemes.Any(t => t.Name.Equals(theme!.Name))) {
+                    allThemes.Add(theme!);
+                }
+            }
+        }
+        
+        Assembly asm = Assembly.GetExecutingAssembly();
+        
+        foreach (string name in asm.GetManifestResourceNames()) {
+            if (!name.EndsWith(Constants.ThemeExtension)) {
+                continue;
+            }
+
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            string themeText = reader.ReadToEnd();
+
+            if (!TryParseTheme(themeText, out Theme? theme)) {
+                Debug.Fail($"Failed to parse manifest asset {name}");
+                continue;
+            }
+            
+            theme!.Normalize();
+            
+            if (!allThemes.Any(t => t.Name.Equals(theme!.Name))) {
+                allThemes.Add(theme!);
+                string themeFilePath = Path.Combine(themePath, $"{theme!.Name}{Constants.ThemeExtension}");
+                fileSystem.WriteAllText(themeFilePath, themeText);
+            }
+        }
+
+        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
+
+        if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
+            DefaultTheme = allThemes
+                .Where(t => t.Name == uxSection.GetString(Constants.Keys.DefaultTheme))
+                .First();
+        }
+        else {
+            // Handle the case where the config file has been edited with a default-theme name that has not been loaded.
+            Debug.Assert(allThemes.Contains(defaultTheme));
+            
+            if (!allThemes.Contains(defaultTheme)) {
+                allThemes.Add(defaultTheme);
+            }
+
+            DefaultTheme = defaultTheme;
+        }
+    }
+
     public List<Layout> Layouts => allLayouts;
+
+    private bool TryParseTheme(string themeText, out Theme? theme)
+    {
+        theme = null;
+
+        try {
+            ConfigParser parser = new(themeText);
+            parser.Parse();
+            theme = new(parser.Sections[0]);
+            theme.Normalize();
+            return true;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.HandleException(ex);
+            return false;
+        }
+    }
     
     public List<Theme> Themes => allThemes;
 
@@ -684,6 +563,7 @@ public sealed class AppConfig
         try {
             iniConfig = config;
             LoadSections();
+            LoadThemes();
             return true;
         }
         catch (Exception ex) {
@@ -695,9 +575,8 @@ public sealed class AppConfig
     public bool TryLoad(string path)
     {
         try {
-            iniConfig = Config.FromFile(fileSystem, path);
-            LoadSections();
-            return true;
+            Config config = Config.FromFile(fileSystem, path);
+            return TryLoad(config);
         }
         catch (Exception ex) when (ex is FileNotFoundException || ex is IOException) {
             ExceptionHelper.HandleException(ex, $"Error loading config: ${ex.Message}.");

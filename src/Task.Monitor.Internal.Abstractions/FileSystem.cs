@@ -8,6 +8,17 @@ public sealed partial class FileSystem : IFileSystem
 
     public bool FileExists(string? path) => File.Exists(path);
 
+    public string[] GetFiles(string path)
+    {
+        try {
+            return Directory.GetFiles(path);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.HandleException(ex, $"Error on GetFiles '{path}'");
+            return [];
+        }
+    } 
+    
     public string ReadAllText(string path) => File.ReadAllText(path);
 
     public bool TryCreateDirectory(string path)
