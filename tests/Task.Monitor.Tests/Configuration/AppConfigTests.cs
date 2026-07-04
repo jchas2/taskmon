@@ -55,7 +55,7 @@ nprocs=-1
 
 [ux]
 confirm-task-delete=True
-default-theme=Classic HTop
+default-theme=Taskmon Default
 highlight-daemons=True
 highlight-stats-col-update=True
 metre-style=Dots
@@ -92,7 +92,7 @@ use-irix-cpu-reporting=True
         Assert.NotEmpty(appConfig.DefaultConfigFilePath);
 
         Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("Classic HTop", appConfig.DefaultTheme.Name);
+        Assert.Equal("Taskmon Default", appConfig.DefaultTheme.Name);
         //Assert.Equal(ConsolePalette.Transparent, appConfig.DefaultTheme.Background);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Blue,       appConfig.DefaultTheme.ColumnCommandLowPriority);
@@ -115,11 +115,11 @@ use-irix-cpu-reporting=True
         Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.MenubarBackground);
         Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.MenubarForeground);
         Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.RangeHighBackground);
-        Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.RangeHighForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeHighForeground);
         Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.RangeLowBackground);
-        Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.RangeLowForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeLowForeground);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
-        Assert.Equal(ConsolePalette.DarkYellow, appConfig.DefaultTheme.RangeMidForeground);
+        Assert.Equal(ConsolePalette.Black, appConfig.DefaultTheme.RangeMidForeground);
 
         Assert.Equal(Processor.DefaultDelayInMilliseconds, appConfig.DelayInMilliseconds);
         Assert.Equal(-1, appConfig.FilterPid);
@@ -202,7 +202,7 @@ use-irix-cpu-reporting=False
         Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.Background);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnCommandLowPriority);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandHighCpu);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.ColumnCommandHighCpu);
         Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandIoBound);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandScript);
@@ -221,11 +221,11 @@ use-irix-cpu-reporting=False
         Assert.Equal(ConsolePalette.DarkCyan,   appConfig.DefaultTheme.MenubarBackground);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.MenubarForeground);
         Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.RangeHighBackground);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.RangeHighForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeHighForeground);
         Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.RangeLowBackground);
-        Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.RangeLowForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeLowForeground);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeMidForeground);
 
         Assert.Equal(2000, appConfig.DelayInMilliseconds);
         Assert.Equal(123456, appConfig.FilterPid);
@@ -278,7 +278,7 @@ use-irix-cpu-reporting=False
         AppConfig appConfig = new(fileSystem.Object);
 
         Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("Classic HTop", appConfig.DefaultTheme.Name);
+        Assert.Equal("Taskmon Default", appConfig.DefaultTheme.Name);
     }
 
     [Fact]

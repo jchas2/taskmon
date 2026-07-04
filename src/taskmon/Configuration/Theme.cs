@@ -97,7 +97,7 @@ public sealed class Theme
 
     public Color ColumnCommandHighCpu
     {
-        get => GetColour(Constants.Keys.ColCmdHighCpu, ConsolePalette.Red);
+        get => GetColour(Constants.Keys.ColCmdHighCpu, ConsolePalette.Black);
         set => SetColour(Constants.Keys.ColCmdHighCpu, value);
     }
 
@@ -217,19 +217,19 @@ public sealed class Theme
 
     public Color RangeHighForeground
     {
-        get => GetColour(Constants.Keys.RangeHighForeground, ConsolePalette.White);
+        get => GetColour(Constants.Keys.RangeHighForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.RangeHighForeground, value);
     }
 
     public Color RangeLowForeground
     {
-        get => GetColour(Constants.Keys.RangeLowForeground, ConsolePalette.White);
+        get => GetColour(Constants.Keys.RangeLowForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.RangeLowForeground, value);
     }
 
     public Color RangeMidForeground
     {
-        get => GetColour(Constants.Keys.RangeMidForeground, ConsolePalette.DarkYellow);
+        get => GetColour(Constants.Keys.RangeMidForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.RangeMidForeground, value);
     }
 }
