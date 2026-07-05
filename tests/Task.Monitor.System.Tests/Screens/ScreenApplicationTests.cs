@@ -10,9 +10,10 @@ public sealed class ScreenApplicationTests
     public void Should_Register_Screen()
     {
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
-        ScreenApplication screenApp = new(terminalMock.Object);
-        
-        screenApp.RegisterScreen(new ScreenTests.TestScreen1(terminalMock.Object));
+        ForwardingTerminal terminal = new(terminalMock.Object);
+        ScreenApplication screenApp = new(terminal);
+
+        screenApp.RegisterScreen(new ScreenTests.TestScreen1(terminal));
         screenApp.ShowScreen<ScreenTests.TestScreen1>();
         
         terminalMock.Verify(terminal => terminal.WindowHeight, Times.Once);
@@ -23,8 +24,8 @@ public sealed class ScreenApplicationTests
     public void ShowScreen_Throws_InvalidOperationException_When_Screen_Is_Not_Registered()
     {
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
-        ScreenApplication screenApp = new(terminalMock.Object);
-        
+        ScreenApplication screenApp = new(new ForwardingTerminal(terminalMock.Object));
+
         Assert.Throws<InvalidOperationException>(screenApp.ShowScreen<ScreenTests.TestScreen2>);
     }
 
@@ -32,9 +33,10 @@ public sealed class ScreenApplicationTests
     public void Should_Set_OwnerScreen()
     {
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
-        ScreenApplication.ScreenApplicationContext appContext = new(terminalMock.Object);
-        
-        ScreenTests.TestScreen1 testScreen = new(terminalMock.Object);
+        ForwardingTerminal terminal = new(terminalMock.Object);
+        ScreenApplication.ScreenApplicationContext appContext = new(terminal);
+
+        ScreenTests.TestScreen1 testScreen = new(terminal);
         appContext.OwnerScreen = testScreen;
         
         terminalMock.Verify(terminal => terminal.WindowHeight, Times.Once);

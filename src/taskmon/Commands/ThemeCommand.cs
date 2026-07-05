@@ -18,7 +18,6 @@ public class ThemeCommand(string text, MainScreen mainScreen, AppConfig appConfi
         
         mainScreen.Close();
         mainScreen.Show();
-        //mainScreen.Draw();
     }
 
     public override bool IsEnabled => appConfig.Themes.Count > 0;

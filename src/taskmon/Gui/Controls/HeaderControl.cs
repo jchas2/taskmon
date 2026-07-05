@@ -242,7 +242,6 @@ public sealed class HeaderControl : Control
     protected override void OnLoad()
     {
         foreach (Control ctrl in Controls) {
-            ctrl.Load();
             ctrl.BackgroundColour = appConfig.DefaultTheme.Background;
             ctrl.ForegroundColour = appConfig.DefaultTheme.Foreground; 
         }
@@ -254,13 +253,13 @@ public sealed class HeaderControl : Control
             chart.MetreStyle = appConfig.MetreStyle;
         }
         
-        processor.ProcessorUpdated += OnProcessorUpdated; 
+        processor.ProcessorUpdated += OnProcessorUpdated;
+        
+        base.OnLoad();
     }
 
     protected override void OnResize()
     {
-        Clear();
-        
         foreach (Chart ctrl in charts) {
             ctrl.Visible = false;
         }
@@ -307,9 +306,10 @@ public sealed class HeaderControl : Control
                 charts[ord].Y = rowHeight * row + MinHeaderRows;
                 charts[ord].Width = colWidth - 1;
                 charts[ord].Height = rowHeight * (row + 1) == height ? rowHeight - 1 : rowHeight;                                                                                                                   
-                charts[ord].Resize();
             }                                                                                                                                                     
-        }           
+        }
+        
+        base.OnResize();
     }
 
     private void OnProcessorUpdated(object? sender, ProcessorEventArgs e)
@@ -320,7 +320,7 @@ public sealed class HeaderControl : Control
     
     protected override void OnUnload()
     {
-        base.OnUnload();
         processor.ProcessorUpdated -= OnProcessorUpdated;
+        base.OnUnload();
     }
 }

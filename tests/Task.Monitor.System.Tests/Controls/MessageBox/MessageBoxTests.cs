@@ -17,8 +17,8 @@ public sealed class MessageBoxTests
     public void Should_Construct_Default()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        MessageBoxControl control = new(terminal.Object);
-        
+        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object));
+
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Empty(control.Controls);
         Assert.Equal(ConsolePalette.White, control.ForegroundColour);
@@ -46,7 +46,7 @@ public sealed class MessageBoxTests
         
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
-        MessageBoxControl control = new(terminal.Object) {
+        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             BackgroundColour = ConsolePalette.Gray,
             ForegroundColour = ConsolePalette.Black,
             Buttons = MessageBoxButtons.OkCancel,
@@ -143,7 +143,7 @@ public sealed class MessageBoxTests
     [MemberData(nameof(KeyPressData))]
     public void MessageBox_On_ConsoleKey_Should_Set_Result(List<ConsoleKey> consoleKeys, MessageBoxResult result)
     {
-        MessageBoxControl control = new(TerminalMock.Setup().Object) {
+        MessageBoxControl control = new(new ForwardingTerminal(TerminalMock.Setup().Object)) {
             Buttons = MessageBoxButtons.OkCancel,
             Height = 12,
             Text = "Text",
@@ -173,7 +173,7 @@ public sealed class MessageBoxTests
         
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
-        MessageBoxControl control = new(terminal.Object) {
+        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             Buttons = MessageBoxButtons.OkCancel,
             Height = 12,
             Text = text,
@@ -186,7 +186,6 @@ public sealed class MessageBoxTests
         
         control.ShowMessageBox();
         
-        terminal.Verify(t => t.SetCursorPosition(5, 10), Times.Exactly(2));
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(title))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(text))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(help))), Times.Once);

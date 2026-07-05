@@ -186,8 +186,6 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnLoad()
     {
-        base.OnLoad();
-        
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
         
@@ -240,26 +238,24 @@ public partial class ProcessInfoControl : Control
         workerTask = AutoRefresh
             ? WorkerTask.Run(() => UpdateListViewItemsLoop(cancellationTokenSource.Token))
             : null;
+        
+        base.OnLoad();
     }
 
     protected override void OnResize()
     {
-        Clear();
-        
         processInfoView.X = X;
         processInfoView.Y = Y;
         processInfoView.Width = Width;
         processInfoView.Height = ProcessInfoViewHeight;
         processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width = ColumnInfoKeyWidth;
         processInfoView.ColumnHeaders[(int)InfoColumns.Value].Width = Width - ColumnInfoKeyWidth;
-        processInfoView.Resize();
         
         menuView.X = X;
         menuView.Y = processInfoView.Y + processInfoView.Height + ControlGutter;
         menuView.Height = Height - (ProcessInfoViewHeight + 1 + ControlGutter);
         menuView.Width = MenuViewWidth;
         menuView.ColumnHeaders[0].Width = MenuViewWidth;
-        menuView.Resize();
 
         tabControls.ForEach(ctrl => {
             ctrl.X = menuView.X + menuView.Width + ControlGutter;
@@ -270,7 +266,6 @@ public partial class ProcessInfoControl : Control
         
         modulesView.ColumnHeaders[(int)ModuleColumns.ModuleName].Width = ColumnModuleNameWidth;
         modulesView.ColumnHeaders[(int)ModuleColumns.FileName].Width = modulesView.Width - ColumnModuleNameWidth;
-        modulesView.Resize();
         
         threadsView.ColumnHeaders[(int)ThreadColumns.Id].Width = ColumnThreadIdWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.State].Width = ColumnThreadStateWidth;
@@ -285,15 +280,11 @@ public partial class ProcessInfoControl : Control
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].Width = ColumnThreadCpuTotalTimeWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].RightAligned = true;
         
-        threadsView.Resize();
-        
-        handlesView.Resize();
+        base.OnResize();
     }
 
     protected override void OnUnload()
     {
-        base.OnUnload();
-        
         cancellationTokenSource?.Cancel();
 
         try {
@@ -310,6 +301,8 @@ public partial class ProcessInfoControl : Control
         handlesView.Items.Clear();
         
         menuView.ItemClicked -= MenuViewOnItemClicked;
+        
+        base.OnUnload();
     }
 
     public int SelectedProcessId { get; set; } = -1;

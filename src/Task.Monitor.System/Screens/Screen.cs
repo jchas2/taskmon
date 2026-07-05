@@ -1,3 +1,4 @@
+using System.Drawing;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.InputBox;
 using Task.Monitor.System.Controls.MessageBox;
@@ -32,7 +33,17 @@ public partial class Screen : Control
             Height = 1,
             Visible = false
         };
-    } 
+    }
+
+    public override Color BackgroundColour
+    {
+        get => base.BackgroundColour;
+        set {
+            base.BackgroundColour = value;
+            messageBox.BackgroundColour = value;
+            inputBox.BackgroundColour = value;
+        }
+    }
 
     public void Close()
     {
@@ -71,6 +82,16 @@ public partial class Screen : Control
         focusedControl.GotFocus();
     }
     
+    public override Color ForegroundColour
+    {
+        get => base.ForegroundColour;
+        set {
+            base.ForegroundColour = value;
+            messageBox.ForegroundColour = value;
+            inputBox.ForegroundColour = value;
+        }
+    }
+
     private bool IsActive { get; set; } = false;
 
     protected override void OnClear()
@@ -108,19 +129,21 @@ public partial class Screen : Control
         else if (inputBox.Visible) {
             OnInputBoxKeyPressed(keyInfo, ref handled);
         }
-        // else {
-        //     base.OnKeyPressed(keyInfo, ref handled);
-        // }
     }
 
     protected override void OnLoad()
     {
-        base.OnLoad();
-        
+        messageBox.BackgroundColour = BackgroundColour;
+        messageBox.ForegroundColour = ForegroundColour;
         messageBox.Load();
+
+        inputBox.BackgroundColour = BackgroundColour;
+        inputBox.ForegroundColour = ForegroundColour;
         inputBox.Load();
 
         focusedControl = SelectNextControl(null, lookForward: true);
+        
+        base.OnLoad();
     }
 
     private void OnInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -154,6 +177,7 @@ public partial class Screen : Control
             onMessageBoxResult?.Invoke();
         }
 
+        Clear();
         Draw();
     }
     
@@ -162,6 +186,8 @@ public partial class Screen : Control
         messageBox.X = X + (Width / 2 - messageBox.Width / 2);
         messageBox.Y = Y + (Height / 2 - messageBox.Height / 2);
         messageBox.Resize();
+        
+        base.OnResize();
     }
     
     protected virtual void OnShown() { }
@@ -176,8 +202,8 @@ public partial class Screen : Control
 
     public void Show()
     {
-        Clear();
         Load();
+        Clear();
         Resize();
         Focus();
         Draw();

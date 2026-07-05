@@ -125,10 +125,13 @@ public sealed class MainScreen : Screen
     protected override void OnLoad()
     {
         Terminal.CursorVisible = false;
+
+        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
+        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
         
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
-            ctrl.ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+            ctrl.BackgroundColour = BackgroundColour;
+            ctrl.ForegroundColour = ForegroundColour;
         }
 
         activeControl = processControl;
@@ -156,17 +159,12 @@ public sealed class MainScreen : Screen
 
     protected override void OnResize()
     {
-        base.OnResize();
-        
-        Clear();
-
         int headerHeight = HeaderHeight;
         
         headerControl.X = 0;
         headerControl.Y = 0;
         headerControl.Height = headerHeight;
         headerControl.Width = Width;
-        headerControl.Resize();
         
         SizeControl(processControl);
         SizeControl(processInfoControl);
@@ -175,14 +173,14 @@ public sealed class MainScreen : Screen
         footerControl.Y = Height - FooterHeight;
         footerControl.Width = Width;
         footerControl.Height = FooterHeight;
-        footerControl.Resize();
+        
+        base.OnResize();
     }
     
     protected override void OnUnload()
     {
-        base.OnUnload();
-        
         processControl.ProcessItemSelected -= OnProcessItemSelected;
+        base.OnUnload();
         Terminal.CursorVisible = true;
     }
 
@@ -202,6 +200,7 @@ public sealed class MainScreen : Screen
         SizeControl(activeControl);
         
         activeControl.Load();
+        activeControl.Clear();
         activeControl.Resize();
 
         return (T)activeControl;
@@ -245,6 +244,5 @@ public sealed class MainScreen : Screen
         control.Y = headerHeight;
         control.Width = Width;
         control.Height = Height - headerHeight - FooterHeight;
-        control.Resize();
     }
 }
