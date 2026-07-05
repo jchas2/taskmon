@@ -18,13 +18,6 @@ public class HelpScreen : Screen
 
     protected override void OnDraw()
     {
-        DrawRectangle(
-            X,
-            Y,
-            Width,
-            Height,
-            runContext.AppConfig.DefaultTheme.Background);
-
         Terminal.SetCursorPosition(X, Y);
         Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.MenubarBackground;
         Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.MenubarForeground;
@@ -56,9 +49,12 @@ public class HelpScreen : Screen
     {
         Terminal.CursorVisible = false;
         
-        Color fg = runContext.AppConfig.DefaultTheme.Foreground;
         Color bg = runContext.AppConfig.DefaultTheme.Background;
+        Color fg = runContext.AppConfig.DefaultTheme.Foreground;
         Theme theme = runContext.AppConfig.DefaultTheme;
+
+        BackgroundColour = bg;
+        ForegroundColour = fg;
         
         helpText.Clear();
         helpText.AppendLine();
@@ -109,6 +105,8 @@ public class HelpScreen : Screen
   F8   Cycle between layouts.
   F9   Show information about this app and the system.
   F10  Exit App.".ToColour(fg, bg));
+        
+        base.OnLoad();
     }
 
     protected override void OnUnload()

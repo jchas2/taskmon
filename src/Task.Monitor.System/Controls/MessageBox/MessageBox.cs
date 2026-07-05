@@ -148,6 +148,8 @@ public sealed class MessageBox : Control
                  selected: !okFocused);
          }
 
+         Terminal.BackgroundColor = dialogColour;
+         Terminal.ForegroundColor = ConsolePalette.Black;
          Terminal.SetCursorPosition(X, ++y);
          Terminal.Write(spacer);
 

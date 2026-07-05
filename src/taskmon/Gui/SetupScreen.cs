@@ -458,20 +458,11 @@ public class SetupScreen : Screen
         var menuListViewItem = e.Item as MenuListViewItem;
         menuListViewItem!.AssociatedControl.Visible = true;
         
-        Clear();
-        Resize();
         Draw();
     }
 
     protected override void OnDraw()
     {
-        DrawRectangle(
-            X,
-            Y,
-            Width,
-            Height,
-            previewTheme.Background);
-
         Terminal.SetCursorPosition(X, Y);
         Terminal.BackgroundColor = previewTheme.MenubarBackground;
         Terminal.ForegroundColor = previewTheme.MenubarForeground;
@@ -483,18 +474,9 @@ public class SetupScreen : Screen
         Terminal.Write(menubar.ToBold());
         Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
 
-        Terminal.BackgroundColor = previewTheme.Background;
-        Terminal.ForegroundColor = previewTheme.Foreground;
-        
-        UpdateTheme(headerView);
+        UpdateTheme();
         headerView.Draw();
-        
-        UpdateTheme(menuView);
         menuView.Draw();
-
-        foreach (ListView ctrl in tabControls) {
-            UpdateTheme(ctrl);
-        }
         
         ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
         activeControl.Draw();
@@ -557,6 +539,9 @@ public class SetupScreen : Screen
     protected override void OnLoad()
     {
         Terminal.CursorVisible = false;
+
+        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
+        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
         
         foreach (Control control in Controls) {
             control.Load();
@@ -594,8 +579,10 @@ public class SetupScreen : Screen
         
         menuView.ItemClicked += MenuViewOnItemClicked;
         themeView.ItemClicked += ThemeViewOnItemClicked;
+        
+        base.OnLoad();
     }
-
+    
     private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
         Theme theme = runContext.AppConfig.Themes
@@ -607,14 +594,13 @@ public class SetupScreen : Screen
         ConsolePalette.PreferIndexedColours = 
             TerminalCapabilities.ResolvePreferIndexed(previewTheme.ColourMode, Environment.GetEnvironmentVariable);
 
+        UpdateTheme();
+        Clear();
         Draw();
     }
 
     protected override void OnResize()
     {
-        base.OnResize();
-        Clear();
-
         headerView.X = X;
         headerView.Y = Y + 2;
         headerView.Width = Width;
@@ -626,7 +612,6 @@ public class SetupScreen : Screen
         menuView.Height = Height - (headerView.Height + 4) - ControlGutter;
         menuView.Width = MenuViewWidth;
         menuView.ColumnHeaders[0].Width = MenuViewWidth;
-        menuView.Resize();
         
         foreach (ListView ctrl in tabControls) {
             ctrl.X = menuView.X + menuView.Width + ControlGutter;
@@ -634,17 +619,16 @@ public class SetupScreen : Screen
             ctrl.Height = menuView.Height;
             ctrl.Width = Width - (menuView.Width + ControlGutter);
             ctrl.ColumnHeaders[0].Width = ctrl.ShowCheckboxes ? ctrl.Width - ListView.CheckboxWidth : ctrl.Width;
-            ctrl.Resize();
         }
 
         generalView.ColumnHeaders[1].Width = 0;
         columnsView.ColumnHeaders[1].Width = 0;
+        
+        base.OnResize();
     }
 
     protected override void OnUnload()
     {
-        base.OnUnload();
-        
         menuView.ItemClicked -= MenuViewOnItemClicked;
         themeView.ItemClicked -= ThemeViewOnItemClicked;
 
@@ -657,6 +641,8 @@ public class SetupScreen : Screen
         }
 
         Terminal.CursorVisible = true;
+        
+        base.OnUnload();
     }
 
     private void SaveConfig()
@@ -672,13 +658,28 @@ public class SetupScreen : Screen
         }
     }
 
-    private void UpdateTheme(ListView listView)
+    private void UpdateTheme()
     {
-        listView.BackgroundHighlightColour = previewTheme.BackgroundHighlight;
-        listView.ForegroundHighlightColour = previewTheme.ForegroundHighlight;
-        listView.BackgroundColour = previewTheme.Background;
-        listView.ForegroundColour = previewTheme.Foreground;
-        listView.HeaderBackgroundColour = previewTheme.HeaderBackground;
-        listView.HeaderForegroundColour = previewTheme.HeaderForeground;
-    } 
+        BackgroundColour = previewTheme.Background;
+        ForegroundColour = previewTheme.Foreground;
+
+        foreach (Control ctrl in Controls) {
+            ctrl.BackgroundColour = previewTheme.Background;
+            ctrl.ForegroundColour = previewTheme.Foreground;
+        }
+
+        UpdateTheme(menuView);
+        
+        foreach (ListView ctrl in tabControls) {
+            UpdateTheme(ctrl);
+        }
+    }
+
+    private void UpdateTheme(ListView ctrl)
+    {
+        ctrl.BackgroundHighlightColour = previewTheme.BackgroundHighlight;
+        ctrl.ForegroundHighlightColour = previewTheme.ForegroundHighlight;
+        ctrl.HeaderBackgroundColour = previewTheme.HeaderBackground;
+        ctrl.HeaderForegroundColour = previewTheme.HeaderForeground;
+    }
 }

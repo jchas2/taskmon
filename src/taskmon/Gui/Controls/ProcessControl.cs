@@ -183,8 +183,6 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnLoad()
     {
-        base.OnLoad();
-
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
 
@@ -214,6 +212,8 @@ public sealed partial class ProcessControl : Control
         processor.ProcessorUpdated += ProcessorOnProcessorUpdated;
 
         LoadSortItems();
+        
+        base.OnLoad();
     }
 
     protected override void OnResize()
@@ -223,7 +223,6 @@ public sealed partial class ProcessControl : Control
         sortView.Width = SortControlWidth;
         sortView.Height = Height;
         sortView.ColumnHeaders[0].Width = SortControlWidth;
-        sortView.Resize();
 
         int pX = X;
         int pWidth = Width;
@@ -275,16 +274,16 @@ public sealed partial class ProcessControl : Control
         processView.ColumnHeaders[(int)Columns.CommandLine].Width =
             IsColumnVisible(Columns.CommandLine) ? commandLineWidth : 0;
 
-        processView.Resize();
+        base.OnResize();
     }
 
     protected override void OnUnload()
     {
-        base.OnUnload();
-
         sortView.ItemSelected -= SortViewOnItemSelected;
         processView.ItemSelected -= ProcessViewOnItemSelected;
         processor.ProcessorUpdated -= ProcessorOnProcessorUpdated;
+        
+        base.OnUnload();
     }
 
     private void ProcessorOnProcessorUpdated(object? sender, ProcessorEventArgs e)

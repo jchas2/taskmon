@@ -29,7 +29,7 @@ public class Control
         controlCollection = new ControlCollection(this);
     }
 
-    public Color BackgroundColour { get; set; } = ConsolePalette.Black;
+    public virtual Color BackgroundColour { get; set; } = ConsolePalette.Black;
 
     private bool CanFocus => Visible && TabStop;
 
@@ -63,13 +63,16 @@ public class Control
         int height,
         Color colour)
     {
-        using TerminalColourRestorer _ = new();
-        Terminal.BackgroundColor = colour;
-        
+        AnsiScreenBuffer frame = new();
+        frame.SetColour(colour, colour);
+
         for (int i = y; i < y + height; i++) {
-            terminal.SetCursorPosition(x, i);
-            terminal.WriteEmptyLineTo(width);
+            frame.MoveTo(x, i);
+            frame.Append(' ', width);
         }
+        
+        frame.ResetColour();
+        terminal.Write(frame.AsSpan());
     }
 
     public void Draw()
@@ -90,7 +93,7 @@ public class Control
 
     internal bool Focused { get; set; } = false;
     
-    public Color ForegroundColour { get; set; } = ConsolePalette.White;
+    public virtual Color ForegroundColour { get; set; } = ConsolePalette.White;
     
     internal Control GetControlByIndex(int index)
     {
@@ -205,7 +208,12 @@ public class Control
         // }
     }
 
-    protected virtual void OnResize() { }
+    protected virtual void OnResize()
+    {
+        foreach (Control control in Controls) {
+            control.Resize();
+        }
+    }
 
     protected virtual void OnUnload()
     {

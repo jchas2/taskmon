@@ -63,6 +63,7 @@ public class ScreenApplication
                     // Resize Events.
                     if (screenWidth != terminal.WindowWidth || screenHeight != terminal.WindowHeight) {
                         FitScreenToConsole(currScreen);
+                        currScreen.Clear();
                         currScreen.Resize();
                         currScreen.Draw();
                         screenWidth = terminal.WindowWidth;
@@ -74,6 +75,7 @@ public class ScreenApplication
                     if (inResize) {
                         Thread.Sleep(30);
                         FitScreenToConsole(currScreen);
+                        currScreen.Clear();
                         currScreen.Resize();
                         currScreen.Draw();
                         inResize = false;

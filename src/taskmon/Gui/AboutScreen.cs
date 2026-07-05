@@ -93,27 +93,33 @@ public sealed class AboutScreen : Screen
 
     private void DrawInternal()
     {
-        runContext.Terminal.SetCursorPosition(X, Y);
-        runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.MenubarBackground;
-        runContext.Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.MenubarForeground;
+        AnsiScreenBuffer frame = new();
+        frame.MoveTo(X, Y);
+        
+        frame.SetColour(
+            runContext.AppConfig.DefaultTheme.MenubarForeground, 
+            runContext.AppConfig.DefaultTheme.MenubarBackground);
         
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
-        Terminal.WriteEmptyLineTo(offsetX);
-        Terminal.Write(menubar.ToBold());
-        Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
 
-        runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
-        runContext.Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.Foreground;
-
+        frame.Append(' ', offsetX);
+        frame.Append(menubar.ToBold());
+        frame.Append(' ', Width - offsetX - menubar.Length);
+        
+        frame.SetColour(
+            runContext.AppConfig.DefaultTheme.Foreground, 
+            runContext.AppConfig.DefaultTheme.Background);
+        
         offsetX = Terminal.WindowWidth / 2 - version.Length / 2;
-        Terminal.WriteEmptyLineTo(offsetX);
-        Terminal.Write(version.ToBold());
-        Terminal.WriteEmptyLineTo(Width - offsetX - version.Length);
+        
+        frame.Append(' ', offsetX);
+        frame.Append(version.ToBold());
+        frame.Append(' ', Width - offsetX - version.Length);
         
         int offsetY = 2;
 
         for (int i = 0; i < offsetY; i++) {
-            runContext.Terminal.WriteEmptyLine();
+            frame.Append(' ', Width);
         }
 
         int logoX = 4;
@@ -122,10 +128,14 @@ public sealed class AboutScreen : Screen
             var (text, _) = Art[i];
             Color colour = ConsolePalette.FromHex(colors[i], ConsolePalette.Black);
             string colourCode = ConsolePalette.ForegroundSgr(colour);
-            runContext.Terminal.WriteEmptyLineTo(logoX);
-            runContext.Terminal.WriteLine(colourCode + text + "\u001b[K");
+            frame.Append(' ', logoX);
+            frame.Append(colourCode + text + "\u001b[K");
+            frame.Append(Environment.NewLine);
         }
 
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+        
         string last = colors[^1];
 
         for (int i = colors.Length - 1; i > 0; i--) {
@@ -236,14 +246,15 @@ public sealed class AboutScreen : Screen
 
     protected override void OnLoad()
     {
-        base.OnLoad();
-
         for (int i = 0; i < Art.Length; i++) {
             colors[i] = Art[i].hex;
         }
 
-        statsView.BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
-        statsView.ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
+        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+        
+        statsView.BackgroundColour = BackgroundColour;
+        statsView.ForegroundColour = ForegroundColour;
         
         statsView.Items.Add(new ListViewItem(new[] { "Machine:", "" }));
         statsView.Items.Add(new ListViewItem(new[] { "Operating System:", "" }));
@@ -282,13 +293,13 @@ public sealed class AboutScreen : Screen
 
         runContext.Terminal.CursorVisible = false;
         runContext.Processor.ProcessorUpdated += ProcessorOnProcessorUpdated;
+        
+        base.OnLoad();
     }
 
     protected override void OnResize()
     {
-        base.OnResize();
         runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
-        Clear();
 
         statsView.Y = Y + 3;
         statsView.X = X + Art.Max(arr => arr.text.Length) + 12;
@@ -297,15 +308,18 @@ public sealed class AboutScreen : Screen
 
         statsView.ColumnHeaders[0].Width = 25;
         statsView.ColumnHeaders[1].Width = statsView.Width - statsView.ColumnHeaders[0].Width;
+        
+        base.OnResize();
     }
 
     protected override void OnUnload()
     {
-        base.OnUnload();
         statsView.Items.Clear();
         
         runContext.Terminal.CursorVisible = true;
         runContext.Processor.ProcessorUpdated -= ProcessorOnProcessorUpdated;
+        
+        base.OnUnload();
     }
     
     private void ProcessorOnProcessorUpdated(object? sender, ProcessorEventArgs e)

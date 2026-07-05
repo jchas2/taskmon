@@ -18,8 +18,8 @@ public sealed class InputBoxTests
     public void Should_Construct_Default()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        InputBoxControl control = new(terminal.Object);
-        
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object));
+
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Empty(control.Controls);
         Assert.Equal(ConsolePalette.White, control.ForegroundColour);
@@ -44,7 +44,7 @@ public sealed class InputBoxTests
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
-        InputBoxControl control = new(terminal.Object) {
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             BackgroundColour = ConsolePalette.Gray,
             ForegroundColour = ConsolePalette.Black,
             Height = 1,
@@ -83,8 +83,8 @@ public sealed class InputBoxTests
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
         
-        InputBoxControl control = new(terminal.Object) {
-            X = 0, 
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
+            X = 0,
             Y = 0, 
             Width = 42, 
             Height = 1,
@@ -103,8 +103,8 @@ public sealed class InputBoxTests
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
 
-        InputBoxControl control = new(terminal.Object) {
-            X = 0, 
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
+            X = 0,
             Y = 0, 
             Width = 42, 
             Height = 1,
@@ -124,7 +124,6 @@ public sealed class InputBoxTests
                 control: false), 
             ref handled);
          
-        terminal.Verify(t => t.SetCursorPosition(0, 0), Times.AtLeastOnce);
         terminal.Verify(t => t.Write("H"), Times.Once);
         
         Assert.Equal("H", control.Text);
