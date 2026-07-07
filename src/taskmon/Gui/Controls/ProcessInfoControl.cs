@@ -23,7 +23,8 @@ public partial class ProcessInfoControl : Control
     private readonly ListView handlesView;
     private readonly List<ListView> tabControls = [];
     private WorkerTask? workerTask;
-    
+    private bool modulesLoaded;
+
     private CancellationTokenSource? cancellationTokenSource;
 
     private const int ControlGutter = 1;
@@ -31,6 +32,8 @@ public partial class ProcessInfoControl : Control
     private const int MenuViewWidth = 10;
 
     private const string MsgNotYetImplemented = "Not yet implemented on this OS";
+    private const string MsgThreadsNotLoaded = "Threads could not be loaded";
+    private const string MsgModulesNotLoaded = "Modules could not be loaded";
 
     public ProcessInfoControl(
         IProcessService processService,
@@ -67,6 +70,7 @@ public partial class ProcessInfoControl : Control
             .Add(new ListViewColumnHeader(""));
 
         threadsView = new ListView(terminal) {
+            EmptyListViewText = MsgThreadsNotLoaded,
             TabStop = true,
             TabIndex = 3,
             Visible = true
@@ -83,7 +87,7 @@ public partial class ProcessInfoControl : Control
             .Add(new ListViewColumnHeader("TOTAL TIME"));
         
         modulesView = new ListView(terminal) {
-            EmptyListViewText = MsgNotYetImplemented,
+            EmptyListViewText = MsgModulesNotLoaded,
             TabStop = true,
             TabIndex = 4,
             Visible = false
@@ -124,7 +128,8 @@ public partial class ProcessInfoControl : Control
     {
         var menuListViewItem = e.Item as MenuListViewItem;
         SetActiveControl(menuListViewItem!.AssociatedControl);
-        
+        menuListViewItem.LoadItems?.Invoke();
+
         Clear();
         Resize();
         Draw();
@@ -207,27 +212,28 @@ public partial class ProcessInfoControl : Control
 
         menuView.Items.Add(
             new MenuListViewItem(
-                threadsView, 
+                threadsView,
                 "THREADS",
                 appConfig.DefaultTheme.Background,
                 appConfig.DefaultTheme.Foreground));
-        
+
         menuView.Items.Add(
             new MenuListViewItem(
                 modulesView, "MODULES",
                 appConfig.DefaultTheme.Background,
-                appConfig.DefaultTheme.Foreground));
-        
+                appConfig.DefaultTheme.Foreground) {
+                LoadItems = TryUpdateListViewModuleItems
+            });
+
         menuView.Items.Add(
             new MenuListViewItem(
-                handlesView, 
+                handlesView,
                 "HANDLES",
                 appConfig.DefaultTheme.Background,
                 appConfig.DefaultTheme.Foreground));
 
         TryLoadProcessInfo();
         TryUpdateListViewThreadItems();
-        TryUpdateListViewModuleItems();
         SetActiveControl(threadsView);
 
         menuView.SetFocus();
@@ -236,7 +242,7 @@ public partial class ProcessInfoControl : Control
         cancellationTokenSource = new CancellationTokenSource();
 
         workerTask = AutoRefresh
-            ? WorkerTask.Run(() => UpdateListViewItemsLoop(cancellationTokenSource.Token))
+            ? WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token))
             : null;
         
         base.OnLoad();
@@ -299,6 +305,8 @@ public partial class ProcessInfoControl : Control
         modulesView.Items.Clear();
         threadsView.Items.Clear();
         handlesView.Items.Clear();
+
+        modulesLoaded = false;
         
         menuView.ItemClicked -= MenuViewOnItemClicked;
         
@@ -371,7 +379,14 @@ public partial class ProcessInfoControl : Control
     
     private void TryUpdateListViewModuleItems()
     {
+        if (modulesLoaded) {
+            return;
+        }
+
         try {
+            Control.DrawingLockAcquire();
+            modulesView.Items.Clear();
+
             List<ModuleInfo> modules = moduleService.GetModules(SelectedProcessId)
                 .OrderBy(m => m.ModuleName)
                 .ToList();
@@ -379,9 +394,14 @@ public partial class ProcessInfoControl : Control
             foreach (var moduleInfo in modules) {
                 modulesView.Items.Add(new ModuleListViewItem(moduleInfo, appConfig));
             }
+
+            modulesLoaded = true;
         }
         catch (Exception ex) {
             ExceptionHelper.HandleException(ex);
+        }
+        finally {
+            Control.DrawingLockRelease();
         }
     }
     
@@ -444,14 +464,14 @@ public partial class ProcessInfoControl : Control
         }
     }
     
-    private void UpdateListViewItemsLoop(CancellationToken token)
+    private void UpdateListViewThreadItemsLoop(CancellationToken token)
     {
         while (!token.IsCancellationRequested) {
             if (threadsView.Visible) {
                 TryUpdateListViewThreadItems();
                 Draw();
             }
-            Thread.Sleep(1500);
+            Thread.Sleep(1000);
         }
     }
 }

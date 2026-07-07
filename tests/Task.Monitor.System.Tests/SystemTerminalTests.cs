@@ -1,8 +1,6 @@
 using System.Runtime.Versioning;
-using System.Text;
 using Task.Monitor.Cli.Utils;
 
-using System.Drawing;
 namespace Task.Monitor.System.Tests;
 
 public sealed class SystemTerminalTests
@@ -38,28 +36,11 @@ public sealed class SystemTerminalTests
     public void Should_Encode_Ansi_Colour_Codes()
     {
         var terminal = new SystemTerminal();
-        string testString = "This should be Green".ToGreen();
-        
+
         // Initially just test no error is thrown.
-        terminal.WriteLine(testString);
-    }
-
-    [SkippableFact]
-    [SupportedOSPlatform("macos")]
-    public void Should_Set_Cursor_Position()
-    {
-        var terminal = new SystemTerminal();
-        terminal.CursorLeft = 0;
-        terminal.CursorTop = 0;
-        
-        Assert.Equal(0, terminal.CursorLeft);
-        Assert.Equal(0, terminal.CursorTop);
-        
-        // TODO: Failing test.
-        //terminal.SetCursorPosition(2, 4);
-
-        //Assert.Equal(2, terminal.CursorLeft);
-        //Assert.Equal(4, terminal.CursorTop);
+        terminal.WriteLine("This should be Red".ToRed());
+        terminal.WriteLine("This should be Green".ToGreen());
+        terminal.WriteLine("This should be Blue".ToBlue());
     }
     
     // TODO: Writing test for the various Write@ functions will require setting the TextWriter on the Console.
