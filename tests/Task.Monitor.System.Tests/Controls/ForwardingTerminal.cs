@@ -11,8 +11,8 @@ public sealed class ForwardingTerminal(ISystemTerminal inner) : ISystemTerminal
     public void Write(ReadOnlySpan<char> chars) => inner.Write(chars.ToString());
 
     public Color BackgroundColor { get => inner.BackgroundColor; set => inner.BackgroundColor = value; }
-    public int CursorLeft { get => inner.CursorLeft; set => inner.CursorLeft = value; }
-    public int CursorTop { get => inner.CursorTop; set => inner.CursorTop = value; }
+    public int CursorLeft { set => inner.CursorLeft = value; }
+    public int CursorTop { set => inner.CursorTop = value; }
     public bool CursorVisible { get => inner.CursorVisible; set => inner.CursorVisible = value; }
     public Color ForegroundColor { get => inner.ForegroundColor; set => inner.ForegroundColor = value; }
     public bool KeyAvailable => inner.KeyAvailable;

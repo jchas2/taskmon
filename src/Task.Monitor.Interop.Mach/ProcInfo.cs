@@ -5,7 +5,11 @@ namespace Task.Monitor.Interop.Mach;
 public sealed class ProcInfo
 {
     public const int MAXCOMLEN = 16;
+    public const int MAXPATHLEN = 1024;
     public const int PROC_PIDTASKALLINFO = 2;
+    public const int PROC_PIDREGIONPATHINFO = 8;
+
+    public const uint VM_MEMORY_DYLIB = 33;
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct proc_bsdinfo
@@ -70,5 +74,52 @@ public sealed class ProcInfo
         int flavor,
         ulong arg,
         proc_taskallinfo* buffer,
+        int bufferSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct proc_regioninfo
+    {
+        public uint  pri_protection;
+        public uint  pri_max_protection;
+        public uint  pri_inheritance;
+        public uint  pri_flags;
+        public ulong pri_offset;
+        public uint  pri_behavior;
+        public uint  pri_user_wired_count;
+        public uint  pri_user_tag;
+        public uint  pri_pages_resident;
+        public uint  pri_pages_shared_now_private;
+        public uint  pri_pages_swapped_out;
+        public uint  pri_pages_dirtied;
+        public uint  pri_ref_count;
+        public uint  pri_shadow_depth;
+        public uint  pri_share_mode;
+        public uint  pri_private_pages_resident;
+        public uint  pri_shared_pages_resident;
+        public uint  pri_obj_id;
+        public uint  pri_depth;
+        public ulong pri_address;
+        public ulong pri_size;
+    }
+
+    // The embedded vnode_info block (struct vnode_info from <sys/proc_info.h>) is
+    // opaque here: we only need the region info and the trailing path, so it is a
+    // fixed-size blob that keeps prp_vip_path at the correct offset.
+    private const int VnodeInfoSize = 152;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct proc_regionwithpathinfo
+    {
+        public proc_regioninfo prp_prinfo;
+        public fixed byte      prp_vnode_info[VnodeInfoSize];
+        public fixed byte      prp_vip_path[MAXPATHLEN];
+    }
+
+    [DllImport(Libraries.LibProc, SetLastError = true)]
+    public static extern unsafe int proc_pidinfo(
+        int pid,
+        int flavor,
+        ulong arg,
+        proc_regionwithpathinfo* buffer,
         int bufferSize);
 }

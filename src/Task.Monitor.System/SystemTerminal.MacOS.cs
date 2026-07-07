@@ -18,9 +18,6 @@ public partial class SystemTerminal : ISystemTerminal
         }
     }
     
-    private void EnableAnsiTerminalCodesInternal()
-    {
-        
-    }
+    private void EnableAnsiTerminalCodesInternal() { }
 #endif
 }

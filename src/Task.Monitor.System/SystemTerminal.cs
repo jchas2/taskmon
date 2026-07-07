@@ -4,6 +4,7 @@ using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System;
 
+// Simple Console wrapper that helps manage cross-platform issues with terminal support.
 public partial class SystemTerminal : ISystemTerminal
 {
     private const int MaxStackChars = 256;
@@ -31,14 +32,14 @@ public partial class SystemTerminal : ISystemTerminal
 
     public int CursorLeft
     {
-        get => Console.CursorLeft;
-        set => Console.CursorLeft = value;
+        // See SetCursorPosition comments.
+        set => Console.Out.Write($"\u001b[{value + 1}G");
     }
 
     public int CursorTop
     {
-        get => Console.CursorTop;
-        set => Console.CursorTop = value;
+        // See SetCursorPosition comments.
+        set => Console.Out.Write($"\u001b[{value + 1}d");
     }
 
     public bool CursorVisible
@@ -69,15 +70,19 @@ public partial class SystemTerminal : ISystemTerminal
 
     public void SetCursorPosition(int left, int top)
     {
-        // During Resize events this will throw on Windows if we don't mitigate the difference
-        // between window size and buffer size. Ensure left, top are within buffer range.
-        left = Math.Clamp(left, 0, Math.Max(0, Console.BufferWidth - 1));
-        top = Math.Clamp(top, 0, Math.Max(0, Console.BufferHeight - 1));
-
-        try {
-            Console.SetCursorPosition(left, top);
+        if (left < 0) {
+            left = 0;
         }
-        catch (ArgumentOutOfRangeException) { }
+
+        if (top < 0) {
+            top = 0;
+        }
+
+        // Note: Some terminals (like ghostty) rely on env var TERMINFO which gets stripped undo sudo on Unix
+        // and the underlying Console.SetCursorPosition implementation cannot resolve terminal capabilities,
+        // (using the terminfo db) causing addressing to misfire. This can cause the screen to "jump around".
+        // We emit the raw ANSI codes here as we are only supporting ANSI aware terminals.
+        Console.Out.Write($"\u001b[{top + 1};{left + 1}H");
     }
     public int WindowWidth => Console.WindowWidth;
     public int WindowHeight => Console.WindowHeight;

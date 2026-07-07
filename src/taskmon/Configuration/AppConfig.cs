@@ -83,14 +83,10 @@ public sealed class AppConfig
                         Constants.AppName);
                 }
 
-                if (fileSystem.DirectoryExists(userPath)) {
+                if (fileSystem.DirectoryExists(userPath) || fileSystem.TryCreateDirectory(userPath)) {
                     return userPath;
                 }
-
-                if (fileSystem.TryCreateDirectory(userPath)) {
-                    return userPath;
-                }
-
+                
                 string appPath = AppContext.BaseDirectory;
                 return fileSystem.DirectoryExists(appPath) ? appPath : null;
             }
@@ -544,7 +540,7 @@ public sealed class AppConfig
             return true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.HandleException(ex, $"Error parsing Ini: {ex.Message}");
             return false;
         }
     }

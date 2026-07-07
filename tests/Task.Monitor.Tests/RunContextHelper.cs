@@ -30,8 +30,6 @@ internal class RunContextHelper
         terminal.Setup(t => t.WindowWidth).Returns(32);
         terminal.Setup(t => t.BackgroundColor).Returns(ConsolePalette.Black);
         terminal.Setup(t => t.ForegroundColor).Returns(ConsolePalette.White);
-        terminal.Setup(t => t.CursorLeft).Returns(0);
-        terminal.Setup(t => t.CursorTop).Returns(0);
         terminal.Setup(t => t.KeyAvailable).Returns(false);
     }
 

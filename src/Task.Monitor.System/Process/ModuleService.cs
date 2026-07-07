@@ -2,7 +2,7 @@
 
 namespace Task.Monitor.System.Process;
 
-public partial class ModuleService
+public partial class ModuleService : IModuleService
 {
     public virtual List<ModuleInfo> GetModules(int pid)
     {

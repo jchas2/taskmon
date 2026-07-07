@@ -57,52 +57,58 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
             
             case ConsoleKey.Backspace:
                 if (textBuffer.MoveBackwards()) {
-                    Terminal.CursorLeft--;
-                    Terminal.Write(textBuffer.Text.Substring(textBuffer.CursorBufferPosition) + " ");
-                    Terminal.CursorLeft -= textBuffer.Text.Length - textBuffer.CursorBufferPosition + 1;
+                    // Redraw the tail from the caret, plus a space to clear the vacated cell.
+                    PositionCaret();
+                    Terminal.Write(textBuffer.Text[textBuffer.CursorBufferPosition..] + " ");
+                    PositionCaret();
                 }
                 break;
-            
+
             case ConsoleKey.Delete:
                 if (textBuffer.Delete()) {
-                    Terminal.Write(textBuffer.Text.Substring(textBuffer.CursorBufferPosition) + " ");
-                    Terminal.CursorLeft -= textBuffer.Length - textBuffer.CursorBufferPosition + 1;
+                    PositionCaret();
+                    Terminal.Write(textBuffer.Text[textBuffer.CursorBufferPosition..] + " ");
+                    PositionCaret();
                 }
                 break;
-            
+
             case ConsoleKey.LeftArrow:
                 if (textBuffer.MoveLeft()) {
-                    Terminal.CursorLeft--;
+                    PositionCaret();
                 }
                 break;
-            
+
             case ConsoleKey.RightArrow:
                 if (textBuffer.MoveRight()) {
-                    Terminal.CursorLeft++;
+                    PositionCaret();
                 }
                 break;
-            
+
             case ConsoleKey.Insert:
                 textBuffer.InsertMode = !textBuffer.InsertMode;
                 break;
-            
+
             default:
                 if (!textBuffer.Add(keyInfo.KeyChar)) {
                     break;
                 }
 
                 if (textBuffer.InsertMode) {
-                    int currentCursorPosition = Terminal.CursorLeft;
+                    // Redraw from the inserted character to the end of the text.
+                    Terminal.CursorLeft = X + textBuffer.CursorBufferPosition - 1;
                     Terminal.Write(textBuffer.Text[(textBuffer.CursorBufferPosition - 1)..]);
-                    Terminal.CursorLeft = currentCursorPosition + 1;
                 }
                 else {
                     Terminal.Write(keyInfo.KeyChar);
                 }
 
+                PositionCaret();
                 break;
         }
     }
+
+    // The screen caret is always at column X + the buffer caret index on the box's row.
+    private void PositionCaret() => Terminal.CursorLeft = X + textBuffer.CursorBufferPosition;
 
     public InputBoxResult Result { get; private set; } = InputBoxResult.Enter;
 

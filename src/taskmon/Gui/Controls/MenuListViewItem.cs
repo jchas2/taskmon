@@ -20,4 +20,5 @@ public class MenuListViewItem : ListViewItem
             foregroundColor) => this.AssociatedControl = associatedControl;
     
     public Control AssociatedControl { get; }
+    public Action? LoadItems { get; init; }
 }
