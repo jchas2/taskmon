@@ -40,10 +40,10 @@ public sealed class FilterControlTests
         
         ctrl.Draw();
         
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Enter"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("ENTER"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Done"))), Times.Once);
         
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Esc"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("ESC"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Clear"))), Times.Once);
         
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Filter: "))), Times.Once);

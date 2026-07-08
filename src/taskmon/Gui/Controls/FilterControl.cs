@@ -31,7 +31,7 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
         int nchars = 0;
         
         nchars += KeyBindControl.Draw(
-            "Enter",
+            "ENTER",
             "Done",
             nchars,
             Y,
@@ -41,7 +41,7 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
             Terminal);
 
         nchars += KeyBindControl.Draw(
-            "Esc",
+            "ESC",
             "Clear",
             nchars,
             Y,
