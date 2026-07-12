@@ -10,11 +10,20 @@ public static class ProcessUtils
         if (!TryGetProcessByPid(pid, out SysDiag::Process? process) || process == null) {
             return false;
         }
-        
-        process.Kill(entireProcessTree: true);
-        bool result = process.WaitForExit(timeOutMilliseconds);
-        process.Dispose();
-        return result;
+
+        try {
+            process.Kill(entireProcessTree: true);
+            bool result = process.WaitForExit(timeOutMilliseconds);
+            process.Dispose();
+            return result;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Exception occurred terminating process {pid}.");
+            return false;
+        }
+        finally {
+            process?.Dispose();
+        }
     }
     
     internal static bool TryGetProcessByPid(int pid, out SysDiag::Process? process)
@@ -24,7 +33,7 @@ public static class ProcessUtils
             return true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex, $"Failed GetProcessById() for Pid {pid}");
+            ExceptionHelper.LogException(ex, $"Failed GetProcessById() for Pid {pid}.");
             process = null;
             return false;
         }

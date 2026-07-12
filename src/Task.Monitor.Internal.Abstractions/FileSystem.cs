@@ -14,7 +14,7 @@ public sealed partial class FileSystem : IFileSystem
             return Directory.GetFiles(path);
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex, $"Error on GetFiles '{path}'");
+            ExceptionHelper.LogException(ex, $"Error on GetFiles '{path}'");
             return [];
         }
     } 
@@ -27,7 +27,7 @@ public sealed partial class FileSystem : IFileSystem
             return DirectoryExists(path) || CreateDirectoryInternal(path);
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex, $"Error creating directory '{path}'");
+            ExceptionHelper.LogException(ex, $"Error creating directory '{path}'");
             return false;
         }
     }

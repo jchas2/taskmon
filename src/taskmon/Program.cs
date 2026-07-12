@@ -1,8 +1,4 @@
-﻿#if DEBUG
-//    #define DEBUG_TRACE_LISTENER 
-#endif
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using Task.Monitor.System;
@@ -70,13 +66,10 @@ class Program
             var version = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "Unknown";
-            Console.WriteLine($"taskmon version {version}");
+            Console.WriteLine($"{Constants.AppName} version {version}");
             return 0;
         }
         
-#if DEBUG_TRACE_LISTENER
-        FormattedTextWriterTraceListener.Initialise();
-#endif
         ProcessService processService = new();
         SystemTerminal terminal = new();
         ModuleService moduleService = new();

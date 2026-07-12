@@ -1,5 +1,5 @@
 using System.CommandLine;
-using System.Reflection;
+using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
@@ -47,7 +47,7 @@ public sealed class TaskMgrApp(RunContext runContext)
             name: "--debug",
             description: "Pause execution on startup until a debugger is attached to the process.");
 
-        RootCommand rootCommand = new("Task.Monitorfor the command line.") {
+        RootCommand rootCommand = new("Task Monitor for the command line.") {
             pidOption,
             usernameOption,
             processOption,
@@ -78,8 +78,21 @@ public sealed class TaskMgrApp(RunContext runContext)
                     assignmentAction.Invoke(optionValue);
                 }
             }            
+
+            string? logPath = runContext.AppConfig.DefaultLogPath;
+
+            if (!string.IsNullOrEmpty(logPath)) {
+                if (runContext.FileSystem.DirectoryExists(logPath)) {
+                    FormattedTextWriterTraceListener.Initialise(
+                        logPath, 
+                        maxBytes: 2 * 1024 * 1024, 
+                        maxFiles: 16,
+                        Constants.AppName);
+                }
+            }
             
-            // First load configuration from disk.
+            Trace.WriteLine($"{Constants.AppName} started.");
+            
             string? configPath = runContext.AppConfig.DefaultConfigFilePath;
             
             if (!string.IsNullOrEmpty(configPath)) {
@@ -90,7 +103,7 @@ public sealed class TaskMgrApp(RunContext runContext)
                     runContext.AppConfig.TrySave(configPath);
                 }
             }
-            
+
             // Only override what's in config if a value comes in from the command line.
             int? pid =               context.ParseResult.GetValueForOption(pidOption);
             string? userName =       context.ParseResult.GetValueForOption(usernameOption);

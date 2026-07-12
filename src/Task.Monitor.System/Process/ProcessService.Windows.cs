@@ -176,7 +176,7 @@ public sealed partial class ProcessService
         writeBytes = 0;
 
         if (!WinNt.GetProcessIoCounters(hProcess, out WinNt.IO_COUNTERS counters)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(WinNt.GetProcessIoCounters));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(WinNt.GetProcessIoCounters));
             return;
         }
 
@@ -193,7 +193,7 @@ public sealed partial class ProcessService
             ref counters,
             counters.cb)) {
             
-            Win32ErrorHelpers.AssertOnLastError(nameof(PsApi.GetProcessMemoryInfo));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(PsApi.GetProcessMemoryInfo));
         }
     }
 

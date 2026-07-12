@@ -92,7 +92,7 @@ public class ScreenApplication
                             continue;
                         }
 
-                        if (!handled && consoleKey == ConsoleKey.Escape || consoleKey == ConsoleKey.F10) {
+                        if (!handled && (consoleKey == ConsoleKey.Escape || consoleKey == ConsoleKey.F10)) {
                             currScreen.Close();
                             _ = screenStack.Pop();
 

@@ -1,29 +1,52 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Task.Monitor.Cli.Utils;
 
 public static class ExceptionHelper
 {
-    // Log diagnostic information for Release builds and use Asserts for Debug builds.
-    public static void HandleException(Exception ex) => HandleException(ex, string.Empty);
+    public static void LogException(Exception ex) => LogException(ex, string.Empty);
     
-    public static void HandleException(Exception ex, string message)
+    public static void LogException(Exception ex, string message)
     {
-        if (string.IsNullOrEmpty(message)) {
-            message = ex.Message;
-        }
+        Trace.WriteLine($"--- EXCEPTION [{ex.GetType()}]");
         
-        Trace.TraceError($"An exception occurred. Message: {message}");
-        Trace.TraceError($"Exception: {ex}");
+        if (!string.IsNullOrEmpty(message)) {
+            Trace.WriteLine($"Context = {message}");
+        }
+
+        TraceException(ex);
+        Exception? innerEx = ex.InnerException;
+
+        int maxExceptions = 64;
+        int count = 0;
+        
+        while (innerEx != null && ++count < maxExceptions) {
+            Trace.WriteLine($"--- INNER EXCEPTION [{ex.GetType()}]");
+            TraceException(innerEx);
+            innerEx = innerEx.InnerException;
+        }
     }
 
     public static void HandleWaitAllException(AggregateException aggEx)
     {
         foreach (Exception ex in aggEx.InnerExceptions) {
             if (ex is not OperationCanceledException) {
-                HandleException(ex, "An exception occurred while stopping worker Tasks");
+                LogException(ex, "An exception occurred while stopping worker Tasks");
             }
         }
+    }
+
+    private static void TraceException(Exception ex)
+    {
+        Trace.WriteLine($"Message = {ex.Message}");
+        Trace.WriteLine($"Source = {ex.Source ?? string.Empty}");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            Trace.WriteLine($"HResult = {ex.HResult}");
+        }
+        
+        Trace.WriteLine($"StackTrace = {Environment.NewLine} {ex.StackTrace}");
+        Trace.WriteLine(string.Empty);
     }
 }

@@ -34,6 +34,7 @@ public partial class ProcessInfoControl : Control
     private const string MsgNotYetImplemented = "Not yet implemented on this OS";
     private const string MsgThreadsNotLoaded = "Threads could not be loaded";
     private const string MsgModulesNotLoaded = "Modules could not be loaded";
+    private const string MsgLoading = "Loading, please wait...";
 
     public ProcessInfoControl(
         IProcessService processService,
@@ -372,7 +373,7 @@ public partial class ProcessInfoControl : Control
                     appConfig.DefaultTheme.Foreground));
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
             processInfoView.Items.Add(new(new[] { "Error:", ex.Message.ToRed() }));
         }
     }
@@ -383,9 +384,13 @@ public partial class ProcessInfoControl : Control
             return;
         }
 
+        string prevEmptyText = modulesView.EmptyListViewText;
+        
         try {
             Control.DrawingLockAcquire();
+            modulesView.EmptyListViewText = MsgLoading;
             modulesView.Items.Clear();
+            modulesView.Draw();
 
             List<ModuleInfo> modules = moduleService.GetModules(SelectedProcessId)
                 .OrderBy(m => m.ModuleName)
@@ -398,9 +403,10 @@ public partial class ProcessInfoControl : Control
             modulesLoaded = true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
         }
         finally {
+            modulesView.EmptyListViewText = prevEmptyText;
             Control.DrawingLockRelease();
         }
     }
@@ -457,7 +463,7 @@ public partial class ProcessInfoControl : Control
             }
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
         }
         finally {
             Control.DrawingLockRelease();

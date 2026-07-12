@@ -31,19 +31,19 @@ public partial class SystemTerminal
         IntPtr consoleHandle = ProcessEnv.GetStdHandle(ProcessEnv.STD_OUTPUT_HANDLE);
         
         if (consoleHandle == IntPtr.Zero || consoleHandle == new IntPtr(-1)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(ProcessEnv.GetStdHandle));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessEnv.GetStdHandle));
             return;
         }
 
         if (!ConsoleApi.GetConsoleMode(consoleHandle, out uint originalMode)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(ConsoleApi.GetConsoleMode));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.GetConsoleMode));
             return;
         }
 
         uint newMode = originalMode | ConsoleApi.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 
         if (!ConsoleApi.SetConsoleMode(consoleHandle, newMode)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(ConsoleApi.SetConsoleMode));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.SetConsoleMode));
         }
     }
 #endif

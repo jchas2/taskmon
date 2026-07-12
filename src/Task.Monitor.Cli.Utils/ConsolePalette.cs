@@ -104,6 +104,7 @@ public static class ConsolePalette
 
         if ((hex.Length == 6 || hex.Length == 8) &&
             uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint packed)) {
+            
             if (hex.Length == 6) {
                 return Color.FromArgb(
                     255,

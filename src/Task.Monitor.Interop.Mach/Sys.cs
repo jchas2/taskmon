@@ -119,8 +119,14 @@ public static unsafe class Sys
     public static unsafe string? SysctlByNameString(string name)
     {
         size_t len = IntPtr.Zero;
-
-        if (SysctlByName(name, null, &len, null, IntPtr.Zero) != 0) {
+        
+        if (SysctlByName(
+                name, 
+                null, 
+                &len, 
+                null, 
+                IntPtr.Zero) != 0) {
+            Trace.WriteLine($"Failed SysctlByName() &len: {name}");
             return null;
         }
 
@@ -135,7 +141,13 @@ public static unsafe class Sys
         try {
             size_t outLen = (IntPtr)byteLen;
 
-            if (SysctlByName(name, buffer, &outLen, null, IntPtr.Zero) != 0) {
+            if (SysctlByName(
+                    name, 
+                    buffer, 
+                    &outLen, 
+                    null, 
+                    IntPtr.Zero) != 0) {
+                Trace.WriteLine($"Failed SysctlByName() buffer: {name}");
                 return null;
             }
 
@@ -161,6 +173,7 @@ public static unsafe class Sys
         size_t len = (IntPtr)sizeof(int);
 
         if (SysctlByName(name, &result, &len, null, IntPtr.Zero) != 0) {
+            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
             return false;
         }
 
@@ -180,7 +193,11 @@ public static unsafe class Sys
     public static unsafe bool Sysctl(ReadOnlySpan<int> name, ref byte* value, ref int len)
     {
         fixed (int* ptr = &MemoryMarshal.GetReference(name)) {
-            return Sysctl(ptr, name.Length, ref value, ref len);
+            return Sysctl(
+                ptr, 
+                name.Length, 
+                ref value, 
+                ref len);
         }
     }
     
@@ -191,9 +208,14 @@ public static unsafe class Sys
         bool autoSize = (value == null && len == 0);
 
         if (autoSize) {
-            ret = Sysctl(name, name_len, value, &bytesLength);
+            ret = Sysctl(
+                name, 
+                name_len, 
+                value, 
+                &bytesLength);
             
             if (ret != 0) {
+                Trace.WriteLine($"Failed Sysctl() &bytesLength: {*name}");
                 return false;
             }
             
@@ -213,6 +235,7 @@ public static unsafe class Sys
             Marshal.FreeHGlobal((IntPtr)value);
             
             if ((int)bytesLength == int.MaxValue) {
+                Trace.WriteLine($"Failed Sysctl() &bytesLength Out of memory : {*name}");
                 throw new OutOfMemoryException();
             }
             

@@ -13,6 +13,7 @@ public static class AssemblyVersionInfo
         Version? version = assembly.GetName().Version;
         
         if (version == null) {
+            Trace.WriteLine("Failed assembly.GetName().Version");
             return NoVersion;
         }
 

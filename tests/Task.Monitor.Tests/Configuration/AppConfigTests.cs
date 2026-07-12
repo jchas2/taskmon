@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
@@ -398,4 +399,44 @@ use-irix-cpu-reporting=False
         Assert.NotNull(result);
         Assert.Contains("taskmon.ini", result);
     }
+
+    // [Fact]
+    // public void DefaultLogPath_ReturnsNonNullPath()
+    // {
+    //     AppConfig appConfig = new(fileSystem.Object);
+    //
+    //     fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+    //
+    //     string? result = appConfig.DefaultLogPath;
+    //
+    //     Assert.NotNull(result);
+    //     Assert.Contains("taskmon", result);
+    // }
+    //
+    // [Fact]
+    // public void DefaultLogPath_Under_Sudo_Resolves_Invoking_User_Home_On_MacOS()
+    // {
+    //     // GetUserHomeDirectory only takes the SUDO_USER branch on macOS.
+    //     if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+    //         return;
+    //     }
+    //
+    //     string? originalSudoUser = Environment.GetEnvironmentVariable("SUDO_USER");
+    //
+    //     try {
+    //         Environment.SetEnvironmentVariable("SUDO_USER", "alice");
+    //         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+    //
+    //         AppConfig appConfig = new(fileSystem.Object);
+    //
+    //         string? result = appConfig.DefaultLogPath;
+    //
+    //         // Logs go to the invoking user's home, not root's (/var/root).
+    //         Assert.NotNull(result);
+    //         Assert.StartsWith("/Users/alice/.local/state", result);
+    //     }
+    //     finally {
+    //         Environment.SetEnvironmentVariable("SUDO_USER", originalSudoUser);
+    //     }
+    // }
 }

@@ -120,6 +120,11 @@ public sealed class MainScreen : Screen
         }
 
         commandControl.KeyPressed(keyInfo, ref handled);
+
+        // Special case for F10 mapped to Quit - don't handle so the app loop aborts.
+        if (keyInfo.Key == ConsoleKey.F10) {
+            handled = false;
+        }
     }
 
     protected override void OnLoad()

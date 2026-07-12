@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Process;
+using Task.Monitor.System;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
 
@@ -84,6 +85,7 @@ public sealed class AppConfig
                 }
 
                 if (fileSystem.DirectoryExists(userPath) || fileSystem.TryCreateDirectory(userPath)) {
+                    PathPermissions.EnsureUserOwnership(userPath);
                     return userPath;
                 }
                 
@@ -96,6 +98,35 @@ public sealed class AppConfig
         }
     }
 
+    public string? DefaultLogPath
+    {
+        get {
+            try {
+                string logPath = string.Empty;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library",
+                        "Logs", Constants.AppName);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        Constants.AppName, "Logs");
+                }
+
+                if (fileSystem.DirectoryExists(logPath) || fileSystem.TryCreateDirectory(logPath)) {
+                    PathPermissions.EnsureUserOwnership(logPath);
+                    return logPath;
+                }
+                
+                string appPath = AppContext.BaseDirectory;
+                return fileSystem.DirectoryExists(appPath) ? appPath : null;
+            }
+            catch {
+                return null;
+            }
+        }
+    }
+    
     public Layout DefaultLayout
     {
         get => defaultLayout;
@@ -278,7 +309,10 @@ public sealed class AppConfig
         validLayoutPath = !string.IsNullOrEmpty(layoutPath);
         
         if (validLayoutPath && !fileSystem.DirectoryExists(layoutPath)) {
-            if (!fileSystem.TryCreateDirectory(layoutPath)) {
+            if (fileSystem.TryCreateDirectory(layoutPath)) {
+                PathPermissions.EnsureUserOwnership(layoutPath);
+            }
+            else {
                 validLayoutPath = false;
             }
         }
@@ -318,6 +352,7 @@ public sealed class AppConfig
                 allLayouts.Add(layout!);
                 string layoutFilePath = Path.Combine(layoutPath, $"{layout!.Name}{Constants.LayoutExtension}");
                 fileSystem.WriteAllText(layoutFilePath, layoutText);
+                PathPermissions.EnsureUserOwnership(layoutFilePath);
             }
         }
 
@@ -428,9 +463,12 @@ public sealed class AppConfig
         validThemePath = !string.IsNullOrEmpty(themePath);
         
         if (validThemePath && !fileSystem.DirectoryExists(themePath)) {
-            if (!fileSystem.TryCreateDirectory(themePath)) {
-                validThemePath = false;
+            if (fileSystem.TryCreateDirectory(themePath)) {
+                PathPermissions.EnsureUserOwnership(themePath);
             }
+            else {
+                validThemePath = false;
+            }            
         }
 
         if (validThemePath) {
@@ -472,6 +510,7 @@ public sealed class AppConfig
                 allThemes.Add(theme!);
                 string themeFilePath = Path.Combine(themePath, $"{theme!.Name}{Constants.ThemeExtension}");
                 fileSystem.WriteAllText(themeFilePath, themeText);
+                PathPermissions.EnsureUserOwnership(themeFilePath);
             }
         }
 
@@ -507,7 +546,7 @@ public sealed class AppConfig
             return true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
             return false;
         }
     }
@@ -519,10 +558,10 @@ public sealed class AppConfig
             return TryLoad(config);
         }
         catch (Exception ex) when (ex is FileNotFoundException || ex is IOException) {
-            ExceptionHelper.HandleException(ex, $"Error loading config: ${ex.Message}.");
+            ExceptionHelper.LogException(ex, $"Error loading config: ${ex.Message}.");
         }
         catch (Exception ex) when (ex is ConfigParseException) {
-            ExceptionHelper.HandleException(ex, $"Error parsing config: {ex.Message}.");
+            ExceptionHelper.LogException(ex, $"Error parsing config: {ex.Message}.");
         }
 
         return false;
@@ -540,7 +579,7 @@ public sealed class AppConfig
             return true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex, $"Error parsing Ini: {ex.Message}");
+            ExceptionHelper.LogException(ex, $"Error parsing Ini: {ex.Message}");
             return false;
         }
     }
@@ -549,10 +588,11 @@ public sealed class AppConfig
     {
         try {
             Config.ToFile(fileSystem, path, iniConfig);
+            PathPermissions.EnsureUserOwnership(path);
             return true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex, $"Error saving config: {ex.Message} to path {path}");
+            ExceptionHelper.LogException(ex, $"Error saving config: {ex.Message} to path {path}");
             return false;
         }
     }
