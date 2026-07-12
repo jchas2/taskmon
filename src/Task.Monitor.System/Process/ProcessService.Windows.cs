@@ -333,7 +333,7 @@ public sealed partial class ProcessService
             }
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
             return result;
         }
     }
