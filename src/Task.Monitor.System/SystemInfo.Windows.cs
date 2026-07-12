@@ -71,7 +71,7 @@ public static partial class SystemInfo
             &lpIdleFileTime,
             &lpKernelFileTime,
             &lpUserFileTime)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
             return false;
         }
 
@@ -240,7 +240,7 @@ public static partial class SystemInfo
         SysInfoApi.MEMORYSTATUSEX memoryStatus = new();
         
         if (!SysInfoApi.GlobalMemoryStatusEx(&memoryStatus)) {
-            Win32ErrorHelpers.AssertOnLastError(nameof(SysInfoApi.GlobalMemoryStatusEx));
+            PInvokeErrorHelpers.AssertOnLastError(nameof(SysInfoApi.GlobalMemoryStatusEx));
             return false;
         }
 

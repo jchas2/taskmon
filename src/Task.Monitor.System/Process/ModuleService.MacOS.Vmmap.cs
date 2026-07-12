@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Process;
 
@@ -25,6 +26,7 @@ public partial class ModuleService
             proc.StartInfo.ArgumentList.Add(pid.ToString());
 
             if (!proc.Start()) {
+                Trace.WriteLine($"Failed to start {VmmapPath}");
                 return false;
             }
 
@@ -51,13 +53,14 @@ public partial class ModuleService
             _ = proc.StandardError.ReadToEnd();
 
             if (!proc.WaitForExit(VmmapTimeoutMs)) {
+                Trace.WriteLine($"Timeout of {VmmapTimeoutMs} expired for {VmmapPath}.");
                 proc.Kill(entireProcessTree: true);
             }
 
             return moduleInfos.Count > 0;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex, $"An Exception occurred processing {VmmapPath}");
             return false;
         }
     }

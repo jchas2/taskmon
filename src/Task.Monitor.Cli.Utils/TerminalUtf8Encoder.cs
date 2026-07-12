@@ -31,7 +31,7 @@ public sealed class TerminalUtf8Encoder : IDisposable
             action();
         }
         catch (Exception ex) when (ex is IOException || ex is SecurityException) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
         }
     }
 }

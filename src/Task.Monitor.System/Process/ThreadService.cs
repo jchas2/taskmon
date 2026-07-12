@@ -1,4 +1,5 @@
-﻿using SysDiag = System.Diagnostics;
+﻿using Task.Monitor.Cli.Utils;
+using SysDiag = System.Diagnostics;
 
 namespace Task.Monitor.System.Process;
 
@@ -42,8 +43,8 @@ public class ThreadService : IThreadService
             
             return true;
         }
-        catch (Exception e) {
-            SysDiag.Trace.WriteLine(e);
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex);
             return false;
         }
     }

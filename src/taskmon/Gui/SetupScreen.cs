@@ -515,11 +515,13 @@ public class SetupScreen : Screen
                     MenuViewOnItemClicked(this, e);
                 }
 
+                handled = true;
                 break;
 
             case ConsoleKey.RightArrow:
                 activeControl.SetFocus();
                 Draw();
+                handled = true;
                 break;
 
             case ConsoleKey.UpArrow:
@@ -528,10 +530,18 @@ public class SetupScreen : Screen
             case ConsoleKey.PageDown:
             case ConsoleKey.Spacebar:
                 focusedControl?.KeyPressed(keyInfo, ref handled);
+                handled = true;
                 break;
             
             case ConsoleKey.F10:
-                SaveConfig();
+                if (!SaveConfig()) {
+                    handled = true;
+                    ShowMessageBox(
+                        "Save Failed",
+                        "An error occurred saving config.",
+                        MessageBoxButtons.Ok,
+                        () => { });
+                } 
                 break;
         }
     }
@@ -645,17 +655,10 @@ public class SetupScreen : Screen
         base.OnUnload();
     }
 
-    private void SaveConfig()
+    private bool SaveConfig()
     {
         MapControlsToConfig();
-                
-        if (!runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty)) {
-            ShowMessageBox(
-                "Save Failed",
-                "An error occurred saving config.",
-                MessageBoxButtons.Ok,
-                () => { });
-        }
+        return runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty);     
     }
 
     private void UpdateTheme()

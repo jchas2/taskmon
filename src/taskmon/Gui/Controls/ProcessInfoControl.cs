@@ -373,7 +373,7 @@ public partial class ProcessInfoControl : Control
                     appConfig.DefaultTheme.Foreground));
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
             processInfoView.Items.Add(new(new[] { "Error:", ex.Message.ToRed() }));
         }
     }
@@ -403,7 +403,7 @@ public partial class ProcessInfoControl : Control
             modulesLoaded = true;
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
         }
         finally {
             modulesView.EmptyListViewText = prevEmptyText;
@@ -463,7 +463,7 @@ public partial class ProcessInfoControl : Control
             }
         }
         catch (Exception ex) {
-            ExceptionHelper.HandleException(ex);
+            ExceptionHelper.LogException(ex);
         }
         finally {
             Control.DrawingLockRelease();
