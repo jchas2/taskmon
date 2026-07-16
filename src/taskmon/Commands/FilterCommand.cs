@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Gui;
+﻿using System.Diagnostics;
+using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System.Controls.InputBox;
 
@@ -16,12 +17,16 @@ public sealed class FilterCommand(string text, MainScreen mainScreen) : Abstract
         {
             if (result == InputBoxResult.Enter) {
                 ProcessControl.FilterText = filter;
+                Trace.WriteLine($"Filter applied: {filter}.");
+                
                 if (!Text.StartsWith("*")) {
                     Text = "*" + Text;
                 }
             }
             else if (result == InputBoxResult.Cancel) {
                 ProcessControl.FilterText = string.Empty;
+                Trace.WriteLine("Filter reset.");
+                
                 if (Text.StartsWith("*")) {
                     Text = Text.Substring(1, Text.Length - 1);
                 }

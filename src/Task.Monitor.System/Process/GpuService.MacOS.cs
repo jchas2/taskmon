@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Process;
@@ -15,6 +16,7 @@ public static partial class GpuService
         uint accelerator = IOKit.IOServiceGetMatchingService(0, matching);
 
         if (accelerator == 0) {
+            Trace.WriteLine($"Failed to get IOAccelerator via IOServiceGetMatchingService in {nameof(GpuService)}.");
             return gpuInfo;
         }
 
@@ -26,6 +28,7 @@ public static partial class GpuService
             ref iterator);
 
         if (result != 0 || iterator == IntPtr.Zero) {
+            Trace.WriteLine($"Failed to get IOIterator via IORegistryEntryGetChildIterator in {nameof(GpuService)}.");
             return gpuInfo;
         }
 

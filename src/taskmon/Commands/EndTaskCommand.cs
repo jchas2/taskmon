@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Configuration;
+﻿using System.Diagnostics;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Process;
@@ -34,7 +35,10 @@ public sealed class EndTaskCommand(
             }
         };
 
-        string pidStr = string.Join(", ", selectedProcesses.Take(MaxPidsToShow));
+        string pidStr = string.Join(", ", selectedProcesses);
+        Trace.WriteLine($"Attempt to terminate pids: {pidStr}");
+        
+        pidStr = string.Join(", ", selectedProcesses.Take(MaxPidsToShow));
 
         if (selectedProcesses.Count > MaxPidsToShow) {
             pidStr += "...";

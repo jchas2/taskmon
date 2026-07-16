@@ -14,7 +14,6 @@ public class ControlCollection : IEnumerable<Control>
         ArgumentNullException.ThrowIfNull(control, nameof(control));
         
         owner.InsertControls([control]);
-
         return this;
     }
 

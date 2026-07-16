@@ -16,6 +16,7 @@ public static partial class GpuService
     private static Dictionary<int, long> GetProcessStatsInternal()
     {
         if (Pdh.PdhOpenQuery(null, IntPtr.Zero, out IntPtr hQuery) != Pdh.ERROR_SUCCESS) {
+            Trace.WriteLine($"Failed PdhOpenQuery in {nameof(GpuService)}.");
             return new Dictionary<int, long>(cumulativeEngineValues);
         }
 
@@ -44,10 +45,10 @@ public static partial class GpuService
         IntPtr buffer = Marshal.AllocHGlobal((int)bufferSize);
 
         if (Pdh.PdhGetRawCounterArray(
-                hCounter, 
-                ref bufferSize, 
-                ref itemCount, 
-                buffer) == Pdh.ERROR_SUCCESS) {
+            hCounter, 
+            ref bufferSize, 
+            ref itemCount, 
+            buffer) == Pdh.ERROR_SUCCESS) {
             
             int structSize = Marshal.SizeOf<Pdh.PDH_RAW_COUNTER_ITEM>();
             Dictionary<int, long> maxDeltas = new();

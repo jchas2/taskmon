@@ -92,70 +92,70 @@ public sealed class MessageBox : Control
         
         int y = Y;
 
-         string centredTitle = Title.CentreWithLength(Width);
-         Terminal.BackgroundColor = dialogTitleColour;
-         Terminal.ForegroundColor = ConsolePalette.Black;
-         Terminal.SetCursorPosition(X, y);
-         Terminal.Write(centredTitle);
+        string centredTitle = Title.CentreWithLength(Width);
+        Terminal.BackgroundColor = dialogTitleColour;
+        Terminal.ForegroundColor = ConsolePalette.Black;
+        Terminal.SetCursorPosition(X, y);
+        Terminal.Write(centredTitle);
         
-         string spacer = new(' ', Width);
-         Terminal.BackgroundColor = dialogColour;
-         Terminal.ForegroundColor = ConsolePalette.Black;
-         Terminal.SetCursorPosition(X, ++y);
-         Terminal.Write(spacer);
-        
-         string[] lines = Text.Split('\n');
-        
-         for (int n = 0; n < MaxTextLines; n++) {
-             Terminal.SetCursorPosition(X, ++y);
-             
-             if (n < lines.Length) {
-                 Terminal.Write(lines[n].CentreWithLength(Width));
-                 continue;
-             }
-             
-             Terminal.Write(spacer);
-         }
+        string spacer = new(' ', Width);
+        Terminal.BackgroundColor = dialogColour;
+        Terminal.ForegroundColor = ConsolePalette.Black;
+        Terminal.SetCursorPosition(X, ++y);
+        Terminal.Write(spacer);
 
-         for (int n = 0; n < 2; n++) {
-             Terminal.SetCursorPosition(X, ++y);
-             Terminal.Write(spacer);
-         }
+        string[] lines = Text.Split('\n');
+        
+        for (int n = 0; n < MaxTextLines; n++) { 
+            Terminal.SetCursorPosition(X, ++y);
+         
+            if (n < lines.Length) { 
+                Terminal.Write(lines[n].CentreWithLength(Width));
+                continue;
+            }
+         
+            Terminal.Write(spacer);
+        }
 
-         int buttonX = Buttons == MessageBoxButtons.Ok
+        for (int n = 0; n < 2; n++) {
+            Terminal.SetCursorPosition(X, ++y);
+            Terminal.Write(spacer);
+        }
+
+        int buttonX = Buttons == MessageBoxButtons.Ok
             ? X + (Width / 2 - ButtonWidth / 2)
             : X + (Width / 2 - (ButtonWidth + ButtonGap + ButtonWidth) / 2);
 
-         int buttonY = ++y;
+        int buttonY = ++y;
          
-         if (Buttons == MessageBoxButtons.Ok || Buttons == MessageBoxButtons.OkCancel) {
-             DrawButton(
-                 buttonX,
-                 buttonY,
-                 ButtonWidth,
-                 ButtonHeight,
-                 "OK",
-                 selected: okFocused);
-         }
+        if (Buttons == MessageBoxButtons.Ok || Buttons == MessageBoxButtons.OkCancel) {
+            DrawButton(
+                buttonX,
+                buttonY,
+                ButtonWidth,
+                ButtonHeight,
+                "OK", 
+                selected: okFocused);
+        }
          
-         if (Buttons == MessageBoxButtons.OkCancel) {
-             DrawButton(
-                 buttonX + ButtonWidth + ButtonGap,
-                 buttonY,
-                 ButtonWidth,
-                 ButtonHeight,
-                 "Cancel",
-                 selected: !okFocused);
-         }
+        if (Buttons == MessageBoxButtons.OkCancel) {
+            DrawButton(
+                buttonX + ButtonWidth + ButtonGap,
+                buttonY, 
+                ButtonWidth,
+                ButtonHeight,
+                "Cancel",
+                selected: !okFocused);
+        }
 
-         Terminal.BackgroundColor = dialogColour;
-         Terminal.ForegroundColor = ConsolePalette.Black;
-         Terminal.SetCursorPosition(X, ++y);
-         Terminal.Write(spacer);
+        Terminal.BackgroundColor = dialogColour;
+        Terminal.ForegroundColor = ConsolePalette.Black;
+        Terminal.SetCursorPosition(X, ++y);
+        Terminal.Write(spacer);
 
-         string help = "Use \u2190 \u2192 and \u21B5 to select";
-         Terminal.SetCursorPosition(X, ++y);
-         Terminal.Write(help.CentreWithLength(Width));
+        string help = "Use \u2190 \u2192 and \u21B5 to select";
+        Terminal.SetCursorPosition(X, ++y);
+        Terminal.Write(help.CentreWithLength(Width));
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)

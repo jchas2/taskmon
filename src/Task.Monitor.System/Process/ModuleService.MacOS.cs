@@ -29,6 +29,7 @@ public partial class ModuleService
     private static unsafe bool TryGetDyldModules(int pid, List<ModuleInfo> moduleInfos)
     {
         if (MachTask.task_for_pid(MachTask.task_self_trap(), pid, out uint task) != MachTask.KERN_SUCCESS) {
+            SysDiag::Trace.WriteLine($"Failed MachTask.task_for_pid {pid} in {nameof(ModuleService)}.");
             return false;
         }
 
@@ -36,22 +37,37 @@ public partial class ModuleService
             MachTask.task_dyld_info dyldInfo = default;
             uint count = (uint)(sizeof(MachTask.task_dyld_info) / sizeof(uint));
 
-            if (MachTask.task_info(task, MachTask.TASK_DYLD_INFO, ref dyldInfo, ref count) != MachTask.KERN_SUCCESS ||
+            if (MachTask.task_info(
+                task, 
+                MachTask.TASK_DYLD_INFO, 
+                ref dyldInfo, 
+                ref count) != MachTask.KERN_SUCCESS ||
                 dyldInfo.all_image_info_addr == 0) {
+                SysDiag::Trace.WriteLine($"Failed MachTask.task_info for pid {pid} in {nameof(ModuleService)}.");
                 return false;
             }
 
             MachTask.dyld_all_image_infos_head head;
 
-            if (!ReadTaskMemory(task, dyldInfo.all_image_info_addr, &head, (ulong)sizeof(MachTask.dyld_all_image_infos_head)) ||
+            if (!ReadTaskMemory(
+                task, 
+                dyldInfo.all_image_info_addr, 
+                &head, 
+                (ulong)sizeof(MachTask.dyld_all_image_infos_head)) ||
                 head.infoArrayCount == 0 || head.infoArray == 0) {
+                SysDiag::Trace.WriteLine($"Failed ReadTaskMemory for pid {pid} in {nameof(ModuleService)}.");
                 return false;
             }
 
             var images = new MachTask.dyld_image_info[head.infoArrayCount];
 
             fixed (MachTask.dyld_image_info* imagePtr = images) {
-                if (!ReadTaskMemory(task, head.infoArray, imagePtr, (ulong)(images.Length * sizeof(MachTask.dyld_image_info)))) {
+                if (!ReadTaskMemory(
+                    task, 
+                    head.infoArray, 
+                    imagePtr, 
+                    (ulong)(images.Length * sizeof(MachTask.dyld_image_info)))) {
+                    SysDiag::Trace.WriteLine($"Failed ReadTaskMemory for dylib_image_info for pid {pid} in {nameof(ModuleService)}.");
                     return false;
                 }
             }
@@ -83,7 +99,14 @@ public partial class ModuleService
     private static unsafe bool ReadTaskMemory(uint task, ulong address, void* buffer, ulong size)
     {
         ulong outSize;
-        int result = MachTask.mach_vm_read_overwrite(task, address, size, (ulong)buffer, &outSize);
+        
+        int result = MachTask.mach_vm_read_overwrite(
+            task, 
+            address, 
+            size, 
+            (ulong)buffer, 
+            &outSize);
+        
         return result == MachTask.KERN_SUCCESS && outSize == size;
     }
 
@@ -105,7 +128,10 @@ public partial class ModuleService
         }
 
         int nul = slice.IndexOf((byte)0);
-        return Encoding.UTF8.GetString(nul < 0 ? slice : slice[..nul]);
+        
+        return Encoding.UTF8.GetString(nul < 0 
+            ? slice 
+            : slice[..nul]);
     }
 
     private static bool GetCurrentProcessModules(List<ModuleInfo> moduleInfos)

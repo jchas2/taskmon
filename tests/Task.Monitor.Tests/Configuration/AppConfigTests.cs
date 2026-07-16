@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Configuration;
@@ -363,6 +364,28 @@ use-irix-cpu-reporting=False
         Assert.False(result);
     }
 
+    [Fact]
+    public void New_Config_ToString_Contains_Expected_Sections()
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+        string iniConfig = appConfig.ToString();
+        List<string> expectedSections = new() {
+            "[filter]",
+            "[iterations]",
+            "[sort]",
+            "[stats]",
+            "[ux]",
+        };
+        
+        Assert.NotNull(iniConfig);
+        Assert.NotEmpty(iniConfig);
+        expectedSections.ForEach(s => Assert.Contains(s, iniConfig));
+        
+        // Have any extras been added we don't know about.
+        Assert.Equal(iniConfig.Count(ch => ch == '['), expectedSections.Count);
+        Assert.Equal(iniConfig.Count(ch => ch == ']'), expectedSections.Count);
+    }
+    
     [Fact]
     public void TrySave_With_Valid_Path_Returns_True()
     {

@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Process;
@@ -31,13 +32,12 @@ public sealed class AppConfig
     private ConfigSection? sortSection;
     private ConfigSection? statsSection;
     private ConfigSection? uxSection;
-    
     private const string ConfigFile = $"{Constants.AppName}.ini";
     
     public AppConfig(IFileSystem fileSystem)
     {
         this.fileSystem = fileSystem;
-        this.iniConfig = new();
+        iniConfig = new();
         LoadSections();
         LoadThemes();
         LoadLayouts();
@@ -88,9 +88,15 @@ public sealed class AppConfig
                     PathPermissions.EnsureUserOwnership(userPath);
                     return userPath;
                 }
+
+                string tempPath = Path.GetTempPath();
                 
-                string appPath = AppContext.BaseDirectory;
-                return fileSystem.DirectoryExists(appPath) ? appPath : null;
+                if (fileSystem.DirectoryExists(tempPath) || fileSystem.TryCreateDirectory(tempPath)) {
+                    PathPermissions.EnsureUserOwnership(tempPath);
+                    return tempPath;
+                }
+                
+                return null;
             }
             catch {
                 return null;
@@ -118,8 +124,14 @@ public sealed class AppConfig
                     return logPath;
                 }
                 
-                string appPath = AppContext.BaseDirectory;
-                return fileSystem.DirectoryExists(appPath) ? appPath : null;
+                string tempPath = Path.GetTempPath();
+                
+                if (fileSystem.DirectoryExists(tempPath) || fileSystem.TryCreateDirectory(tempPath)) {
+                    PathPermissions.EnsureUserOwnership(tempPath);
+                    return tempPath;
+                }
+                
+                return null;
             }
             catch {
                 return null;
@@ -322,8 +334,10 @@ public sealed class AppConfig
             
             foreach (string layoutFile in layoutFiles) {
                 string layoutText = fileSystem.ReadAllText(layoutFile);
+                Trace.WriteLine($"Parsing {layoutFile}");
                 
                 if (!TryParseIni(layoutText, out Layout? layout)) {
+                    Trace.WriteLine($"Failed to parse: \n{layoutText}\n");
                     continue;
                 }
                 
@@ -389,7 +403,7 @@ public sealed class AppConfig
         if (!iniConfig.ContainsSection(filterSection.Name)) {
             iniConfig.AddConfigSection(filterSection);
         }
-
+        
         iterationSection = iniConfig.ContainsSection(Constants.Sections.Iterations)
             ? iniConfig.GetConfigSection(Constants.Sections.Iterations)
             : new ConfigSection(Constants.Sections.Iterations);
@@ -399,7 +413,7 @@ public sealed class AppConfig
         if (!iniConfig.ContainsSection(iterationSection.Name)) {
             iniConfig.AddConfigSection(iterationSection);
         }
-
+        
         sortSection = iniConfig.ContainsSection(Constants.Sections.Sort)
             ? iniConfig.GetConfigSection(Constants.Sections.Sort)
             : new ConfigSection(Constants.Sections.Sort);
@@ -476,8 +490,10 @@ public sealed class AppConfig
             
             foreach (string themeFile in themeFiles) {
                 string themeText = fileSystem.ReadAllText(themeFile);
-                
+                Trace.WriteLine($"Parsing {themeFile}");
+
                 if (!TryParseIni(themeText, out Theme? theme)) {
+                    Trace.WriteLine($"Failed to parse: \n{themeText}\n");
                     continue;
                 }
 
@@ -537,12 +553,24 @@ public sealed class AppConfig
 
     public List<Theme> Themes => allThemes;
 
+    public override string ToString()
+    {
+        StringBuilder buffer = new(1024 * iniConfig.ConfigSections.Count);
+        
+        foreach (ConfigSection section in iniConfig.ConfigSections) {
+            buffer.AppendLine(section.ToString());
+        }
+
+        return buffer.ToString();
+    } 
+
     public bool TryLoad(Config config)
     {
         try {
             iniConfig = config;
             LoadSections();
             LoadThemes();
+            LoadLayouts();
             return true;
         }
         catch (Exception ex) {

@@ -24,6 +24,8 @@ public partial class ModuleService
             };
 
             proc.StartInfo.ArgumentList.Add(pid.ToString());
+            
+            Trace.WriteLine($"Spawn {VmmapPath} {pid}");
 
             if (!proc.Start()) {
                 Trace.WriteLine($"Failed to start {VmmapPath}");
@@ -56,6 +58,8 @@ public partial class ModuleService
                 Trace.WriteLine($"Timeout of {VmmapTimeoutMs} expired for {VmmapPath}.");
                 proc.Kill(entireProcessTree: true);
             }
+
+            Trace.WriteLine($"Proc {VmmapPath} with Pid {proc.Id} exited with {proc.ExitCode}.");
 
             return moduleInfos.Count > 0;
         }
