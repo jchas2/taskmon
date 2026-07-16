@@ -37,6 +37,40 @@ public static class ExceptionHelper
         }
     }
 
+    public static void HandleUnhandledException(UnhandledExceptionEventArgs ev)
+    {
+        if (ev.IsTerminating) {
+            string error = "Runtime has encountered a fatal unhandled Exception.";
+            OutputWriter.Error.WriteLine(Environment.NewLine + error.ToRed());
+            Trace.WriteLine(error);
+        }
+
+        if (ev.ExceptionObject is Exception ex) {
+            List<Exception> exceptions = new();
+            
+            if (ex is AggregateException) {
+                exceptions.AddRange(((AggregateException)ex).Flatten().InnerExceptions);
+            }
+            else {
+                exceptions.Add(ex);
+            }
+            
+            foreach (Exception e in exceptions) {
+                OutputWriter.Error.WriteLine(e.GetType().ToString().ToRed());
+                OutputWriter.Error.WriteLine(e.Message.ToRed());
+                OutputWriter.Error.WriteLine(e.StackTrace?? e.ToString().ToYellow());
+                LogException(e);
+            }
+
+            return;
+        }
+        
+        string unhandledError = $"Unhandled error: {ev.ExceptionObject.GetType().Name}";
+        OutputWriter.Error.WriteLine(unhandledError.ToRed());
+        Trace.WriteLine(unhandledError);
+    }
+    
+    
     private static void TraceException(Exception ex)
     {
         Trace.WriteLine($"Message = {ex.Message}");

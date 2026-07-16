@@ -1,4 +1,5 @@
-﻿using Task.Monitor.Configuration;
+﻿using System.Diagnostics;
+using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.Process;
 using Task.Monitor.System;
@@ -386,6 +387,8 @@ public sealed partial class ProcessControl : Control
         processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
         processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
 
+        Trace.WriteLine($"Sort selection = {sortColumn}.");
+        
         mode = ControlMode.None;
         processView.SetFocus();
 

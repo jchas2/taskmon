@@ -241,10 +241,12 @@ public partial class ProcessInfoControl : Control
         menuView.ItemClicked += MenuViewOnItemClicked;
         
         cancellationTokenSource = new CancellationTokenSource();
+        workerTask = null;
 
-        workerTask = AutoRefresh
-            ? WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token))
-            : null;
+        if (AutoRefresh) {
+            workerTask = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
+            Trace.WriteLine($"ProcessInfoControl worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
+        }
         
         base.OnLoad();
     }
@@ -295,6 +297,7 @@ public partial class ProcessInfoControl : Control
         cancellationTokenSource?.Cancel();
 
         try {
+            Trace.WriteLine("Stopping ProcessInfoControl worker task.");
             workerTask?.Wait();
         }
         catch (AggregateException aggEx) {
@@ -373,7 +376,7 @@ public partial class ProcessInfoControl : Control
                     appConfig.DefaultTheme.Foreground));
         }
         catch (Exception ex) {
-            ExceptionHelper.LogException(ex);
+            ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");
             processInfoView.Items.Add(new(new[] { "Error:", ex.Message.ToRed() }));
         }
     }
@@ -396,14 +399,19 @@ public partial class ProcessInfoControl : Control
                 .OrderBy(m => m.ModuleName)
                 .ToList();
 
-            foreach (var moduleInfo in modules) {
-                modulesView.Items.Add(new ModuleListViewItem(moduleInfo, appConfig));
+            if (modules.Count > 0) {
+                foreach (var moduleInfo in modules) {
+                    modulesView.Items.Add(new ModuleListViewItem(moduleInfo, appConfig));
+                }
+            }
+            else {
+                Trace.WriteLine($"GetModules returned 0 for pid {SelectedProcessId}.");
             }
 
             modulesLoaded = true;
         }
         catch (Exception ex) {
-            ExceptionHelper.LogException(ex);
+            ExceptionHelper.LogException(ex, $"Error loading ModuleInfos for pid {SelectedProcessId}.");
         }
         finally {
             modulesView.EmptyListViewText = prevEmptyText;
@@ -422,6 +430,7 @@ public partial class ProcessInfoControl : Control
 
             if (threads.Count == 0) {
                 threadsView.Items.Clear();
+                Trace.WriteLine($"GetThreads returned 0 for pid {SelectedProcessId}.");
                 return;
             }
 
@@ -463,7 +472,7 @@ public partial class ProcessInfoControl : Control
             }
         }
         catch (Exception ex) {
-            ExceptionHelper.LogException(ex);
+            ExceptionHelper.LogException(ex, $"Error loading ThreadInfos for pid {SelectedProcessId}.");
         }
         finally {
             Control.DrawingLockRelease();

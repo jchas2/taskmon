@@ -50,7 +50,7 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
             else {
                 base.Write(formatted);
             }
-
+            
             bytesWritten += length;
         }
     }
@@ -67,10 +67,10 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
         };
         
         bytesWritten = 0;
-        PruneOldSegments();
+        PruneOldLogs();
     }
 
-    private void PruneOldSegments()
+    private void PruneOldLogs()
     {
         try {
             string[] segments = Directory.GetFiles(directory, $"{prefix}_*.{extension}");
@@ -86,12 +86,12 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
                     File.Delete(segments[i]);
                 }
                 catch (Exception ex) {
-                    Debug.Fail($"Failed PruneOldSegments: {ex}");
+                    Debug.Fail($"Failed PruneOldLogs: {ex}");
                 }
             }
         }
         catch (Exception ex) {
-            Debug.Fail($"Failed PruneOldSegments: {ex}");
+            Debug.Fail($"Failed PruneOldLogs: {ex}");
         }
     }
 

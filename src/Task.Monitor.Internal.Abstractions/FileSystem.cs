@@ -17,9 +17,18 @@ public sealed partial class FileSystem : IFileSystem
             ExceptionHelper.LogException(ex, $"Error on GetFiles '{path}'");
             return [];
         }
+    }
+
+    public string ReadAllText(string path)
+    {
+        try {
+            return File.ReadAllText(path);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on ReadAllText '{path}'");
+            throw;
+        }
     } 
-    
-    public string ReadAllText(string path) => File.ReadAllText(path);
 
     public bool TryCreateDirectory(string path)
     {
@@ -32,6 +41,15 @@ public sealed partial class FileSystem : IFileSystem
         }
     }
 
-    public void WriteAllText(string path, string? contents) => File.WriteAllText(path, contents);
+    public void WriteAllText(string path, string? contents)
+    {
+        try {
+            File.WriteAllText(path, contents);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on WriteAllText '{path}'");
+            throw;
+        }
+    } 
 }
 #pragma warning restore CA1416

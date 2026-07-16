@@ -12,36 +12,21 @@ namespace Task.Monitor;
 
 class Program
 {
-    private const int UnhandledExceptionExitCode = 1;
+    internal const int UnhandledExceptionExitCode = 1;
     private const int DebugWait = 3000;
-    
-    private static void HandleException(UnhandledExceptionEventArgs ev)
-    {
-        if (ev.IsTerminating) {
-            OutputWriter.Error.WriteLine(
-                Environment.NewLine + "Runtime has encountered a fatal unhandled Exception.".ToRed());
-        }
-        
-        if (ev.ExceptionObject is Exception e) {
-            OutputWriter.Error.WriteLine(e.GetType().ToString().ToRed());
-            OutputWriter.Error.WriteLine(e.Message.ToRed());
-            OutputWriter.Error.WriteLine(e.StackTrace?? e.ToString().ToYellow());
-            Debug.WriteLine(e.ToString());
-            return;
-        }
-        
-        string unhandledError = $"Unhandled error: {ev.ExceptionObject.GetType().Name}";
-        OutputWriter.Error.WriteLine(unhandledError.ToRed());
-        Debug.WriteLine(unhandledError);
-    }
     
     private static int Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => {
-            HandleException(eventArgs);
+            ExceptionHelper.HandleUnhandledException(eventArgs);
             Environment.Exit(UnhandledExceptionExitCode);
         };
 
+        TaskScheduler.UnobservedTaskException += (sender, eventArgs) => {
+            ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(eventArgs.Exception, isTerminating: true));
+            eventArgs.SetObserved();
+        };        
+        
         Console.CancelKeyPress += (sender, args) => {
             Console.ResetColor();
             Console.CursorVisible = true;
@@ -93,7 +78,7 @@ class Program
             return app.Run(args);
         }
         catch (Exception e) {
-            HandleException(new UnhandledExceptionEventArgs(e, isTerminating: true));
+            ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(e, isTerminating: true));
             Console.ResetColor();
             Console.CursorVisible = true;
             Environment.Exit(UnhandledExceptionExitCode);

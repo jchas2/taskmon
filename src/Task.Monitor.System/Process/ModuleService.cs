@@ -8,6 +8,7 @@ public partial class ModuleService : IModuleService
     {
         if (!ProcessUtils.TryGetProcessByPid(pid, out SysDiag::Process? process) ||
             process == null) {
+            SysDiag::Trace.WriteLine($"Failed TryGetProcessByPid for Pid {pid} in {nameof(ModuleService)}.");
             return [];
         }
         

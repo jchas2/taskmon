@@ -44,7 +44,7 @@ public class Config
     public ConfigSection GetConfigSection(string name)
     {
         if (!ContainsSection(name)) {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"Section name {name} not found.");
         }
 
         return configSections.Single(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));

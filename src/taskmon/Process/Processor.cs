@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.System;
 using Task.Monitor.System.Process;
@@ -105,6 +106,9 @@ public class Processor : IProcessor
        
         workerTask = WorkerTask.Run(() => RunInternal(cancellationTokenSource.Token));
         monitorTask = WorkerTask.Run(() => RunMonitorInternal(cancellationTokenSource.Token));
+
+        Trace.WriteLine($"Processor worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
+        Trace.WriteLine($"Processor worker task {nameof(monitorTask)} spawned with id {monitorTask.Id}.");
     }
 
 #if __APPLE__    
@@ -372,6 +376,7 @@ public class Processor : IProcessor
         WorkerTask[] workerTasks = [workerTask!, monitorTask!];
         
         try {
+            Trace.WriteLine("Stopping Processor worker tasks.");
             WorkerTask.WaitAll(workerTasks);
         }
         catch (AggregateException aggEx) {

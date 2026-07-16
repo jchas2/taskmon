@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
@@ -658,7 +659,13 @@ public class SetupScreen : Screen
     private bool SaveConfig()
     {
         MapControlsToConfig();
-        return runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty);     
+        bool result = runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty);
+        
+        if (result) {
+            Trace.WriteLine($"Config saved = \n{runContext.AppConfig}");
+        }
+
+        return result;
     }
 
     private void UpdateTheme()
