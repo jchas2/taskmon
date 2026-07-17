@@ -21,7 +21,7 @@ public sealed class SetupScreenTests
 
     [Fact]
     public void SetupScreen_Canary_Test() =>
-        Assert.Equal(12, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+        Assert.Equal(17, CanaryTestHelper.GetPropertyCount<SetupScreen>());
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()
@@ -43,6 +43,11 @@ public sealed class SetupScreenTests
         Assert.Equal(ConsolePalette.Black, setupScreen.BackgroundColour);
         Assert.NotEmpty(setupScreen.Controls);
         Assert.True(setupScreen.CursorVisible);
+        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, setupScreen.DialogBorderColour);
+        Assert.Equal(ConsolePalette.DarkGray, setupScreen.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, setupScreen.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.White, setupScreen.ForegroundColour);
         Assert.Equal(0, setupScreen.Height);
         Assert.NotNull(setupScreen.Name);

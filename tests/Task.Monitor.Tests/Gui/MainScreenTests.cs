@@ -21,7 +21,7 @@ public sealed class MainScreenTests
 
     [Fact]
     public void MainScreen_Canary_Test() =>
-        Assert.Equal(12, CanaryTestHelper.GetPropertyCount<MainScreen>());
+        Assert.Equal(17, CanaryTestHelper.GetPropertyCount<MainScreen>());
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()
@@ -47,6 +47,11 @@ public sealed class MainScreenTests
         Assert.Equal(ConsolePalette.Black, mainScreen.BackgroundColour);
         Assert.NotEmpty(mainScreen.Controls);
         Assert.True(mainScreen.CursorVisible);
+        Assert.Equal(ConsolePalette.Gray, mainScreen.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, mainScreen.DialogBorderColour);
+        Assert.Equal(ConsolePalette.DarkGray, mainScreen.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, mainScreen.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, mainScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.White, mainScreen.ForegroundColour);
         Assert.Equal(0, mainScreen.Height);
         Assert.NotNull(mainScreen.Name);

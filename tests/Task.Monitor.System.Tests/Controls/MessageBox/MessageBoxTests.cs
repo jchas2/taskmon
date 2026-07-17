@@ -11,7 +11,7 @@ public sealed class MessageBoxTests
 {
     [Fact]
     public void MessageBox_Canary_Test() =>
-        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+        Assert.Equal(20, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
 
     [Fact]
     public void Should_Construct_Default()
@@ -20,10 +20,15 @@ public sealed class MessageBoxTests
         MessageBoxControl control = new(new ForwardingTerminal(terminal.Object));
 
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
         Assert.Empty(control.Controls);
+        Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.DarkGray, control.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
         Assert.Equal(ConsolePalette.White, control.ForegroundColour);
         Assert.Equal(0, control.Height);
-        Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
         Assert.NotNull(control.Name);
         Assert.Equal(MessageBoxResult.None, control.Result);
         Assert.True(0 == control.TabIndex);
@@ -48,6 +53,11 @@ public sealed class MessageBoxTests
         
         MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             BackgroundColour = ConsolePalette.Gray,
+            DialogBackgroundColour = ConsolePalette.Green,
+            DialogBorderColour = ConsolePalette.Yellow,
+            DialogButtonBackgroundColour = ConsolePalette.Magenta,
+            DialogButtonForegroundColour = ConsolePalette.Red,
+            DialogForegroundColour = ConsolePalette.DarkBlue,
             ForegroundColour = ConsolePalette.Black,
             Buttons = MessageBoxButtons.OkCancel,
             Height = 12,
@@ -60,6 +70,11 @@ public sealed class MessageBoxTests
         };
 
         Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Green, control.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Yellow, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.Magenta, control.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Red, control.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.DarkBlue, control.DialogForegroundColour);
         Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
         Assert.True(control.Buttons == MessageBoxButtons.OkCancel);
         Assert.Equal(12, control.Height);
