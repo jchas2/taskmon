@@ -40,6 +40,12 @@ public sealed class RecordingTerminal : ISystemTerminal
         output.Append(ch);
     }
 
+    public void Write(char ch, int count)
+    {
+        WriteCharCalls++;
+        output.Append(new string(ch, count));
+    }
+
     public void Write(string message)
     {
         WriteStringCalls++;

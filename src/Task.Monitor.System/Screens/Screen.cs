@@ -1,3 +1,4 @@
+using System.Buffers.Text;
 using System.Drawing;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.InputBox;
@@ -40,7 +41,6 @@ public partial class Screen : Control
         get => base.BackgroundColour;
         set {
             base.BackgroundColour = value;
-            messageBox.BackgroundColour = value;
             inputBox.BackgroundColour = value;
         }
     }
@@ -53,6 +53,12 @@ public partial class Screen : Control
 
     public bool CursorVisible { get; set; } = true;
 
+    public Color DialogBackgroundColour { get => messageBox.DialogBackgroundColour; set => messageBox.DialogBackgroundColour = value; }
+    public Color DialogBorderColour { get => messageBox.DialogBorderColour; set => messageBox.DialogBorderColour = value; }
+    public Color DialogButtonBackgroundColour { get => messageBox.DialogButtonBackgroundColour; set => messageBox.DialogButtonBackgroundColour = value; }
+    public Color DialogButtonForegroundColour { get => messageBox.DialogButtonForegroundColour; set => messageBox.DialogButtonForegroundColour = value; }
+    public Color DialogForegroundColour { get => messageBox.DialogForegroundColour; set => messageBox.DialogForegroundColour = value; }
+    
     private void Focus()
     {
         if (focusedControl != null) {
@@ -87,21 +93,12 @@ public partial class Screen : Control
         get => base.ForegroundColour;
         set {
             base.ForegroundColour = value;
-            messageBox.ForegroundColour = value;
             inputBox.ForegroundColour = value;
         }
     }
 
     private bool IsActive { get; set; } = false;
-
-    protected override void OnClear()
-    {
-        base.OnClear();
-        
-        messageBox.Clear();
-        inputBox.Clear();
-    }
-
+    
     protected override void OnDraw()
     {
         base.OnDraw();

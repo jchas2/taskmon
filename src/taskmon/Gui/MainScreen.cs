@@ -133,6 +133,12 @@ public sealed class MainScreen : Screen
 
         BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
         ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+
+        DialogBackgroundColour = runContext.AppConfig.DefaultTheme.HeaderBackground;
+        DialogBorderColour = runContext.AppConfig.DefaultTheme.HeaderForeground;
+        DialogForegroundColour = runContext.AppConfig.DefaultTheme.HeaderForeground;
+        DialogButtonBackgroundColour = runContext.AppConfig.DefaultTheme.BackgroundHighlight;
+        DialogButtonForegroundColour = runContext.AppConfig.DefaultTheme.ForegroundHighlight;
         
         foreach (Control ctrl in Controls) {
             ctrl.BackgroundColour = BackgroundColour;

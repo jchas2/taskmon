@@ -27,6 +27,7 @@ public sealed class ForwardingTerminal(ISystemTerminal inner) : ISystemTerminal
     public ConsoleKeyInfo ReadKey() => inner.ReadKey();
     public void SetCursorPosition(int left, int top) => inner.SetCursorPosition(left, top);
     public void Write(char ch) => inner.Write(ch);
+    public void Write(char ch, int count) => inner.Write(ch, count);
     public void Write(string message) => inner.Write(message);
     public void WriteEmptyLine() => inner.WriteEmptyLine();
     public void WriteEmptyLineTo(int x) => inner.WriteEmptyLineTo(x);

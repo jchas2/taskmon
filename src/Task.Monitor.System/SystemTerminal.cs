@@ -87,6 +87,14 @@ public partial class SystemTerminal : ISystemTerminal
     public int WindowWidth => Console.WindowWidth;
     public int WindowHeight => Console.WindowHeight;
     public void Write(char ch) => Console.Out.Write(ch);
+
+    public void Write(char ch, int count)
+    {
+        Span<char> buffer = stackalloc char[count];
+        buffer.Fill(ch);
+        Write(buffer);
+    }
+    
     public void Write(ReadOnlySpan<char> chars) => Console.Out.Write(chars);
     public void Write(string message) => Console.Out.Write(message);
     public void WriteEmptyLine() => WriteEmptyLineTo(Console.WindowWidth);

@@ -20,6 +20,7 @@ public interface ISystemTerminal
     int WindowWidth { get; }
     int WindowHeight { get; }
     void Write(char ch);
+    void Write(char ch, int count);
     void Write(ReadOnlySpan<char> chars);
     void Write(string message);
     void WriteEmptyLine();
