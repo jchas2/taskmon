@@ -19,11 +19,11 @@ public sealed class MessageBox : Control
 
     public MessageBoxButtons Buttons { get; set; } = MessageBoxButtons.OkCancel;
 
-    public Color DialogBackgroundColour { get; set; } = Color.Gray;
-    public Color DialogBorderColour { get; set; } = Color.Black;
-    public Color DialogButtonBackgroundColour { get; set; } = Color.DarkGray;
-    public Color DialogButtonForegroundColour { get; set; } = Color.Black;
-    public Color DialogForegroundColour { get; set; } = Color.Black;
+    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
+    public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
+    public Color DialogButtonBackgroundColour { get; set; } = ConsolePalette.DarkGray;
+    public Color DialogButtonForegroundColour { get; set; } = ConsolePalette.Black;
+    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
     
     private void DrawButton(
         int x,
