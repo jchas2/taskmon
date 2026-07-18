@@ -2,48 +2,61 @@
   <img src="./docs/images/app_icon.png" alt="taskmgr-cli icon" height="40" align="left" />
   Task Monitor
 </h1>
-A powerful, cross-platform terminal-based task monitor designed to provide real-time monitoring and management of a computer's performance, active processes, and resource utilization. 
-Originally inspired by tools like top, htop and the Windows Task Manager, it provides performance monitoring for system resources (including CPU, GPU, Memory, Disk and Network) and process
-management functions.
+<p>A modern, powerful cross-platform terminal-based task monitor designed to provide real-time monitoring and management of a computer's performance, active processes, and resource utilization. 
+Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Task Manager</b>, it provides performance monitoring at-a-glance for system resources (including CPU, GPU, Memory, Swap, Disk and Network) and process
+management functions.</p>
 
-![Task Monitor](./docs/images/taskmon.gif)
+[![Homebrew](https://img.shields.io/badge/homebrew-orange?style=flat-square&logo=homebrew&logoColor=white)](#macos-on-apple-silicon)
+[![Chocolatey](https://img.shields.io/badge/chocolatey-blue?style=flat-square&logo=chocolatey&logoColor=white)](#windows-on-x64-and-arm64)
+
+[![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)](#macos-on-apple-silicon)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#windows-on-x64-and-arm64)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](#linux-distros)
+
+
+![Task Monitor](./docs/images/taskmon_main.png)
 
 ## Features
 
-### Core Capabilities
-
-- **Real-Time Process Monitoring** - Live updates of CPU & GPU, memory, disk I/O, Network I/O and thread counts
-- **Advanced Process Information** - View detailed module lists, thread states, and command-line arguments (platform dependent)
-- **Multi-Process Selection** - Select and terminate multiple processes simultaneously
-- **Smart Filtering** - Filter by process name, username, or PID
-- **Flexible Sorting** - Sort by any column (Process, PID, User, Priority, CPU%, Threads, GPU%, Memory, Disk, Path)
-- **Rich System Metrics** - Visual meters for CPU, GPU, memory usage, Virtual/Swap, Disk and Network
-- **Keyboard-Driven Interface** - Full F1-F10 hotkey support for navigation
-
-### Customization
-
-- **Built-in Themes** - Colour, Mono, MS-DOS, Tokyo Night, and Matrix
-- **Configurable UI** - 26 customizable color keys per theme
-- **Adjustable Performance** - Configurable update intervals and process display limits
-- **IRIX Mode** - Toggle between per-core and total CPU reporting per process
-
-### Deep Process Insights
-- **Thread-Level Information**: View individual thread states, CPU times, and priorities to verify process state
-- **Windows Service Details**: Shows actual service names and startup parameters, not just generic `svchost.exe` entries
-- **Module Analysis**: Full DLL/library enumeration for each process (Currently Windows only)
+- **No sudo or administrator privilege required** - Native platform APIs used on each platform.
+- Written in C# using platform native interop for maximum performance and minimum memory overhead.
+- **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
+- High resolution charts in 24-bit colour.
+- Switch layouts (F8) to focus charts on specific system metrics. 
+- **Real-Time Process Monitoring**: View Process, Pid, CPU%, Avg CPU%, Max CPU%, Threads, GPU%, Avg GPU%, Max GPU%, Memory, Avg Memory, Max Memory, Disk MB/s, Avg Disk MB/s, Max Disk MB/s and Command Path.
+- Process list formatted similar to the original **htop** and **top**. 
+- Process CPU% defaults to IRIX mode for *nix systems.
+- Process deep dive (F5) to view live thread times and loaded libraries (system and user).
+- **Module Analysis**: Full dynamic and static library enumeration for selected process.
+- Multiple process selection (enabled through the F2 Setup function).
+- Customise update interval (default 1500ms).
+- Customise top number of processes to display (default unlimited).
+- Customise number of process iteration loops.
+- **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
+- Select and terminate multiple processes simultaneously (F6).
+- Filter by process name, username, command path or PID (F4).
+- Sort the process list by any visible column (F3). 
+- Toggle process sorting between ascending (using the 'a' key) and descending (using the 'd' key).
+- Navigate scrollable lists using the &#x2193;, &#x2191; arrow keys and Pg Up and Pg Down keys.  
+- **Multiple Themes**: Ships with dozens of popular, modern 24-bit colour themes.
+- Modern terminal detection to support colour desaturation.
+- **Customise Configuration**: Manage configuration settings using the (F2) Setup function. Interactive UI for modifying and saving settings.
+- **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the F9 function).
 
 **Cross-Platform Native Performance**
-- Platform-specific optimizations using native APIs (Win32,  Mach kernel, IOKit, IOReport, CoreFoundation)
-- Minimal generic cross-platform wrappers - direct system calls for maximum performance
+- Platform-specific optimizations using native APIs (Win32,  Mach kernel). 
+- .net native with small memory footprint.
+- No dependencies on libraries such as ncurses.
 
 ## Installation
 
-### macOS (Homebrew)
+### macOS on Apple Silicon
 
-The easiest way to install on macOS ARM64 (Apple Silicon):
+The easiest way to install on macOS ARM64 (Apple Silicon) isusing homebrew:
 
 ```bash
 brew tap jchas2/taskmon
+brew trust jchas2/taskmon
 brew install taskmon
 ```
 
@@ -54,11 +67,11 @@ brew update
 brew upgrade taskmon
 ```
 
-Taskmgr does not require sudo permission on MacOS for system monitoring, however some system process detail won't be available unless run with sudo.
+Task Monitor does not require sudo permission on MacOS for system monitoring, however some system process detail won't be available unless run with sudo.
 
-### Windows (Chocolatey)
+### Windows on x64 and ARM64
 
-The easiest way to install on Windows (x64 and ARM64):
+The easiest way to install on Windows isusing chocolately (pending):
 
 ```powershell
 choco install taskmon
@@ -81,7 +94,156 @@ After downloading:
 
 Task Monitor does not require elevated permission on Windows for system monitoring, however some system process detail won't be available unless run as Administrator.
 
+### Linux Distros
+
+Task Monitor is not yet available on Linux (coming soon).
+
+## Usage
+
+Task Monitor supports the following commands on startup. Note these commands can also be configured using the F2 Setup function, and saved to configuration for next run.
+
+| Command | What it does |
+|---------|--------------|
+| `taskmon` | Start Task Monitor with configuration defaults. |
+| `taskmon --pid <pid>` | Automatically monitor the pid nnn on startup. |
+| `taskmon --username <username>` | Automatically monitor all processes running under user <username> on startup. |
+| `taskmon --process <processname>` | Automatically monitor all processes with matching <processname> on startup. |
+| `taskmon --sort <column>` | Automatically sort by <column> on startup. |
+| `taskmon --ascending` | Apply ascending sort order (default descending). |
+| `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
+| `taskmon --limit <limit>` | Limit the number of iteration loops and then stop. |
+| `taskmon --nprocs <nprocs>` | Only display the top number of processes <nprocs>. |
+| `taskmon --theme <theme>` | Load a theme <theme> from the available themes. Eg: `taskmon --theme "Dracula Official"` |
+| `taskmon --debug` | Signal a debug break on startup and wait for a debugger to attach. |
+| `taskmon --version` | Print version information and exit. |
+| `taskmon --help` | Show help and usage information. |
+
+Valid sort columns are: AvgCpu,AvgDisk,AvgGpu,AvgMem,Cpu,Disk,Gpu,MaxCpu,MaxDisk,MaxGpu,MaxMem,Mem,Path,Pid,Pri,Process,Thrd,User
+
 ## Configuration
 
-Configuration is managed through the F2 Setup function in the terminal UI. The raw config file is in .ini format and can also be edited manually.
-Configuration is stored in `taskmon.ini` in the application directory.
+Task Monitor stores configuration and log files in the following system directories:
+
+| Config | Description |
+|--------|-------------|
+| `taskmon.ini` | Primary config file in .ini format. |
+| Theme files | One config file per theme. |
+| Layout files | One layout file per TUI layout. Controls size and types of charts on display. | 
+| Log files | One log file per session; logs are rotated > 2MB and routinely deleted. |
+
+### MacOS
+
+| Config | Path |
+|--------|------|
+| `taskmon.ini` | `~\.config\taskmon` |
+| Theme files |  `~\.config\taskmon\themes` |
+| Layout files | `~\.config\taskmon\layouts` | 
+| Log files | `~\Library\Logs\taskmon` |
+
+### Windows
+
+| Config | Path | Description |
+|--------|------|-------------|
+| `taskmon.ini` | `~\AppData\Roaming\taskmon` |
+| Theme files |  `~\AppData\Roaming\taskmon\themes` |
+| Layout files | `~\AppData\Roaming\taskmon\layouts` | 
+| Log files | `~\AppData\Local\taskmon\Logs` | 
+
+## Theme Files
+
+Theme files control the colour palette behaviour for colour desaturation, background opacity, and the colours applied to the TUI screen elements.
+There a number of default themes that are pre-loaded when Task Monitor starts. These themes are kept in .ini files and can be customised as required. Additionally, new theme
+files can be authored and copied to the theme files directory and will automatically be available next time Task Monitor starts.
+
+Below is an example theme file:
+```
+[Dracula Official]
+colour-mode=indexed
+background=transparent
+background-highlight=#3b5070
+col-cmd-normal-user-space=#50fa7b
+col-cmd-low-priority=#0000FF
+col-cmd-high-cpu=#ff79c6
+col-cmd-io-bound=#bd93f9
+col-cmd-script=#e3b341
+col-user-current-non-root=#f8f8f2
+col-user-other-non-root=#f1fa8c
+col-user-system=#ff79c6
+col-user-root=#50fa7b
+command-foreground=#bd93f9
+command-background=#282a36
+delta-highlight-colour=#ffb86c
+error=#db61a2
+foreground=#f8f8f2
+foreground-highlight=#ffb86c
+menubar-foreground=#f1fa8c
+menubar-background=#282a36
+range-high-background=#bd93f9
+range-low-background=#f1fa8c
+range-mid-background=#ffb86c
+range-high-foreground=#000000
+range-low-foreground=#000000
+range-mid-foreground=#000000
+header-background=#282a36
+header-foreground=#f1fa8c
+```
+
+| Example Theme | Description |
+| --- | --- |
+| `[Dracula Official]` | Theme name, used to identify the theme. |
+| `colour-mode=indexed` | `Indexed` means use the colour palette that supports colour desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
+| `background=transparent` | `transaparent` honours background opacity settings in the terminal. Otherwise use a hex colour. |
+| `background-highlight=#3b5070` | Row selection background colour in a list. |
+| `col-cmd-normal-user-space=#50fa7b` | Text colour for user-mode applications. |
+| `col-cmd-low-priority=#0000FF` | Text colour for applications running at a low priority. |
+| `col-cmd-high-cpu=#ff79c6` | Text colour for a process running at high CPU%. |
+| `col-cmd-io-bound=#bd93f9` | Text colour for a process that is IO bound. |
+| `col-cmd-script=#e3b341` | Text colour for script/shell processes. (not supported yet) |
+| `col-user-current-non-root=#f8f8f2` | Username colour for current user if not running as root. |
+| `col-user-other-non-root=#f1fa8c` | Username colour for other non-root users. |
+| `col-user-system=#ff79c6` | Text colour for system users. |
+| `col-user-root=#50fa7b` | Text colour for root/admin users. |
+| `command-foreground=#bd93f9` | Function Key text colour. |
+| `command-background=#282a36` | Function key background colour. |
+| `delta-highlight-colour=#ffb86c` | Flash colour when a metric updates in the process list. |
+| `error=#db61a2` | Text error colour. |
+| `foreground=#f8f8f2` | Text foreground colour. |
+| `foreground-highlight=#ffb86c` | Row selection forground colour in a list. |
+| `menubar-foreground=#f1fa8c` | Menubar text colour. |
+| `menubar-background=#282a36` | Menubar background colour. |
+| `range-high-background=#bd93f9` | Chart colour for high-range values. |
+| `range-low-background=#f1fa8c` | Chart colour for low-range values. |
+| `range-mid-background=#ffb86c` | Chart colour for mid-range values. |
+| `range-high-foreground=#000000` | Text colour for high-range values. |
+| `range-low-foreground=#000000` | Text colour for low-range values. |
+| `range-mid-foreground=#000000` | Text colour for mid-rage values. |
+| `header-background=#282a36` | Column header background colour in a list. |
+| `header-foreground=#f1fa8c` | Column header foreground colour in a list. |
+
+Note: ```colour-mode``` can be temporarily overriden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```.
+
+## Layout Files
+
+Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. 
+
+Below is an example Layout file:
+
+```
+[All Charts]
+ratio=0.4
+num-rows=2
+num-cols=4
+; Chart index
+; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
+charts=0,1,2,3,4,5,6,7
+```
+
+| Example Layout | Description |
+| :--- | :--- |
+| `[All Charts]` | Layout name, used to identify the layout. |
+| `ratio=0.4` | Percentage of the screen Y-axis used to display chart content i.e. 40%. |
+| `num-rows=2` | Number of rows to split the charts across. |
+| `num-cols=4` | Number of columns to show each chart. |
+| `; Chart index` | |
+| `; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec` | Chart identifiers. |
+| `charts=0,1,2,3,4,5,6,7` | Element list of chart identifiers to render across the rows and columns. |
