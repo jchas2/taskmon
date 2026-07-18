@@ -224,7 +224,9 @@ Note: ```colour-mode``` can be temporarily overriden for ALL theme files by sett
 
 ## Layout Files
 
-Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. 
+Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. There a number of default layouts that are pre-loaded when Task Monitor starts. 
+These layouts are kept in .ini files and can be customised as required. Additionally, new layout
+files can be authored and copied to the layout files directory and will automatically be available next time Task Monitor starts.
 
 Below is an example Layout file:
 
@@ -246,4 +248,4 @@ charts=0,1,2,3,4,5,6,7
 | `num-cols=4` | Number of columns to show each chart. |
 | `; Chart index` | |
 | `; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec` | Chart identifiers. |
-| `charts=0,1,2,3,4,5,6,7` | Element list of chart identifiers to render across the rows and columns. |
+| `charts=0,1,2,3,4,5,6,7` | Array of chart identifiers to render across the rows and columns. |
