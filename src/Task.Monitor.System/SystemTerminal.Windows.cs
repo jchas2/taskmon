@@ -25,18 +25,19 @@ public partial class SystemTerminal
 
     private void EnableAnsiTerminalCodesInternal()
     {
-        // Not all terminals on Windows platforms (cmd.exe as an example) support ANSI escape codes.
+        // Not all terminals on Windows platforms (conhost.exe as an example) support ANSI escape codes.
         // We attempt to enable here to support older terminals.
-        
         IntPtr consoleHandle = ProcessEnv.GetStdHandle(ProcessEnv.STD_OUTPUT_HANDLE);
         
         if (consoleHandle == IntPtr.Zero || consoleHandle == new IntPtr(-1)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessEnv.GetStdHandle));
+            Trace.WriteLine($"EnableAnsiTerminalCodesInternal GetStdHandle: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
             return;
         }
 
         if (!ConsoleApi.GetConsoleMode(consoleHandle, out uint originalMode)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.GetConsoleMode));
+            Trace.WriteLine($"EnableAnsiTerminalCodesInternal GetConsoleMode: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
             return;
         }
 
@@ -44,6 +45,7 @@ public partial class SystemTerminal
 
         if (!ConsoleApi.SetConsoleMode(consoleHandle, newMode)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.SetConsoleMode));
+            Trace.WriteLine($"EnableAnsiTerminalCodesInternal SetConsoleMode: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
         }
     }
 #endif

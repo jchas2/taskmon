@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Versioning;
 using System.ServiceProcess;
+using Task.Monitor.Interop.Win32;
 using Task.Monitor.System.Process;
 using SysDiag = System.Diagnostics;
 
@@ -8,6 +9,17 @@ namespace Task.Monitor.System.Tests.Process;
 public class ServiceUtilsTests
 {
 #if __WIN32__
+    [SkippableFact]
+    [SupportedOSPlatform("windows")]
+    public void Should_Get_Services()
+    {
+        ProcessService processService = new();
+        
+        ServiceInfo[] serviceInfos = ServiceUtils.GetServices();
+        Assert.NotNull(serviceInfos);
+        Assert.NotEmpty(serviceInfos);
+    }
+    
     [SkippableFact]
     [SupportedOSPlatform("windows")]
     public void Should_Get_Services_With_Pid()
@@ -29,8 +41,8 @@ public class ServiceUtilsTests
 
         bool foundAnyService = processService.GetProcesses()
             .Select(p => {
-                if (ServiceUtils.GetService(p.Pid, out ServiceController? sc)) {
-                    return sc;
+                if (ServiceUtils.GetService(p.Pid, out ServiceInfo? si)) {
+                    return si;
                 }
                 return null; 
             })
