@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to create and publish a new release of taskmgr.
+This document describes how to create and publish a new release of Task Monitor.
 
 ## Overview
 
@@ -12,36 +12,7 @@ Releases are fully automated via GitHub Actions. When you push a git tag, the wo
 
 ## Prerequisites
 
-Before creating your first release, ensure:
-- [ ] Homebrew tap repository (`jchas2/homebrew-taskmgr`) is set up
-- [ ] `HOMEBREW_TAP_TOKEN` secret is configured in the taskmgr-cli repository
-- [ ] All tests pass locally
-- [ ] CHANGELOG is updated (if you maintain one)
-
-See [Phase 3 Setup](../PHASE3_MANUAL_STEPS.md) for initial configuration.
-
-## Creating a Release
-
-### 1. Prepare the Release
-
-Ensure your main branch is up to date and all changes are merged:
-
-```bash
-git checkout main
-git pull origin main
-```
-
-Run tests to verify everything works:
-
-```bash
-# macOS
-./eng/build.sh --restore --build --test --config Release
-
-# Windows
-.\eng\build.ps1 -restore -build -test -config Release
-```
-
-### 2. Choose a Version Number
+### 1. Choose a Version Number
 
 Use [Semantic Versioning](https://semver.org/):
 - **MAJOR** version for incompatible API changes
@@ -50,7 +21,7 @@ Use [Semantic Versioning](https://semver.org/):
 
 Examples: `1.3.0`, `2.0.0`, `1.3.1`
 
-### 3. Create and Push the Tag
+### 2. Create and Push the Tag
 
 Create an annotated tag with a release message:
 
@@ -64,9 +35,9 @@ git push origin v1.3.0
 
 **Important**: The tag must start with `v` followed by the version number (e.g., `v1.3.0`).
 
-### 4. Monitor the Release Workflow
+### 3. Monitor the Release Workflow
 
-1. Go to the [Actions tab](https://github.com/jchas2/taskmgr-cli/actions)
+1. Go to the [Actions tab](https://github.com/jchas2/taskmon/actions)
 2. Find the "Release" workflow run for your tag
 3. Monitor the progress of all jobs:
    - `create-release` - Creates the GitHub Release
@@ -74,22 +45,22 @@ git push origin v1.3.0
    - `build-windows` - Builds Windows binary
    - `update-homebrew` - Updates Homebrew formula
 
-The entire process takes approximately 10-15 minutes.
+The entire process takes approximately 1-3 minutes.
 
 ### 5. Verify the Release
 
 After the workflow completes successfully:
 
 1. **Check the GitHub Release**:
-   - Go to [Releases](https://github.com/jchas2/taskmgr-cli/releases)
+   - Go to [Releases](https://github.com/jchas2/taskmon/releases)
    - Verify all artifacts are present:
-     - `taskmgr-{version}-macos-arm64.tar.gz`
-     - `taskmgr-{version}-macos-arm64.tar.gz.sha256`
-     - `taskmgr-{version}-windows-x64.zip`
-     - `taskmgr-{version}-windows-x64.zip.sha256`
+     - `taskmon-{version}-macos-arm64.tar.gz`
+     - `taskmon-{version}-macos-arm64.tar.gz.sha256`
+     - `taskmon-{version}-windows-x64.zip`
+     - `taskmon-{version}-windows-x64.zip.sha256`
 
 2. **Check Homebrew Formula**:
-   - Go to [homebrew-taskmgr](https://github.com/jchas2/homebrew-taskmgr)
+   - Go to [homebrew-taskmon](https://github.com/jchas2/homebrew-taskmon)
    - Verify the formula was updated with the new version
    - Check that SHA256 checksums were updated
 
@@ -98,23 +69,16 @@ After the workflow completes successfully:
    macOS (Homebrew):
    ```bash
    brew update
-   brew upgrade taskmgr
-   taskmgr --version
-   # Should show: taskmgr version {version}
-   ```
-
-   Direct download:
-   ```bash
-   # Download and extract the binary for your platform
-   # Then verify:
-   ./taskmgr --version
+   brew upgrade taskmon
+   taskmon --version
+   # Should show: taskmon version {version}
    ```
 
 ## Manual Release (Alternative)
 
 If you need to trigger a release manually without creating a tag:
 
-1. Go to [Actions](https://github.com/jchas2/taskmgr-cli/actions)
+1. Go to [Actions](https://github.com/jchas2/taskmon-cli/actions)
 2. Select the "Release" workflow
 3. Click "Run workflow"
 4. Enter the version (without the `v` prefix, e.g., `1.3.0`)
@@ -131,7 +95,6 @@ Note: This will create both the tag and the release.
 **Solutions**:
 - Check the logs in GitHub Actions for specific error messages
 - Verify the code builds locally on your machine
-- Ensure .NET 10.0 SDK is properly referenced in the workflow
 
 ### Homebrew Update Fails
 
@@ -148,7 +111,7 @@ Note: This will create both the tag and the release.
    - Ensure `HOMEBREW_TAP_TOKEN` exists and is valid
 
 3. **Check repository access**:
-   - Ensure the token has access to `jchas2/homebrew-taskmgr`
+   - Ensure the token has access to `jchas2/homebrew-taskmon`
 
 ### Wrong Version Number
 
@@ -193,21 +156,21 @@ $env:RELEASE_VERSION="1.3.0-rc1"
 ### Test Archive Creation
 
 ```bash
-cd src/taskmgr/bin/Release/net10.0/osx-arm64/publish
-tar -czf taskmgr-1.3.0-rc1-macos-arm64.tar.gz taskmgr
-shasum -a 256 taskmgr-1.3.0-rc1-macos-arm64.tar.gz
+cd src/taskmon/bin/Release/net10.0/osx-arm64/publish
+tar -czf taskmon-1.3.0-rc1-macos-arm64.tar.gz taskmon
+shasum -a 256 taskmon-1.3.0-rc1-macos-arm64.tar.gz
 ```
 
 ### Test Homebrew Formula Locally
 
 ```bash
-# Edit homebrew-tap/Formula/taskmgr.rb with test values
+# Edit homebrew-tap/Formula/taskmon.rb with test values
 # Then test installation:
-brew install --build-from-source homebrew-tap/Formula/taskmgr.rb
+brew install --build-from-source homebrew-tap/Formula/taskmon.rb
 ```
 
 ## Version History
 
 Releases are tracked in:
-- [GitHub Releases](https://github.com/jchas2/taskmgr-cli/releases)
-- [Homebrew Formula](https://github.com/jchas2/homebrew-taskmgr/commits/main/Formula/taskmgr.rb)
+- [GitHub Releases](https://github.com/jchas2/taskmon/releases)
+- [Homebrew Formula](https://github.com/jchas2/homebrew-taskmon/commits/main/Formula/taskmgr.rb)
