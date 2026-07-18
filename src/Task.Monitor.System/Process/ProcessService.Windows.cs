@@ -46,7 +46,7 @@ public sealed partial class ProcessService
             processInfo.ProcessName);
         
         processInfo.ModuleName = Path.GetFileName(entry.szExeFile);
-        processInfo.IsDaemon = ServiceUtils.GetService((int)entry.th32ProcessID, out ServiceController? _);
+        processInfo.IsDaemon = ServiceUtils.GetService((int)entry.th32ProcessID, out ServiceInfo? _);
         processInfo.IsLowPriority = entry.pcPriClassBase < 8;
         processInfo.UserName = GetProcessUserName(processHandle);
         processInfo.CmdLine = GetProcessCommandLine((int)entry.th32ProcessID, processInfo.FileName);
@@ -84,8 +84,8 @@ public sealed partial class ProcessService
     private static string GetProcessCommandLine(int pid, in string defaultValue)
     {
         try {
-            if (ServiceUtils.GetService(pid, out ServiceController? serviceController)) {
-                string imagePath = ServiceUtils.GetServiceImagePath(serviceController!.ServiceName) ?? defaultValue;
+            if (ServiceUtils.GetService(pid, out ServiceInfo? serviceInfo)) {
+                string imagePath = ServiceUtils.GetServiceImagePath(serviceInfo!.ServiceName) ?? defaultValue;
                 return Environment.ExpandEnvironmentVariables(imagePath);
             }
 
@@ -240,8 +240,8 @@ public sealed partial class ProcessService
         string processPath,
         string defaultValue)
     {
-        if (ServiceUtils.GetService((int)pid, out ServiceController? serviceController)) {
-            return serviceController?.DisplayName ?? defaultValue;
+        if (ServiceUtils.GetService((int)pid, out ServiceInfo? serviceInfo)) {
+            return serviceInfo?.DisplayName ?? defaultValue;
         }
 
         if (string.IsNullOrWhiteSpace(processPath)) {
