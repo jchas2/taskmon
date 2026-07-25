@@ -239,11 +239,12 @@ public partial class ProcessInfoControl : Control
 
         menuView.SetFocus();
         menuView.ItemClicked += MenuViewOnItemClicked;
-        
-        cancellationTokenSource = new CancellationTokenSource();
+
+        cancellationTokenSource = null;
         workerTask = null;
 
         if (AutoRefresh) {
+            cancellationTokenSource = new CancellationTokenSource();
             workerTask = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
             Trace.WriteLine($"ProcessInfoControl worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
         }
@@ -294,10 +295,8 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnUnload()
     {
-        cancellationTokenSource?.Cancel();
-
         try {
-            Trace.WriteLine("Stopping ProcessInfoControl worker task.");
+            cancellationTokenSource?.Cancel();
             workerTask?.Wait();
         }
         catch (AggregateException aggEx) {
@@ -488,5 +487,7 @@ public partial class ProcessInfoControl : Control
             }
             Thread.Sleep(1000);
         }
+        
+        Trace.WriteLine("ProcessInfoControl CancellationToken signalled.");
     }
 }

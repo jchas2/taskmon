@@ -1,4 +1,3 @@
-using System.Reflection;
 using Task.Monitor.Process;
 using Task.Monitor.Tests.Common;
 
@@ -8,7 +7,7 @@ public sealed class ProcessorInfoTests
 {
     [Fact]
     public void ProcessorInfo_Canary_Test() =>
-        Assert.Equal(28, CanaryTestHelper.GetPropertyCount<ProcessorInfo>());
+        Assert.Equal(29, CanaryTestHelper.GetPropertyCount<ProcessorInfo>());
     
     [Fact]                                                                                                                             
     public void Default_Constructor_Initializes_With_Default_Values()                                                                  
@@ -21,7 +20,8 @@ public sealed class ProcessorInfoTests
         Assert.Equal(0, info.BasePriority);                                                                                            
         Assert.Equal(0, info.ParentPid);                                                                                               
         Assert.False(info.IsDaemon);                                                                                                   
-        Assert.False(info.IsLowPriority);                                                                                              
+        Assert.False(info.IsLowPriority);
+        Assert.False(info.IsRunningAsRoot);
         Assert.Equal(default(DateTime), info.StartTime);                                                                               
         Assert.Equal(string.Empty, info.ProcessName);                                                                                  
         Assert.Equal(string.Empty, info.FileDescription);                                                                              
@@ -56,7 +56,8 @@ public sealed class ProcessorInfoTests
             BasePriority = 8,                                                                                                          
             ParentPid = 1,                                                                                                             
             IsDaemon = true,                                                                                                           
-            IsLowPriority = false,                                                                                                     
+            IsLowPriority = false,
+            IsRunningAsRoot = true,
             StartTime = startTime,                                                                                                     
             ProcessName = "test.exe",                                                                                                  
             FileDescription = "Test Process",                                                                                          
@@ -86,7 +87,8 @@ public sealed class ProcessorInfoTests
         Assert.Equal(8, info.BasePriority);                                                                                            
         Assert.Equal(1, info.ParentPid);                                                                                               
         Assert.True(info.IsDaemon);                                                                                                    
-        Assert.False(info.IsLowPriority);                                                                                              
+        Assert.False(info.IsLowPriority);
+        Assert.True(info.IsRunningAsRoot);
         Assert.Equal(startTime, info.StartTime);                                                                                       
         Assert.Equal("test.exe", info.ProcessName);                                                                                    
         Assert.Equal("Test Process", info.FileDescription);                                                                            

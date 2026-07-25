@@ -67,10 +67,19 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
         };
         
         bytesWritten = 0;
-        PruneOldLogs();
+        
+        PruneOldLogs(
+            directory,
+            maxFiles,
+            prefix,
+            extension);
     }
 
-    private void PruneOldLogs()
+    private static void PruneOldLogs(
+        string directory,
+        int maxFiles,
+        string prefix,
+        string extension)
     {
         try {
             string[] segments = Directory.GetFiles(directory, $"{prefix}_*.{extension}");
@@ -106,6 +115,12 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
 
         Trace.Listeners.Add(traceListener);
         Trace.AutoFlush = true;
+        
+        PruneOldLogs(
+            directory,
+            maxFiles,
+            prefix,
+            extension);
     }
 
     private static string UseNextFileName(string prefix = "debug", string extension = "log") =>

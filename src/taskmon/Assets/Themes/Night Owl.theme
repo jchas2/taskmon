@@ -1,0 +1,38 @@
+﻿[Night Owl]
+colour-mode=indexed
+
+background=transparent
+background-highlight=#1d3b53       ; editor.selectionBackground 
+
+col-cmd-normal-user-space=#ecc48d    ; tokenColors: string
+col-cmd-low-priority=#82AAFF         ; tokenColors: constant
+col-cmd-high-cpu=#c5e478             ; tokenColors: variable
+col-cmd-io-bound=#7fdbca             ; tokenColors: punctuation
+col-cmd-script=#7fdbca               ; tokenColors: support
+col-user-current-non-root=#637777    ; tokenColors: comment
+col-user-other-non-root=#c5e478      ; tokenColors: support.function
+col-user-system=#d9f5dd              ; tokenColors: punctuation.definition.parameters
+col-user-root=#d9f5dd                ; tokenColors: punctuation.definition.parameters
+
+command-foreground=#d2dee7          ; tab.activeForeground
+command-background=#0b2942          ; tab.activeBackground
+
+delta-highlight-colour=#ffcb8b      ; tokencolors: meta
+
+error=#db61a2
+
+foreground=#c792ea                  ; tokenColors: entity 
+foreground-highlight=#e2a2f433      ; editor.wordHighlightStrongBackground
+
+menubar-foreground=#d2dee7          ; tab.activeForeground
+menubar-background=#0b2942          ; tab.activeBackground
+
+range-high-background=#F78C6C       ; tokenColors: variable
+range-low-background=#637777        ; tokenColors: comment 
+range-mid-background=#c792ea        ; tokenColors: keyword
+range-high-foreground=#222222
+range-low-foreground=#222222
+range-mid-foreground=#222222
+
+header-background=#0b2942          ; tab.activeBackground
+header-foreground=#d2dee7          ; tab.activeForeground

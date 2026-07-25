@@ -143,12 +143,12 @@ public sealed class SetupScreenTests
             { "Show Swap memory numerically",                      "generalView" },
 #endif
 #if __WIN32__
-            { "Use Irix mode for process CPU% (Unix default)",     "generalView" },
+            { "Use Irix mode for per-process CPU% (individual core saturation)",     "generalView" },
 #endif
 #if __APPLE__
-            { "Use Irix mode for process CPU% (Activity Monitor)", "generalView" },
+            { "Use Irix mode for per-process CPU% (Activity Monitor)",               "generalView" },
 #endif
-            { Constants.Sections.ThemeTaskmonDefault,                 "themeView" },
+            { Constants.Sections.ThemeTaskmonDefault,              "themeView" },
             { Constants.Sections.ThemeMsDos,                       "themeView" },
             
             { "Blocks",                                            "metreView" },

@@ -12,31 +12,37 @@ namespace Task.Monitor;
 
 class Program
 {
-    internal const int UnhandledExceptionExitCode = 1;
+    internal const int ExitSuccess = 0;
+    internal const int ExitFailure = 1;
+    internal const int UnhandledExceptionExitCode = 2;
     private const int DebugWait = 3000;
     
+    private static void UnhandledErrorConsoleTidyUp()
+    {
+        Console.ResetColor();
+        Console.CursorVisible = true;
+    }
+
     private static int Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => {
             ExceptionHelper.HandleUnhandledException(eventArgs);
+            UnhandledErrorConsoleTidyUp();
             Environment.Exit(UnhandledExceptionExitCode);
         };
 
         TaskScheduler.UnobservedTaskException += (sender, eventArgs) => {
             ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(eventArgs.Exception, isTerminating: true));
+            UnhandledErrorConsoleTidyUp();
             eventArgs.SetObserved();
+            Environment.Exit(UnhandledExceptionExitCode);
         };        
         
         Console.CancelKeyPress += (sender, args) => {
-            Console.ResetColor();
-            Console.CursorVisible = true;
+            Trace.WriteLine("Ctrl+C or Ctrl+Break signalled");
+            UnhandledErrorConsoleTidyUp();
         };
 
-        using TerminalUtf8Encoder _ = new();
-        Console.OutputEncoding = Encoding.UTF8;
-
-        using TerminalColourRestorer __ = new();
-        
         if (args.Any(arg => arg.Equals("--debug", StringComparison.CurrentCultureIgnoreCase))) {
             OutputWriter.Out.WriteLine($"Waiting for debugger attach to Pid {Environment.ProcessId}");
             
@@ -47,14 +53,15 @@ class Program
             Debugger.Break();
         }
         
+        // CI tooling relies on this switch, resolve early.
         if (args.Any(arg => arg.Equals("--version", StringComparison.CurrentCultureIgnoreCase))) {
             var version = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "Unknown";
             Console.WriteLine($"{Constants.AppName} version {version}");
-            return 0;
+            return ExitSuccess;
         }
-        
+
         ProcessService processService = new();
         SystemTerminal terminal = new();
         ModuleService moduleService = new();
@@ -71,19 +78,17 @@ class Program
                 moduleService,
                 threadService,
                 processor,
-                appConfig,
-                outputWriter: null);
+                appConfig);
 
-            TaskMgrApp app = new(runContext);
+            TaskMonApp app = new(runContext);
             return app.Run(args);
         }
         catch (Exception e) {
             ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(e, isTerminating: true));
-            Console.ResetColor();
-            Console.CursorVisible = true;
+            UnhandledErrorConsoleTidyUp();
             Environment.Exit(UnhandledExceptionExitCode);
         }
 
-        return 0;
+        return ExitSuccess;
     }
 }

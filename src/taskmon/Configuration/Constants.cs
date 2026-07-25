@@ -17,7 +17,7 @@ public sealed class Constants
         public const string Iterations = "iterations";
 
         public const string ThemeTaskmonDefault = "Taskmon Default";
-        public const string ThemeMsDos = "MSDOS";
+        public const string ThemeMsDos = "MS-DOS";
 
         public const string LayoutAllCharts = "All Charts";
     }

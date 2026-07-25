@@ -28,7 +28,7 @@ public sealed class MainScreenTests
     {
         Mock<ISystemTerminal> terminalMock = new();
         ScreenApplication screenApp = new(terminalMock.Object);
-        MainScreen mainScreen = new(screenApp, runContext);
+        MainScreen mainScreen = new(runContext, screenApp);
 
         Assert.NotNull(mainScreen);
     }
@@ -42,7 +42,7 @@ public sealed class MainScreenTests
     {
         Mock<ISystemTerminal> terminalMock = new();
         ScreenApplication screenApp = new(terminalMock.Object);
-        MainScreen mainScreen = new(screenApp, runContext);
+        MainScreen mainScreen = new(runContext, screenApp);
 
         Assert.Equal(ConsolePalette.Black, mainScreen.BackgroundColour);
         Assert.NotEmpty(mainScreen.Controls);

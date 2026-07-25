@@ -1,10 +1,9 @@
-using System.CodeDom;
 using System.Drawing;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
-using Task.Monitor.System;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 
 namespace Task.Monitor.Gui;
@@ -12,9 +11,29 @@ namespace Task.Monitor.Gui;
 public class HelpScreen : Screen
 {
     private readonly RunContext runContext;
-    private StringBuilder helpText = new();
+    private readonly ListView helpView;
+    private StringBuilder colourHelpText = new();
+    private StringBuilder functionHelpText = new();
 
-    public HelpScreen(RunContext runContext) : base(runContext.Terminal) => this.runContext = runContext;
+    public HelpScreen(RunContext runContext) : base(runContext.Terminal)
+    {
+        this.runContext = runContext;
+        
+        helpView = new(runContext.Terminal) {
+            EnableScroll = false,
+            EnableRowSelect = false,
+            ShowColumnHeaders = false,
+            ShowCheckboxes = false,
+        };
+
+        helpView.ColumnHeaders
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""));
+        
+        Controls.Add(helpView);
+    } 
 
     protected override void OnDraw()
     {
@@ -28,11 +47,15 @@ public class HelpScreen : Screen
         Terminal.WriteEmptyLineTo(offsetX);
         Terminal.Write(menubar.ToBold());
         Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
+        Terminal.WriteLine(colourHelpText.ToString());
         
+        helpView.Draw();
+        
+        Terminal.SetCursorPosition(0, helpView.Y + helpView.Height);
         Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
         Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.Foreground;
         Terminal.WriteEmptyLine();
-        Terminal.WriteLine(helpText.ToString());
+        Terminal.WriteLine(functionHelpText.ToString());
         
         KeyBindControl.Draw(
             "ESC",
@@ -51,66 +74,92 @@ public class HelpScreen : Screen
         
         Color bg = runContext.AppConfig.DefaultTheme.Background;
         Color fg = runContext.AppConfig.DefaultTheme.Foreground;
+        Color keyColour = runContext.AppConfig.DefaultTheme.RangeLowBackground;
         Theme theme = runContext.AppConfig.DefaultTheme;
 
         BackgroundColour = bg;
         ForegroundColour = fg;
-        
-        helpText.Clear();
-        helpText.AppendLine();
 
-        helpText.AppendLine("Metre Colours:".ToColour(fg, bg));
-        helpText.Append("Low ".ToColour(theme.RangeLowBackground, bg));
-        helpText.Append("Mid ".ToColour(theme.RangeMidBackground, bg));
-        helpText.AppendLine("High".ToColour(theme.RangeHighBackground, bg));
-        helpText.AppendLine();
-        
-        helpText.AppendLine("Process and Path Colours:".ToColour(fg, bg));
-        helpText.AppendLine("Normal process".ToColour(theme.ColumnCommandNormalUserSpace, bg));
-        helpText.AppendLine("Low priority (nice) process".ToColour(theme.ColumnCommandLowPriority, bg));
-        helpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
-        helpText.AppendLine("I/O bound process".ToColour(theme.ColumnCommandIoBound, bg));
-        helpText.Append("Metric ".ToColour(fg, bg));
-        helpText.Append("Low ".ToColour(theme.RangeLowForeground, theme.RangeLowBackground));
-        helpText.Append("Mid ".ToColour(theme.RangeMidForeground, theme.RangeMidBackground));
-        helpText.AppendLine("High".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
-        helpText.AppendLine("Metric changed".ToColour(theme.DeltaHighlightColour, bg));
-        helpText.AppendLine();
-        helpText.AppendLine("Screen Navigation".ToColour(fg, bg));
-        helpText.AppendLine("\u2190    Move left to next screen component".ToColour(fg, bg));
-        helpText.AppendLine("\u2192    Move right to next screen component".ToColour(fg, bg));
-        helpText.AppendLine("\u21B5    Enter to select screen or dialog component".ToColour(fg, bg));
-        helpText.AppendLine("ESC  Exit current screen or dialog".ToColour(fg, bg));
-        helpText.AppendLine();
-        helpText.AppendLine("List Navigation".ToColour(fg, bg));
-        helpText.AppendLine("\u2191    Arrow to scroll up".ToColour(fg, bg));
-        helpText.AppendLine("\u2193    Arrow to scroll down".ToColour(fg, bg));
-        helpText.AppendLine("\u21B5    Enter to select item in list".ToColour(fg, bg));
-        helpText.AppendLine("\u2423    Space-bar to check/uncheck item in list (Checkboxes must be enabled in F2 Setup)".ToColour(fg, bg));
-        helpText.AppendLine();
+        helpView.BackgroundColour = bg;
+        helpView.ForegroundColour = fg;
 
-        helpText.AppendLine("A    Sort column ascending".ToColour(fg, bg));
-        helpText.AppendLine("D    Sort column descending".ToColour(fg, bg));
-        helpText.AppendLine();
+        helpView.ColumnHeaders[0].RightAligned = true;
+        helpView.ColumnHeaders[1].RightAligned = false;
+        helpView.ColumnHeaders[2].RightAligned = true;
+        helpView.ColumnHeaders[3].RightAligned = false;
+
+        colourHelpText.Append("Chart Colours: ".ToColour(fg, bg));
+        colourHelpText.Append("Low ".ToColour(theme.RangeLowBackground, bg));
+        colourHelpText.Append("Mid ".ToColour(theme.RangeMidBackground, bg));
+        colourHelpText.AppendLine("High".ToColour(theme.RangeHighBackground, bg));
+        colourHelpText.AppendLine();
+        colourHelpText.AppendLine("Process and Path Colours:".ToColour(fg, bg));
+        colourHelpText.AppendLine("Normal process".ToColour(theme.ColumnCommandNormalUserSpace, bg));
+        colourHelpText.AppendLine("Low priority (nice) process".ToColour(theme.ColumnCommandLowPriority, bg));
+        colourHelpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
+        colourHelpText.AppendLine("I/O bound process".ToColour(theme.ColumnCommandIoBound, bg));
+        colourHelpText.Append("Metric ".ToColour(fg, bg));
+        colourHelpText.Append("Low ".ToColour(theme.RangeLowForeground, theme.RangeLowBackground));
+        colourHelpText.Append("Mid ".ToColour(theme.RangeMidForeground, theme.RangeMidBackground));
+        colourHelpText.AppendLine("High".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
+        colourHelpText.AppendLine("Metric changed".ToColour(theme.DeltaHighlightColour, bg));
         
-        helpText.AppendLine(
-@"Function Keys
-  F1   Show this help screen.
-  F2   Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.  
-  F3   Prompt to sort process list by one of the visible columns. Press ENTER to accept selection or ESC to abandon.
-  F4   Filter the current process list: Enter a partial name and processes with partial matching names, paths, PIDs or user names will show. To cancel filtering, enter F4 again and clear or ESC. If --pid, --username or --process used on start, filter is applied to existing filters.
-  F5   Show detailed process info, including threads, cpu time, loaded modules and handles (OS specific).
-  F6   Terminate the selected task in the process list. If checkboxes are enabled in F2 Setup, all checked processes will be terminated.
-  F7   Cycle between themes.
-  F8   Cycle between layouts.
-  F9   Show information about this app and the system.
-  F10  Exit App.".ToColour(fg, bg));
+        helpView.Items.Add(new ListViewItem(new[] { "", "", "", "" }));
+        helpView.Items.Add(new ListViewItem(new[] { "\u2190:", "Move left to next screen component",  "\u2191:", "Arrow to scroll up" }));
+        helpView.Items.Add(new ListViewItem(new[] { "\u2192:", "Move right to next screen component", "\u2193:", "Arrow to scroll down" }));
+        helpView.Items.Add(new ListViewItem(new[] { "Pg Up:", "Move up one page in list",             "\u21B5:", "ENTER to select item" }));
+        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Exit current screen or dialog" }));
+        helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort processes ascending",                 "d:", "Sort processes descending" }));
+        helpView.Items.Add(new ListViewItem(new[] { "F3:", "Select sort column",                      "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
+        helpView.Items.Add(new ListViewItem(new[] { "F4:", "Filter by Process, User, Pid, Path",      "x:", "Toggle multiple process selection" }));
+        helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
+        helpView.Items.Add(new ListViewItem(new[] { "F6:", "Kill process/selected processes",         "F5:", "Show process info" }));
+        helpView.Items.Add(new ListViewItem(new[] { "f z:", "Freeze process updates",                 "i:", "Toggle Irix mode CPU reporting" }));
         
+        for (int i = 0; i < helpView.Items.Count; i++) {
+            helpView.Items[i].SubItems[0].ForegroundColor = keyColour;
+            helpView.Items[i].SubItems[0].BackgroundColor = bg;
+            helpView.Items[i].SubItems[2].ForegroundColor = keyColour;
+            helpView.Items[i].SubItems[2].BackgroundColor = bg;
+        }
+
+        functionHelpText.AppendLine(
+            @$"Function Keys:
+{"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
+{"F3:".ToColour(theme.RangeLowBackground, bg)}{"  Prompt to sort process list by one of the visible columns. Press ENTER to accept selection or ESC to abandon.".ToColour(fg, bg)}
+{"F4:".ToColour(theme.RangeLowBackground, bg)}{"  Filter the current process list: Enter a partial name and processes with partial matching names, paths, PIDs or user names will show. To cancel filtering, enter F4 again and clear or ESC. If --pid, --username or --process used on start, filter is applied to existing filters.".ToColour(fg, bg)}
+{"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Show detailed process info, including threads, cpu time, loaded modules and handles (OS specific).".ToColour(fg, bg)}
+{"F6:".ToColour(theme.RangeLowBackground, bg)}{"  Terminate the selected task in the process list. If checkboxes are enabled in F2 Setup, all checked processes will be terminated.".ToColour(fg, bg)}
+{"F7:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between themes.".ToColour(fg, bg)}
+{"F8:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between layouts.".ToColour(fg, bg)}
+{"F9:".ToColour(theme.RangeLowBackground, bg)}{"  Show information about this app and the system.".ToColour(fg, bg)}");
+
         base.OnLoad();
+    }
+
+    protected override void OnResize()
+    {
+        runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
+
+        helpView.Y = 10; // Room for colourHelpText.
+        helpView.X = 0;
+        helpView.Width = runContext.Terminal.WindowWidth - helpView.X - 2;
+        helpView.Height = helpView.Items.Count + 1;
+
+        helpView.ColumnHeaders[0].Width = 10;
+        helpView.ColumnHeaders[1].Width = 40;
+        helpView.ColumnHeaders[2].Width = 10;
+        helpView.ColumnHeaders[3].Width = 40;
+        
+        base.OnResize();
     }
 
     protected override void OnUnload()
     {
+        helpView.Items.Clear();
+        colourHelpText.Clear();
+        functionHelpText.Clear();
+        
         base.OnUnload();
         Terminal.CursorVisible = true;
     }

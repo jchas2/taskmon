@@ -49,6 +49,7 @@ public sealed partial class ProcessService
         processInfo.ModuleName = Path.GetFileName(processInfo.FileName);
         processInfo.IsDaemon = procTaskInfo.pbsd.pbi_ppid == LAUNCHD_PID || pid == LAUNCHD_PID || pid == KERNEL_TASK_PID;
         processInfo.IsLowPriority = procTaskInfo.pbsd.pbi_nice > 0;
+        processInfo.IsRunningAsRoot = procBsdInfo.pbi_uid == 0;
         processInfo.UserName = GetProcessUserName(ref procTaskInfo);
         processInfo.CmdLine = processInfo.FileName;
         processInfo.ThreadCount = procTaskInfo.ptinfo.pti_threadnum;

@@ -19,7 +19,7 @@ internal class RunContextHelper
     internal Mock<IModuleService> moduleService = new();
     internal Mock<IThreadService> threadService = new();
     internal Mock<IProcessor> processor = new();
-    internal Mock<IOutputWriter> outputWriter = new();
+    //internal Mock<IOutputWriter> outputWriter = new();
     internal AppConfig appConfig;
 
     public RunContextHelper()
@@ -41,6 +41,6 @@ internal class RunContextHelper
             moduleService.Object,
             threadService.Object,
             processor.Object,
-            appConfig,
-            outputWriter.Object);
+            appConfig);
+    //outputWriter.Object);
 }

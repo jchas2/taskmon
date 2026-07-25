@@ -25,7 +25,7 @@ public partial class SystemTerminal
 
     private void EnableAnsiTerminalCodesInternal()
     {
-        // Not all terminals on Windows platforms (conhost.exe as an example) support ANSI escape codes.
+        // Not all terminals on Windows platforms (conhost.exe as an example) support VT/ANSI escape codes.
         // We attempt to enable here to support older terminals.
         IntPtr consoleHandle = ProcessEnv.GetStdHandle(ProcessEnv.STD_OUTPUT_HANDLE);
         

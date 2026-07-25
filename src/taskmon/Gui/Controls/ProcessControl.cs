@@ -31,7 +31,7 @@ public sealed partial class ProcessControl : Control
     private ControlMode mode = ControlMode.None;
     private Columns sortColumn;
     private readonly Lock allProcessesLock;
-    private bool sortAscending = false;
+    private bool freezeUpdates = false;
 
     private const int SortControlWidth = 20;
     private const int ControlGutter = 1;
@@ -64,10 +64,18 @@ public sealed partial class ProcessControl : Control
             Statistics.User => Columns.User,
             Statistics.Pri => Columns.Priority,
             Statistics.Cpu => Columns.Cpu,
+            Statistics.AvgCpu => Columns.AvgCpu,
+            Statistics.MaxCpu => Columns.MaxCpu,
             Statistics.Thrd => Columns.Threads,
             Statistics.Gpu => Columns.Gpu,
+            Statistics.AvgGpu => Columns.AvgGpu,
+            Statistics.MaxGpu => Columns.MaxGpu,
             Statistics.Mem => Columns.Memory,
+            Statistics.AvgMem => Columns.AvgMemory,
+            Statistics.MaxMem => Columns.MaxMemory,
             Statistics.Disk => Columns.Disk,
+            Statistics.AvgDisk => Columns.AvgDisk,
+            Statistics.MaxDisk => Columns.MaxDisk,
             Statistics.Path => Columns.CommandLine,
             _ => Columns.Cpu
         };
@@ -160,16 +168,52 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)    
     {
-        if (keyInfo.Key == ConsoleKey.Escape && mode == ControlMode.SortSelection) {
-            SetMode(ControlMode.None);
-            handled = true;
-            return;
-        }
-
-        if (keyInfo.Key == ConsoleKey.A || keyInfo.Key == ConsoleKey.D) {
-            sortAscending = keyInfo.Key == ConsoleKey.A;
-            handled = true;
-            return;
+        switch (keyInfo.Key) {
+            case ConsoleKey.Escape:
+                if (mode == ControlMode.SortSelection) {
+                    SetMode(ControlMode.None);
+                    handled = true;
+                    return;
+                }
+                break;
+            case ConsoleKey.A:
+            case ConsoleKey.D:
+                appConfig.SortAscending = keyInfo.Key == ConsoleKey.A;
+                SortSelectionChanged(sortColumn);
+                handled = true;
+                return;
+            case ConsoleKey.G:
+                SortSelectionChanged(Columns.Gpu);
+                handled = true;
+                return;
+            case ConsoleKey.I:
+                appConfig.UseIrixReporting = !appConfig.UseIrixReporting;
+                processor.IrixMode = appConfig.UseIrixReporting;
+                handled = true;
+                return;
+            case ConsoleKey.M:
+                SortSelectionChanged(Columns.Memory);
+                handled = true;
+                return;
+            case ConsoleKey.P:
+                SortSelectionChanged(Columns.Cpu);
+                handled = true;
+                return;
+            case ConsoleKey.U:
+                UncheckAllProcesses();
+                handled = true;
+                return;
+            case ConsoleKey.X:
+                appConfig.MultiSelectProcesses = !appConfig.MultiSelectProcesses;
+                processView.ShowCheckboxes = appConfig.MultiSelectProcesses;
+                Draw();
+                handled = true;
+                return;
+            case ConsoleKey.F:
+            case ConsoleKey.Z:
+                freezeUpdates = !freezeUpdates;
+                handled = true;
+                return;
         }
         
         try {
@@ -202,9 +246,9 @@ public sealed partial class ProcessControl : Control
                 columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
             }
         }
-
-        processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
-        processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
+        
+        UpdateColumnHeaderSort(decorate: true);
+        
         processView.ShowCheckboxes = appConfig.MultiSelectProcesses;
         processView.SetFocus();
 
@@ -289,12 +333,15 @@ public sealed partial class ProcessControl : Control
 
     private void ProcessorOnProcessorUpdated(object? sender, ProcessorEventArgs e)
     {
+        if (freezeUpdates) {
+            return;
+        }
+        
         lock (allProcessesLock) {
             allProcesses = e.ProcessInfos;
         }
 
         systemStatistics = e.Statistics;
-
         Draw();
     }
 
@@ -377,16 +424,13 @@ public sealed partial class ProcessControl : Control
         Draw();
     }
 
-    private void SortViewOnItemSelected(object? sender, ListViewItemEventArgs e)
+    private void SortSelectionChanged(Columns column)
     {
-        processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-
-        sortColumn = Enum.GetValues<Columns>().Single(c => c.GetTitle() == e.Item.Text);
-
-        processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
-        processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
-
+        UpdateColumnHeaderSort(decorate: false);
+        sortColumn = column;
+        UpdateColumnHeaderSort(decorate: true);
+        
+        appConfig.SortColumn = ToStatistic(sortColumn);
         Trace.WriteLine($"Sort selection = {sortColumn}.");
         
         mode = ControlMode.None;
@@ -395,6 +439,12 @@ public sealed partial class ProcessControl : Control
         Clear();
         Resize();
         Draw();
+    }
+
+    private void SortViewOnItemSelected(object? sender, ListViewItemEventArgs e)
+    {
+        Columns column = Enum.GetValues<Columns>().Single(c => c.GetTitle() == e.Item.Text);
+        SortSelectionChanged(column);        
     }
     
     private static Statistics ToStatistic(Columns column) => column switch {
@@ -418,6 +468,39 @@ public sealed partial class ProcessControl : Control
         Columns.CommandLine => Statistics.Path,
         _ => default
     };
+
+    private void UncheckAllProcesses()
+    {
+        try {
+            Control.DrawingLockAcquire();
+            IEnumerable<ListViewItem> checkedItems = processView.Items.Where(item => item.Checked);
+            
+            foreach (ListViewItem item in checkedItems) {
+                item.Checked = false;
+            }
+            
+            processView.Draw();
+        }
+        finally {
+            Control.DrawingLockRelease();
+        }
+        
+    }
+    
+    private void UpdateColumnHeaderSort(bool decorate)
+    {
+        processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
+        processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
+
+        if (!decorate) {
+            processView.ColumnHeaders[(int)sortColumn].Text = sortColumn.GetTitle();
+        }
+        else {
+            processView.ColumnHeaders[(int)sortColumn].Text = appConfig.SortAscending
+                ? sortColumn.GetTitle() + "\u2191"
+                : sortColumn.GetTitle() + "\u2193";
+        }
+    }
 
     private void UpdateListViewItems()
     {
@@ -446,7 +529,7 @@ public sealed partial class ProcessControl : Control
             }
 
             IOrderedEnumerable<ProcessorInfo> Sort<TKey>(Func<ProcessorInfo, TKey> key) =>
-                sortAscending
+                appConfig.SortAscending
                     ? filteredProcesses.OrderBy(key)
                     : filteredProcesses.OrderByDescending(key);
 

@@ -297,13 +297,7 @@ public sealed class AppConfig
         get => uxSection?.GetBool(Constants.Keys.ShowMetreSwapNumerically, true) ?? true;
         set => uxSection?.Add(Constants.Keys.ShowMetreSwapNumerically, value.ToString());
     }
-
-    public bool UseLargeCharts
-    {
-        get => uxSection?.GetBool(Constants.Keys.UseLargeCharts, false) ?? false;
-        set => uxSection?.Add(Constants.Keys.UseLargeCharts, value.ToString());
-    }
-
+    
     public bool UseIrixReporting
     {
         get => uxSection?.GetBool(Constants.Keys.UseIrixCpuReporting, useIrixMode) ?? useIrixMode;

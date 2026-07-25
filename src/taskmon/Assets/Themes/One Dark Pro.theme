@@ -9,10 +9,10 @@ col-cmd-low-priority=#0000FF
 col-cmd-high-cpu=#222222
 col-cmd-io-bound=#2b7489
 col-cmd-script=#e3b341
-col-user-current-non-root=#e06c75
+col-user-current-non-root=#61afef
 col-user-other-non-root=#98c379
 col-user-system=#c678dd
-col-user-root=#61afef
+col-user-root=#e06c75
 
 command-foreground=#98c379
 command-background=#282c34

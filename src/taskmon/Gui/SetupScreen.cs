@@ -268,18 +268,13 @@ public class SetupScreen : Screen
             "Show Network metre numerically", 
             Constants.Keys.ShowMetreNetworkNumerically,
             runContext.AppConfig.ShowMetreNetworkNumerically);
-
-        AddGeneralItem(
-            "Use large charts",
-            Constants.Keys.UseLargeCharts,
-            runContext.AppConfig.UseLargeCharts);
         
         AddGeneralItem(
 #if __WIN32__
-            "Use Irix mode for process CPU% (Unix default)",
+            "Use Irix mode for per-process CPU% (individual core saturation)",
 #endif
 #if __APPLE__
-            "Use Irix mode for process CPU% (Activity Monitor)",
+            "Use Irix mode for per-process CPU% (Activity Monitor)",
 #endif
             Constants.Keys.UseIrixCpuReporting,
             runContext.AppConfig.UseIrixReporting);
@@ -421,7 +416,6 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowMetreSwapNumerically = GetItemValueByKey(Constants.Keys.ShowMetreSwapNumerically).Checked;
         runContext.AppConfig.ShowMetreDiskNumerically = GetItemValueByKey(Constants.Keys.ShowMetreDiskNumerically).Checked;
         runContext.AppConfig.ShowMetreNetworkNumerically = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
-        runContext.AppConfig.UseLargeCharts = GetItemValueByKey(Constants.Keys.UseLargeCharts).Checked;
         runContext.AppConfig.UseIrixReporting = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 
         Statistics visibleColumns = Statistics.Process | Statistics.Pid;
@@ -450,6 +444,10 @@ public class SetupScreen : Screen
         UpdateConfigValue(delayView.SelectedItem,    val => runContext.AppConfig.DelayInMilliseconds = val);
         UpdateConfigValue(limitView.SelectedItem,    val => runContext.AppConfig.IterationLimit = val);
         UpdateConfigValue(numProcsView.SelectedItem, val => runContext.AppConfig.NumberOfProcesses = val);
+        
+        runContext.Processor.IrixMode = runContext.AppConfig.UseIrixReporting;
+        runContext.Processor.IterationLimit = runContext.AppConfig.IterationLimit;
+        runContext.Processor.Delay = runContext.AppConfig.DelayInMilliseconds;
     }
     
     private void MenuViewOnItemClicked(object? sender, ListViewItemEventArgs e)
@@ -660,7 +658,7 @@ public class SetupScreen : Screen
     {
         MapControlsToConfig();
         bool result = runContext.AppConfig.TrySave(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty);
-        
+
         if (result) {
             Trace.WriteLine($"Config saved = \n{runContext.AppConfig}");
         }

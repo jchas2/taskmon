@@ -1,0 +1,38 @@
+﻿[SynthWave 84]
+colour-mode=indexed
+
+background=transparent
+background-highlight=#fede5d       ; editor.selectionBackground 
+
+col-cmd-normal-user-space=#ff8b39    ; tokenColors: string
+col-cmd-low-priority=#f97e72         ; tokenColors: constant
+col-cmd-high-cpu=#ff7edb             ; tokenColors: variable
+col-cmd-io-bound=#b6b1b1             ; tokenColors: punctuation
+col-cmd-script=#36f9f6               ; tokenColors: support
+col-user-current-non-root=#848bbd    ; tokenColors: comment
+col-user-other-non-root=#36f9f6      ; tokenColors: support.function
+col-user-system=#ff8b39              ; tokenColors: punctuation.definition.parameters
+col-user-root=#ff8b39                ; tokenColors: punctuation.definition.parameters
+
+command-foreground=#f97e72          ; tab.activeForeground
+command-background=#262335          ; tab.activeBackground
+
+delta-highlight-colour=#36f9f6      ; tokencolors: meta
+
+error=#db61a2
+
+foreground=#ff7edb                  ; tokenColors: entity
+foreground-highlight=#34294f88      ; editor.wordHighlightStrongBackground
+
+menubar-foreground=#f97e72          ; tab.activeForeground
+menubar-background=#262335          ; tab.activeBackground
+
+range-high-background=#36f9f6       ; tokenColors: variable
+range-low-background=#ff7edb        ; tokenColors: comment 
+range-mid-background=#8080FF        ; tokenColors: keyword
+range-high-foreground=#222222
+range-low-foreground=#222222
+range-mid-foreground=#222222
+
+header-background=#262335          ; tab.activeBackground
+header-foreground=#f97e72          ; tab.activeForeground

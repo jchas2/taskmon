@@ -4,25 +4,57 @@ public sealed class OutputWriter : IOutputWriter
 {
     private readonly TextWriter writer;
 
-    private static readonly OutputWriter errorWriter = new OutputWriter(Console.Error);
-    private static readonly OutputWriter outWriter = new OutputWriter(Console.Out);
+    private static IOutputWriter errorWriter = new OutputWriter(Console.Error);
+    private static IOutputWriter outWriter = new OutputWriter(Console.Out);
+    private static Lock lockObject = new ();
     
     public OutputWriter(TextWriter writer) => 
         this.writer = writer;
     
-    public static OutputWriter Error => errorWriter;
+    public static IOutputWriter Error => errorWriter;
 
-    public static OutputWriter Out => outWriter;
-    
-    public void Write(string message) =>
-        writer?.Write(message);
+    public static IOutputWriter Out => outWriter;
 
-    public void WriteLine() =>
-        writer?.WriteLine();
+    public static void SetErrorWriter(OutputWriter errorWriter)
+    {
+        lock (lockObject) {
+            OutputWriter.errorWriter = errorWriter;
+        }
+    }
 
-    public void WriteLine(string message) =>
-        writer?.WriteLine(message);
-    
-    public void WriteLine(string format, params object?[] args) =>
-        writer?.WriteLine(string.Format(format, args));
+    public static void SetOutputWriter(IOutputWriter outWriter)
+    {
+        lock (lockObject) {
+            OutputWriter.outWriter = outWriter;
+        }
+    }
+
+    public void Write(string message)
+    {
+        lock (lockObject) {
+            writer?.Write(message);
+        }
+    }
+
+    public void WriteLine()
+    {
+        lock (lockObject) {
+            writer?.WriteLine();
+        }
+
+    }
+
+    public void WriteLine(string message)
+    {
+        lock (lockObject) {
+            writer?.WriteLine(message);
+        }
+    }
+
+    public void WriteLine(string format, params object?[] args)
+    {
+        lock (lockObject) {
+            writer?.WriteLine(string.Format(format, args));
+        }
+    }
 }

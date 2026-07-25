@@ -9,7 +9,7 @@ public sealed class ProcessInfoTests
 {
     [Fact]
     public void ProcessInfo_Canary_Test() =>
-        Assert.Equal(20, CanaryTestHelper.GetPropertyCount<ProcessInfo>());
+        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<ProcessInfo>());
 
     [Fact]
     public void Should_Construct_ProcessInfo_From_Process()

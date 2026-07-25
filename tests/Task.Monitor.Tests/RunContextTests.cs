@@ -21,7 +21,7 @@ public class RunContextTests
         Mock<IProcessor> processor = new();
         Mock<IOutputWriter> outputWriter = new();
         AppConfig appConfig = new(fileSystem.Object);
-        
+
         RunContext context = new(
             fileSystem.Object,
             terminal.Object,
@@ -29,8 +29,7 @@ public class RunContextTests
             moduleService.Object,
             threadService.Object,
             processor.Object,
-            appConfig,
-            outputWriter.Object);
+            appConfig);
         
         Assert.True(context.FileSystem == fileSystem.Object);
         Assert.True(context.Terminal == terminal.Object);
@@ -39,6 +38,5 @@ public class RunContextTests
         Assert.True(context.ThreadService == threadService.Object);
         Assert.True(context.Processor == processor.Object);
         Assert.True(context.AppConfig == appConfig);
-        Assert.True(context.OutputWriter == outputWriter.Object);
     }
 }

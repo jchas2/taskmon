@@ -9,10 +9,6 @@
     <ItemGroup>
       <ProjectReference Include="..\Task.Monitor.System\Task.Monitor.System.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="Task.Monitor.Tests" />
@@ -39,9 +35,7 @@
       <None Remove="Assets\Themes\Monochrome.theme" />
       <EmbeddedResource Include="Assets\Themes\Monochrome.theme" />
       <None Remove="Assets\Themes\Amber.theme" />
-      <EmbeddedResource Include="Assets\Themes\Amber.theme" />
       <None Remove="Assets\Themes\Green.theme" />
-      <EmbeddedResource Include="Assets\Themes\Green.theme" />
       <None Remove="Assets\Layouts\All Charts.layout" />
       <EmbeddedResource Include="Assets\Layouts\All Charts.layout" />
       <None Remove="Assets\Layouts\All Charts Large.layout" />
@@ -62,6 +56,26 @@
       <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes.layout" />
       <None Remove="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
       <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
+      <None Remove="Assets\Themes\Alien Blood.theme" />
+      <EmbeddedResource Include="Assets\Themes\Alien Blood.theme" />
+      <None Remove="Assets\Themes\macOS Classic Light" />
+      <None Remove="Assets\Themes\macOS Classic Light.theme" />
+      <None Remove="Assets\Themes\macOS Classic.theme" />
+      <EmbeddedResource Include="Assets\Themes\macOS Classic.theme" />
+      <None Remove="Assets\Themes\Shades of Purple.theme" />
+      <EmbeddedResource Include="Assets\Themes\Shades of Purple.theme" />
+      <None Remove="Assets\Themes\SynthWave 84.theme" />
+      <EmbeddedResource Include="Assets\Themes\SynthWave 84.theme" />
+      <None Remove="Assets\Themes\Green Beautiful 2.theme" />
+      <EmbeddedResource Include="Assets\Themes\Green Beautiful 2.theme" />
+      <None Remove="Assets\Themes\Cobalt2.theme" />
+      <EmbeddedResource Include="Assets\Themes\Cobalt2.theme" />
+      <None Remove="Assets\Themes\Cyberpunk 2077.theme" />
+      <EmbeddedResource Include="Assets\Themes\Cyberpunk 2077.theme" />
+      <None Remove="Assets\Themes\Nord.theme" />
+      <EmbeddedResource Include="Assets\Themes\Nord.theme" />
+      <None Remove="Assets\Themes\Night Owl.theme" />
+      <EmbeddedResource Include="Assets\Themes\Night Owl.theme" />
     </ItemGroup>
 
 </Project>

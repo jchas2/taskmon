@@ -211,6 +211,7 @@ public class Processor : IProcessor
                     ParentPid = processInfo.ParentPid,
                     IsDaemon = processInfo.IsDaemon,
                     IsLowPriority = processInfo.IsLowPriority,
+                    IsRunningAsRoot = processInfo.IsRunningAsRoot,
                     ProcessName = processInfo.ProcessName,
                     FileDescription = processInfo.FileDescription,
                     UserName = processInfo.UserName,
@@ -344,6 +345,14 @@ public class Processor : IProcessor
                 iterationCount++;
             }
         }
+
+        if (cancellationToken.IsCancellationRequested) {
+            Trace.WriteLine("Processor CancellationToken signalled.");
+        }
+
+        if (iterationLimit > 0) {
+            Trace.WriteLine($"Processor iteration limit {iterationLimit} exceeded with {iterationCount}.");
+        }
     }
 
 #if __APPLE__    
@@ -376,7 +385,6 @@ public class Processor : IProcessor
         WorkerTask[] workerTasks = [workerTask!, monitorTask!];
         
         try {
-            Trace.WriteLine("Stopping Processor worker tasks.");
             WorkerTask.WaitAll(workerTasks);
         }
         catch (AggregateException aggEx) {

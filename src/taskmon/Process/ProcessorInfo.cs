@@ -9,6 +9,7 @@ public class ProcessorInfo
     public int ParentPid { get; set; }
     public bool IsDaemon { get; set; }
     public bool IsLowPriority { get; set; }
+    public bool IsRunningAsRoot { get; set; }
     public DateTime StartTime { get; set; }
 
     public string ProcessName { get; set; } = string.Empty;

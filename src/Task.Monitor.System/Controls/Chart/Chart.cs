@@ -136,10 +136,10 @@ public sealed class Chart : Control
 
                 Color chartColour;
 
-                if (ratio > 0.8) {
+                if (ratio > 0.66) {
                     chartColour = ColourHigh;
                 }
-                else if (ratio > 0.5) {
+                else if (ratio > 0.33) {
                     chartColour = ColourMid;
                 }
                 else {

@@ -40,7 +40,7 @@ public sealed class HelpScreenTests
         HelpScreen helpScreen = new(runContext);
 
         Assert.Equal(ConsolePalette.Black, helpScreen.BackgroundColour);
-        Assert.Empty(helpScreen.Controls);
+        Assert.Equal(1, helpScreen.Controls.Count);
         Assert.True(helpScreen.CursorVisible);
         Assert.Equal(ConsolePalette.Gray, helpScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.Black, helpScreen.DialogBorderColour);
@@ -84,10 +84,8 @@ public sealed class HelpScreenTests
     public static TheoryData<string> HelpTextData()
         => new() 
         {
-            "Metre Colours:",
-            "Process and Path Colours:",
-            "Screen Navigation",
-            "List Navigation",
+            "Chart Colours",
+            "Process and Path Colours",
             "Function Keys"
         };
 
@@ -99,7 +97,7 @@ public sealed class HelpScreenTests
         string capturedText = String.Empty;
 
         runContextHelper.terminal.Setup(t => t.WriteLine(It.IsAny<string>()))
-            .Callback<string>(txt => capturedText = txt);
+            .Callback<string>(txt => capturedText += txt);
         
         helpScreen.Load();
         helpScreen.Draw();

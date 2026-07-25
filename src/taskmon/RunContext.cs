@@ -14,8 +14,7 @@ public class RunContext(
     IModuleService moduleService,
     IThreadService threadService,
     IProcessor processor,
-    AppConfig appConfig,
-    IOutputWriter? outputWriter = null)
+    AppConfig appConfig)
 {
     public IFileSystem FileSystem { get; } = fileSystem;
     public ISystemTerminal Terminal { get; } = terminal;
@@ -24,5 +23,4 @@ public class RunContext(
     public IThreadService ThreadService { get; } = threadService;
     public IProcessor Processor { get; } = processor;
     public AppConfig AppConfig { get; } = appConfig;
-    public IOutputWriter OutputWriter { get; } = outputWriter ?? Cli.Utils.OutputWriter.Out;
 }
