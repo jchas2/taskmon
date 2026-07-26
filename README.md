@@ -111,6 +111,8 @@ Task Monitor supports the following commands on startup. Note these commands can
 | Command | What it does |
 |---------|--------------|
 | `taskmon` | Start Task Monitor with configuration defaults. |
+| `taskmon --gpu-only` | Automatically monitor GPU resources on startup. |
+| `taskmon --cpu-only` | Automatically monitor CPU resources on startup. |
 | `taskmon --pid <pid>` | Automatically monitor the pid nnn on startup. |
 | `taskmon --username <username>` | Automatically monitor all processes running under user <username> on startup. |
 | `taskmon --process <processname>` | Automatically monitor all processes with matching <processname> on startup. |
@@ -147,8 +149,8 @@ Task Monitor stores configuration and log files in the following system director
 
 ### Windows
 
-| Config | Path | Description |
-|--------|------|-------------|
+| Config | Path |
+|--------|------|
 | `taskmon.ini` | `~\AppData\Roaming\taskmon` |
 | Theme files |  `~\AppData\Roaming\taskmon\themes` |
 | Layout files | `~\AppData\Roaming\taskmon\layouts` | 
