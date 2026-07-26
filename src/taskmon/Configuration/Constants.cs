@@ -20,6 +20,8 @@ public sealed class Constants
         public const string ThemeMsDos = "MS-DOS";
 
         public const string LayoutAllCharts = "All Charts";
+        public const string LayoutGpuAndGpuMemoryLarge = "Gpu And Gpu Memory Large";
+        public const string LayoutCpuAndMemoryLarge = "Cpu And Memory Large";
     }
 
     public sealed class Keys

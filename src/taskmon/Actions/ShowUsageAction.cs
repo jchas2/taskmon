@@ -13,6 +13,8 @@ public sealed class ShowUsageAction : IAction
 Usage: {Constants.AppName} [options]
 
 Options:
+     --gpu-only           Show Gpu Charts and sort process list by Gpu% on startup
+     --cpu-only           Show Cpu Charts and sort process list by Cpu% on startup
      --pid PID            Monitor the given process PID
   -u --username <NAME>    Only show processes for the the given user NAME
   -p --process <NAME>     Only show processes with matching process NAME

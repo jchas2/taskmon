@@ -18,8 +18,9 @@ management functions.</p>
 
 ## Features
 
-- **No sudo or administrator privilege required** - Native platform APIs used on each platform.
-- Written in C# using platform native interop for maximum performance and minimum memory overhead.
+- **Perfect for HomeLab and Local LLM monitoring**
+- **No sudo or administrator privilege required** 
+- Written in C# using platform native interop for maximum performance and minimum memory overhead (zero third-party dependencies)
 - **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
 - High resolution charts in 24-bit colour.
 - Switch layouts (`F8`) to focus charts on specific system metrics. 
