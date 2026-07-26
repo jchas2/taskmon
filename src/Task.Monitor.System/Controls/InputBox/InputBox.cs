@@ -17,7 +17,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
             return;
         }
     
-        using TerminalColourRestorer _ = new();
+        using TerminalRestorer _ = new();
 
         DrawRectangle(
             X,
@@ -40,7 +40,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
         Result = InputBoxResult.None;
         handled = true;
 
-        using TerminalColourRestorer _ = new();
+        using TerminalRestorer _ = new();
 
         Terminal.BackgroundColor = boxColour;
         Terminal.ForegroundColor = ConsolePalette.Black;

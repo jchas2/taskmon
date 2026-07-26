@@ -24,7 +24,6 @@ public sealed class HeaderControl : Control
     private readonly Chart networkSentChart;
 
     private Chart[] charts;
-    
     private const int MinHeaderRows = 3;
     private const int MinChartWidth = 25;
     private const int MinChartHeight = 4;
@@ -104,7 +103,7 @@ public sealed class HeaderControl : Control
 
     private void OnDrawInternal()
     {
-        using TerminalColourRestorer _ = new();
+        using TerminalRestorer _ = new();
 
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
@@ -130,8 +129,10 @@ public sealed class HeaderControl : Control
             systemStatistics.MachineName.Length + 3 +
             systemStatistics.OsVersion.Length + 6 +
             systemStatistics.PrivateIPv4Address.Length;
-        
-        Terminal.WriteEmptyLineTo(Width - nchars);
+
+        int themeLen = appConfig.DefaultTheme.Name.Length + 1;
+        Terminal.WriteEmptyLineTo(Width - nchars - themeLen);
+        Terminal.Write($"{appConfig.DefaultTheme.Name} ");
 
         string coreBreakdown = $"{systemStatistics.CpuCores} Cores";
 #if __APPLE__
@@ -162,7 +163,10 @@ public sealed class HeaderControl : Control
         if (appConfig.UseIrixReporting) {
             cpuInfo += " Irix Mode";
         }
-        
+        else {
+            cpuInfo += " Solaris Mode";
+        }
+
         Terminal.Write(cpuInfo);
         nchars = cpuInfo.Length + 1;
 

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Net.Sockets;
-using Task.Monitor.Commands;
+using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.InputBox;
@@ -22,7 +21,7 @@ public sealed class MainScreen : Screen
     
     private const int FooterHeight = 1;
 
-    public MainScreen(ScreenApplication screenApp, RunContext runContext)
+    public MainScreen(RunContext runContext, ScreenApplication screenApp)
     : base(runContext.Terminal)
     {
         this.runContext = runContext;

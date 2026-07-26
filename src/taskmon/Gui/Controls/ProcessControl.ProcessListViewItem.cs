@@ -18,6 +18,7 @@ public partial class ProcessControl
         private long lastDiskUsage;
         private double lastCpu;
         private double lastGpu;
+        private static string currThreadUser = string.Empty;
         
         public ProcessListViewItem(
             ProcessorInfo processorInfo,
@@ -29,6 +30,7 @@ public partial class ProcessControl
             Pid = processorInfo.Pid;
             AddSubItems(processorInfo);
             FormatSubItems(processorInfo, ref systemStatistics);
+            currThreadUser = Environment.UserName;
         }
 
         public int Pid { get; private set; }
@@ -71,8 +73,13 @@ public partial class ProcessControl
                 SubItems[i].ForegroundColor = AppConfig.DefaultTheme.Foreground;
             }
             
-            if (!SubItems[(int)Columns.User].Text.Equals(Environment.UserName, StringComparison.OrdinalIgnoreCase)) {
-                SubItems[(int)Columns.User].ForegroundColor = ConsolePalette.DarkGray;
+            if (!processorInfo.IsRunningAsRoot) {
+                SubItems[(int)Columns.User].ForegroundColor = SubItems[(int)Columns.User].Text.Equals(currThreadUser, StringComparison.OrdinalIgnoreCase)
+                    ? SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserCurrentNonRoot
+                    : SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserOtherNonRoot; 
+            }
+            else {
+                SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserRoot;
             }
             
             if (AppConfig.HighlightStatisticsColumnUpdate) {

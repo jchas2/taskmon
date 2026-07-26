@@ -1,11 +1,11 @@
 using Moq;
-using Task.Monitor.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
 
-using System.Drawing;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.Gui.Commands;
+
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class CommandControlTests

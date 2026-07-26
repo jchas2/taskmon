@@ -137,13 +137,14 @@ public class ScreenApplication
         applicationContext = new ScreenApplicationContext(terminal);
     }
     
-    public void RegisterScreen(Screen screen)
+    public ScreenApplication RegisterScreen(Screen screen)
     {
         if (registeredScreens.ContainsKey(screen.GetType())) {
             throw new InvalidOperationException($"Screen {screen.GetType()} is already registered.");
         }
         
         registeredScreens.Add(screen.GetType(), screen);
+        return this;
     }
     
     public void Run(Screen screen)

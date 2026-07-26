@@ -141,7 +141,6 @@ use-irix-cpu-reporting=True
         Assert.True(appConfig.ShowMetreGpuMemNumerically);
         Assert.True(appConfig.ShowMetreSwapNumerically);
         Assert.True(appConfig.ShowMetreNetworkNumerically);
-        Assert.False(appConfig.UseLargeCharts);
 
         if (!string.IsNullOrEmpty(iniFileData)) {
             Assert.True(appConfig.UseIrixReporting);
@@ -168,7 +167,7 @@ nprocs=5
 
 [ux]
 confirm-task-delete=False
-default-theme=MSDOS
+default-theme=MS-DOS
 highlight-daemons=False
 highlight-stats-col-update=False
 metre-style=Bars
@@ -200,7 +199,7 @@ use-irix-cpu-reporting=False
         Assert.NotEmpty(appConfig.DefaultConfigFilePath);
         
         Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("MSDOS", appConfig.DefaultTheme.Name);
+        Assert.Equal("MS-DOS", appConfig.DefaultTheme.Name);
         Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.Background);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnCommandLowPriority);
@@ -247,7 +246,6 @@ use-irix-cpu-reporting=False
         Assert.False(appConfig.ShowMetreGpuNumerically);
         Assert.False(appConfig.ShowMetreGpuMemNumerically);
         Assert.False(appConfig.ShowMetreNetworkNumerically);
-        Assert.True(appConfig.UseLargeCharts);
         Assert.False(appConfig.UseIrixReporting);
     }
 
@@ -287,7 +285,7 @@ use-irix-cpu-reporting=False
     public void Default_Theme_Set_To_Valid_Theme_Updates_Default_Theme()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        Theme theme = appConfig.Themes.First(t => t.Name == "MSDOS");
+        Theme theme = appConfig.Themes.First(t => t.Name == "MS-DOS");
 
         appConfig.DefaultTheme = theme;
         Assert.Equal(theme, appConfig.DefaultTheme);

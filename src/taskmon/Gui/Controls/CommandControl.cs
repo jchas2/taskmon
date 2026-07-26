@@ -1,6 +1,5 @@
-﻿using System.Text;
-using Task.Monitor.Cli.Utils;
-using Task.Monitor.Commands;
+﻿using Task.Monitor.Cli.Utils;
+using Task.Monitor.Gui.Commands;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
@@ -32,7 +31,7 @@ public sealed class CommandControl(ISystemTerminal terminal, AppConfig appConfig
     
     private void OnDrawInternal()
     {
-        using TerminalColourRestorer _ = new();
+        using TerminalRestorer _ = new();
         
         Terminal.SetCursorPosition(left: X, top: Y);
         int nchars = 0;

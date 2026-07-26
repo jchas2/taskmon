@@ -22,26 +22,28 @@ management functions.</p>
 - Written in C# using platform native interop for maximum performance and minimum memory overhead.
 - **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
 - High resolution charts in 24-bit colour.
-- Switch layouts (F8) to focus charts on specific system metrics. 
+- Switch layouts (`F8`) to focus charts on specific system metrics. 
 - **Real-Time Process Monitoring**: View Process, Pid, CPU%, Avg CPU%, Max CPU%, Threads, GPU%, Avg GPU%, Max GPU%, Memory, Avg Memory, Max Memory, Disk MB/s, Avg Disk MB/s, Max Disk MB/s and Command Path.
 - Process list formatted similar to the original **htop** and **top**. 
-- Process CPU% defaults to IRIX mode for *nix systems.
-- Process deep dive (F5) to view live thread times and loaded libraries (system and user).
+- Process CPU% defaults to Irix mode (individual core saturation) for *nix systems (`i` to toggle on/off).
+- Process deep dive (`F5`) to view live thread times and loaded libraries (system and user).
 - **Module Analysis**: Full dynamic and static library enumeration for selected process.
-- Multiple process selection (enabled through the F2 Setup function).
+- Multiple process selection (`x` toggle show checkboxex, `spacebar` for selection, `u` to uncheck all selections)
 - Customise update interval (default 1500ms).
 - Customise top number of processes to display (default unlimited).
 - Customise number of process iteration loops.
+- Freeze process list updates (`f` or `z`).
 - **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
-- Select and terminate multiple processes simultaneously (F6).
-- Filter by process name, username, command path or PID (F4).
-- Sort the process list by any visible column (F3). 
-- Toggle process sorting between ascending (using the 'a' key) and descending (using the 'd' key).
-- Navigate scrollable lists using the &#x2193;, &#x2191; arrow keys and Pg Up and Pg Down keys.  
+- Select and terminate multiple processes simultaneously (`F6`).
+- Filter by process name, username, command path or PID (`F4`).
+- Sort the process list by any visible column (`F3`).
+- Quick sort by CPU%, GPU% or Memory (`p`, `g` or `m` respectively). 
+- Toggle process sorting between ascending (using the `a` key) and descending (using the `d` key).
+- Navigate scrollable lists using the `&#x2193;`, `&#x2191;` arrow keys and `Pg Up` and `Pg Down` keys.  
 - **Multiple Themes**: Ships with dozens of popular, modern 24-bit colour themes.
 - Modern terminal detection to support colour desaturation.
-- **Customise Configuration**: Manage configuration settings using the (F2) Setup function. Interactive UI for modifying and saving settings.
-- **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the F9 function).
+- **Customise Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
+- **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the `F9` function).
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using native APIs (Win32,  Mach kernel). 
@@ -50,9 +52,12 @@ management functions.</p>
 
 ## Installation
 
+Note: taskmon does NOT require the .net SDK or runtime to be installed on any platform to run. The application is a native-code, self-contained executable on all platforms.
+
 ### macOS on Apple Silicon
 
-The easiest way to install on macOS ARM64 (Apple Silicon) isusing homebrew:
+[![Homebrew](https://img.shields.io/badge/homebrew-orange?style=flat-square&logo=homebrew&logoColor=white)](#macos-on-apple-silicon)
+The easiest way to install on macOS ARM64 (Apple Silicon) is using homebrew:
 
 ```bash
 brew tap jchas2/taskmon
@@ -71,6 +76,7 @@ Task Monitor does not require sudo permission on MacOS for system monitoring, ho
 
 ### Windows on x64 and ARM64
 
+[![Chocolatey](https://img.shields.io/badge/chocolatey-blue?style=flat-square&logo=chocolatey&logoColor=white)](#windows-on-x64-and-arm64)
 The easiest way to install on Windows isusing chocolately (pending):
 
 ```powershell
@@ -109,7 +115,6 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --username <username>` | Automatically monitor all processes running under user <username> on startup. |
 | `taskmon --process <processname>` | Automatically monitor all processes with matching <processname> on startup. |
 | `taskmon --sort <column>` | Automatically sort by <column> on startup. |
-| `taskmon --ascending` | Apply ascending sort order (default descending). |
 | `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
 | `taskmon --limit <limit>` | Limit the number of iteration loops and then stop. |
 | `taskmon --nprocs <nprocs>` | Only display the top number of processes <nprocs>. |
@@ -118,7 +123,7 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --version` | Print version information and exit. |
 | `taskmon --help` | Show help and usage information. |
 
-Valid sort columns are: AvgCpu,AvgDisk,AvgGpu,AvgMem,Cpu,Disk,Gpu,MaxCpu,MaxDisk,MaxGpu,MaxMem,Mem,Path,Pid,Pri,Process,Thrd,User
+Valid sort columns are: AvgCpu, AvgDisk, AvgGpu, AvgMem, Cpu, Disk, Gpu, MaxCpu, MaxDisk, MaxGpu, MaxMem, Mem, Path, Pid, Pri, Process, Thrd,User
 
 ## Configuration
 

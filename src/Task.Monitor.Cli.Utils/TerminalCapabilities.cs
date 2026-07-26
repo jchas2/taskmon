@@ -78,7 +78,9 @@ public static class TerminalCapabilities
     public static ColourMode ResolveEffective(ColourMode configuredMode, Func<string, string?> getEnvironmentVariable)
     {
         if (TryParseColourMode(getEnvironmentVariable(ColourModeEnvVar), out ColourMode envMode)) {
-            configuredMode = envMode;
+            if (envMode != ColourMode.Auto) {
+                configuredMode = envMode;
+            }
         }
 
         if (configuredMode == ColourMode.Auto) {

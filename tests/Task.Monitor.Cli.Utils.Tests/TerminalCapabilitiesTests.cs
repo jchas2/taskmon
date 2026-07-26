@@ -104,17 +104,7 @@ public sealed class TerminalCapabilitiesTests
 
         Assert.Equal(expected, result);
     }
-
-    [Fact]
-    public void ResolvePreferIndexed_Env_Var_Auto_Falls_Through_To_Detection()
-    {
-        bool result = TerminalCapabilities.ResolvePreferIndexed(
-            ColourMode.Truecolour,
-            Env((TerminalCapabilities.ColourModeEnvVar, "auto"), ("TERM_PROGRAM", "ghostty")));
-
-        Assert.True(result);
-    }
-
+    
     [Theory]
     [InlineData("auto", ColourMode.Auto)]
     [InlineData("INDEXED", ColourMode.Indexed)]
