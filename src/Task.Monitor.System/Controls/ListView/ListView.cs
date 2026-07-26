@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.ListView;
@@ -52,6 +52,16 @@ public class ListView : Control
             : Y;
         
         viewPort.Bounds = new Rectangle(X, y, Width, Height);
+        
+        if (viewPort.SelectedIndex >= items.Count) {
+            viewPort.SelectedIndex = items.Count - 1;
+        }
+        if (viewPort.PreviousSelectedIndex >= items.Count) {
+            viewPort.PreviousSelectedIndex = items.Count - 1;
+        }
+        if (viewPort.CurrentPageIndex > Math.Max(0, items.Count - viewPort.RowCount)) {
+            viewPort.CurrentPageIndex = Math.Max(0, items.Count - viewPort.RowCount);
+        }
     }
     
     internal void ClearColumnHeaders() => columnHeaders.Clear();
@@ -82,9 +92,9 @@ public class ListView : Control
                     viewPort.PreviousSelectedIndex = viewPort.SelectedIndex;
                     viewPort.SelectedIndex++;
                     
-                    if (viewPort.SelectedIndex - viewPort.CurrentIndex >= viewPort.RowCount) {
-                        if (viewPort.CurrentIndex <= items.Count - viewPort.Bounds.Height + 1) {
-                            viewPort.CurrentIndex++;
+                    if (viewPort.SelectedIndex - viewPort.CurrentPageIndex >= viewPort.RowCount) {
+                        if (viewPort.CurrentPageIndex <= items.Count - viewPort.Bounds.Height + 1) {
+                            viewPort.CurrentPageIndex++;
                             redrawAllItems = true;
                         }
                     }
@@ -96,8 +106,8 @@ public class ListView : Control
                     viewPort.PreviousSelectedIndex = viewPort.SelectedIndex;
                     viewPort.SelectedIndex--;
                     
-                    if (viewPort.SelectedIndex <= viewPort.CurrentIndex - 1 && viewPort.CurrentIndex != 0) {
-                        viewPort.CurrentIndex--;
+                    if (viewPort.SelectedIndex <= viewPort.CurrentPageIndex - 1 && viewPort.CurrentPageIndex != 0) {
+                        viewPort.CurrentPageIndex--;
                         redrawAllItems = true;
                     }
                 }
@@ -115,8 +125,8 @@ public class ListView : Control
                         viewPort.SelectedIndex = items.Count - 1;
                     }
                     
-                    if (viewPort.SelectedIndex - viewPort.CurrentIndex >= viewPort.RowCount) {
-                        viewPort.CurrentIndex = Math.Min(items.Count - viewPort.RowCount, viewPort.SelectedIndex);
+                    if (viewPort.SelectedIndex - viewPort.CurrentPageIndex >= viewPort.RowCount) {
+                        viewPort.CurrentPageIndex = Math.Min(items.Count - viewPort.RowCount, viewPort.SelectedIndex - viewPort.RowCount + 1);
                         redrawAllItems = true;
                     }
                 }
@@ -133,8 +143,8 @@ public class ListView : Control
                         viewPort.SelectedIndex = 0;
                     }
                     
-                    if (viewPort.SelectedIndex <= viewPort.CurrentIndex - 1 && viewPort.CurrentIndex != 0) {
-                        viewPort.CurrentIndex = Math.Max(0, viewPort.SelectedIndex);
+                    if (viewPort.SelectedIndex <= viewPort.CurrentPageIndex - 1 && viewPort.CurrentPageIndex != 0) {
+                        viewPort.CurrentPageIndex = Math.Max(0, viewPort.SelectedIndex);
                         redrawAllItems = true;
                     }
                 }
@@ -320,11 +330,11 @@ public class ListView : Control
         int n = 0;
 
         for (int i = 0; i < viewPort.RowCount; i++) {
-            int pid = i + viewPort.CurrentIndex;
+            int pos = i + viewPort.CurrentPageIndex;
 
-            if (pid < ItemCount) {
-                ListViewItem item = Items[pid];
-                DrawItem(item, viewPort.Bounds.Y + n, highlight: pid == viewPort.SelectedIndex);
+            if (pos < ItemCount) {
+                ListViewItem item = Items[pos];
+                DrawItem(item, viewPort.Bounds.Y + n, highlight: pos == viewPort.SelectedIndex);
                 n++;
             }
         }
@@ -431,9 +441,8 @@ public class ListView : Control
     protected override void OnDraw()
     {
         FrameClear();
-        
         CalculateViewPortBounds();
-
+        
         if (ShowColumnHeaders) {
             DrawHeader();
         }
@@ -521,16 +530,17 @@ public class ListView : Control
         frame.Clear();
 
         ListViewItem selectedItem = items[viewPort.SelectedIndex];
+        
         DrawItem(
             selectedItem,
-            viewPort.Bounds.Y + viewPort.SelectedIndex - viewPort.CurrentIndex,
+            viewPort.Bounds.Y + viewPort.SelectedIndex - viewPort.CurrentPageIndex,
             highlight: true);
 
         if (viewPort.PreviousSelectedIndex != viewPort.SelectedIndex) {
             ListViewItem previousSelectedItem = items[viewPort.PreviousSelectedIndex];
             DrawItem(
                 previousSelectedItem,
-                viewPort.Bounds.Y + viewPort.PreviousSelectedIndex - viewPort.CurrentIndex,
+                viewPort.Bounds.Y + viewPort.PreviousSelectedIndex - viewPort.CurrentPageIndex,
                 highlight: false);
         }
 

@@ -6,7 +6,7 @@ background-highlight=#3b5070
 
 col-cmd-normal-user-space=#59a6e0
 col-cmd-low-priority=#0000FF
-col-cmd-high-cpu=#000000
+col-cmd-high-cpu=#ffa759
 col-cmd-io-bound=#2b7489
 col-cmd-script=#e3b341
 col-user-current-non-root=#95e6cb

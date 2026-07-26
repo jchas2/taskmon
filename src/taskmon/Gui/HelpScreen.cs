@@ -96,7 +96,7 @@ public class HelpScreen : Screen
         colourHelpText.AppendLine("Process and Path Colours:".ToColour(fg, bg));
         colourHelpText.AppendLine("Normal process".ToColour(theme.ColumnCommandNormalUserSpace, bg));
         colourHelpText.AppendLine("Low priority (nice) process".ToColour(theme.ColumnCommandLowPriority, bg));
-        colourHelpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
+        colourHelpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.ColumnCommandHighCpu, bg));
         colourHelpText.AppendLine("I/O bound process".ToColour(theme.ColumnCommandIoBound, bg));
         colourHelpText.Append("Metric ".ToColour(fg, bg));
         colourHelpText.Append("Low ".ToColour(theme.RangeLowForeground, theme.RangeLowBackground));

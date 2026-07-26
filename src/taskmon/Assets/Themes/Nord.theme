@@ -2,37 +2,37 @@
 colour-mode=indexed
 
 background=transparent
-background-highlight=#434c5ecc       ; editor.selectionBackground 
+background-highlight=#434c5ecc       
 
-col-cmd-normal-user-space=#A3BE8C    ; tokenColors: string
-col-cmd-low-priority=#81A1C1         ; tokenColors: constant
-col-cmd-high-cpu=#81A1C1             ; tokenColors: variable
-col-cmd-io-bound=#ECEFF4             ; tokenColors: punctuation
-col-cmd-script=#8FBCBB               ; tokenColors: support
-col-user-current-non-root=#616E88    ; tokenColors: comment
-col-user-other-non-root=#88C0D0      ; tokenColors: support.function
-col-user-system=#ECEFF4              ; tokenColors: punctuation.definition.parameters
-col-user-root=#ECEFF4                ; tokenColors: punctuation.definition.parameters
+col-cmd-normal-user-space=#A3BE8C    
+col-cmd-low-priority=#81A1C1         
+col-cmd-high-cpu=#8FBCBB             
+col-cmd-io-bound=#ECEFF4             
+col-cmd-script=#8FBCBB               
+col-user-current-non-root=#616E88    
+col-user-other-non-root=#88C0D0      
+col-user-system=#ECEFF4        
+col-user-root=#ECEFF4            
 
-command-foreground=#d8dee9          ; tab.activeForeground
-command-background=#3b4252          ; tab.activeBackground
+command-foreground=#d8dee9          
+command-background=#3b4252          
 
-delta-highlight-colour=#5E81AC      ; tokencolors: meta
+delta-highlight-colour=#5E81AC      
 
 error=#db61a2
 
-foreground=#8FBCBB                  ; tokenColors: entity
-foreground-highlight=#81a1c199      ; editor.wordHighlightStrongBackground
+foreground=#8FBCBB                  
+foreground-highlight=#81a1c199      
 
-menubar-foreground=#d8dee9          ; tab.activeForeground
-menubar-background=#3b4252          ; tab.activeBackground
+menubar-foreground=#d8dee9          
+menubar-background=#3b4252          
 
-range-high-background=#8FBCBB       ; tokenColors: variable
-range-low-background=#616E88        ; tokenColors: comment 
-range-mid-background=#81A1C1        ; tokenColors: keyword
+range-high-background=#8FBCBB       
+range-low-background=#616E88        
+range-mid-background=#81A1C1        
 range-high-foreground=#222222
 range-low-foreground=#222222
 range-mid-foreground=#222222
 
-header-background=#3b4252          ; tab.activeBackground
-header-foreground=#d8dee9          ; tab.activeForeground
+header-background=#3b4252    
+header-foreground=#d8dee9   

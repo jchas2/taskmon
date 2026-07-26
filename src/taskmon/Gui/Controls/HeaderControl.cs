@@ -153,11 +153,11 @@ public sealed class HeaderControl : Control
         }
 #endif
         string cpuName = systemStatistics.CpuName;
-#if __APPLE__
+
         if (systemStatistics.CpuFrequency > 0) {
             cpuName += $" @ {systemStatistics.CpuFrequency / 1000.0:0.00} GHz";
         }
-#endif
+        
         string cpuInfo = $"{cpuName} ({coreBreakdown})";
 
         if (appConfig.UseIrixReporting) {

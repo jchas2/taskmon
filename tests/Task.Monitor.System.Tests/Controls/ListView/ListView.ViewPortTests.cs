@@ -11,7 +11,7 @@ public sealed class ViewPortTests
         ViewPort viewPort = new();
     
         Assert.Equal(new Rectangle(0, 0, 0, 0), viewPort.Bounds);
-        Assert.Equal(0, viewPort.CurrentIndex);
+        Assert.Equal(0, viewPort.CurrentPageIndex);
         Assert.Equal(0, viewPort.RowCount);
         Assert.Equal(0, viewPort.SelectedIndex);
         Assert.Equal(0, viewPort.PreviousSelectedIndex);
@@ -22,7 +22,7 @@ public sealed class ViewPortTests
     {
         ViewPort viewPort = new() {
             Bounds = new Rectangle(1, 1, 80, 24),
-            CurrentIndex = 1,
+            CurrentPageIndex = 1,
             PreviousSelectedIndex = 2,
             RowCount = 24,
             SelectedIndex = 1
@@ -31,7 +31,7 @@ public sealed class ViewPortTests
         viewPort.Reset();
         
         Assert.Equal(new Rectangle(0, 0, 0, 0), viewPort.Bounds);
-        Assert.Equal(0, viewPort.CurrentIndex);
+        Assert.Equal(0, viewPort.CurrentPageIndex);
         Assert.Equal(0, viewPort.RowCount);
         Assert.Equal(0, viewPort.SelectedIndex);
         Assert.Equal(0, viewPort.PreviousSelectedIndex);
