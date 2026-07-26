@@ -2,9 +2,8 @@
   <img src="./docs/images/app_icon.png" alt="taskmgr-cli icon" height="40" align="left" />
   Task Monitor
 </h1>
-<p>A modern, powerful cross-platform terminal-based task monitor designed to provide real-time monitoring and management of a computer's performance, active processes, and resource utilization. 
-Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Task Manager</b>, it provides performance monitoring at-a-glance for system resources (including CPU, GPU, Memory, Swap, Disk and Network) and process
-management functions.</p>
+<p>A modern, powerful cross-platform terminal-based task monitor providing real-time monitoring and management of a computer's performance, active processes, and resource utilization. Perfect for Homelab and local LLM monitoring. 
+Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Task Manager</b>, it provides performance monitoring at-a-glance for system resources (including CPU, GPU, Memory, Swap, Disk and Network) and process management functions.</p>
 
 [![Homebrew](https://img.shields.io/badge/homebrew-orange?style=flat-square&logo=homebrew&logoColor=white)](#macos-on-apple-silicon)
 [![Chocolatey](https://img.shields.io/badge/chocolatey-blue?style=flat-square&logo=chocolatey&logoColor=white)](#windows-on-x64-and-arm64)
@@ -18,8 +17,9 @@ management functions.</p>
 
 ## Features
 
-- **No sudo or administrator privilege required** - Native platform APIs used on each platform.
-- Written in C# using platform native interop for maximum performance and minimum memory overhead.
+- **Perfect for HomeLab and Local LLM monitoring**
+- **No sudo or administrator privilege required** 
+- **Cross-Platform native performance**: Written in C# using platform native interop for maximum performance and minimum memory overhead (zero third-party dependencies)
 - **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
 - High resolution charts in 24-bit colour.
 - Switch layouts (`F8`) to focus charts on specific system metrics. 
@@ -46,9 +46,9 @@ management functions.</p>
 - **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the `F9` function).
 
 **Cross-Platform Native Performance**
-- Platform-specific optimizations using native APIs (Win32,  Mach kernel). 
-- .net native with small memory footprint.
-- No dependencies on libraries such as ncurses.
+- Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
+- .net native build with small memory footprint.
+- Zero third-party dependencies on libraries such as ncurses.
 
 ## Installation
 
@@ -111,6 +111,8 @@ Task Monitor supports the following commands on startup. Note these commands can
 | Command | What it does |
 |---------|--------------|
 | `taskmon` | Start Task Monitor with configuration defaults. |
+| `taskmon --gpu-only` | Automatically monitor GPU resources on startup. |
+| `taskmon --cpu-only` | Automatically monitor CPU resources on startup. |
 | `taskmon --pid <pid>` | Automatically monitor the pid nnn on startup. |
 | `taskmon --username <username>` | Automatically monitor all processes running under user <username> on startup. |
 | `taskmon --process <processname>` | Automatically monitor all processes with matching <processname> on startup. |
@@ -147,8 +149,8 @@ Task Monitor stores configuration and log files in the following system director
 
 ### Windows
 
-| Config | Path | Description |
-|--------|------|-------------|
+| Config | Path |
+|--------|------|
 | `taskmon.ini` | `~\AppData\Roaming\taskmon` |
 | Theme files |  `~\AppData\Roaming\taskmon\themes` |
 | Layout files | `~\AppData\Roaming\taskmon\layouts` | 

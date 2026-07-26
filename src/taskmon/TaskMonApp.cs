@@ -163,6 +163,27 @@ public sealed class TaskMonApp(RunContext runContext)
             }
         }
 
+        bool isGpuOnly = args.Contains("--gpu-only");
+        bool isCpuOnly = !isGpuOnly && args.Contains("--cpu-only");
+        
+        if (isGpuOnly || isCpuOnly) {
+            var (layoutName, sortCol) = isGpuOnly
+                ? (Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
+                : (Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
+            
+            Layout? defaultLayout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
+                    l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+
+            if (defaultLayout != null) {
+                runContext.AppConfig.DefaultLayout = defaultLayout;
+                runContext.AppConfig.SortColumn = sortCol;
+            }
+            else {
+                OutputWriter.Error.WriteLine($"{Constants.AppName}: Layout {layoutName} not found");
+                result = false;
+            }
+        }
+        
         if (!result || args.Any(arg => arg == "-h" || arg == "--help")) {
             actions.Add(new ShowUsageAction());
             return result;

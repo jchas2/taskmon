@@ -5,7 +5,7 @@ background=#0f1610
 background-highlight=#1d4125
 
 col-cmd-normal-user-space=#327f77
-col-cmd-low-priority=#121d18
+col-cmd-low-priority=#10b981
 col-cmd-high-cpu=#b082d1
 col-cmd-io-bound=#dff0e6
 col-cmd-script=#dff0e6
