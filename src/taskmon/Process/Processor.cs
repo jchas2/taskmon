@@ -140,12 +140,6 @@ public class Processor : IProcessor
             GetNetworkStats(ref prevNetworkStats);
 
             foreach (ProcessInfo processInfo in processService.GetProcesses()) {
-#if __WIN32__
-                // On Windows, ignore the system "idle" process auto assigned to Pid 0.
-                if (isWindows && processInfo.Pid == 0) {
-                    continue;
-                }
-#endif
                 processInfoMap.TryAdd(processInfo.Pid, processInfo);
                 processCount++;
                 threadCount += processInfo.ThreadCount; 

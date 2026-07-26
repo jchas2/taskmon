@@ -4,7 +4,7 @@ namespace Task.Monitor.System.Controls.ListView;
 
 public sealed class ViewPort
 {
-    public int CurrentIndex { get; set; }
+    public int CurrentPageIndex { get; set; }
     public int SelectedIndex { get; set; }
     public int PreviousSelectedIndex { get; set; }
     public int RowCount { get; set; }
@@ -12,7 +12,7 @@ public sealed class ViewPort
 
     public void Reset()
     {
-        CurrentIndex = 0;
+        CurrentPageIndex = 0;
         SelectedIndex = 0;
         PreviousSelectedIndex = 0;
         RowCount = 0;

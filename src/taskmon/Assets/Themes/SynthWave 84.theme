@@ -6,7 +6,7 @@ background-highlight=#fede5d       ; editor.selectionBackground
 
 col-cmd-normal-user-space=#ff8b39    ; tokenColors: string
 col-cmd-low-priority=#f97e72         ; tokenColors: constant
-col-cmd-high-cpu=#ff7edb             ; tokenColors: variable
+col-cmd-high-cpu=#36f9f6             ; tokenColors: variable
 col-cmd-io-bound=#b6b1b1             ; tokenColors: punctuation
 col-cmd-script=#36f9f6               ; tokenColors: support
 col-user-current-non-root=#848bbd    ; tokenColors: comment

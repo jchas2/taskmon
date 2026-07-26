@@ -46,7 +46,7 @@ class Program
         if (args.Any(arg => arg.Equals("--debug", StringComparison.CurrentCultureIgnoreCase))) {
             OutputWriter.Out.WriteLine($"Waiting for debugger attach to Pid {Environment.ProcessId}");
             
-            while (false == Debugger.IsAttached) {
+            while (!Debugger.IsAttached) {
                 Thread.Sleep(DebugWait);
             }
             
