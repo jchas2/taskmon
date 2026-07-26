@@ -203,7 +203,7 @@ use-irix-cpu-reporting=False
         Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.Background);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnCommandLowPriority);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.ColumnCommandHighCpu);
+        Assert.Equal(ConsolePalette.Red,      appConfig.DefaultTheme.ColumnCommandHighCpu);
         Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandIoBound);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandScript);
