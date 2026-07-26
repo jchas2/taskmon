@@ -489,13 +489,17 @@ public sealed partial class ProcessControl : Control
     
     private void UpdateColumnHeaderSort(bool decorate)
     {
-        processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
-        processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
 
         if (!decorate) {
+            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
+            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            
             processView.ColumnHeaders[(int)sortColumn].Text = sortColumn.GetTitle();
         }
         else {
+            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
+            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
+            
             processView.ColumnHeaders[(int)sortColumn].Text = appConfig.SortAscending
                 ? sortColumn.GetTitle() + "\u2191"
                 : sortColumn.GetTitle() + "\u2193";
