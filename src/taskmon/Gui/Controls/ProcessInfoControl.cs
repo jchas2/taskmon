@@ -239,6 +239,7 @@ public partial class ProcessInfoControl : Control
 
         menuView.SetFocus();
         menuView.ItemClicked += MenuViewOnItemClicked;
+        menuView.SelectedIndex = 0;
 
         cancellationTokenSource = null;
         workerTask = null;
