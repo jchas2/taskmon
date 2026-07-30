@@ -133,15 +133,19 @@ public sealed class SetupScreenTests
 #endif
             { "Highlight changed values",                          "generalView" },
             { "Enable multiple process selection",                 "generalView" },
-            { "Show Cpu meter numerically",                        "generalView" },
-            { "Show Disk metre numerically",                       "generalView" },
-            { "Show Memory metre numerically",                     "generalView" },
+            { "Show Cpu chart label numerically",                  "generalView" },
+            { "Show Gpu chart label numerically",                  "generalView" },
+            { "Show Memory chart label numerically",               "generalView" },
+            { "Show Gpu Memory chart label numerically",           "generalView" },
 #if __WIN32__
-            { "Show Virtual memory numerically",                   "generalView" },
+            { "Show Virtual memory chart label numerically",       "generalView" },
 #endif
 #if __APPLE__
-            { "Show Swap memory numerically",                      "generalView" },
+            { "Show Swap memory chart label numerically",          "generalView" },
 #endif
+            { "Show Disk chart label numerically",                 "generalView" },
+            { "Show Network chart label numerically",              "generalView" },
+            { "Show chart Y axis scale",                           "generalView" },
 #if __WIN32__
             { "Use Irix mode for per-process CPU% (individual core saturation)",     "generalView" },
 #endif

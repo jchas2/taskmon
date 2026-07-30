@@ -255,6 +255,7 @@ public sealed class HeaderControl : Control
             chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
             chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
             chart.MetreStyle = appConfig.MetreStyle;
+            chart.ShowYAxisScale = appConfig.ShowYAxisScale;
         }
         
         processor.ProcessorUpdated += OnProcessorUpdated;

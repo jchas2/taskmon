@@ -66,7 +66,7 @@ show-metre-cpu-numerically=True
 show-metre-disk-numerically=True
 show-metre-mem-numerically=True
 show-metre-swap-numerically=True
-use-large-charts=False
+show-y-axis-scale=True
 use-irix-cpu-reporting=True
 ";
     
@@ -141,6 +141,7 @@ use-irix-cpu-reporting=True
         Assert.True(appConfig.ShowMetreGpuMemNumerically);
         Assert.True(appConfig.ShowMetreSwapNumerically);
         Assert.True(appConfig.ShowMetreNetworkNumerically);
+        Assert.True(appConfig.ShowYAxisScale);
 
         if (!string.IsNullOrEmpty(iniFileData)) {
             Assert.True(appConfig.UseIrixReporting);
@@ -179,7 +180,7 @@ show-metre-swap-numerically=False
 show-metre-gpu-numerically=False
 show-metre-gpu-mem-numerically=False
 show-metre-network-numerically=False
-use-large-charts=True
+show-y-axis-scale=False
 use-irix-cpu-reporting=False
 ";
     
@@ -246,6 +247,7 @@ use-irix-cpu-reporting=False
         Assert.False(appConfig.ShowMetreGpuNumerically);
         Assert.False(appConfig.ShowMetreGpuMemNumerically);
         Assert.False(appConfig.ShowMetreNetworkNumerically);
+        Assert.False(appConfig.ShowYAxisScale);
         Assert.False(appConfig.UseIrixReporting);
     }
 

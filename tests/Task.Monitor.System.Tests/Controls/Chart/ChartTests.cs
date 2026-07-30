@@ -99,4 +99,63 @@ public sealed class ChartTests
             ConsolePalette.ForegroundSgr(chart.ColourLow),
             terminal.Output);
     }
+
+    [Fact]
+    public void OnDraw_Does_Not_Draw_YAxisScale_When_Chart_Height_Is_6_Or_Less()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 8); // chartHeight = 6 (<= 6)
+        chart.Add(0.5);
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.DoesNotContain('┤', terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Draws_YAxisScale_When_Chart_Height_Is_Greater_Than_6()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9); // chartHeight = 7 (> 6)
+        chart.Add(1.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        Assert.Contains('┤', output);
+        Assert.Contains("100%", output);
+        Assert.Contains("0%", output);
+    }
+
+    [Fact]
+    public void OnDraw_Hides_YAxisScale_When_ShowYAxisScale_Is_False()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.ShowYAxisScale = false;
+        chart.Add(1.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.DoesNotContain('┤', terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Uses_CustomYAxisScaleFormatter_When_Provided()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.CustomYAxisScaleFormatter = val => $"{val:F0}v";
+        chart.Add(10.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        Assert.Contains("10v", output);
+        Assert.Contains("0v", output);
+    }
 }

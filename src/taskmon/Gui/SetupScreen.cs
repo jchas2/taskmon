@@ -229,46 +229,51 @@ public class SetupScreen : Screen
             runContext.AppConfig.MultiSelectProcesses);
 
         AddGeneralItem(
-            "Show Cpu meter numerically",
+            "Show Cpu chart label numerically",
             Constants.Keys.ShowMetreCpuNumerically,
             runContext.AppConfig.ShowMetreCpuNumerically);
 
         AddGeneralItem(
-            "Show Gpu meter numerically",
+            "Show Gpu chart label numerically",
             Constants.Keys.ShowMetreGpuNumerically,
             runContext.AppConfig.ShowMetreGpuNumerically);
         
         AddGeneralItem(
-            "Show Memory metre numerically", 
+            "Show Memory chart label numerically", 
             Constants.Keys.ShowMetreMemNumerically,
             runContext.AppConfig.ShowMetreMemoryNumerically);
 
         AddGeneralItem(
-            "Show Gpu Memory metre numerically", 
+            "Show Gpu Memory chart label numerically", 
             Constants.Keys.ShowMetreGpuMemNumerically,
             runContext.AppConfig.ShowMetreGpuMemNumerically);
 #if __WIN32__
         AddGeneralItem(
-            "Show Virtual memory numerically", 
+            "Show Virtual memory chart label numerically", 
             Constants.Keys.ShowMetreSwapNumerically,
             runContext.AppConfig.ShowMetreSwapNumerically);
 #endif
 #if __APPLE__
         AddGeneralItem(
-            "Show Swap memory numerically", 
+            "Show Swap memory chart label numerically", 
             Constants.Keys.ShowMetreSwapNumerically,
             runContext.AppConfig.ShowMetreSwapNumerically);
 #endif
         AddGeneralItem(
-            "Show Disk metre numerically", 
+            "Show Disk chart label numerically", 
             Constants.Keys.ShowMetreDiskNumerically,
             runContext.AppConfig.ShowMetreDiskNumerically);
 
         AddGeneralItem(
-            "Show Network metre numerically", 
+            "Show Network chart label numerically", 
             Constants.Keys.ShowMetreNetworkNumerically,
             runContext.AppConfig.ShowMetreNetworkNumerically);
-        
+
+        AddGeneralItem(
+            "Show chart Y axis scale", 
+            Constants.Keys.ShowYAxisScale,
+            runContext.AppConfig.ShowYAxisScale);
+
         AddGeneralItem(
 #if __WIN32__
             "Use Irix mode for per-process CPU% (individual core saturation)",
@@ -416,6 +421,7 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowMetreSwapNumerically = GetItemValueByKey(Constants.Keys.ShowMetreSwapNumerically).Checked;
         runContext.AppConfig.ShowMetreDiskNumerically = GetItemValueByKey(Constants.Keys.ShowMetreDiskNumerically).Checked;
         runContext.AppConfig.ShowMetreNetworkNumerically = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
+        runContext.AppConfig.ShowYAxisScale = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
         runContext.AppConfig.UseIrixReporting = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 
         Statistics visibleColumns = Statistics.Process | Statistics.Pid;

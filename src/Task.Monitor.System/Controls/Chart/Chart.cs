@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Controls.Chart;
@@ -15,17 +15,18 @@ public sealed class Chart : Control
     private static readonly char[] BrailleChars = ['\u2800', '\u28C0', '\u28E4', '\u28F6', '\u28FF'];
     private static readonly char BarChar = '|';
     private static readonly char BlockChar = ' ';
+
+    private const int DefaultScaleWidth = 5;
     
     private double[] data = [];
     private int dataHead  = 0;
     private int dataCount = 0;
     private double dataMax = 0.0;
+    private bool showYAxisScale = true;
     private readonly object dataLock = new();
     private readonly AnsiScreenBuffer frame = new();
     
     public Chart(ISystemTerminal terminal) : base(terminal) { }
-
-    private int DataCapacity => Math.Max(0, Width - 2);
 
     public void Add(double value)
     {
@@ -66,8 +67,10 @@ public sealed class Chart : Control
     }
 
     public bool AutoScale { get; set; } = true;
-
-    public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
+    
+    public Func<double, string>? CustomYAxisScaleFormatter { get; set; }
+    
+    private int DataCapacity => Math.Max(0, Width - 2 - ScaleWidth);
     
     public Color ColourHigh { get; set; } = ConsolePalette.Red;
 
@@ -77,6 +80,42 @@ public sealed class Chart : Control
 
     private double DataAt(int i) => data[(dataHead + i) % data.Length]; 
     
+    private string FormatScaleValue(double value, double maxVal)
+    {
+        if (CustomYAxisScaleFormatter != null) {
+            return CustomYAxisScaleFormatter(value);
+        }
+
+        if (maxVal <= 1.0 && maxVal > 0.0) {
+            int pct = (int)Math.Round(value * 100.0);
+            return $"{pct}%";
+        }
+
+        if (Math.Abs(value) < 1e-9) {
+            return "0";
+        }
+
+        if (value >= 1000000) {
+            return $"{value / 1000000.0:0.#}M";
+        }
+
+        if (value >= 1000) {
+            return $"{value / 1000.0:0.#}k";
+        }
+
+        if (value >= 100) {
+            return $"{value:0}";
+        }
+
+        if (value >= 10) {
+            return $"{value:0.#}";
+        }
+
+        return $"{value:0.##}";
+    }
+    
+    private bool IsYAxisScaleVisible => ShowYAxisScale && (Height - 2) > 6;
+
     public string LabelSeries { get; set; } = string.Empty;
     
     protected override void OnDraw()
@@ -95,19 +134,22 @@ public sealed class Chart : Control
         }
 
         int chartHeight = Math.Max(0, Height - 2);
-        int chartWidth = Math.Max(0, Width - 2);
+        bool showScale = ShowYAxisScale && chartHeight > 6;
+        int scaleWidth = showScale ? DefaultScaleWidth : 0;
+        int totalInnerWidth = Math.Max(0, Width - 2);
+        int chartWidth = Math.Max(0, totalInnerWidth - scaleWidth);
         int totalSubRows = chartHeight * 4;
         int sampleCount = samples.Length;
 
         double displayScale = AutoScale
-            ? 1.0 / snapshotMax
+            ? (snapshotMax > 0.0 ? 1.0 / snapshotMax : 1.0)
             : 1.0;
 
         frame.Clear();
         frame.MoveTo(X, Y);
         frame.SetColour(ForegroundColour, BackgroundColour);
         frame.Append('\u256D');
-        frame.Append('\u2500', chartWidth);
+        frame.Append('\u2500', totalInnerWidth);
         frame.Append('\u256E');
         
         for (int row = 0; row < chartHeight; row++) {
@@ -174,8 +216,31 @@ public sealed class Chart : Control
                 frame.Append(ch);
             }
 
-            frame.SetColour(ForegroundColour, BackgroundColour);
-            frame.Append('\u2502');
+            if (showScale) {
+                bool isIndexRow = (row % 2 == 0) || (row == chartHeight - 1);
+                frame.SetColour(ForegroundColour, BackgroundColour);
+
+                if (isIndexRow) {
+                    double ratio = chartHeight > 1 ? (double)rowFromBottom / (chartHeight - 1) : 0.0;
+                    double scaleValue = (AutoScale ? snapshotMax : 1.0) * ratio;
+                    string formatted = FormatScaleValue(scaleValue, snapshotMax);
+                    
+                    if (formatted.Length > scaleWidth) {
+                        formatted = formatted[..scaleWidth];
+                    }
+
+                    frame.Append(formatted.PadLeft(scaleWidth));
+                    frame.Append('\u2524');
+                }
+                else {
+                    frame.Append(' ', scaleWidth);
+                    frame.Append('\u2502');
+                }
+            }
+            else {
+                frame.SetColour(ForegroundColour, BackgroundColour);
+                frame.Append('\u2502');
+            }
         }
 
         frame.MoveTo(X, Y + Height - 1);
@@ -186,9 +251,9 @@ public sealed class Chart : Control
             : $"{Text} {LabelSeries}";
 
         string labelPadded = label.Length > 0 ? $" {label} " : string.Empty;
-        int labelLen = Math.Min(labelPadded.Length, chartWidth);
-        int leftDashes = (chartWidth - labelLen) / 2;
-        int rightDashes = chartWidth - labelLen - leftDashes;
+        int labelLen = Math.Min(labelPadded.Length, totalInnerWidth);
+        int leftDashes = (totalInnerWidth - labelLen) / 2;
+        int rightDashes = totalInnerWidth - labelLen - leftDashes;
 
         frame.Append('\u2570');
         frame.Append('\u2500', leftDashes);
@@ -199,11 +264,9 @@ public sealed class Chart : Control
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
     }
-
-    private void SetCellColour(Color chartColour) => frame.SetColour(
-        MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,
-        MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour);
-
+    
+    public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
+    
     protected override void OnResize()
     {
         lock (dataLock) {
@@ -225,6 +288,24 @@ public sealed class Chart : Control
                 for (int i = 0; i < dataCount; i++) {
                     dataMax = Math.Max(dataMax, data[i]);
                 }
+            }
+        }
+    }
+
+    private int ScaleWidth => IsYAxisScaleVisible ? DefaultScaleWidth : 0;
+
+    private void SetCellColour(Color chartColour) => frame.SetColour(
+        MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,
+        MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour);
+    
+    public bool ShowYAxisScale
+    {
+        get => showYAxisScale;
+        set
+        {
+            if (showYAxisScale != value) {
+                showYAxisScale = value;
+                OnResize();
             }
         }
     }
