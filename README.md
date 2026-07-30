@@ -14,12 +14,13 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 
 
 ![Task Monitor](./docs/images/taskmon_main.png)
+![Task Monitor Gpu](./docs/images/taskmon_gpu.png)
+
 
 ## Features
 
 - **Perfect for HomeLab and Local LLM monitoring**
 - **No sudo or administrator privilege required** 
-- **Cross-Platform native performance**: Written in C# using platform native interop for maximum performance and minimum memory overhead (zero third-party dependencies)
 - **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
 - High resolution charts in 24-bit colour.
 - Switch layouts (`F8`) to focus charts on specific system metrics. 
@@ -28,18 +29,18 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - Process CPU% defaults to Irix mode (individual core saturation) for *nix systems (`i` to toggle on/off).
 - Process deep dive (`F5`) to view live thread times and loaded libraries (system and user).
 - **Module Analysis**: Full dynamic and static library enumeration for selected process.
-- Multiple process selection (`x` toggle show checkboxex, `spacebar` for selection, `u` to uncheck all selections)
 - Customise update interval (default 1500ms).
 - Customise top number of processes to display (default unlimited).
 - Customise number of process iteration loops.
 - Freeze process list updates (`f` or `z`).
 - **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
+- Multiple process selection (`x` toggle show checkboxes, `spacebar` for selection, `u` to uncheck all selections)
 - Select and terminate multiple processes simultaneously (`F6`).
 - Filter by process name, username, command path or PID (`F4`).
 - Sort the process list by any visible column (`F3`).
 - Quick sort by CPU%, GPU% or Memory (`p`, `g` or `m` respectively). 
 - Toggle process sorting between ascending (using the `a` key) and descending (using the `d` key).
-- Navigate scrollable lists using the `&#x2193;`, `&#x2191;` arrow keys and `Pg Up` and `Pg Down` keys.  
+- Navigate scrollable lists using the &#x2193;, &#x2191; arrow keys and `Pg Up` and `Pg Down` keys.  
 - **Multiple Themes**: Ships with dozens of popular, modern 24-bit colour themes.
 - Modern terminal detection to support colour desaturation.
 - **Customise Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
@@ -77,7 +78,7 @@ Task Monitor does not require sudo permission on MacOS for system monitoring, ho
 ### Windows on x64 and ARM64
 
 [![Chocolatey](https://img.shields.io/badge/chocolatey-blue?style=flat-square&logo=chocolatey&logoColor=white)](#windows-on-x64-and-arm64)
-The easiest way to install on Windows isusing chocolately (pending):
+The easiest way to install on Windows is using chocolately (pending):
 
 ```powershell
 choco install taskmon
@@ -114,18 +115,18 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --gpu-only` | Automatically monitor GPU resources on startup. |
 | `taskmon --cpu-only` | Automatically monitor CPU resources on startup. |
 | `taskmon --pid <pid>` | Automatically monitor the pid nnn on startup. |
-| `taskmon --username <username>` | Automatically monitor all processes running under user <username> on startup. |
-| `taskmon --process <processname>` | Automatically monitor all processes with matching <processname> on startup. |
+| `taskmon --username <username>` | Automatically monitor all processes running under user username on startup. |
+| `taskmon --process <processname>` | Automatically monitor all processes with matching processname on startup. |
 | `taskmon --sort <column>` | Automatically sort by <column> on startup. |
+| `taskmon --sort-help` | Show the list of columns available for the `--sort` option. |
 | `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
 | `taskmon --limit <limit>` | Limit the number of iteration loops and then stop. |
-| `taskmon --nprocs <nprocs>` | Only display the top number of processes <nprocs>. |
+| `taskmon --nprocs <nprocs>` | Only display the top number of processes. Eg: `taskmon --nprocs 10` |
 | `taskmon --theme <theme>` | Load a theme <theme> from the available themes. Eg: `taskmon --theme "Dracula Official"` |
+| `taskmon --theme-help` | Show the list of theme names available for the `--theme` option. |
 | `taskmon --debug` | Signal a debug break on startup and wait for a debugger to attach. |
 | `taskmon --version` | Print version information and exit. |
 | `taskmon --help` | Show help and usage information. |
-
-Valid sort columns are: AvgCpu, AvgDisk, AvgGpu, AvgMem, Cpu, Disk, Gpu, MaxCpu, MaxDisk, MaxGpu, MaxMem, Mem, Path, Pid, Pri, Process, Thrd,User
 
 ## Configuration
 
@@ -199,7 +200,7 @@ header-foreground=#f1fa8c
 | --- | --- |
 | `[Dracula Official]` | Theme name, used to identify the theme. |
 | `colour-mode=indexed` | `Indexed` means use the colour palette that supports colour desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
-| `background=transparent` | `transaparent` honours background opacity settings in the terminal. Otherwise use a hex colour. |
+| `background=transparent` | `transaparent` honours background colour opacity settings in the terminal. Otherwise specify a custom background colour to override the terminal default. |
 | `background-highlight=#3b5070` | Row selection background colour in a list. |
 | `col-cmd-normal-user-space=#50fa7b` | Text colour for user-mode applications. |
 | `col-cmd-low-priority=#0000FF` | Text colour for applications running at a low priority. |
@@ -227,7 +228,7 @@ header-foreground=#f1fa8c
 | `header-background=#282a36` | Column header background colour in a list. |
 | `header-foreground=#f1fa8c` | Column header foreground colour in a list. |
 
-Note: ```colour-mode``` can be temporarily overriden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```.
+Note: ```colour-mode``` can be temporarily overriden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
 
 ## Layout Files
 
@@ -256,3 +257,102 @@ charts=0,1,2,3,4,5,6,7
 | `; Chart index` | |
 | `; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec` | Chart identifiers. |
 | `charts=0,1,2,3,4,5,6,7` | Array of chart identifiers to render across the rows and columns. |
+
+## Development Guide
+
+This section covers everything you need to know to build, test, debug, and contribute to `taskmon`.
+
+### Prerequisites
+
+*   [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or newer.
+*   A compatible OS and Architecture:
+    *   **macOS**: Apple Silicon (`osx-arm64`). *Intel Macs (`osx-x64`) are not supported.*
+    *   **Windows**: x64 (`win-x64`).
+
+### Building the Project
+
+The repository includes cross-platform build scripts in the root directory that wrap the underlying .NET CLI commands and engineering scripts (`eng/`).
+
+**macOS (Bash):**
+```bash
+./build.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+.\build.ps1
+```
+
+By default, these scripts perform a clean build using the `Debug` configuration. Under the hood, they invoke `eng/build.sh` or `eng/build.ps1`. 
+You can pass custom arguments to the underlying scripts:
+*   `--clean`: Clean the solution.
+*   `--restore`: Restore NuGet packages.
+*   `--build`: Build the solution.
+*   `-c <config>`: Specify configuration (e.g., `Release`).
+
+### Running Tests
+
+The project uses **xUnit** and **Moq** for testing. Test projects are located in the `tests/` directory.
+
+To run the full test suite:
+
+**macOS:**
+```bash
+./test.sh
+```
+
+**Windows:**
+```powershell
+.\test.ps1
+```
+*(This is equivalent to running `./eng/build.sh --test`)*
+
+### Publishing
+
+To build self-contained, Native AOT-compiled binaries for release:
+
+**macOS:**
+```bash
+./publish.sh
+```
+
+**Windows:**
+```powershell
+.\publish.ps1
+```
+*(This cleans, builds, and publishes using the `Release` configuration).*
+
+The output will be located in `src/taskmon/bin/Release/net10.0/<runtime>/publish/`.
+
+### Debugging
+
+To debug the CLI application, you can instruct it to pause on startup and wait for a debugger to attach. This is useful when issues
+or behaviours can't be reproduced in IDE consoles, or are specific to the terminal host (i.e. Powershell, conhost, Terminal, Ghostty, etc).
+
+1.  Run the application with the `--debug` flag:
+    ```bash
+    taskmon --debug
+    ```
+2.  The application will print its Process ID (PID) and wait:
+    `Waiting for debugger attach to Pid 12345`
+3.  Attach your IDE's debugger to the specified PID.
+4.  Once attached, the application will trigger a `Debugger.Break()` and you can step through the code.
+
+### Writing Code / Project Structure
+
+*   **Interop Layer**: All native OS calls are isolated in `Task.Monitor.Interop.Mach` (macOS) and `Task.Monitor.Interop.Win32` (Windows). If you need to add a new OS metric, define the P/Invoke signatures here.
+*   **System Abstraction**: The `Task.Monitor.System` project consumes the Interop layer to provide cross-platform models (e.g., `SystemStatistics`, `ProcessInfo`).
+*   **UI/CLI**: The `taskmon` project contains the main application logic, rendering, and terminal UI layouts.
+*   **Themes/Layouts**: Custom terminal themes and layouts are stored as embedded resources in `src/taskmon/Assets/`.
+*   **Test Projects**: There is a matching test project for every application project.
+
+### Dependencies
+This project contains no dependencies on third party .net libraries. The early iterations of the system layer functionality used
+a number of libaries and the memory footprint for the tool quickly climbed to several hundred MB. Keeping the CPU and memory footprint as low as possible for a .net native application is a key design goal.
+
+## Acknowledgments
+
+- The original `htop` https://github.com/htop-dev/htop
+- MacOS `top` https://github.com/apple-open-source/macos/tree/master/top
+- The .net framework authors https://github.com/dotnet
+- The WinForms authors: the TUI framework design in this project was modelled on the WinForms object and eventing models, to provide a clean, simple API for working with the underlying terminal. 

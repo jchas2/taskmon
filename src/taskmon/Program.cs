@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 using Task.Monitor.System;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;

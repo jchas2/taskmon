@@ -12,19 +12,10 @@ namespace Task.Monitor.Gui.Controls;
 
 public sealed partial class ProcessControl : Control
 {
-    private class CmdLineFilters
-    {
-        public int Pid { get; init; }
-        public string UserName { get; init; } = string.Empty;
-        public string Process { get; init; } = string.Empty;
-        public int NumProcs { get; init; }
-    }
-
     private readonly IProcessor processor;
     private readonly AppConfig appConfig;
     private readonly ListView sortView;
     private readonly ListView processView;
-    private readonly CmdLineFilters cmdLineFilters;
 
     private List<ProcessorInfo> allProcesses = [];
     private SystemStatistics systemStatistics;
@@ -48,14 +39,7 @@ public sealed partial class ProcessControl : Control
     {
         this.processor = processor;
         this.appConfig = appConfig;
-
-        cmdLineFilters = new CmdLineFilters {
-            Pid = appConfig.FilterPid,
-            UserName = appConfig.FilterUserName,
-            Process = appConfig.FilterProcess,
-            NumProcs = appConfig.NumberOfProcesses
-        };
-
+        
         Statistics sortStatistic = appConfig.SortColumn;
 
         sortColumn = sortStatistic switch {
@@ -511,17 +495,17 @@ public sealed partial class ProcessControl : Control
         lock (allProcessesLock) {
             IEnumerable<ProcessorInfo> filteredProcesses = allProcesses;
 
-            if (cmdLineFilters.Pid > -1) {
+            if (appConfig.FilterPid > -1) {
                 filteredProcesses = filteredProcesses
-                    .Where(p => p.Pid == cmdLineFilters.Pid);
+                    .Where(p => p.Pid == appConfig.FilterPid);
             }
-            else if (!string.IsNullOrWhiteSpace(cmdLineFilters.UserName)) {
+            else if (!string.IsNullOrWhiteSpace(appConfig.FilterUserName)) {
                 filteredProcesses = filteredProcesses
-                    .Where(p => p.UserName.Contains(cmdLineFilters.UserName, StringComparison.OrdinalIgnoreCase));
+                    .Where(p => p.UserName.Contains(appConfig.FilterUserName, StringComparison.OrdinalIgnoreCase));
             }
-            else if (!string.IsNullOrWhiteSpace(cmdLineFilters.Process)) {
+            else if (!string.IsNullOrWhiteSpace(appConfig.FilterProcess)) {
                 filteredProcesses = filteredProcesses
-                    .Where(p => p.ProcessName.Contains(cmdLineFilters.Process, StringComparison.OrdinalIgnoreCase));
+                    .Where(p => p.ProcessName.Contains(appConfig.FilterProcess, StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(FilterText)) {
@@ -559,9 +543,9 @@ public sealed partial class ProcessControl : Control
                 _ => filteredProcesses.OrderByDescending(p => p.CpuTimePercent)
             }).ToList();
 
-            if (cmdLineFilters.NumProcs > -1) {
+            if (appConfig.NumberOfProcesses > -1) {
                 sortedProcesses = sortedProcesses
-                    .Take(cmdLineFilters.NumProcs)
+                    .Take(appConfig.NumberOfProcesses)
                     .ToList();
             }
 

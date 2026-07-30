@@ -20,8 +20,8 @@ public sealed class Constants
         public const string ThemeMsDos = "MS-DOS";
 
         public const string LayoutAllCharts = "All Charts";
-        public const string LayoutGpuAndGpuMemoryLarge = "Gpu And Gpu Memory Large";
-        public const string LayoutCpuAndMemoryLarge = "Cpu And Memory Large";
+        public const string LayoutGpuAndGpuMemoryLarge = "Gpu and Gpu Memory Large";
+        public const string LayoutCpuAndMemoryLarge = "Cpu and Memory Large";
     }
 
     public sealed class Keys
@@ -59,6 +59,7 @@ public sealed class Constants
         public const string ShowMetreGpuNumerically = "show-metre-gpu-numerically";
         public const string ShowMetreGpuMemNumerically = "show-metre-gpu-mem-numerically";
         public const string ShowMetreNetworkNumerically = "show-metre-network-numerically";
+        public const string ShowYAxisScale = "show-y-axis-scale";
         public const string UseLargeCharts = "use-large-charts";
         public const string UseIrixCpuReporting = "use-irix-cpu-reporting";
 

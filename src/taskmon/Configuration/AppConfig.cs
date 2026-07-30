@@ -238,6 +238,12 @@ public sealed class AppConfig
         set => statsSection?.Add(Constants.Keys.Cols, value.ToString());
     }
 
+    public bool ShowYAxisScale
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowYAxisScale, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowYAxisScale, value.ToString());
+    }
+
     public Statistics SortColumn
     {
         get => sortSection?.GetEnum(Constants.Keys.Col, Statistics.Cpu) ?? Statistics.Cpu;
@@ -452,6 +458,7 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowMetreGpuMemNumerically, true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreNetworkNumerically, true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically, true.ToString())
+            .AddIfMissing(Constants.Keys.ShowYAxisScale, true.ToString())
             .AddIfMissing(Constants.Keys.UseLargeCharts, false.ToString())
             .AddIfMissing(Constants.Keys.UseIrixCpuReporting, useIrixMode.ToString());
 

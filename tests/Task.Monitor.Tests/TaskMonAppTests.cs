@@ -131,6 +131,25 @@ public class TaskMonAppTests
         Assert.Equal(actionType, actions[0].GetType());
     }
 
+    public static TheoryData<string, string, Statistics> TargetedArgData()
+        => new() {
+            { "--cpu-only", Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu },
+            { "--gpu-only", Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu }
+        };
+    [Theory]
+    [MemberData(nameof(TargetedArgData))]
+    public void Should_Setup_Config_For_Targeted_Monitoring(string arg, string layoutName, Statistics sortColumn)
+    {
+        RunContext runContext = new RunContextHelper().GetRunContext();
+        TaskMonApp app = new(runContext);
+        bool result = app.ProcessArgs(new[] { arg }, out List<IAction> actions);
+
+        Assert.True(result);
+        Assert.Equal(layoutName, runContext.AppConfig.DefaultLayout.Name);
+        Assert.Equal(sortColumn, runContext.AppConfig.SortColumn);
+        Assert.Equal(typeof(RunAppAction), actions[0].GetType());
+    }
+
     [Fact]
     public void Should_Load_RunApp_Action_For_No_Args()
     {

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 
@@ -54,10 +55,10 @@ public class ListView : Control
         viewPort.Bounds = new Rectangle(X, y, Width, Height);
         
         if (viewPort.SelectedIndex >= items.Count) {
-            viewPort.SelectedIndex = items.Count - 1;
+            viewPort.SelectedIndex = Math.Max(0, items.Count - 1); 
         }
         if (viewPort.PreviousSelectedIndex >= items.Count) {
-            viewPort.PreviousSelectedIndex = items.Count - 1;
+            viewPort.PreviousSelectedIndex = Math.Max(0, items.Count - 1);
         }
         if (viewPort.CurrentPageIndex > Math.Max(0, items.Count - viewPort.RowCount)) {
             viewPort.CurrentPageIndex = Math.Max(0, items.Count - viewPort.RowCount);
@@ -528,7 +529,6 @@ public class ListView : Control
     private void RedrawItem()
     {
         frame.Clear();
-
         ListViewItem selectedItem = items[viewPort.SelectedIndex];
         
         DrawItem(
