@@ -103,8 +103,6 @@ public sealed class HeaderControl : Control
 
     private void OnDrawInternal()
     {
-        using TerminalRestorer _ = new();
-
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
         

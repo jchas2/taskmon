@@ -92,7 +92,7 @@ public sealed class MainScreen : Screen
     {
         Debug.Assert(activeControl != null);
 
-        headerControl.Draw();
+        headerControl.Draw(); 
         activeControl.Draw();
         footerControl.Draw();
     }

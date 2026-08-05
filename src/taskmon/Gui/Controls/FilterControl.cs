@@ -24,8 +24,6 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
     
     private void OnDrawInternal()
     {
-        using TerminalRestorer _ = new();
-        
         Terminal.SetCursorPosition(left: X, top: Y);
 
         int nchars = 0;
