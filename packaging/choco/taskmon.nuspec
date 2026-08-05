@@ -18,19 +18,45 @@
     <tags>taskmon task-monitor cli htop top task-manager process-monitor cpu gpu memory disk network system-monitor admin foss</tags>
     <summary>A powerful, cross-platform terminal-based task monitor.</summary>
     <description>
-Task Monitor (taskmon) is a powerful, cross-platform terminal-based task monitor that provides
-real-time monitoring and management of system performance, active processes, and resource
-utilization. Inspired by tools like top, htop and the Windows Task Manager.
+A modern, powerful cross-platform terminal-based task monitor providing real-time monitoring and management of a computer's performance, 
+active processes, and resource utilization. Perfect for Homelab and local LLM monitoring. Originally inspired by tools like top, htop and 
+the Windows Task Manager, it provides performance monitoring at-a-glance for system resources (including CPU, GPU, Memory, Swap, Disk and 
+Network) and process management functions.
+
+![Task Monitor](https://raw.githubusercontent.com/jchas2/taskmon/refs/heads/main/docs/images/taskmon_win32.png)
 
 ### Features
-- Real-time process monitoring (CPU, GPU, memory, disk I/O, network I/O, thread counts)
-- Advanced process information including module lists, thread states and command-line arguments
-- Multi-process selection and termination
-- Filtering by process name, username or PID, and flexible column sorting
-- Rich system metrics with visual meters
-- Keyboard-driven interface with F1-F10 hotkey support
-- Built-in themes, layouts and configurable colors
-- Native performance using platform-specific APIs
+- **Perfect for HomeLab and Local LLM monitoring**
+- **No sudo or administrator privilege required** 
+- **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
+- High resolution charts in 24-bit colour.
+- Switch layouts (`F8`) to focus charts on specific system metrics. 
+- **Real-Time Process Monitoring**: View Process, Pid, CPU%, Avg CPU%, Max CPU%, Threads, GPU%, Avg GPU%, Max GPU%, Memory, Avg Memory, Max Memory, Disk MB/s, Avg Disk MB/s, Max Disk MB/s and Command Path.
+- Process list formatted similar to the original **htop** and **top**. 
+- Process CPU% defaults to Irix mode (individual core saturation) for *nix systems (`i` to toggle on/off).
+- Process deep dive (`F5`) to view live thread times and loaded libraries (system and user).
+- **Module Analysis**: Full dynamic and static library enumeration for selected process.
+- Customise update interval (default 1500ms).
+- Customise top number of processes to display (default unlimited).
+- Customise number of process iteration loops.
+- Freeze process list updates (`f` or `z`).
+- **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
+- Multiple process selection (`x` toggle show checkboxes, `spacebar` for selection, `u` to uncheck all selections)
+- Select and terminate multiple processes simultaneously (`F6`).
+- Filter by process name, username, command path or PID (`F4`).
+- Sort the process list by any visible column (`F3`).
+- Quick sort by CPU%, GPU% or Memory (`p`, `g` or `m` respectively). 
+- Toggle process sorting between ascending (using the `a` key) and descending (using the `d` key).
+- Navigate scrollable lists using the &#x2193;, &#x2191; arrow keys and `Pg Up` and `Pg Down` keys.  
+- **Multiple Themes**: Ships with dozens of popular, modern 24-bit colour themes.
+- Modern terminal detection to support colour desaturation.
+- **Customise Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
+- **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the `F9` function).
+
+**Cross-Platform Native Performance**
+- Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
+- .net native build with small memory footprint.
+- Zero third-party dependencies on libraries such as ncurses.
 
 ### Package notes
 This package installs a self-contained, natively compiled (AOT) single-file executable.

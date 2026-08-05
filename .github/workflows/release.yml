@@ -185,7 +185,7 @@ jobs:
           asset_name: taskmon-${{ needs.create-release.outputs.version }}-windows-${{ matrix.arch }}.zip.sha256
           asset_content_type: text/plain
 
-      - name: Save artifact for Chocolatey
+      - name: Save artifact for Chocolatey1
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}-binary
@@ -287,45 +287,45 @@ jobs:
           Write-Host "Pushing $($nupkg.Name)"
           choco push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
 
-#  publish-winget:
-#    name: Publish winget Manifest
-#    needs: [create-release, build-windows]
-#    runs-on: windows-latest
-#    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-#    env:
-#      VERSION: ${{ needs.create-release.outputs.version }}
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v4
-#
-#      - name: Download Windows x64 artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: windows-x64-binary
-#          path: artifacts/x64
-#
-#      - name: Download Windows ARM64 artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: windows-arm64-binary
-#          path: artifacts/arm64
-#
-#      - name: Build winget manifests
-#        shell: pwsh
-#        run: |
-#          ./packaging/winget/build-winget.ps1 `
-#            -Version $env:VERSION `
-#            -X64Zip "artifacts/x64/taskmon-$env:VERSION-windows-x64.zip" `
-#            -Arm64Zip "artifacts/arm64/taskmon-$env:VERSION-windows-arm64.zip"
-#
-#      - name: Submit to winget-pkgs
-#        shell: pwsh
-#        env:
-#          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-#        run: |
-#          # wingetcreate opens a PR against microsoft/winget-pkgs from a fork owned by the
-#          # WINGET_TOKEN's account. The first version must be bootstrapped manually
-#          # (see packaging/winget/README.md); subsequent versions are submitted here.
-#          # Use the standalone exe rather than `winget install` (no interactive app context on runners).
-#          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
-#          ./wingetcreate.exe submit packaging/winget/dist --token $env:WINGET_TOKEN
+  publish-winget:
+    name: Publish winget Manifest
+    needs: [create-release, build-windows]
+    runs-on: windows-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    env:
+      VERSION: ${{ needs.create-release.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Windows x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-binary
+          path: artifacts/x64
+
+      - name: Download Windows ARM64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-arm64-binary
+          path: artifacts/arm64
+
+      - name: Build winget manifests
+        shell: pwsh
+        run: |
+          ./packaging/winget/build-winget.ps1 `
+            -Version $env:VERSION `
+            -X64Zip "artifacts/x64/taskmon-$env:VERSION-windows-x64.zip" `
+            -Arm64Zip "artifacts/arm64/taskmon-$env:VERSION-windows-arm64.zip"
+
+      - name: Submit to winget-pkgs
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          # wingetcreate opens a PR against microsoft/winget-pkgs from a fork owned by the
+          # WINGET_TOKEN's account. The first version must be bootstrapped manually
+          # (see packaging/winget/README.md); subsequent versions are submitted here.
+          # Use the standalone exe rather than `winget install` (no interactive app context on runners).
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          ./wingetcreate.exe submit packaging/winget/dist --token $env:WINGET_TOKEN

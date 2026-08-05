@@ -31,8 +31,6 @@ public sealed class CommandControl(ISystemTerminal terminal, AppConfig appConfig
     
     private void OnDrawInternal()
     {
-        using TerminalRestorer _ = new();
-        
         Terminal.SetCursorPosition(left: X, top: Y);
         int nchars = 0;
         

@@ -41,7 +41,7 @@ public partial class SystemTerminal
             return;
         }
 
-        uint newMode = originalMode | ConsoleApi.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        uint newMode = originalMode |= ConsoleApi.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 
         if (!ConsoleApi.SetConsoleMode(consoleHandle, newMode)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.SetConsoleMode));

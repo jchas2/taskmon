@@ -13,33 +13,35 @@ class Program
 {
     internal const int ExitSuccess = 0;
     internal const int ExitFailure = 1;
-    internal const int UnhandledExceptionExitCode = 2;
+    private const int UnhandledExceptionExitCode = 2;
     private const int DebugWait = 3000;
     
-    private static void UnhandledErrorConsoleTidyUp()
+    private static void RestoreConsole()
     {
-        Console.ResetColor();
         Console.CursorVisible = true;
+        ConsoleEx.RestoreScreenBuffer();
     }
 
     private static int Main(string[] args)
     {
+        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => {
+            RestoreConsole();
+        };
+        
         AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => {
             ExceptionHelper.HandleUnhandledException(eventArgs);
-            UnhandledErrorConsoleTidyUp();
             Environment.Exit(UnhandledExceptionExitCode);
         };
 
         TaskScheduler.UnobservedTaskException += (sender, eventArgs) => {
             ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(eventArgs.Exception, isTerminating: true));
-            UnhandledErrorConsoleTidyUp();
             eventArgs.SetObserved();
             Environment.Exit(UnhandledExceptionExitCode);
         };        
         
         Console.CancelKeyPress += (sender, args) => {
             Trace.WriteLine("Ctrl+C or Ctrl+Break signalled");
-            UnhandledErrorConsoleTidyUp();
+            RestoreConsole();
         };
 
         if (args.Any(arg => arg.Equals("--debug", StringComparison.CurrentCultureIgnoreCase))) {
@@ -84,10 +86,9 @@ class Program
         }
         catch (Exception e) {
             ExceptionHelper.HandleUnhandledException(new UnhandledExceptionEventArgs(e, isTerminating: true));
-            UnhandledErrorConsoleTidyUp();
             Environment.Exit(UnhandledExceptionExitCode);
         }
-
+        
         return ExitSuccess;
     }
 }

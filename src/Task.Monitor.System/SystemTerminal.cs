@@ -49,7 +49,7 @@ public partial class SystemTerminal : ISystemTerminal
     }
 
     public void EnableAnsiTerminalCodes() => EnableAnsiTerminalCodesInternal();
-    
+
     public Color ForegroundColor
     {
         get => foregroundColour;
@@ -84,6 +84,7 @@ public partial class SystemTerminal : ISystemTerminal
         // We emit the raw ANSI codes here as we are only supporting ANSI aware terminals.
         Console.Out.Write($"\u001b[{top + 1};{left + 1}H");
     }
+
     public int WindowWidth => Console.WindowWidth;
     public int WindowHeight => Console.WindowHeight;
     public void Write(char ch) => Console.Out.Write(ch);

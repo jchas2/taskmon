@@ -33,8 +33,6 @@ public sealed class MessageBox : Control
         string text,
         bool selected)
     {
-        using TerminalRestorer _ = new();
-        
         DrawRectangle(
             x,
             y,
@@ -76,8 +74,6 @@ public sealed class MessageBox : Control
             return;
         }
     
-        using TerminalRestorer _ = new();
-        
         DrawRectangle(
             X,
             Y,

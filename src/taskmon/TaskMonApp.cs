@@ -213,9 +213,6 @@ public sealed class TaskMonApp(RunContext runContext)
             Environment.SetEnvironmentVariable(TerminalCapabilities.ColourModeEnvVar, $"{ColourMode.Auto}");
         }
         
-        using TerminalRestorer _ = new();
-        Console.OutputEncoding = Encoding.UTF8;
-        
         InitialiseProcess();
         
         if (!ProcessArgs(args, out List<IAction> actions)) {
