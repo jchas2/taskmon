@@ -181,7 +181,9 @@ public sealed class MainScreen : Screen
 
         footerControl.X = 0;
         footerControl.Y = Height - FooterHeight;
-        footerControl.Width = Width;
+        // Setting Width -1 prevents the auto-scroll when bottom right corner is written to on Windows, 
+        // which can sometimes jump the screen around.
+        footerControl.Width = Width - 1;
         footerControl.Height = FooterHeight;
         
         base.OnResize();
