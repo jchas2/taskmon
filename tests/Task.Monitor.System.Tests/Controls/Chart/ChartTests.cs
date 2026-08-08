@@ -15,7 +15,7 @@ public sealed class ChartTests
             X = 0,
             Y = 0,
             Width = width,
-            Height = height
+            Height = height,
         };
 
         chart.Resize();
@@ -27,7 +27,7 @@ public sealed class ChartTests
     {
         RecordingTerminal terminal = new();
         ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-
+        
         for (int i = 0; i < 8; i++) {
             chart.Add(0.5);
         }
@@ -104,7 +104,8 @@ public sealed class ChartTests
     public void OnDraw_Does_Not_Draw_YAxisScale_When_Chart_Height_Is_6_Or_Less()
     {
         RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 8); // chartHeight = 6 (<= 6)
+        ChartControl chart = CreateChart(terminal, width: 20, height: 6);
+        chart.ShowYAxisScale = true;
         chart.Add(0.5);
 
         terminal.Reset();
@@ -117,7 +118,9 @@ public sealed class ChartTests
     public void OnDraw_Draws_YAxisScale_When_Chart_Height_Is_Greater_Than_6()
     {
         RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 9); // chartHeight = 7 (> 6)
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.ShowYAxisScale = true;
+        chart.CustomYAxisScaleFormatter = ChartControl.FormatYScalePercentage;
         chart.Add(1.0);
 
         terminal.Reset();

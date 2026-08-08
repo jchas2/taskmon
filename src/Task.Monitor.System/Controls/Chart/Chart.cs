@@ -78,19 +78,16 @@ public sealed class Chart : Control
 
     public Color ColourMid { get; set; } = ConsolePalette.Yellow;
 
-    private double DataAt(int i) => data[(dataHead + i) % data.Length]; 
-    
-    private string FormatScaleValue(double value, double maxVal)
+    private double DataAt(int i) => data[(dataHead + i) % data.Length];
+
+    public static string FormatYScalePercentage(double value)
     {
-        if (CustomYAxisScaleFormatter != null) {
-            return CustomYAxisScaleFormatter(value);
-        }
+        int pct = (int)Math.Round(value * 100.0);
+        return $"{pct}%";
+    }
 
-        if (maxVal <= 1.0 && maxVal > 0.0) {
-            int pct = (int)Math.Round(value * 100.0);
-            return $"{pct}%";
-        }
-
+    public static string FormatYScaleCompact(double value)
+    {
         if (Math.Abs(value) < 1e-9) {
             return "0";
         }
@@ -112,6 +109,15 @@ public sealed class Chart : Control
         }
 
         return $"{value:0.##}";
+    }
+    
+    private string FormatScaleValue(double value, double maxVal)
+    {
+        if (CustomYAxisScaleFormatter == null) {
+            return FormatYScaleCompact(value);
+        }
+        
+        return CustomYAxisScaleFormatter(value);
     }
     
     private bool IsYAxisScaleVisible => ShowYAxisScale && (Height - 2) > 6;
