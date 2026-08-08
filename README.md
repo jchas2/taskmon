@@ -22,16 +22,16 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Perfect for HomeLab and Local LLM monitoring**
 - **No sudo or administrator privilege required** 
 - **Real-Time System Monitoring**: Live updates of CPU, GPU, memory, swap, disk I/O and Network I/O.
-- High resolution charts in 24-bit colour.
+- High resolution charts in 24-bit color.
 - Switch layouts (`F8`) to focus charts on specific system metrics. 
 - **Real-Time Process Monitoring**: View Process, Pid, CPU%, Avg CPU%, Max CPU%, Threads, GPU%, Avg GPU%, Max GPU%, Memory, Avg Memory, Max Memory, Disk MB/s, Avg Disk MB/s, Max Disk MB/s and Command Path.
 - Process list formatted similar to the original **htop** and **top**. 
 - Process CPU% defaults to Irix mode (individual core saturation) for *nix systems (`i` to toggle on/off).
 - Process deep dive (`F5`) to view live thread times and loaded libraries (system and user).
 - **Module Analysis**: Full dynamic and static library enumeration for selected process.
-- Customise update interval (default 1500ms).
-- Customise top number of processes to display (default unlimited).
-- Customise number of process iteration loops.
+- Customize update interval (default 1500ms).
+- Customize top number of processes to display (default unlimited).
+- Customize number of process iteration loops.
 - Freeze process list updates (`f` or `z`).
 - **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
 - Multiple process selection (`x` toggle show checkboxes, `spacebar` for selection, `u` to uncheck all selections)
@@ -41,9 +41,9 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - Quick sort by CPU%, GPU% or Memory (`p`, `g` or `m` respectively). 
 - Toggle process sorting between ascending (using the `a` key) and descending (using the `d` key).
 - Navigate scrollable lists using the &#x2193;, &#x2191; arrow keys and `Pg Up` and `Pg Down` keys.  
-- **Multiple Themes**: Ships with dozens of popular, modern 24-bit colour themes.
-- Modern terminal detection to support colour desaturation.
-- **Customise Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
+- **Multiple Themes**: Ships with dozens of popular, modern 24-bit color themes.
+- Modern terminal detection to support color desaturation.
+- **Customize Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
 - **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the `F9` function).
 
 **Cross-Platform Native Performance**
@@ -159,8 +159,8 @@ Task Monitor stores configuration and log files in the following system director
 
 ## Theme Files
 
-Theme files control the colour palette behaviour for colour desaturation, background opacity, and the colours applied to the TUI screen elements.
-There a number of default themes that are pre-loaded when Task Monitor starts. These themes are kept in .ini files and can be customised as required. Additionally, new theme
+Theme files control the color palette behavior for color desaturation, background opacity, and the colors applied to the TUI screen elements.
+There a number of default themes that are pre-loaded when Task Monitor starts. These themes are kept in .ini files and can be customized as required. Additionally, new theme
 files can be authored and copied to the theme files directory and will automatically be available next time Task Monitor starts.
 
 Below is an example theme file:
@@ -199,41 +199,41 @@ header-foreground=#f1fa8c
 | Example Theme | Description |
 | --- | --- |
 | `[Dracula Official]` | Theme name, used to identify the theme. |
-| `colour-mode=indexed` | `Indexed` means use the colour palette that supports colour desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
-| `background=transparent` | `transaparent` honours background colour opacity settings in the terminal. Otherwise specify a custom background colour to override the terminal default. |
-| `background-highlight=#3b5070` | Row selection background colour in a list. |
-| `col-cmd-normal-user-space=#50fa7b` | Text colour for user-mode applications. |
-| `col-cmd-low-priority=#0000FF` | Text colour for applications running at a low priority. |
-| `col-cmd-high-cpu=#ff79c6` | Text colour for a process running at high CPU%. |
-| `col-cmd-io-bound=#bd93f9` | Text colour for a process that is IO bound. |
-| `col-cmd-script=#e3b341` | Text colour for script/shell processes. (not supported yet) |
-| `col-user-current-non-root=#f8f8f2` | Username colour for current user if not running as root. |
-| `col-user-other-non-root=#f1fa8c` | Username colour for other non-root users. |
-| `col-user-system=#ff79c6` | Text colour for system users. |
-| `col-user-root=#50fa7b` | Text colour for root/admin users. |
-| `command-foreground=#bd93f9` | Function Key text colour. |
-| `command-background=#282a36` | Function key background colour. |
-| `delta-highlight-colour=#ffb86c` | Flash colour when a metric updates in the process list. |
-| `error=#db61a2` | Text error colour. |
-| `foreground=#f8f8f2` | Text foreground colour. |
-| `foreground-highlight=#ffb86c` | Row selection forground colour in a list. |
-| `menubar-foreground=#f1fa8c` | Menubar text colour. |
-| `menubar-background=#282a36` | Menubar background colour. |
-| `range-high-background=#bd93f9` | Chart colour for high-range values. |
-| `range-low-background=#f1fa8c` | Chart colour for low-range values. |
-| `range-mid-background=#ffb86c` | Chart colour for mid-range values. |
-| `range-high-foreground=#000000` | Text colour for high-range values. |
-| `range-low-foreground=#000000` | Text colour for low-range values. |
-| `range-mid-foreground=#000000` | Text colour for mid-rage values. |
-| `header-background=#282a36` | Column header background colour in a list. |
-| `header-foreground=#f1fa8c` | Column header foreground colour in a list. |
+| `colour-mode=indexed` | `Indexed` means use the color palette that supports color desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
+| `background=transparent` | `transparent` honors background color opacity settings in the terminal. Otherwise specify a custom background color to override the terminal default. |
+| `background-highlight=#3b5070` | Row selection background color in a list. |
+| `col-cmd-normal-user-space=#50fa7b` | Text color for user-mode applications. |
+| `col-cmd-low-priority=#0000FF` | Text color for applications running at a low priority. |
+| `col-cmd-high-cpu=#ff79c6` | Text color for a process running at high CPU%. |
+| `col-cmd-io-bound=#bd93f9` | Text color for a process that is IO bound. |
+| `col-cmd-script=#e3b341` | Text color for script/shell processes. (not supported yet) |
+| `col-user-current-non-root=#f8f8f2` | Username color for current user if not running as root. |
+| `col-user-other-non-root=#f1fa8c` | Username color for other non-root users. |
+| `col-user-system=#ff79c6` | Text color for system users. |
+| `col-user-root=#50fa7b` | Text color for root/admin users. |
+| `command-foreground=#bd93f9` | Function Key text color. |
+| `command-background=#282a36` | Function key background color. |
+| `delta-highlight-colour=#ffb86c` | Flash color when a metric updates in the process list. |
+| `error=#db61a2` | Text error color. |
+| `foreground=#f8f8f2` | Text foreground color. |
+| `foreground-highlight=#ffb86c` | Row selection foreground color in a list. |
+| `menubar-foreground=#f1fa8c` | Menubar text color. |
+| `menubar-background=#282a36` | Menubar background color. |
+| `range-high-background=#bd93f9` | Chart color for high-range values. |
+| `range-low-background=#f1fa8c` | Chart color for low-range values. |
+| `range-mid-background=#ffb86c` | Chart color for mid-range values. |
+| `range-high-foreground=#000000` | Text color for high-range values. |
+| `range-low-foreground=#000000` | Text color for low-range values. |
+| `range-mid-foreground=#000000` | Text color for mid-range values. |
+| `header-background=#282a36` | Column header background color in a list. |
+| `header-foreground=#f1fa8c` | Column header foreground color in a list. |
 
-Note: ```colour-mode``` can be temporarily overriden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
+Note: ```colour-mode``` can be temporarily overridden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
 
 ## Layout Files
 
 Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. There a number of default layouts that are pre-loaded when Task Monitor starts. 
-These layouts are kept in .ini files and can be customised as required. Additionally, new layout
+These layouts are kept in .ini files and can be customized as required. Additionally, new layout
 files can be authored and copied to the layout files directory and will automatically be available next time Task Monitor starts.
 
 Below is an example Layout file:
@@ -327,7 +327,7 @@ The output will be located in `src/taskmon/bin/Release/net10.0/<runtime>/publish
 ### Debugging
 
 To debug the CLI application, you can instruct it to pause on startup and wait for a debugger to attach. This is useful when issues
-or behaviours can't be reproduced in IDE consoles, or are specific to the terminal host (i.e. Powershell, conhost, Terminal, Ghostty, etc).
+or behaviors can't be reproduced in IDE consoles, or are specific to the terminal host (i.e. Powershell, conhost, Terminal, Ghostty, etc).
 
 1.  Run the application with the `--debug` flag:
     ```bash
@@ -348,11 +348,11 @@ or behaviours can't be reproduced in IDE consoles, or are specific to the termin
 
 ### Dependencies
 This project contains no dependencies on third party .net libraries. The early iterations of the system layer functionality used
-a number of libaries and the memory footprint for the tool quickly climbed to several hundred MB. Keeping the CPU and memory footprint as low as possible for a .net native application is a key design goal.
+a number of libraries and the memory footprint for the tool quickly climbed to several hundred MB. Keeping the CPU and memory footprint as low as possible for a .net native application is a key design goal.
 
 ## Acknowledgments
 
 - The original `htop` https://github.com/htop-dev/htop
 - MacOS `top` https://github.com/apple-open-source/macos/tree/master/top
 - The .net framework authors https://github.com/dotnet
-- The WinForms authors: the TUI framework design in this project was modelled on the WinForms object and eventing models, to provide a clean, simple API for working with the underlying terminal. 
+- The WinForms authors: the TUI framework design in this project was modeled on the WinForms object and eventing models, to provide a clean, simple API for working with the underlying terminal. 
