@@ -39,12 +39,14 @@ public sealed class HeaderControl : Control
         
         cpuChart = new Chart(terminal) {
             Text = "Cpu",
-            AutoScale = false
+            AutoScale = false,
+            CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
         };
 
         memoryChart = new Chart(terminal) {
             Text = "Memory",
-            AutoScale = false
+            AutoScale = false,
+            CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
         };
 
         virtualMemoryChart = new Chart(terminal) {
@@ -54,32 +56,38 @@ public sealed class HeaderControl : Control
 #if __APPLE__            
             Text = "Swap",
 #endif
-            AutoScale = false
+            AutoScale = false,
+            CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
         };
 
         diskChart = new Chart(terminal) {
             Text = "Disk",
-            AutoScale = true
+            AutoScale = true,
+            CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
         };
 
         gpuChart = new Chart(terminal) {
             Text = "Gpu",
-            AutoScale = false
+            AutoScale = false,
+            CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
         };
 
         gpuMemChart = new Chart(terminal) {
             Text = "Gpu Memory",
-            AutoScale = false
+            AutoScale = false,
+            CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
         };
 
         networkRecdChart = new Chart(terminal) {
             Text = "Net Rec",
-            AutoScale = true
+            AutoScale = true,
+            CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
         };
 
         networkSentChart = new Chart(terminal) {
             Text = "Net Sent",
-            AutoScale = true
+            AutoScale = true,
+            CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
         };
 
         // Important: Order is critical to align with .layout files.
