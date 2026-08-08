@@ -1,4 +1,4 @@
-﻿using Task.Monitor.Cli.Utils;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 
 namespace Task.Monitor.Actions;
