@@ -25,6 +25,10 @@ public sealed partial class ProcessService
             entry.th32ProcessID);
 
         if (hProcess == IntPtr.Zero) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                $"{nameof(Kernel32.OpenProcess)}_{entry.th32ProcessID}",
+                $"Failed to open process for pid {entry.th32ProcessID}");
+            
             return null;
         }
 
@@ -103,6 +107,7 @@ public sealed partial class ProcessService
         IntPtr hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
         if (hSnapshot == IntPtr.Zero) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
             return null;
         }
         
@@ -111,6 +116,7 @@ public sealed partial class ProcessService
         };
 
         if (!Kernel32.Process32FirstW(hSnapshot, ref entry)) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
             return null;
         }
 
@@ -141,6 +147,7 @@ public sealed partial class ProcessService
         IntPtr hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
         if (hSnapshot == IntPtr.Zero) {
+            PInvokeErrorHelpers.TraceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
             yield break;
         }
         
@@ -149,6 +156,7 @@ public sealed partial class ProcessService
         };
 
         if (!Kernel32.Process32FirstW(hSnapshot, ref entry)) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
             yield break;
         }
 
@@ -176,7 +184,7 @@ public sealed partial class ProcessService
         writeBytes = 0;
 
         if (!WinNt.GetProcessIoCounters(hProcess, out WinNt.IO_COUNTERS counters)) {
-            PInvokeErrorHelpers.AssertOnLastError(nameof(WinNt.GetProcessIoCounters));
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinNt.GetProcessIoCounters));
             return;
         }
 
@@ -186,14 +194,14 @@ public sealed partial class ProcessService
 
     private void GetProcessMemCounters(IntPtr hProcess, ref PsApi.PROCESS_MEMORY_COUNTERS counters)
     {
-        counters.cb  = (uint)Marshal.SizeOf<PsApi.PROCESS_MEMORY_COUNTERS>();
+        counters.cb = (uint)Marshal.SizeOf<PsApi.PROCESS_MEMORY_COUNTERS>();
 
         if (!PsApi.GetProcessMemoryInfo(
             hProcess,
             ref counters,
             counters.cb)) {
             
-            PInvokeErrorHelpers.AssertOnLastError(nameof(PsApi.GetProcessMemoryInfo));
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(PsApi.GetProcessMemoryInfo));
         }
     }
 
@@ -211,6 +219,7 @@ public sealed partial class ProcessService
             out MinWinBase.FILETIME kernel,
             out MinWinBase.FILETIME user)) {
 
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetProcessTimes));
             return;
         }
 
@@ -229,6 +238,7 @@ public sealed partial class ProcessService
             sb,
             ref size)) {
             
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.QueryFullProcessImageNameW));
             return string.Empty;
         }
 
@@ -287,14 +297,17 @@ public sealed partial class ProcessService
 
     private static SecurityIdentifier? GetProcessSecurityIdentifier(SafeProcessHandle processHandle)
     {
-        if (ProcessThreadsApi.OpenProcessToken(
+        if (!ProcessThreadsApi.OpenProcessToken(
             processHandle,
             0x8u,
             out SafeProcessHandle tokenHandle)) {
 
-            if (GetProcessTokenSid(tokenHandle, out SecurityIdentifier sid)) {
-                return sid;
-            }
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(ProcessThreadsApi.OpenProcessToken));
+            return null;
+        }
+
+        if (GetProcessTokenSid(tokenHandle, out SecurityIdentifier sid)) {
+            return sid;
         }
 
         return null;
@@ -327,6 +340,9 @@ public sealed partial class ProcessService
                         uint* sidPtr = tokenUser->sidAndAttributes.Sid;
                         sid = new SecurityIdentifier(new IntPtr(sidPtr));
                     }
+                }
+                else {
+                    PInvokeErrorHelpers.TraceOnceOnLastError(nameof(GetProcessTokenSid));
                 }
 
                 return result;
