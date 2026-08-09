@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Process;
@@ -16,29 +17,60 @@ public static partial class GpuService
 
     private static Dictionary<int, long> GetProcessStatsInternal()
     {
-        if (Pdh.PdhOpenQuery(null, IntPtr.Zero, out IntPtr hQuery) != Pdh.ERROR_SUCCESS) {
-            Trace.WriteLine($"Failed PdhOpenQuery in {nameof(GpuService)}.");
+        uint pdhResult = 0;
+        
+        if ((pdhResult = Pdh.PdhOpenQuery(
+                null, 
+                IntPtr.Zero, 
+                out IntPtr hQuery)) != Pdh.ERROR_SUCCESS) {
+
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhOpenQuery), 
+                $"Failed {nameof(GetProcessStatsInternal)}", 
+                pdhResult);
+            
             return new Dictionary<int, long>(cumulativeEngineValues);
         }
 
-        Pdh.PdhAddEnglishCounter(
-            hQuery, 
-            GpuEngineCounterPath, 
-            IntPtr.Zero, 
-            out IntPtr hCounter);
-        
-        Pdh.PdhCollectQueryData(hQuery);
+        if ((pdhResult = Pdh.PdhAddEnglishCounter(
+                hQuery,
+                GpuEngineCounterPath,
+                IntPtr.Zero,
+                out IntPtr hCounter)) != Pdh.ERROR_SUCCESS) {
+            
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                GpuEngineCounterPath,
+                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}", 
+                pdhResult);
+
+            Pdh.PdhCloseQuery(hQuery);
+            return new Dictionary<int, long>(cumulativeEngineValues);
+        }
+
+        if ((pdhResult = Pdh.PdhCollectQueryData(hQuery)) != Pdh.ERROR_SUCCESS) {
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhCollectQueryData), 
+                $"Failed {nameof(GetProcessStatsInternal)}", 
+                pdhResult);
+
+            Pdh.PdhCloseQuery(hQuery);
+            return new Dictionary<int, long>(cumulativeEngineValues);
+        }
 
         uint bufferSize = 0;
         uint itemCount = 0;
 
-        Pdh.PdhGetRawCounterArray(
+        _ = Pdh.PdhGetRawCounterArray(
             hCounter, 
             ref bufferSize, 
             ref itemCount, 
             IntPtr.Zero);
 
         if (bufferSize <= 0) {
+            TraceEx.WriteLineOnce(
+                $"{nameof(Pdh.PdhGetRawCounterArray)} {hCounter}", 
+                $"{nameof(Pdh.PdhGetRawCounterArray)} failed to calculate {nameof(bufferSize)} ");
+            
             Pdh.PdhCloseQuery(hQuery);
             return new Dictionary<int, long>(cumulativeEngineValues);
         }
@@ -87,6 +119,12 @@ public static partial class GpuService
             foreach (var (pid, maxDelta) in maxDeltas) {
                 cumulativeEngineValues[pid] = cumulativeEngineValues.GetValueOrDefault(pid, 0) + maxDelta;
             }
+        }
+        else {
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                $"{nameof(Pdh.PdhGetRawCounterArray)} {hCounter}", 
+                $"{nameof(Pdh.PdhGetRawCounterArray)} failed to allocate {nameof(buffer)}", 
+                pdhResult);
         }
             
         Marshal.FreeHGlobal(buffer);

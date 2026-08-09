@@ -19,7 +19,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 FormattedTextWriterTraceListener.Initialise(
                     logPath, 
                     maxBytes: 2 * 1024 * 1024, 
-                    maxFiles: 32,
+                    maxFiles: 16,
                     Constants.AppName);
             }
         }

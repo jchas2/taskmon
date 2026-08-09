@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System;
@@ -31,13 +32,13 @@ public partial class SystemTerminal
         
         if (consoleHandle == IntPtr.Zero || consoleHandle == new IntPtr(-1)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessEnv.GetStdHandle));
-            Trace.WriteLine($"EnableAnsiTerminalCodesInternal GetStdHandle: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnLastError(nameof(ProcessEnv.GetStdHandle));
             return;
         }
 
         if (!ConsoleApi.GetConsoleMode(consoleHandle, out uint originalMode)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.GetConsoleMode));
-            Trace.WriteLine($"EnableAnsiTerminalCodesInternal GetConsoleMode: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnLastError(nameof(ConsoleApi.GetConsoleMode));
             return;
         }
 
@@ -45,7 +46,7 @@ public partial class SystemTerminal
 
         if (!ConsoleApi.SetConsoleMode(consoleHandle, newMode)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ConsoleApi.SetConsoleMode));
-            Trace.WriteLine($"EnableAnsiTerminalCodesInternal SetConsoleMode: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnLastError(nameof(ConsoleApi.SetConsoleMode));
         }
     }
 #endif

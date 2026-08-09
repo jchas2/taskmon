@@ -3,6 +3,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using Microsoft.Win32;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Process;
@@ -22,7 +23,7 @@ public static partial class ServiceUtils
         IntPtr hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
 
         if (hSCM == IntPtr.Zero) {
-            Trace.WriteLine($"Failed to open SCM Manager: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinService.SC_MANAGER_CONNECT)); 
             return;
         }
 
@@ -37,6 +38,7 @@ public static partial class ServiceUtils
                 WinService.SERVICE_QUERY_STATUS);
 
             if (hService == IntPtr.Zero) {
+                PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
                 continue;
             }
 
@@ -70,8 +72,13 @@ public static partial class ServiceUtils
     public static string? GetServiceImagePath(string serviceName)
     {
         const string RegPath = @"SYSTEM\CurrentControlSet\Services\";
-       
-        using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegPath + serviceName);
+        string subKey = $"{RegPath}{serviceName}";
+        using RegistryKey? key = Registry.LocalMachine.OpenSubKey(subKey);
+
+        if (key == null) {
+            TraceEx.WriteLineOnce(subKey, "Failed to open registry key");
+        }
+        
         return key?.GetValue("ImagePath")?.ToString() ?? null;
     }
     
@@ -87,7 +94,7 @@ public static partial class ServiceUtils
             (uint)Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>(),
             out _)) {
 
-            Trace.WriteLine($"GetServiceProcessId QueryServiceStatusEx: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.QueryServiceStatusEx)} {hService}");
             return 0;
         }
 
@@ -112,7 +119,10 @@ public static partial class ServiceUtils
         IntPtr hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_ENUMERATE_SERVICE);
         
         if (hSCM == IntPtr.Zero) {
-            Trace.WriteLine($"Failed to open SCM Manager: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(WinService.OpenSCManager), 
+                $"Failed GetServices {nameof(WinService.SC_MANAGER_ENUMERATE_SERVICE)}");
+            
             return services;
         }
 
@@ -135,7 +145,10 @@ public static partial class ServiceUtils
             null!);
 
         if (bytesNeeded == 0) {
-            Trace.WriteLine($"EnumServicesStatusEx bytesNeeded returned 0: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(WinService.EnumServicesStatusEx), 
+                $"{nameof(WinService.EnumServicesStatusEx)} {nameof(bytesNeeded)} returned 0");
+            
             WinService.CloseServiceHandle(hSCM);
             return services;
         }
@@ -156,7 +169,9 @@ public static partial class ServiceUtils
             null!);
 
         if (!result) {
-            Trace.WriteLine($"Failed to EnumServicesStatusEx: {PInvokeErrorHelpers.GetFormattedErrorMesage()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(WinService.EnumServicesStatusEx), 
+                $"{nameof(WinService.EnumServicesStatusEx)} failed to allocate {nameof(buffer)}");
             
             if (buffer != IntPtr.Zero) {
                 Marshal.FreeHGlobal(buffer);

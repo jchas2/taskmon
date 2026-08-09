@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
 #if __WIN32__
@@ -31,9 +32,9 @@ public static partial class SystemInfo
         systemStatistics.CpuName = string.Empty;
 
         using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegPath);
-        Debug.Assert(key != null, $"Failed OpenSubKey() {RegPath}");
         
         if (key == null) {
+            TraceEx.WriteLineOnce(RegPath, "Failed GetCpuInfoInternal OpenSubKey");
             return false;
         }
         
@@ -41,6 +42,7 @@ public static partial class SystemInfo
         object? processorName = key.GetValue(RegKeyProcessorName);
         
         if (processorName == null) {
+            TraceEx.WriteLineOnce(RegKeyProcessorName, "Failed GetCpuInfoInternal GetValue");
             return false;
         }
         
@@ -50,10 +52,12 @@ public static partial class SystemInfo
         object? frequency = key.GetValue(RegKeyFrequencyMhz);
         
         if (frequency == null) {
+            TraceEx.WriteLineOnce(RegKeyFrequencyMhz, "Failed GetCpuInfoInternal GetValue");
             return false;
         }
 
         if (!int.TryParse(frequency.ToString() ?? "0", out int frequencyInt32)) {
+            TraceEx.WriteLineOnce($"FRQ{frequency}", $"Failed GetCpuInfoInternal TryParse frequency");
             return false;
         }
         
@@ -71,7 +75,9 @@ public static partial class SystemInfo
             &lpIdleFileTime,
             &lpKernelFileTime,
             &lpUserFileTime)) {
+            
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
             return false;
         }
 
@@ -118,6 +124,7 @@ public static partial class SystemInfo
         using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegPath);
         
         if (key == null) {
+            TraceEx.WriteLineOnce(RegPath, $"Failed GetGpuMemoryInternalTotal OpenSubKey");
             return false;
         }                
 
@@ -128,10 +135,13 @@ public static partial class SystemInfo
                 continue;
             }
 
+            TraceEx.WriteLineOnce($"{RegPath} {subKeyName}", $"Enumerating Gpu adapter {subKeyName}");
+
             using RegistryKey? subKey = key.OpenSubKey(subKeyName);
             object? memorySize = subKey?.GetValue(RegKeyMemorySize);
 
             if (memorySize == null) {
+                TraceEx.WriteLineOnce(RegKeyMemorySize, "Failed GetGpuMemoryInternalTotal GetValue");
                 continue;
             }
             
@@ -157,22 +167,47 @@ public static partial class SystemInfo
         
         IntPtr hQuery;
         IntPtr hCounter;
+        uint pdhResult = 0;
 
-        if (Pdh.PdhOpenQuery(
+        if ((pdhResult = Pdh.PdhOpenQuery(
             null,
             IntPtr.Zero,
-            out hQuery) != Pdh.ERROR_SUCCESS) {
+            out hQuery)) != Pdh.ERROR_SUCCESS) {
 
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhOpenQuery), 
+                $"Failed {nameof(GetGpuMemoryInternalUsed)}", 
+                pdhResult);
+            
+            Pdh.PdhCloseQuery(hQuery);
             return false;
         }
 
-        Pdh.PdhAddEnglishCounter(
-            hQuery, 
-            AdapterMemoryCounterPath, 
-            IntPtr.Zero, 
-            out hCounter);
+        if ((pdhResult = Pdh.PdhAddEnglishCounter(
+            hQuery,
+            AdapterMemoryCounterPath,
+            IntPtr.Zero,
+            out hCounter)) != Pdh.ERROR_SUCCESS) {
+
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                AdapterMemoryCounterPath,
+                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}", 
+                pdhResult);
+            
+            Pdh.PdhCloseQuery(hQuery);
+            return false;
+        }
+
+        if ((pdhResult = Pdh.PdhCollectQueryData(hQuery)) != Pdh.ERROR_SUCCESS) {
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhCollectQueryData), 
+                $"Failed {nameof(GetGpuMemoryInternalUsed)}", 
+                pdhResult);
+            
+            Pdh.PdhCloseQuery(hQuery);
+            return false;
+        }
         
-        Pdh.PdhCollectQueryData(hQuery);
         long usedDedicatedMemory = SumRawCounterArray(hCounter);
         systemStatistics.AvailableGpuMemory = systemStatistics.TotalGpuMemory - usedDedicatedMemory;
 
@@ -193,28 +228,56 @@ public static partial class SystemInfo
         IntPtr hQuery;
         IntPtr hCounterReceived;
         IntPtr hCounterSent;
-
-        if (Pdh.PdhOpenQuery(
+        uint pdhResult = 0;
+        
+        if ((pdhResult = Pdh.PdhOpenQuery(
             null,
             IntPtr.Zero,
-            out hQuery) != Pdh.ERROR_SUCCESS) {
+            out hQuery)) != Pdh.ERROR_SUCCESS) {
 
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhOpenQuery), 
+                $"Failed {nameof(GetNetworkStatsInternal)}", 
+                pdhResult);
+            
             return false;
         }
 
-        Pdh.PdhAddEnglishCounter(
-            hQuery, 
-            BytesReceivedPath, 
-            IntPtr.Zero, 
-            out hCounterReceived);
-        
-        Pdh.PdhAddEnglishCounter(
-            hQuery, 
-            BytesSentPath,     
-            IntPtr.Zero, 
-            out hCounterSent);
+        if ((pdhResult = Pdh.PdhAddEnglishCounter(
+            hQuery,
+            BytesReceivedPath,
+            IntPtr.Zero,
+            out hCounterReceived)) != Pdh.ERROR_SUCCESS) {
+            
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                BytesReceivedPath,
+                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}", 
+                pdhResult);
 
-        Pdh.PdhCollectQueryData(hQuery);
+            Pdh.PdhCloseQuery(hQuery);
+            return false;
+        }
+
+        if ((pdhResult = Pdh.PdhAddEnglishCounter(
+            hQuery,
+            BytesSentPath,
+            IntPtr.Zero,
+            out hCounterSent)) != Pdh.ERROR_SUCCESS) {
+            
+            PInvokeErrorHelpers.TraceOnPInvokeError(nameof(Pdh.PdhAddEnglishCounter), pdhResult);
+            Pdh.PdhCloseQuery(hQuery);
+            return false;
+        }
+
+        if ((pdhResult = Pdh.PdhCollectQueryData(hQuery)) != Pdh.ERROR_SUCCESS) {
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhCollectQueryData), 
+                $"Failed {nameof(GetNetworkStatsInternal)}", 
+                pdhResult);
+            
+            Pdh.PdhCloseQuery(hQuery);
+            return false;
+        }
 
         long totalReceived = SumRawCounterArray(hCounterReceived);
         long totalSent = SumRawCounterArray(hCounterSent);
@@ -272,6 +335,10 @@ public static partial class SystemInfo
         
         if (!SysInfoApi.GlobalMemoryStatusEx(&memoryStatus)) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(SysInfoApi.GlobalMemoryStatusEx));
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(SysInfoApi.GlobalMemoryStatusEx), 
+                $"Failed {nameof(GetSystemMemoryInternal)}");
+            
             return false;
         }
 
@@ -296,25 +363,36 @@ public static partial class SystemInfo
     {
         uint bufferSize = 0;
         uint itemCount  = 0;
-
-        Pdh.PdhGetRawCounterArray(
-            hCounter, 
-            ref bufferSize, 
-            ref itemCount, 
+        uint pdhResult = 0;
+        
+        _ = Pdh.PdhGetRawCounterArray(
+            hCounter,
+            ref bufferSize,
+            ref itemCount,
             IntPtr.Zero);
 
         if (bufferSize <= 0) {
+            TraceEx.WriteLineOnce(
+                $"{nameof(Pdh.PdhGetRawCounterArray)} {hCounter}", 
+                $"{nameof(Pdh.PdhGetRawCounterArray)} failed to calculate {nameof(bufferSize)} ");
+            
             return -1;
         }
 
         IntPtr buffer = Marshal.AllocHGlobal((int)bufferSize);
 
-        if (Pdh.PdhGetRawCounterArray(
-                hCounter,
-                ref bufferSize,
-                ref itemCount,
-                buffer) != Pdh.ERROR_SUCCESS) { 
+        if ((pdhResult = Pdh.PdhGetRawCounterArray(
+            hCounter,
+            ref bufferSize,
+            ref itemCount,
+            buffer)) != Pdh.ERROR_SUCCESS) {
             
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                $"{nameof(Pdh.PdhGetRawCounterArray)} {hCounter}", 
+                $"{nameof(Pdh.PdhGetRawCounterArray)} failed to allocate {nameof(buffer)}", 
+                pdhResult);
+            
+            Marshal.FreeHGlobal(buffer);
             return 0;
         }
 
