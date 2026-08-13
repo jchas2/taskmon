@@ -16,7 +16,7 @@ public sealed class Theme
 
     public void Update(ConfigSection configSection) => themeSection = configSection;
 
-    private static readonly string[] ColourKeys =
+    internal static readonly string[] ColourKeys =
     [
         Constants.Keys.Background,
         Constants.Keys.BackgroundHighlight,

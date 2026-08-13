@@ -10,7 +10,7 @@ public sealed class SortHelpAction : IAction
         var columns = Enum.GetNames<Statistics>()
             .OrderBy(name => name, StringComparer.Ordinal);
         
-        foreach (string? column in columns) {
+        foreach (string column in columns) {
             OutputWriter.Out.WriteLine(column);
         }
 
