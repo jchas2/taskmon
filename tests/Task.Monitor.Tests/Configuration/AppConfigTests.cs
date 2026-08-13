@@ -37,7 +37,7 @@ public sealed class AppConfigTests
         Assert.NotNull(appConfig.Themes);
     }
     
-    internal static string DefaultIniFile => @"
+    private static string DefaultIniFile => @"
 [filter]
 pid=-1
 username=
@@ -121,7 +121,7 @@ use-irix-cpu-reporting=True
         Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.RangeLowBackground);
         Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeLowForeground);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
-        Assert.Equal(ConsolePalette.Black, appConfig.DefaultTheme.RangeMidForeground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeMidForeground);
 
         Assert.Equal(Processor.DefaultDelayInMilliseconds, appConfig.DelayInMilliseconds);
         Assert.Equal(-1, appConfig.FilterPid);
@@ -204,7 +204,7 @@ use-irix-cpu-reporting=False
         Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.Background);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnCommandLowPriority);
-        Assert.Equal(ConsolePalette.Red,      appConfig.DefaultTheme.ColumnCommandHighCpu);
+        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandHighCpu);
         Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandIoBound);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandScript);
