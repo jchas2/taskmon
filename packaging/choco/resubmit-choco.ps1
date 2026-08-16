@@ -35,7 +35,8 @@ $baseUrl = "https://github.com/jchas2/taskmon/releases/download/v$Version"
 function Get-PublishedSha256([string]$fileName) {
     $url = "$baseUrl/$fileName"
     Write-Host "  Fetching $url"
-    $raw = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content.Trim()
+    $bytes = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
+    $raw = [System.Text.Encoding]::UTF8.GetString($bytes).Trim()
     # Format: "<HASH>  <filename>" - take the first token.
     return ($raw -split '\s+')[0].ToLowerInvariant()
 }
