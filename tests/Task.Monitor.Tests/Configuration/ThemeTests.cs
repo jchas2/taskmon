@@ -104,7 +104,74 @@ header-foreground=#717f24
         
         AssertThemeColours(theme);
     }
-    
+
+    [Fact]
+    public void Setters_ReadBack_All_Colour_Properties_Successfully()
+    {
+        // Arrange – use a distinct colour per property so a mis-mapped setter is caught.
+        ConfigSection section = new("Read-Back Theme");
+
+        Theme theme = new(section);
+
+        // Act – write every colour property through its setter.
+        theme.Background                  = ColorTranslator.FromHtml("#010101");
+        theme.BackgroundHighlight         = ColorTranslator.FromHtml("#020202");
+        theme.ColumnCommandNormalUserSpace = ColorTranslator.FromHtml("#030303");
+        theme.ColumnCommandLowPriority    = ColorTranslator.FromHtml("#040404");
+        theme.ColumnCommandHighCpu        = ColorTranslator.FromHtml("#050505");
+        theme.ColumnCommandIoBound        = ColorTranslator.FromHtml("#060606");
+        theme.ColumnCommandScript         = ColorTranslator.FromHtml("#070707");
+        theme.ColumnUserCurrentNonRoot    = ColorTranslator.FromHtml("#080808");
+        theme.ColumnUserOtherNonRoot      = ColorTranslator.FromHtml("#090909");
+        theme.ColumnUserSystem            = ColorTranslator.FromHtml("#0a0a0a");
+        theme.ColumnUserRoot              = ColorTranslator.FromHtml("#0b0b0b");
+        theme.CommandBackground           = ColorTranslator.FromHtml("#0c0c0c");
+        theme.CommandForeground           = ColorTranslator.FromHtml("#0d0d0d");
+        theme.DeltaHighlightColour        = ColorTranslator.FromHtml("#0e0e0e");
+        theme.Error                       = ColorTranslator.FromHtml("#0f0f0f");
+        theme.Foreground                  = ColorTranslator.FromHtml("#101010");
+        theme.ForegroundHighlight         = ColorTranslator.FromHtml("#111111");
+        theme.HeaderBackground            = ColorTranslator.FromHtml("#121212");
+        theme.HeaderForeground            = ColorTranslator.FromHtml("#131313");
+        theme.MenubarBackground           = ColorTranslator.FromHtml("#141414");
+        theme.MenubarForeground           = ColorTranslator.FromHtml("#151515");
+        theme.RangeHighBackground         = ColorTranslator.FromHtml("#161616");
+        theme.RangeLowBackground          = ColorTranslator.FromHtml("#171717");
+        theme.RangeMidBackground          = ColorTranslator.FromHtml("#181818");
+        theme.RangeHighForeground         = ColorTranslator.FromHtml("#191919");
+        theme.RangeLowForeground          = ColorTranslator.FromHtml("#1a1a1a");
+        theme.RangeMidForeground          = ColorTranslator.FromHtml("#1b1b1b");
+
+        // Assert – read every colour property back through its getter.
+        Assert.Equal(ColorTranslator.FromHtml("#010101"), theme.Background);
+        Assert.Equal(ColorTranslator.FromHtml("#020202"), theme.BackgroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#030303"), theme.ColumnCommandNormalUserSpace);
+        Assert.Equal(ColorTranslator.FromHtml("#040404"), theme.ColumnCommandLowPriority);
+        Assert.Equal(ColorTranslator.FromHtml("#050505"), theme.ColumnCommandHighCpu);
+        Assert.Equal(ColorTranslator.FromHtml("#060606"), theme.ColumnCommandIoBound);
+        Assert.Equal(ColorTranslator.FromHtml("#070707"), theme.ColumnCommandScript);
+        Assert.Equal(ColorTranslator.FromHtml("#080808"), theme.ColumnUserCurrentNonRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#090909"), theme.ColumnUserOtherNonRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#0a0a0a"), theme.ColumnUserSystem);
+        Assert.Equal(ColorTranslator.FromHtml("#0b0b0b"), theme.ColumnUserRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#0c0c0c"), theme.CommandBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#0d0d0d"), theme.CommandForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#0e0e0e"), theme.DeltaHighlightColour);
+        Assert.Equal(ColorTranslator.FromHtml("#0f0f0f"), theme.Error);
+        Assert.Equal(ColorTranslator.FromHtml("#101010"), theme.Foreground);
+        Assert.Equal(ColorTranslator.FromHtml("#111111"), theme.ForegroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#121212"), theme.HeaderBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#131313"), theme.HeaderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#141414"), theme.MenubarBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#151515"), theme.MenubarForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#161616"), theme.RangeHighBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#171717"), theme.RangeLowBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#181818"), theme.RangeMidBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#191919"), theme.RangeHighForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#1a1a1a"), theme.RangeLowForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#1b1b1b"), theme.RangeMidForeground);
+    }
+
     private void AssertThemeColours(Theme theme)
     {
         Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
