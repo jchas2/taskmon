@@ -257,11 +257,13 @@ public sealed class HeaderControl : Control
         }
 
         foreach (Chart chart in charts) {
+            chart.BorderColour = appConfig.DefaultTheme.ChartBprder;
             chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
             chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
             chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
             chart.MetreStyle = appConfig.MetreStyle;
             chart.ShowYAxisScale = appConfig.ShowYAxisScale;
+            chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
         }
         
         processor.ProcessorUpdated += OnProcessorUpdated;

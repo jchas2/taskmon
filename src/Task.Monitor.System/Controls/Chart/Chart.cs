@@ -1,3 +1,4 @@
+using System.Buffers.Text;
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 
@@ -67,10 +68,8 @@ public sealed class Chart : Control
     }
 
     public bool AutoScale { get; set; } = true;
-    
-    public Func<double, string>? CustomYAxisScaleFormatter { get; set; }
-    
-    private int DataCapacity => Math.Max(0, Width - 2 - ScaleWidth);
+
+    public Color BorderColour { get; set; } = ConsolePalette.White;
     
     public Color ColourHigh { get; set; } = ConsolePalette.Red;
 
@@ -78,7 +77,11 @@ public sealed class Chart : Control
 
     public Color ColourMid { get; set; } = ConsolePalette.Yellow;
 
+    public Func<double, string>? CustomYAxisScaleFormatter { get; set; }
+
     private double DataAt(int i) => data[(dataHead + i) % data.Length];
+
+    private int DataCapacity => Math.Max(0, Width - 2 - ScaleWidth);
 
     public static string FormatYScalePercentage(double value)
     {
@@ -153,14 +156,14 @@ public sealed class Chart : Control
 
         frame.Clear();
         frame.MoveTo(X, Y);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(BorderColour, BackgroundColour);
         frame.Append('\u256D');
         frame.Append('\u2500', totalInnerWidth);
         frame.Append('\u256E');
         
         for (int row = 0; row < chartHeight; row++) {
             frame.MoveTo(X, Y + 1 + row);
-            frame.SetColour(ForegroundColour, BackgroundColour);
+            frame.SetColour(BorderColour, BackgroundColour);
             frame.Append('\u2502');
 
             int rowFromBottom = chartHeight - 1 - row;
@@ -170,7 +173,7 @@ public sealed class Chart : Control
                 int sampleIndex = sampleCount - chartWidth + col;
 
                 if (sampleIndex < 0) {
-                    frame.SetColour(ForegroundColour, BackgroundColour);
+                    frame.SetColour(BorderColour, BackgroundColour);
                     frame.Append('\u2800');
                     continue;
                 }
@@ -215,7 +218,7 @@ public sealed class Chart : Control
                     SetCellColour(chartColour);
                 }
                 else {
-                    frame.SetColour(ForegroundColour, BackgroundColour);
+                    frame.SetColour(BorderColour, BackgroundColour);
                     ch = '\u2800';
                 }
 
@@ -224,7 +227,7 @@ public sealed class Chart : Control
 
             if (showScale) {
                 bool isIndexRow = (row % 2 == 0) || (row == chartHeight - 1);
-                frame.SetColour(ForegroundColour, BackgroundColour);
+                frame.SetColour(BorderColour, BackgroundColour);
 
                 if (isIndexRow) {
                     double ratio = chartHeight > 1 ? (double)rowFromBottom / (chartHeight - 1) : 0.0;
@@ -235,7 +238,9 @@ public sealed class Chart : Control
                         formatted = formatted[..scaleWidth];
                     }
 
+                    frame.SetColour(YAxisColour, BackgroundColour);
                     frame.Append(formatted.PadLeft(scaleWidth));
+                    frame.SetColour(BorderColour, BackgroundColour);
                     frame.Append('\u2524');
                 }
                 else {
@@ -244,13 +249,12 @@ public sealed class Chart : Control
                 }
             }
             else {
-                frame.SetColour(ForegroundColour, BackgroundColour);
+                frame.SetColour(BorderColour, BackgroundColour);
                 frame.Append('\u2502');
             }
         }
 
         frame.MoveTo(X, Y + Height - 1);
-        frame.SetColour(ForegroundColour, BackgroundColour);
 
         string label = string.IsNullOrEmpty(LabelSeries)
             ? Text
@@ -261,9 +265,12 @@ public sealed class Chart : Control
         int leftDashes = (totalInnerWidth - labelLen) / 2;
         int rightDashes = totalInnerWidth - labelLen - leftDashes;
 
+        frame.SetColour(BorderColour, BackgroundColour);
         frame.Append('\u2570');
         frame.Append('\u2500', leftDashes);
+        frame.SetColour(ForegroundColour, BackgroundColour);
         frame.Append(labelLen < labelPadded.Length ? labelPadded[..labelLen] : labelPadded);
+        frame.SetColour(BorderColour, BackgroundColour);
         frame.Append('\u2500', rightDashes);
         frame.Append('\u256F');
 
@@ -317,4 +324,6 @@ public sealed class Chart : Control
     }
 
     public string Text { get; set; } = string.Empty;
+    
+    public Color YAxisColour { get; set; } = ConsolePalette.White;
 }

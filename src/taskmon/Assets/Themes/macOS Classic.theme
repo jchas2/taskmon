@@ -1,8 +1,23 @@
-﻿[macOS Classic]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[macOS Classic]
 colour-mode=indexed
 
 background=transparent
 background-highlight=#004a9e
+
+chart-border=#E19773
+chart-y-axis=#ffffff
 
 col-cmd-normal-user-space=#ffffff
 col-cmd-low-priority=#b5cea8
@@ -23,7 +38,6 @@ delta-highlight-colour=#E1D797
 error=#ff453a
 
 foreground=#E19773
-;foreground=AC98AD
 foreground-highlight=#ffffff
 
 menubar-foreground=#858585

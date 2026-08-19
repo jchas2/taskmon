@@ -1,8 +1,23 @@
-﻿[MS-DOS]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[MS-DOS]
 colour-mode=truecolour
 
 background=#000080
 background-highlight=#00FFFF
+
+chart-border=#808080
+chart-y-axis=#FFFF00
 
 col-cmd-normal-user-space=#FFFF00
 col-cmd-low-priority=#C0C0C0

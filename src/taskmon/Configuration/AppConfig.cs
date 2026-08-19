@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -469,13 +469,11 @@ public sealed class AppConfig
 
     private void LoadThemes()
     {
-        bool validThemePath = true;
-        
         string themePath = !string.IsNullOrEmpty(DefaultConfigPath)
             ? Path.Combine(DefaultConfigPath, Constants.ThemeDirectory)
             : string.Empty;
 
-        validThemePath = !string.IsNullOrEmpty(themePath);
+        bool validThemePath = !string.IsNullOrEmpty(themePath);
         
         if (validThemePath && !fileSystem.DirectoryExists(themePath)) {
             if (fileSystem.TryCreateDirectory(themePath)) {
@@ -486,28 +484,9 @@ public sealed class AppConfig
             }            
         }
 
-        if (validThemePath) {
-            string[] themeFiles = fileSystem.GetFiles(themePath);
-            
-            foreach (string themeFile in themeFiles) {
-                string themeText = fileSystem.ReadAllText(themeFile);
-                Trace.WriteLine($"Parsing {themeFile}");
-
-                if (!TryParseIni(themeText, out Theme? theme)) {
-                    Trace.WriteLine($"Failed to parse: \n{themeText}\n");
-                    continue;
-                }
-
-                theme!.Normalize();
-                
-                if (!allThemes.Any(t => t.Name.Equals(theme!.Name))) {
-                    allThemes.Add(theme!);
-                }
-            }
-        }
-        
         Assembly asm = Assembly.GetExecutingAssembly();
         
+        // Load default/shipped themes.
         foreach (string name in asm.GetManifestResourceNames()) {
             if (!name.EndsWith(Constants.ThemeExtension)) {
                 continue;
@@ -515,6 +494,7 @@ public sealed class AppConfig
 
             using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
             string themeText = reader.ReadToEnd();
+            Trace.WriteLine($"Parsing asset {name}");
 
             if (!TryParseIni(themeText, out Theme? theme)) {
                 Debug.Fail($"Failed to parse manifest asset {name}");
@@ -523,11 +503,42 @@ public sealed class AppConfig
             
             theme!.Normalize();
             
-            if (!allThemes.Any(t => t.Name.Equals(theme!.Name))) {
-                allThemes.Add(theme!);
+            if (!allThemes.Any(t => t.Name.Equals(theme.Name))) {
+                allThemes.Add(theme);
+            }
+
+            if (validThemePath) {
                 string themeFilePath = Path.Combine(themePath, $"{theme!.Name}{Constants.ThemeExtension}");
-                fileSystem.WriteAllText(themeFilePath, themeText);
-                PathPermissions.EnsureUserOwnership(themeFilePath);
+
+                if (!fileSystem.FileExists(themeFilePath) || fileSystem.GetFileLength(themeFilePath) != themeText.Length) {
+                    Trace.WriteLine($"Creating/Overwriting {themeFilePath}");
+                    fileSystem.WriteAllText(themeFilePath, themeText);
+                    PathPermissions.EnsureUserOwnership(themeFilePath);
+                }
+            }
+        }
+
+        if (validThemePath) {
+            // Load custom theme files from disk into allThemes array.
+            string[] themeFiles = fileSystem.GetFiles(themePath);
+            
+            foreach (string themeFile in themeFiles) {
+                string themeName = Path.GetFileNameWithoutExtension(themeFile);
+
+                if (allThemes.Any(t => t.Name.Equals(themeName))) {
+                    continue;
+                }
+                
+                string themeText = fileSystem.ReadAllText(themeFile);
+                Trace.WriteLine($"Parsing file {themeFile}");
+
+                if (!TryParseIni(themeText, out Theme? theme)) {
+                    Trace.WriteLine($"Failed to parse: \n{themeText}\n");
+                    continue;
+                }
+
+                theme!.Normalize();
+                allThemes.Add(theme!);
             }
         }
 

@@ -1,8 +1,23 @@
-﻿[Night Owl]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[Night Owl]
 colour-mode=indexed
 
 background=transparent
 background-highlight=#1d3b53       ; editor.selectionBackground 
+
+chart-border=#c792ea
+chart-y-axis=#ecc48d
 
 col-cmd-normal-user-space=#ecc48d    ; tokenColors: string
 col-cmd-low-priority=#82AAFF         ; tokenColors: constant

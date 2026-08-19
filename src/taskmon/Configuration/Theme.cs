@@ -20,6 +20,8 @@ public sealed class Theme
     [
         Constants.Keys.Background,
         Constants.Keys.BackgroundHighlight,
+        Constants.Keys.ChartBorder,
+        Constants.Keys.ChartYAxis,
         Constants.Keys.ColCmdNormalUserSpace,
         Constants.Keys.ColCmdLowPriority,
         Constants.Keys.ColCmdHighCpu,
@@ -83,6 +85,17 @@ public sealed class Theme
         set => SetColour(Constants.Keys.BackgroundHighlight, value);
     }
 
+    public Color ChartBprder
+    {
+        get => GetColour(Constants.Keys.ChartBorder, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ChartBorder, value);
+    }
+    public Color ChartYAxis
+    {
+        get => GetColour(Constants.Keys.ChartYAxis, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ChartYAxis, value);
+    }
+    
     public Color ColumnCommandNormalUserSpace
     {
         get => GetColour(Constants.Keys.ColCmdNormalUserSpace, ConsolePalette.Green);

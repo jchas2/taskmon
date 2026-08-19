@@ -15,6 +15,9 @@ colour-mode=truecolour
 background=#0f1610
 background-highlight=#1d4125
 
+chart-border=#334455
+chart-y-axis=#667788
+
 col-cmd-normal-user-space=#327f77
 col-cmd-low-priority=#10b981
 col-cmd-high-cpu=#b082d1
@@ -55,7 +58,7 @@ header-foreground=#717f24
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(29, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<Theme>());
 
     [Fact]
     public void Constructor_Initialises_Successfully()
@@ -75,6 +78,8 @@ header-foreground=#717f24
         Theme theme = new(section) {
             Background                   = ColorTranslator.FromHtml("#0f1610"),
             BackgroundHighlight          = ColorTranslator.FromHtml("#1d4125"),
+            ChartBprder                  = ColorTranslator.FromHtml("#334455"),
+            ChartYAxis                   = ColorTranslator.FromHtml("#667788"),
             ColumnCommandNormalUserSpace = ColorTranslator.FromHtml("#327f77"),
             ColumnCommandLowPriority     = ColorTranslator.FromHtml("#10b981"),
             ColumnCommandHighCpu         = ColorTranslator.FromHtml("#b082d1"),
@@ -116,6 +121,8 @@ header-foreground=#717f24
         // Act – write every colour property through its setter.
         theme.Background                  = ColorTranslator.FromHtml("#010101");
         theme.BackgroundHighlight         = ColorTranslator.FromHtml("#020202");
+        theme.ChartBprder                 = ColorTranslator.FromHtml("#1c1c1c");
+        theme.ChartYAxis                  = ColorTranslator.FromHtml("#1d1d1d");
         theme.ColumnCommandNormalUserSpace = ColorTranslator.FromHtml("#030303");
         theme.ColumnCommandLowPriority    = ColorTranslator.FromHtml("#040404");
         theme.ColumnCommandHighCpu        = ColorTranslator.FromHtml("#050505");
@@ -145,6 +152,8 @@ header-foreground=#717f24
         // Assert – read every colour property back through its getter.
         Assert.Equal(ColorTranslator.FromHtml("#010101"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#020202"), theme.BackgroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#1c1c1c"), theme.ChartBprder);
+        Assert.Equal(ColorTranslator.FromHtml("#1d1d1d"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#030303"), theme.ColumnCommandNormalUserSpace);
         Assert.Equal(ColorTranslator.FromHtml("#040404"), theme.ColumnCommandLowPriority);
         Assert.Equal(ColorTranslator.FromHtml("#050505"), theme.ColumnCommandHighCpu);
@@ -176,6 +185,8 @@ header-foreground=#717f24
     {
         Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#1d4125"), theme.BackgroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBprder);
+        Assert.Equal(ColorTranslator.FromHtml("#667788"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#327f77"), theme.ColumnCommandNormalUserSpace);
         Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.ColumnCommandLowPriority);
         Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnCommandHighCpu);

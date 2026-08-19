@@ -1,8 +1,23 @@
-﻿[Alien Blood]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[Alien Blood]
 colour-mode=truecolour
 
 background=#0f1610
 background-highlight=#1d4125
+
+chart-border=#717f24
+chart-y-axis=#327f77
 
 col-cmd-normal-user-space=#327f77
 col-cmd-low-priority=#10b981
