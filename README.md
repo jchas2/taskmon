@@ -228,10 +228,8 @@ header-foreground=#f1fa8c
 | `colour-mode=indexed` | `Indexed` means use the color palette that supports color desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
 | `background=transparent` | `transparent` honors background color opacity settings in the terminal. Otherwise specify a custom background color to override the terminal default. |
 | `background-highlight=#3b5070` | Row selection background color in a list. |
-
 | `chart-border=#f8f8f2` | Chart border color. |
 | `chart-y-axis=#50fa7b` | Text color for chart Y-axis scale. |
-
 | `col-cmd-normal-user-space=#50fa7b` | Text color for user-mode applications. |
 | `col-cmd-low-priority=#0000FF` | Text color for applications running at a low priority. |
 | `col-cmd-high-cpu=#ff79c6` | Text color for a process running at high CPU%. |
