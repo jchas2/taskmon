@@ -173,4 +173,4 @@ brew install --build-from-source homebrew-tap/Formula/taskmon.rb
 
 Releases are tracked in:
 - [GitHub Releases](https://github.com/jchas2/taskmon/releases)
-- [Homebrew Formula](https://github.com/jchas2/homebrew-taskmon/commits/main/Formula/taskmgr.rb)
+- [Homebrew Formula](https://github.com/jchas2/homebrew-taskmon/commits/main/Formula/taskmon.rb)

@@ -1,8 +1,23 @@
-﻿[Ayu]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[Ayu]
 colour-mode=indexed
 
 background=transparent
 background-highlight=#3b5070
+
+chart-border=#bae67e
+chart-y-axis=#59a6e0
 
 col-cmd-normal-user-space=#59a6e0
 col-cmd-low-priority=#0000FF

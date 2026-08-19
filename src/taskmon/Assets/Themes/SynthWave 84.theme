@@ -1,8 +1,23 @@
-﻿[SynthWave 84]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[SynthWave 84]
 colour-mode=indexed
 
 background=transparent
 background-highlight=#fede5d       ; editor.selectionBackground 
+
+chart-border=#ff7edb
+chart-y-axis=#ff8b39
 
 col-cmd-normal-user-space=#ff8b39    ; tokenColors: string
 col-cmd-low-priority=#f97e72         ; tokenColors: constant

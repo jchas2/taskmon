@@ -160,15 +160,34 @@ Task Monitor stores configuration and log files in the following system director
 ## Theme Files
 
 Theme files control the color palette behavior for color desaturation, background opacity, and the colors applied to the TUI screen elements.
-There a number of default themes that are pre-loaded when Task Monitor starts. These themes are kept in .ini files and can be customized as required. Additionally, new theme
-files can be authored and copied to the theme files directory and will automatically be available next time Task Monitor starts.
+Theme files use the ini file format (see example below). Any modifications to default/shjpped theme files will be reset automatically when 
+taskmon updates. To create new, custom themes, simply copy an existing theme and modify the settings as required.
+These files will automatically be available next time Task Monitor starts.
 
 Below is an example theme file:
 ```
+;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+
 [Dracula Official]
 colour-mode=indexed
+
 background=transparent
 background-highlight=#3b5070
+
+chart-border=#a9b1d6
+chart-y-axis=#9ece6a
+
 col-cmd-normal-user-space=#50fa7b
 col-cmd-low-priority=#0000FF
 col-cmd-high-cpu=#ff79c6
@@ -178,20 +197,27 @@ col-user-current-non-root=#f8f8f2
 col-user-other-non-root=#f1fa8c
 col-user-system=#ff79c6
 col-user-root=#50fa7b
+
 command-foreground=#bd93f9
 command-background=#282a36
+
 delta-highlight-colour=#ffb86c
+
 error=#db61a2
+
 foreground=#f8f8f2
 foreground-highlight=#ffb86c
+
 menubar-foreground=#f1fa8c
 menubar-background=#282a36
+
 range-high-background=#bd93f9
 range-low-background=#f1fa8c
 range-mid-background=#ffb86c
 range-high-foreground=#000000
 range-low-foreground=#000000
 range-mid-foreground=#000000
+
 header-background=#282a36
 header-foreground=#f1fa8c
 ```
@@ -202,6 +228,10 @@ header-foreground=#f1fa8c
 | `colour-mode=indexed` | `Indexed` means use the color palette that supports color desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
 | `background=transparent` | `transparent` honors background color opacity settings in the terminal. Otherwise specify a custom background color to override the terminal default. |
 | `background-highlight=#3b5070` | Row selection background color in a list. |
+
+| `chart-border=#f8f8f2` | Chart border color. |
+| `chart-y-axis=#50fa7b` | Text color for chart Y-axis scale. |
+
 | `col-cmd-normal-user-space=#50fa7b` | Text color for user-mode applications. |
 | `col-cmd-low-priority=#0000FF` | Text color for applications running at a low priority. |
 | `col-cmd-high-cpu=#ff79c6` | Text color for a process running at high CPU%. |
@@ -232,7 +262,7 @@ Note: ```colour-mode``` can be temporarily overridden for ALL theme files by set
 
 ## Layout Files
 
-Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. There a number of default layouts that are pre-loaded when Task Monitor starts. 
+Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. There are a number of default layouts that are pre-loaded when Task Monitor starts. 
 These layouts are kept in .ini files and can be customized as required. Additionally, new layout
 files can be authored and copied to the layout files directory and will automatically be available next time Task Monitor starts.
 
@@ -341,7 +371,7 @@ or behaviors can't be reproduced in IDE consoles, or are specific to the termina
 ### Writing Code / Project Structure
 
 *   **Interop Layer**: All native OS calls are isolated in `Task.Monitor.Interop.Mach` (macOS) and `Task.Monitor.Interop.Win32` (Windows). If you need to add a new OS metric, define the P/Invoke signatures here.
-*   **System Abstraction**: The `Task.Monitor.System` project consumes the Interop layer to provide cross-platform models (e.g., `SystemStatistics`, `ProcessInfo`).
+*   **System Abstraction**: The `Task.Monitor.System` project consumes the Interop layer to provide cross-platform models (e.g., `SystemStatistics`, `ProcessInfo`). The TUI rendering framework also lives in this library.
 *   **UI/CLI**: The `taskmon` project contains the main application logic, rendering, and terminal UI layouts.
 *   **Themes/Layouts**: Custom terminal themes and layouts are stored as embedded resources in `src/taskmon/Assets/`.
 *   **Test Projects**: There is a matching test project for every application project.

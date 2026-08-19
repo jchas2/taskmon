@@ -67,6 +67,9 @@ public sealed class Constants
         public const string Background = "background";
         public const string BackgroundHighlight = "background-highlight";
 
+        public const string ChartBorder = "chart-border";
+        public const string ChartYAxis = "chart-y-axis";
+        
         public const string ColCmdNormalUserSpace = "col-cmd-normal-user-space";
         public const string ColCmdLowPriority = "col-cmd-low-priority";
         public const string ColCmdHighCpu = "col-cmd-high-cpu";

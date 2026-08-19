@@ -1,8 +1,23 @@
-﻿[Cobalt2]
+﻿;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; Any modifications to default/shipped theme files will be reset automatically
+; when taskmon runs or updates.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
+;   Step 3: Customize color hex values (#RRGGBB).
+;=============================================================================
+[Cobalt2]
 colour-mode=indexed
 
 background=transparent
 background-highlight=#0050A4       
+
+chart-border=#ffc600
+chart-y-axis=#a5ff90
 
 col-cmd-normal-user-space=#a5ff90  
 col-cmd-low-priority=#ff628c       

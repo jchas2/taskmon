@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Configuration;
@@ -423,43 +424,37 @@ use-irix-cpu-reporting=False
         Assert.Contains("taskmon.ini", result);
     }
 
-    // [Fact]
-    // public void DefaultLogPath_ReturnsNonNullPath()
-    // {
-    //     AppConfig appConfig = new(fileSystem.Object);
-    //
-    //     fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-    //
-    //     string? result = appConfig.DefaultLogPath;
-    //
-    //     Assert.NotNull(result);
-    //     Assert.Contains("taskmon", result);
-    // }
-    //
-    // [Fact]
-    // public void DefaultLogPath_Under_Sudo_Resolves_Invoking_User_Home_On_MacOS()
-    // {
-    //     // GetUserHomeDirectory only takes the SUDO_USER branch on macOS.
-    //     if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-    //         return;
-    //     }
-    //
-    //     string? originalSudoUser = Environment.GetEnvironmentVariable("SUDO_USER");
-    //
-    //     try {
-    //         Environment.SetEnvironmentVariable("SUDO_USER", "alice");
-    //         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-    //
-    //         AppConfig appConfig = new(fileSystem.Object);
-    //
-    //         string? result = appConfig.DefaultLogPath;
-    //
-    //         // Logs go to the invoking user's home, not root's (/var/root).
-    //         Assert.NotNull(result);
-    //         Assert.StartsWith("/Users/alice/.local/state", result);
-    //     }
-    //     finally {
-    //         Environment.SetEnvironmentVariable("SUDO_USER", originalSudoUser);
-    //     }
-    // }
+    [Fact]
+    public void LoadThemes_ManifestThemes_Write_To_Disk_On_Load()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.NotEmpty(appConfig.Themes);
+        Assert.Contains(appConfig.Themes, t => t.Name == "Taskmon Default");
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => p.EndsWith($"Taskmon Default{Constants.ThemeExtension}")),
+            It.IsAny<string>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void LoadThemes_Custom_Themes_On_Disk_Are_Loaded()
+    {
+        string customThemeIni = @"
+[My Custom Theme]
+colour-mode=truecolour
+background=#123456
+foreground=#abcdef
+";
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/themes/My Custom Theme.theme"]);
+        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/themes/My Custom Theme.theme")).Returns(customThemeIni);
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.Contains(appConfig.Themes, t => t.Name == "My Custom Theme");
+        Theme customTheme = appConfig.Themes.First(t => t.Name == "My Custom Theme");
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), customTheme.Background);
+    }
 }

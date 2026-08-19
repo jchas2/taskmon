@@ -8,6 +8,18 @@ public sealed partial class FileSystem : IFileSystem
 
     public bool FileExists(string? path) => File.Exists(path);
 
+    public long GetFileLength(string path)
+    {
+        try {
+            FileInfo finfo = new(path);
+            return finfo.Length;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on GetFileLength '{path}'");
+            return -1;
+        }
+    }
+
     public string[] GetFiles(string path)
     {
         try {
