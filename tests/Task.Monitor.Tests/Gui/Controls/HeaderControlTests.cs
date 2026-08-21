@@ -59,6 +59,8 @@ public sealed class HeaderControlTests
             CpuPercentIdleTime = 0.7482,
             CpuPercentKernelTime = 0.1188,
             CpuPercentUserTime = 0.1333,
+            GpuCores = 18,
+            GpuPercentTime = 0.1232,
             MachineName = "mach01",
             OsVersion = "Unix 14.1.0",
             PublicIPv4Address = "",
@@ -72,6 +74,7 @@ public sealed class HeaderControlTests
             TotalNetworkPacketsSent = 346723,
             ProcessCount = 739,
             ThreadCount = 4993,
+            RunningCount = 102
         };
 
         processorFake.AddSystemStats(statistics);
@@ -93,9 +96,22 @@ public sealed class HeaderControlTests
         Assert.True(runContext.AppConfig.MetreStyle == MetreControlStyle.Dots);
         
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("TASK MONITOR"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("mach01  (Unix 14.1.0)  IP 192.168.1.110"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Mac15,7 (12 Cores)"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Cpu"))), Times.Once);
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("mach01"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Unix 14.1.0"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("192.168.1.110"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Mac15,7"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("12 Cores"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("18 Gpu"))), Times.Once);
+        
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Tasks:"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("739"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Threads:"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("4993"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("102"))), Times.Once);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("running"))), Times.Once);
+        
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Cpu"))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Memory"))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Swap") || s.Contains("Virtual"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Disk"))), Times.Once);

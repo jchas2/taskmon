@@ -1,8 +1,10 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Controls.ListView;
 using IProcessor = Task.Monitor.Process.IProcessor;
 using ProcessorEventArgs = Task.Monitor.Process.ProcessorEventArgs;
 
@@ -22,8 +24,8 @@ public sealed class HeaderControl : Control
     private readonly Chart gpuMemChart;
     private readonly Chart networkRecdChart;
     private readonly Chart networkSentChart;
-
     private Chart[] charts;
+
     private const int MinHeaderRows = 3;
     private const int MinChartWidth = 25;
     private const int MinChartHeight = 4;
@@ -111,6 +113,14 @@ public sealed class HeaderControl : Control
 
     private void OnDrawInternal()
     {
+        const string MachineLabel = "Machine: ";
+        const string OSLabel = " OS: ";
+        const string IpLabel = " Ip: ";
+        const string CpuLabel = "Cpu: ";
+        const string TasksLabel = " Tasks: ";
+        const string ThreadsLabel = " Threads: ";
+        const string RunningLabel = " running";
+        
         BackgroundColour = appConfig.DefaultTheme.Background;
         ForegroundColour = appConfig.DefaultTheme.Foreground;
         
@@ -128,17 +138,27 @@ public sealed class HeaderControl : Control
         Terminal.BackgroundColor = BackgroundColour;
         Terminal.ForegroundColor = ForegroundColour;
 
-        Terminal.Write(
-            $"{systemStatistics.MachineName}  ({systemStatistics.OsVersion})  IP {systemStatistics.PrivateIPv4Address}");
+        Color lbColor = appConfig.DefaultTheme.Foreground;
+        Color fgColour = appConfig.DefaultTheme.RangeLowBackground;
+        Color bgColour = appConfig.DefaultTheme.Background;
 
+        Terminal.Write(MachineLabel.ToColour(lbColor, bgColour));
+        Terminal.Write(systemStatistics.MachineName.ToColour(fgColour, bgColour));
+        Terminal.Write(OSLabel.ToColour(lbColor, bgColour));
+        Terminal.Write(systemStatistics.OsVersion.ToColour(fgColour, bgColour));
+        Terminal.Write(IpLabel.ToColour(lbColor, bgColour));
+        Terminal.Write(systemStatistics.PrivateIPv4Address.ToColour(fgColour, bgColour));
+        
         int nchars =
-            systemStatistics.MachineName.Length + 3 +
-            systemStatistics.OsVersion.Length + 6 +
-            systemStatistics.PrivateIPv4Address.Length;
+            MachineLabel.Length + systemStatistics.MachineName.Length +
+            OSLabel.Length + systemStatistics.OsVersion.Length +
+            IpLabel.Length + systemStatistics.PrivateIPv4Address.Length;
 
         int themeLen = appConfig.DefaultTheme.Name.Length + 1;
+
+        Terminal.BackgroundColor = bgColour;
         Terminal.WriteEmptyLineTo(Width - nchars - themeLen);
-        Terminal.Write($"{appConfig.DefaultTheme.Name} ");
+        Terminal.Write($"{appConfig.DefaultTheme.Name.ToColour(fgColour, bgColour)} ");
 
         string coreBreakdown = $"{systemStatistics.CpuCores} Cores";
 #if __APPLE__
@@ -155,7 +175,7 @@ public sealed class HeaderControl : Control
         }
 
         if (systemStatistics.GpuCores > 0) {
-            coreBreakdown += $" · {systemStatistics.GpuCores} GPU";
+            coreBreakdown += $" · {systemStatistics.GpuCores} Gpu";
         }
 #endif
         string cpuName = systemStatistics.CpuName;
@@ -173,9 +193,26 @@ public sealed class HeaderControl : Control
             cpuInfo += " Solaris Mode";
         }
 
-        Terminal.Write(cpuInfo);
-        nchars = cpuInfo.Length + 1;
+        Terminal.Write(CpuLabel.ToColour(lbColor, bgColour));
+        Terminal.Write(cpuInfo.ToColour(fgColour, bgColour));
+        nchars = CpuLabel.Length + cpuInfo.Length;
 
+        string processCount = systemStatistics.ProcessCount.ToString();
+        string threadCount = systemStatistics.ThreadCount.ToString();
+        string runningCount = systemStatistics.RunningCount.ToString();
+        
+        Terminal.Write(TasksLabel.ToColour(lbColor, bgColour));
+        Terminal.Write(processCount.ToColour(fgColour, bgColour));
+        Terminal.Write(ThreadsLabel.ToColour(lbColor, bgColour));
+        Terminal.Write((threadCount + ", ").ToColour(fgColour, bgColour));
+        Terminal.Write(runningCount.ToColour(fgColour, bgColour));
+        Terminal.Write(RunningLabel.ToColour(lbColor, bgColour));
+
+        nchars += TasksLabel.Length + processCount.Length +
+                  ThreadsLabel.Length + threadCount.Length + 2 +
+                  runningCount.Length + RunningLabel.Length;
+        
+        Terminal.BackgroundColor = bgColour;
         Terminal.WriteEmptyLineTo(Width - nchars);
         
         double totalCpu = systemStatistics.CpuPercentKernelTime + systemStatistics.CpuPercentUserTime;
@@ -251,6 +288,9 @@ public sealed class HeaderControl : Control
 
     protected override void OnLoad()
     {
+        BackgroundColour = appConfig.DefaultTheme.Background;
+        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        
         foreach (Control ctrl in Controls) {
             ctrl.BackgroundColour = appConfig.DefaultTheme.Background;
             ctrl.ForegroundColour = appConfig.DefaultTheme.Foreground; 

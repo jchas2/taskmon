@@ -33,6 +33,7 @@ public class Processor : IProcessor
     private volatile bool dataInitialised = false;
     private int processCount = 0;
     private int threadCount = 0;
+    private int runningCount = 0;
     private int delayInMilliseconds = DefaultDelayInMilliseconds;
     private int iterationLimit = DefaultIterationLimit;
     
@@ -135,6 +136,7 @@ public class Processor : IProcessor
             currentPids.Clear();
             processCount = 0;
             threadCount = 0;
+            runningCount = 0;
 
             GetSystemTimes(ref prevSysTimes);
             GetNetworkStats(ref prevNetworkStats);
@@ -257,6 +259,10 @@ public class Processor : IProcessor
 #endif
                 }
 
+                if (processorInfo.CpuTimePercent > 0.0 || processorInfo.GpuTimePercent > 0.0) {
+                    runningCount++;
+                }
+
                 processorInfo.UsedMemory = newProcessInfo.UsedMemory;
                 processorInfo.DiskReadBytes = newProcessInfo.DiskReadBytes;
                 processorInfo.DiskWriteBytes = newProcessInfo.DiskWriteBytes;
@@ -294,6 +300,7 @@ public class Processor : IProcessor
             systemStatistics.CpuPercentIdleTime = (double)sysTimesDeltas.Idle / (double)totalSysTime;
             systemStatistics.ProcessCount = processCount;
             systemStatistics.ThreadCount = threadCount;
+            systemStatistics.RunningCount = runningCount;
             
             systemStatistics.TotalNetworkBytesReceived = currNetworkStats.NetworkBytesReceived;
             systemStatistics.TotalNetworkBytesSent = currNetworkStats.NetworkBytesSent;
