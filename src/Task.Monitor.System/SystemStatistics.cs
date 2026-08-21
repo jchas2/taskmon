@@ -56,4 +56,5 @@ public struct SystemStatistics()
     // Processes.
     public int ProcessCount { get; set; } = 0;
     public int ThreadCount { get; set; } = 0;
+    public int RunningCount { get; set; } = 0;
 }
