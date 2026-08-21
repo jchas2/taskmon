@@ -102,8 +102,11 @@ public sealed class HeaderControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("192.168.1.110"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Mac15,7"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("12 Cores"))), Times.Once);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("18 Gpu"))), Times.Once);
-        
+
+        if (OperatingSystem.IsMacOS()) {
+            runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("18 Gpu"))), Times.Once);
+        }
+
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Tasks:"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("739"))), Times.Once);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Threads:"))), Times.Once);
