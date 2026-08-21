@@ -4,7 +4,6 @@ using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
-using Task.Monitor.System.Controls.ListView;
 using IProcessor = Task.Monitor.Process.IProcessor;
 using ProcessorEventArgs = Task.Monitor.Process.ProcessorEventArgs;
 
