@@ -161,18 +161,18 @@ public static partial class SystemInfo
         return true;
     }
     
-    private static bool GetGpuMemoryInternalUsed(ref SystemStatistics systemStatistics)
+    private static unsafe bool GetGpuMemoryInternalUsed(ref SystemStatistics systemStatistics)
     {
         const string AdapterMemoryCounterPath = @"\GPU Adapter Memory(*)\Dedicated Usage";
         
-        IntPtr hQuery;
-        IntPtr hCounter;
+        nint hQuery = 0;
+        nint hCounter = 0;
         uint pdhResult = 0;
 
         if ((pdhResult = Pdh.PdhOpenQuery(
             null,
-            IntPtr.Zero,
-            out hQuery)) != Pdh.ERROR_SUCCESS) {
+            nint.Zero,
+            &hQuery)) != Pdh.ERROR_SUCCESS) {
 
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 nameof(Pdh.PdhOpenQuery), 
@@ -186,8 +186,8 @@ public static partial class SystemInfo
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
             hQuery,
             AdapterMemoryCounterPath,
-            IntPtr.Zero,
-            out hCounter)) != Pdh.ERROR_SUCCESS) {
+            nint.Zero,
+            &hCounter)) != Pdh.ERROR_SUCCESS) {
 
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 AdapterMemoryCounterPath,
@@ -215,7 +215,7 @@ public static partial class SystemInfo
         return true;        
     }
 
-    private static bool GetNetworkStatsInternal(ref NetworkStatistics networkStatistics)
+    private static unsafe bool GetNetworkStatsInternal(ref NetworkStatistics networkStatistics)
     {
         networkStatistics.NetworkBytesSent = 0;
         networkStatistics.NetworkBytesReceived = 0;
@@ -225,15 +225,15 @@ public static partial class SystemInfo
         const string BytesReceivedPath = @"\Network Interface(*)\Bytes Received/sec";
         const string BytesSentPath     = @"\Network Interface(*)\Bytes Sent/sec";
 
-        IntPtr hQuery;
-        IntPtr hCounterReceived;
-        IntPtr hCounterSent;
+        nint hQuery = 0;
+        nint hCounterReceived = 0;
+        nint hCounterSent = 0;
         uint pdhResult = 0;
         
         if ((pdhResult = Pdh.PdhOpenQuery(
             null,
-            IntPtr.Zero,
-            out hQuery)) != Pdh.ERROR_SUCCESS) {
+            nint.Zero,
+            &hQuery)) != Pdh.ERROR_SUCCESS) {
 
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 nameof(Pdh.PdhOpenQuery), 
@@ -246,8 +246,8 @@ public static partial class SystemInfo
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
             hQuery,
             BytesReceivedPath,
-            IntPtr.Zero,
-            out hCounterReceived)) != Pdh.ERROR_SUCCESS) {
+            nint.Zero,
+            &hCounterReceived)) != Pdh.ERROR_SUCCESS) {
             
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 BytesReceivedPath,
@@ -261,8 +261,8 @@ public static partial class SystemInfo
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
             hQuery,
             BytesSentPath,
-            IntPtr.Zero,
-            out hCounterSent)) != Pdh.ERROR_SUCCESS) {
+            nint.Zero,
+            &hCounterSent)) != Pdh.ERROR_SUCCESS) {
             
             PInvokeErrorHelpers.TraceOnPInvokeError(nameof(Pdh.PdhAddEnglishCounter), pdhResult);
             Pdh.PdhCloseQuery(hQuery);
@@ -359,7 +359,7 @@ public static partial class SystemInfo
         return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
     
-    private static long SumRawCounterArray(IntPtr hCounter)
+    private static unsafe long SumRawCounterArray(nint hCounter)
     {
         uint bufferSize = 0;
         uint itemCount  = 0;
@@ -367,9 +367,9 @@ public static partial class SystemInfo
         
         _ = Pdh.PdhGetRawCounterArray(
             hCounter,
-            ref bufferSize,
-            ref itemCount,
-            IntPtr.Zero);
+            &bufferSize,
+            &itemCount,
+            nint.Zero);
 
         if (bufferSize <= 0) {
             TraceEx.WriteLineOnce(
@@ -379,12 +379,12 @@ public static partial class SystemInfo
             return -1;
         }
 
-        IntPtr buffer = Marshal.AllocHGlobal((int)bufferSize);
+        nint buffer = Marshal.AllocHGlobal((int)bufferSize);
 
         if ((pdhResult = Pdh.PdhGetRawCounterArray(
             hCounter,
-            ref bufferSize,
-            ref itemCount,
+            &bufferSize,
+            &itemCount,
             buffer)) != Pdh.ERROR_SUCCESS) {
             
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
@@ -401,7 +401,7 @@ public static partial class SystemInfo
 
         for (int i = 0; i < itemCount; i++)
         {
-            IntPtr ptr  = new IntPtr(buffer.ToInt64() + (i * structSize));
+            nint ptr  = new nint(buffer.ToInt64() + (i * structSize));
             Pdh.PDH_RAW_COUNTER_ITEM item = Marshal.PtrToStructure<Pdh.PDH_RAW_COUNTER_ITEM>(ptr);
 
             if (item.RawValue.CStatus == Pdh.PDH_CSTATUS_VALID_DATA) {

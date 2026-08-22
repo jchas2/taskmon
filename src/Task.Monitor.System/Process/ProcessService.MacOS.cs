@@ -103,8 +103,9 @@ public sealed partial class ProcessService
         return pinfo;
     }
     
-    private IEnumerable<ProcessInfo> GetProcessInfosInternal()
+    private List<ProcessInfo> GetProcessInfosInternal()
     {
+        List<ProcessInfo> processInfos = new();
         int[] pids = GetPids();
         Dictionary<int, long> gpuStats = GpuService.GetProcessStats();
 
@@ -113,9 +114,11 @@ public sealed partial class ProcessService
             ProcessInfo? pinfo = CreateProcessInfo(pids[i], gpuTime);
             
             if (pinfo != null) {
-                yield return pinfo;
+                processInfos.Add(pinfo);
             }
         }
+
+        return processInfos;
     }
     
     private static unsafe string GetProcessUserName(ref ProcInfo.proc_taskallinfo procTaskInfo)

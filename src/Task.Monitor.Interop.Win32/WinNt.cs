@@ -19,7 +19,7 @@ public static class WinNt
     public unsafe struct SID_AND_ATTRIBUTES
     {
         public uint* Sid;
-        public uint Attributes;
+        public uint  Attributes;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -29,5 +29,5 @@ public static class WinNt
     }
     
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool GetProcessIoCounters(IntPtr hProcess, out IO_COUNTERS counters);
+    public static extern unsafe bool GetProcessIoCounters(nint hProcess, IO_COUNTERS* counters);
 }

@@ -10,7 +10,7 @@ public static class Pdh
     [StructLayout(LayoutKind.Sequential)]
     public struct PDH_RAW_COUNTER {
         public uint CStatus;
-        public System.Runtime.InteropServices.ComTypes.FILETIME TimeStamp;
+        public MinWinBase.FILETIME TimeStamp;
         public long FirstValue;
         public long SecondValue;
         public uint MultiCount;
@@ -18,33 +18,35 @@ public static class Pdh
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct PDH_RAW_COUNTER_ITEM {
-        [MarshalAs(UnmanagedType.LPWStr)] public string szName;
+        [MarshalAs(UnmanagedType.LPWStr)] 
+        public string szName;
         public PDH_RAW_COUNTER RawValue;
     }
 
     [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
-    public static extern uint PdhOpenQuery(
+    public static extern unsafe uint PdhOpenQuery(
+        [MarshalAs(UnmanagedType.LPWStr)]
         string? szDataSource, 
-        IntPtr dwUserData, 
-        out IntPtr phQuery);
+        nint dwUserData, 
+        nint* phQuery);
     
     [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
-    public static extern uint PdhAddEnglishCounter(
-        IntPtr hQuery, 
+    public static extern unsafe uint PdhAddEnglishCounter(
+        nint hQuery, 
         string szFullCounterPath, 
-        IntPtr dwUserData, 
-        out IntPtr phCounter);
+        nint dwUserData, 
+        nint* phCounter);
     
     [DllImport(Libraries.Pdh)]
-    public static extern uint PdhCollectQueryData(IntPtr hQuery);
+    public static extern uint PdhCollectQueryData(nint hQuery);
     
     [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
-    public static extern uint PdhGetRawCounterArray(
-        IntPtr hCounter, 
-        ref uint lpdwBufferSize, 
-        ref uint lpdwItemCount, 
-        IntPtr ItemBuffer);
+    public static extern unsafe uint PdhGetRawCounterArray(
+        nint hCounter, 
+        uint* lpdwBufferSize, 
+        uint* lpdwItemCount, 
+        nint ItemBuffer);
     
     [DllImport("pdh.dll")]
-    public static extern uint PdhCloseQuery(IntPtr hQuery);
+    public static extern uint PdhCloseQuery(nint hQuery);
 }

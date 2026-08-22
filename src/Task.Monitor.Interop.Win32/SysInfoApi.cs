@@ -7,8 +7,8 @@ public static unsafe class SysInfoApi
     [StructLayout(LayoutKind.Sequential)]
     public struct MEMORYSTATUSEX
     {
-        public uint dwLength;
-        public uint dwMemoryLoad;
+        public uint  dwLength;
+        public uint  dwMemoryLoad;
         public ulong ullTotalPhys;
         public ulong ullAvailPhys;
         public ulong ullTotalPageFile;
@@ -27,13 +27,13 @@ public static unsafe class SysInfoApi
     {
         public ushort wProcessorArchitecture;
         public ushort wReserved;
-        public uint dwPageSize;
-        public uint* lpMinimumApplicationAddress;
-        public uint* lpMaximumApplicationAddress;
-        public uint* dwActiveProcessorMask;
-        public uint dwNumberOfProcessors;
-        public uint dwProcessorType;
-        public uint dwAllocationGranularity;
+        public uint   dwPageSize;
+        public uint*  lpMinimumApplicationAddress;
+        public uint*  lpMaximumApplicationAddress;
+        public uint*  dwActiveProcessorMask;
+        public uint   dwNumberOfProcessors;
+        public uint   dwProcessorType;
+        public uint   dwAllocationGranularity;
         public ushort wProcessorLevel;
         public ushort wProcessorRevision;
     }

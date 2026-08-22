@@ -20,9 +20,9 @@ public static partial class ServiceUtils
     {
         serviceMap.Clear();
 
-        IntPtr hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
+        nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
 
-        if (hSCM == IntPtr.Zero) {
+        if (hSCM == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinService.SC_MANAGER_CONNECT)); 
             return;
         }
@@ -32,12 +32,12 @@ public static partial class ServiceUtils
         for (int i = 0; i < services.Length; i++) {
             ServiceInfo service = services[i];
 
-            IntPtr hService = WinService.OpenService(
+            nint hService = WinService.OpenService(
                 hSCM, 
                 service.ServiceName, 
                 WinService.SERVICE_QUERY_STATUS);
 
-            if (hService == IntPtr.Zero) {
+            if (hService == nint.Zero) {
                 PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
                 continue;
             }
@@ -82,17 +82,18 @@ public static partial class ServiceUtils
         return key?.GetValue("ImagePath")?.ToString() ?? null;
     }
     
-    private static int GetServiceProcessId(IntPtr hService)
+    private static unsafe int GetServiceProcessId(nint hService)
     {
         int pid = 0;
-        IntPtr pss = Marshal.AllocHGlobal(Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>());
-
+        nint pss = Marshal.AllocHGlobal(Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>());
+        uint bytesNeeded = 0;
+        
         if (!WinService.QueryServiceStatusEx(
             hService,
             WinService.SC_ENUM_PROCESS_INFO,
             pss,
             (uint)Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>(),
-            out _)) {
+            &bytesNeeded)) {
 
             PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.QueryServiceStatusEx)} {hService}");
             return 0;
@@ -113,12 +114,12 @@ public static partial class ServiceUtils
         return pid;
     }
 
-    internal static ServiceInfo[] GetServices()
+    internal static unsafe ServiceInfo[] GetServices()
     {
         ServiceInfo[] services = [];
-        IntPtr hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_ENUMERATE_SERVICE);
+        nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_ENUMERATE_SERVICE);
         
-        if (hSCM == IntPtr.Zero) {
+        if (hSCM == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
                 nameof(WinService.OpenSCManager), 
                 $"Failed GetServices {nameof(WinService.SC_MANAGER_ENUMERATE_SERVICE)}");
@@ -126,7 +127,7 @@ public static partial class ServiceUtils
             return services;
         }
 
-        IntPtr buffer = IntPtr.Zero;
+        nint buffer = nint.Zero;
         
         uint bytesNeeded = 0;
         uint servicesReturned = 0;
@@ -137,11 +138,11 @@ public static partial class ServiceUtils
             WinService.INFO_LEVEL_STANDARD,
             WinService.SERVICE_TYPE_ALL,
             WinService.SERVICE_STATE_ALL,
-            IntPtr.Zero,
+            nint.Zero,
             0,
-            out bytesNeeded,
-            out servicesReturned,
-            ref resumeHandle,
+            &bytesNeeded,
+            &servicesReturned,
+            &resumeHandle,
             null!);
 
         if (bytesNeeded == 0) {
@@ -153,7 +154,7 @@ public static partial class ServiceUtils
             return services;
         }
         
-        buffer = Marshal.AllocHGlobal((IntPtr)bytesNeeded);
+        buffer = Marshal.AllocHGlobal((nint)bytesNeeded);
         resumeHandle = 0;
 
         bool result = WinService.EnumServicesStatusEx(
@@ -163,9 +164,9 @@ public static partial class ServiceUtils
             WinService.SERVICE_STATE_ALL,
             buffer,
             bytesNeeded,
-            out bytesNeeded,
-            out servicesReturned,
-            ref resumeHandle,
+            &bytesNeeded,
+            &servicesReturned,
+            &resumeHandle,
             null!);
 
         if (!result) {
@@ -173,7 +174,7 @@ public static partial class ServiceUtils
                 nameof(WinService.EnumServicesStatusEx), 
                 $"{nameof(WinService.EnumServicesStatusEx)} failed to allocate {nameof(buffer)}");
             
-            if (buffer != IntPtr.Zero) {
+            if (buffer != nint.Zero) {
                 Marshal.FreeHGlobal(buffer);
             }
 
@@ -181,7 +182,7 @@ public static partial class ServiceUtils
             return services;
         }
 
-        IntPtr currentPtr = buffer;
+        nint currentPtr = buffer;
         int structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUS_PROCESS>();
         services = new ServiceInfo[servicesReturned];
         
@@ -193,10 +194,10 @@ public static partial class ServiceUtils
                 DisplayName = status.lpDisplayName
             };
 
-            currentPtr = IntPtr.Add(currentPtr, structSize);
+            currentPtr = nint.Add(currentPtr, structSize);
         }
 
-        if (buffer != IntPtr.Zero) {
+        if (buffer != nint.Zero) {
             Marshal.FreeHGlobal(buffer);
         }
         

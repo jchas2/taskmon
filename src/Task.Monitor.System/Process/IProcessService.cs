@@ -2,6 +2,6 @@
 
 public interface IProcessService
 {
-    IEnumerable<ProcessInfo> GetProcesses();
+    List<ProcessInfo> GetProcesses();
     ProcessInfo? GetProcessById(int pid);
 }

@@ -9,8 +9,8 @@ public static class ConsoleApi
     public const uint DISABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0008;
    
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+    public static extern bool GetConsoleMode(nint hConsoleHandle, out uint lpMode);
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+    public static extern bool SetConsoleMode(nint hConsoleHandle, uint dwMode);
 }

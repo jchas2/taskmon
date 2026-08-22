@@ -40,15 +40,15 @@ public static class WinService
     {
         public string lpServiceName;
         public string lpDisplayName;
-        public int dwServiceType;
-        public int dwCurrentState;
-        public int dwControlsAccepted;
-        public int dwWin32ExitCode;
-        public int dwServiceSpecificExitCode;
-        public int dwCheckPoint;
-        public int dwWaitHint;
-        public int dwProcessId;
-        public int dwServiceFlags;
+        public int    dwServiceType;
+        public int    dwCurrentState;
+        public int    dwControlsAccepted;
+        public int    dwWin32ExitCode;
+        public int    dwServiceSpecificExitCode;
+        public int    dwCheckPoint;
+        public int    dwWaitHint;
+        public int    dwProcessId;
+        public int    dwServiceFlags;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -67,60 +67,40 @@ public static class WinService
 
     [DllImport(Libraries.Advapi32, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool CloseServiceHandle(IntPtr hSCObject);
-
-    [DllImport(Libraries.Advapi32, SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr CreateService(
-        IntPtr hSCManager,
-        string lpServiceName,
-        string lpDisplayName,
-        uint dwDesiredAccess,
-        uint dwServiceType,
-        uint dwStartType,
-        uint dwErrorControl,
-        string lpBinaryPathName,
-        string lpLoadOrderGroup,
-        string lpdwTagId,
-        string lpDependencies,
-        string lpServiceStartName,
-        string lpPassword);
-
-    [DllImport(Libraries.Advapi32, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool DeleteService(IntPtr hService);
+    public static extern bool CloseServiceHandle(nint hSCObject);
 
     [DllImport(Libraries.Advapi32, EntryPoint = "EnumServicesStatusExW", SetLastError = true, CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool EnumServicesStatusEx(
-        IntPtr hSCManager,
+    public static extern unsafe bool EnumServicesStatusEx(
+        nint hSCManager,
         uint InfoLevel,
         uint dwServiceType,
         uint dwServiceState,
-        IntPtr lpServices,
+        nint lpServices,
         uint cbBufSize,
-        out uint pcbBytesNeeded,
-        out uint lpServicesReturned,
-        ref uint lpResumeHandle,
+        uint* pcbBytesNeeded,
+        uint* lpServicesReturned,
+        uint* lpResumeHandle,
         string pszGroupName);
     
     [DllImport(Libraries.Advapi32, SetLastError = true)]
-    public static extern IntPtr OpenSCManager(
+    public static extern nint OpenSCManager(
         string lpMachineName,
         string lpDatabaseName,
         int dwDesiredAccess);
 
     [DllImport(Libraries.Advapi32, SetLastError = true)]
-    public static extern IntPtr OpenService(
-        IntPtr hSCManager,
+    public static extern nint OpenService(
+        nint   hSCManager,
         string lpServiceName,
-        int dwDesiredAccess);
+        int    dwDesiredAccess);
 
     [DllImport(Libraries.Advapi32, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool QueryServiceStatusEx(
-        IntPtr hService,
-        int InfoLevel,
-        IntPtr lpBuffer,
-        uint cbBufSize,
-        out uint pcbBytesNeeded);
+    public static extern unsafe bool QueryServiceStatusEx(
+        nint  hService,
+        int   InfoLevel,
+        nint  lpBuffer,
+        uint  cbBufSize,
+        uint* pcbBytesNeeded);
 }

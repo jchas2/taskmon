@@ -28,9 +28,9 @@ public partial class SystemTerminal
     {
         // Not all terminals on Windows platforms (conhost.exe as an example) support VT/ANSI escape codes.
         // We attempt to enable here to support older terminals.
-        IntPtr consoleHandle = ProcessEnv.GetStdHandle(ProcessEnv.STD_OUTPUT_HANDLE);
+        nint consoleHandle = ProcessEnv.GetStdHandle(ProcessEnv.STD_OUTPUT_HANDLE);
         
-        if (consoleHandle == IntPtr.Zero || consoleHandle == new IntPtr(-1)) {
+        if (consoleHandle == 0 || consoleHandle == -1) {
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessEnv.GetStdHandle));
             PInvokeErrorHelpers.TraceOnLastError(nameof(ProcessEnv.GetStdHandle));
             return;
