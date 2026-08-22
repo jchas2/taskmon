@@ -15,14 +15,16 @@ public static partial class GpuService
     private static readonly Dictionary<string, long> prevEngineValues = new();
     private static readonly Dictionary<int, long> cumulativeEngineValues = new();
 
-    private static Dictionary<int, long> GetProcessStatsInternal()
+    private static unsafe Dictionary<int, long> GetProcessStatsInternal()
     {
         uint pdhResult = 0;
+        nint hQuery = 0;
+        nint hCounter = 0;
         
         if ((pdhResult = Pdh.PdhOpenQuery(
-                null, 
-                IntPtr.Zero, 
-                out IntPtr hQuery)) != Pdh.ERROR_SUCCESS) {
+            null, 
+            nint.Zero, 
+            &hQuery)) != Pdh.ERROR_SUCCESS) {
 
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 nameof(Pdh.PdhOpenQuery), 
@@ -33,10 +35,10 @@ public static partial class GpuService
         }
 
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
-                hQuery,
-                GpuEngineCounterPath,
-                IntPtr.Zero,
-                out IntPtr hCounter)) != Pdh.ERROR_SUCCESS) {
+            hQuery,
+            GpuEngineCounterPath,
+            nint.Zero,
+            &hCounter)) != Pdh.ERROR_SUCCESS) {
             
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 GpuEngineCounterPath,
@@ -62,9 +64,9 @@ public static partial class GpuService
 
         _ = Pdh.PdhGetRawCounterArray(
             hCounter, 
-            ref bufferSize, 
-            ref itemCount, 
-            IntPtr.Zero);
+            &bufferSize, 
+            &itemCount, 
+            nint.Zero);
 
         if (bufferSize <= 0) {
             TraceEx.WriteLineOnce(
@@ -75,19 +77,19 @@ public static partial class GpuService
             return new Dictionary<int, long>(cumulativeEngineValues);
         }
 
-        IntPtr buffer = Marshal.AllocHGlobal((int)bufferSize);
+        nint buffer = Marshal.AllocHGlobal((int)bufferSize);
 
         if (Pdh.PdhGetRawCounterArray(
             hCounter, 
-            ref bufferSize, 
-            ref itemCount, 
+            &bufferSize, 
+            &itemCount, 
             buffer) == Pdh.ERROR_SUCCESS) {
             
             int structSize = Marshal.SizeOf<Pdh.PDH_RAW_COUNTER_ITEM>();
             Dictionary<int, long> maxDeltas = new();
 
             for (int i = 0; i < itemCount; i++) {
-                IntPtr currentItemPtr = new IntPtr(buffer.ToInt64() + (i * structSize));
+                nint currentItemPtr = new nint(buffer.ToInt64() + (i * structSize));
                 Pdh.PDH_RAW_COUNTER_ITEM item = Marshal.PtrToStructure<Pdh.PDH_RAW_COUNTER_ITEM>(currentItemPtr);
 
                 if (item.RawValue.CStatus != Pdh.PDH_CSTATUS_VALID_DATA || 
@@ -145,21 +147,27 @@ public static partial class GpuService
         const string pidPrefix = "pid_";
         int pidIndex = instanceName.IndexOf(pidPrefix, StringComparison.OrdinalIgnoreCase);
 
-        if (pidIndex == -1)
+        if (pidIndex == -1) {
             return -1;
+        }
 
         int startIndex = pidIndex + pidPrefix.Length;
-        if (startIndex >= instanceName.Length)
+
+        if (startIndex >= instanceName.Length) {
             return -1;
+        }
 
         int endIndex = instanceName.IndexOf('_', startIndex);
-        if (endIndex == -1)
+
+        if (endIndex == -1) {
             endIndex = instanceName.Length;
+        }
 
         ReadOnlySpan<char> pidSpan = instanceName.AsSpan(startIndex, endIndex - startIndex);
 
-        if (int.TryParse(pidSpan, out int pid))
+        if (int.TryParse(pidSpan, out int pid)) {
             return pid;
+        }
 
         return -1;
     }

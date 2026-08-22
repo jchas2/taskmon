@@ -22,8 +22,8 @@ public static class PsApi
     }
 
     [DllImport(Libraries.PsApi, SetLastError = true)]
-    public static extern bool GetProcessMemoryInfo(
-        IntPtr hProcess,
-        ref PROCESS_MEMORY_COUNTERS psmemCounters,
+    public static extern unsafe bool GetProcessMemoryInfo(
+        nint hProcess,
+        PROCESS_MEMORY_COUNTERS* psmemCounters,
         uint cb);
 }

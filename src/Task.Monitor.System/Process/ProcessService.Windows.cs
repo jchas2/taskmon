@@ -1,7 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.ServiceProcess;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 using Task.Monitor.Cli.Utils;
@@ -17,17 +16,17 @@ public sealed partial class ProcessService
 #if __WIN32__
     private static Dictionary<string, string> userMap = new();
     
-    private ProcessInfo? CreateProcessInfo(ref Kernel32.PROCESSENTRY32W entry, long gpuTime)
+    private unsafe ProcessInfo? CreateProcessInfo(Kernel32.PROCESSENTRY32W* entry, long gpuTime)
     {
-        IntPtr hProcess = Kernel32.OpenProcess(
+        nint hProcess = Kernel32.OpenProcess(
             Kernel32.PROCESS_QUERY_LIMITED_INFORMATION, 
             bInheritHandle: false, 
-            entry.th32ProcessID);
+            entry->th32ProcessID);
 
-        if (hProcess == IntPtr.Zero) {
+        if (hProcess == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
-                $"{nameof(Kernel32.OpenProcess)}_{entry.th32ProcessID}",
-                $"Failed to open process for pid {entry.th32ProcessID}");
+                $"{nameof(Kernel32.OpenProcess)}_{entry->th32ProcessID}",
+                $"Failed to open process for pid {entry->th32ProcessID}");
             
             return null;
         }
@@ -35,31 +34,33 @@ public sealed partial class ProcessService
         SafeProcessHandle processHandle = new(hProcess, ownsHandle: false);
 
         ProcessInfo processInfo = new() {
-            Pid = (int)entry.th32ProcessID
+            Pid = (int)entry->th32ProcessID
         };
 
-        processInfo.ProcessName = entry.szExeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) 
-            ? entry.szExeFile.Substring(0, entry.szExeFile.Length - 4) 
-            : entry.szExeFile;
+        string exeFile = new string(entry->szExeFile);
+        
+        processInfo.ProcessName = exeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) 
+            ? exeFile.Substring(0, exeFile.Length - 4) 
+            : exeFile;
         
         processInfo.FileName = GetProcessPath(hProcess);
         
         processInfo.FileDescription = GetProcessProductName(
-            entry.th32ProcessID, 
+            entry->th32ProcessID, 
             processInfo.FileName, 
             processInfo.ProcessName);
         
-        processInfo.ModuleName = Path.GetFileName(entry.szExeFile);
-        processInfo.IsDaemon = ServiceUtils.GetService((int)entry.th32ProcessID, out ServiceInfo? _);
-        processInfo.IsLowPriority = entry.pcPriClassBase < 8;
+        processInfo.ModuleName = Path.GetFileName(exeFile);
+        processInfo.IsDaemon = ServiceUtils.GetService((int)entry->th32ProcessID, out ServiceInfo? _);
+        processInfo.IsLowPriority = entry->pcPriClassBase < 8;
         processInfo.UserName = GetProcessUserName(processHandle);
-        processInfo.CmdLine = GetProcessCommandLine((int)entry.th32ProcessID, processInfo.FileName);
-        processInfo.ThreadCount = (int)entry.cntThreads;
+        processInfo.CmdLine = GetProcessCommandLine((int)entry->th32ProcessID, processInfo.FileName);
+        processInfo.ThreadCount = (int)entry->cntThreads;
         processInfo.HandleCount = 0;
-        processInfo.BasePriority = entry.pcPriClassBase;
+        processInfo.BasePriority = entry->pcPriClassBase;
 
         PsApi.PROCESS_MEMORY_COUNTERS memCounters = new();
-        GetProcessMemCounters(hProcess, ref memCounters);    
+        GetProcessMemCounters(hProcess, &memCounters);    
         processInfo.UsedMemory = (long)memCounters.WorkingSetSize;
 
         GetProcessorTimes(
@@ -101,12 +102,12 @@ public sealed partial class ProcessService
         } 
     }
 
-    private ProcessInfo? GetProcessInfoInternal(int pid)
+    private unsafe ProcessInfo? GetProcessInfoInternal(int pid)
     {
         ProcessInfo? processInfo = null;
-        IntPtr hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
+        nint hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
-        if (hSnapshot == IntPtr.Zero) {
+        if (hSnapshot == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
             return null;
         }
@@ -115,7 +116,7 @@ public sealed partial class ProcessService
             dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>()
         };
 
-        if (!Kernel32.Process32FirstW(hSnapshot, ref entry)) {
+        if (!Kernel32.Process32FirstW(hSnapshot, &entry)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
             return null;
         }
@@ -127,7 +128,7 @@ public sealed partial class ProcessService
 
             Dictionary<int, long> gpuStats = GpuService.GetProcessStats(); 
             long gpuTime = gpuStats.GetValueOrDefault((int)entry.th32ProcessID, 0);            
-            processInfo = CreateProcessInfo(ref entry, gpuTime);
+            processInfo = CreateProcessInfo(&entry, gpuTime);
 
             if (processInfo != null) {
                 break;
@@ -135,55 +136,60 @@ public sealed partial class ProcessService
             
             entry.dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>();
 
-        } while (Kernel32.Process32NextW(hSnapshot, ref entry));
+        } while (Kernel32.Process32NextW(hSnapshot, &entry));
         
         Kernel32.CloseHandle(hSnapshot);
         return processInfo;
     }
     
-    private IEnumerable<ProcessInfo> GetProcessInfosInternal()
+    private unsafe List<ProcessInfo> GetProcessInfosInternal()
     {
+        List<ProcessInfo> processInfos = new();
         Dictionary<int, long> gpuStats = GpuService.GetProcessStats(); 
-        IntPtr hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
+        nint hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
-        if (hSnapshot == IntPtr.Zero) {
+        if (hSnapshot == nint.Zero) {
             PInvokeErrorHelpers.TraceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
-            yield break;
+            return processInfos; 
         }
         
         Kernel32.PROCESSENTRY32W entry = new() {
             dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>()
         };
 
-        if (!Kernel32.Process32FirstW(hSnapshot, ref entry)) {
+        if (!Kernel32.Process32FirstW(hSnapshot, &entry)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
-            yield break;
+            Kernel32.CloseHandle(hSnapshot);
+            return processInfos;
         }
 
         do {
             long gpuTime = gpuStats.GetValueOrDefault((int)entry.th32ProcessID, 0);            
-            ProcessInfo? processInfo = CreateProcessInfo(ref entry, gpuTime);
+            ProcessInfo? processInfo = CreateProcessInfo(&entry, gpuTime);
 
             if (processInfo != null) {
-                yield return processInfo;
+                processInfos.Add(processInfo);
             }
             
             entry.dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>();
 
-        } while (Kernel32.Process32NextW(hSnapshot, ref entry));
+        } while (Kernel32.Process32NextW(hSnapshot, &entry));
         
         Kernel32.CloseHandle(hSnapshot);
+        return processInfos;
     }
     
-    private static void GetProcessIoOperations(
-        IntPtr hProcess, 
+    private static unsafe void GetProcessIoOperations(
+        nint hProcess, 
         out ulong readBytes, 
         out ulong writeBytes)
     {
         readBytes = 0;
         writeBytes = 0;
 
-        if (!WinNt.GetProcessIoCounters(hProcess, out WinNt.IO_COUNTERS counters)) {
+        WinNt.IO_COUNTERS counters = new();
+        
+        if (!WinNt.GetProcessIoCounters(hProcess, &counters)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinNt.GetProcessIoCounters));
             return;
         }
@@ -192,57 +198,64 @@ public sealed partial class ProcessService
         writeBytes = counters.WriteTransferCount;
     }
 
-    private void GetProcessMemCounters(IntPtr hProcess, ref PsApi.PROCESS_MEMORY_COUNTERS counters)
+    private unsafe void GetProcessMemCounters(nint hProcess, PsApi.PROCESS_MEMORY_COUNTERS* counters)
     {
-        counters.cb = (uint)Marshal.SizeOf<PsApi.PROCESS_MEMORY_COUNTERS>();
+        counters->cb = (uint)Marshal.SizeOf<PsApi.PROCESS_MEMORY_COUNTERS>();
 
         if (!PsApi.GetProcessMemoryInfo(
             hProcess,
-            ref counters,
-            counters.cb)) {
+            counters,
+            counters->cb)) {
             
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(PsApi.GetProcessMemoryInfo));
         }
     }
 
-    private void GetProcessorTimes(
-        IntPtr hProcess, 
+    private unsafe void GetProcessorTimes(
+        nint hProcess, 
         out long kernelTime, 
         out long userTime)
     {
+        MinWinBase.FILETIME creationFileTime = new();
+        MinWinBase.FILETIME exitFileTime = new();
+        MinWinBase.FILETIME kernelFileTime = new();
+        MinWinBase.FILETIME userFileTime = new();
+        
         kernelTime = 0;
         userTime = 0;
         
         if (!Kernel32.GetProcessTimes(hProcess,
-            out MinWinBase.FILETIME creation,
-            out MinWinBase.FILETIME exit,
-            out MinWinBase.FILETIME kernel,
-            out MinWinBase.FILETIME user)) {
+            &creationFileTime,
+            &exitFileTime,
+            &kernelFileTime,
+            &userFileTime)) {
 
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetProcessTimes));
             return;
         }
-
-        kernelTime = kernel.ToLong();
-        userTime = user.ToLong();
+        
+        kernelTime = kernelFileTime.ToLong();
+        userTime = userFileTime.ToLong();
     }
     
-    private string GetProcessPath(IntPtr hProcess, uint flags = Kernel32.PROCESS_NAME_WIN32)
+    private unsafe string GetProcessPath(nint hProcess, uint flags = Kernel32.PROCESS_NAME_WIN32)
     {
         uint size = 1024;
-        var sb = new StringBuilder((int)size);
+        Span<char> buffer = stackalloc char[(int)size];
+        
+        fixed (char* pBuffer = &MemoryMarshal.GetReference(buffer)) {
+            if (!Kernel32.QueryFullProcessImageNameW(
+                hProcess,
+                flags,
+                pBuffer,
+                &size)) {
 
-        if (!Kernel32.QueryFullProcessImageNameW(
-            hProcess,
-            flags,
-            sb,
-            ref size)) {
-            
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.QueryFullProcessImageNameW));
-            return string.Empty;
+                PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.QueryFullProcessImageNameW));
+                return string.Empty;
+            }
+
+            return buffer.Slice(0, (int)size).ToString();
         }
-
-        return sb.ToString(0, (int)size);
     }
     
     private static string GetProcessProductName(
@@ -338,7 +351,7 @@ public sealed partial class ProcessService
                     
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                         uint* sidPtr = tokenUser->sidAndAttributes.Sid;
-                        sid = new SecurityIdentifier(new IntPtr(sidPtr));
+                        sid = new SecurityIdentifier(new nint(sidPtr));
                     }
                 }
                 else {

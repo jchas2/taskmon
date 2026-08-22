@@ -8,5 +8,5 @@ public static class ProcessEnv
     public const int STD_INPUT_HANDLE = -10;
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern IntPtr GetStdHandle(int nStdHandle);
+    public static extern nint GetStdHandle(int nStdHandle);
 }

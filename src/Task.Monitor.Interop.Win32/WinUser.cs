@@ -8,5 +8,5 @@ public static class WinUser
     public const uint GR_USEROBJECTS = 1;
     
     [DllImport(Libraries.User32)]
-    public static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
+    public static extern uint GetGuiResources(nint hProcess, uint uiFlags);
 }

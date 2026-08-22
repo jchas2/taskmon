@@ -12,54 +12,53 @@ public static class Kernel32
     public const uint PROCESS_NAME_WIN32  = 0;   
     public const uint PROCESS_NAME_NATIVE = 1;   
     
-    public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+    public static readonly nint INVALID_HANDLE_VALUE = -1;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct PROCESSENTRY32W
+    public unsafe struct PROCESSENTRY32W
     {
-        public uint    dwSize;               
-        public uint    cntUsage;             
-        public uint    th32ProcessID;        
-        public UIntPtr th32DefaultHeapID;   
-        public uint    th32ModuleID;         
-        public uint    cntThreads;           
-        public uint    th32ParentProcessID;  
-        public int     pcPriClassBase;       
-        public uint    dwFlags;              
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
-        public string  szExeFile;            
+        public uint  dwSize;               
+        public uint  cntUsage;             
+        public uint  th32ProcessID;        
+        public nuint th32DefaultHeapID;   
+        public uint  th32ModuleID;         
+        public uint  cntThreads;           
+        public uint  th32ParentProcessID;  
+        public int   pcPriClassBase;       
+        public uint  dwFlags;              
+        public fixed char szExeFile[MAX_PATH];
     }
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool CloseHandle(IntPtr hObject);
+    public static extern bool CloseHandle(nint hObject);
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+    public static extern nint CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
     
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool GetProcessTimes(
-        IntPtr    hProcess,
-        out MinWinBase.FILETIME lpCreationTime,
-        out MinWinBase.FILETIME lpExitTime,
-        out MinWinBase.FILETIME lpKernelTime,
-        out MinWinBase.FILETIME lpUserTime);
+    public static extern unsafe bool GetProcessTimes(
+        nint hProcess,
+        MinWinBase.FILETIME* lpCreationTime,
+        MinWinBase.FILETIME* lpExitTime,
+        MinWinBase.FILETIME* lpKernelTime,
+        MinWinBase.FILETIME* lpUserTime);
     
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern IntPtr OpenProcess(
+    public static extern nint OpenProcess(
         uint dwDesiredAccess, 
         bool bInheritHandle, 
         uint dwProcessId);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern bool Process32FirstW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
+    public static extern unsafe bool Process32FirstW(nint hSnapshot, PROCESSENTRY32W* lppe);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern bool Process32NextW(IntPtr hSnapshot, ref PROCESSENTRY32W lppe);
+    public static extern unsafe bool Process32NextW(nint hSnapshot, PROCESSENTRY32W* lppe);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern bool QueryFullProcessImageNameW(
-        IntPtr hProcess,
+    public static extern unsafe bool QueryFullProcessImageNameW(
+        nint hProcess,
         uint dwFlags,
-        StringBuilder lpExeName,
-        ref uint lpdwSize);
+        char* lpExeName,
+        uint* lpdwSize);
 }
