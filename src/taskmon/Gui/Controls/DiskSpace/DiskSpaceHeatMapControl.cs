@@ -20,6 +20,11 @@ public sealed class DiskSpaceHeatMapControl : Control
     private const int FadeSteps = 4;
     private const int MinCellWidthForLabel = 6;
 
+    // Embedded in the bottom border rather than shown as content-area text, the same way
+    // ListView's own HeaderText/FooterText live in its border - one consistent place across every
+    // bordered panel for "how do I use this", instead of each one inventing its own placeholder.
+    private const string BorderHint = "s Start scanning   c Cancel";
+
     private readonly AppConfig appConfig;
     private readonly AnsiScreenBuffer frame = new();
     private readonly StableTreemapLayout stableLayout = new();
@@ -106,7 +111,7 @@ public sealed class DiskSpaceHeatMapControl : Control
             _ => ForegroundColour
         };
 
-        string text = specs is null
+        string text = specs is null or { State: DiskSpaceScanState.Idle }
             ? "DISK SPACE"
             : $"DISK SPACE  {specs.RootPath}  {DescribeState(specs)}";
 
@@ -114,7 +119,6 @@ public sealed class DiskSpaceHeatMapControl : Control
     }
 
     private static string DescribeState(DiskSpaceSpecs specs) => specs.State switch {
-        DiskSpaceScanState.Idle => "s: start scanning",
         DiskSpaceScanState.Scanning =>
             $"Scanning… {specs.FilesScanned:N0} files / {specs.TotalBytesScanned.ToFormattedByteSize()}",
         DiskSpaceScanState.Cancelling => "Cancelling…",
@@ -154,10 +158,21 @@ public sealed class DiskSpaceHeatMapControl : Control
             frame.Append('│');
         }
 
+        // Bottom: ╰── hint ──╯ - mirrors ListView.DrawBorder's own HeaderText/FooterText
+        // convention (centred label, dashes either side) rather than a one-off layout here.
+        string footerLabel = $" {BorderHint} ";
+        int footerLabelLen = Math.Min(footerLabel.Length, innerWidth);
+        int footerLeftDashes = (innerWidth - footerLabelLen) / 2;
+        int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
+
         frame.MoveTo(X, top + height - 1);
         frame.SetColour(borderColour, BackgroundColour);
         frame.Append('╰');
-        frame.Append('─', innerWidth);
+        frame.Append('─', footerLeftDashes);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(footerLabelLen < footerLabel.Length ? footerLabel[..footerLabelLen] : footerLabel);
+        frame.SetColour(borderColour, BackgroundColour);
+        frame.Append('─', footerRightDashes);
         frame.Append('╯');
 
         frame.ResetColour();
@@ -168,11 +183,13 @@ public sealed class DiskSpaceHeatMapControl : Control
     {
         DrawRectangle(left, top, width, height, BackgroundColour);
 
-        string message = specs?.State switch {
-            DiskSpaceScanState.Faulted => specs.ErrorMessage ?? "Scan failed.",
-            _ => "Press 's' to scan a drive or folder."
-        };
+        // The usage hint now lives permanently in the border (see BorderHint) rather than as
+        // content-area text here - only a genuine error is worth a message in this space.
+        if (specs?.State != DiskSpaceScanState.Faulted) {
+            return;
+        }
 
+        string message = specs.ErrorMessage ?? "Scan failed.";
         WriteLine(left, top, width, message, ForegroundColour);
     }
 

@@ -52,9 +52,11 @@ public sealed partial class DiskSpaceControl
             }
         }
 
+        // The scan-control hints (s Start scanning / c Cancel) live on the heat map's own border
+        // now, not repeated here - this footer is just about the list itself.
         filesView.FooterText =
             $"{files.Count} of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files     " +
-            "s Start scanning   c Cancel   ↑ ↓ PgUp PgDn Scroll";
+            "↑ ↓ PgUp PgDn Scroll";
     }
 
     private sealed class FileListViewItem : ListViewItem

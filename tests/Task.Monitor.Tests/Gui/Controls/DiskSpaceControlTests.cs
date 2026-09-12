@@ -87,14 +87,15 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Draws_A_Prompt_Before_Any_Scan_Has_Started()
+    public void Draws_The_Scan_Hint_In_The_Heat_Maps_Border_Before_Any_Scan_Has_Started()
     {
         DiskSpaceControl ctrl = CreateControl();
         ctrl.Draw();
 
         string output = CapturedOutput();
 
-        Assert.Contains("Press 's' to scan", output);
+        Assert.Contains("Start scanning", output);
+        Assert.Contains("Cancel", output);
         Assert.Contains("No files scanned yet", output);
 
         ctrl.Unload();
@@ -210,6 +211,24 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
+    public void The_Scan_Control_Hints_Live_On_The_Heat_Map_Border_Not_The_File_List_Footer()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        // The heat map's own border carries these now (see the earlier "before any scan" test) -
+        // the file list's footer should be about the list itself only.
+        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
+        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ PgUp PgDn Scroll", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Rebuilds_Rows_When_Scan_Progress_Changes()
     {
         DiskSpaceControl ctrl = CreateControl();
@@ -238,7 +257,7 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("Press 's' to scan", CapturedOutput());
+        Assert.Contains("Start scanning", CapturedOutput());
 
         ctrl.Unload();
     }
