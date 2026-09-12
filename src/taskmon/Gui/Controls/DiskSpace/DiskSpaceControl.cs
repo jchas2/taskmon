@@ -36,6 +36,7 @@ public sealed partial class DiskSpaceControl : Control
     private const int FileColumnMinWidth = 16;
     private const int FileCountRowHeight = 1;
     private const int SizeColumnWidth = 12;
+    private const int PreferredVisibleDriveRows = 5;
     
     private int fileCountRowX;
     private int fileCountRowY;
@@ -217,11 +218,13 @@ public sealed partial class DiskSpaceControl : Control
         Control.RedrawEnabled = false;
 
         IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
-        int rowCount = candidates.Count + 1;
 
-        driveInputBox.X = X + 2;
+        // Fixed at 5 visible rows regardless of how many real candidates there are - a couple of
+        // drives shouldn't render as a cramped two-row box, and more than 5 (rare) scrolls rather
+        // than growing the dialog further.
         driveInputBox.Width = Math.Clamp(Width - 4, 30, 60);
-        driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(rowCount), 8, Math.Max(8, Height - 2));
+        driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
+        driveInputBox.X = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
         driveInputBox.Y = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
         driveInputBox.Title = "Select a drive";
         driveInputBox.SetCandidates(candidates);
