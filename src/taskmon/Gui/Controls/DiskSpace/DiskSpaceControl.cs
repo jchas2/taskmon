@@ -1,3 +1,4 @@
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
@@ -29,7 +30,12 @@ public sealed partial class DiskSpaceControl : Control
     private string lastFileListSignature = string.Empty;
 
     private const int FileColumnMinWidth = 16;
+    private const int FileCountRowHeight = 1;
     private const int SizeColumnWidth = 12;
+    
+    private int fileCountRowX;
+    private int fileCountRowY;
+    private int fileCountRowWidth;    
 
     public DiskSpaceControl(
         ServiceController serviceController,
@@ -93,6 +99,24 @@ public sealed partial class DiskSpaceControl : Control
         Draw();
     }
 
+    private void DrawFileCountRow(DiskSpaceSpecs? specs)
+    {
+        string text = specs?.State switch {
+            null => string.Empty,
+            DiskSpaceScanState.Idle => string.Empty,
+            DiskSpaceScanState.Scanning or DiskSpaceScanState.Cancelling => $"Processing {specs.FilesScanned:N0} files",
+            _ => $"Processed {specs.FilesScanned:N0} files"
+        };
+
+        int charsToTake = text.TruncateToTerminalWidth(fileCountRowWidth, out int actualWidth);
+        string padded = text[..charsToTake] + new string(' ', fileCountRowWidth - actualWidth);
+        
+        Terminal.SetCursorPosition(fileCountRowX, fileCountRowY);
+        Terminal.BackgroundColor = BackgroundColour;
+        Terminal.ForegroundColor = ForegroundColour;
+        Terminal.Write(padded);
+    }
+    
     protected override void OnDraw()
     {
         try {
@@ -105,6 +129,7 @@ public sealed partial class DiskSpaceControl : Control
 
             heatMap.Draw();
             UpdateProgressMetre(diskSpace?.Specs);
+            DrawFileCountRow(diskSpace?.Specs);
             filesView.Draw();
 
             if (scanPathInputBox.Visible) {
@@ -264,7 +289,7 @@ public sealed partial class DiskSpaceControl : Control
     protected override void OnResize()
     {
         int progressMetreHeight = progressMetre.RequiredHeight;
-        int remainingHeight = Math.Max(0, Height - progressMetreHeight);
+        int remainingHeight = Math.Max(0, Height - progressMetreHeight - FileCountRowHeight);
         int heatMapHeight = Math.Max(3, remainingHeight / 2);
         int filesViewHeight = Math.Max(1, remainingHeight - heatMapHeight);
 
@@ -279,9 +304,13 @@ public sealed partial class DiskSpaceControl : Control
         progressMetre.Width = Width - 1;
         progressMetre.Height = progressMetreHeight;
         progressMetre.Resize();
+        
+        fileCountRowX = X;
+        fileCountRowY = Y + heatMapHeight + progressMetreHeight;
+        fileCountRowWidth = Width;
 
         filesView.X = X;
-        filesView.Y = Y + heatMapHeight + progressMetreHeight;
+        filesView.Y = fileCountRowY + FileCountRowHeight;
         filesView.Width = Width;
         filesView.Height = filesViewHeight;
 
