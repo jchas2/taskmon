@@ -47,7 +47,7 @@ public sealed class DiskSpaceWalkerTests : IDisposable
     }
 
     [Fact]
-    public void Walk_Builds_A_Nested_Tree_Matching_The_Real_Directory_Structure()
+    public void Walk_Attributes_Everything_To_The_Root_Level_Folder_It_Lives_Under()
     {
         CreateFile(Path.Combine("Documents", "resume.docx"), 40);
         CreateFile(Path.Combine("Documents", "Work", "report.xlsx"), 60);
@@ -61,11 +61,12 @@ public sealed class DiskSpaceWalkerTests : IDisposable
         var music = specs.RootNode!.Children.Single(c => c.Name == "Music");
         Assert.Equal(500, music.TotalBytes);
 
+        // Only the scan root's immediate children are tracked - a file nested under
+        // Documents\Work still counts toward Documents' total, but no separate node is kept for
+        // Work itself.
         var documents = specs.RootNode.Children.Single(c => c.Name == "Documents");
         Assert.Equal(100, documents.TotalBytes);
-
-        var work = documents.Children.Single(c => c.Name == "Work");
-        Assert.Equal(60, work.TotalBytes);
+        Assert.Empty(documents.Children);
     }
 
     [Fact]

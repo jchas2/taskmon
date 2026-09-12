@@ -7,7 +7,7 @@ public sealed class DiskSpaceAccumulatorTests
     private const string Root = @"C:\Root";
 
     [Fact]
-    public void AddFile_Attributes_Size_To_The_Immediate_Parent_And_Every_Ancestor_Up_To_Root()
+    public void AddFile_Attributes_Size_To_The_Root_Level_Ancestor_Only()
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
@@ -20,13 +20,13 @@ public sealed class DiskSpaceAccumulatorTests
 
         Assert.Equal(100, specs.RootNode!.TotalBytes);
 
+        // Only the scan root's immediate children are tracked/retained - a file several levels
+        // down is attributed to its root-level ancestor ("A"), and nothing deeper is kept in
+        // memory for the whole scanned volume.
         DiskSpaceFolderNode a = Assert.Single(specs.RootNode.Children);
         Assert.Equal("A", a.Name);
         Assert.Equal(100, a.TotalBytes);
-
-        DiskSpaceFolderNode b = Assert.Single(a.Children);
-        Assert.Equal("B", b.Name);
-        Assert.Equal(100, b.TotalBytes);
+        Assert.Empty(a.Children);
     }
 
     [Fact]

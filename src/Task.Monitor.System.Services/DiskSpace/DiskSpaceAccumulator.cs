@@ -1,16 +1,27 @@
 namespace Task.Monitor.System.Services.DiskSpace;
 
 // Pure in-memory aggregation of a scan in progress - no filesystem access, no interop. Fed a
-// stream of (folder, file, size) triples by a walker, it maintains a running per-folder byte
-// total (each file's size is added to every ancestor folder up to the scan root) and a bounded
-// top-N list of the largest files seen. Kept free of I/O so it is unit testable without touching
-// disk; DiskSpaceWalker is what actually calls Directory.EnumerateFileSystemEntries.
+// stream of (folder, file, size) triples by a walker, it maintains a running byte total per
+// scan-root-level folder (not a full recursive tree of every folder at every depth - see the
+// note on RootLevelTotals below) and a bounded top-N list of the largest files seen. Kept free
+// of I/O so it is unit testable without touching disk; DiskSpaceWalker is what actually calls
+// Directory.EnumerateFileSystemEntries.
 public sealed class DiskSpaceAccumulator
 {
     public const int MaxTrackedFiles = 500;
 
     private readonly string rootPath;
-    private readonly Dictionary<string, long> folderTotals = new(StringComparer.OrdinalIgnoreCase);
+    private long rootTotalBytes;
+
+    // Only the scan root's immediate children are tracked - not one entry per folder at every
+    // depth in the scanned volume. A full recursive tree is O(total folders on disk), which for a
+    // whole-drive scan can be hundreds of thousands to millions of live path strings retained for
+    // the life of the scan (and, since nothing ever cleared it, well beyond); the treemap only
+    // ever draws this one level today, so anything deeper was pure memory cost with no reader.
+    // A file several levels down still counts toward its root-level ancestor's total here - it
+    // just isn't given its own node in the published tree.
+    private readonly Dictionary<string, long> rootLevelTotals = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly List<DiskSpaceFileEntry> topFiles = new(MaxTrackedFiles + 1);
 
     // Backs the progress bar: root-level folders are all discovered in one pass (the root's own
@@ -32,7 +43,6 @@ public sealed class DiskSpaceAccumulator
     {
         this.rootPath = rootPath;
         currentPath = rootPath;
-        folderTotals[rootPath] = 0;
     }
 
     // Called by the walker as soon as a subdirectory is found (queued to visit later), not only
@@ -45,18 +55,20 @@ public sealed class DiskSpaceAccumulator
     }
 
     // Called when the walker starts enumerating a directory - tracks the scan-cursor position and
-    // ensures a folder with no files of its own still appears in the tree with a zero total.
+    // ensures a root-level folder with no files of its own still appears in the tree with a zero
+    // total (folders below the root level have no node of their own to seed - see RootLevelTotals).
     public void EnterFolder(string path)
     {
         foldersScanned++;
         currentPath = path;
-        folderTotals.TryAdd(path, 0);
 
         string? rootLevelFolder = RootLevelAncestorOf(path);
 
         if (rootLevelFolder is null) {
             return;
         }
+
+        rootLevelTotals.TryAdd(rootLevelFolder, 0);
 
         if (currentRootLevelFolder is not null &&
             !string.Equals(currentRootLevelFolder, rootLevelFolder, StringComparison.OrdinalIgnoreCase)) {
@@ -79,8 +91,8 @@ public sealed class DiskSpaceAccumulator
     public void SkipFolder() => foldersSkipped++;
 
     // Walks up from path to find the immediate child of the scan root that contains it - null for
-    // the root itself. Used only to attribute progress to a root-level folder, not for the
-    // ancestor-total bookkeeping AddToAncestors already does.
+    // the root itself. Used both to attribute a file's size to the right root-level bucket and to
+    // attribute walk progress to a root-level folder.
     private string? RootLevelAncestorOf(string path)
     {
         if (string.Equals(path, rootPath, StringComparison.OrdinalIgnoreCase)) {
@@ -108,24 +120,15 @@ public sealed class DiskSpaceAccumulator
     {
         filesScanned++;
         totalBytesScanned += sizeBytes;
+        rootTotalBytes += sizeBytes;
 
-        AddToAncestors(parentFolder, sizeBytes);
-        TrackTopFile(fullPath, sizeBytes);
-    }
+        string? rootLevelFolder = RootLevelAncestorOf(parentFolder);
 
-    private void AddToAncestors(string folder, long sizeBytes)
-    {
-        string? current = folder;
-
-        while (current is not null) {
-            folderTotals[current] = folderTotals.GetValueOrDefault(current) + sizeBytes;
-
-            if (string.Equals(current, rootPath, StringComparison.OrdinalIgnoreCase)) {
-                break;
-            }
-
-            current = Path.GetDirectoryName(current);
+        if (rootLevelFolder is not null) {
+            rootLevelTotals[rootLevelFolder] = rootLevelTotals.GetValueOrDefault(rootLevelFolder) + sizeBytes;
         }
+
+        TrackTopFile(fullPath, sizeBytes);
     }
 
     // Keeps a sorted top-N rather than sorting the full file list on every snapshot, since a
@@ -161,60 +164,36 @@ public sealed class DiskSpaceAccumulator
             CurrentPath = state == DiskSpaceScanState.Scanning ? currentPath : string.Empty,
             RootLevelFoldersTotal = rootLevelFolders.Count,
             RootLevelFoldersCompleted = completedRootLevelFolders.Count,
-            RootNode = BuildTree(),
+            RootNode = BuildRootNode(),
             TopFiles = [.. topFiles],
             ErrorMessage = errorMessage
         };
 
-    // Builds the full nested folder tree from the flat total-per-path map. Left to the layout
-    // algorithm to decide how deep it actually recurses when drawing, based on available screen
-    // space, rather than limiting depth here.
-    private DiskSpaceFolderNode? BuildTree()
+    // Builds just the scan root and its immediate children from the bounded root-level totals -
+    // O(top-level folder count) regardless of how many folders exist deeper in the scanned volume,
+    // unlike a full recursive rebuild of every folder at every depth on every throttled publish.
+    private DiskSpaceFolderNode BuildRootNode()
     {
-        if (!folderTotals.ContainsKey(rootPath)) {
-            return null;
-        }
-
-        Dictionary<string, List<string>> childrenByParent = new(StringComparer.OrdinalIgnoreCase);
-
-        foreach (string path in folderTotals.Keys) {
-            if (string.Equals(path, rootPath, StringComparison.OrdinalIgnoreCase)) {
-                continue;
-            }
-
-            string? parent = Path.GetDirectoryName(path);
-
-            if (parent is null) {
-                continue;
-            }
-
-            if (!childrenByParent.TryGetValue(parent, out List<string>? siblings)) {
-                siblings = [];
-                childrenByParent[parent] = siblings;
-            }
-
-            siblings.Add(path);
-        }
-
-        return BuildNode(rootPath, childrenByParent);
-    }
-
-    private DiskSpaceFolderNode BuildNode(string path, Dictionary<string, List<string>> childrenByParent)
-    {
-        List<DiskSpaceFolderNode> children = childrenByParent.TryGetValue(path, out List<string>? childPaths)
-            ? [.. childPaths
-                .Select(childPath => BuildNode(childPath, childrenByParent))
-                .OrderByDescending(node => node.TotalBytes)]
-            : [];
-
-        string trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string name = Path.GetFileName(trimmed);
+        List<DiskSpaceFolderNode> children = [.. rootLevelTotals
+            .Select(pair => new DiskSpaceFolderNode {
+                Path = pair.Key,
+                Name = NameOf(pair.Key),
+                TotalBytes = pair.Value
+            })
+            .OrderByDescending(node => node.TotalBytes)];
 
         return new DiskSpaceFolderNode {
-            Path = path,
-            Name = string.IsNullOrEmpty(name) ? path : name,
-            TotalBytes = folderTotals.GetValueOrDefault(path),
+            Path = rootPath,
+            Name = NameOf(rootPath),
+            TotalBytes = rootTotalBytes,
             Children = children
         };
+    }
+
+    private static string NameOf(string path)
+    {
+        string trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string name = Path.GetFileName(trimmed);
+        return string.IsNullOrEmpty(name) ? path : name;
     }
 }
