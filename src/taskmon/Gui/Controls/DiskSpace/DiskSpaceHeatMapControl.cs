@@ -34,10 +34,8 @@ public sealed class DiskSpaceHeatMapControl : Control
 
     protected override void OnDraw()
     {
-        DrawHeader();
-
-        int treemapTop = Y + 1;
-        int treemapHeight = Math.Max(0, Height - 1);
+        int treemapTop = Y;
+        int treemapHeight = Height;
 
         if (treemapHeight <= 0 || Width <= 0) {
             return;
@@ -54,8 +52,20 @@ public sealed class DiskSpaceHeatMapControl : Control
             return;
         }
 
+        // The header (state/path) is the box's own first inner row, right under the top border -
+        // not a separate row above it - so the border lines up with every other bordered panel's,
+        // which all start flush at their control's own Y.
+        DrawHeader(innerLeft, innerTop, innerWidth);
+
+        int cellsTop = innerTop + 1;
+        int cellsHeight = Math.Max(0, innerHeight - 1);
+
+        if (cellsHeight <= 0) {
+            return;
+        }
+
         if (specs?.RootNode is not { Children.Count: > 0 } root) {
-            DrawPlaceholder(innerLeft, innerTop, innerWidth, innerHeight);
+            DrawPlaceholder(innerLeft, cellsTop, innerWidth, cellsHeight);
             return;
         }
 
@@ -64,11 +74,11 @@ public sealed class DiskSpaceHeatMapControl : Control
             .Select(child => new TreemapItem { Id = child.Path, Weight = child.TotalBytes })];
 
         if (items.Length == 0) {
-            DrawPlaceholder(innerLeft, innerTop, innerWidth, innerHeight);
+            DrawPlaceholder(innerLeft, cellsTop, innerWidth, cellsHeight);
             return;
         }
 
-        Rectangle bounds = new(innerLeft, innerTop, innerWidth, innerHeight);
+        Rectangle bounds = new(innerLeft, cellsTop, innerWidth, cellsHeight);
         IReadOnlyList<TreemapCell> cells = stableLayout.Layout(items, bounds);
         Dictionary<string, DiskSpaceFolderNode> nodesById = root.Children.ToDictionary(child => child.Path);
 
@@ -87,7 +97,7 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
     }
 
-    private void DrawHeader()
+    private void DrawHeader(int left, int top, int width)
     {
         Color stateColour = specs?.State switch {
             DiskSpaceScanState.Scanning => appConfig.DefaultTheme.RangeMidForeground,
@@ -100,7 +110,7 @@ public sealed class DiskSpaceHeatMapControl : Control
             ? "DISK SPACE"
             : $"DISK SPACE  {specs.RootPath}  {DescribeState(specs)}";
 
-        WriteLine(X, Y, Width, text, stateColour);
+        WriteLine(left, top, width, text, stateColour);
     }
 
     private static string DescribeState(DiskSpaceSpecs specs) => specs.State switch {
@@ -242,7 +252,7 @@ public sealed class DiskSpaceHeatMapControl : Control
         // frame.Append(padded);
         // frame.ResetColour();
         // Terminal.Write(frame.AsSpan());
-        
+
         for (int row = 0; row < lines.Count; row++) {
             string padded = lines[row] + new string(' ', usableWidth - lines[row].TerminalWidth());
             frame.Clear();
@@ -284,11 +294,11 @@ public sealed class DiskSpaceHeatMapControl : Control
             if (lastSpace > windowStart) {
                 lines.Add(text[windowStart..lastSpace]);
                 pos = lastSpace;
-    
+
                     while (pos < len && text[pos] == ' ') {
                         pos++;
                     }
-            } 
+            }
             else {
                 int take = Math.Max(1, charsToTake);
                 lines.Add(text[windowStart..(windowStart + take)]);
