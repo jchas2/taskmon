@@ -244,7 +244,7 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void S_Opens_A_Prompt_Prefilled_With_The_System_Drive()
+    public void S_Opens_A_Drive_Selection_Prompt_Listing_The_System_Drive()
     {
         DiskSpaceControl ctrl = CreateControl();
         ctrl.Draw();
@@ -256,19 +256,72 @@ public sealed class DiskSpaceControlTests : IDisposable
         Assert.True(handled);
 
         string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
-        Assert.Contains(defaultRoot, CapturedOutput());
+        string output = CapturedOutput();
+
+        Assert.Contains("Select a drive", output);
+        Assert.Contains(defaultRoot, output);
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Escape_Cancels_The_Scan_Path_Prompt_Without_Starting_A_Scan()
+    public void Escape_Cancels_The_Drive_Selection_Prompt_Without_Starting_A_Scan()
     {
         DiskSpaceControl ctrl = CreateControl();
         ctrl.Draw();
 
         bool handled = false;
         ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
+
+        Assert.True(handled);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Choosing_Custom_Path_Falls_Through_To_The_Free_Text_Scan_Prompt()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+
+        // "Custom path..." always sits one row past the last real candidate.
+        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
+
+        for (int i = 0; i < realCandidateCount; i++) {
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        }
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
+
+        // ShowScanPathPrompt pre-fills the free-text box with the system drive, same as before
+        // this control existed - that's the visible signal the fallback prompt actually opened.
+        string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
+        Assert.Contains(defaultRoot, CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_From_The_Custom_Path_Prompt_Does_Not_Start_A_Scan()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+
+        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
+
+        for (int i = 0; i < realCandidateCount; i++) {
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        }
+
+        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
         ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
 
         Assert.True(handled);

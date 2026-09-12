@@ -2,6 +2,7 @@ using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.InputBox;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.Metre;
@@ -22,8 +23,11 @@ public sealed partial class DiskSpaceControl : Control
     private readonly ListView filesView;
 
     // Not added to Controls, the same way Screen keeps its own message/input boxes out of its
-    // Controls collection - it is only ever shown modally, positioned and drawn explicitly rather
-    // than taking part in the normal child-control layout pass.
+    // Controls collection - they are only ever shown modally, positioned and drawn explicitly
+    // rather than taking part in the normal child-control layout pass. driveInputBox opens first
+    // (pick a volume, or "Custom path..."); scanPathInputBox is the fallback free-text prompt for
+    // scanning a specific folder rather than a whole volume.
+    private readonly DriveInputBox driveInputBox;
     private readonly InputBox scanPathInputBox;
 
     private DiskSpaceInfo? diskSpace;
@@ -76,6 +80,10 @@ public sealed partial class DiskSpaceControl : Control
             .Add(new ListViewColumnHeader("FILE"))
             .Add(new ListViewColumnHeader("SIZE"))
             .Add(new ListViewColumnHeader("PATH"));
+
+        driveInputBox = new DriveInputBox(terminal) {
+            Visible = false
+        };
 
         scanPathInputBox = new InputBox(terminal) {
             Width = 48,
@@ -132,7 +140,10 @@ public sealed partial class DiskSpaceControl : Control
             DrawFileCountRow(diskSpace?.Specs);
             filesView.Draw();
 
-            if (scanPathInputBox.Visible) {
+            if (driveInputBox.Visible) {
+                driveInputBox.Draw();
+            }
+            else if (scanPathInputBox.Visible) {
                 scanPathInputBox.Draw();
             }
         }
@@ -172,6 +183,11 @@ public sealed partial class DiskSpaceControl : Control
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (driveInputBox.Visible) {
+            OnDriveInputBoxKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         if (scanPathInputBox.Visible) {
             OnScanPathInputBoxKeyPressed(keyInfo, ref handled);
             return;
@@ -179,7 +195,7 @@ public sealed partial class DiskSpaceControl : Control
 
         switch (keyInfo.Key) {
             case ConsoleKey.S:
-                ShowScanPathPrompt();
+                ShowDriveSelectionPrompt();
                 handled = true;
                 return;
 
@@ -190,6 +206,61 @@ public sealed partial class DiskSpaceControl : Control
         }
 
         filesView.KeyPressed(keyInfo, ref handled);
+    }
+
+    // The first prompt 's' opens: a scrollable pick-list of real, scannable volumes (see
+    // ScanRootProvider), plus a trailing "Custom path..." row that falls through to
+    // ShowScanPathPrompt's free-text entry for scanning a specific folder instead of a whole
+    // volume.
+    private void ShowDriveSelectionPrompt()
+    {
+        Control.RedrawEnabled = false;
+
+        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
+        int rowCount = candidates.Count + 1;
+
+        driveInputBox.X = X + 2;
+        driveInputBox.Width = Math.Clamp(Width - 4, 30, 60);
+        driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(rowCount), 8, Math.Max(8, Height - 2));
+        driveInputBox.Y = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
+        driveInputBox.Title = "Select a drive";
+        driveInputBox.SetCandidates(candidates);
+        driveInputBox.Visible = true;
+        driveInputBox.ShowDriveInputBox();
+    }
+
+    private void OnDriveInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        driveInputBox.KeyPressed(keyInfo, ref handled);
+
+        if (driveInputBox.Result == DriveInputBoxResult.None) {
+            return;
+        }
+
+        DriveInputBoxResult result = driveInputBox.Result;
+        bool customPathRequested = driveInputBox.CustomPathRequested;
+        string? selectedPath = driveInputBox.SelectedPath;
+
+        driveInputBox.Visible = false;
+
+        if (result == DriveInputBoxResult.Cancel) {
+            Control.RedrawEnabled = true;
+            Draw();
+            return;
+        }
+
+        if (customPathRequested) {
+            ShowScanPathPrompt();
+            return;
+        }
+
+        Control.RedrawEnabled = true;
+
+        if (!string.IsNullOrWhiteSpace(selectedPath)) {
+            TryStartScan(selectedPath);
+        }
+
+        Draw();
     }
 
     private void ShowScanPathPrompt()
@@ -274,6 +345,15 @@ public sealed partial class DiskSpaceControl : Control
             columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
         }
 
+        driveInputBox.DialogBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
+        driveInputBox.DialogBorderColour = appConfig.DefaultTheme.HeaderForeground;
+        driveInputBox.DialogButtonBackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
+        driveInputBox.DialogButtonForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
+        driveInputBox.DialogForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        driveInputBox.ListBackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
+        driveInputBox.ListForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        driveInputBox.Load();
+
         scanPathInputBox.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
         scanPathInputBox.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
         scanPathInputBox.Load();
@@ -330,6 +410,7 @@ public sealed partial class DiskSpaceControl : Control
         progressMetre.ClearSeries();
         filesView.Items.Clear();
         lastFileListSignature = string.Empty;
+        driveInputBox.Unload();
         scanPathInputBox.Unload();
 
         base.OnUnload();
