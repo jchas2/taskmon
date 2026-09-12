@@ -28,7 +28,7 @@ public sealed class DriveInputBoxTests
 
     [Fact]
     public void DriveInputBox_Canary_Test() =>
-        Assert.Equal(22, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
+        Assert.Equal(25, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
 
     [Fact]
     public void Should_Construct_Default()
@@ -156,6 +156,18 @@ public sealed class DriveInputBoxTests
         Assert.Equal(DriveInputBoxResult.None, control.Result);
         Assert.Null(control.SelectedPath);
         Assert.False(control.CustomPathRequested);
+    }
+
+    [Fact]
+    public void ListX_ListY_And_ListWidth_Reflect_The_Inner_Lists_Layout_After_Resize()
+    {
+        DriveInputBoxControl control = CreateBox();
+        control.ShowDriveInputBox();
+
+        // Matches DriveInputBox.OnResize: list.X = X + 1, list.Y = Y + 2, list.Width = Width - 2.
+        Assert.Equal(control.X + 1, control.ListX);
+        Assert.Equal(control.Y + 2, control.ListY);
+        Assert.Equal(control.Width - 2, control.ListWidth);
     }
 
     [Fact]

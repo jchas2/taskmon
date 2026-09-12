@@ -64,6 +64,13 @@ public sealed class DriveInputBox : Control
 
     public string Title { get; set; } = string.Empty;
 
+    // Exposed so a caller falling through to its own free-text prompt (e.g. after "Custom
+    // path..." is chosen) can line that prompt up with the row content instead of guessing at
+    // this control's internal border/padding layout.
+    public int ListX => list.X;
+    public int ListY => list.Y;
+    public int ListWidth => list.Width;
+
     public DriveInputBoxResult Result { get; private set; } = DriveInputBoxResult.None;
 
     // Valid only once Result == Ok and the chosen row was a real volume, not the trailing

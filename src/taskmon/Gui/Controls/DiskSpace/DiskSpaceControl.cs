@@ -266,15 +266,18 @@ public sealed partial class DiskSpaceControl : Control
         Draw();
     }
 
+    // Lines up with, and overlays, the drive list it's falling through from - driveInputBox is
+    // hidden by this point but its last-resized layout (and so the list's X/Y/Width) is still
+    // valid, since only Visible changed, not the geometry.
     private void ShowScanPathPrompt()
     {
         string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
 
         Control.RedrawEnabled = false;
 
-        scanPathInputBox.X = X + 2;
-        scanPathInputBox.Y = Y + Math.Max(0, Height / 2);
-        scanPathInputBox.Width = Math.Clamp(Width - 4, 20, 60);
+        scanPathInputBox.X = driveInputBox.ListX;
+        scanPathInputBox.Y = driveInputBox.ListY;
+        scanPathInputBox.Width = driveInputBox.ListWidth;
         scanPathInputBox.Title = "Scan path:";
         scanPathInputBox.Visible = true;
         scanPathInputBox.SetText(defaultRoot);
