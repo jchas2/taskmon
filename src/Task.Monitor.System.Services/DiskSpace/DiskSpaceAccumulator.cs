@@ -7,7 +7,7 @@ namespace Task.Monitor.System.Services.DiskSpace;
 // disk; DiskSpaceWalker is what actually calls Directory.EnumerateFileSystemEntries.
 public sealed class DiskSpaceAccumulator
 {
-    public const int MaxTrackedFiles = 200;
+    public const int MaxTrackedFiles = 500;
 
     private readonly string rootPath;
     private readonly Dictionary<string, long> folderTotals = new(StringComparer.OrdinalIgnoreCase);

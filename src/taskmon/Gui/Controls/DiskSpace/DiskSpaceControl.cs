@@ -276,7 +276,7 @@ public sealed partial class DiskSpaceControl : Control
 
         progressMetre.X = X;
         progressMetre.Y = Y + heatMapHeight;
-        progressMetre.Width = Width;
+        progressMetre.Width = Width - 1;
         progressMetre.Height = progressMetreHeight;
         progressMetre.Resize();
 
