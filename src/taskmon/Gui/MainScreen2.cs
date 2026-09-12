@@ -259,12 +259,11 @@ public sealed class MainScreen2 : Screen
             new MenuListViewItem(performanceControl, "PERFORMANCE"),
             new MenuListViewItem(processesControl,   "PROCESSES"),
             new MenuListViewItem(thermalsControl,    "THERMALS"),
-            new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
+            new MenuListViewItem(diskSpaceControl,   "DISK SPACE"),
             new MenuListViewItem(startupControl,     "STARTUP"),
             new MenuListViewItem(installedAppsControl, "APPS"),
-            new MenuListViewItem(summaryControl,     "USERS"),
             new MenuListViewItem(servicesControl,    "SERVICES"),
-            new MenuListViewItem(diskSpaceControl,   "DISK SPACE"),
+            new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
         };
         
         activeControl = summaryControl;
