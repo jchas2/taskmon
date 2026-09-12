@@ -22,6 +22,11 @@ public sealed partial class DiskSpaceControl : Control
     private readonly MetreControl progressMetre;
     private readonly ListView filesView;
 
+    // Re-captured on every OnLoad (ClearSeries() on Unload drops the previous instance) so its
+    // label can be kept in sync with the scan root - "Root Folders" is only ever a placeholder
+    // before a path is known, not a fixed series name.
+    private MetreControlSeries? rootFoldersSeries;
+
     // Not added to Controls, the same way Screen keeps its own message/input boxes out of its
     // Controls collection - they are only ever shown modally, positioned and drawn explicitly
     // rather than taking part in the normal child-control layout pass. driveInputBox opens first
@@ -178,6 +183,13 @@ public sealed partial class DiskSpaceControl : Control
             { State: DiskSpaceScanState.Completed } => 1.0,
             _ => 0.0
         };
+
+        // "Root Folders" is just the placeholder shown before a path is actually known - once a
+        // scan has one, the series is named after it (e.g. "C:\" or "C:\Windows") so the legend
+        // says what's actually being scanned rather than a generic label.
+        if (rootFoldersSeries is not null) {
+            rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) ? "Root Folders" : specs.RootPath;
+        }
 
         progressMetre.SetValue(0, ratio);
     }
@@ -336,7 +348,7 @@ public sealed partial class DiskSpaceControl : Control
         progressMetre.BackgroundColour = appConfig.DefaultTheme.Background;
         progressMetre.ForegroundColour = appConfig.DefaultTheme.Foreground;
         progressMetre.MetreStyle = appConfig.MetreStyle;
-        progressMetre.AddSeries("Root Folders", appConfig.DefaultTheme.RangeLowBackground);
+        rootFoldersSeries = progressMetre.AddSeries("Root Folders", appConfig.DefaultTheme.RangeLowBackground);
 
         filesView.BackgroundColour = appConfig.DefaultTheme.Background;
         filesView.ForegroundColour = appConfig.DefaultTheme.Foreground;
@@ -414,6 +426,7 @@ public sealed partial class DiskSpaceControl : Control
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         progressMetre.ClearSeries();
+        rootFoldersSeries = null;
         filesView.Items.Clear();
         lastFileListSignature = string.Empty;
         driveInputBox.Unload();

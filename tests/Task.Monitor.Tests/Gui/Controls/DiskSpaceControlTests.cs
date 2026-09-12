@@ -131,6 +131,22 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
+    public void Shows_The_Scan_Root_Path_As_The_Progress_Metre_Legend_Once_A_Scan_Has_One()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains(@"C:\Root", output);
+        Assert.DoesNotContain("Root Folders", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Shows_Root_Level_Folder_Completion_As_A_Percentage()
     {
         DiskSpaceControl ctrl = CreateControl();
