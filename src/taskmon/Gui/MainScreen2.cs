@@ -22,6 +22,7 @@ public sealed class MainScreen2 : Screen
     private readonly RunContext runContext;
 
     private readonly MenuControl menuControl;
+    private readonly BannerControl menuBannerControl;
     private readonly BannerControl bannerControl;
     private readonly HeaderControl2 headerControl;
     private readonly SummaryControl summaryControl;
@@ -62,11 +63,17 @@ public sealed class MainScreen2 : Screen
             TabIndex = 1
         };
 
+        menuBannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
+            Visible = true,
+            TabStop = false,
+            Text = "VIEW MENU"
+        };
+
         bannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
             Visible = true,
             TabStop = false
         };
-        
+
         summaryControl = new SummaryControl(
             runContext.ServiceController,
             runContext.Terminal,
@@ -149,6 +156,7 @@ public sealed class MainScreen2 : Screen
 
         Controls
             .Add(menuControl)
+            .Add(menuBannerControl)
             .Add(bannerControl)
             .Add(headerControl)
             .Add(summaryControl)
@@ -186,8 +194,9 @@ public sealed class MainScreen2 : Screen
     {
         Debug.Assert(activeControl != null);
 
-        headerControl.Draw(); 
+        headerControl.Draw();
         menuControl.Draw();
+        menuBannerControl.Draw();
         bannerControl.Draw();
         activeControl.Draw();
         footerControl.Draw();
@@ -272,6 +281,7 @@ public sealed class MainScreen2 : Screen
 
         headerControl.Load();
         menuControl.Load();
+        menuBannerControl.Load();
         bannerControl.Load();
         activeControl.Load();
         footerControl.Load();
@@ -298,6 +308,12 @@ public sealed class MainScreen2 : Screen
         menuControl.Width = MenuWidth;
         menuControl.Height = Height - ActiveControlTop - FooterHeight - 1;
         menuControl.Resize();
+
+        menuBannerControl.X = 0;
+        menuBannerControl.Y = ActiveControlTop;
+        menuBannerControl.Width = MenuWidth;
+        menuBannerControl.Height = BannerHeight;
+        menuBannerControl.Resize();
 
         bannerControl.X = MenuWidth + 1;
         bannerControl.Y = ActiveControlTop;
