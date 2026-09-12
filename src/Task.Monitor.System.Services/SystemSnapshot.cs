@@ -1,6 +1,7 @@
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
+using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.Memory;
@@ -32,6 +33,8 @@ public sealed record SystemSnapshot
     // Windows services (daemons) - distinct from Services below, which is this app's own worker
     // services.
     public WindowsServicesInfo? WindowsServices { get; init; }
+
+    public DriversInfo? Drivers { get; init; }
 
     public IReadOnlyList<ServiceHealth> Services { get; init; } = [];
 }

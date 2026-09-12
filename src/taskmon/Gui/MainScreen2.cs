@@ -2,6 +2,7 @@
 using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
+using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.Gui.Controls.Processes;
@@ -33,6 +34,7 @@ public sealed class MainScreen2 : Screen
     private readonly StartupControl startupControl;
     private readonly InstalledAppsControl installedAppsControl;
     private readonly ServicesControl servicesControl;
+    private readonly DriversControl driversControl;
     private readonly DiskSpaceControl diskSpaceControl;
     private readonly FooterControl footerControl;
     private Control activeControl;
@@ -138,6 +140,14 @@ public sealed class MainScreen2 : Screen
             TabIndex = 2
         };
 
+        driversControl = new DriversControl(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            TabStop = true,
+            TabIndex = 2
+        };
+
         diskSpaceControl = new DiskSpaceControl(
             runContext.ServiceController,
             runContext.Terminal,
@@ -167,6 +177,7 @@ public sealed class MainScreen2 : Screen
             .Add(startupControl)
             .Add(installedAppsControl)
             .Add(servicesControl)
+            .Add(driversControl)
             .Add(diskSpaceControl)
             .Add(footerControl);
 
@@ -179,6 +190,7 @@ public sealed class MainScreen2 : Screen
             startupControl,
             installedAppsControl,
             servicesControl,
+            driversControl,
             diskSpaceControl
         };
         
@@ -272,6 +284,7 @@ public sealed class MainScreen2 : Screen
             new MenuListViewItem(startupControl,     "STARTUP"),
             new MenuListViewItem(installedAppsControl, "APPS"),
             new MenuListViewItem(servicesControl,    "SERVICES"),
+            new MenuListViewItem(driversControl,     "DRIVERS"),
             new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
         };
         

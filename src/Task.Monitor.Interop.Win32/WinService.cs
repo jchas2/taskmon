@@ -11,6 +11,14 @@ public static class WinService
     public const uint SERVICE_TYPE_ALL = 0x00000030;
     public const uint SERVICE_STATE_ALL = 0x00000003;
 
+    // Despite the name, SERVICE_TYPE_ALL above is only the Win32 service types (own-process +
+    // share-process) - EnumServicesStatusEx never returns drivers unless one of these is also
+    // passed. SERVICE_KERNEL_DRIVER covers .sys drivers loaded directly; SERVICE_FILE_SYSTEM_DRIVER
+    // covers filter/file-system drivers - both are enumerated together for a "Drivers" screen.
+    public const uint SERVICE_KERNEL_DRIVER = 0x00000001;
+    public const uint SERVICE_FILE_SYSTEM_DRIVER = 0x00000002;
+    public const uint SERVICE_DRIVER = SERVICE_KERNEL_DRIVER | SERVICE_FILE_SYSTEM_DRIVER;
+
     public const int SC_ENUM_PROCESS_INFO = 0;
     public const uint INFO_LEVEL_STANDARD = 0;
 

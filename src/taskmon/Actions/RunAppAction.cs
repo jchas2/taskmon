@@ -5,6 +5,7 @@ using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
+using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
@@ -35,6 +36,7 @@ public sealed class RunAppAction(RunContext runContext) : IAction
             .AddService(() => new StartupService())
             .AddService(() => new InstalledAppsService())
             .AddService(() => new WindowsServicesService())
+            .AddService(() => new DriversService())
             .AddService(() => new ThermalService())
             .AddService(() => new PowerService());
 
