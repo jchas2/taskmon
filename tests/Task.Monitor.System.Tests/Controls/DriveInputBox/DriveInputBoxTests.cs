@@ -96,6 +96,41 @@ public sealed class DriveInputBoxTests
     }
 
     [Fact]
+    public void DownArrow_Does_Not_Repaint_The_Frame_Title_Or_Buttons()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        DriveInputBoxControl control = CreateBox(terminal);
+        control.ShowDriveInputBox();
+
+        terminal.Invocations.Clear();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+
+        // Browsing the list must only touch the list's own rows - repainting the border, title,
+        // buttons or help text on every arrow press is what caused the whole dialog to flicker.
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Select a drive"))), Times.Never);
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Custom path..."))), Times.Never);
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("confirm"))), Times.Never);
+    }
+
+    [Fact]
+    public void LeftRightArrow_Only_Repaints_The_Button_Row()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        DriveInputBoxControl control = CreateBox(terminal);
+        control.ShowDriveInputBox();
+
+        terminal.Invocations.Clear();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
+
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Select a drive"))), Times.Never);
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Custom path..."))), Times.Never);
+    }
+
+    [Fact]
     public void Escape_Cancels_Regardless_Of_Which_Button_Is_Focused()
     {
         DriveInputBoxControl control = CreateBox();

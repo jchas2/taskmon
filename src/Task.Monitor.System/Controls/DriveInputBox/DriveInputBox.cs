@@ -258,6 +258,12 @@ public sealed class DriveInputBox : Control
         }
     }
 
+    // Redraws only whatever the key actually changed, rather than a full OnDraw() after every
+    // press. ListView.OnKeyPressed already redraws itself incrementally (RedrawItem() for a
+    // simple selection move, a scoped repaint only when it actually needs to scroll) - a trailing
+    // full OnDraw() here would repaint the entire background, border, title, buttons and help
+    // text (plus a second full list redraw) on top of that on every single arrow press, which is
+    // exactly what was causing the whole dialog to flicker while browsing the list.
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         Result = DriveInputBoxResult.None;
@@ -269,10 +275,12 @@ public sealed class DriveInputBox : Control
             switch (keyInfo.Key) {
                 case ConsoleKey.LeftArrow:
                     okFocused = true;
+                    DrawFooter();
                     break;
 
                 case ConsoleKey.RightArrow:
                     okFocused = false;
+                    DrawFooter();
                     break;
 
                 case ConsoleKey.Enter:
@@ -292,8 +300,6 @@ public sealed class DriveInputBox : Control
         finally {
             Control.DrawingLockRelease();
         }
-
-        OnDraw();
     }
 
     private void ApplySelection()
