@@ -39,7 +39,9 @@ error=#FF0000
 foreground=#FFFFFF
 foreground-highlight=#000000
 
-menubar-foreground=#FFFFFF
+listView-border=#FFFFFF
+
+menubar-foreground=#000000
 menubar-background=#000080
 
 range-high-background=#FF0000

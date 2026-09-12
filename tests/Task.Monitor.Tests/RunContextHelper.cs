@@ -2,23 +2,21 @@
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
-using Task.Monitor.Process;
 using Task.Monitor.System;
 using Task.Monitor.System.Process;
 using Task.Monitor.System.Tests.Controls;
 
 using System.Drawing;
+using Task.Monitor.System.Services;
+
 namespace Task.Monitor.Tests;
 
 internal class RunContextHelper
 {
+    internal ServiceController serviceController = new();
     // Internal for Mock Verification pattern.
     internal Mock<IFileSystem> fileSystem = new();
     internal Mock<ISystemTerminal> terminal = new();
-    internal Mock<IProcessService> processService = new();
-    internal Mock<IModuleService> moduleService = new();
-    internal Mock<IThreadService> threadService = new();
-    internal Mock<IProcessor> processor = new();
     //internal Mock<IOutputWriter> outputWriter = new();
     internal AppConfig appConfig;
 
@@ -35,12 +33,9 @@ internal class RunContextHelper
 
     internal RunContext GetRunContext() =>
         new RunContext(
+            serviceController,
             fileSystem.Object,
             new ForwardingTerminal(terminal.Object),
-            processService.Object,
-            moduleService.Object,
-            threadService.Object,
-            processor.Object,
             appConfig);
     //outputWriter.Object);
 }

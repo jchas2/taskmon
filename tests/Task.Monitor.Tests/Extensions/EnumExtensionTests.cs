@@ -1,5 +1,5 @@
 using Task.Monitor.Extensions;
-using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
 
 namespace Task.Monitor.Tests.EnumExtensions;
 

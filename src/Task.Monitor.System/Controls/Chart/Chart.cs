@@ -29,13 +29,38 @@ public sealed class Chart : Control
     
     public Chart(ISystemTerminal terminal) : base(terminal) { }
 
-    public void Add(double value)
+    /// <summary>
+    /// Appends a sample without repainting. Used by a control that is fed every tick but only
+    /// drawn while it is on screen, so its history keeps accumulating in the background and it
+    /// repaints from a full buffer the moment it becomes visible.
+    /// </summary>
+    public void AddData(double value)
     {
         lock (dataLock) {
             AddInternal(value);
         }
+    }
 
+    public void Add(double value)
+    {
+        AddData(value);
         Draw();
+    }
+
+    /// <summary>
+    /// Discards the plotted history.
+    /// </summary>
+    public void ClearData()
+    {
+        lock (dataLock) {
+            dataHead = 0;
+            dataCount = 0;
+            dataMax = 0.0;
+
+            if (data.Length > 0) {
+                Array.Clear(data);
+            }
+        }
     }
 
     private void AddInternal(double value)
@@ -218,8 +243,14 @@ public sealed class Chart : Control
                     SetCellColour(chartColour);
                 }
                 else {
-                    frame.SetColour(BorderColour, BackgroundColour);
-                    ch = '\u2800';
+                    frame.SetColour(Color.DarkGray, BackgroundColour);
+
+                    if (col % 2 == 0 && ShowGrid) {
+                        ch = '.';
+                    }
+                    else {
+                        ch = '\u2800';
+                    }
                 }
 
                 frame.Append(ch);
@@ -310,6 +341,8 @@ public sealed class Chart : Control
     private void SetCellColour(Color chartColour) => frame.SetColour(
         MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,
         MetreStyle == MetreControlStyle.Blocks ? chartColour : BackgroundColour);
+    
+    public bool ShowGrid { get; set; } = true;
     
     public bool ShowYAxisScale
     {

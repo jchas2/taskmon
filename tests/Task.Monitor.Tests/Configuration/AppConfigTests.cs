@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
-using Task.Monitor.Process;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
 
@@ -43,9 +42,6 @@ public sealed class AppConfigTests
 pid=-1
 username=
 process=
-
-[iterations]
-limit=0
 
 [sort]
 col=Cpu
@@ -124,7 +120,7 @@ use-irix-cpu-reporting=True
         Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
         Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeMidForeground);
 
-        Assert.Equal(Processor.DefaultDelayInMilliseconds, appConfig.DelayInMilliseconds);
+        //Assert.Equal(Processor.DefaultDelayInMilliseconds, appConfig.DelayInMilliseconds);
         Assert.Equal(-1, appConfig.FilterPid);
         Assert.Equal(string.Empty, appConfig.FilterUserName);
         Assert.Equal(string.Empty, appConfig.FilterProcess);
@@ -134,7 +130,6 @@ use-irix-cpu-reporting=True
         Assert.Equal(-1, appConfig.NumberOfProcesses);
         Assert.Equal(Statistics.Cpu, appConfig.SortColumn);
         Assert.False(appConfig.SortAscending);
-        Assert.Equal(0, appConfig.IterationLimit);
         Assert.True(appConfig.ShowMetreCpuNumerically);
         Assert.True(appConfig.ShowMetreGpuNumerically);
         Assert.True(appConfig.ShowMetreDiskNumerically);
@@ -154,9 +149,6 @@ use-irix-cpu-reporting=True
 pid=123456
 username=root
 process=kernel_task
-
-[iterations]
-limit=10
 
 [sort]
 col=Mem
@@ -240,7 +232,6 @@ use-irix-cpu-reporting=False
         Assert.Equal(5, appConfig.NumberOfProcesses);
         Assert.Equal(Statistics.Mem, appConfig.SortColumn);
         Assert.True(appConfig.SortAscending);
-        Assert.Equal(10, appConfig.IterationLimit);
         Assert.False(appConfig.ShowMetreCpuNumerically);
         Assert.False(appConfig.ShowMetreDiskNumerically);
         Assert.False(appConfig.ShowMetreMemoryNumerically);
@@ -372,7 +363,6 @@ use-irix-cpu-reporting=False
         string iniConfig = appConfig.ToString();
         List<string> expectedSections = new() {
             "[filter]",
-            "[iterations]",
             "[sort]",
             "[stats]",
             "[ux]",

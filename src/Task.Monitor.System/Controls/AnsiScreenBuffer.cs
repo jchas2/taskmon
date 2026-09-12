@@ -15,7 +15,8 @@ public sealed class AnsiScreenBuffer
     private Color foreground;
 
     private Color background;
-    private bool colourSet;
+    private bool foregroundSet;
+    private bool backgroundSet;
     private bool bold;
 
     public AnsiScreenBuffer(int capacity = 1024) =>
@@ -28,7 +29,8 @@ public sealed class AnsiScreenBuffer
     public void Clear()
     {
         length = 0;
-        colourSet = false;
+        foregroundSet = false;
+        backgroundSet = false;
         bold = false;
     }
 
@@ -50,21 +52,7 @@ public sealed class AnsiScreenBuffer
         Append('H');
     }
 
-    public void SetColour(Color fg, Color bg)
-    {
-        if (colourSet && fg.ToArgb() == foreground.ToArgb() && bg.ToArgb() == background.ToArgb()) {
-            return;
-        }
-
-        AppendBackground(bg);
-        AppendForeground(fg);
-
-        foreground = fg;
-        background = bg;
-        colourSet = true;
-    }
-
-    private void AppendBackground(Color colour)
+    public void AppendBackground(Color colour)
     {
         Append(Escape);
         Append('[');
@@ -86,9 +74,12 @@ public sealed class AnsiScreenBuffer
         }
 
         Append('m');
+
+        background = colour;
+        backgroundSet = true;
     }
 
-    private void AppendForeground(Color colour)
+    public void AppendForeground(Color colour)
     {
         Append(Escape);
         Append('[');
@@ -110,23 +101,9 @@ public sealed class AnsiScreenBuffer
         }
 
         Append('m');
-    }
 
-    public void SetBold(bool enabled)
-    {
-        if (bold == enabled) {
-            return;
-        }
-
-        Append(enabled ? BoldOn : BoldOff);
-        bold = enabled;
-    }
-
-    public void ResetColour()
-    {
-        Append(AnsiConsoleStringExtensions.Reset);
-        colourSet = false;
-        bold = false;
+        foreground = colour;
+        foregroundSet = true;
     }
 
     public void Append(char ch)
@@ -188,5 +165,35 @@ public sealed class AnsiScreenBuffer
         }
 
         Array.Resize(ref buffer, newSize);
+    }
+
+    public void ResetColour()
+    {
+        Append(AnsiConsoleStringExtensions.Reset);
+        foregroundSet = false;
+        backgroundSet = false;
+        bold = false;
+    }
+
+    public void SetBold(bool enabled)
+    {
+        if (bold == enabled) {
+            return;
+        }
+
+        Append(enabled ? BoldOn : BoldOff);
+        bold = enabled;
+    }
+
+    public void SetColour(Color fg, Color bg)
+    {
+        if (foregroundSet && backgroundSet &&
+            fg.ToArgb() == foreground.ToArgb() &&
+            bg.ToArgb() == background.ToArgb()) {
+            return;
+        }
+
+        AppendBackground(bg);
+        AppendForeground(fg);
     }
 }

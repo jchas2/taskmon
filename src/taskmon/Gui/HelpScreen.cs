@@ -45,7 +45,7 @@ public class HelpScreen : Screen
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
         
         Terminal.WriteEmptyLineTo(offsetX);
-        Terminal.Write(menubar.ToBold());
+        Terminal.Write(menubar);
         Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
         Terminal.WriteLine(colourHelpText.ToString());
         

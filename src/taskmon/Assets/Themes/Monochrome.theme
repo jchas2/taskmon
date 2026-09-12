@@ -39,6 +39,8 @@ error=#ffffff
 foreground=#ffffff
 foreground-highlight=#ffffff
 
+listView-border=#ffffff
+
 menubar-foreground=#000000
 menubar-background=#c0c0c0
 

@@ -5,18 +5,24 @@ public sealed class IntegerExtensionsTests
     public static TheoryData<long, string> ByteData()
         => new()
         {
-            { 1, "1 B" },
-            { 16, "16 B" },
-            { 32, "32 B" },
-            { 64, "64 B" },
-            { 264, "264 B" },
-            { 512, "512 B" },
-            { 1024, "1 KB" },
+            { 1, "1.0 B" },
+            { 16, "16.0 B" },
+            { 32, "32.0 B" },
+            { 64, "64.0 B" },
+            { 264, "264.0 B" },
+            { 512, "512.0 B" },
+            { 1024, "1.0 KB" },
             { 1536, "1.5 KB" },
-            { 1024 * 2, "2 KB" },
-            { 1024 * 512, "512 KB" },
-            { 1024 * 1024, "1 MB" },
-            { 1024 * 1024 * 1024, "1 GB" }
+            { 1024 * 2, "2.0 KB" },
+            { 1024 * 512, "512.0 KB" },
+            { 1024 * 1024, "1.0 MB" },
+            { 1024 * 1024 * 1024, "1.0 GB" },
+
+            // The GPU memory figures, which are the reason the decimal place is fixed: the
+            // dedicated and shared totals have to render as Task Manager shows them.
+            { 12_878_610_432, "12.0 GB" },
+            { 17_044_301_824, "15.9 GB" },
+            { 29_922_912_256, "27.9 GB" }
         };
     
     [Theory]

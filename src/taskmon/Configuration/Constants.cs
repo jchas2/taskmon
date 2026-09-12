@@ -14,7 +14,6 @@ public sealed class Constants
         public const string UX = "ux";
         public const string Stats = "stats";
         public const string Sort = "sort";
-        public const string Iterations = "iterations";
 
         public const string ThemeTaskmonDefault = "Taskmon Default";
         public const string ThemeMsDos = "MS-DOS";
@@ -30,9 +29,6 @@ public sealed class Constants
         public const string Pid = "pid";
         public const string Process = "process";
         public const string UserName = "username";
-
-        // Iteration keys.
-        public const string Limit = "limit";
 
         // Sort keys.
         public const string Asc = "asc";
@@ -52,6 +48,8 @@ public sealed class Constants
         public const string HighlightStatsColUpdate = "highlight-stats-col-update";
         public const string MetreStyle = "metre-style";
         public const string MultiSelectProcesses = "multi-select-procs";
+        public const string ShowSmallMetreGrid = "show-small-metre-grid";
+        public const string ShowLargeMetreGrid = "show-large-metre-grid";
         public const string ShowMetreCpuNumerically = "show-metre-cpu-numerically";
         public const string ShowMetreDiskNumerically = "show-metre-disk-numerically";
         public const string ShowMetreMemNumerically = "show-metre-mem-numerically";
@@ -90,6 +88,7 @@ public sealed class Constants
         public const string ForegroundHighlight = "foreground-highlight";
         public const string HeaderForeground = "header-foreground";
         public const string HeaderBackground = "header-background";
+        public const string ListViewBorder = "listView-border";
         public const string MenubarForeground = "menubar-foreground";
         public const string MenubarBackground = "menubar-background";
         public const string RangeHighBackground = "range-high-background";

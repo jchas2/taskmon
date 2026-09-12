@@ -80,7 +80,7 @@ public sealed partial class ProcessService
 
         processInfo.DiskReadBytes = diskReadBytes;
         processInfo.DiskWriteBytes = diskWriteBytes;
-        processInfo.DiskOperations = diskReadBytes + diskReadBytes;
+        processInfo.DiskOperations = diskReadBytes + diskWriteBytes;
 
         Kernel32.CloseHandle(hProcess);
         return processInfo;

@@ -5,6 +5,7 @@ using Task.Monitor.Actions;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
+using Task.Monitor.System.Services;
 
 namespace Task.Monitor;
 
@@ -86,7 +87,6 @@ public sealed class TaskMonApp(RunContext runContext)
         string? processArg = ExtractArg(arg => arg == "-p" || arg == "--process");
         string? sortArg    = ExtractArg(arg => arg == "-s" || arg == "--sort");
         string? delayArg   = ExtractArg(arg => arg == "-d" || arg == "--delay");
-        string? limitArg   = ExtractArg(arg => arg == "-l" || arg == "--limit");
         string? nprocsArg  = ExtractArg(arg => arg == "--nprocs");
         string? themeArg   = ExtractArg(arg => arg == "-t" || arg == "--theme");
 
@@ -120,21 +120,11 @@ public sealed class TaskMonApp(RunContext runContext)
         }
         
         if (!string.IsNullOrEmpty(delayArg)) {
-            if (int.TryParse(delayArg, out int delay) && delay >= 500) {
+            if (int.TryParse(delayArg, out int delay) && delay >= WorkerService.MinimumDelayInMilliseconds) {
                 runContext.AppConfig.DelayInMilliseconds = delay;
             }
             else {
                 OutputWriter.Error.WriteLine($"{Constants.AppName}: bad delay arg: {delayArg}");
-                result = false;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(limitArg)) {
-            if (int.TryParse(limitArg, out int limit) && limit >= 0) {
-                runContext.AppConfig.IterationLimit = limit;
-            }
-            else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad limit arg: {limitArg}");
                 result = false;
             }
         }

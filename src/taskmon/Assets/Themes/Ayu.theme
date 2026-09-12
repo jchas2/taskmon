@@ -39,6 +39,8 @@ error=#db61a2
 foreground=#bae67e
 foreground-highlight=#95e6cb
 
+listView-border=#bae67e
+
 menubar-foreground=#bae67e
 menubar-background=#1f2430
 

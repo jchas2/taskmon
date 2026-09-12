@@ -78,7 +78,7 @@ header-foreground=#717f24
         Theme theme = new(section) {
             Background                   = ColorTranslator.FromHtml("#0f1610"),
             BackgroundHighlight          = ColorTranslator.FromHtml("#1d4125"),
-            ChartBprder                  = ColorTranslator.FromHtml("#334455"),
+            ChartBorder                  = ColorTranslator.FromHtml("#334455"),
             ChartYAxis                   = ColorTranslator.FromHtml("#667788"),
             ColumnCommandNormalUserSpace = ColorTranslator.FromHtml("#327f77"),
             ColumnCommandLowPriority     = ColorTranslator.FromHtml("#10b981"),
@@ -121,7 +121,7 @@ header-foreground=#717f24
         // Act – write every colour property through its setter.
         theme.Background                  = ColorTranslator.FromHtml("#010101");
         theme.BackgroundHighlight         = ColorTranslator.FromHtml("#020202");
-        theme.ChartBprder                 = ColorTranslator.FromHtml("#1c1c1c");
+        theme.ChartBorder                 = ColorTranslator.FromHtml("#1c1c1c");
         theme.ChartYAxis                  = ColorTranslator.FromHtml("#1d1d1d");
         theme.ColumnCommandNormalUserSpace = ColorTranslator.FromHtml("#030303");
         theme.ColumnCommandLowPriority    = ColorTranslator.FromHtml("#040404");
@@ -152,7 +152,7 @@ header-foreground=#717f24
         // Assert – read every colour property back through its getter.
         Assert.Equal(ColorTranslator.FromHtml("#010101"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#020202"), theme.BackgroundHighlight);
-        Assert.Equal(ColorTranslator.FromHtml("#1c1c1c"), theme.ChartBprder);
+        Assert.Equal(ColorTranslator.FromHtml("#1c1c1c"), theme.ChartBorder);
         Assert.Equal(ColorTranslator.FromHtml("#1d1d1d"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#030303"), theme.ColumnCommandNormalUserSpace);
         Assert.Equal(ColorTranslator.FromHtml("#040404"), theme.ColumnCommandLowPriority);
@@ -185,7 +185,7 @@ header-foreground=#717f24
     {
         Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#1d4125"), theme.BackgroundHighlight);
-        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBprder);
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorder);
         Assert.Equal(ColorTranslator.FromHtml("#667788"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#327f77"), theme.ColumnCommandNormalUserSpace);
         Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.ColumnCommandLowPriority);

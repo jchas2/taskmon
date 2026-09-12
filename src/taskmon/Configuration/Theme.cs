@@ -85,11 +85,12 @@ public sealed class Theme
         set => SetColour(Constants.Keys.BackgroundHighlight, value);
     }
 
-    public Color ChartBprder
+    public Color ChartBorder
     {
         get => GetColour(Constants.Keys.ChartBorder, ConsolePalette.White);
         set => SetColour(Constants.Keys.ChartBorder, value);
     }
+
     public Color ChartYAxis
     {
         get => GetColour(Constants.Keys.ChartYAxis, ConsolePalette.White);
@@ -196,6 +197,12 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.HeaderForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.HeaderForeground, value);
+    }
+    
+    public Color ListViewBorder
+    {
+        get => GetColour(Constants.Keys.ListViewBorder, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ListViewBorder, value);
     }
 
     public Color MenubarBackground

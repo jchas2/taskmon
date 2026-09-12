@@ -116,6 +116,10 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
     public string Text => textBuffer.Text;
 
+    // Pre-fills the box with a default value the user can accept as-is or edit, rather than
+    // always starting from empty. Call before ShowInputBox so the initial paint reflects it.
+    public void SetText(string text) => textBuffer.SetText(text);
+
     public override bool Visible
     {
         get => base.Visible;

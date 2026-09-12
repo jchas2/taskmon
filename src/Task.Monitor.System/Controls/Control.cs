@@ -18,6 +18,12 @@ public class Control
 
     private string? name = null;
 
+    private AnsiScreenBuffer frame = new();
+
+    // Row glyphs are staged in a scratch buffer so a row costs one cursor move and one
+    // append instead of one move per cell. Rows wider than this fall back to the heap.
+    private const int MaxStackAllocChars = 512;
+
     private static readonly object drawingLock = new();
     private static int drawingLocksAcquired = 0;
     
@@ -39,6 +45,67 @@ public class Control
 
     internal int ControlCount => controls.Count;
 
+    protected void DrawHorizontalLine(
+        int y,
+        int x1,
+        int x2,
+        Color colour)
+    {
+        int width = x2 - x1 + 1;
+
+        if (width < 1) {
+            return;
+        }
+
+        Span<char> line = width <= MaxStackAllocChars
+            ? stackalloc char[width]
+            : new char[width];
+
+        line.Fill('\u2500');
+        line[0] = '\u2576';
+
+        if (width > 2) {
+            line[width - 2] = '\u2574';
+        }
+
+        frame.Clear();
+        frame.MoveTo(x1, y);
+        frame.SetColour(colour, BackgroundColour);
+        frame.Append(line);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+    
+    protected void DrawVerticalLine(
+        int x, 
+        int y1, 
+        int y2, 
+        Color colour)
+    {
+        frame.Clear();
+        frame.MoveTo(x, y1);
+        frame.SetColour(colour, BackgroundColour);
+
+        for (int i = y1; i < y2; i++) {
+            frame.MoveTo(x, i);
+            
+            if (i == y1) {
+                frame.Append('\u2577');
+                continue;
+            }
+
+            if (i + 1 == y2) {
+                frame.Append('\u2575');
+                continue;
+            }
+            
+            frame.Append('\u2502');
+        }
+        
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+    
     protected static void DrawingLockAcquire()
     {
         drawingLocksAcquired++;
@@ -63,18 +130,94 @@ public class Control
         int height,
         Color colour)
     {
-        AnsiScreenBuffer frame = new();
+        if (width < 1 || height < 1) {
+            return;
+        }
+
+        Span<char> line = width <= MaxStackAllocChars
+            ? stackalloc char[width]
+            : new char[width];
+
+        line.Fill(' ');
+
+        frame.Clear();
         frame.SetColour(colour, colour);
 
         for (int i = y; i < y + height; i++) {
             frame.MoveTo(x, i);
-            frame.Append(' ', width);
+            frame.Append(line);
         }
-        
+
         frame.ResetColour();
         terminal.Write(frame.AsSpan());
     }
 
+    protected void DrawRectangleWithBevel(
+        int x, 
+        int y, 
+        int width,
+        int height,
+        Color colour)
+    {
+        if (width < 1 || height < 1) return;
+
+        frame.Clear();
+
+        if (width == 1) {
+            frame.SetColour(colour, BackgroundColour);
+
+            for (int row = y; row < y + height; row++) {
+                frame.MoveTo(x, row);
+                frame.Append('▞');
+            }
+
+            frame.ResetColour();
+            terminal.Write(frame.AsSpan());
+            return;
+        }
+
+        int bottom = y + height - 1;
+
+        Span<char> line = width <= MaxStackAllocChars
+            ? stackalloc char[width]
+            : new char[width];
+
+        line.Fill('▄');
+        line[0] = '▗';
+        line[width - 1] = '▖';
+
+        frame.MoveTo(x, y);
+        frame.SetColour(colour, BackgroundColour);
+        frame.Append(line);
+
+        for (int row = y + 1; row < bottom; row++) {
+            frame.MoveTo(x, row);
+            frame.SetColour(colour, BackgroundColour);
+            frame.Append('▐'); // \u2590
+
+            if (width > 2) {
+                frame.SetColour(colour, colour);
+                frame.Append(' ', width - 2);
+            }
+
+            frame.SetColour(colour, BackgroundColour);
+            frame.Append('▌'); // \u258C
+        }
+
+        if (height > 1) {
+            line.Fill('▀');
+            line[0] = '▝';
+            line[width - 1] = '▘';
+
+            frame.MoveTo(x, bottom);
+            frame.SetColour(colour, BackgroundColour);
+            frame.Append(line);
+        }
+
+        frame.ResetColour();
+        terminal.Write(frame.AsSpan());
+    }    
+    
     public void Draw()
     {
         if (RedrawEnabled && Visible) {

@@ -161,4 +161,67 @@ public sealed class ChartTests
         Assert.Contains("10v", output);
         Assert.Contains("0v", output);
     }
+
+    [Fact]
+    public void AddData_Accumulates_Without_Writing_To_The_Terminal()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 12, height: 6);
+        chart.AutoScale = false;
+
+        terminal.Reset();
+
+        for (int i = 0; i < 12; i++) {
+            chart.AddData(0.9);
+        }
+
+        Assert.Equal(0, terminal.WriteSpanCalls);
+        Assert.Equal(0, terminal.WriteStringCalls);
+        Assert.Equal(0, terminal.WriteCharCalls);
+
+        // The samples are there: a redraw now shows the high bars.
+        chart.Draw();
+        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ColourHigh), terminal.Output);
+    }
+
+    [Fact]
+    public void ClearData_Drops_The_Plotted_History()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 12, height: 6);
+        chart.AutoScale = false;
+
+        for (int i = 0; i < 12; i++) {
+            chart.Add(0.9);
+        }
+
+        chart.ClearData();
+
+        terminal.Reset();
+        chart.Draw();
+
+        // No bars of any range colour: the buffer is empty, so every cell is grid or blank.
+        Assert.DoesNotContain(ConsolePalette.ForegroundSgr(chart.ColourHigh), terminal.Output);
+        Assert.DoesNotContain(ConsolePalette.ForegroundSgr(chart.ColourMid), terminal.Output);
+        Assert.DoesNotContain(ConsolePalette.ForegroundSgr(chart.ColourLow), terminal.Output);
+    }
+
+    [Fact]
+    public void ClearData_Resets_The_AutoScale_Peak()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.CustomYAxisScaleFormatter = val => $"{val:F0}v";
+
+        chart.Add(100.0);
+        chart.ClearData();
+        chart.Add(5.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        Assert.Contains("5v", output);
+        Assert.DoesNotContain("100v", output);
+    }
 }

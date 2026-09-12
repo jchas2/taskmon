@@ -7,6 +7,7 @@ using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Screens;
+using ProcessService = Task.Monitor.System.Services.Process.ProcessService;
 
 namespace Task.Monitor.Gui;
 
@@ -21,7 +22,6 @@ public class SetupScreen : Screen
     private readonly ListView layoutView;
     private readonly ListView metreView;
     private readonly ListView delayView;
-    private readonly ListView limitView;
     private readonly ListView numProcsView;
     private readonly List<ListView> tabControls = [];
 
@@ -49,6 +49,7 @@ public class SetupScreen : Screen
         (Statistics.Disk, "Disk"),
         (Statistics.AvgDisk, "Average Disk"),
         (Statistics.MaxDisk, "Max Disk"),
+        (Statistics.Power, "Power"),
         (Statistics.Path, "Path"),
     ];
 
@@ -145,22 +146,11 @@ public class SetupScreen : Screen
 
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("Delay between updates, in milliseconds"));
         
-        limitView = new(runContext.Terminal) {
-            Name = nameof(limitView),
-            EnableScroll = true,
-            ShowColumnHeaders = true,
-            TabIndex = 6,
-            TabStop = true,
-            Visible = false
-        };
-
-        limitView.ColumnHeaders.Add(new ListViewColumnHeader("Limit the number of process iterations, 0 = loop forever"));
-        
         numProcsView = new(runContext.Terminal) {
             Name = nameof(numProcsView),
             EnableScroll = true,
             ShowColumnHeaders = true,
-            TabIndex = 7,
+            TabIndex = 6,
             TabStop = true,
             Visible = false
         };
@@ -176,7 +166,6 @@ public class SetupScreen : Screen
             .Add(layoutView)
             .Add(metreView)
             .Add(delayView)
-            .Add(limitView)
             .Add(numProcsView);
         
         tabControls.AddRange(new [] {
@@ -186,7 +175,6 @@ public class SetupScreen : Screen
             layoutView,
             metreView,
             delayView, 
-            limitView,
             numProcsView
         });
 
@@ -329,11 +317,6 @@ public class SetupScreen : Screen
 
         menuView.Items.Add(
             new MenuListViewItem(
-                limitView,
-                "LIMIT"));
-
-        menuView.Items.Add(
-            new MenuListViewItem(
                 numProcsView,
                 "PROCESSES"));
     }
@@ -448,12 +431,23 @@ public class SetupScreen : Screen
             .Single(c => c.ToString() == metreView.SelectedItem?.Text);
 
         UpdateConfigValue(delayView.SelectedItem,    val => runContext.AppConfig.DelayInMilliseconds = val);
-        UpdateConfigValue(limitView.SelectedItem,    val => runContext.AppConfig.IterationLimit = val);
         UpdateConfigValue(numProcsView.SelectedItem, val => runContext.AppConfig.NumberOfProcesses = val);
         
-        runContext.Processor.IrixMode = runContext.AppConfig.UseIrixReporting;
-        runContext.Processor.IterationLimit = runContext.AppConfig.IterationLimit;
-        runContext.Processor.Delay = runContext.AppConfig.DelayInMilliseconds;
+        ApplySamplingSettings();
+    }
+
+    // The two settings above that are inputs to the sampling rather than to how it is drawn. They
+    // are pushed onto the services themselves: nothing republishes AppConfig, so a service already
+    // running would otherwise keep sampling with whatever it was given at startup.
+    //
+    // The delay goes to every service and to the controller's publish cycle, so changing it here
+    // takes effect on the charts and the repaint rate as well as on the process list. Each service
+    // picks it up within one 250ms step of its current wait rather than at the end of it.
+    private void ApplySamplingSettings()
+    {
+        runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
+        runContext.ServiceController.GetService<ProcessService>().IrixMode =
+            runContext.AppConfig.UseIrixReporting;
     }
     
     private void MenuViewOnItemClicked(object? sender, ListViewItemEventArgs e)
@@ -476,7 +470,7 @@ public class SetupScreen : Screen
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
         
         Terminal.WriteEmptyLineTo(offsetX);
-        Terminal.Write(menubar.ToBold());
+        Terminal.Write(menubar);
         Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
 
         UpdateTheme();
@@ -581,11 +575,6 @@ public class SetupScreen : Screen
             numProcsView,
             [ -1, 5, 10, 20, 50, 100, 500, 1000 ],
             runContext.AppConfig.NumberOfProcesses);        
-        
-        LoadSectionConfigListView(
-            limitView,
-            [ 0, 1, 3, 5, 10, 20, 50, 100, 500, 1000 ],
-            runContext.AppConfig.IterationLimit);
 
         previewTheme = runContext.AppConfig.DefaultTheme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;

@@ -39,6 +39,8 @@ error=#db61a2
 foreground=#c792ea                  ; tokenColors: entity 
 foreground-highlight=#e2a2f433      ; editor.wordHighlightStrongBackground
 
+listView-border=#c792ea
+
 menubar-foreground=#d2dee7          ; tab.activeForeground
 menubar-background=#0b2942          ; tab.activeBackground
 

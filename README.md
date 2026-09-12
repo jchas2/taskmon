@@ -45,6 +45,11 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - Modern terminal detection to support color desaturation.
 - **Customize Configuration**: Manage configuration settings using the (`F2`) Setup function. Interactive UI for modifying and saving settings.
 - **System profile**: Display machine name, OS name and version, CPU name and clock speed, top resource consumers (Avg and Max) (using the `F9` function).
+- **System Info**: Full hardware and OS specification dump - machine, OS, CPU, every memory module, GPU, physical disk (with volumes) and network adapter - in one scrollable screen (`SYSTEM INFO` menu).
+- **Startup**: Lists the applications configured to run at logon - the `Run` / `RunOnce` registry keys and the per-user and all-users Startup folders - with each entry's publisher, type, enabled/disabled state and command (`STARTUP` menu).
+- **Thermals**: Live temperature charts for every sensor the machine reports without a kernel driver - NVMe / SATA drives (SMART), NVIDIA (NVAPI) and AMD (ADL) GPUs, and the ACPI thermal zones - on a dedicated `THERMALS` screen, with the current reading also shown on the CPU, GPU and Disk performance panels. Accurate CPU die temperature needs a signed kernel helper driver and is not read.
+- **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
+- **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -120,7 +125,6 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --sort <column>` | Automatically sort by <column> on startup. |
 | `taskmon --sort-help` | Show the list of columns available for the `--sort` option. |
 | `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
-| `taskmon --limit <limit>` | Limit the number of iteration loops and then stop. |
 | `taskmon --nprocs <nprocs>` | Only display the top number of processes. Eg: `taskmon --nprocs 10` |
 | `taskmon --theme <theme>` | Load a theme <theme> from the available themes. Eg: `taskmon --theme "Dracula Official"` |
 | `taskmon --theme-help` | Show the list of theme names available for the `--theme` option. |

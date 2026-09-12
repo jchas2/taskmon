@@ -4,8 +4,7 @@ using Task.Monitor.System;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
-using Task.Monitor.System.Process;
-using Processor = Task.Monitor.Process.Processor;
+using Task.Monitor.System.Services;
 
 namespace Task.Monitor;
 
@@ -63,22 +62,16 @@ class Program
             return ExitSuccess;
         }
 
-        ProcessService processService = new();
+        ServiceController serviceController = new();
         SystemTerminal terminal = new();
-        ModuleService moduleService = new();
-        ThreadService threadService = new();
         FileSystem fileSystem = new();
-        Processor processor = new(processService);
         AppConfig appConfig = new(fileSystem);
 
         try {
             RunContext runContext = new(
+                serviceController,
                 fileSystem,
                 terminal,
-                processService,
-                moduleService,
-                threadService,
-                processor,
                 appConfig);
 
             TaskMonApp app = new(runContext);

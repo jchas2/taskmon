@@ -1,5 +1,5 @@
 using System.Reflection;
-using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
@@ -15,6 +15,7 @@ public sealed class ColumnsEnumTests
             { ProcessControl.Columns.Threads, "THRDS" },
             { ProcessControl.Columns.Memory, "MEM" },
             { ProcessControl.Columns.Disk, "DISK" },
+            { ProcessControl.Columns.Power, "POWER" },
             { ProcessControl.Columns.CommandLine, "PATH" },
             { ProcessControl.Columns.Count, "" }
         };
@@ -51,6 +52,7 @@ public sealed class ColumnsEnumTests
             { ProcessControl.Columns.Threads, "ThreadCount" },
             { ProcessControl.Columns.Memory, "UsedMemory" },
             { ProcessControl.Columns.Disk, "DiskUsage" },
+            { ProcessControl.Columns.Power, "PowerBucket" },
             { ProcessControl.Columns.CommandLine, "CmdLine" },
             { ProcessControl.Columns.Count, "" }
         };
@@ -95,6 +97,7 @@ public sealed class ColumnsEnumTests
             ProcessControl.Columns.Process,
             ProcessControl.Columns.Priority,
             ProcessControl.Columns.Threads,
+            ProcessControl.Columns.Power,
             ProcessControl.Columns.CommandLine,
             ProcessControl.Columns.Count
         };

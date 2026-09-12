@@ -29,6 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Task.Monitor.Tests.Common",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Task.Monitor.Tests", "..\tests\Task.Monitor.Tests\Task.Monitor.Tests.csproj", "{DF0DD31B-D7B9-4573-9440-B2CB973F2774}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Task.Monitor.System.Services", "Task.Monitor.System.Services\Task.Monitor.System.Services.csproj", "{BE455052-B15A-4D25-97D1-55809063FB84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Task.Monitor.System.Services.Tests", "..\tests\Task.Monitor.System.Services.Tests\Task.Monitor.System.Services.Tests.csproj", "{D220E451-D84C-452F-BAC5-CE24B11F314A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +83,14 @@ Global
 		{DF0DD31B-D7B9-4573-9440-B2CB973F2774}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF0DD31B-D7B9-4573-9440-B2CB973F2774}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF0DD31B-D7B9-4573-9440-B2CB973F2774}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE455052-B15A-4D25-97D1-55809063FB84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE455052-B15A-4D25-97D1-55809063FB84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE455052-B15A-4D25-97D1-55809063FB84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE455052-B15A-4D25-97D1-55809063FB84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D220E451-D84C-452F-BAC5-CE24B11F314A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D220E451-D84C-452F-BAC5-CE24B11F314A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D220E451-D84C-452F-BAC5-CE24B11F314A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D220E451-D84C-452F-BAC5-CE24B11F314A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,5 +107,7 @@ Global
 		{12AF680D-78FC-42CA-9F89-0FD1A66CB639} = {19DE28F8-CCD7-4BF5-939F-E194A9366017}
 		{B6543474-C206-422B-AD75-2E1A5A98BC45} = {19DE28F8-CCD7-4BF5-939F-E194A9366017}
 		{DF0DD31B-D7B9-4573-9440-B2CB973F2774} = {19DE28F8-CCD7-4BF5-939F-E194A9366017}
+		{BE455052-B15A-4D25-97D1-55809063FB84} = {8EF06B48-8A78-45F9-BA39-12D811802D9E}
+		{D220E451-D84C-452F-BAC5-CE24B11F314A} = {19DE28F8-CCD7-4BF5-939F-E194A9366017}
 	EndGlobalSection
 EndGlobal

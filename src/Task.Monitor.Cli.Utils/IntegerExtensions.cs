@@ -44,7 +44,9 @@ public static class IntegerExtensions
             count /= 1024;
         }
 
-        return $"{count:0.#} {byteFormatters[index]}";
+        // A fixed decimal place rather than "0.#", so a value keeps the same width as it moves
+        // through a range and a used/total pair reads consistently: "2.0 GB/12.0 GB".
+        return $"{count:0.0} {byteFormatters[index]}";
     }
     
     public static string ToFormattedMbpsFromBytes(this long num)
@@ -53,6 +55,15 @@ public static class IntegerExtensions
         return string.Format(null, MbpsFormat, mbps);
     }
     
+    // The services publish per second rates as double, having divided a byte delta by a measured
+    // interval rather than by the nominal one. Same formatting, same decimal megabyte, so the
+    // figure a process shows still lines up with the one it showed before.
+    public static string ToFormattedMbpsFromBytes(this double num)
+    {
+        double mbps = ToMbpsFromBytes(num);
+        return string.Format(null, MbpsFormat, mbps);
+    }
+
     public static string ToHexadecimal(this long num) =>
         ((ulong)num).ToHexadecimal();
     
@@ -68,4 +79,7 @@ public static class IntegerExtensions
     
     public static double ToMbpsFromBytes(this long num) =>
          Math.Ceiling((double)num / 1000000.0 * 10.0) / 10.0;
+
+    public static double ToMbpsFromBytes(this double num) =>
+         Math.Ceiling(num / 1000000.0 * 10.0) / 10.0;
 }

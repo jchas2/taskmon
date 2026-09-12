@@ -40,6 +40,8 @@ error=#ff453a
 foreground=#E19773
 foreground-highlight=#ffffff
 
+listView-border=#E19773
+
 menubar-foreground=#858585
 menubar-background=#1e1e1e
 

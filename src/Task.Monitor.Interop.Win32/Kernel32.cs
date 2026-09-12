@@ -44,6 +44,13 @@ public static class Kernel32
         MinWinBase.FILETIME* lpUserTime);
     
     [DllImport(Libraries.Kernel32, SetLastError = true)]
+    public static extern uint GetSystemFirmwareTable(
+        uint firmwareTableProviderSignature,
+        uint firmwareTableId,
+        nint pFirmwareTableBuffer,
+        uint bufferSize);
+    
+    [DllImport(Libraries.Kernel32, SetLastError = true)]
     public static extern nint OpenProcess(
         uint dwDesiredAccess, 
         bool bInheritHandle, 

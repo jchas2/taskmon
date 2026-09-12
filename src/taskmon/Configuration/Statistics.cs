@@ -22,5 +22,6 @@ public enum Statistics
     MaxCpu  = 1 << 14,
     MaxGpu  = 1 << 15,
     MaxMem  = 1 << 16,
-    MaxDisk = 1 << 17
+    MaxDisk = 1 << 17,
+    Power   = 1 << 18
 }

@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
-using Task.Monitor.Process;
 using Task.Monitor.System;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Configuration;
 
@@ -28,7 +28,6 @@ public sealed class AppConfig
 #endif
 
     private ConfigSection? filterSection;
-    private ConfigSection? iterationSection;
     private ConfigSection? sortSection;
     private ConfigSection? statsSection;
     private ConfigSection? uxSection;
@@ -174,8 +173,8 @@ public sealed class AppConfig
     
     public int DelayInMilliseconds
     {
-        get => statsSection?.GetInt(Constants.Keys.Delay, Processor.DefaultDelayInMilliseconds) ??
-               Processor.DefaultDelayInMilliseconds;
+        get => statsSection?.GetInt(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds) ??
+               WorkerService.DefaultDelayInMilliseconds;
         set => statsSection?.Add(Constants.Keys.Delay, value.ToString());
     }
 
@@ -256,12 +255,6 @@ public sealed class AppConfig
         set => sortSection?.Add(Constants.Keys.Asc, value.ToString());
     }
 
-    public int IterationLimit
-    {
-        get => iterationSection?.GetInt(Constants.Keys.Limit, 0) ?? 0;
-        set => iterationSection?.Add(Constants.Keys.Limit, value.ToString());
-    }
-    
     public bool ShowMetreCpuNumerically
     {
         get => uxSection?.GetBool(Constants.Keys.ShowMetreCpuNumerically, true) ?? true;
@@ -303,7 +296,19 @@ public sealed class AppConfig
         get => uxSection?.GetBool(Constants.Keys.ShowMetreSwapNumerically, true) ?? true;
         set => uxSection?.Add(Constants.Keys.ShowMetreSwapNumerically, value.ToString());
     }
-    
+
+    public bool ShowSmallMetreGrid
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowSmallMetreGrid, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowSmallMetreGrid, value.ToString());
+    }
+
+    public bool ShowLargeMetreGrid
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowLargeMetreGrid, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowLargeMetreGrid, value.ToString());
+    }
+
     public bool UseIrixReporting
     {
         get => uxSection?.GetBool(Constants.Keys.UseIrixCpuReporting, useIrixMode) ?? useIrixMode;
@@ -404,16 +409,6 @@ public sealed class AppConfig
             iniConfig.AddConfigSection(filterSection);
         }
         
-        iterationSection = iniConfig.ContainsSection(Constants.Sections.Iterations)
-            ? iniConfig.GetConfigSection(Constants.Sections.Iterations)
-            : new ConfigSection(Constants.Sections.Iterations);
-
-        iterationSection.AddIfMissing(Constants.Keys.Limit, "0");
-
-        if (!iniConfig.ContainsSection(iterationSection.Name)) {
-            iniConfig.AddConfigSection(iterationSection);
-        }
-        
         sortSection = iniConfig.ContainsSection(Constants.Sections.Sort)
             ? iniConfig.GetConfigSection(Constants.Sections.Sort)
             : new ConfigSection(Constants.Sections.Sort);
@@ -432,7 +427,7 @@ public sealed class AppConfig
 
         statsSection
             .AddIfMissing(Constants.Keys.Cols, DefaultVisibleColumns.ToString())
-            .AddIfMissing(Constants.Keys.Delay, Processor.DefaultDelayInMilliseconds.ToString())
+            .AddIfMissing(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds.ToString())
             .AddIfMissing(Constants.Keys.NProcs, "-1");
 
         if (!iniConfig.ContainsSection(statsSection.Name)) {
@@ -458,6 +453,8 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowMetreGpuMemNumerically, true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreNetworkNumerically, true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically, true.ToString())
+            .AddIfMissing(Constants.Keys.ShowSmallMetreGrid, false.ToString())
+            .AddIfMissing(Constants.Keys.ShowLargeMetreGrid, true.ToString())
             .AddIfMissing(Constants.Keys.ShowYAxisScale, true.ToString())
             .AddIfMissing(Constants.Keys.UseLargeCharts, false.ToString())
             .AddIfMissing(Constants.Keys.UseIrixCpuReporting, useIrixMode.ToString());

@@ -21,7 +21,6 @@ Options:
   -s --sort <COLUMN>      Sort by COLUMN in the process list view
      --sort-help          Displays the list of columns available for the --sort option
   -d --delay <DELAY>      DELAY (in milliseconds) between process list view updates
-  -l --limit <LIMIT>      Limit the number of process updates to LIMIT before stopping
      --nprocs <NUMPROCS>  Only display the top NUMPROCS in the process list view
   -t --theme <NAME>       Load theme NAME from the config file
      --theme-help         Displays the list of available theme names for the --theme option

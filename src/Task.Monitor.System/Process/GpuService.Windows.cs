@@ -122,7 +122,7 @@ public static partial class GpuService
                 cumulativeEngineValues[pid] = cumulativeEngineValues.GetValueOrDefault(pid, 0) + maxDelta;
             }
         }
-        else {
+        else {                            
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
                 $"{nameof(Pdh.PdhGetRawCounterArray)} {hCounter}", 
                 $"{nameof(Pdh.PdhGetRawCounterArray)} failed to allocate {nameof(buffer)}", 

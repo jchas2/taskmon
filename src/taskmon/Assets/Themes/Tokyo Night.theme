@@ -14,7 +14,7 @@
 colour-mode=indexed
 
 background=transparent
-background-highlight=##3b5070
+background-highlight=#3b5070
 
 chart-border=#a9b1d6
 chart-y-axis=#9ece6a
@@ -38,6 +38,8 @@ error=#db61a2
 
 foreground=#a9b1d6
 foreground-highlight=#c0caf5
+
+listView-border=#a9b1d6
 
 menubar-foreground=#9ece6a
 menubar-background=#1a1b26

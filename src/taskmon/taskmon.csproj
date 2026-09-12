@@ -7,6 +7,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\Task.Monitor.System.Services\Task.Monitor.System.Services.csproj" />
       <ProjectReference Include="..\Task.Monitor.System\Task.Monitor.System.csproj" />
     </ItemGroup>
 
@@ -76,6 +77,10 @@
       <EmbeddedResource Include="Assets\Themes\Nord.theme" />
       <None Remove="Assets\Themes\Night Owl.theme" />
       <EmbeddedResource Include="Assets\Themes\Night Owl.theme" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Gui\Controls\Processes\" />
     </ItemGroup>
 
 </Project>
