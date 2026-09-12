@@ -47,8 +47,7 @@ public sealed partial class ServicesControl : Control
             TabStop = true,
             TabIndex = 2,
             Visible = true,
-            EmptyListViewText = "Gathering Windows services…",
-            HeaderText = "WINDOWS SERVICES"
+            EmptyListViewText = "Gathering Windows services…"
         };
 
         servicesView.ColumnHeaders

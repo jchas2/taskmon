@@ -47,8 +47,7 @@ public sealed partial class InstalledAppsControl : Control
             TabStop = true,
             TabIndex = 2,
             Visible = true,
-            EmptyListViewText = "Gathering installed applications…",
-            HeaderText = "INSTALLED APPLICATIONS"
+            EmptyListViewText = "Gathering installed applications…"
         };
 
         installedAppsView.ColumnHeaders

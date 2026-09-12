@@ -57,7 +57,7 @@ public sealed partial class SystemInfoControl : Control
             TabIndex = 2,
             Visible = true,
             EmptyListViewText = "Gathering system information…",
-            HeaderText = "SYSTEM INFORMATION"
+            FooterText = "↑ ↓ PgUp PgDn Scroll"
         };
 
         // Hidden, but the two column widths still drive the row layout the same way they do on

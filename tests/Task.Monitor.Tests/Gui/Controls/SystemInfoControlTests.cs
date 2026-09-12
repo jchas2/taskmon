@@ -212,7 +212,7 @@ public sealed class SystemInfoControlTests
 
         string output = CapturedOutput();
 
-        Assert.Contains("SYSTEM INFORMATION", output);
+        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
         Assert.Contains(Environment.MachineName.ToUpper(), output);
 
         ctrl.Unload();

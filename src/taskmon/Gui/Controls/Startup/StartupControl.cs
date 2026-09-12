@@ -46,8 +46,7 @@ public sealed partial class StartupControl : Control
             TabStop = true,
             TabIndex = 2,
             Visible = true,
-            EmptyListViewText = "Gathering startup applications…",
-            HeaderText = "STARTUP APPLICATIONS"
+            EmptyListViewText = "Gathering startup applications…"
         };
 
         startupView.ColumnHeaders
