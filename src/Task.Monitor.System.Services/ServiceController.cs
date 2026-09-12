@@ -4,6 +4,7 @@ using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
+using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.Memory;
@@ -82,6 +83,7 @@ public sealed class ServiceController : WorkerService
             Startup      = GetLatestInfo<StartupInfo>(),
             InstalledApps = GetLatestInfo<InstalledAppsInfo>(),
             WindowsServices = GetLatestInfo<WindowsServicesInfo>(),
+            Drivers      = GetLatestInfo<DriversInfo>(),
             Thermal      = GetLatestInfo<ThermalInfo>(),
             Power        = GetLatestInfo<PowerInfo>(),
             Services     = BuildServiceHealth()
