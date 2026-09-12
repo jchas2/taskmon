@@ -34,10 +34,18 @@ public static class DiskSpaceWalker
     {
         accumulator.EnterFolder(directory);
 
-        IEnumerable<string> entries;
+        IEnumerable<FileSystemInfo> entries;
 
         try {
-            entries = Directory.EnumerateFileSystemEntries(directory);
+            // Enumerating FileSystemInfo (rather than plain path strings via
+            // EnumerateFileSystemEntries) captures name, attributes, and size from the same
+            // per-entry native call the enumeration already makes - on Windows that's a single
+            // WIN32_FIND_DATA per FindNextFile result; on Unix, FileSystemInfo lazily stats an
+            // entry on first property access and caches the result for the rest of that
+            // instance's lifetime. Either way it's one native call per entry, not the three
+            // (enumerate, then a separate GetAttributes, then a separate FileInfo.Length) the
+            // previous string-based version paid for every single file.
+            entries = new DirectoryInfo(directory).EnumerateFileSystemInfos();
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
             accumulator.SkipFolder();
@@ -45,7 +53,7 @@ public static class DiskSpaceWalker
         }
 
         try {
-            foreach (string entry in entries) {
+            foreach (FileSystemInfo entry in entries) {
                 cancellationToken.ThrowIfCancellationRequested();
                 VisitEntry(directory, entry, accumulator, pending);
             }
@@ -58,12 +66,12 @@ public static class DiskSpaceWalker
     }
 
     private static void VisitEntry(
-        string directory, string path, DiskSpaceAccumulator accumulator, Stack<string> pending)
+        string directory, FileSystemInfo entry, DiskSpaceAccumulator accumulator, Stack<string> pending)
     {
         FileAttributes attributes;
 
         try {
-            attributes = File.GetAttributes(path);
+            attributes = entry.Attributes;
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
             return;
@@ -75,14 +83,14 @@ public static class DiskSpaceWalker
             return;
         }
 
-        if (attributes.HasFlag(FileAttributes.Directory)) {
-            accumulator.RegisterDiscoveredFolder(directory, path);
-            pending.Push(path);
+        if (entry is DirectoryInfo) {
+            accumulator.RegisterDiscoveredFolder(directory, entry.FullName);
+            pending.Push(entry.FullName);
             return;
         }
 
         try {
-            accumulator.AddFile(directory, path, new FileInfo(path).Length);
+            accumulator.AddFile(directory, entry.FullName, ((FileInfo)entry).Length);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
         }
