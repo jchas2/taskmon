@@ -40,7 +40,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetricsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = true,
             ShowCheckboxes = false,
             Visible = true,
@@ -50,7 +50,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuSpecsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = false,
             ShowCheckboxes = false,
             Visible = true,
@@ -120,16 +120,14 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             cpuMetricsListView.Items[0].SubItems[3].Text = "0";
             cpuMetricsListView.Draw();
 
-            Terminal.SetCursorPosition(X + 2, cpuMetricsListView.Y + cpuMetricsListView.Height + 1);
-            Terminal.Write(cpuInfo.Specs.CpuName.ToColour(appConfig.DefaultTheme.Foreground, appConfig.DefaultTheme.Background));
-
-            cpuSpecsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
-            cpuSpecsListView.Items[0].SubItems[3].Text = cpuInfo.Specs.ToCpuSocketCount();
-            cpuSpecsListView.Items[1].SubItems[1].Text = cpuInfo.Specs.CpuCores.ToString();
-            cpuSpecsListView.Items[1].SubItems[3].Text = cpuInfo.Specs.ToCpuVirtualization();
-            cpuSpecsListView.Items[2].SubItems[1].Text = cpuInfo.Specs.ToCpuL1Cache();
-            cpuSpecsListView.Items[2].SubItems[3].Text = cpuInfo.Specs.ToCpuL2Cache();
-            cpuSpecsListView.Items[3].SubItems[1].Text = cpuInfo.Specs.ToCpuL3Cache();
+            cpuSpecsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.CpuName;
+            cpuSpecsListView.Items[1].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
+            cpuSpecsListView.Items[2].SubItems[1].Text = cpuInfo.Specs.ToCpuSocketCount();
+            cpuSpecsListView.Items[3].SubItems[1].Text = cpuInfo.Specs.CpuCores.ToString();
+            cpuSpecsListView.Items[4].SubItems[1].Text = cpuInfo.Specs.ToCpuVirtualization();
+            cpuSpecsListView.Items[5].SubItems[1].Text = cpuInfo.Specs.ToCpuL1Cache();
+            cpuSpecsListView.Items[6].SubItems[1].Text = cpuInfo.Specs.ToCpuL2Cache();
+            cpuSpecsListView.Items[7].SubItems[1].Text = cpuInfo.Specs.ToCpuL3Cache();
             cpuSpecsListView.Draw();
         }
     }
@@ -167,17 +165,21 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         OnLoadListView(cpuMetricsListView);
+        cpuMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
         
         cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
 
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Base speed:",         "0 GHz", "Sockets:",        "0" }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Logical processors:", "0",     "Virtualization:", "" }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L1 cache:",           "0 KB",  "L2 cache:",       "0 KB" }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",           "0 KB",  "",                "" }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Name:",                string.Empty }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Base speed:",          "0 GHz"      }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Sockets:",             "0"          }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Logical processors:",  "0"          }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Virtualization:",      string.Empty }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L1 cache:",            "0 KB"       }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L2 cache:",            "0 KB"       }));
+        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",            "0 KB"       }));
         OnLoadListView(cpuSpecsListView);
+        cpuSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
@@ -241,9 +243,13 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
         // control; the CPU chart grows to fill whatever is left between the core grid and the metre.
-        const int MetricsHeight = 2;
+        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
+        const int MetricsHeight = 4;
         const int SpecsGap = 3;
-        const int SpecsHeight = 6;
+
+        // +3 over the eight field rows: two for the specs list's own top/bottom border, one
+        // because RowCount is Bounds.Height - 1.
+        const int SpecsHeight = 11;
         int bottomY = Y + Height - (MetricsHeight + SpecsGap + SpecsHeight);
 
         // Two rows are held back for the one-row gaps below the chart and below the metre.
@@ -270,17 +276,17 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         for (int i = 0; i < cpuSpecsListView.ColumnHeaders.Count(); i++) {
             cpuSpecsListView.ColumnHeaders[i].Width = i % 2 == 0
                 ? 22
-                : 16;
+                : 40;
         }
 
-        cpuMetricsListView.X = X + 2;
+        cpuMetricsListView.X = X + 1;
         cpuMetricsListView.Y = bottomY;
-        cpuMetricsListView.Width = Width - 3;
+        cpuMetricsListView.Width = Width - 1;
         cpuMetricsListView.Height = MetricsHeight;
 
-        cpuSpecsListView.X = X + 2;
+        cpuSpecsListView.X = X + 1;
         cpuSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
-        cpuSpecsListView.Width = Width - 3;
+        cpuSpecsListView.Width = Width - 1;
         cpuSpecsListView.Height = SpecsHeight;
     }
 

@@ -61,14 +61,10 @@ public partial class Screen : Control
     
     private void Focus()
     {
-        if (focusedControl != null) {
-            focusedControl.Focused = false;    
-        }
-        
-        focusedControl = SelectFirstControl(currentControl: this, lookForward: true);
-        
-        if (focusedControl != null) {
-            focusedControl.Focused = true;
+        Control? control = SelectFirstControl(currentControl: this, lookForward: true);
+
+        if (control != null) {
+            FocusInternal(control);
         }
     }
 
@@ -77,15 +73,22 @@ public partial class Screen : Control
         if (focusedControl == control) {
             return;
         }
-        
-        if (focusedControl != null) {
-            focusedControl.Focused = false;
-            focusedControl.LostFocus();
+
+        // Captured locally rather than read back off the field: a composite's own OnGotFocus can
+        // re-enter this method to redirect focus further down to one of its children (see
+        // Control.GotFocus), which reassigns the field before this call unwinds.
+        Control? previous = focusedControl;
+
+        if (previous != null) {
+            previous.Focused = false;
+            previous.LostFocus();
+            previous.Draw();
         }
 
         focusedControl = control;
-        focusedControl.Focused = true;
-        focusedControl.GotFocus();
+        control.Focused = true;
+        control.GotFocus();
+        control.Draw();
     }
     
     public override Color ForegroundColour

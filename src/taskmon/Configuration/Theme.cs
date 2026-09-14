@@ -37,6 +37,7 @@ public sealed class Theme
         Constants.Keys.Error,
         Constants.Keys.Foreground,
         Constants.Keys.ForegroundHighlight,
+        Constants.Keys.FocusSelectionColour,
         Constants.Keys.HeaderBackground,
         Constants.Keys.HeaderForeground,
         Constants.Keys.MenubarBackground,
@@ -185,6 +186,14 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.ForegroundHighlight, ConsolePalette.Black);
         set => SetColour(Constants.Keys.ForegroundHighlight, value);
+    }
+
+    // The colour a bordered control's border switches to while it holds input focus - see
+    // Control.FocusSelectionColour, which is set from this at startup.
+    public Color FocusSelectionColour
+    {
+        get => GetColour(Constants.Keys.FocusSelectionColour, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.FocusSelectionColour, value);
     }
 
     public Color HeaderBackground

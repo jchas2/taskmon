@@ -71,6 +71,12 @@ public sealed partial class SystemInfoControl : Control
             .Add(systemInfoView);
     }
 
+    // SystemInfoControl itself draws no border - navMenu is the actual bordered, focusable panel
+    // that owns internal left/right routing to systemInfoView - so a SetFocus() call on this
+    // composite (e.g. from MainScreen2's arrow-key nav) needs to be redirected down to it for the
+    // focus-colour cue to reach anything visible.
+    protected override void OnGotFocus() => navMenu.SetFocus();
+
     // Called with the latest snapshot every publish. Wired to the controller event in OnLoad;
     // tests call it directly.
     public void Sample(SystemSnapshot snapshot)

@@ -47,7 +47,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuMetricsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = true,
             ShowCheckboxes = false,
             Visible = true,
@@ -57,7 +57,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = false,
             ShowCheckboxes = false,
             Visible = true,
@@ -209,6 +209,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(gpuMetricsListView);
+        gpuMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
 
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -219,6 +220,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
         OnLoadListView(gpuSpecsListView);
+        gpuSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
@@ -257,9 +259,12 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
         // control; the three charts grow to share whatever height is left above them.
-        const int MetricsHeight = 2;
+        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
+        const int MetricsHeight = 4;
         const int SpecsGap = 1;
-        int specsHeight = SpecsRowCount + 1;
+
+        // +2 over the field row count for the specs list's own top/bottom border.
+        int specsHeight = SpecsRowCount + 3;
         int bottomY = Y + Height - (MetricsHeight + SpecsGap + specsHeight);
 
         // One row is held back for the gap between the charts and the bottom list stack.
@@ -302,14 +307,14 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
                 : 50;
         }
 
-        gpuMetricsListView.X = X + 2;
+        gpuMetricsListView.X = X + 1;
         gpuMetricsListView.Y = bottomY;
-        gpuMetricsListView.Width = Width - 3;
+        gpuMetricsListView.Width = Width - 1;
         gpuMetricsListView.Height = MetricsHeight;
 
-        gpuSpecsListView.X = X + 2;
+        gpuSpecsListView.X = X + 1;
         gpuSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
-        gpuSpecsListView.Width = Width - 3;
+        gpuSpecsListView.Width = Width - 1;
 
         // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the
         // extra line.

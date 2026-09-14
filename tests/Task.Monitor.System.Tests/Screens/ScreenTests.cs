@@ -14,7 +14,7 @@ public sealed class ScreenTests
 
     [Fact]
     public void InputBox_Canary_Test() =>
-        Assert.Equal(17, CanaryTestHelper.GetPropertyCount<TestScreen1>());
+        Assert.Equal(19, CanaryTestHelper.GetPropertyCount<TestScreen1>());
 
     [Fact]
     public void Should_Construct_Default()

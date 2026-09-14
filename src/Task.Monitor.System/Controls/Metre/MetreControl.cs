@@ -255,8 +255,6 @@ public sealed class MetreControl : Control
         }
     }
 
-    public Color BorderColour { get; set; } = ConsolePalette.White;
-
     public void ClearSeries()
     {
         lock (seriesLock) {

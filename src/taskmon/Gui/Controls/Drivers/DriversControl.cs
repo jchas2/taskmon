@@ -90,6 +90,11 @@ public sealed partial class DriversControl : Control
         Draw();
     }
 
+    // DriversControl itself draws no border - driversView is the actual bordered, focusable
+    // panel - so a SetFocus() call on this composite (e.g. from MainScreen2's arrow-key nav)
+    // needs to be redirected down to it for the focus-colour cue to reach anything visible.
+    protected override void OnGotFocus() => driversView.SetFocus();
+
     protected override void OnDraw()
     {
         try {

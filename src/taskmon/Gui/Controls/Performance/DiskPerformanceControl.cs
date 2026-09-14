@@ -45,7 +45,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskMetricsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = true,
             ShowCheckboxes = false,
             Visible = true,
@@ -55,7 +55,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = false,
             ShowCheckboxes = false,
             Visible = true,
@@ -207,6 +207,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
         diskMetricsListView.Items.Add(diskMetricsItem);
         OnLoadListView(diskMetricsListView);
+        diskMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
 
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -222,6 +223,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Read:",    "0.0 GB" }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Written:", "0.0 GB" }));
         OnLoadListView(diskSpecsListView);
+        diskSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)
@@ -260,9 +262,12 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
         // control; the two charts grow to share whatever height is left above them.
-        const int MetricsHeight = 2;
+        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
+        const int MetricsHeight = 4;
         const int SpecsGap = 1;
-        int specsHeight = SpecsRowCount + 1;
+
+        // +2 over the field row count for the specs list's own top/bottom border.
+        int specsHeight = SpecsRowCount + 3;
         int bottomY = Y + Height - (MetricsHeight + SpecsGap + specsHeight);
 
         // One row is held back for the gap between the charts and the bottom list stack.
@@ -296,14 +301,14 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
                 : 40;
         }
 
-        diskMetricsListView.X = X + 2;
+        diskMetricsListView.X = X + 1;
         diskMetricsListView.Y = bottomY;
-        diskMetricsListView.Width = Width - 3;
+        diskMetricsListView.Width = Width - 1;
         diskMetricsListView.Height = MetricsHeight;
 
-        diskSpecsListView.X = X + 2;
+        diskSpecsListView.X = X + 1;
         diskSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
-        diskSpecsListView.Width = Width - 3;
+        diskSpecsListView.Width = Width - 1;
 
         // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the
         // extra line.

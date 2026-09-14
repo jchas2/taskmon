@@ -21,7 +21,7 @@ public sealed class SetupScreenTests
 
     [Fact]
     public void SetupScreen_Canary_Test() =>
-        Assert.Equal(17, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+        Assert.Equal(19, CanaryTestHelper.GetPropertyCount<SetupScreen>());
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()

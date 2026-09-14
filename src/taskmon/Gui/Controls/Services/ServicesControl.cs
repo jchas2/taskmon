@@ -88,6 +88,11 @@ public sealed partial class ServicesControl : Control
         Draw();
     }
 
+    // ServicesControl itself draws no border - servicesView is the actual bordered, focusable
+    // panel - so a SetFocus() call on this composite needs to be redirected down to it for the
+    // focus-colour cue to reach anything visible.
+    protected override void OnGotFocus() => servicesView.SetFocus();
+
     protected override void OnDraw()
     {
         try {

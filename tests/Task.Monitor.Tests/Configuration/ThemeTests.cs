@@ -58,7 +58,7 @@ header-foreground=#717f24
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(33, CanaryTestHelper.GetPropertyCount<Theme>());
 
     [Fact]
     public void Constructor_Initialises_Successfully()

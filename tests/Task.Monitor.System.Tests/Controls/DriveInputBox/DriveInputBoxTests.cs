@@ -28,7 +28,7 @@ public sealed class DriveInputBoxTests
 
     [Fact]
     public void DriveInputBox_Canary_Test() =>
-        Assert.Equal(25, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
+        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
 
     [Fact]
     public void Should_Construct_Default()

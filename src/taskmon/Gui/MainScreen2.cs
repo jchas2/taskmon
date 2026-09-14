@@ -225,6 +225,7 @@ public sealed class MainScreen2 : Screen
         switch (keyInfo.Key) {
             case ConsoleKey.RightArrow when focusedControl == menuControl:
                 focusedControl = activeControl;
+                activeControl.SetFocus();
                 Draw();
                 break;
 
@@ -364,6 +365,12 @@ public sealed class MainScreen2 : Screen
         SizeControl(activeControl);
         activeControl.Clear();
         activeControl.Draw();
+
+        // Loading the newly-previewed pane can establish its own default internal focus (e.g.
+        // ProcessControl/SystemInfoControl focusing their own nav on load) - this is only ever
+        // reached while the outer menu is what the user is actually navigating, so real focus
+        // belongs back on the menu, not silently left on whatever the pane just claimed.
+        menuControl.SetFocus();
     }
 
     private void SizeControl(Control control)

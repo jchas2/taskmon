@@ -37,6 +37,8 @@ public class Control
 
     public virtual Color BackgroundColour { get; set; } = ConsolePalette.Black;
 
+    public virtual Color BorderColour { get; set; } = ConsolePalette.White;
+
     private bool CanFocus => Visible && TabStop;
 
     public void Clear() => OnClear();
@@ -234,8 +236,22 @@ public class Control
    
     public ControlCollection Controls => controlCollection;
 
-    internal bool Focused { get; set; } = false;
-    
+    // Public rather than internal so a composite control in another assembly that renders through
+    // an internal, tree-detached delegate control (e.g. MenuControl's internal ListView, which is
+    // never added to any Controls collection and so never receives this from Screen.FocusInternal
+    // on its own) can mirror its own focus state onto that delegate from OnGotFocus/OnLostFocus.
+    public bool Focused { get; set; } = false;
+
+    // The colour every bordered control's border switches to while it holds input focus, so
+    // arrow-key navigation always leaves an unambiguous visual cue behind. Static rather than
+    // per-instance because the cue is meant to look and mean the same thing everywhere; the app
+    // sets this once at startup from its theme.
+    public static Color FocusSelectionColour { get; set; } = ConsolePalette.White;
+
+    // Set by GotFocus() so LostFocus() can restore whatever BorderColour the control had before
+    // it was swapped to FocusSelectionColour - a control not currently focused never has one.
+    private Color? preFocusBorderColour;
+
     public virtual Color ForegroundColour { get; set; } = ConsolePalette.White;
     
     internal Control GetControlByIndex(int index)
@@ -258,7 +274,12 @@ public class Control
             : focusableControls.OrderByDescending(ctrl => ctrl.TabIndex);
     }
 
-    internal void GotFocus() => OnGotFocus();
+    internal void GotFocus()
+    {
+        preFocusBorderColour = BorderColour;
+        BorderColour = FocusSelectionColour;
+        OnGotFocus();
+    }
 
     private Screen? GetParentScreen()
     {
@@ -315,7 +336,15 @@ public class Control
     
     public void Load() => OnLoad();
 
-    internal void LostFocus() => OnLostFocus();
+    internal void LostFocus()
+    {
+        if (preFocusBorderColour is Color original) {
+            BorderColour = original;
+            preFocusBorderColour = null;
+        }
+
+        OnLostFocus();
+    }
 
     protected virtual void OnClear() =>
         DrawRectangle(

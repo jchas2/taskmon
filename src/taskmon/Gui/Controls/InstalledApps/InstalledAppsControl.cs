@@ -90,6 +90,11 @@ public sealed partial class InstalledAppsControl : Control
         Draw();
     }
 
+    // InstalledAppsControl itself draws no border - installedAppsView is the actual bordered,
+    // focusable panel - so a SetFocus() call on this composite needs to be redirected down to it
+    // for the focus-colour cue to reach anything visible.
+    protected override void OnGotFocus() => installedAppsView.SetFocus();
+
     protected override void OnDraw()
     {
         try {

@@ -34,7 +34,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetricsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = true,
             ShowCheckboxes = false,
             Visible = true,
@@ -44,7 +44,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memorySpecsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = false,
             ShowCheckboxes = false,
             Visible = true,
@@ -104,7 +104,6 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             memoryMetricsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.ToPageFileMemoryAvailableFormattedBytes();
             memoryMetricsListView.Draw();
 
-            int yTop = memoryMetricsListView.Y + memoryMetricsListView.Height + 1;
             uint stickMemory = 0;
             int slotsUsed = 0;
             ushort memorySpeed = 0;
@@ -132,20 +131,17 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
                 }
             }
 
-            if (stickMemory > 0 && memorySummary != null) {
-                Terminal.SetCursorPosition(X + 2, memoryMetricsListView.Y + memoryMetricsListView.Height + 1);
-                Terminal.Write($"{stickMemory.ToMemoryCapacity()} {memorySummary}".ToColour(appConfig.DefaultTheme.Foreground, appConfig.DefaultTheme.Background));
-            }
-
-            memorySpecsListView.Items[0].SubItems[1].Text = memorySpeed.ToMemorySpeed();
-            memorySpecsListView.Items[1].SubItems[1].Text = memoryConfiguredSpeed.ToMemoryConfiguredSpeed();
-            memorySpecsListView.Items[2].SubItems[1].Text = $"{slotsUsed} of {memoryInfo.Specs.Devices.Count}";
-            memorySpecsListView.Items[3].SubItems[1].Text = formFactor ?? "Unknown";
-            
-            memorySpecsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.InUseBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[1].SubItems[3].Text = memoryInfo.Metrics.ModifiedBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[2].SubItems[3].Text = memoryInfo.Metrics.StandbyBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[3].SubItems[3].Text = memoryInfo.Metrics.FreeBytes.ToFormattedByteSize();
+            memorySpecsListView.Items[0].SubItems[1].Text = stickMemory > 0 && memorySummary != null
+                ? $"{stickMemory.ToMemoryCapacity()} {memorySummary}"
+                : "Unknown";
+            memorySpecsListView.Items[1].SubItems[1].Text = memorySpeed.ToMemorySpeed();
+            memorySpecsListView.Items[2].SubItems[1].Text = memoryConfiguredSpeed.ToMemoryConfiguredSpeed();
+            memorySpecsListView.Items[3].SubItems[1].Text = $"{slotsUsed} of {memoryInfo.Specs.Devices.Count}";
+            memorySpecsListView.Items[4].SubItems[1].Text = formFactor ?? "Unknown";
+            memorySpecsListView.Items[5].SubItems[1].Text = memoryInfo.Metrics.InUseBytes.ToFormattedByteSize();
+            memorySpecsListView.Items[6].SubItems[1].Text = memoryInfo.Metrics.ModifiedBytes.ToFormattedByteSize();
+            memorySpecsListView.Items[7].SubItems[1].Text = memoryInfo.Metrics.StandbyBytes.ToFormattedByteSize();
+            memorySpecsListView.Items[8].SubItems[1].Text = memoryInfo.Metrics.FreeBytes.ToFormattedByteSize();
 
             memorySpecsListView.Draw();
         }
@@ -184,17 +180,22 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(memoryMetricsListView);
+        memoryMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
 
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
 
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Speed:",            "0 GHz", "In use:",                "0 MB" }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Configured speed:", "0 GHz", "Modified:",              "0 MB" }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Slots used:",       "0 GHz", "Standby (cached):",      "0 MB" }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Form factor:",      "0 GHz", "Free:",                  "0 MB" }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Memory:",            string.Empty }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Speed:",             "0 GHz"      }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Configured speed:",  "0 GHz"      }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Slots used:",        "0"          }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Form factor:",       string.Empty }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "In use:",            "0 MB"       }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Modified:",          "0 MB"       }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
+        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
         OnLoadListView(memorySpecsListView);
+        memorySpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
@@ -236,9 +237,13 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
         // control; the two charts grow to fill whatever is left above the metre.
-        const int MetricsHeight = 2;
+        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
+        const int MetricsHeight = 4;
         const int SpecsGap = 3;
-        const int SpecsHeight = 6;
+
+        // +3 over the nine field rows: two for the specs list's own top/bottom border, one
+        // because RowCount is Bounds.Height - 1.
+        const int SpecsHeight = 12;
         int bottomY = Y + Height - (MetricsHeight + SpecsGap + SpecsHeight);
 
         // One row is held back for the gap between the metre and the bottom list stack.
@@ -275,17 +280,17 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         for (int i = 0; i < memorySpecsListView.ColumnHeaders.Count(); i++) {
             memorySpecsListView.ColumnHeaders[i].Width = i % 2 == 0
                 ? 22
-                : 16;
+                : 40;
         }
 
-        memoryMetricsListView.X = X + 2;
+        memoryMetricsListView.X = X + 1;
         memoryMetricsListView.Y = bottomY;
-        memoryMetricsListView.Width = Width - 3;
+        memoryMetricsListView.Width = Width - 1;
         memoryMetricsListView.Height = MetricsHeight;
 
-        memorySpecsListView.X = X + 2;
+        memorySpecsListView.X = X + 1;
         memorySpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
-        memorySpecsListView.Width = Width - 3;
+        memorySpecsListView.Width = Width - 1;
         memorySpecsListView.Height = SpecsHeight;
     }
 

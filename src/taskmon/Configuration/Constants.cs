@@ -86,6 +86,7 @@ public sealed class Constants
         public const string Error = "error";
         public const string Foreground = "foreground";
         public const string ForegroundHighlight = "foreground-highlight";
+        public const string FocusSelectionColour = "focus-selection-colour";
         public const string HeaderForeground = "header-foreground";
         public const string HeaderBackground = "header-background";
         public const string ListViewBorder = "listView-border";

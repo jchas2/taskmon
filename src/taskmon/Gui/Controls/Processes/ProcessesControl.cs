@@ -38,6 +38,12 @@ public sealed class ProcessesControl : Control
 
     internal ProcessControl ProcessControl => processControl;
 
+    // ProcessesControl itself draws no border - it delegates entirely to processControl, whose
+    // own OnGotFocus redirects further down to whichever list is active - so a SetFocus() call
+    // on this composite needs to be redirected there for the focus-colour cue to reach anything
+    // visible.
+    protected override void OnGotFocus() => processControl.SetFocus();
+
     protected override void OnDraw()
     {
         try {

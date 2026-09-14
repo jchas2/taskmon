@@ -41,7 +41,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkMetricsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = true,
             ShowCheckboxes = false,
             Visible = true,
@@ -51,7 +51,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkSpecsListView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
-            ShowBorder = false,
+            ShowBorder = true,
             ShowColumnHeaders = false,
             ShowCheckboxes = false,
             Visible = true,
@@ -186,6 +186,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         ListViewItem networkMetricsItem = new(new[] { "0.0 B/s", "0.0 B/s" });
         networkMetricsListView.Items.Add(networkMetricsItem);
         OnLoadListView(networkMetricsListView);
+        networkMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
 
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -200,6 +201,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         }
 
         OnLoadListView(networkSpecsListView);
+        networkSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
@@ -238,9 +240,12 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
         // control; the two charts grow to share whatever height is left above them.
-        const int MetricsHeight = 2;
+        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
+        const int MetricsHeight = 4;
         const int SpecsGap = 1;
-        int specsHeight = SpecsRowCount + 1;
+
+        // +2 over the field row count for the specs list's own top/bottom border.
+        int specsHeight = SpecsRowCount + 3;
         int bottomY = Y + Height - (MetricsHeight + SpecsGap + specsHeight);
 
         // One row is held back for the gap between the charts and the bottom list stack.
@@ -272,14 +277,14 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
                 : 50;
         }
 
-        networkMetricsListView.X = X + 2;
+        networkMetricsListView.X = X + 1;
         networkMetricsListView.Y = bottomY;
-        networkMetricsListView.Width = Width - 3;
+        networkMetricsListView.Width = Width - 1;
         networkMetricsListView.Height = MetricsHeight;
 
-        networkSpecsListView.X = X + 2;
+        networkSpecsListView.X = X + 1;
         networkSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
-        networkSpecsListView.Width = Width - 3;
+        networkSpecsListView.Width = Width - 1;
 
         // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the
         // extra line.

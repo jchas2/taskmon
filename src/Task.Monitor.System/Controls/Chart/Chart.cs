@@ -94,8 +94,6 @@ public sealed class Chart : Control
 
     public bool AutoScale { get; set; } = true;
 
-    public Color BorderColour { get; set; } = ConsolePalette.White;
-    
     public Color ColourHigh { get; set; } = ConsolePalette.Red;
 
     public Color ColourLow { get; set; } = ConsolePalette.DarkGreen;

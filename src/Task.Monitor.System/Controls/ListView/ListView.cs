@@ -44,9 +44,7 @@ public class ListView : Control
     }
     
     public Color BackgroundHighlightColour { get; set; } = ConsolePalette.White;
-    
-    public Color BorderColour { get; set; } = ConsolePalette.White;
-    
+
     private void CalculateViewPortBounds()
     {
         int inset = ShowBorder ? 1 : 0;
@@ -166,6 +164,10 @@ public class ListView : Control
 
     private void DrawBorder()
     {
+        if (Width < 2 || Height < 2) {
+            return;
+        }
+
         int innerWidth = Width - 2;
 
         // Top: ╭── HeaderText ──╮
