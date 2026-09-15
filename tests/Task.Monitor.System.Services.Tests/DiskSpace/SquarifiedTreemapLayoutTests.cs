@@ -110,6 +110,24 @@ public sealed class SquarifiedTreemapLayoutTests
         }
     }
 
+    // Regression case for a rounding bug: a middle item's cumulative offset can independently
+    // round up to the full strip length before the row's actual last item is reached, which used
+    // to steal the last unit of space and push that final item's cell one column past the right
+    // edge - exactly the "colours bleed into the border" symptom reported against the live control.
+    [Fact]
+    public void Middle_Item_Rounding_Up_To_Strip_Length_Does_Not_Push_The_Last_Cell_Out_Of_Bounds()
+    {
+        Rectangle bounds = new(0, 0, 36, 8);
+        double[] weights = [15, 801, 817, 869, 846, 14, 306, 774, 568, 563, 760, 212, 680, 232, 403, 865, 409, 74];
+        TreemapItem[] items = [.. weights.Select((w, i) => new TreemapItem { Id = i.ToString(), Weight = w })];
+
+        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
+
+        foreach (TreemapCell cell in cells) {
+            Assert.True(bounds.Contains(cell.Bounds), $"{cell.Id} escaped bounds: {cell.Bounds}");
+        }
+    }
+
     [Fact]
     public void Total_Cell_Area_Approximately_Equals_Bounds_Area()
     {

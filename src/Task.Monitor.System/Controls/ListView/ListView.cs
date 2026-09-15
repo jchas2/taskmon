@@ -357,7 +357,7 @@ public class ListView : Control
             }
 
             string columnStr = FormatColumnCell(subItem.Text, columnWidth, rightAligned);
-            
+
             // A cell that set its own background (a heat / severity colour) keeps its own colours
             // through the selection band. Cells left at the list's default background, and the
             // filler past the last column, take the highlight so the selected row still reads as

@@ -44,18 +44,22 @@ public sealed class ProcessesControl : Control
     // visible.
     protected override void OnGotFocus() => processControl.SetFocus();
 
+    private void UpdateProcessHeaderAndFooter()
+    {
+        ProcessMetrics? metrics = snapshot?.Processes?.Metrics;
+
+        processControl.HeaderText =
+            $"Processes    {metrics?.ProcessCount ?? 0} Total    {metrics?.ThreadCount ?? 0} Threads    {metrics?.RunningCount ?? 0} Running";
+        processControl.FooterText =
+            "Pg Up | Pg Down | ↓ Scroll Down | ↑ Scroll Up | Sort Asc: a | Sort Desc: d";
+    }
+
     protected override void OnDraw()
     {
         try {
             Control.DrawingLockAcquire();
 
-            ProcessMetrics? metrics = snapshot?.Processes?.Metrics;
-
-            processControl.HeaderText =
-                $"Processes    {metrics?.ProcessCount ?? 0} Total    {metrics?.ThreadCount ?? 0} Threads    {metrics?.RunningCount ?? 0} Running";
-            processControl.FooterText =
-                "Pg Up | Pg Down | ↓ Scroll Down | ↑ Scroll Up | Sort Asc: a | Sort Desc: d";
-
+            UpdateProcessHeaderAndFooter();
             processControl.Draw();
         }
         finally {
@@ -87,7 +91,21 @@ public sealed class ProcessesControl : Control
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
         snapshot = e.Snapshot;
-        Draw();
+
+        try {
+            Control.DrawingLockAcquire();
+
+            // processControl redraws itself via its own SystemSnapshotUpdated subscription (which
+            // registers after this one - see OnLoad), which is also what refreshes the data it
+            // draws. Calling processControl.Draw() here too, before that subscription's handler
+            // has run, would repaint last tick's still-unchanged data and produce a spurious
+            // "reverted to plain" flash sandwiched between this tick's real change and the correct
+            // redraw moments later. Only the header/footer text needs to be current by then.
+            UpdateProcessHeaderAndFooter();
+        }
+        finally {
+            Control.DrawingLockRelease();
+        }
     }
 
     protected override void OnResize()

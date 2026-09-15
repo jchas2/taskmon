@@ -118,8 +118,15 @@ public static class SquarifiedTreemapLayout
             offset += areas[i] / thicknessExact;
 
             // The last item in the row always closes out exactly at stripLength, so rounding
-            // error accumulated across the row doesn't leave a gap or overrun the strip.
-            int boundary = i == end - 1 ? stripLength : (int)Math.Round(offset);
+            // error accumulated across the row doesn't leave a gap or overrun the strip. A
+            // middle item's rounded cumulative offset can independently round up to stripLength
+            // too (its exact offset lands within 0.5 of it) - left unclamped, that steals the
+            // last unit of space and pushes the final item's boundary one past the strip's edge.
+            // Reserving one unit per item still to come keeps every boundary inside the strip.
+            int itemsRemainingAfter = end - 1 - i;
+            int boundary = i == end - 1
+                ? stripLength
+                : Math.Min((int)Math.Round(offset), stripLength - itemsRemainingAfter);
             int length = Math.Max(1, boundary - previousBoundary);
 
             Rectangle cellBounds = vertical

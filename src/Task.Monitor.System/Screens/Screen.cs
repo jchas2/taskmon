@@ -79,16 +79,28 @@ public partial class Screen : Control
         // Control.GotFocus), which reassigns the field before this call unwinds.
         Control? previous = focusedControl;
 
-        if (previous != null) {
-            previous.Focused = false;
-            previous.LostFocus();
-            previous.Draw();
-        }
+        // A control's own OnDraw can recompute item colours (e.g. ProcessControl's per-tick
+        // delta highlighting) in more than one step before painting, wrapped in this same lock
+        // so a redraw always sees the finished state. The Draw() calls below run from key-press
+        // handling rather than that data-tick path, so without acquiring it here they could land
+        // mid-recompute on another thread and paint the transient, not-yet-highlighted colour.
+        try {
+            DrawingLockAcquire();
 
-        focusedControl = control;
-        control.Focused = true;
-        control.GotFocus();
-        control.Draw();
+            if (previous != null) {
+                previous.Focused = false;
+                previous.LostFocus();
+                previous.Draw();
+            }
+
+            focusedControl = control;
+            control.Focused = true;
+            control.GotFocus();
+            control.Draw();
+        }
+        finally {
+            DrawingLockRelease();
+        }
     }
     
     public override Color ForegroundColour

@@ -239,17 +239,17 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         int yTop = Y;
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the two charts grow to share whatever height is left above them.
+        // control; the two charts grow to share whatever height is left above them. Every
+        // element is stacked flush against the next, with no gap rows between them.
         // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
         const int MetricsHeight = 4;
-        const int SpecsGap = 1;
 
-        // +2 over the field row count for the specs list's own top/bottom border.
+        // +3 over the field row count: two for the specs list's own top/bottom border, one
+        // because RowCount is Bounds.Height - 1.
         int specsHeight = SpecsRowCount + 3;
-        int bottomY = Y + Height - (MetricsHeight + SpecsGap + specsHeight);
+        int bottomY = Y + Height - (MetricsHeight + specsHeight);
 
-        // One row is held back for the gap between the charts and the bottom list stack.
-        int chartsArea = Math.Max(0, bottomY - yTop - 1);
+        int chartsArea = Math.Max(0, bottomY - yTop);
         int height = chartsArea / 2;
 
         sendChart.X = X + 1;
@@ -283,7 +283,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkMetricsListView.Height = MetricsHeight;
 
         networkSpecsListView.X = X + 1;
-        networkSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
+        networkSpecsListView.Y = bottomY + MetricsHeight;
         networkSpecsListView.Width = Width - 1;
 
         // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the

@@ -242,25 +242,24 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         int metreHeight = cpuMetre.RequiredHeight;
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the CPU chart grows to fill whatever is left between the core grid and the metre.
+        // control; the CPU chart grows to fill whatever is left above the metre. Every element
+        // is stacked flush against the next, with no gap rows between them.
         // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
         const int MetricsHeight = 4;
-        const int SpecsGap = 3;
 
         // +3 over the eight field rows: two for the specs list's own top/bottom border, one
         // because RowCount is Bounds.Height - 1.
         const int SpecsHeight = 11;
-        int bottomY = Y + Height - (MetricsHeight + SpecsGap + SpecsHeight);
+        int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
 
-        // Two rows are held back for the one-row gaps below the chart and below the metre.
-        int height = Math.Max(0, bottomY - yTop - metreHeight - 2);
+        int height = Math.Max(0, bottomY - yTop - metreHeight);
         cpuChart.X = X + 1;
         cpuChart.Y = yTop;
         cpuChart.Width = numCols * ChartWidth;
         cpuChart.Height = height;
         cpuChart.Resize();
 
-        yTop += height + 1;
+        yTop += height;
 
         cpuMetre.X = X + 1;
         cpuMetre.Y = yTop;
@@ -285,7 +284,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetricsListView.Height = MetricsHeight;
 
         cpuSpecsListView.X = X + 1;
-        cpuSpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
+        cpuSpecsListView.Y = bottomY + MetricsHeight;
         cpuSpecsListView.Width = Width - 1;
         cpuSpecsListView.Height = SpecsHeight;
     }

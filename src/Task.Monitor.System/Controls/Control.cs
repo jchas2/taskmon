@@ -26,7 +26,7 @@ public class Control
 
     private static readonly object drawingLock = new();
     private static int drawingLocksAcquired = 0;
-    
+
     private readonly ISystemTerminal terminal;
 
     public Control(ISystemTerminal terminal)

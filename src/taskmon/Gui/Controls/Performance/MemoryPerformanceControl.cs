@@ -236,18 +236,17 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         int metreHeight = memoryMetre.RequiredHeight;
 
         // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the two charts grow to fill whatever is left above the metre.
+        // control; the two charts grow to fill whatever is left above the metre. Every element
+        // is stacked flush against the next, with no gap rows between them.
         // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
         const int MetricsHeight = 4;
-        const int SpecsGap = 3;
 
         // +3 over the nine field rows: two for the specs list's own top/bottom border, one
         // because RowCount is Bounds.Height - 1.
         const int SpecsHeight = 12;
-        int bottomY = Y + Height - (MetricsHeight + SpecsGap + SpecsHeight);
+        int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
 
-        // One row is held back for the gap between the metre and the bottom list stack.
-        int chartsArea = Math.Max(0, bottomY - yTop - metreHeight - 1);
+        int chartsArea = Math.Max(0, bottomY - yTop - metreHeight);
         int height = chartsArea / 2;
 
         memoryChart.X = X + 1;
@@ -289,7 +288,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetricsListView.Height = MetricsHeight;
 
         memorySpecsListView.X = X + 1;
-        memorySpecsListView.Y = bottomY + MetricsHeight + SpecsGap;
+        memorySpecsListView.Y = bottomY + MetricsHeight;
         memorySpecsListView.Width = Width - 1;
         memorySpecsListView.Height = SpecsHeight;
     }
