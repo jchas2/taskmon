@@ -255,7 +255,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         int height = Math.Max(0, bottomY - yTop - metreHeight);
         cpuChart.X = X + 1;
         cpuChart.Y = yTop;
-        cpuChart.Width = numCols * ChartWidth;
+        cpuChart.Width = Width - 1;
         cpuChart.Height = height;
         cpuChart.Resize();
 
@@ -263,7 +263,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
         cpuMetre.X = X + 1;
         cpuMetre.Y = yTop;
-        cpuMetre.Width = numCols * ChartWidth;
+        cpuMetre.Width = Width - 1;
         cpuMetre.Height = metreHeight;
 
         for (int i = 0; i < cpuMetricsListView.ColumnHeaders.Count(); i++) {

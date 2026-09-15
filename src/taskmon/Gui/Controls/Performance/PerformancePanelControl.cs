@@ -105,7 +105,7 @@ public sealed class PerformancePanelControl : Control
             Frame.SetColour(fgMenuColour, bgMenuColour);
             Frame.Append('▌'); // ▌
             Frame.Append(Title.PadOrTruncate(' ', textWidth - 2));
-            Frame.MoveTo(X + textWidth + 2, Y + 1);
+            Frame.MoveTo(X + textWidth - 1, Y + 1);
             Frame.SetColour(fgMenuColour, bgMenuColour);
             Frame.Append('▐'); // ▐
         }
