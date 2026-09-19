@@ -30,6 +30,30 @@ public sealed class ScreenApplicationTests
     }
 
     [Fact]
+    public void GetScreen_Returns_The_Same_Registered_Instance()
+    {
+        Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
+        ForwardingTerminal terminal = new(terminalMock.Object);
+        ScreenApplication screenApp = new(terminal);
+
+        ScreenTests.TestScreen1 registered = new(terminal);
+        screenApp.RegisterScreen(registered);
+
+        ScreenTests.TestScreen1 result = screenApp.GetScreen<ScreenTests.TestScreen1>();
+
+        Assert.Same(registered, result);
+    }
+
+    [Fact]
+    public void GetScreen_Throws_InvalidOperationException_When_Screen_Is_Not_Registered()
+    {
+        Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
+        ScreenApplication screenApp = new(new ForwardingTerminal(terminalMock.Object));
+
+        Assert.Throws<InvalidOperationException>(screenApp.GetScreen<ScreenTests.TestScreen2>);
+    }
+
+    [Fact]
     public void Should_Set_OwnerScreen()
     {
         Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();

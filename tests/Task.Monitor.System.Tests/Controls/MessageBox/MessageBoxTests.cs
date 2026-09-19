@@ -11,7 +11,7 @@ public sealed class MessageBoxTests
 {
     [Fact]
     public void MessageBox_Canary_Test() =>
-        Assert.Equal(22, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+        Assert.Equal(23, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
 
     [Fact]
     public void Should_Construct_Default()

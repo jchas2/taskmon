@@ -44,46 +44,31 @@ public sealed class MenuControl : Control
 
     protected override void OnLostFocus() => menuControl.Focused = false;
 
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            menuControl.Draw();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => menuControl.Draw();
 
-    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        try {
-            Control.DrawingLockAcquire();
-            menuControl.KeyPressed(keyInfo, ref handled);
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) =>
+        menuControl.KeyPressed(keyInfo, ref handled);
 
     protected override void OnLoad()
     {
         ArgumentNullException.ThrowIfNull(MenuItems);
         
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
         
         for (int i = 0; i < MenuItems.Count; i++) {
             menuControl.Items.Add(MenuItems[i]);
         }
 
-        menuControl.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        menuControl.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        menuControl.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
-        menuControl.BackgroundColour = appConfig.DefaultTheme.Background;
-        menuControl.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        menuControl.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        menuControl.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        menuControl.BorderColour = appConfig.Theme.ListViewBorder;
+        menuControl.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        menuControl.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        menuControl.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        menuControl.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+        menuControl.BackgroundColour = appConfig.Theme.Background;
+        menuControl.ForegroundColour = appConfig.Theme.Foreground;
+        menuControl.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        menuControl.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         menuControl.ItemClicked += OnMenuItemClicked;
 
         base.OnLoad();

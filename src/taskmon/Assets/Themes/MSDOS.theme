@@ -1,4 +1,4 @@
-﻿;=============================================================================
+;=============================================================================
 ; Task Monitor (taskmon) - Built-in Theme
 ;=============================================================================
 ; IMPORTANT:
@@ -13,43 +13,65 @@
 [MS-DOS]
 colour-mode=truecolour
 
-background=#000080
-background-highlight=#00FFFF
+control.background=#000080
+control.background.highlight.focused=#00FFFF
+control.background.highlight.inactive=#708090
+control.foreground=#808080
+control.foreground.highlight.focused=#000000
+control.foreground.highlight.inactive=#000000
+control.border=#808080
+control.border.focused=#FFFF00
 
-chart-border=#808080
-chart-y-axis=#FFFF00
+chart.border=#808080
+chart.yaxis=#FFFF00
+chart.title=#808080
+chart.grid=#A9A9A9
+chart.range.low.background=#00FF00
+chart.range.low.foreground=#000000
+chart.range.mid.background=#FFFF00
+chart.range.mid.foreground=#000000
+chart.range.high.background=#FF0000
+chart.range.high.foreground=#000000
 
-col-cmd-normal-user-space=#FFFF00
-col-cmd-low-priority=#C0C0C0
-col-cmd-high-cpu=#FF0000
-col-cmd-io-bound=#FF0000
-col-cmd-script=#FFFF00
-col-user-current-non-root=#C0C0C0
-col-user-other-non-root=#808080
-col-user-system=#FFFF00
-col-user-root=#FF0000
+listview.background=#000080
+listview.foreground=#808080
+listview.border=#808080
+listview.header.background=#008080
+listview.header.foreground=#FFFF00
 
-command-foreground=#FFFF00
-command-background=#008080
+performance.panel.background=#000080
+performance.panel.foreground=#808080
+performance.panel.titlebar.background=#008080
+performance.panel.titlebar.foreground=#FFFF00
+performance.cpu.kernel=#FF0000
+performance.cpu.user=#FFFF00
+performance.memory.inuse=#FF0000
+performance.memory.modified=#FFFF00
+performance.memory.standby=#FFFF00
+performance.memory.free=#00FF00
 
-delta-highlight-colour=#FFFF00
+process.list.normaluserspace=#FFFF00
+process.list.lowpriority=#C0C0C0
+process.list.highcpu=#FF0000
+process.list.iobound=#FF0000
+process.list.script=#FFFF00
+process.list.user.currentnonroot=#C0C0C0
+process.list.user.othernonroot=#808080
+process.list.user.system=#FFFF00
+process.list.user.root=#FF0000
+process.list.deltahighlight=#FFFF00
 
-error=#FF0000
+heatmap.size.small=#00FF00
+heatmap.size.mid=#FFFF00
+heatmap.size.large=#FF0000
+heatmap.state.scanning=#000000
+heatmap.state.completed=#000000
+heatmap.state.faulted=#000000
 
-foreground=#808080
-foreground-highlight=#000000
+app.error=#FF0000
 
-listView-border=#808080
+menubar.foreground=#FFFF00
+menubar.background=#008080
 
-menubar-foreground=#FFFF00
-menubar-background=#008080
-
-range-high-background=#FF0000
-range-low-background=#00FF00
-range-mid-background=#FFFF00
-range-high-foreground=#000000
-range-low-foreground=#000000
-range-mid-foreground=#000000
-
-header-background=#008080
-header-foreground=#FFFF00
+command.foreground=#FFFF00
+command.background=#008080

@@ -45,6 +45,8 @@ public class ListView : Control
     
     public Color BackgroundHighlightColour { get; set; } = ConsolePalette.White;
 
+    public Color BackgroundHighlightInactiveColour { get; set; } = ConsolePalette.Gray;
+
     private void CalculateViewPortBounds()
     {
         int inset = ShowBorder ? 1 : 0;
@@ -470,6 +472,8 @@ public class ListView : Control
     
     public Color ForegroundHighlightColour { get; set; } = ConsolePalette.Cyan;
 
+    public Color ForegroundHighlightInactiveColour { get; set; } = ConsolePalette.Black;
+
     internal ListViewColumnHeader GetColumnHeaderByIndex(int index)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
@@ -705,7 +709,7 @@ public class ListView : Control
             if (items.Count == 0) {
                 return null;
             }
-            
+
             return items[SelectedIndex];
         }
     }
@@ -713,11 +717,11 @@ public class ListView : Control
     private void SelectItemCheckbox(ListViewItem item) => item.Checked = !item.Checked;
 
     // The colours a selected row is drawn in: the configured highlight pair when the control has
-    // focus, otherwise the muted black-on-gray used for an unfocused selection.
+    // focus, otherwise the muted inactive highlight pair used for an unfocused selection.
     private (Color Foreground, Color Background) SelectionColours() =>
         Focused
             ? (ForegroundHighlightColour, BackgroundHighlightColour)
-            : (ConsolePalette.Black, ConsolePalette.Gray);
+            : (ForegroundHighlightInactiveColour, BackgroundHighlightInactiveColour);
 
     private static bool SameColour(Color left, Color right) => left.ToArgb() == right.ToArgb();
 

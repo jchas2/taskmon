@@ -7,22 +7,13 @@ namespace Task.Monitor.Gui.Controls;
 
 public sealed class BannerControl(ISystemTerminal terminal, AppConfig appConfig) : Control(terminal)
 {
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
     {
         Terminal.SetCursorPosition(X, Y);
-        Terminal.BackgroundColor = appConfig.DefaultTheme.MenubarBackground;
-        Terminal.ForegroundColor = appConfig.DefaultTheme.MenubarForeground;
+        Terminal.BackgroundColor = appConfig.Theme.MenubarBackground;
+        Terminal.ForegroundColor = appConfig.Theme.MenubarForeground;
 
         Terminal.Write(Text);
         Terminal.WriteEmptyLineTo(Width - Text.Length);

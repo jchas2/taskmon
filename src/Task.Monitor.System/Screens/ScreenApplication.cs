@@ -168,9 +168,21 @@ public class ScreenApplication
         if (!registeredScreens.ContainsKey(typeof(T))) {
             throw new InvalidOperationException($"Screen {typeof(T)} is not registered.");
         }
-        
+
         Screen screen = (T)registeredScreens[typeof(T)];
-        
+
         applicationContext.OwnerScreen = screen;
+    }
+
+    // Registered screens are singletons - a caller that needs to push per-visit state into one
+    // before showing it (e.g. LayoutDesignerScreen.Open(tree, name)) fetches that same instance
+    // through here rather than constructing a second, unregistered one.
+    public T GetScreen<T>() where T : Screen
+    {
+        if (!registeredScreens.TryGetValue(typeof(T), out Screen? screen)) {
+            throw new InvalidOperationException($"Screen {typeof(T)} is not registered.");
+        }
+
+        return (T)screen;
     }
 }

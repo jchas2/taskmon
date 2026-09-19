@@ -1,3 +1,4 @@
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
@@ -345,21 +346,21 @@ public sealed class PerformanceControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
         chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     private void ConfigureColours(Control control)
     {
-        control.BackgroundColour = appConfig.DefaultTheme.Background;
-        control.ForegroundColour = appConfig.DefaultTheme.Foreground;
+        control.BackgroundColour = appConfig.Theme.Background;
+        control.ForegroundColour = appConfig.Theme.Foreground;
     }
 
     private void AttachPanels()
@@ -394,19 +395,23 @@ public sealed class PerformanceControl : Control
 
     // ---- Draw / input / lifecycle ----------------------------------------------------------
 
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
     {
+        int previousScrollOffset = scrollOffset;
+
+        LayoutPanelColumn();
+
+        if (scrollOffset != previousScrollOffset) {
+            DrawRectangle(
+                X, 
+                Y, 
+                panelColumnWidth, 
+                Height, 
+                BackgroundColour);
+        }
+
         foreach (PerformancePanelControl panel in panelControls) {
             panel.Draw();
         }
@@ -419,13 +424,15 @@ public sealed class PerformanceControl : Control
             X + panelColumnWidth,
             Y,
             Y + Height,
-            appConfig.DefaultTheme.ChartBorder);
+            PanelColumnBorderColour);
 
         DrawPanelColumnFiller();
         DrawScrollIndicators();
 
         activeControl.AssociatedControl.Draw();
     }
+
+    protected override void OnGotFocus() => activeControl.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -454,12 +461,12 @@ public sealed class PerformanceControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = appConfig.DefaultTheme.Background;
-            ctrl.ForegroundColour = appConfig.DefaultTheme.Foreground;
+            ctrl.BackgroundColour = appConfig.Theme.Background;
+            ctrl.ForegroundColour = appConfig.Theme.Foreground;
         }
 
         foreach (PerformancePanelControl panel in panelControls) {
@@ -666,28 +673,37 @@ public sealed class PerformanceControl : Control
     {
         scrollFrame.Clear();
         scrollFrame.MoveTo(x, y);
-        scrollFrame.SetColour(appConfig.DefaultTheme.ChartBorder, BackgroundColour);
+        scrollFrame.SetColour(PanelColumnBorderColour, BackgroundColour);
         scrollFrame.Append(glyph);
         scrollFrame.ResetColour();
         Terminal.Write(scrollFrame.AsSpan());
     }
+
+    // Focus never lands on PerformanceControl itself - OnGotFocus() immediately redirects it down
+    // to activeControl (see Screen.FocusInternal's same-thread re-entrant redirect), so
+    // activeControl.Focused is the only reliable signal that this whole panel column - the
+    // vertical divider and its scroll arrows included - currently holds input focus.
+    private Color PanelColumnBorderColour =>
+        activeControl.Focused
+            ? Control.FocusSelectionColour
+            : appConfig.Theme.ChartBorder;
 
     private void SetActiveControl(PerformancePanelControl nextControl)
     {
         activeControl.IsSelected = false;
         activeControl = nextControl;
 
-        int previousScrollOffset = scrollOffset;
-        LayoutPanelColumn();
-
-        if (scrollOffset != previousScrollOffset) {
-            DrawRectangle(
-                X, 
-                Y, 
-                panelColumnWidth, 
-                Height, 
-                BackgroundColour);
-        }
+        // int previousScrollOffset = scrollOffset;
+        // LayoutPanelColumn();
+        //
+        // if (scrollOffset != previousScrollOffset) {
+        //     DrawRectangle(
+        //         X, 
+        //         Y, 
+        //         panelColumnWidth, 
+        //         Height, 
+        //         BackgroundColour);
+        // }
 
         activeControl.AssociatedControl.Clear();
         activeControl.IsSelected = true;

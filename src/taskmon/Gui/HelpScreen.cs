@@ -38,8 +38,8 @@ public class HelpScreen : Screen
     protected override void OnDraw()
     {
         Terminal.SetCursorPosition(X, Y);
-        Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.MenubarBackground;
-        Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.MenubarForeground;
+        Terminal.BackgroundColor = runContext.AppConfig.Theme.MenubarBackground;
+        Terminal.ForegroundColor = runContext.AppConfig.Theme.MenubarForeground;
 
         string menubar = "TASK MONITOR HELP";
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
@@ -52,8 +52,8 @@ public class HelpScreen : Screen
         helpView.Draw();
         
         Terminal.SetCursorPosition(0, helpView.Y + helpView.Height);
-        Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
-        Terminal.ForegroundColor = runContext.AppConfig.DefaultTheme.Foreground;
+        Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
+        Terminal.ForegroundColor = runContext.AppConfig.Theme.Foreground;
         Terminal.WriteEmptyLine();
         Terminal.WriteLine(functionHelpText.ToString());
         
@@ -63,7 +63,7 @@ public class HelpScreen : Screen
             X,
             Height - 1,
             10,
-            runContext.AppConfig.DefaultTheme,
+            runContext.AppConfig.Theme,
             enabled: true,
             runContext.Terminal);
     }
@@ -72,10 +72,10 @@ public class HelpScreen : Screen
     {
         Terminal.CursorVisible = false;
         
-        Color bg = runContext.AppConfig.DefaultTheme.Background;
-        Color fg = runContext.AppConfig.DefaultTheme.Foreground;
-        Color keyColour = runContext.AppConfig.DefaultTheme.RangeLowBackground;
-        Theme theme = runContext.AppConfig.DefaultTheme;
+        Color bg = runContext.AppConfig.Theme.Background;
+        Color fg = runContext.AppConfig.Theme.Foreground;
+        Color keyColour = runContext.AppConfig.Theme.RangeLowBackground;
+        Theme theme = runContext.AppConfig.Theme;
 
         BackgroundColour = bg;
         ForegroundColour = fg;
@@ -139,7 +139,7 @@ public class HelpScreen : Screen
 
     protected override void OnResize()
     {
-        runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
+        runContext.Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
 
         helpView.Y = 10; // Room for colourHelpText.
         helpView.X = 0;

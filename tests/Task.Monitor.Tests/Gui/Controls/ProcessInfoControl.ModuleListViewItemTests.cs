@@ -52,7 +52,7 @@ public sealed class ModuleListViewItemTests
                                                                                                                                                                                          
         for (int i = 0; i < (int)ProcessInfoControl.ModuleColumns.Count; i++) {                                                                                                            
             Assert.Equal(                                                                                                                                                                  
-                appConfig.DefaultTheme.Background,                                                                                                                                         
+                appConfig.Theme.Background,                                                                                                                                         
                 item.SubItems[i].BackgroundColor);                                                                                                                                         
         }                                                                                                                                                                                  
     }                                                                                                                                                                                      
@@ -69,7 +69,7 @@ public sealed class ModuleListViewItemTests
                                                                                                                                                                                          
         for (int i = 0; i < (int)ProcessInfoControl.ModuleColumns.Count; i++) {                                                                                                            
             Assert.Equal(                                                                                                                                                                  
-                appConfig.DefaultTheme.Foreground,                                                                                                                                         
+                appConfig.Theme.Foreground,                                                                                                                                         
                 item.SubItems[i].ForegroundColor);                                                                                                                                         
         }                                                                                                                                                                                  
     }                                                                                                                                                                                      

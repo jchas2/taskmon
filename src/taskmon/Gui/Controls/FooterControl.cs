@@ -12,10 +12,8 @@ public class FooterControl : Control
     private readonly ServiceController serviceController;
     private readonly AppConfig appConfig;
     private readonly AnsiScreenBuffer frame = new();
-
-    // The latest service-health list off the snapshot. Each entry redraws the footer only when the
-    // list actually changes - a service transition is rare next to the publish rate.
-    private IReadOnlyList<ServiceHealth> services = [];
+    private SystemSnapshot? snapshot = null;
+    private readonly Lock @lock = new();
 
     private const char StatusGlyph = '●';
 
@@ -35,18 +33,12 @@ public class FooterControl : Control
         base.OnLoad();
     }
 
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
-
-    // Wired to the controller event in OnLoad; tests call it directly. The footer redraws only when
-    // the health list actually changes - a service transition is rare next to the publish rate.
-    public void Sample(SystemSnapshot snapshot)
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
-        if (services.SequenceEqual(snapshot.Services)) {
-            return;
+        lock (@lock) {
+            snapshot = e.Snapshot;
         }
 
-        services = snapshot.Services;
         Draw();
     }
 
@@ -58,19 +50,8 @@ public class FooterControl : Control
 
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
-
-    private void OnDrawInternal()
-    {
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
 
         string banner = $" Task Monitor v{AssemblyVersionInfo.GetVersion()} ";
 
@@ -78,35 +59,45 @@ public class FooterControl : Control
         frame.MoveTo(X, Y);
         frame.SetColour(Color.Black, Color.DeepSkyBlue);
         frame.Append(banner);
-        frame.SetColour(foreground, background);
-        
-        // Each health token is "<glyph> <name>  ". Drop the cluster when the row is too narrow for
-        // the banner plus all of it rather than wrapping onto the line above.
-        int clusterWidth = services.Sum(service => TokenWidth(service.Name));
 
-        if (services.Count > 0 && banner.Length + clusterWidth <= Width) {
-            frame.Append(' ', Width - banner.Length - clusterWidth);
+        lock (@lock) {
+            if (snapshot != null) {
+                if (snapshot.Services.Count == snapshot.Services.Count(s => s.Status == ServiceStatus.Running)) {
+                    frame.SetColour(Color.Black, Color.Green);
+                    frame.Append(" Services: Running ");
+                }
+                else if (snapshot.Services.Any(s => s.Status == ServiceStatus.Errored)) {
+                    frame.SetColour(Color.Black, Color.OrangeRed);
+                    frame.Append(" Service status: Errored ");
+                }
+                else if (snapshot.Services.Any(s => s.Status 
+                             is ServiceStatus.Stopping
+                             or ServiceStatus.Stopped
+                             or ServiceStatus.None)) {
+                    frame.SetColour(Color.Black, Color.Orange);
+                    frame.Append(" Service status: Stopping ");
+                }
+                else {
+                    frame.SetColour(Color.Black, Color.Orange);
+                    frame.Append(" Service status: Unknown ");
+                }
 
-            foreach (ServiceHealth service in services) {
-                frame.SetColour(StatusColour(service.Status), background);
-                frame.Append(StatusGlyph);
+                //Color ledColour = snapshot.Sequence % 2 == 0 ? Color.DeepSkyBlue : background;
+
+                if (snapshot.Sequence % 2 == 0) {
+                    frame.SetColour(Color.DeepSkyBlue, background);
+                    frame.Append($"  {StatusGlyph}");
+                }
+                else {
+                    frame.SetColour(background, background);
+                    frame.Append($"   ");
+                }
+                
                 frame.SetColour(foreground, background);
-                frame.Append($" {service.Name}  ");
+                frame.Append($" {snapshot.Sequence} Rx");
             }
-        }
-        else {
-            frame.Append(' ', Math.Max(0, Width - banner.Length));
         }
 
         Terminal.Write(frame.AsSpan());
     }
-
-    private static int TokenWidth(string name) => name.Length + 4;
-
-    private Color StatusColour(ServiceStatus status) => status switch {
-        ServiceStatus.Running => Color.Green,
-        ServiceStatus.Starting or ServiceStatus.Stopping => Color.Orange,
-        ServiceStatus.Errored => Color.Red,
-        _ => appConfig.DefaultTheme.Foreground
-    };
 }

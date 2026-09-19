@@ -12,9 +12,9 @@ public sealed partial class StartupControl
     {
         startupView.Items.Clear();
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
-        Color disabledForeground = appConfig.DefaultTheme.RangeMidForeground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
+        Color disabledForeground = appConfig.Theme.RangeMidForeground;
 
         int enabled = 0;
 
@@ -49,9 +49,9 @@ public sealed partial class StartupControl
             return;
         }
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
-        Color disabledForeground = appConfig.DefaultTheme.RangeMidForeground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
+        Color disabledForeground = appConfig.Theme.RangeMidForeground;
 
         Color statusForeground =
             entry.State == StartupEntryState.Disabled ? disabledForeground : foreground;

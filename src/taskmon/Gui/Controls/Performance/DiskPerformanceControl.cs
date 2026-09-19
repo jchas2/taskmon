@@ -190,8 +190,8 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         // Active time is bounded at 100%, so it scales against a fixed ceiling like the CPU and
         // GPU charts. Transfer rate has no ceiling to scale against, so the chart finds its own
@@ -207,7 +207,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
         diskMetricsListView.Items.Add(diskMetricsItem);
         OnLoadListView(diskMetricsListView);
-        diskMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        diskMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
 
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -223,36 +223,36 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Read:",    "0.0 GB" }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Written:", "0.0 GB" }));
         OnLoadListView(diskSpecsListView);
-        diskSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        diskSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)
     {
         chart.AutoScale = autoScale;
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = yAxisScaleFormatter;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
         chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.DefaultTheme.Background;
-        listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        listView.BackgroundColour = appConfig.Theme.Background;
+        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
     }
 

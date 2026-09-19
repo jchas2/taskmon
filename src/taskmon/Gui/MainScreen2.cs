@@ -9,6 +9,7 @@ using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
 using Task.Monitor.Gui.Controls.Summary;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Controls;
@@ -21,12 +22,18 @@ namespace Task.Monitor.Gui;
 public sealed class MainScreen2 : Screen
 {
     private readonly RunContext runContext;
+    private readonly ScreenApplication screenApp;
 
     private readonly MenuControl menuControl;
     private readonly BannerControl menuBannerControl;
     private readonly BannerControl bannerControl;
     private readonly HeaderControl2 headerControl;
-    private readonly SummaryControl summaryControl;
+
+    // Flip to false to revert to the original fixed-grid SummaryControl while SummaryControl2's
+    // recursive split-tree layout is unproven - see the Summary2 design plan.
+    private const bool UseSummaryControl2 = true;
+    private readonly Control activeSummaryControl;
+
     private readonly PerformanceControl performanceControl;
     private readonly ProcessesControl processesControl;
     private readonly ThermalsControl thermalsControl;
@@ -51,7 +58,8 @@ public sealed class MainScreen2 : Screen
     : base(runContext.Terminal)
     {
         this.runContext = runContext;
-        
+        this.screenApp = screenApp;
+
         headerControl = new HeaderControl2(
             runContext.ServiceController,
             runContext.Terminal,
@@ -76,13 +84,21 @@ public sealed class MainScreen2 : Screen
             TabStop = false
         };
 
-        summaryControl = new SummaryControl(
-            runContext.ServiceController,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            TabStop = true,
-            TabIndex = 2
-        };
+        activeSummaryControl = UseSummaryControl2
+            ? new SummaryControl2(
+                runContext.ServiceController,
+                runContext.Terminal,
+                runContext.AppConfig) {
+                TabStop = true,
+                TabIndex = 2
+            }
+            : new SummaryControl(
+                runContext.ServiceController,
+                runContext.Terminal,
+                runContext.AppConfig) {
+                TabStop = true,
+                TabIndex = 2
+            };
 
         performanceControl = new PerformanceControl(
             runContext.ServiceController,
@@ -169,7 +185,7 @@ public sealed class MainScreen2 : Screen
             .Add(menuBannerControl)
             .Add(bannerControl)
             .Add(headerControl)
-            .Add(summaryControl)
+            .Add(activeSummaryControl)
             .Add(performanceControl)
             .Add(processesControl)
             .Add(thermalsControl)
@@ -182,7 +198,7 @@ public sealed class MainScreen2 : Screen
             .Add(footerControl);
 
         menuControls = new List<Control> {
-            summaryControl,
+            activeSummaryControl,
             performanceControl,
             processesControl,
             thermalsControl,
@@ -194,7 +210,7 @@ public sealed class MainScreen2 : Screen
             diskSpaceControl
         };
         
-        activeControl = summaryControl;
+        activeControl = activeSummaryControl;
         focusedControl = menuControl;
     } 
 
@@ -223,6 +239,19 @@ public sealed class MainScreen2 : Screen
         }
         
         switch (keyInfo.Key) {
+            // Pre-existing gap, not something this session's Summary2 work introduced: the
+            // constructor has always taken a ScreenApplication (screenApp), and SetupScreen/
+            // HelpScreen/AboutScreen have always been registered in RunAppAction, but nothing
+            // ever actually called ShowScreen<T>() for any of them - there was no way to reach
+            // Setup (or Help/About) from the running app at all. This wires up F2 for Setup,
+            // the screen the SummaryControl2 layout designer (LayoutDesignerScreen, reached from
+            // Setup's LAYOUTS tab via 'N') needs to be reachable through. Help/About have the
+            // same gap and are left alone here as out of scope for this fix.
+            case ConsoleKey.F2:
+                screenApp.ShowScreen<SetupScreen>();
+                handled = true;
+                break;
+
             case ConsoleKey.RightArrow when focusedControl == menuControl:
                 focusedControl = activeControl;
                 activeControl.SetFocus();
@@ -262,14 +291,14 @@ public sealed class MainScreen2 : Screen
     {
         Terminal.CursorVisible = false;
 
-        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
-        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+        BackgroundColour = runContext.AppConfig.Theme.Background;
+        ForegroundColour = runContext.AppConfig.Theme.Foreground;
 
-        DialogBackgroundColour = runContext.AppConfig.DefaultTheme.HeaderBackground;
-        DialogBorderColour = runContext.AppConfig.DefaultTheme.HeaderForeground;
-        DialogForegroundColour = runContext.AppConfig.DefaultTheme.HeaderForeground;
-        DialogButtonBackgroundColour = runContext.AppConfig.DefaultTheme.BackgroundHighlight;
-        DialogButtonForegroundColour = runContext.AppConfig.DefaultTheme.ForegroundHighlight;
+        DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
+        DialogBorderColour = runContext.AppConfig.Theme.HeaderForeground;
+        DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
+        DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
+        DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
         
         foreach (Control ctrl in Controls) {
             ctrl.BackgroundColour = BackgroundColour;
@@ -277,7 +306,7 @@ public sealed class MainScreen2 : Screen
         }
 
         menuControl.MenuItems = new() {
-            new MenuListViewItem(summaryControl,     "SUMMARY"),
+            new MenuListViewItem(activeSummaryControl, "SUMMARY"),
             new MenuListViewItem(performanceControl, "PERFORMANCE"),
             new MenuListViewItem(processesControl,   "PROCESSES"),
             new MenuListViewItem(thermalsControl,    "THERMALS"),
@@ -289,7 +318,7 @@ public sealed class MainScreen2 : Screen
             new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
         };
         
-        activeControl = summaryControl;
+        activeControl = activeSummaryControl;
         bannerControl.Text = menuControl.MenuItems[0].Text;
         focusedControl = menuControl;
 

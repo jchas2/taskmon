@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Linq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls;
@@ -18,53 +19,35 @@ namespace Task.Monitor.Gui;
 
 public sealed class AboutScreen : Screen
 {
-    #if __APPLE__
-    private static readonly (string text, string hex)[] Art =
+#if __APPLE__
+    private static readonly string[] Hex =
     {
-        ("                  .,o",                       "3CC846"), // Green.
-        ("                 /gg,",                       "3CC846"), 
-        ("              (dMMb",                         "3CC846"), 
-        ("               .o,",                          "3CC846"), 
-        ("    .gggMbgg.     .,ggMMg,",                  "3CC846"), 
-        ("   dMMMMMMMMMMMMMMMMMMMMMMb",                 "E63C32"), // Red.
-        ("  dMMMMMMMMMMMMMMMMMMMMMMMMb",                "E63C32"),
-        (" dMMMMMMMMMMMMMMMMMMMMMMMMMMb",               "F08C1E"), // Orange.
-        (".MMMMMMMMMMMMMMMMMMMMMMMMMb,",                "F08C1E"), 
-        ("MMMMMMMMMMMMMMMMMMMMMMMMM`",                  "EBD228"), // Yellow.
-        ("MMMMMMMMMMMMMMMMMMMMMMMM`",                   "EBD228"), 
-        ("MMMMMMMMMMMMMMMMMMMMMMMM,",                   "3CC846"), // Green.
-        ("MMMMMMMMMMMMMMMMMMMMMMMMM.",                  "3CC846"), 
-        (".MMMMMMMMMMMMMMMMMMMMMMMMMM'",                "28C8D2"), // Cyan.
-        (" `MMMMMMMMMMMMMMMMMMMMMMMMMMd'",              "28C8D2"),
-        ("  `bMMMMMMMMMMMMMMMMMMMMMMMMd'",              "326EE6"), // Blue.
-        ("   `bMMMMMMMMMTASKMMMMMMMMMd'",               "326EE6"),
-        ("     `MbMMMMMMONITORMMMMMdM'",                "BE46C8"), // Magenta.
-        ("       `MMbgg,,,,,,,ggdMM'",                  "BE46C8"),
-        ("         `''        ''`",                     "BE46C8"),
+        "3CC846", "3CC846", "3CC846", "3CC846", "3CC846", // Green.
+        "E63C32", "E63C32",                               // Red.
+        "F08C1E", "F08C1E",                               // Orange.
+        "EBD228", "EBD228",                               // Yellow.
+        "3CC846", "3CC846",                               // Green.
+        "28C8D2", "28C8D2",                               // Cyan.
+        "326EE6", "326EE6",                               // Blue.
+        "BE46C8", "BE46C8", "BE46C8",                     // Magenta.
     };
 #endif
 #if __WIN32__
-    private static readonly (string text, string hex)[] Art =
+    private static readonly string[] Hex =
     {
-        ("        ,.=:!!t3Z3z.,",                  "00A4EF"), // Blue.
-        ("       :tt:::tt333EE3",                  "00A4EF"),
-        ("       Et:::ztt33EEEL @Ee.,      ..,",   "00A4EF"),
-        ("      ;tt:::tt333EE7 ;EEEEEEttttt33#",   "00A4EF"),
-        ("     :Et:::zt333EEQ. $EEEEEttttt33QL",   "7FBA00"), // Green.
-        ("     it::::tt333EEF @EEEEEEttttt33F",    "7FBA00"),
-        ("    ;3=*^```'*4EEV :EEEEEEttttt33@.",    "7FBA00"),
-        ("    ,.=::::it=., ` @EEEEEEtttz33QF",     "7FBA00"),
-        ("   ;::::::::zt33)   \"4EEEtttji3P*",     "F25022"), // Red.
-        ("  :t::::::::tt33.:Z3z..  `` ,..g.",      "F25022"),
-        ("  i::::::::zt33F ATASKttt::::ztF",       "F25022"),
-        (" ;:::::::::t33V ;MONITORt::::t3",        "F25022"),
-        (" E::::::::zt33L @EEEtttt::::z3F",        "FFB900"), // Yellow.
-        ("{3=*^```'*4E3) ;EEEtttt:::::tZ`",        "FFB900"),
-        ("             ` :EEEEtttt::::z7",         "FFB900"),
-        ("                 \"VEzjt:;;z>*`",        "FFB900"),
+        "00A4EF", "00A4EF", "00A4EF", "00A4EF", // Blue.
+        "7FBA00", "7FBA00", "7FBA00", "7FBA00", // Green.
+        "F25022", "F25022", "F25022", "F25022", // Red.
+        "FFB900", "FFB900", "FFB900", "FFB900", // Yellow.
     };
 #endif
-   
+
+    // The glyph text itself is shared with SystemLogoControl (see LogoArt) - only the colour
+    // strategy differs between the two: this screen rotates colors[] every draw for a marquee
+    // effect, SystemLogoControl keeps its colours fixed and pulses bold instead.
+    private static readonly (string text, string hex)[] Art =
+        LogoArt.Lines.Zip(Hex, (text, hex) => (text, hex)).ToArray();
+
     private string[] colors = new string[Art.Length];
     private readonly RunContext runContext;
 
@@ -108,8 +91,8 @@ public sealed class AboutScreen : Screen
         frame.MoveTo(X, Y);
         
         frame.SetColour(
-            runContext.AppConfig.DefaultTheme.MenubarForeground, 
-            runContext.AppConfig.DefaultTheme.MenubarBackground);
+            runContext.AppConfig.Theme.MenubarForeground, 
+            runContext.AppConfig.Theme.MenubarBackground);
         
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
 
@@ -118,8 +101,8 @@ public sealed class AboutScreen : Screen
         frame.Append(' ', Width - offsetX - menubar.Length);
         
         frame.SetColour(
-            runContext.AppConfig.DefaultTheme.Foreground, 
-            runContext.AppConfig.DefaultTheme.Background);
+            runContext.AppConfig.Theme.Foreground, 
+            runContext.AppConfig.Theme.Background);
         
         offsetX = Terminal.WindowWidth / 2 - version.Length / 2;
         
@@ -181,7 +164,7 @@ public sealed class AboutScreen : Screen
             X,
             Height - 1,
             10,
-            runContext.AppConfig.DefaultTheme,
+            runContext.AppConfig.Theme,
             enabled: true,
             runContext.Terminal);
     }
@@ -318,16 +301,7 @@ public sealed class AboutScreen : Screen
         statsView.Items[29].SubItems[1].Text = topDskMaxProc is null ? string.Empty : $"{topDskMaxProc.DiskBytesPerSecondMax.ToMbpsFromBytes()} MB/s Pid {topDskMaxProc.Pid} {topDskMaxProc.FileDescription}";
     }
 
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            DrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => DrawInternal();
 
     protected override void OnLoad()
     {
@@ -335,8 +309,8 @@ public sealed class AboutScreen : Screen
             colors[i] = Art[i].hex;
         }
 
-        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
-        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+        BackgroundColour = runContext.AppConfig.Theme.Background;
+        ForegroundColour = runContext.AppConfig.Theme.Foreground;
         
         statsView.BackgroundColour = BackgroundColour;
         statsView.ForegroundColour = ForegroundColour;
@@ -384,7 +358,7 @@ public sealed class AboutScreen : Screen
 
     protected override void OnResize()
     {
-        runContext.Terminal.BackgroundColor = runContext.AppConfig.DefaultTheme.Background;
+        runContext.Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
 
         statsView.Y = Y + 3;
         statsView.X = X + Art.Max(arr => arr.text.Length) + 12;

@@ -16,12 +16,11 @@ namespace Task.Monitor.Tests.Gui.Controls;
 public sealed class SystemInfoControlTests
 {
     // Index into navMenu.MenuItems / the Section enum - keep in sync with SystemInfoControl's nav.
-    private const int System = 0;
-    private const int Cpu = 1;
-    private const int Memory = 2;
-    private const int Gpu = 3;
-    private const int Disk = 4;
-    private const int Network = 5;
+    private const int Cpu = 0;
+    private const int Memory = 1;
+    private const int Gpu = 2;
+    private const int Disk = 3;
+    private const int Network = 4;
 
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -167,6 +166,7 @@ public sealed class SystemInfoControlTests
         screen.Controls.Add(ctrl);
         ctrl.Load();
         ctrl.Resize();
+        ctrl.SetFocus();
 
         return ctrl;
     }
@@ -188,7 +188,7 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
-    public void Nav_Shows_All_Six_Section_Labels_Regardless_Of_Selection()
+    public void Nav_Shows_All_Five_Section_Labels_Regardless_Of_Selection()
     {
         SystemInfoControl ctrl = CreateControl();
         ctrl.Sample(BuildSnapshot());
@@ -196,7 +196,7 @@ public sealed class SystemInfoControlTests
 
         string output = CapturedOutput();
 
-        foreach (string label in new[] { "SYSTEM", "CPU", "MEMORY", "GPU", "DISK", "NETWORK" }) {
+        foreach (string label in new[] { "CPU", "MEMORY", "GPU", "DISK", "NETWORK" }) {
             Assert.Contains(label, output);
         }
 
@@ -205,7 +205,7 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
-    public void Draws_The_System_Section_Without_A_Snapshot()
+    public void Draws_The_System_Summary_Without_A_Snapshot()
     {
         SystemInfoControl ctrl = CreateControl();
         ctrl.Draw();
@@ -214,6 +214,24 @@ public sealed class SystemInfoControlTests
 
         Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
         Assert.Contains(Environment.MachineName.ToUpper(), output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void System_Summary_Stays_Pinned_Regardless_Of_Selected_Section()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+
+        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+            runContextHelper.terminal.Invocations.Clear();
+
+            ctrl.SelectSectionForTests(navIndex);
+            ctrl.Draw();
+
+            Assert.Contains(Environment.MachineName.ToUpper(), CapturedOutput());
+        }
 
         ctrl.Unload();
     }

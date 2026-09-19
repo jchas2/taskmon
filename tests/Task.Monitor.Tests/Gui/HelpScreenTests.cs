@@ -20,7 +20,7 @@ public sealed class HelpScreenTests
     
     [Fact]
     public void HelpScreen_Canary_Test() =>
-        Assert.Equal(19, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+        Assert.Equal(20, CanaryTestHelper.GetPropertyCount<HelpScreen>());
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()
@@ -131,7 +131,7 @@ public sealed class HelpScreenTests
 
         Assert.NotNull(capturedBg);
         Assert.NotNull(capturedFg);
-        Assert.Equal(runContext.AppConfig.DefaultTheme.Background, capturedBg);
-        Assert.Equal(runContext.AppConfig.DefaultTheme.Foreground, capturedFg);
+        Assert.Equal(runContext.AppConfig.Theme.Background, capturedBg);
+        Assert.Equal(runContext.AppConfig.Theme.Foreground, capturedFg);
     }
 }

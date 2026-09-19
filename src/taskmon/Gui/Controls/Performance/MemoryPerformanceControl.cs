@@ -149,24 +149,24 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
         
         OnLoadChart(memoryChart);
         OnLoadChart(pageFileChart);
         
-        memoryMetre.BackgroundColour = appConfig.DefaultTheme.Background;
-        memoryMetre.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        memoryMetre.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        memoryMetre.BackgroundColour = appConfig.Theme.Background;
+        memoryMetre.ForegroundColour = appConfig.Theme.Foreground;
+        memoryMetre.BorderColour = appConfig.Theme.ChartBorder;
         memoryMetre.MetreStyle = appConfig.MetreStyle;
         memoryMetre.Border = true;
         memoryMetre.Text = string.Empty;
         memoryMetre.ShowLegend = true;
 
-        memoryMetre.AddSeries("In Use", appConfig.DefaultTheme.RangeHighBackground);
-        memoryMetre.AddSeries("Modified", appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
-        memoryMetre.AddSeries("Standby", appConfig.DefaultTheme.RangeMidBackground);
-        memoryMetre.AddSeries("Free", appConfig.DefaultTheme.RangeLowBackground);
+        memoryMetre.AddSeries("In Use", appConfig.Theme.RangeHighBackground);
+        memoryMetre.AddSeries("Modified", appConfig.Theme.ColumnCommandNormalUserSpace);
+        memoryMetre.AddSeries("Standby", appConfig.Theme.RangeMidBackground);
+        memoryMetre.AddSeries("Free", appConfig.Theme.RangeLowBackground);
 
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("In Use"));
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Available"));
@@ -180,7 +180,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(memoryMetricsListView);
-        memoryMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        memoryMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
 
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -195,36 +195,36 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
         OnLoadListView(memorySpecsListView);
-        memorySpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        memorySpecsListView.BorderColour = appConfig.Theme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
         chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.DefaultTheme.Background;
-        listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        listView.BackgroundColour = appConfig.Theme.Background;
+        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
     }
 

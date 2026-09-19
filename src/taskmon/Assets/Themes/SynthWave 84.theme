@@ -1,4 +1,4 @@
-﻿;=============================================================================
+;=============================================================================
 ; Task Monitor (taskmon) - Built-in Theme
 ;=============================================================================
 ; IMPORTANT:
@@ -13,43 +13,65 @@
 [SynthWave 84]
 colour-mode=indexed
 
-background=transparent
-background-highlight=#fede5d       ; editor.selectionBackground 
+control.background=transparent
+control.background.highlight.focused=#fede5d       ; editor.selectionBackground
+control.background.highlight.inactive=#708090       ; editor.selectionBackground
+control.foreground=#ff7edb                  ; tokenColors: entity
+control.foreground.highlight.focused=#34294f88      ; editor.wordHighlightStrongBackground
+control.foreground.highlight.inactive=#34294f88      ; editor.wordHighlightStrongBackground
+control.border=#ff7edb
+control.border.focused=#36f9f6
 
-chart-border=#ff7edb
-chart-y-axis=#ff8b39
+chart.border=#ff7edb
+chart.yaxis=#ff8b39
+chart.title=#ff7edb                  ; tokenColors: entity
+chart.grid=#A9A9A9
+chart.range.low.background=#ff7edb        ; tokenColors: comment
+chart.range.low.foreground=#222222
+chart.range.mid.background=#8080FF        ; tokenColors: keyword
+chart.range.mid.foreground=#222222
+chart.range.high.background=#36f9f6       ; tokenColors: variable
+chart.range.high.foreground=#222222
 
-col-cmd-normal-user-space=#ff8b39    ; tokenColors: string
-col-cmd-low-priority=#f97e72         ; tokenColors: constant
-col-cmd-high-cpu=#36f9f6             ; tokenColors: variable
-col-cmd-io-bound=#b6b1b1             ; tokenColors: punctuation
-col-cmd-script=#36f9f6               ; tokenColors: support
-col-user-current-non-root=#848bbd    ; tokenColors: comment
-col-user-other-non-root=#36f9f6      ; tokenColors: support.function
-col-user-system=#ff8b39              ; tokenColors: punctuation.definition.parameters
-col-user-root=#ff8b39                ; tokenColors: punctuation.definition.parameters
+listview.background=transparent
+listview.foreground=#ff7edb                  ; tokenColors: entity
+listview.border=#ff7edb
+listview.header.background=#262335          ; tab.activeBackground
+listview.header.foreground=#f97e72          ; tab.activeForeground
 
-command-foreground=#f97e72          ; tab.activeForeground
-command-background=#262335          ; tab.activeBackground
+performance.panel.background=transparent
+performance.panel.foreground=#ff7edb                  ; tokenColors: entity
+performance.panel.titlebar.background=#262335          ; tab.activeBackground
+performance.panel.titlebar.foreground=#f97e72          ; tab.activeForeground
+performance.cpu.kernel=#36f9f6       ; tokenColors: variable
+performance.cpu.user=#ff8b39    ; tokenColors: string
+performance.memory.inuse=#36f9f6       ; tokenColors: variable
+performance.memory.modified=#ff8b39    ; tokenColors: string
+performance.memory.standby=#8080FF        ; tokenColors: keyword
+performance.memory.free=#ff7edb        ; tokenColors: comment
 
-delta-highlight-colour=#36f9f6      ; tokencolors: meta
+process.list.normaluserspace=#ff8b39    ; tokenColors: string
+process.list.lowpriority=#f97e72         ; tokenColors: constant
+process.list.highcpu=#36f9f6             ; tokenColors: variable
+process.list.iobound=#b6b1b1             ; tokenColors: punctuation
+process.list.script=#36f9f6               ; tokenColors: support
+process.list.user.currentnonroot=#848bbd    ; tokenColors: comment
+process.list.user.othernonroot=#36f9f6      ; tokenColors: support.function
+process.list.user.system=#ff8b39              ; tokenColors: punctuation.definition.parameters
+process.list.user.root=#ff8b39                ; tokenColors: punctuation.definition.parameters
+process.list.deltahighlight=#36f9f6      ; tokencolors: meta
 
-error=#db61a2
+heatmap.size.small=#ff7edb        ; tokenColors: comment
+heatmap.size.mid=#8080FF        ; tokenColors: keyword
+heatmap.size.large=#36f9f6       ; tokenColors: variable
+heatmap.state.scanning=#222222
+heatmap.state.completed=#222222
+heatmap.state.faulted=#222222
 
-foreground=#ff7edb                  ; tokenColors: entity
-foreground-highlight=#34294f88      ; editor.wordHighlightStrongBackground
+app.error=#db61a2
 
-listView-border=#ff7edb
+menubar.foreground=#f97e72          ; tab.activeForeground
+menubar.background=#262335          ; tab.activeBackground
 
-menubar-foreground=#f97e72          ; tab.activeForeground
-menubar-background=#262335          ; tab.activeBackground
-
-range-high-background=#36f9f6       ; tokenColors: variable
-range-low-background=#ff7edb        ; tokenColors: comment 
-range-mid-background=#8080FF        ; tokenColors: keyword
-range-high-foreground=#222222
-range-low-foreground=#222222
-range-mid-foreground=#222222
-
-header-background=#262335          ; tab.activeBackground
-header-foreground=#f97e72          ; tab.activeForeground
+command.foreground=#f97e72          ; tab.activeForeground
+command.background=#262335          ; tab.activeBackground

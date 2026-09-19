@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
@@ -90,35 +91,35 @@ use-irix-cpu-reporting=True
         Assert.NotNull(appConfig.DefaultConfigFilePath);
         Assert.NotEmpty(appConfig.DefaultConfigFilePath);
 
-        Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("Taskmon Default", appConfig.DefaultTheme.Name);
+        Assert.NotNull(appConfig.Theme);
+        Assert.Equal("Taskmon Default", appConfig.Theme.Name);
         //Assert.Equal(ConsolePalette.Transparent, appConfig.DefaultTheme.Background);
-        Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
-        Assert.Equal(ConsolePalette.Blue,       appConfig.DefaultTheme.ColumnCommandLowPriority);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandHighCpu);
-        Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.ColumnCommandIoBound);
-        Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandScript);
-        Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.ColumnUserCurrentNonRoot);
-        Assert.Equal(ConsolePalette.Magenta,    appConfig.DefaultTheme.ColumnUserOtherNonRoot);
-        Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.ColumnUserRoot);
-        Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnUserSystem);
-        Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.CommandBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.CommandForeground);
-        Assert.Equal(ConsolePalette.DarkYellow, appConfig.DefaultTheme.DeltaHighlightColour);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.Error);
-        Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.Foreground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.ForegroundHighlight);
-        Assert.Equal(ConsolePalette.DarkGreen,  appConfig.DefaultTheme.HeaderBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.HeaderForeground);
-        Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.MenubarBackground);
-        Assert.Equal(ConsolePalette.White,      appConfig.DefaultTheme.MenubarForeground);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.RangeHighBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeHighForeground);
-        Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.RangeLowBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeLowForeground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeMidForeground);
+        Assert.Equal(ConsolePalette.Cyan,       appConfig.Theme.BackgroundHighlight);
+        Assert.Equal(ConsolePalette.Blue,       appConfig.Theme.ColumnCommandLowPriority);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.ColumnCommandHighCpu);
+        Assert.Equal(ConsolePalette.Cyan,       appConfig.Theme.ColumnCommandIoBound);
+        Assert.Equal(ConsolePalette.Green,      appConfig.Theme.ColumnCommandNormalUserSpace);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.ColumnCommandScript);
+        Assert.Equal(ConsolePalette.Green,      appConfig.Theme.ColumnUserCurrentNonRoot);
+        Assert.Equal(ConsolePalette.Magenta,    appConfig.Theme.ColumnUserOtherNonRoot);
+        Assert.Equal(ConsolePalette.White,      appConfig.Theme.ColumnUserRoot);
+        Assert.Equal(ConsolePalette.Gray,       appConfig.Theme.ColumnUserSystem);
+        Assert.Equal(ConsolePalette.Cyan,       appConfig.Theme.CommandBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.CommandForeground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.DeltaHighlightColour);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.Error);
+        Assert.Equal(ConsolePalette.White,      appConfig.Theme.Foreground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.ForegroundHighlight);
+        Assert.Equal(ConsolePalette.DarkGreen,  appConfig.Theme.HeaderBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.HeaderForeground);
+        Assert.Equal(ConsolePalette.DarkBlue,   appConfig.Theme.MenubarBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.MenubarForeground);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.RangeHighBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeHighForeground);
+        Assert.Equal(ConsolePalette.Green,      appConfig.Theme.RangeLowBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeLowForeground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.RangeMidBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeMidForeground);
 
         //Assert.Equal(Processor.DefaultDelayInMilliseconds, appConfig.DelayInMilliseconds);
         Assert.Equal(-1, appConfig.FilterPid);
@@ -192,35 +193,35 @@ use-irix-cpu-reporting=False
         Assert.NotNull(appConfig.DefaultConfigFilePath);
         Assert.NotEmpty(appConfig.DefaultConfigFilePath);
         
-        Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("MS-DOS", appConfig.DefaultTheme.Name);
-        Assert.Equal(ConsolePalette.DarkBlue,   appConfig.DefaultTheme.Background);
-        Assert.Equal(ConsolePalette.Cyan,       appConfig.DefaultTheme.BackgroundHighlight);
-        Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnCommandLowPriority);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandHighCpu);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnCommandIoBound);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandNormalUserSpace);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnCommandScript);
-        Assert.Equal(ConsolePalette.Gray,       appConfig.DefaultTheme.ColumnUserCurrentNonRoot);
-        Assert.Equal(ConsolePalette.DarkGray,   appConfig.DefaultTheme.ColumnUserOtherNonRoot);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.ColumnUserRoot);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.ColumnUserSystem);
-        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.DefaultTheme.CommandBackground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.CommandForeground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.DeltaHighlightColour);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.Error);
-        Assert.Equal(ConsolePalette.DarkGray,   appConfig.DefaultTheme.Foreground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.ForegroundHighlight);
-        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.DefaultTheme.HeaderBackground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.HeaderForeground);
-        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.DefaultTheme.MenubarBackground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.MenubarForeground);
-        Assert.Equal(ConsolePalette.Red,        appConfig.DefaultTheme.RangeHighBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeHighForeground);
-        Assert.Equal(ConsolePalette.Green,      appConfig.DefaultTheme.RangeLowBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeLowForeground);
-        Assert.Equal(ConsolePalette.Yellow,     appConfig.DefaultTheme.RangeMidBackground);
-        Assert.Equal(ConsolePalette.Black,      appConfig.DefaultTheme.RangeMidForeground);
+        Assert.NotNull(appConfig.Theme);
+        Assert.Equal("MS-DOS", appConfig.Theme.Name);
+        Assert.Equal(ConsolePalette.DarkBlue,   appConfig.Theme.Background);
+        Assert.Equal(ConsolePalette.Cyan,       appConfig.Theme.BackgroundHighlight);
+        Assert.Equal(ConsolePalette.Gray,       appConfig.Theme.ColumnCommandLowPriority);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.ColumnCommandHighCpu);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.ColumnCommandIoBound);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.ColumnCommandNormalUserSpace);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.ColumnCommandScript);
+        Assert.Equal(ConsolePalette.Gray,       appConfig.Theme.ColumnUserCurrentNonRoot);
+        Assert.Equal(ConsolePalette.DarkGray,   appConfig.Theme.ColumnUserOtherNonRoot);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.ColumnUserRoot);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.ColumnUserSystem);
+        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.Theme.CommandBackground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.CommandForeground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.DeltaHighlightColour);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.Error);
+        Assert.Equal(ConsolePalette.DarkGray,   appConfig.Theme.Foreground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.ForegroundHighlight);
+        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.Theme.HeaderBackground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.HeaderForeground);
+        Assert.Equal(ConsolePalette.DarkCyan,   appConfig.Theme.MenubarBackground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.MenubarForeground);
+        Assert.Equal(ConsolePalette.Red,        appConfig.Theme.RangeHighBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeHighForeground);
+        Assert.Equal(ConsolePalette.Green,      appConfig.Theme.RangeLowBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeLowForeground);
+        Assert.Equal(ConsolePalette.Yellow,     appConfig.Theme.RangeMidBackground);
+        Assert.Equal(ConsolePalette.Black,      appConfig.Theme.RangeMidForeground);
 
         Assert.Equal(2000, appConfig.DelayInMilliseconds);
         Assert.Equal(123456, appConfig.FilterPid);
@@ -271,8 +272,8 @@ use-irix-cpu-reporting=False
     {
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.NotNull(appConfig.DefaultTheme);
-        Assert.Equal("Taskmon Default", appConfig.DefaultTheme.Name);
+        Assert.NotNull(appConfig.Theme);
+        Assert.Equal("Taskmon Default", appConfig.Theme.Name);
     }
 
     [Fact]
@@ -281,8 +282,8 @@ use-irix-cpu-reporting=False
         AppConfig appConfig = new(fileSystem.Object);
         Theme theme = appConfig.Themes.First(t => t.Name == "MS-DOS");
 
-        appConfig.DefaultTheme = theme;
-        Assert.Equal(theme, appConfig.DefaultTheme);
+        appConfig.Theme = theme;
+        Assert.Equal(theme, appConfig.Theme);
     }
 
     [Fact]
@@ -291,7 +292,7 @@ use-irix-cpu-reporting=False
         AppConfig appConfig = new(fileSystem.Object);
         Theme invalidTheme = new(new ConfigSection("theme-invalid"));
 
-        Assert.Throws<InvalidOperationException>(() => appConfig.DefaultTheme = invalidTheme);
+        Assert.Throws<InvalidOperationException>(() => appConfig.Theme = invalidTheme);
     }    
 
     // TODO:
@@ -434,8 +435,8 @@ use-irix-cpu-reporting=False
         string customThemeIni = @"
 [My Custom Theme]
 colour-mode=truecolour
-background=#123456
-foreground=#abcdef
+control.background=#123456
+control.foreground=#abcdef
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
         fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/themes/My Custom Theme.theme"]);
@@ -446,5 +447,184 @@ foreground=#abcdef
         Assert.Contains(appConfig.Themes, t => t.Name == "My Custom Theme");
         Theme customTheme = appConfig.Themes.First(t => t.Name == "My Custom Theme");
         Assert.Equal(ColorTranslator.FromHtml("#123456"), customTheme.Background);
+    }
+
+    // Every shipped layout, and the charts each row held under the old grid format (row by row,
+    // left to right) - the trees they were converted to must reproduce exactly that order, with
+    // the process list last.
+    public static TheoryData<string, PaneControlType[]> ShippedLayouts()
+    {
+        PaneControlType[] allCharts = [
+            PaneControlType.Cpu, PaneControlType.Gpu, PaneControlType.Disk, PaneControlType.NetworkSent,
+            PaneControlType.Memory, PaneControlType.GpuMemory, PaneControlType.VirtualMemory, PaneControlType.NetworkReceived,
+            PaneControlType.Process
+        ];
+        PaneControlType[] cpuMemory = [PaneControlType.Cpu, PaneControlType.Memory, PaneControlType.Process];
+        PaneControlType[] gpuGpuMemory = [PaneControlType.Gpu, PaneControlType.GpuMemory, PaneControlType.Process];
+        PaneControlType[] network = [PaneControlType.NetworkSent, PaneControlType.NetworkReceived, PaneControlType.Process];
+        PaneControlType[] disk = [PaneControlType.Disk, PaneControlType.Process];
+
+        return new() {
+            { "All Charts", allCharts },
+            { "All Charts Large", allCharts },
+            { "Cpu and Memory", cpuMemory },
+            { "Cpu and Memory Large", cpuMemory },
+            { "Gpu and Gpu Memory", gpuGpuMemory },
+            { "Gpu and Gpu Memory Large", gpuGpuMemory },
+            { "Network Send and Receive Bytes", network },
+            { "Network Send and Receive Bytes Large", network },
+            { "Disk Read and Write Bytes", disk },
+            { "Disk Read and Write Bytes Large", disk },
+        };
+    }
+
+    [Theory]
+    [MemberData(nameof(ShippedLayouts))]
+    public void Shipped_Layouts_Load_As_Trees_With_The_Original_Chart_Order(string name, PaneControlType[] expected)
+    {
+        // No fileSystem setup - the on-disk scan is skipped, leaving only the embedded layouts.
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.DoesNotContain(appConfig.Layouts, l => l.Name == name);
+
+        SummaryLayout2 layout = appConfig.SummaryLayouts2.Single(l => l.Name == name);
+        SummaryLayoutTree tree = layout.ToTree();
+
+        Assert.Equal(expected, tree.Panes().Select(p => p.ControlType).ToArray());
+
+        // Like the old grid, the process list uses the app-wide columns - no per-pane override.
+        Assert.Null(tree.Panes().Single(p => p.ControlType == PaneControlType.Process).ProcessColumns);
+    }
+
+    // The 1/N, 1/(N-1), ... ratio chains that stand in for the old grid's equal cells: every
+    // chart in All Charts comes out the same size, and the charts keep the grid's 60% height.
+    [Fact]
+    public void Shipped_All_Charts_Reproduces_The_Grid_Geometry()
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayoutTree tree = appConfig.SummaryLayouts2.Single(l => l.Name == "All Charts").ToTree();
+
+        SummaryLayoutRenderer renderer = new();
+        renderer.Layout(tree, new Dictionary<int, Task.Monitor.System.Controls.Control>(), 0, 0, 120, 40);
+
+        List<Rectangle> charts = tree.Panes()
+            .Where(p => p.ControlType != PaneControlType.Process)
+            .Select(p => renderer.PaneBounds[p.Id])
+            .ToList();
+
+        Assert.All(charts, r => Assert.Equal(new Size(30, 12), r.Size));
+
+        Rectangle process = renderer.PaneBounds[tree.Panes().Single(p => p.ControlType == PaneControlType.Process).Id];
+        Assert.Equal(new Rectangle(0, 24, 120, 16), process);
+    }
+
+    [Fact]
+    public void DefaultSummaryLayout2_Falls_Back_To_All_Charts_When_None_Is_Configured()
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.Equal("All Charts", appConfig.DefaultSummaryLayout2?.Name);
+    }
+
+    // Regression test: a tree .layout file left in the same folder as the fixed-grid ones (by
+    // SaveSummaryLayout2, or on a prior run) must be classified as a SummaryLayouts2 entry, never
+    // as a bogus default-ratio Layout under the same name.
+    [Fact]
+    public void LoadLayouts_Custom_Tree_Layout_On_Disk_Is_Loaded_As_SummaryLayout2_Not_Layout()
+    {
+        string treeLayoutIni = @"
+[My Dashboard]
+layout-type=tree
+root=0
+nodes=0,1,2
+node.0=split,row,0.5,1,2
+node.1=pane,cpu
+node.2=pane,process,process+pid+cpu+mem
+";
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/layouts/My Dashboard.layout"]);
+        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/layouts/My Dashboard.layout")).Returns(treeLayoutIni);
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.Contains(appConfig.SummaryLayouts2, t => t.Name == "My Dashboard");
+        Assert.DoesNotContain(appConfig.Layouts, t => t.Name == "My Dashboard");
+
+        SummaryLayoutTree tree = appConfig.SummaryLayouts2.Single(t => t.Name == "My Dashboard").ToTree();
+        SummaryLayoutNode processPane = tree.Panes().Single(p => p.ControlType == PaneControlType.Process);
+
+        Assert.Equal(
+            Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem,
+            processPane.ProcessColumns);
+    }
+
+    [Fact]
+    public void SaveSummaryLayout2_Writes_The_File_And_Adds_It_To_SummaryLayouts2()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayout2 layout = SummaryLayout2.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+
+        bool result = appConfig.SaveSummaryLayout2(layout);
+
+        Assert.True(result);
+        Assert.Contains(appConfig.SummaryLayouts2, t => t.Name == "Saved Dashboard");
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => p.EndsWith($"Saved Dashboard{Constants.LayoutExtension}")),
+            It.IsAny<string>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void DefaultSummaryLayout2_Set_To_Invalid_Layout_Throws_InvalidOperationException()
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayout2 invalid = SummaryLayout2.FromTree("Not Registered", SummaryLayoutTree.CreateExample());
+
+        Assert.Throws<InvalidOperationException>(() => appConfig.DefaultSummaryLayout2 = invalid);
+    }
+
+    [Fact]
+    public void DefaultSummaryLayout2_Set_To_A_Saved_Layout_Updates_The_Property()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayout2 layout = SummaryLayout2.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+        appConfig.SaveSummaryLayout2(layout);
+
+        appConfig.DefaultSummaryLayout2 = layout;
+
+        Assert.Equal(layout, appConfig.DefaultSummaryLayout2);
+    }
+
+    // Regression test: SaveSummaryLayout2 replaces the list entry for a re-saved name, but the
+    // default kept pointing at the replaced instance - so edits to the layout in use never
+    // reached the SUMMARY screen (which rebuilds when the default instance changes).
+    [Fact]
+    public void Resaving_The_Default_Layout_Repoints_The_Default_At_The_New_Version()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayout2 original = appConfig.DefaultSummaryLayout2!;
+
+        SummaryLayout2 edited = SummaryLayout2.FromTree(original.Name, SummaryLayoutTree.CreateExample());
+        appConfig.SaveSummaryLayout2(edited);
+
+        Assert.Same(edited, appConfig.DefaultSummaryLayout2);
+    }
+
+    [Fact]
+    public void Saving_A_Different_Layout_Leaves_The_Default_Alone()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryLayout2 original = appConfig.DefaultSummaryLayout2!;
+
+        appConfig.SaveSummaryLayout2(SummaryLayout2.FromTree("Something Else", SummaryLayoutTree.CreateExample()));
+
+        Assert.Same(original, appConfig.DefaultSummaryLayout2);
     }
 }

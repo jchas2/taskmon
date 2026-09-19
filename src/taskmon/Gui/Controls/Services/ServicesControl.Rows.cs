@@ -12,9 +12,9 @@ public sealed partial class ServicesControl
     {
         servicesView.Items.Clear();
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
-        Color stoppedForeground = appConfig.DefaultTheme.RangeMidForeground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
+        Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
         int running = 0;
 
@@ -49,9 +49,9 @@ public sealed partial class ServicesControl
             return;
         }
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
-        Color stoppedForeground = appConfig.DefaultTheme.RangeMidForeground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
+        Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
         Color statusForeground =
             service.Status == WindowsServiceStatus.Running ? foreground : stoppedForeground;

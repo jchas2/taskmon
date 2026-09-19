@@ -15,8 +15,8 @@ public partial class ProcessInfoControl
                 new ListViewSubItem(this, moduleInfo.FileName));
             
             for (int i = 0; i < (int)ModuleColumns.Count; i++) {
-                SubItems[i].BackgroundColor = appConfig.DefaultTheme.Background;
-                SubItems[i].ForegroundColor = appConfig.DefaultTheme.Foreground;
+                SubItems[i].BackgroundColor = appConfig.Theme.Background;
+                SubItems[i].ForegroundColor = appConfig.Theme.Foreground;
             }
         }
     }

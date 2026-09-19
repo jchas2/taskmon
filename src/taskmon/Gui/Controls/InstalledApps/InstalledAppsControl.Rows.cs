@@ -13,8 +13,8 @@ public sealed partial class InstalledAppsControl
     {
         installedAppsView.Items.Clear();
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
 
         foreach (InstalledApp app in apps) {
             ListViewItem row = new(new[] {
@@ -42,8 +42,8 @@ public sealed partial class InstalledAppsControl
             return;
         }
 
-        Color background = appConfig.DefaultTheme.Background;
-        Color foreground = appConfig.DefaultTheme.Foreground;
+        Color background = appConfig.Theme.Background;
+        Color foreground = appConfig.Theme.Foreground;
 
         detailView.Items.Add(new ListViewItem(["Name", Cell(app.Name)], background, foreground));
         detailView.Items.Add(new ListViewItem(["Version", Cell(app.Version)], background, foreground));

@@ -26,7 +26,7 @@ public sealed class ListViewTests
     
     [Fact]
     public void ListView_Canary_Test() =>
-        Assert.Equal(29, CanaryTestHelper.GetPropertyCount<ListViewControl>());
+        Assert.Equal(32, CanaryTestHelper.GetPropertyCount<ListViewControl>());
     
     [Fact]
     public void Should_Construct_Default()
@@ -36,6 +36,7 @@ public sealed class ListViewTests
         
         Assert.Equal(ConsolePalette.Black, listView.BackgroundColour);
         Assert.Equal(ConsolePalette.White, listView.BackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.Gray, listView.BackgroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.White, listView.BorderColour);
         Assert.Empty(listView.ColumnHeaders);
         Assert.Empty(listView.Controls);
@@ -45,6 +46,7 @@ public sealed class ListViewTests
         Assert.Empty(listView.FooterText);
         Assert.Equal(ConsolePalette.White, listView.ForegroundColour);
         Assert.Equal(ConsolePalette.Cyan, listView.ForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.Black, listView.ForegroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.Black, listView.HeaderBackgroundColour);
         Assert.Equal(ConsolePalette.White, listView.HeaderForegroundColour);
         Assert.Equal(0, listView.Height);
@@ -71,6 +73,7 @@ public sealed class ListViewTests
         ListViewControl listView = new(terminal.Object) {
             BackgroundColour = ConsolePalette.Gray,
             BackgroundHighlightColour = ConsolePalette.DarkGray,
+            BackgroundHighlightInactiveColour = ConsolePalette.DarkGray,
             BorderColour = ConsolePalette.Red,
             EmptyListViewText = "No Items",
             EnableRowSelect = false,
@@ -78,6 +81,7 @@ public sealed class ListViewTests
             FooterText = "Footer",
             ForegroundColour = ConsolePalette.Blue,
             ForegroundHighlightColour = ConsolePalette.DarkGray,
+            ForegroundHighlightInactiveColour = ConsolePalette.DarkGray,
             HeaderBackgroundColour = ConsolePalette.Green,
             HeaderForegroundColour = ConsolePalette.Black,
             HeaderText = "Header",
@@ -91,6 +95,7 @@ public sealed class ListViewTests
 
         Assert.Equal(ConsolePalette.Gray, listView.BackgroundColour);
         Assert.Equal(ConsolePalette.DarkGray, listView.BackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.DarkGray, listView.BackgroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.Red, listView.BorderColour);
         Assert.Equal("No Items", listView.EmptyListViewText);
         Assert.False(listView.EnableRowSelect);
@@ -98,6 +103,7 @@ public sealed class ListViewTests
         Assert.Equal("Footer", listView.FooterText);
         Assert.Equal(ConsolePalette.Blue, listView.ForegroundColour);
         Assert.Equal(ConsolePalette.DarkGray, listView.ForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.DarkGray, listView.ForegroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.Green, listView.HeaderBackgroundColour);
         Assert.Equal(ConsolePalette.Black, listView.HeaderForegroundColour);
         Assert.Equal("Header", listView.HeaderText);

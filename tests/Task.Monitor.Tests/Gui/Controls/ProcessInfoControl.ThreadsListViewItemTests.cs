@@ -63,19 +63,19 @@ public sealed class ThreadsListViewItemTests
                                                                                                                                                                                          
         for (int i = 0; i < (int)ProcessInfoControl.ThreadColumns.Count; i++) {                                                                                                            
             Assert.Equal(                                                                                                                                                                  
-                appConfig.DefaultTheme.Background,                                                                                                                                         
+                appConfig.Theme.Background,                                                                                                                                         
                 item.SubItems[i].BackgroundColor);                                                                                                                                         
         }                                                                                                                                                                                  
     }                                                                                                                                                                                      
                                                                                                                                                                                              
     public static TheoryData<int, Color> ThreadColourData()                                                                                                                              
         => new() {                                                                                                                                                                         
-            { (int)ProcessInfoControl.ThreadColumns.State, ConsolePalette.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.Reason, ConsolePalette.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.Priority, ConsolePalette.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuKernelTime, ConsolePalette.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuUserTime, ConsolePalette.DarkYellow },                                                                                                                     
-            { (int)ProcessInfoControl.ThreadColumns.CpuTotalTime, ConsolePalette.DarkYellow },                                                                                                                     
+            { (int)ProcessInfoControl.ThreadColumns.State, ConsolePalette.Yellow },
+            { (int)ProcessInfoControl.ThreadColumns.Reason, ConsolePalette.Yellow },
+            { (int)ProcessInfoControl.ThreadColumns.Priority, ConsolePalette.Yellow },
+            { (int)ProcessInfoControl.ThreadColumns.CpuKernelTime, ConsolePalette.Yellow },
+            { (int)ProcessInfoControl.ThreadColumns.CpuUserTime, ConsolePalette.Yellow },
+            { (int)ProcessInfoControl.ThreadColumns.CpuTotalTime, ConsolePalette.Yellow },
             { (int)ProcessInfoControl.ThreadColumns.Id, ConsolePalette.White }                                                                                                                     
         };                                                                                                                                                                                 
                                                                                                                                                                                          

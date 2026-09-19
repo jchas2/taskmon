@@ -106,7 +106,7 @@ public class TaskMonAppTests
         bool result = app.ProcessArgs(new[] { "--theme", Constants.Sections.ThemeTaskmonDefault }, out List<IAction> actions);
         
         Assert.True(result);
-        Assert.Equal(Constants.Sections.ThemeTaskmonDefault, runContext.AppConfig.DefaultTheme.Name);
+        Assert.Equal(Constants.Sections.ThemeTaskmonDefault, runContext.AppConfig.Theme.Name);
         Assert.Equal(typeof(RunAppAction), actions[0].GetType());
     }
 
@@ -143,7 +143,7 @@ public class TaskMonAppTests
         bool result = app.ProcessArgs(new[] { arg }, out List<IAction> actions);
 
         Assert.True(result);
-        Assert.Equal(layoutName, runContext.AppConfig.DefaultLayout.Name);
+        Assert.Equal(layoutName, runContext.AppConfig.DefaultSummaryLayout2?.Name);
         Assert.Equal(sortColumn, runContext.AppConfig.SortColumn);
         Assert.Equal(typeof(RunAppAction), actions[0].GetType());
     }

@@ -176,28 +176,19 @@ public sealed class ThermalsControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     // ---- Draw / input / lifecycle -------------------------------------------------------------
 
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
     {
@@ -292,7 +283,7 @@ public sealed class ThermalsControl : Control
 
             frame.Clear();
             frame.MoveTo(x, y);
-            frame.SetColour(appConfig.DefaultTheme.Foreground, BackgroundColour);
+            frame.SetColour(appConfig.Theme.Foreground, BackgroundColour);
             frame.Append(line);
             Terminal.Write(frame.AsSpan());
         }
@@ -305,7 +296,7 @@ public sealed class ThermalsControl : Control
     {
         int x = X + Width - 1;
 
-        DrawVerticalLine(x, Y, Y + Height, appConfig.DefaultTheme.ChartBorder);
+        DrawVerticalLine(x, Y, Y + Height, appConfig.Theme.ChartBorder);
 
         if (scrollOffset > 0) {
             DrawGlyph(x, Y, '▲');
@@ -320,7 +311,7 @@ public sealed class ThermalsControl : Control
     {
         frame.Clear();
         frame.MoveTo(x, y);
-        frame.SetColour(appConfig.DefaultTheme.ChartBorder, BackgroundColour);
+        frame.SetColour(appConfig.Theme.ChartBorder, BackgroundColour);
         frame.Append(glyph);
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
@@ -357,8 +348,8 @@ public sealed class ThermalsControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         foreach (Chart chart in chartCache.Values) {
             ConfigureChart(chart);

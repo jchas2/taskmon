@@ -1,6 +1,8 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Process;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
 
@@ -12,6 +14,7 @@ public sealed class ProcessesControl : Control
     private readonly AppConfig appConfig;
     private SystemSnapshot? snapshot;
     private readonly ProcessControl processControl;
+    private readonly ProcessInfoControl processInfoControl;
 
     private const int MinWidth = 20;
     private const int MinHeight = 4;
@@ -33,10 +36,25 @@ public sealed class ProcessesControl : Control
             TabIndex = 1
         };
 
-        Controls.Add(processControl);
+        // ProcessService/ModuleService/ThreadService are plain on-demand query classes (not
+        // ServiceController-registered worker services), so they're constructed directly here
+        // rather than resolved via serviceController.GetService<T>().
+        processInfoControl = new ProcessInfoControl(
+            new Task.Monitor.System.Process.ProcessService(),
+            new ModuleService(),
+            new ThreadService(),
+            terminal,
+            appConfig) {
+            TabStop = true,
+            TabIndex = 2
+        };
+
+        Controls.Add(processControl).Add(processInfoControl);
     }
 
     internal ProcessControl ProcessControl => processControl;
+
+    internal ProcessInfoControl ProcessInfoControl => processInfoControl;
 
     // ProcessesControl itself draws no border - it delegates entirely to processControl, whose
     // own OnGotFocus redirects further down to whichever list is active - so a SetFocus() call
@@ -56,36 +74,83 @@ public sealed class ProcessesControl : Control
 
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-
-            UpdateProcessHeaderAndFooter();
-            processControl.Draw();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
+        UpdateProcessHeaderAndFooter();
+        processControl.Draw();
+        processInfoControl.Draw();
     }
 
+    // Neither child's own Focused is a usable signal here: both ProcessControl.OnGotFocus and
+    // ProcessInfoControl.OnGotFocus redirect focus one level further down as soon as they receive
+    // it (to processView/sortView, and to menuView, respectively - see Screen.FocusInternal), so
+    // Focused on the child itself flips back to false the instant that happens. HasFocus on each
+    // is the proxy that survives that redirect.
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        processControl.KeyPressed(keyInfo, ref handled);
+        switch (keyInfo.Key) {
+            case ConsoleKey.RightArrow when processControl.HasFocus:
+                processInfoControl.SetFocus();
+                handled = true;
+                Draw();
+                break;
+
+            // processInfoControl gets first refusal on its own internal left/right nav (its
+            // menu <-> active tab chain). Only step back out to processControl once it reports
+            // there is nothing further left inside it.
+            case ConsoleKey.LeftArrow when processInfoControl.HasFocus:
+                processInfoControl.KeyPressed(keyInfo, ref handled);
+
+                if (!handled) {
+                    processControl.SetFocus();
+                    handled = true;
+
+                    // OnSelectedProcessIdChanged ignored every change while processInfoControl had
+                    // focus (see its own comment), and ProcessControl's diff check only fires on an
+                    // actual change - so if the pid drifted while we were ignoring it and has been
+                    // steady since, nothing would otherwise ever tell processInfoControl to catch
+                    // up. Forcing it here, the moment focus actually leaves, closes that gap.
+                    processInfoControl.LoadProcess(processControl.SelectedProcessId);
+                }
+
+                Draw();
+                break;
+
+            default:
+                (processInfoControl.HasFocus ? processInfoControl : (Control)processControl)
+                    .KeyPressed(keyInfo, ref handled);
+                break;
+        }
     }
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = appConfig.DefaultTheme.Background;
-            ctrl.ForegroundColour = appConfig.DefaultTheme.Foreground;
+            ctrl.BackgroundColour = appConfig.Theme.Background;
+            ctrl.ForegroundColour = appConfig.Theme.Foreground;
         }
 
         processControl.NumberOfProcesses = -1;
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+        processControl.SelectedProcessIdChanged += OnSelectedProcessIdChanged;
 
         base.OnLoad();
+    }
+
+    // While processInfoControl has focus, the user is actively scrolling one of its own lists
+    // (DETAIL/THREADS/MODULES/HANDLES) - reloading out from under them whenever the pid grid's
+    // selection shifts (a background sort re-publish moving a different process under the same
+    // row, not necessarily anything the user did) would yank them to a different pid mid-scroll.
+    // Syncing resumes, with an explicit catch-up, the moment focus actually leaves - see the
+    // LeftArrow case in OnKeyPressed.
+    private void OnSelectedProcessIdChanged(object? sender, int pid)
+    {
+        if (processInfoControl.HasFocus) {
+            return;
+        }
+
+        processInfoControl.LoadProcess(pid);
     }
 
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
@@ -114,10 +179,17 @@ public sealed class ProcessesControl : Control
             return;
         }
 
+        int processHeight = (int)(Height * 0.6);
+
         processControl.X = X;
         processControl.Y = Y;
-        processControl.Width = Width - 2;
-        processControl.Height = Height;
+        processControl.Width = Width;
+        processControl.Height = processHeight;
+
+        processInfoControl.X = X;
+        processInfoControl.Y = Y + processHeight;
+        processInfoControl.Width = Width;
+        processInfoControl.Height = Math.Max(1, Height - processHeight);
 
         base.OnResize();
     }
@@ -125,6 +197,7 @@ public sealed class ProcessesControl : Control
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+        processControl.SelectedProcessIdChanged -= OnSelectedProcessIdChanged;
         base.OnUnload();
     }
 }

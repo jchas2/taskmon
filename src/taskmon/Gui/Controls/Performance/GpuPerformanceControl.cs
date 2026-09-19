@@ -193,8 +193,8 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
         
         OnLoadChart(gpuChart);
         OnLoadChart(gpuDedicatedMemChart);
@@ -209,7 +209,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(gpuMetricsListView);
-        gpuMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        gpuMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
 
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -220,36 +220,36 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
         OnLoadListView(gpuSpecsListView);
-        gpuSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        gpuSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
         chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.DefaultTheme.Background;
-        listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        listView.BackgroundColour = appConfig.Theme.Background;
+        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
     }
 

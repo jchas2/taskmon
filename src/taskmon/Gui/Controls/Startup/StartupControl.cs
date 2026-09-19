@@ -27,7 +27,6 @@ public sealed partial class StartupControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
-    private const int DetailGutter = 1;
 
     public StartupControl(
         ServiceController serviceController,
@@ -92,23 +91,18 @@ public sealed partial class StartupControl : Control
     // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => startupView.SetFocus();
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-
-            if (startup is { } current) {
-                EnsureRows(current);
-            }
-
-            RefreshDetailPane();
-
-            startupView.Draw();
-            detailView.Draw();
+        if (startup is { } current) {
+            EnsureRows(current);
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
+
+        RefreshDetailPane();
+
+        startupView.Draw();
+        detailView.Draw();
     }
 
     // Rebuilds the row list only when the set of entries changes - installs and uninstalls, or a
@@ -175,31 +169,33 @@ public sealed partial class StartupControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
-        startupView.BackgroundColour = appConfig.DefaultTheme.Background;
-        startupView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        startupView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        startupView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        startupView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-        startupView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        startupView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        startupView.BackgroundColour = appConfig.Theme.Background;
+        startupView.ForegroundColour = appConfig.Theme.Foreground;
+        startupView.BorderColour = appConfig.Theme.ListViewBorder;
+        startupView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        startupView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        startupView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        startupView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        startupView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        startupView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
         foreach (ListViewColumnHeader columnHeader in startupView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.DefaultTheme.Background;
-        detailView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        detailView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        detailView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        detailView.BackgroundColour = appConfig.Theme.Background;
+        detailView.ForegroundColour = appConfig.Theme.Foreground;
+        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
@@ -212,7 +208,7 @@ public sealed partial class StartupControl : Control
 
     protected override void OnResize()
     {
-        int startupViewHeight = Math.Max(1, Height - DetailViewHeight - DetailGutter);
+        int startupViewHeight = Math.Max(1, Height - DetailViewHeight);
 
         startupView.X = X;
         startupView.Y = Y;
@@ -228,7 +224,7 @@ public sealed partial class StartupControl : Control
         startupView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
 
         detailView.X = X;
-        detailView.Y = Y + startupViewHeight + DetailGutter;
+        detailView.Y = Y + startupViewHeight;
         detailView.Width = Width;
         detailView.Height = DetailViewHeight;
 

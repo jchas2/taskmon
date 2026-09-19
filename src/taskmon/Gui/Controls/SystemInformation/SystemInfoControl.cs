@@ -14,23 +14,28 @@ namespace Task.Monitor.Gui.Controls.SystemInformation;
 // SLOT/GPU/DISK sub-header per device) where the subsystem has more than one.
 public sealed partial class SystemInfoControl : Control
 {
-    private enum Section { System, Cpu, Memory, Gpu, Disk, Network }
+    private enum Section { Cpu, Memory, Gpu, Disk, Network }
 
     private readonly ServiceController serviceController;
     private readonly AppConfig appConfig;
     private readonly MenuControl navMenu;
     private readonly ListView systemInfoView;
+    private readonly SystemLogoControl logoControl;
+    private readonly ListView systemSummaryView;
 
     // The most recent snapshot, kept whole. The rows are rebuilt from it only when the set of
-    // devices changes or the selected section changes (see BuildSignature); the values themselves
-    // are specification facts that do not move tick to tick.
+    // devices changes or the selected section changes (see BuildSectionSignature); the values
+    // themselves are specification facts that do not move tick to tick.
     private SystemSnapshot? snapshot;
-    private string lastSignature = string.Empty;
-    private Section selectedSection = Section.System;
+
+    // Tracked separately from the section signature: the pinned summary header is never rebuilt
+    // just because the nav selection changed, only when its own content actually could have.
+    private string lastSectionSignature = string.Empty;
+    private string lastSummarySignature = string.Empty;
+    private Section selectedSection = Section.Cpu;
 
     private const int LabelColumnWidth = 32;
     private const int NavWidth = 12;
-    private const int ControlGutter = 1;
     private const string GatheringText = "Gathering…";
 
     public SystemInfoControl(
@@ -66,7 +71,29 @@ public sealed partial class SystemInfoControl : Control
             .Add(new ListViewColumnHeader(string.Empty))
             .Add(new ListViewColumnHeader(string.Empty));
 
+        logoControl = new SystemLogoControl(terminal) {
+            Visible = true
+        };
+
+        // Pinned above systemInfoView, always showing the machine/OS/CPU/memory/GPU/disk summary
+        // regardless of which nav section is selected below it - never focusable, never scrolled.
+        systemSummaryView = new ListView(terminal) {
+            EnableScroll = false,
+            EnableRowSelect = false,
+            ShowColumnHeaders = false,
+            ShowBorder = false,
+            TabStop = false,
+            Visible = true,
+            EmptyListViewText = "Gathering system information…"
+        };
+
+        systemSummaryView.ColumnHeaders
+            .Add(new ListViewColumnHeader(string.Empty))
+            .Add(new ListViewColumnHeader(string.Empty));
+
         Controls
+            .Add(logoControl)
+            .Add(systemSummaryView)
             .Add(navMenu)
             .Add(systemInfoView);
     }
@@ -76,6 +103,8 @@ public sealed partial class SystemInfoControl : Control
     // composite (e.g. from MainScreen2's arrow-key nav) needs to be redirected down to it for the
     // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => navMenu.SetFocus();
+
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     // Called with the latest snapshot every publish. Wired to the controller event in OnLoad;
     // tests call it directly.
@@ -87,37 +116,55 @@ public sealed partial class SystemInfoControl : Control
 
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
+        // A null snapshot still lays out the selected section; the per-service rows fill in
+        // as each service publishes.
+        SystemSnapshot s = snapshot ?? new SystemSnapshot();
 
-            // A null snapshot still lays out the selected section; the per-service rows fill in
-            // as each service publishes.
-            EnsureRows(snapshot ?? new SystemSnapshot());
+        EnsureSummaryRows(s);
+        EnsureSectionRows(s);
 
-            navMenu.Draw();
-            systemInfoView.Draw();
+        logoControl.Draw();
+        systemSummaryView.Draw();
+        navMenu.Draw();
+        systemInfoView.Draw();
+    }
+
+    // Rebuilds the pinned summary header only when its own content could have changed - never on
+    // a nav selection change, since it is always shown regardless of which section is selected.
+    private void EnsureSummaryRows(SystemSnapshot snapshot)
+    {
+        string signature = BuildSummarySignature(snapshot);
+
+        if (signature == lastSummarySignature) {
+            return;
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
+
+        lastSummarySignature = signature;
+        RebuildSummaryRows(snapshot);
     }
 
     // Rebuilds the row list only when the shape changes: the first few ticks as the services come
     // online, a section switch, then not again until a device is added or removed. A rebuild resets
     // the scroll to the top, which is why it is gated rather than run every draw.
-    private void EnsureRows(SystemSnapshot snapshot)
+    private void EnsureSectionRows(SystemSnapshot snapshot)
     {
-        string signature = BuildSignature(snapshot);
+        string signature = BuildSectionSignature(snapshot);
 
-        if (signature == lastSignature) {
+        if (signature == lastSectionSignature) {
             return;
         }
 
-        lastSignature = signature;
+        lastSectionSignature = signature;
         RebuildRows(snapshot);
     }
 
-    private string BuildSignature(SystemSnapshot s)
+    // Keyed only on what AddSystemSection actually reads that can change row count: CPU identity.
+    // Memory is shown as a single total (no per-device rows), and GPU/disk/network are not shown
+    // at all, so none of those belong in this signature.
+    private string BuildSummarySignature(SystemSnapshot s) =>
+        s.Cpu?.Specs.CpuName ?? "-";
+
+    private string BuildSectionSignature(SystemSnapshot s)
     {
         int volumeCount = s.Disk?.Specs.Devices.Sum(device => device.Volumes.Count) ?? -1;
         int unattachedCount = s.Disk?.Specs.UnattachedVolumes.Count ?? -1;
@@ -154,46 +201,38 @@ public sealed partial class SystemInfoControl : Control
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        try {
-            Control.DrawingLockAcquire();
+        switch (keyInfo.Key) {
+            // Only claimed when there is somewhere internal left/right to move: on the
+            // content pane, left steps back to the nav; on the nav, right steps into the
+            // content. Otherwise the key is left unhandled so MainScreen2 can move focus back
+            // to its own outer menu (left) or leaves right to do nothing further (there is no
+            // pane beyond the content).
+            case ConsoleKey.LeftArrow when GetFocusedControl == systemInfoView:
+                navMenu.SetFocus();
+                handled = true;
+                Draw();
+                break;
 
-            switch (keyInfo.Key) {
-                // Only claimed when there is somewhere internal left/right to move: on the
-                // content pane, left steps back to the nav; on the nav, right steps into the
-                // content. Otherwise the key is left unhandled so MainScreen2 can move focus back
-                // to its own outer menu (left) or leaves right to do nothing further (there is no
-                // pane beyond the content).
-                case ConsoleKey.LeftArrow when GetFocusedControl == systemInfoView:
-                    navMenu.SetFocus();
-                    handled = true;
-                    Draw();
-                    break;
+            case ConsoleKey.RightArrow when GetFocusedControl == navMenu:
+                systemInfoView.SetFocus();
+                handled = true;
+                Draw();
+                break;
 
-                case ConsoleKey.RightArrow when GetFocusedControl == navMenu:
-                    systemInfoView.SetFocus();
-                    handled = true;
-                    Draw();
-                    break;
-
-                default:
-                    GetFocusedControl?.KeyPressed(keyInfo, ref handled);
-                    break;
-            }
-        }
-        finally {
-            Control.DrawingLockRelease();
+            default:
+                GetFocusedControl?.KeyPressed(keyInfo, ref handled);
+                break;
         }
     }
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         // MenuControl.OnLoad throws if MenuItems is still null, so this has to be set before the
         // base.OnLoad() below reaches it.
         navMenu.MenuItems = new() {
-            new MenuListViewItem(systemInfoView, "SYSTEM")  { LoadItems = () => SelectSection(Section.System) },
             new MenuListViewItem(systemInfoView, "CPU")     { LoadItems = () => SelectSection(Section.Cpu) },
             new MenuListViewItem(systemInfoView, "MEMORY")  { LoadItems = () => SelectSection(Section.Memory) },
             new MenuListViewItem(systemInfoView, "GPU")     { LoadItems = () => SelectSection(Section.Gpu) },
@@ -201,20 +240,26 @@ public sealed partial class SystemInfoControl : Control
             new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
         };
 
-        systemInfoView.BackgroundColour = appConfig.DefaultTheme.Background;
-        systemInfoView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        systemInfoView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        systemInfoView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        systemInfoView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-        systemInfoView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        systemInfoView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        systemInfoView.BackgroundColour = appConfig.Theme.Background;
+        systemInfoView.ForegroundColour = appConfig.Theme.Foreground;
+        systemInfoView.BorderColour = appConfig.Theme.ListViewBorder;
+        systemInfoView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        systemInfoView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        systemInfoView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        systemInfoView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        systemInfoView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        systemInfoView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+
+        logoControl.BackgroundColour = appConfig.Theme.Background;
+
+        systemSummaryView.BackgroundColour = appConfig.Theme.Background;
+        systemSummaryView.ForegroundColour = appConfig.Theme.Foreground;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         base.OnLoad();
 
         navMenu.MenuItemClicked += OnNavItemClicked;
-        navMenu.SetFocus();
     }
 
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
@@ -222,15 +267,38 @@ public sealed partial class SystemInfoControl : Control
 
     protected override void OnResize()
     {
+        // Unchanged in position/size, per design: the pinned header above the detail pane never
+        // affects the nav column.
         navMenu.X = X;
         navMenu.Y = Y;
         navMenu.Width = NavWidth;
         navMenu.Height = Height;
 
-        systemInfoView.X = X + NavWidth + ControlGutter;
-        systemInfoView.Y = Y;
-        systemInfoView.Width = Width - NavWidth - ControlGutter;
-        systemInfoView.Height = Height;
+        int contentX = X + NavWidth;
+        int contentWidth = Width - NavWidth;
+        int headerHeight = Math.Min(Height, logoControl.LogoHeight);
+
+        logoControl.X = contentX + contentWidth - logoControl.LogoWidth - 2;
+        logoControl.Y = Y;
+        logoControl.Width = logoControl.LogoWidth;
+        logoControl.Height = headerHeight;
+
+        // Sized from the actual gaps to its neighbours (logoControl.X, headerHeight) rather than
+        // independently, so the +1 indent below never overlaps the logo horizontally or
+        // systemInfoView vertically.
+        systemSummaryView.X = contentX + 1;
+        systemSummaryView.Y = Y + 1;
+        systemSummaryView.Width = Math.Max(1, logoControl.X - systemSummaryView.X);
+        systemSummaryView.Height = Math.Max(1, headerHeight - 1);
+
+        int summaryColWidth = Math.Max((int)(systemSummaryView.Width * 0.30), LabelColumnWidth);
+        systemSummaryView.ColumnHeaders[0].Width = summaryColWidth;
+        systemSummaryView.ColumnHeaders[1].Width = Math.Max(1, systemSummaryView.Width - summaryColWidth - 3);
+
+        systemInfoView.X = contentX;
+        systemInfoView.Y = Y + headerHeight;
+        systemInfoView.Width = contentWidth;
+        systemInfoView.Height = Height - headerHeight;
 
         int sizedColWidth = Math.Max((int)(Width * 0.30), LabelColumnWidth);
         systemInfoView.ColumnHeaders[0].Width = sizedColWidth;
@@ -244,7 +312,9 @@ public sealed partial class SystemInfoControl : Control
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         navMenu.MenuItemClicked -= OnNavItemClicked;
         systemInfoView.Items.Clear();
-        lastSignature = string.Empty;
+        systemSummaryView.Items.Clear();
+        lastSectionSignature = string.Empty;
+        lastSummarySignature = string.Empty;
 
         base.OnUnload();
     }

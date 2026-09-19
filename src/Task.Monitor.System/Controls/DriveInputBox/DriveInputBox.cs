@@ -56,10 +56,22 @@ public sealed class DriveInputBox : Control
         set => list.BackgroundHighlightColour = value;
     }
 
+    public Color ListBackgroundHighlightInactiveColour
+    {
+        get => list.BackgroundHighlightInactiveColour;
+        set => list.BackgroundHighlightInactiveColour = value;
+    }
+
     public Color ListForegroundHighlightColour
     {
         get => list.ForegroundHighlightColour;
         set => list.ForegroundHighlightColour = value;
+    }
+
+    public Color ListForegroundHighlightInactiveColour
+    {
+        get => list.ForegroundHighlightInactiveColour;
+        set => list.ForegroundHighlightInactiveColour = value;
     }
 
     public string Title { get; set; } = string.Empty;
@@ -130,15 +142,9 @@ public sealed class DriveInputBox : Control
             return;
         }
 
-        try {
-            Control.DrawingLockAcquire();
-            DrawFrame();
-            DrawList();
-            DrawFooter();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
+        DrawFrame();
+        DrawList();
+        DrawFooter();
     }
 
     // list.Draw() is the inherited Control wrapper, which itself checks the static
@@ -269,36 +275,29 @@ public sealed class DriveInputBox : Control
         Result = DriveInputBoxResult.None;
         handled = true;
 
-        try {
-            Control.DrawingLockAcquire();
+        switch (keyInfo.Key) {
+            case ConsoleKey.LeftArrow:
+                okFocused = true;
+                DrawFooter();
+                break;
 
-            switch (keyInfo.Key) {
-                case ConsoleKey.LeftArrow:
-                    okFocused = true;
-                    DrawFooter();
-                    break;
+            case ConsoleKey.RightArrow:
+                okFocused = false;
+                DrawFooter();
+                break;
 
-                case ConsoleKey.RightArrow:
-                    okFocused = false;
-                    DrawFooter();
-                    break;
+            case ConsoleKey.Enter:
+                Result = okFocused ? DriveInputBoxResult.Ok : DriveInputBoxResult.Cancel;
+                ApplySelection();
+                break;
 
-                case ConsoleKey.Enter:
-                    Result = okFocused ? DriveInputBoxResult.Ok : DriveInputBoxResult.Cancel;
-                    ApplySelection();
-                    break;
+            case ConsoleKey.Escape:
+                Result = DriveInputBoxResult.Cancel;
+                break;
 
-                case ConsoleKey.Escape:
-                    Result = DriveInputBoxResult.Cancel;
-                    break;
-
-                default:
-                    list.KeyPressed(keyInfo, ref handled);
-                    break;
-            }
-        }
-        finally {
-            Control.DrawingLockRelease();
+            default:
+                list.KeyPressed(keyInfo, ref handled);
+                break;
         }
     }
 

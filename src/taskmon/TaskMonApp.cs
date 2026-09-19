@@ -145,7 +145,7 @@ public sealed class TaskMonApp(RunContext runContext)
                     t.Name.Equals(themeArg, StringComparison.CurrentCultureIgnoreCase));
 
             if (defaultTheme != null) {
-                runContext.AppConfig.DefaultTheme = defaultTheme;
+                runContext.AppConfig.Theme = defaultTheme;
             }
             else {
                 OutputWriter.Error.WriteLine($"{Constants.AppName}: bad theme arg: {themeArg}");
@@ -161,11 +161,13 @@ public sealed class TaskMonApp(RunContext runContext)
                 ? (Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
                 : (Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
             
-            Layout? defaultLayout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
+            // The shipped layouts are SummaryLayout2 trees (what the SUMMARY screen's
+            // SummaryControl2 renders), not grid Layouts, so look the name up among those.
+            SummaryLayout2? layout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(l =>
                     l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
-            if (defaultLayout != null) {
-                runContext.AppConfig.DefaultLayout = defaultLayout;
+            if (layout != null) {
+                runContext.AppConfig.DefaultSummaryLayout2 = layout;
                 runContext.AppConfig.SortColumn = sortCol;
             }
             else {

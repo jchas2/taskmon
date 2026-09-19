@@ -64,6 +64,26 @@ console-color-white=white
         Assert.Throws<ConfigParseException>(() => configParser.Parse());
     }
 
+    internal static string ConfigFileWithDottedKeys => @"
+[dotted-keys]
+control.background=#000000
+control.background.highlight.focused=#00FFFF
+performance.panel.titlebar.background=#000080
+process.list.user.currentnonroot=#00FF00";
+
+    [Fact]
+    public void Should_Parse_Keys_Containing_Dots()
+    {
+        var configParser = new ConfigParser(ConfigFileWithDottedKeys);
+        configParser.Parse();
+
+        Assert.True(configParser.Sections.Count == 1);
+        Assert.Equal("#000000", configParser.Sections[0].GetString("control.background"));
+        Assert.Equal("#00FFFF", configParser.Sections[0].GetString("control.background.highlight.focused"));
+        Assert.Equal("#000080", configParser.Sections[0].GetString("performance.panel.titlebar.background"));
+        Assert.Equal("#00FF00", configParser.Sections[0].GetString("process.list.user.currentnonroot"));
+    }
+
     [Fact]
     public void Should_Parse_Min_Config_File()
     {

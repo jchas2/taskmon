@@ -18,16 +18,7 @@ public sealed class CommandControl(ISystemTerminal terminal, AppConfig appConfig
         return this;
     }
     
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire(); 
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
     
     private void OnDrawInternal()
     {
@@ -53,7 +44,7 @@ public sealed class CommandControl(ISystemTerminal terminal, AppConfig appConfig
                 nchars,
                 Y,
                 CommandLength,
-                appConfig.DefaultTheme,
+                appConfig.Theme,
                 cmd.IsEnabled,
                 Terminal);
             

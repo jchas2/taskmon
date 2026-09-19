@@ -44,7 +44,7 @@ public partial class ProcessInfoControl
             subItem.Text = text;
             
             if (changeCondition.Invoke()) {
-                subItem.ForegroundColor = AppConfig.DefaultTheme.DeltaHighlightColour;
+                subItem.ForegroundColor = AppConfig.Theme.DeltaHighlightColour;
             }
         }
         
@@ -53,8 +53,8 @@ public partial class ProcessInfoControl
             Debug.Assert(threadInfo.ThreadId == ThreadId);
 
             foreach (ListViewSubItem subItem in SubItems) {
-                subItem.BackgroundColor = AppConfig.DefaultTheme.Background;
-                subItem.ForegroundColor = AppConfig.DefaultTheme.Foreground;
+                subItem.BackgroundColor = AppConfig.Theme.Background;
+                subItem.ForegroundColor = AppConfig.Theme.Foreground;
             }
             
             UpdateSubItem(

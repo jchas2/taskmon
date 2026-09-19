@@ -220,10 +220,25 @@ public class Control
         terminal.Write(frame.AsSpan());
     }    
     
+    // The single choke point every redraw funnels through - both top-down cascades from a parent's
+    // own OnDraw() and redraws triggered directly by a background thread's event handler (e.g. a
+    // service publishing a new snapshot). Locking here, rather than inside each OnDraw() override,
+    // means no call site can forget to synchronise: a parent calling child.Draw() from within its
+    // own already-locked OnDraw() just extends the same critical section (Monitor is reentrant for
+    // the thread that already holds it), while an unrelated thread's Draw() call blocks until the
+    // whole in-progress draw - however many nested calls deep - has finished.
     public void Draw()
     {
-        if (RedrawEnabled && Visible) {
+        if (!RedrawEnabled || !Visible) {
+            return;
+        }
+
+        try {
+            DrawingLockAcquire();
             OnDraw();
+        }
+        finally {
+            DrawingLockRelease();
         }
     }
     
@@ -241,6 +256,14 @@ public class Control
     // never added to any Controls collection and so never receives this from Screen.FocusInternal
     // on its own) can mirror its own focus state onto that delegate from OnGotFocus/OnLostFocus.
     public bool Focused { get; set; } = false;
+
+    // True when this control, or something inside it, currently holds input focus. Differs from
+    // Focused for any composite whose OnGotFocus redirects focus further down (e.g.
+    // GetTargetControl()?.SetFocus()) - Focused on the composite itself flips back to false the
+    // instant that redirect happens (see Screen.FocusInternal's reentrant redirect handling).
+    // Leaf controls never redirect, so the default (Focused) is already correct for them;
+    // composites override this to point at whichever descendant the redirect actually lands on.
+    public virtual bool HasFocus => Focused;
 
     // The colour every bordered control's border switches to while it holds input focus, so
     // arrow-key navigation always leaves an unambiguous visual cue behind. Static rather than
@@ -326,7 +349,19 @@ public class Control
         this.controls.AddRange(controls);
     }
     
-    public void KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) => OnKeyPressed(keyInfo, ref handled);
+    // Same rationale as Draw(): a key press can itself trigger writes to the terminal (e.g.
+    // ListView's RedrawItem() partial repaint), so it needs the same protection against an
+    // unrelated thread's Draw() landing mid-handling.
+    public void KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        try {
+            DrawingLockAcquire();
+            OnKeyPressed(keyInfo, ref handled);
+        }
+        finally {
+            DrawingLockRelease();
+        }
+    }
 
     public string? Name
     {

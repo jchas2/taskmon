@@ -18,8 +18,10 @@ public sealed class AppConfig
     private Config iniConfig;
     private Theme defaultTheme = new();
     private Layout defaultLayout = new();
+    private SummaryLayout2? defaultSummaryLayout2;
     private readonly List<Theme> allThemes = new();
     private readonly List<Layout> allLayouts = new();
+    private readonly List<SummaryLayout2> allSummaryLayouts2 = new();
     
 #if __WIN32__
     private bool useIrixMode = false;
@@ -154,7 +156,23 @@ public sealed class AppConfig
         }
     }
     
-    public Theme DefaultTheme
+    // Null until either a tree layout has been saved this run (SaveSummaryLayout2) or one was
+    // found on disk/in the default-summary-layout2 preference at load time - SummaryControl2
+    // falls back to SummaryLayoutTree.CreateExample() when this is null.
+    public SummaryLayout2? DefaultSummaryLayout2
+    {
+        get => defaultSummaryLayout2;
+        set {
+            if (value != null && !allSummaryLayouts2.Contains(value)) {
+                throw new InvalidOperationException();
+            }
+
+            defaultSummaryLayout2 = value;
+            uxSection?.Add(Constants.Keys.DefaultSummaryLayout2, value?.Name ?? string.Empty);
+        }
+    }
+
+    public Theme Theme
     {
         get => defaultTheme;
         set {
@@ -318,13 +336,13 @@ public sealed class AppConfig
     private void LoadLayouts()
     {
         bool validLayoutPath = true;
-        
+
         string layoutPath = !string.IsNullOrEmpty(DefaultConfigPath)
             ? Path.Combine(DefaultConfigPath, Constants.LayoutDirectory)
             : string.Empty;
 
         validLayoutPath = !string.IsNullOrEmpty(layoutPath);
-        
+
         if (validLayoutPath && !fileSystem.DirectoryExists(layoutPath)) {
             if (fileSystem.TryCreateDirectory(layoutPath)) {
                 PathPermissions.EnsureUserOwnership(layoutPath);
@@ -336,24 +354,22 @@ public sealed class AppConfig
 
         if (validLayoutPath) {
             string[] layoutFiles = fileSystem.GetFiles(layoutPath);
-            
+
             foreach (string layoutFile in layoutFiles) {
                 string layoutText = fileSystem.ReadAllText(layoutFile);
                 Trace.WriteLine($"Parsing {layoutFile}");
-                
-                if (!TryParseIni(layoutText, out Layout? layout)) {
+
+                if (!TryParseIniSection(layoutText, out ConfigSection? section)) {
                     Trace.WriteLine($"Failed to parse: \n{layoutText}\n");
                     continue;
                 }
-                
-                if (!allLayouts.Any(t => t.Name.Equals(layout!.Name))) {
-                    allLayouts.Add(layout!);
-                }
+
+                AddParsedLayout(section!, layoutPath, layoutText, deploy: false);
             }
         }
-        
+
         Assembly asm = Assembly.GetExecutingAssembly();
-        
+
         foreach (string name in asm.GetManifestResourceNames()) {
             if (!name.EndsWith(Constants.LayoutExtension)) {
                 continue;
@@ -362,17 +378,12 @@ public sealed class AppConfig
             using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
             string layoutText = reader.ReadToEnd();
 
-            if (!TryParseIni(layoutText, out Layout? layout)) {
+            if (!TryParseIniSection(layoutText, out ConfigSection? section)) {
                 Debug.Fail($"Failed to parse manifest asset {name}");
                 continue;
             }
-            
-            if (!allLayouts.Any(t => t.Name.Equals(layout!.Name))) {
-                allLayouts.Add(layout!);
-                string layoutFilePath = Path.Combine(layoutPath, $"{layout!.Name}{Constants.LayoutExtension}");
-                fileSystem.WriteAllText(layoutFilePath, layoutText);
-                PathPermissions.EnsureUserOwnership(layoutFilePath);
-            }
+
+            AddParsedLayout(section!, layoutPath, layoutText, deploy: true);
         }
 
         uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
@@ -383,14 +394,62 @@ public sealed class AppConfig
                 .First();
         }
         else {
-            // Handle the case where the config file has been edited with a default-layout name that has not been loaded.
-            Debug.Assert(allLayouts.Contains(defaultLayout));
-            
+            // No grid layout by the configured name - the normal case now that every shipped
+            // layout is a SummaryLayout2 tree (only a hand-kept grid file on disk would match),
+            // so this is not an assert. The unnamed built-in Layout (2 x 4 charts, all eight) keeps
+            // the legacy fixed-grid SummaryControl working if MainScreen2 is switched back to it.
             if (!allLayouts.Contains(defaultLayout)) {
                 allLayouts.Add(defaultLayout);
             }
 
             DefaultLayout = defaultLayout;
+        }
+
+        string preferredTree = uxSection.GetString(Constants.Keys.DefaultSummaryLayout2);
+
+        SummaryLayout2? configured = allSummaryLayouts2.FirstOrDefault(
+            t => t.Name.Equals(preferredTree, StringComparison.CurrentCultureIgnoreCase));
+
+        if (configured != null) {
+            DefaultSummaryLayout2 = configured;
+        }
+        else if (allSummaryLayouts2.Count > 0 && defaultSummaryLayout2 == null) {
+            // No saved preference (or it named a layout that no longer exists): the shipped
+            // "All Charts" - the same default the legacy grid used - rather than whichever tree
+            // happened to be found first, which with user-saved layouts on disk could be anything.
+            DefaultSummaryLayout2 = allSummaryLayouts2.FirstOrDefault(
+                    t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
+                ?? allSummaryLayouts2[0];
+        }
+    }
+
+    // A layout file (on disk or embedded) is either a fixed-grid Layout or a SummaryLayout2 tree
+    // - never both - decided purely by the layout-type key (SummaryLayout2.IsTreeLayout). deploy
+    // is only true for the embedded-manifest pass: a name already present (found on disk, or an
+    // earlier manifest entry) is left alone rather than overwritten with the shipped copy.
+    private void AddParsedLayout(ConfigSection section, string layoutPath, string sourceText, bool deploy)
+    {
+        if (new SummaryLayout2(section).IsTreeLayout) {
+            if (allSummaryLayouts2.Any(t => t.Name.Equals(section.Name))) {
+                return;
+            }
+
+            allSummaryLayouts2.Add(new SummaryLayout2(section));
+        }
+        else {
+            Layout layout = new(section);
+
+            if (allLayouts.Any(t => t.Name.Equals(layout.Name))) {
+                return;
+            }
+
+            allLayouts.Add(layout);
+        }
+
+        if (deploy) {
+            string layoutFilePath = Path.Combine(layoutPath, $"{section.Name}{Constants.LayoutExtension}");
+            fileSystem.WriteAllText(layoutFilePath, sourceText);
+            PathPermissions.EnsureUserOwnership(layoutFilePath);
         }
     }
     
@@ -542,7 +601,7 @@ public sealed class AppConfig
         uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
 
         if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
-            DefaultTheme = allThemes
+            Theme = allThemes
                 .Where(t => t.Name == uxSection.GetString(Constants.Keys.DefaultTheme))
                 .First();
         }
@@ -554,11 +613,13 @@ public sealed class AppConfig
                 allThemes.Add(defaultTheme);
             }
 
-            DefaultTheme = defaultTheme;
+            Theme = defaultTheme;
         }
     }
 
     public List<Layout> Layouts => allLayouts;
+
+    public List<SummaryLayout2> SummaryLayouts2 => allSummaryLayouts2;
 
     public List<Theme> Themes => allThemes;
 
@@ -617,6 +678,72 @@ public sealed class AppConfig
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error parsing Ini: {ex.Message}");
+            return false;
+        }
+    }
+
+    // Layout files need their raw ConfigSection before deciding whether they're a grid Layout or
+    // a SummaryLayout2 tree (see AddParsedLayout) - unlike TryParseIni<T>, which commits to a
+    // concrete type up front.
+    private bool TryParseIniSection(string text, out ConfigSection? section)
+    {
+        section = null;
+
+        try {
+            ConfigParser parser = new(text);
+            parser.Parse();
+            section = parser.Sections[0];
+            return true;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error parsing Ini: {ex.Message}");
+            return false;
+        }
+    }
+
+    // There is no equivalent save path for the fixed-grid Layout format - those are only ever
+    // deployed once from embedded resources (see LoadLayouts) and never written back. Tree
+    // layouts need one because Milestone 4/5's designer is how they're created in the first
+    // place, with nothing to embed ahead of time.
+    public bool SaveSummaryLayout2(SummaryLayout2 layout)
+    {
+        try {
+            string layoutPath = !string.IsNullOrEmpty(DefaultConfigPath)
+                ? Path.Combine(DefaultConfigPath, Constants.LayoutDirectory)
+                : string.Empty;
+
+            if (string.IsNullOrEmpty(layoutPath)) {
+                return false;
+            }
+
+            if (!fileSystem.DirectoryExists(layoutPath) && !fileSystem.TryCreateDirectory(layoutPath)) {
+                return false;
+            }
+
+            string layoutFilePath = Path.Combine(layoutPath, $"{layout.Name}{Constants.LayoutExtension}");
+            fileSystem.WriteAllText(layoutFilePath, layout.ToString());
+            PathPermissions.EnsureUserOwnership(layoutFilePath);
+
+            SummaryLayout2? existing = allSummaryLayouts2.FirstOrDefault(
+                t => t.Name.Equals(layout.Name, StringComparison.CurrentCultureIgnoreCase));
+
+            if (existing != null) {
+                allSummaryLayouts2.Remove(existing);
+            }
+
+            allSummaryLayouts2.Add(layout);
+
+            // Re-saving the layout currently in use replaces its entry above - repoint the default
+            // at the new instance, or it would keep serving the pre-edit copy (SummaryControl2
+            // reloads when the default instance changes, so this is also what shows the edits).
+            if (existing != null && existing == defaultSummaryLayout2) {
+                defaultSummaryLayout2 = layout;
+            }
+
+            return true;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error saving summary layout: {ex.Message}");
             return false;
         }
     }

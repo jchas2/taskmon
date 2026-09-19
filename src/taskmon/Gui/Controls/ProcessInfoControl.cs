@@ -26,8 +26,6 @@ public partial class ProcessInfoControl : Control
 
     private CancellationTokenSource? cancellationTokenSource;
 
-    private const int ControlGutter = 1;
-    private const int ProcessInfoViewHeight = 8;
     private const int MenuViewWidth = 10;
 
     private const string MsgNotYetImplemented = "Not yet implemented on this OS";
@@ -116,8 +114,9 @@ public partial class ProcessInfoControl : Control
             .Add(handlesView);
         
         tabControls.AddRange(new [] {
-            modulesView, 
-            threadsView, 
+            processInfoView,
+            threadsView,
+            modulesView,
             handlesView
         });
     }
@@ -137,62 +136,55 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-            ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
-            processInfoView.Draw();
-            menuView.Draw();
-            activeControl.Draw();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
+        ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
+        menuView.Draw();
+        activeControl.Draw();
     }
+
+    // ProcessInfoControl itself draws no border - menuView is the actual bordered, focusable
+    // panel that owns internal left/right routing to whichever tab is active - so a SetFocus()
+    // call on this composite (e.g. from ProcessesControl's arrow-key nav) needs to be redirected
+    // down to it for the focus-colour cue to reach anything visible.
+    protected override void OnGotFocus() => menuView.SetFocus();
+
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        try {
-            Control.DrawingLockAcquire();
-            ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
-            Control? focusedControl = GetFocusedControl;
+        ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
 
-            switch (keyInfo.Key) {
-                case ConsoleKey.LeftArrow:
-                    menuView.SetFocus();
-                    
-                    if (menuView.SelectedItem != null) {
-                        ListViewItemEventArgs e = new(menuView.SelectedItem);
-                        MenuViewOnItemClicked(this, e);
-                    }
-                    
-                    break;
-                
-                case ConsoleKey.RightArrow:
-                    if (activeControl.Items.Count > 0) {
-                        activeControl.SelectedIndex = 0;
-                    }
+        switch (keyInfo.Key) {
+            // Only claimed when there is somewhere internal left/right to move: on the active
+            // tab, left steps back to the menu; on the menu, right steps into the active tab.
+            // Otherwise the key is left unhandled so ProcessesControl can move focus back to
+            // processControl (left) or leaves right to do nothing further (there is no pane
+            // beyond the active tab).
+            case ConsoleKey.LeftArrow when GetFocusedControl == activeControl:
+                menuView.SetFocus();
+                handled = true;
+                Draw();
+                break;
 
-                    activeControl.SetFocus();
-                    Draw();
-                    break;
-                
-                case ConsoleKey.UpArrow:
-                case ConsoleKey.DownArrow:
-                case ConsoleKey.PageUp:
-                case ConsoleKey.PageDown:
-                    focusedControl?.KeyPressed(keyInfo, ref handled);
-                    break;
-            }
-        }
-        finally {
-            Control.DrawingLockRelease();
+            case ConsoleKey.RightArrow when GetFocusedControl == menuView:
+                if (activeControl.Items.Count > 0) {
+                    activeControl.SelectedIndex = 0;
+                }
+
+                activeControl.SetFocus();
+                handled = true;
+                Draw();
+                break;
+
+            default:
+                GetFocusedControl?.KeyPressed(keyInfo, ref handled);
+                break;
         }
     }
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
         
         ListView[] listViews = [
             menuView, 
@@ -202,26 +194,35 @@ public partial class ProcessInfoControl : Control
             handlesView];
 
         foreach (var listView in listViews) {
-            listView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-            listView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
-            listView.BackgroundColour = appConfig.DefaultTheme.Background;
-            listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-            listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            listView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+            listView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+            listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+            listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+            listView.BackgroundColour = appConfig.Theme.Background;
+            listView.ForegroundColour = appConfig.Theme.Foreground;
+            listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+            listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         }
+
+        menuView.Items.Add(
+            new MenuListViewItem(
+                processInfoView,
+                "DETAIL",
+                appConfig.Theme.Background,
+                appConfig.Theme.Foreground));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 threadsView,
                 "THREADS",
-                appConfig.DefaultTheme.Background,
-                appConfig.DefaultTheme.Foreground));
+                appConfig.Theme.Background,
+                appConfig.Theme.Foreground));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 modulesView, "MODULES",
-                appConfig.DefaultTheme.Background,
-                appConfig.DefaultTheme.Foreground) {
+                appConfig.Theme.Background,
+                appConfig.Theme.Foreground) {
                 LoadItems = TryUpdateListViewModuleItems
             });
 
@@ -229,12 +230,12 @@ public partial class ProcessInfoControl : Control
             new MenuListViewItem(
                 handlesView,
                 "HANDLES",
-                appConfig.DefaultTheme.Background,
-                appConfig.DefaultTheme.Foreground));
+                appConfig.Theme.Background,
+                appConfig.Theme.Foreground));
 
         TryLoadProcessInfo();
         TryUpdateListViewThreadItems();
-        SetActiveControl(threadsView);
+        SetActiveControl(processInfoView);
 
         menuView.SetFocus();
         menuView.ItemClicked += MenuViewOnItemClicked;
@@ -254,28 +255,33 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnResize()
     {
-        processInfoView.X = X;
-        processInfoView.Y = Y;
-        processInfoView.Width = Width;
-        processInfoView.Height = ProcessInfoViewHeight;
-        processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width = ColumnInfoKeyWidth;
-        processInfoView.ColumnHeaders[(int)InfoColumns.Value].Width = Width - ColumnInfoKeyWidth;
-        
         menuView.X = X;
-        menuView.Y = processInfoView.Y + processInfoView.Height + ControlGutter;
-        menuView.Height = Height - (ProcessInfoViewHeight + 1 + ControlGutter);
+        menuView.Y = Y;
+        menuView.Height = Height;
         menuView.Width = MenuViewWidth;
-        menuView.ColumnHeaders[0].Width = MenuViewWidth;
+        // The column width is the *inner* content width, not the outer control width - the two
+        // border columns aren't part of it (see MenuControl.OnResize's identical Width - 2).
+        // Setting it to the full outer width made DrawItem()'s columnWidth > viewPort.Bounds.Width
+        // guard trip on every row, silently blanking all menu item text.
+        menuView.ColumnHeaders[0].Width = MenuViewWidth - 2;
 
         tabControls.ForEach(ctrl => {
-            ctrl.X = menuView.X + menuView.Width + ControlGutter;
+            ctrl.X = menuView.X + menuView.Width;
             ctrl.Y = menuView.Y;
             ctrl.Height = menuView.Height;
-            ctrl.Width = Width - (menuView.Width + ControlGutter); 
+            ctrl.Width = Width - menuView.Width;
         });
-        
+
+        // The second column's width must leave room for the two border columns DrawItem()'s
+        // viewport actually has to draw into (see CalculateViewPortBounds: Width - inset*2) -
+        // using the raw outer Width here made the two columns sum to 2 more than the viewport,
+        // which tripped DrawItem()'s columnWidth-vs-viewport guard and silently blanked the
+        // second column's text on every row (labels rendered, values never did).
+        processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width = ColumnInfoKeyWidth;
+        processInfoView.ColumnHeaders[(int)InfoColumns.Value].Width = processInfoView.Width - ColumnInfoKeyWidth - 2;
+
         modulesView.ColumnHeaders[(int)ModuleColumns.ModuleName].Width = ColumnModuleNameWidth;
-        modulesView.ColumnHeaders[(int)ModuleColumns.FileName].Width = modulesView.Width - ColumnModuleNameWidth;
+        modulesView.ColumnHeaders[(int)ModuleColumns.FileName].Width = modulesView.Width - ColumnModuleNameWidth - 2;
         
         threadsView.ColumnHeaders[(int)ThreadColumns.Id].Width = ColumnThreadIdWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.State].Width = ColumnThreadStateWidth;
@@ -318,6 +324,57 @@ public partial class ProcessInfoControl : Control
 
     public int SelectedProcessId { get; set; } = -1;
 
+    // The sync entry point for a host (ProcessesControl) telling this control the highlighted
+    // process elsewhere changed. Detail and threads always refresh - both are cheap and threads
+    // already refresh every second regardless; modules stay lazy, only forced when MODULES
+    // happens to be the tab currently on screen, matching the existing lazy-load-once philosophy.
+    public void LoadProcess(int pid)
+    {
+        if (pid == SelectedProcessId) {
+            return;
+        }
+
+        SelectedProcessId = pid;
+        processInfoView.Items.Clear();
+        modulesLoaded = false;
+        modulesView.Items.Clear();
+
+        TryLoadProcessInfo();
+        TryUpdateListViewThreadItems();
+
+        if (modulesView.Visible) {
+            TryUpdateListViewModuleItems();
+        }
+
+        Draw();
+    }
+
+    // Test-only seam: invokes the same click handler a real menu selection (click or arrow-key
+    // move onto the row) would fire, without needing to simulate real key presses.
+    internal void SelectMenuItemForTests(int index) =>
+        MenuViewOnItemClicked(this, new ListViewItemEventArgs(menuView.Items[index]));
+
+    // Test-only seam: the process name and pid shown centred in the top border of every tab view.
+    internal string ProcessTitle => processInfoView.HeaderText;
+
+    // ProcessInfoControl draws no border of its own, so the title goes on every tab view's
+    // HeaderText (ListView.DrawBorder centres it) - set on all four so it survives tab switches.
+    // menuView is left alone: at MenuViewWidth it has no room for a name.
+    private void SetProcessTitle(string title) =>
+        tabControls.ForEach(ctrl => ctrl.HeaderText = title);
+
+    // "chrome.exe (1234)" - the pid disambiguates processes sharing a name.
+    private static string ResolveProcessTitle(ProcessInfo processInfo)
+    {
+        string name = !string.IsNullOrWhiteSpace(processInfo.ProcessName) ? processInfo.ProcessName
+            : !string.IsNullOrWhiteSpace(processInfo.ModuleName) ? processInfo.ModuleName
+            : Path.GetFileName(processInfo.FileName);
+
+        return string.IsNullOrWhiteSpace(name)
+            ? $"({processInfo.Pid})"
+            : $"{name} ({processInfo.Pid})";
+    }
+
     private void SetActiveControl(Control activeControl)
     {
         tabControls.ForEach(ctrl => ctrl.Visible = false);
@@ -330,8 +387,13 @@ public partial class ProcessInfoControl : Control
             ProcessInfo? processInfo = processService.GetProcessById(SelectedProcessId);
             if (processInfo == null) {
                 processInfoView.Items.Clear();
+                SetProcessTitle(string.Empty);
                 return;
             }
+
+            // Set before the FileInfo/FileVersionInfo calls below, which throw for protected or
+            // system processes - the title should still say what's selected when detail can't load.
+            SetProcessTitle(ResolveProcessTitle(processInfo));
 
             FileInfo finfo = new(processInfo.FileName);
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(finfo.FullName);
@@ -341,38 +403,38 @@ public partial class ProcessInfoControl : Control
             
             processInfoView.Items.Add(
                 new(["File:", processInfo.ModuleName],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
                     
             processInfoView.Items.Add(
                 new(["Description:", processInfo.FileDescription],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
                     
             processInfoView.Items.Add(
                 new(["Path:", processInfo.CmdLine],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
             
             processInfoView.Items.Add(
                 new(["User:", processInfo.UserName],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
             
             processInfoView.Items.Add(
                 new(["Version:", fvi.FileVersion ?? string.Empty],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
             
             processInfoView.Items.Add(
                 new(["Size:", finfo.Length.ToFormattedByteSize()],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
             
             processInfoView.Items.Add(
                 new(["Size on disk:", $"{finfo.Length} bytes"],
-                    appConfig.DefaultTheme.Background,
-                    appConfig.DefaultTheme.Foreground));
+                    appConfig.Theme.Background,
+                    appConfig.Theme.Foreground));
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");

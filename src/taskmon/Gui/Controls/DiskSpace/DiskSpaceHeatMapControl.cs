@@ -105,9 +105,9 @@ public sealed class DiskSpaceHeatMapControl : Control
     private void DrawHeader(int left, int top, int width)
     {
         Color stateColour = specs?.State switch {
-            DiskSpaceScanState.Scanning => appConfig.DefaultTheme.RangeMidForeground,
-            DiskSpaceScanState.Completed => appConfig.DefaultTheme.RangeLowForeground,
-            DiskSpaceScanState.Faulted => appConfig.DefaultTheme.RangeHighForeground,
+            DiskSpaceScanState.Scanning => appConfig.Theme.RangeMidForeground,
+            DiskSpaceScanState.Completed => appConfig.Theme.RangeLowForeground,
+            DiskSpaceScanState.Faulted => appConfig.Theme.RangeHighForeground,
             _ => ForegroundColour
         };
 
@@ -140,7 +140,7 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
 
         int innerWidth = Width - 2;
-        Color borderColour = appConfig.DefaultTheme.ListViewBorder;
+        Color borderColour = appConfig.Theme.ListViewBorder;
 
         frame.Clear();
         frame.MoveTo(X, top);
@@ -213,8 +213,8 @@ public sealed class DiskSpaceHeatMapControl : Control
         double t = cellCount <= 1 ? 1.0 : 1.0 - (rank / (double)(cellCount - 1));
 
         return t <= 0.5
-            ? Lerp(appConfig.DefaultTheme.RangeLowBackground, appConfig.DefaultTheme.RangeMidBackground, t / 0.5)
-            : Lerp(appConfig.DefaultTheme.RangeMidBackground, appConfig.DefaultTheme.RangeHighBackground, (t - 0.5) / 0.5);
+            ? Lerp(appConfig.Theme.RangeLowBackground, appConfig.Theme.RangeMidBackground, t / 0.5)
+            : Lerp(appConfig.Theme.RangeMidBackground, appConfig.Theme.RangeHighBackground, (t - 0.5) / 0.5);
     }
 
     // Eases a newly-appeared cell in from the background colour over the next few redraws rather

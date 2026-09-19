@@ -48,16 +48,7 @@ public sealed class HeaderControl2 : Control
         this.appConfig = appConfig;
     }
 
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
     {
@@ -69,12 +60,12 @@ public sealed class HeaderControl2 : Control
         const string ThreadsLabel = " Threads: ";
         const string RunningLabel = " running";
 
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         Terminal.SetCursorPosition(X, Y);
-        Terminal.BackgroundColor = appConfig.DefaultTheme.MenubarBackground;
-        Terminal.ForegroundColor = appConfig.DefaultTheme.MenubarForeground;
+        Terminal.BackgroundColor = appConfig.Theme.MenubarBackground;
+        Terminal.ForegroundColor = appConfig.Theme.MenubarForeground;
 
         string menubar = "TASK MONITOR";
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
@@ -86,9 +77,9 @@ public sealed class HeaderControl2 : Control
         Terminal.BackgroundColor = BackgroundColour;
         Terminal.ForegroundColor = ForegroundColour;
 
-        Color lbColor = appConfig.DefaultTheme.Foreground;
-        Color fgColour = appConfig.DefaultTheme.RangeLowBackground;
-        Color bgColour = appConfig.DefaultTheme.Background;
+        Color lbColor = appConfig.Theme.Foreground;
+        Color fgColour = appConfig.Theme.RangeLowBackground;
+        Color bgColour = appConfig.Theme.Background;
 
         string ipAddress = privateIPv4Address;
 
@@ -104,11 +95,11 @@ public sealed class HeaderControl2 : Control
             OSLabel.Length + osVersion.Length +
             IpLabel.Length + ipAddress.Length;
 
-        int themeLen = appConfig.DefaultTheme.Name.Length + 1;
+        int themeLen = appConfig.Theme.Name.Length + 1;
 
         Terminal.BackgroundColor = bgColour;
         Terminal.WriteEmptyLineTo(Width - nchars - themeLen);
-        Terminal.Write($"{appConfig.DefaultTheme.Name.ToColour(fgColour, bgColour)} ");
+        Terminal.Write($"{appConfig.Theme.Name.ToColour(fgColour, bgColour)} ");
 
         // Nothing has published yet on the first draw. The header still paints its chrome and its
         // labels, with the figures left at zero, rather than leaving the top rows unwritten.
@@ -180,8 +171,8 @@ public sealed class HeaderControl2 : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 

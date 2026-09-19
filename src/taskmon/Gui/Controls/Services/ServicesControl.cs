@@ -28,7 +28,6 @@ public sealed partial class ServicesControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
-    private const int DetailGutter = 1;
 
     public ServicesControl(
         ServiceController serviceController,
@@ -93,23 +92,18 @@ public sealed partial class ServicesControl : Control
     // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => servicesView.SetFocus();
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-
-            if (services is { } current) {
-                EnsureRows(current);
-            }
-
-            RefreshDetailPane();
-
-            servicesView.Draw();
-            detailView.Draw();
+        if (services is { } current) {
+            EnsureRows(current);
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
+
+        RefreshDetailPane();
+
+        servicesView.Draw();
+        detailView.Draw();
     }
 
     // Rebuilds the row list only when the set of services changes - rather than every publish,
@@ -175,31 +169,33 @@ public sealed partial class ServicesControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
-        servicesView.BackgroundColour = appConfig.DefaultTheme.Background;
-        servicesView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        servicesView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        servicesView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        servicesView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-        servicesView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        servicesView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        servicesView.BackgroundColour = appConfig.Theme.Background;
+        servicesView.ForegroundColour = appConfig.Theme.Foreground;
+        servicesView.BorderColour = appConfig.Theme.ListViewBorder;
+        servicesView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        servicesView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        servicesView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        servicesView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        servicesView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        servicesView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
         foreach (ListViewColumnHeader columnHeader in servicesView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.DefaultTheme.Background;
-        detailView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        detailView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        detailView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        detailView.BackgroundColour = appConfig.Theme.Background;
+        detailView.ForegroundColour = appConfig.Theme.Foreground;
+        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
@@ -212,7 +208,7 @@ public sealed partial class ServicesControl : Control
 
     protected override void OnResize()
     {
-        int servicesViewHeight = Math.Max(1, Height - DetailViewHeight - DetailGutter);
+        int servicesViewHeight = Math.Max(1, Height - DetailViewHeight);
 
         servicesView.X = X;
         servicesView.Y = Y;
@@ -228,7 +224,7 @@ public sealed partial class ServicesControl : Control
         servicesView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
 
         detailView.X = X;
-        detailView.Y = Y + servicesViewHeight + DetailGutter;
+        detailView.Y = Y + servicesViewHeight;
         detailView.Width = Width;
         detailView.Height = DetailViewHeight;
 

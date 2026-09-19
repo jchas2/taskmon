@@ -34,7 +34,14 @@ public sealed partial class ProcessControl : Control
 
     private const int InvalidSelectedItemIndex = -1;
 
+    private int lastKnownProcessId = InvalidSelectedItemIndex;
+
     public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
+
+    // Fires on any change to SelectedProcessId - arrow-key movement, Enter, or the highlighted
+    // row shifting underneath the user because of a sort re-publish - unlike ProcessItemSelected,
+    // which only fires on Enter.
+    public event EventHandler<int>? SelectedProcessIdChanged;
 
     public ProcessControl(
         ServiceController serviceController,
@@ -128,11 +135,17 @@ public sealed partial class ProcessControl : Control
     }
     
     public string HeaderText { get; set; } = string.Empty;
-    
+
+    // Null (default) keeps today's behaviour - every ProcessControl reflects the one global
+    // AppConfig.VisibleColumns setting. A caller hosting this in a custom layout pane (e.g.
+    // SummaryControl2) sets this to show its own nominated column subset independent of the
+    // app-wide PROCESSES screen setting.
+    public Statistics? VisibleColumnsOverride { get; set; }
+
     // Process and Pid are always shown.
     private bool IsColumnVisible(Columns column) =>
         column is Columns.Process or Columns.Pid ||
-        (appConfig.VisibleColumns & ToStatistic(column)) != 0;
+        ((VisibleColumnsOverride ?? appConfig.VisibleColumns) & ToStatistic(column)) != 0;
 
     private void LoadSortItems()
     {
@@ -155,16 +168,28 @@ public sealed partial class ProcessControl : Control
     
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-            UpdateListView();
-            UpdateListViewItems();
-            sortView.Visible = mode == ControlMode.SortSelection;
-            sortView.Draw();
-            processView.Draw();
-        }
-        finally {
-            Control.DrawingLockRelease();
+        UpdateListView();
+        UpdateListViewItems();
+        sortView.Visible = mode == ControlMode.SortSelection;
+        sortView.Draw();
+        processView.Draw();
+
+        RaiseSelectedProcessIdChangedIfNeeded();
+    }
+
+    // Arrow-key movement inside processView never reaches here: ListView.OnKeyPressed repaints
+    // just the two affected rows directly (RedrawItem()) instead of going through a full Draw()/
+    // OnDraw() of this control, so the check above alone only ever catches snapshot-driven
+    // changes (a new tick, or the sorted order shifting who sits at the selected index). Arrow
+    // moves are covered separately via processView.ItemClicked, which ListView does raise on
+    // every Up/Down/PageUp/PageDown - see ProcessViewOnItemClicked below.
+    private void RaiseSelectedProcessIdChangedIfNeeded()
+    {
+        int currentProcessId = SelectedProcessId;
+
+        if (currentProcessId != lastKnownProcessId) {
+            lastKnownProcessId = currentProcessId;
+            SelectedProcessIdChanged?.Invoke(this, currentProcessId);
         }
     }
 
@@ -221,14 +246,8 @@ public sealed partial class ProcessControl : Control
                 return;
         }
         
-        try {
-            Control? targetControl = GetTargetControl();
-            Control.DrawingLockAcquire();
-            targetControl?.KeyPressed(keyInfo, ref handled);
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
+        Control? targetControl = GetTargetControl();
+        targetControl?.KeyPressed(keyInfo, ref handled);
     }
 
     // ProcessControl itself draws no border - whichever of sortView/processView is currently
@@ -236,35 +255,39 @@ public sealed partial class ProcessControl : Control
     // (e.g. from a parent like SummaryControl) needs to be redirected down to it.
     protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         ListView[] listViews = [sortView, processView];
 
         foreach (ListView listView in listViews) {
-            listView.BorderColour = appConfig.DefaultTheme.ChartBorder;
-            listView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-            listView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
-            listView.BackgroundColour = appConfig.DefaultTheme.Background;
-            listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-            listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            listView.BorderColour = appConfig.Theme.ChartBorder;
+            listView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+            listView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+            listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+            listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+            listView.BackgroundColour = appConfig.Theme.Background;
+            listView.ForegroundColour = appConfig.Theme.Foreground;
+            listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+            listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
             foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-                columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-                columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+                columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+                columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
             }
         }
         
         UpdateColumnHeaderSort(decorate: true);
         
         processView.ShowCheckboxes = appConfig.MultiSelectProcesses;
-        processView.SetFocus();
 
         sortView.ItemSelected += SortViewOnItemSelected;
         processView.ItemSelected += ProcessViewOnItemSelected;
+        processView.ItemClicked += ProcessViewOnItemClicked;
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         LoadSortItems();
@@ -338,6 +361,7 @@ public sealed partial class ProcessControl : Control
     {
         sortView.ItemSelected -= SortViewOnItemSelected;
         processView.ItemSelected -= ProcessViewOnItemSelected;
+        processView.ItemClicked -= ProcessViewOnItemClicked;
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
 
         base.OnUnload();
@@ -369,6 +393,12 @@ public sealed partial class ProcessControl : Control
 
     private void ProcessViewOnItemSelected(object? sender, ListViewItemEventArgs e) =>
         ProcessItemSelected?.Invoke(sender, e);
+
+    // ListView raises ItemClicked on every arrow-key/PageUp/PageDown move (not just Enter), so
+    // this is what actually catches a highlight change made via the keyboard - see the comment on
+    // RaiseSelectedProcessIdChangedIfNeeded for why the OnDraw() check alone misses it.
+    private void ProcessViewOnItemClicked(object? sender, ListViewItemEventArgs e) =>
+        RaiseSelectedProcessIdChangedIfNeeded();
 
     public List<int> CheckedProcesses
     {
@@ -494,34 +524,27 @@ public sealed partial class ProcessControl : Control
 
     private void UncheckAllProcesses()
     {
-        try {
-            Control.DrawingLockAcquire();
-            IEnumerable<ListViewItem> checkedItems = processView.Items.Where(item => item.Checked);
-            
-            foreach (ListViewItem item in checkedItems) {
-                item.Checked = false;
-            }
-            
-            processView.Draw();
+        IEnumerable<ListViewItem> checkedItems = processView.Items.Where(item => item.Checked);
+
+        foreach (ListViewItem item in checkedItems) {
+            item.Checked = false;
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
-        
+
+        processView.Draw();
     }
     
     private void UpdateColumnHeaderSort(bool decorate)
     {
 
         if (!decorate) {
-            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.HeaderBackground;
+            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.HeaderForeground;
             
             processView.ColumnHeaders[(int)sortColumn].Text = sortColumn.GetTitle();
         }
         else {
-            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.DefaultTheme.BackgroundHighlight;
-            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.DefaultTheme.ForegroundHighlight;
+            processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.BackgroundHighlight;
+            processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.ForegroundHighlight;
             
             processView.ColumnHeaders[(int)sortColumn].Text = appConfig.SortAscending
                 ? sortColumn.GetTitle() + "\u2191"

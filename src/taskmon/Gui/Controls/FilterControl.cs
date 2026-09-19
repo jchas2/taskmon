@@ -11,16 +11,7 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
     
     public int NeededWidth { get; private set; }
     
-    protected override void OnDraw()
-    {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawInternal();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
+    protected override void OnDraw() => OnDrawInternal();
     
     private void OnDrawInternal()
     {
@@ -34,7 +25,7 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
             nchars,
             Y,
             CommandLength,
-            appConfig.DefaultTheme,
+            appConfig.Theme,
             enabled: true,
             Terminal);
 
@@ -44,7 +35,7 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
             nchars,
             Y,
             CommandLength,
-            appConfig.DefaultTheme,
+            appConfig.Theme,
             enabled: true,
             Terminal);
 
@@ -54,13 +45,13 @@ public class FilterControl(ISystemTerminal terminal, AppConfig appConfig) : Cont
         string spacer = "  ";
         string filterCommand = "Filter: ";
 
-        Terminal.BackgroundColor = appConfig.DefaultTheme.Background;
-        Terminal.ForegroundColor = appConfig.DefaultTheme.Foreground;
+        Terminal.BackgroundColor = appConfig.Theme.Background;
+        Terminal.ForegroundColor = appConfig.Theme.Foreground;
         Terminal.Write(spacer);
         nchars += spacer.Length;
         
-        Terminal.BackgroundColor = appConfig.DefaultTheme.BackgroundHighlight;
-        Terminal.ForegroundColor = appConfig.DefaultTheme.ForegroundHighlight;
+        Terminal.BackgroundColor = appConfig.Theme.BackgroundHighlight;
+        Terminal.ForegroundColor = appConfig.Theme.ForegroundHighlight;
         Terminal.Write(filterCommand);
         nchars += filterCommand.Length;
         

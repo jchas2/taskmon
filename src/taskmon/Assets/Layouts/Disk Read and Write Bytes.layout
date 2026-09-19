@@ -1,7 +1,12 @@
-﻿[Disk Read and Write Bytes]
-ratio=0.6
-num-rows=1
-num-cols=1
-; Chart index
-; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
-charts=2
+[Disk Read and Write Bytes]
+; A split tree (see SummaryLayout2). Each node is one of:
+;   split,<Row|Column>,<ratio>,<first>,<second>  - Row = side by side, Column = stacked,
+;                                                   ratio = the first child's share
+;   pane,<control>[,<process columns joined with +>]
+; The Disk chart over the process list, the chart taking 60% of the height.
+layout-type=tree
+root=0
+nodes=0,1,2
+node.0=split,Column,0.6,1,2
+node.1=pane,Disk
+node.2=pane,Process

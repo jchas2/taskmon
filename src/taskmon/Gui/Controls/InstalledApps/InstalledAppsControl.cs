@@ -28,7 +28,6 @@ public sealed partial class InstalledAppsControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight = 10; // border (2) + column headers (1) + 7 field rows
-    private const int DetailGutter = 1;
 
     public InstalledAppsControl(
         ServiceController serviceController,
@@ -95,23 +94,18 @@ public sealed partial class InstalledAppsControl : Control
     // for the focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => installedAppsView.SetFocus();
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-
-            if (installedApps is { } current) {
-                EnsureRows(current);
-            }
-
-            RefreshDetailPane();
-
-            installedAppsView.Draw();
-            detailView.Draw();
+        if (installedApps is { } current) {
+            EnsureRows(current);
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
+
+        RefreshDetailPane();
+
+        installedAppsView.Draw();
+        detailView.Draw();
     }
 
     // Rebuilds the row list only when the set of apps changes - installs and uninstalls - rather
@@ -177,31 +171,33 @@ public sealed partial class InstalledAppsControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
-        installedAppsView.BackgroundColour = appConfig.DefaultTheme.Background;
-        installedAppsView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        installedAppsView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        installedAppsView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        installedAppsView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-        installedAppsView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        installedAppsView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        installedAppsView.BackgroundColour = appConfig.Theme.Background;
+        installedAppsView.ForegroundColour = appConfig.Theme.Foreground;
+        installedAppsView.BorderColour = appConfig.Theme.ListViewBorder;
+        installedAppsView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        installedAppsView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        installedAppsView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        installedAppsView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        installedAppsView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        installedAppsView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
         foreach (ListViewColumnHeader columnHeader in installedAppsView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.DefaultTheme.Background;
-        detailView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        detailView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        detailView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        detailView.BackgroundColour = appConfig.Theme.Background;
+        detailView.ForegroundColour = appConfig.Theme.Foreground;
+        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
@@ -214,7 +210,7 @@ public sealed partial class InstalledAppsControl : Control
 
     protected override void OnResize()
     {
-        int installedAppsViewHeight = Math.Max(1, Height - DetailViewHeight - DetailGutter);
+        int installedAppsViewHeight = Math.Max(1, Height - DetailViewHeight);
 
         installedAppsView.X = X;
         installedAppsView.Y = Y;
@@ -233,7 +229,7 @@ public sealed partial class InstalledAppsControl : Control
         installedAppsView.ColumnHeaders[6].Width = Math.Max(1, Width - fixedWidth - 3);
 
         detailView.X = X;
-        detailView.Y = Y + installedAppsViewHeight + DetailGutter;
+        detailView.Y = Y + installedAppsViewHeight;
         detailView.Width = Width;
         detailView.Height = DetailViewHeight;
 

@@ -1,7 +1,26 @@
-﻿[All Charts Large]
-ratio=0.8
-num-rows=2
-num-cols=4
-; Chart index
-; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
-charts=0,1,2,3,4,5,6,7
+[All Charts Large]
+; A split tree (see SummaryLayout2). Each node is one of:
+;   split,<Row|Column>,<ratio>,<first>,<second>  - Row = side by side, Column = stacked,
+;                                                   ratio = the first child's share
+;   pane,<control>[,<process columns joined with +>]
+; 2 rows of 4 charts over the process list, the charts taking 80% of the height.
+layout-type=tree
+root=0
+nodes=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+node.0=split,Column,0.8,1,2
+node.1=split,Column,0.5,3,4
+node.2=pane,Process
+node.3=split,Row,0.25,5,6
+node.4=split,Row,0.25,11,12
+node.5=pane,Cpu
+node.6=split,Row,0.33333334,7,8
+node.7=pane,Gpu
+node.8=split,Row,0.5,9,10
+node.9=pane,Disk
+node.10=pane,NetworkSent
+node.11=pane,Memory
+node.12=split,Row,0.33333334,13,14
+node.13=pane,GpuMemory
+node.14=split,Row,0.5,15,16
+node.15=pane,VirtualMemory
+node.16=pane,NetworkReceived

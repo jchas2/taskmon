@@ -124,14 +124,8 @@ public sealed class SummaryControl : Control
 
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-            OnDrawCharts();
-            OnDrawProcesses();
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
+        OnDrawCharts();
+        OnDrawProcesses();
     }
 
     // A chart is only advanced when the service that feeds it has published. Adding a zero for a
@@ -237,22 +231,22 @@ public sealed class SummaryControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
         
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = appConfig.DefaultTheme.Background;
-            ctrl.ForegroundColour = appConfig.DefaultTheme.Foreground; 
+            ctrl.BackgroundColour = appConfig.Theme.Background;
+            ctrl.ForegroundColour = appConfig.Theme.Foreground; 
         }
 
         foreach (Chart chart in charts) {
-            chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-            chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-            chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-            chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+            chart.BorderColour = appConfig.Theme.ChartBorder;
+            chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+            chart.ColourLow = appConfig.Theme.RangeLowBackground;
+            chart.ColourMid = appConfig.Theme.RangeMidBackground;
             chart.MetreStyle = appConfig.MetreStyle;
             chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-            chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+            chart.YAxisColour = appConfig.Theme.ChartYAxis;
         }
 
         processControl.NumberOfProcesses = 20;

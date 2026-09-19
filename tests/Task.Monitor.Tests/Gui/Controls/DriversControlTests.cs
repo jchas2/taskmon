@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Drivers;
+using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Process;
@@ -200,6 +201,31 @@ public sealed class DriversControlTests
         ctrl.Draw();
 
         Assert.Contains("Gathering drivers", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    // Regression test: OnGotFocus redirects focus down to driversView, which makes this
+    // control's own Focused flip back to false the instant that happens (see
+    // Screen.FocusInternal's reentrant redirect) - HasFocus is the override that survives it.
+    [Fact]
+    public void HasFocus_Survives_The_OnGotFocus_Redirect()
+    {
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 160, Height = 40 };
+
+        DriversControl ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
+            Width = 160,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        Assert.False(ctrl.Focused);
+        Assert.True(ctrl.HasFocus);
 
         ctrl.Unload();
     }

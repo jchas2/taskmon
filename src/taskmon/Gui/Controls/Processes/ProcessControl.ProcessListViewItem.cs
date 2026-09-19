@@ -83,22 +83,22 @@ public partial class ProcessControl
             void FormatSubItem(ListViewSubItem subItem, Func<bool> condition)
             {
                 if (condition.Invoke()) {
-                    subItem.ForegroundColor = AppConfig.DefaultTheme.DeltaHighlightColour;
+                    subItem.ForegroundColor = AppConfig.Theme.DeltaHighlightColour;
                 }
             }
             
             for (int i = 0; i < (int)Columns.Count; i++) {
-                SubItems[i].BackgroundColor = AppConfig.DefaultTheme.Background;
-                SubItems[i].ForegroundColor = AppConfig.DefaultTheme.Foreground;
+                SubItems[i].BackgroundColor = AppConfig.Theme.Background;
+                SubItems[i].ForegroundColor = AppConfig.Theme.Foreground;
             }
             
             if (!processEntry.IsRunningAsRoot) {
                 SubItems[(int)Columns.User].ForegroundColor = SubItems[(int)Columns.User].Text.Equals(currThreadUser, StringComparison.OrdinalIgnoreCase)
-                    ? SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserCurrentNonRoot
-                    : SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserOtherNonRoot; 
+                    ? SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserCurrentNonRoot
+                    : SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserOtherNonRoot; 
             }
             else {
-                SubItems[(int)Columns.User].ForegroundColor = AppConfig.DefaultTheme.ColumnUserRoot;
+                SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserRoot;
             }
             
             if (AppConfig.HighlightStatisticsColumnUpdate) {
@@ -110,9 +110,9 @@ public partial class ProcessControl
             bool cpuHighCoreUsage = SystemInfo.GetCpuHighCoreUsage(processEntry.CpuTimePercent);
             
             if (cpuHighCoreUsage) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.DefaultTheme.RangeHighBackground;
-                SubItems[(int)Columns.Cpu].ForegroundColor = AppConfig.DefaultTheme.RangeHighForeground;
-                SubItems[(int)Columns.Cpu].BackgroundColor = AppConfig.DefaultTheme.RangeHighBackground;
+                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.RangeHighBackground;
+                SubItems[(int)Columns.Cpu].ForegroundColor = AppConfig.Theme.RangeHighForeground;
+                SubItems[(int)Columns.Cpu].BackgroundColor = AppConfig.Theme.RangeHighBackground;
             }
             else {
                 if (AppConfig.HighlightStatisticsColumnUpdate) {
@@ -141,16 +141,16 @@ public partial class ProcessControl
                 : 0.0;
             
             if (memRatio > 0.1 && memRatio <= 0.2) {
-                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.DefaultTheme.RangeLowForeground;
-                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.DefaultTheme.RangeLowBackground;
+                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.Theme.RangeLowForeground;
+                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.Theme.RangeLowBackground;
             }
             else if (memRatio > 0.2 && memRatio <= 0.5) {
-                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.DefaultTheme.RangeMidForeground;
-                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.DefaultTheme.RangeMidBackground;
+                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.Theme.RangeMidForeground;
+                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.Theme.RangeMidBackground;
             }
             else if (memRatio > 0.5) {
-                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.DefaultTheme.RangeHighForeground;
-                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.DefaultTheme.RangeHighBackground;
+                SubItems[(int)Columns.Memory].ForegroundColor = AppConfig.Theme.RangeHighForeground;
+                SubItems[(int)Columns.Memory].BackgroundColor = AppConfig.Theme.RangeHighBackground;
             }
             else {
                 if (AppConfig.HighlightStatisticsColumnUpdate) {
@@ -164,16 +164,16 @@ public partial class ProcessControl
             
             if (mbps > 1.0) {
                 if (mbps < 10.0) {
-                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.DefaultTheme.RangeLowForeground;
-                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.DefaultTheme.RangeLowBackground;
+                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.Theme.RangeLowForeground;
+                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.Theme.RangeLowBackground;
                 }
                 else if (mbps < 100.0) {
-                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.DefaultTheme.RangeMidForeground;
-                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.DefaultTheme.RangeMidBackground;
+                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.Theme.RangeMidForeground;
+                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.Theme.RangeMidBackground;
                 }
                 else {
-                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.DefaultTheme.RangeHighForeground;
-                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.DefaultTheme.RangeHighBackground;
+                    SubItems[(int)Columns.Disk].ForegroundColor = AppConfig.Theme.RangeHighForeground;
+                    SubItems[(int)Columns.Disk].BackgroundColor = AppConfig.Theme.RangeHighBackground;
                 }
             }
             else {
@@ -185,37 +185,37 @@ public partial class ProcessControl
             }
 
             if (!processEntry.IsDaemon && AppConfig.HighlightDaemons) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandNormalUserSpace;
-                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandNormalUserSpace;
+                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandNormalUserSpace;
+                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandNormalUserSpace;
             }
 
             if (processEntry.IsLowPriority) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandLowPriority;
-                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandLowPriority;
+                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandLowPriority;
+                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandLowPriority;
             }
 
             if (mbps >= 100.0) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandIoBound;
-                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandIoBound;
+                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandIoBound;
+                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandIoBound;
             }
 
             if (cpuHighCoreUsage) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandHighCpu;
-                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.DefaultTheme.ColumnCommandHighCpu;
+                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandHighCpu;
+                SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandHighCpu;
             }
 
-            SubItems[(int)Columns.Power].BackgroundColor = AppConfig.DefaultTheme.Background;
+            SubItems[(int)Columns.Power].BackgroundColor = AppConfig.Theme.Background;
 
             if (processEntry.PowerBucket == ProcessPowerBucket.VeryLow ||
                 processEntry.PowerBucket == ProcessPowerBucket.Low) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.DefaultTheme.RangeLowBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeLowBackground;
             }
             else if (processEntry.PowerBucket == ProcessPowerBucket.Moderate) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.DefaultTheme.RangeMidBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeMidBackground;
             }
             else if (processEntry.PowerBucket == ProcessPowerBucket.High ||
                 processEntry.PowerBucket == ProcessPowerBucket.VeryHigh) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.DefaultTheme.RangeHighBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeHighBackground;
             }
             
             lastCpu = processEntry.CpuTimePercent;

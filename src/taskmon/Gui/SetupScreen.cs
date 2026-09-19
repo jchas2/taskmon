@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
@@ -14,6 +15,15 @@ namespace Task.Monitor.Gui;
 public class SetupScreen : Screen
 {
     private readonly RunContext runContext;
+    private readonly ScreenApplication screenApp;
+
+    // First row of the LAYOUTS tab - Enter on it opens the designer on a fresh example layout.
+    // Can't collide with a real layout name: the designer's save dialog doesn't accept '+'.
+    private const string NewLayoutRow = "+ New Layout";
+
+    // Set when leaving for the designer, so the Show() that brings this screen back (after the
+    // designer is closed) returns to the LAYOUTS tab rather than resetting to GENERAL.
+    private bool returnToLayoutsTab;
     private readonly ListView headerView;
     private readonly ListView menuView;
     private readonly ListView generalView;
@@ -53,9 +63,10 @@ public class SetupScreen : Screen
         (Statistics.Path, "Path"),
     ];
 
-    public SetupScreen(RunContext runContext) : base(runContext.Terminal)
+    public SetupScreen(RunContext runContext, ScreenApplication screenApp) : base(runContext.Terminal)
     {
         this.runContext = runContext;
+        this.screenApp = screenApp;
 
         headerView = new(runContext.Terminal) {
             Name = nameof(headerView),
@@ -122,7 +133,7 @@ public class SetupScreen : Screen
             Visible = false
         };
 
-        layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Layouts"));
+        layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Summary layouts - ↵ create/edit, highlighted is used on F10 Done"));
         
         metreView = new(runContext.Terminal) {
             Name = nameof(metreView),
@@ -178,7 +189,7 @@ public class SetupScreen : Screen
             numProcsView
         });
 
-        previewTheme = runContext.AppConfig.DefaultTheme;
+        previewTheme = runContext.AppConfig.Theme;
     }
 
     private void LoadGeneralSection()
@@ -366,14 +377,21 @@ public class SetupScreen : Screen
             .Select(t => t.Name)
             .ToList();
 
-        AddItems(themeView, themeNames, val => runContext.AppConfig.DefaultTheme.Name.Equals(val));
+        AddItems(themeView, themeNames, val => runContext.AppConfig.Theme.Name.Equals(val));
         
-        List<string> layoutNames = runContext.AppConfig.Layouts
-            .OrderBy(l => l.Name)
-            .Select(l => l.Name)
-            .ToList();
+        // The SUMMARY screen's split-tree layouts (SummaryControl2) - the shipped ones and any
+        // saved from the designer - with the one currently in use highlighted.
+        layoutView.Items.Add(new ListViewItem(NewLayoutRow));
 
-        AddItems(layoutView, layoutNames, val => runContext.AppConfig.DefaultLayout.Name.Equals(val));
+        string? defaultLayoutName = runContext.AppConfig.DefaultSummaryLayout2?.Name;
+
+        foreach (string name in runContext.AppConfig.SummaryLayouts2.Select(l => l.Name).OrderBy(n => n)) {
+            layoutView.Items.Add(new ListViewItem(name));
+
+            if (name.Equals(defaultLayoutName, StringComparison.CurrentCultureIgnoreCase)) {
+                layoutView.SelectedIndex = layoutView.Items.Count - 1;
+            }
+        }
         
         List<string> metreStyles = Enum.GetValues<MetreControlStyle>()
             .Select(c => c.ToString())
@@ -418,13 +436,16 @@ public class SetupScreen : Screen
         runContext.AppConfig.VisibleColumns = visibleColumns;
         
         if (themeView.SelectedItem?.Text != null) {
-            runContext.AppConfig.DefaultTheme = runContext.AppConfig.Themes.First(
+            runContext.AppConfig.Theme = runContext.AppConfig.Themes.First(
                 t => t.Name.Equals(themeView.SelectedItem.Text, StringComparison.CurrentCultureIgnoreCase));
         }
 
-        if (layoutView.SelectedItem?.Text != null) {
-            runContext.AppConfig.DefaultLayout = runContext.AppConfig.Layouts.First(
-                t => t.Name.Equals(layoutView.SelectedItem.Text, StringComparison.CurrentCultureIgnoreCase));
+        // The "+ New Layout" row matches no layout, so leaving it highlighted keeps the current one.
+        SummaryLayout2? chosenLayout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(
+            l => l.Name.Equals(layoutView.SelectedItem?.Text, StringComparison.CurrentCultureIgnoreCase));
+
+        if (chosenLayout != null) {
+            runContext.AppConfig.DefaultSummaryLayout2 = chosenLayout;
         }
 
         runContext.AppConfig.MetreStyle = Enum.GetValues<MetreControlStyle>()
@@ -531,7 +552,20 @@ public class SetupScreen : Screen
                 focusedControl?.KeyPressed(keyInfo, ref handled);
                 handled = true;
                 break;
-            
+
+            // Enter on a layout opens it in the designer; on "+ New Layout", a fresh example.
+            // Needs the list itself focused (Right arrow into it), like Space/arrows above.
+            case ConsoleKey.Enter when activeControl == layoutView && focusedControl == layoutView:
+                OpenLayoutDesigner(layoutView.SelectedItem?.Text);
+                handled = true;
+                break;
+
+            // Shortcut for "+ New Layout" from anywhere on the LAYOUTS tab.
+            case ConsoleKey.N when activeControl == layoutView:
+                OpenLayoutDesigner(null);
+                handled = true;
+                break;
+
             case ConsoleKey.F10:
                 if (!SaveConfig()) {
                     handled = true;
@@ -549,8 +583,8 @@ public class SetupScreen : Screen
     {
         Terminal.CursorVisible = false;
 
-        BackgroundColour = runContext.AppConfig.DefaultTheme.Background;
-        ForegroundColour = runContext.AppConfig.DefaultTheme.Foreground;
+        BackgroundColour = runContext.AppConfig.Theme.Background;
+        ForegroundColour = runContext.AppConfig.Theme.Foreground;
         
         foreach (Control control in Controls) {
             control.Load();
@@ -576,10 +610,20 @@ public class SetupScreen : Screen
             [ -1, 5, 10, 20, 50, 100, 500, 1000 ],
             runContext.AppConfig.NumberOfProcesses);        
 
-        previewTheme = runContext.AppConfig.DefaultTheme;
+        previewTheme = runContext.AppConfig.Theme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;
-        generalView.Visible = true;
-        menuView.SetFocus();
+
+        if (returnToLayoutsTab) {
+            // Back from the designer - the list above was just rebuilt, so a layout saved there
+            // is already in it. Focus itself is set in OnShown: Screen.Show() runs Focus() after
+            // Load(), which would move it back to the category menu.
+            layoutView.Visible = true;
+            SelectMenuItemFor(layoutView);
+        }
+        else {
+            generalView.Visible = true;
+            menuView.SetFocus();
+        }
         
         menuView.ItemClicked += MenuViewOnItemClicked;
         themeView.ItemClicked += ThemeViewOnItemClicked;
@@ -587,6 +631,41 @@ public class SetupScreen : Screen
         base.OnLoad();
     }
     
+    protected override void OnShown()
+    {
+        if (!returnToLayoutsTab) {
+            return;
+        }
+
+        returnToLayoutsTab = false;
+        layoutView.SetFocus();
+    }
+
+    private void SelectMenuItemFor(ListView tab)
+    {
+        for (int i = 0; i < menuView.Items.Count; i++) {
+            if (menuView.Items[i] is MenuListViewItem item && item.AssociatedControl == tab) {
+                menuView.SelectedIndex = i;
+                return;
+            }
+        }
+    }
+
+    // A null or unknown name (e.g. the "+ New Layout" row) opens a fresh, unnamed example layout.
+    // The designer edits a copy (ToTree builds a new tree), so leaving it without saving changes
+    // nothing here.
+    private void OpenLayoutDesigner(string? layoutName)
+    {
+        SummaryLayout2? layout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(
+            l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+
+        LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();
+        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateExample(), layout?.Name);
+
+        returnToLayoutsTab = true;
+        screenApp.ShowScreen<LayoutDesignerScreen>();
+    }
+
     private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
         Theme theme = runContext.AppConfig.Themes
@@ -603,31 +682,42 @@ public class SetupScreen : Screen
         Draw();
     }
 
+    // Every ListView here defaults to ShowBorder = true, which insets its actual drawable
+    // viewport by one column on each side (see ListView.CalculateViewPortBounds) - a column
+    // width set to the control's raw Width, with no allowance for that inset, trips
+    // ListView.DrawItem's "does this column fit the viewport" guard on column 0 of every row,
+    // silently blanking every list on this screen. This screen was unreachable from the running
+    // app until this session wired up MainScreen2's F2 (see MainScreen2's ScreenApplication
+    // field), so nothing had ever actually exercised OnResize() against a real terminal before.
+    private const int BorderInset = 2;
+
     protected override void OnResize()
     {
         headerView.X = X;
         headerView.Y = Y + 2;
         headerView.Width = Width;
         headerView.Height = 3;
-        headerView.ColumnHeaders[0].Width = Width;
-        
+        headerView.ColumnHeaders[0].Width = Math.Max(0, Width - BorderInset);
+
         menuView.X = X;
         menuView.Y = headerView.Y + headerView.Height;
         menuView.Height = Height - (headerView.Height + 4) - ControlGutter;
         menuView.Width = MenuViewWidth;
-        menuView.ColumnHeaders[0].Width = MenuViewWidth;
-        
+        menuView.ColumnHeaders[0].Width = Math.Max(0, MenuViewWidth - BorderInset);
+
         foreach (ListView ctrl in tabControls) {
             ctrl.X = menuView.X + menuView.Width + ControlGutter;
             ctrl.Y = menuView.Y;
             ctrl.Height = menuView.Height;
             ctrl.Width = Width - (menuView.Width + ControlGutter);
-            ctrl.ColumnHeaders[0].Width = ctrl.ShowCheckboxes ? ctrl.Width - ListView.CheckboxWidth : ctrl.Width;
+
+            int checkboxWidth = ctrl.ShowCheckboxes ? ListView.CheckboxWidth : 0;
+            ctrl.ColumnHeaders[0].Width = Math.Max(0, ctrl.Width - checkboxWidth - BorderInset);
         }
 
         generalView.ColumnHeaders[1].Width = 0;
         columnsView.ColumnHeaders[1].Width = 0;
-        
+
         base.OnResize();
     }
 
@@ -682,6 +772,8 @@ public class SetupScreen : Screen
     {
         ctrl.BackgroundHighlightColour = previewTheme.BackgroundHighlight;
         ctrl.ForegroundHighlightColour = previewTheme.ForegroundHighlight;
+        ctrl.BackgroundHighlightInactiveColour = previewTheme.BackgroundHighlightInactive;
+        ctrl.ForegroundHighlightInactiveColour = previewTheme.ForegroundHighlightInactive;
         ctrl.HeaderBackgroundColour = previewTheme.HeaderBackground;
         ctrl.HeaderForegroundColour = previewTheme.HeaderForeground;
     }

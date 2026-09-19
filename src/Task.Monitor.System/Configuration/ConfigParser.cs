@@ -142,7 +142,7 @@ public class ConfigParser : IDisposable
                 throw new ConfigParseException($"End-of-file found reading key name {keyBuffer}.");
             }
             
-            if (!(char.IsLetterOrDigit(ch) || ch == '-')) {
+            if (!(char.IsLetterOrDigit(ch) || ch == '-' || ch == '.')) {
                 break;
             }
 

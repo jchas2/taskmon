@@ -30,7 +30,6 @@ public sealed partial class DriversControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
-    private const int DetailGutter = 1;
 
     public DriversControl(
         ServiceController serviceController,
@@ -95,23 +94,18 @@ public sealed partial class DriversControl : Control
     // needs to be redirected down to it for the focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => driversView.SetFocus();
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
     protected override void OnDraw()
     {
-        try {
-            Control.DrawingLockAcquire();
-
-            if (drivers is { } current) {
-                EnsureRows(current);
-            }
-
-            RefreshDetailPane();
-
-            driversView.Draw();
-            detailView.Draw();
+        if (drivers is { } current) {
+            EnsureRows(current);
         }
-        finally {
-            Control.DrawingLockRelease();
-        }
+
+        RefreshDetailPane();
+
+        driversView.Draw();
+        detailView.Draw();
     }
 
     // Rebuilds the row list only when the set of drivers changes - rather than every publish,
@@ -177,31 +171,33 @@ public sealed partial class DriversControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
-        driversView.BackgroundColour = appConfig.DefaultTheme.Background;
-        driversView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        driversView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        driversView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        driversView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
-        driversView.BackgroundHighlightColour = appConfig.DefaultTheme.BackgroundHighlight;
-        driversView.ForegroundHighlightColour = appConfig.DefaultTheme.ForegroundHighlight;
+        driversView.BackgroundColour = appConfig.Theme.Background;
+        driversView.ForegroundColour = appConfig.Theme.Foreground;
+        driversView.BorderColour = appConfig.Theme.ListViewBorder;
+        driversView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        driversView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        driversView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
+        driversView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        driversView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
+        driversView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
         foreach (ListViewColumnHeader columnHeader in driversView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.DefaultTheme.Background;
-        detailView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        detailView.BorderColour = appConfig.DefaultTheme.ListViewBorder;
-        detailView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        detailView.BackgroundColour = appConfig.Theme.Background;
+        detailView.ForegroundColour = appConfig.Theme.Foreground;
+        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
@@ -214,7 +210,7 @@ public sealed partial class DriversControl : Control
 
     protected override void OnResize()
     {
-        int driversViewHeight = Math.Max(1, Height - DetailViewHeight - DetailGutter);
+        int driversViewHeight = Math.Max(1, Height - DetailViewHeight);
 
         driversView.X = X;
         driversView.Y = Y;
@@ -230,7 +226,7 @@ public sealed partial class DriversControl : Control
         driversView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
 
         detailView.X = X;
-        detailView.Y = Y + driversViewHeight + DetailGutter;
+        detailView.Y = Y + driversViewHeight;
         detailView.Width = Width;
         detailView.Height = DetailViewHeight;
 

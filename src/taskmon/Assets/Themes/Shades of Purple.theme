@@ -1,4 +1,4 @@
-﻿;=============================================================================
+;=============================================================================
 ; Task Monitor (taskmon) - Built-in Theme
 ;=============================================================================
 ; IMPORTANT:
@@ -13,43 +13,65 @@
 [Shades of Purple]
 colour-mode=indexed
 
-background=transparent
-background-highlight=#B362FF       
+control.background=transparent
+control.background.highlight.focused=#B362FF
+control.background.highlight.inactive=#708090
+control.foreground=#B362FF
+control.foreground.highlight.focused=#FFFFFF0D
+control.foreground.highlight.inactive=#FFFFFF0D
+control.border=#B362FF
+control.border.focused=#FFEE80
 
-chart-border=#B362FF
-chart-y-axis=#A5FF90
+chart.border=#B362FF
+chart.yaxis=#A5FF90
+chart.title=#B362FF
+chart.grid=#A9A9A9
+chart.range.low.background=#A5FF90
+chart.range.low.foreground=#222222
+chart.range.mid.background=#FF9D00
+chart.range.mid.foreground=#222222
+chart.range.high.background=#B362FF
+chart.range.high.foreground=#222222
 
-col-cmd-normal-user-space=#A5FF90    
-col-cmd-low-priority=#FF628C         
-col-cmd-high-cpu=#B362FF             
-col-cmd-io-bound=#E1EFFF             
-col-cmd-script=#80FFBB               
-col-user-current-non-root=#B362FF    
-col-user-other-non-root=#FF9D00      
-col-user-system=#FFEE80              
-col-user-root=#FFEE80                
+listview.background=transparent
+listview.foreground=#B362FF
+listview.border=#B362FF
+listview.header.background=#222244
+listview.header.foreground=#FFFFFF
 
-command-foreground=#FFFFFF         
-command-background=#222244         
+performance.panel.background=transparent
+performance.panel.foreground=#B362FF
+performance.panel.titlebar.background=#222244
+performance.panel.titlebar.foreground=#FFFFFF
+performance.cpu.kernel=#B362FF
+performance.cpu.user=#A5FF90
+performance.memory.inuse=#B362FF
+performance.memory.modified=#A5FF90
+performance.memory.standby=#FF9D00
+performance.memory.free=#A5FF90
 
-delta-highlight-colour=#9EFFFF     
+process.list.normaluserspace=#A5FF90
+process.list.lowpriority=#FF628C
+process.list.highcpu=#B362FF
+process.list.iobound=#E1EFFF
+process.list.script=#80FFBB
+process.list.user.currentnonroot=#B362FF
+process.list.user.othernonroot=#FF9D00
+process.list.user.system=#FFEE80
+process.list.user.root=#FFEE80
+process.list.deltahighlight=#9EFFFF
 
-error=#db61a2
+heatmap.size.small=#A5FF90
+heatmap.size.mid=#FF9D00
+heatmap.size.large=#B362FF
+heatmap.state.scanning=#222222
+heatmap.state.completed=#222222
+heatmap.state.faulted=#222222
 
-foreground=#B362FF                 
-foreground-highlight=#FFFFFF0D     
+app.error=#db61a2
 
-listView-border=#B362FF
+menubar.foreground=#FFFFFF
+menubar.background=#222244
 
-menubar-foreground=#FFFFFF         
-menubar-background=#222244         
-
-range-high-background=#B362FF      
-range-low-background=#A5FF90       
-range-mid-background=#FF9D00       
-range-high-foreground=#222222
-range-low-foreground=#222222
-range-mid-foreground=#222222
-
-header-background=#222244          
-header-foreground=#FFFFFF          
+command.foreground=#FFFFFF
+command.background=#222244

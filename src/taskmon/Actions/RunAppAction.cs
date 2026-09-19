@@ -24,7 +24,7 @@ public sealed class RunAppAction(RunContext runContext) : IAction
     {
         ConsoleEx.SetAlternateScreenBuffer();
 
-        Control.FocusSelectionColour = runContext.AppConfig.DefaultTheme.FocusSelectionColour;
+        Control.FocusSelectionColour = runContext.AppConfig.Theme.FocusSelectionColour;
 
         runContext.ServiceController
             .AddService(() => new CpuService())
@@ -53,8 +53,9 @@ public sealed class RunAppAction(RunContext runContext) : IAction
         screenApp
             .RegisterScreen(mainScreen)
             .RegisterScreen(new HelpScreen(runContext))
-            .RegisterScreen(new SetupScreen(runContext))
-            .RegisterScreen(new AboutScreen(runContext));
+            .RegisterScreen(new SetupScreen(runContext, screenApp))
+            .RegisterScreen(new AboutScreen(runContext))
+            .RegisterScreen(new LayoutDesignerScreen(runContext));
         
         runContext.ServiceController.Start();
 

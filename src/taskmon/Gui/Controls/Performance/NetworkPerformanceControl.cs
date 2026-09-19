@@ -171,8 +171,8 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.DefaultTheme.Background;
-        ForegroundColour = appConfig.DefaultTheme.Foreground;
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
 
         // Throughput has no ceiling to scale against, so both charts find their own and label the
         // Y axis in byte rates rather than as a percentage. Send and receive are plotted
@@ -186,7 +186,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         ListViewItem networkMetricsItem = new(new[] { "0.0 B/s", "0.0 B/s" });
         networkMetricsListView.Items.Add(networkMetricsItem);
         OnLoadListView(networkMetricsListView);
-        networkMetricsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        networkMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
 
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -201,36 +201,36 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         }
 
         OnLoadListView(networkSpecsListView);
-        networkSpecsListView.BorderColour = appConfig.DefaultTheme.ChartBorder;
+        networkSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = true;
-        chart.BackgroundColour = appConfig.DefaultTheme.Background;
-        chart.ForegroundColour = appConfig.DefaultTheme.Foreground;
+        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = PerformanceChartFormatters.FormatYScaleByteRate;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.DefaultTheme.ChartBorder;
-        chart.ColourHigh = appConfig.DefaultTheme.RangeHighBackground;
-        chart.ColourLow = appConfig.DefaultTheme.RangeLowBackground;
-        chart.ColourMid = appConfig.DefaultTheme.RangeMidBackground;
+        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle = appConfig.MetreStyle;
         chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.DefaultTheme.ChartYAxis;
+        chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.DefaultTheme.Background;
-        listView.ForegroundColour = appConfig.DefaultTheme.Foreground;
-        listView.HeaderBackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+        listView.BackgroundColour = appConfig.Theme.Background;
+        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
+        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
         foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.DefaultTheme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.DefaultTheme.HeaderForeground;
+            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
+            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
     }
 

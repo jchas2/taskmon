@@ -62,13 +62,21 @@ public sealed class PerformancePanelControl : Control
     {
         int textWidth = Width - chart.Width;
 
+        Color highlightFgColour = Focused
+            ? appConfig.Theme.ForegroundHighlight
+            : appConfig.Theme.ForegroundHighlightInactive;
+
+        Color highlightBgColour = Focused
+            ? appConfig.Theme.BackgroundHighlight
+            : appConfig.Theme.BackgroundHighlightInactive;
+
         if (IsSelected) {
             DrawRectangleWithBevel(
                 X,
                 Y,
                 textWidth,
                 Height,
-                appConfig.DefaultTheme.BackgroundHighlight);
+                highlightBgColour);
         }
         else {
             DrawRectangle(
@@ -80,15 +88,15 @@ public sealed class PerformancePanelControl : Control
         }
 
         Color fgColour = IsSelected
-            ? appConfig.DefaultTheme.ForegroundHighlight
+            ? highlightFgColour
             : ForegroundColour;
 
         Color bgColour  = IsSelected
-            ? appConfig.DefaultTheme.BackgroundHighlight
+            ? highlightBgColour
             : BackgroundColour;
 
-        Color fgMenuColour = appConfig.DefaultTheme.MenubarForeground;
-        Color bgMenuColour = appConfig.DefaultTheme.MenubarBackground;
+        Color fgMenuColour = appConfig.Theme.MenubarForeground;
+        Color bgMenuColour = appConfig.Theme.MenubarBackground;
 
         if (!IsSelected) {
             DrawHorizontalLine(
