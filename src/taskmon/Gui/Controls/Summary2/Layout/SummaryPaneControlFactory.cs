@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.Gui.Controls.InstalledApps;
@@ -81,6 +82,8 @@ public static class SummaryPaneControlFactory
             PaneControlType.SystemInfo => new SystemInfoControl(serviceController, terminal, appConfig) { TabStop = true },
             PaneControlType.DiskSpace => new DiskSpaceControl(serviceController, terminal, appConfig) { TabStop = true },
             PaneControlType.Thermals => new ThermalsControl(serviceController, terminal, appConfig) { TabStop = true },
+            // No TabStop - it takes no input, so it shouldn't join the tab order.
+            PaneControlType.CpuCores => new CpuCoresControl(serviceController, terminal, appConfig),
             _ => new EmptyPaneControl(terminal),
         };
 }

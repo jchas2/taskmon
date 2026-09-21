@@ -349,6 +349,22 @@ public partial class ProcessInfoControl : Control
         Draw();
     }
 
+    // Called by the host (ProcessesControl) when focus leaves this control, so pid auto-binding
+    // only ever refreshes the cheap DETAIL pane - never MODULES (which can shell out on macOS) or
+    // THREADS (the 1s worker loop only runs while threadsView is visible). Both lines are needed:
+    // the SelectedIndex setter only moves the highlight, it doesn't raise ItemClicked. No Draw()
+    // here - the host redraws straight after.
+    public void ResetToDetail()
+    {
+        SetActiveControl(processInfoView);
+        menuView.SelectedIndex = 0;
+    }
+
+    // Test-only seams: which menu row is highlighted, and whether DETAIL is the tab on screen.
+    internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
+
+    internal bool IsDetailActiveForTests => processInfoView.Visible;
+
     // Test-only seam: invokes the same click handler a real menu selection (click or arrow-key
     // move onto the row) would fire, without needing to simulate real key presses.
     internal void SelectMenuItemForTests(int index) =>

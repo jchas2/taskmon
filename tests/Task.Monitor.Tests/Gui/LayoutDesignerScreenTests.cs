@@ -28,6 +28,9 @@ public sealed class LayoutDesignerScreenTests
     private static ConsoleKeyInfo Key(ConsoleKey key, bool ctrl = false) =>
         new('\0', key, shift: false, alt: false, control: ctrl);
 
+    // Opens the multi-pane example tree explicitly - the designer itself now starts on a single
+    // empty pane (see Defaults_To_One_Empty_Pane), and most tests here need panes to split,
+    // delete and move between.
     private LayoutDesignerScreen CreateScreen(int width = 120, int height = 40)
     {
         LayoutDesignerScreen screen = new(runContext) {
@@ -35,6 +38,7 @@ public sealed class LayoutDesignerScreenTests
             Height = height
         };
 
+        screen.Open(SummaryLayoutTree.CreateExample(), null);
         screen.Load();
         screen.Resize();
         return screen;
@@ -72,6 +76,32 @@ public sealed class LayoutDesignerScreenTests
 
         screen.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Defaults_To_One_Empty_Pane()
+    {
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Load();
+        screen.Resize();
+
+        SummaryLayoutNode pane = Assert.Single(screen.Tree.Panes());
+        Assert.Equal(PaneControlType.Empty, pane.ControlType);
+        Assert.Equal(screen.Tree.RootId, pane.Id);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void CreateEmpty_Is_A_Single_Empty_Root_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        SummaryLayoutNode pane = Assert.Single(tree.Nodes.Values);
+        Assert.False(pane.IsSplit);
+        Assert.Equal(PaneControlType.Empty, pane.ControlType);
+        Assert.Equal(tree.RootId, pane.Id);
+        Assert.Equal(1, tree.NextId);
     }
 
     private static bool AnyDescendantFocused(Control control) =>
@@ -393,6 +423,27 @@ public sealed class LayoutDesignerScreenTests
         screen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
 
         Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[emptyPaneId].ControlType);
+
+        screen.Unload();
+    }
+
+    // The picker is built from Enum.GetValues<PaneControlType>(), so a new member shows up in it
+    // automatically - this pins that the CpuCores pane really is assignable and swaps the control in.
+    [Fact]
+    public void Cpu_Cores_Can_Be_Assigned_To_A_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuCores);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Contains("CPU CORES", CapturedOutput());
 
         screen.Unload();
     }

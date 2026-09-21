@@ -102,8 +102,6 @@ public sealed class SummaryControl2 : Control
 
             processControl.HeaderText =
                 $"Top {appConfig.SortColumn.ToString().ToUpper()} Processes ({processControl.NumberOfProcesses})    {processCount} Total";
-            processControl.FooterText =
-                "Pg Up | Pg Down | ↓ Scroll Down | ↑ Scroll Up | Sort Asc: a | Sort Desc: d";
         }
     }
 

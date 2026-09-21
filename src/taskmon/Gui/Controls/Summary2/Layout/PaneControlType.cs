@@ -22,4 +22,5 @@ public enum PaneControlType
     SystemInfo,
     DiskSpace,
     Thermals,
+    CpuCores,
 }

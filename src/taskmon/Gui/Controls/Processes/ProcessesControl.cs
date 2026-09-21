@@ -62,19 +62,17 @@ public sealed class ProcessesControl : Control
     // visible.
     protected override void OnGotFocus() => processControl.SetFocus();
 
-    private void UpdateProcessHeaderAndFooter()
+    private void UpdateProcessHeader()
     {
         ProcessMetrics? metrics = snapshot?.Processes?.Metrics;
 
         processControl.HeaderText =
             $"Processes    {metrics?.ProcessCount ?? 0} Total    {metrics?.ThreadCount ?? 0} Threads    {metrics?.RunningCount ?? 0} Running";
-        processControl.FooterText =
-            "Pg Up | Pg Down | ↓ Scroll Down | ↑ Scroll Up | Sort Asc: a | Sort Desc: d";
     }
 
     protected override void OnDraw()
     {
-        UpdateProcessHeaderAndFooter();
+        UpdateProcessHeader();
         processControl.Draw();
         processInfoControl.Draw();
     }
@@ -87,7 +85,9 @@ public sealed class ProcessesControl : Control
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         switch (keyInfo.Key) {
-            case ConsoleKey.RightArrow when processControl.HasFocus:
+            // Not while the sort menu is open - it's modal (see ProcessControl.OnKeyPressed), and
+            // this case runs before the key would ever reach processControl to be claimed there.
+            case ConsoleKey.RightArrow when processControl.HasFocus && !processControl.IsSortSelectionActive:
                 processInfoControl.SetFocus();
                 handled = true;
                 Draw();
@@ -102,6 +102,14 @@ public sealed class ProcessesControl : Control
                 if (!handled) {
                     processControl.SetFocus();
                     handled = true;
+
+                    // Leaving ProcessInfoControl always drops it back to DETAIL, so the pid
+                    // auto-binding below (and every one after it) refreshes only the cheap pane,
+                    // not MODULES/THREADS. Must run before LoadProcess: LoadProcess eagerly reloads
+                    // modules whenever MODULES is still the visible tab. This is the only exit -
+                    // Tab is a no-op (see Control.ProcessTabKey) and ProcessInfoControl's own
+                    // LostFocus also fires on its OnGotFocus redirect, so it can't be used here.
+                    processInfoControl.ResetToDetail();
 
                     // OnSelectedProcessIdChanged ignored every change while processInfoControl had
                     // focus (see its own comment), and ProcessControl's diff check only fires on an
@@ -165,8 +173,8 @@ public sealed class ProcessesControl : Control
             // draws. Calling processControl.Draw() here too, before that subscription's handler
             // has run, would repaint last tick's still-unchanged data and produce a spurious
             // "reverted to plain" flash sandwiched between this tick's real change and the correct
-            // redraw moments later. Only the header/footer text needs to be current by then.
-            UpdateProcessHeaderAndFooter();
+            // redraw moments later. Only the header text needs to be current by then.
+            UpdateProcessHeader();
         }
         finally {
             Control.DrawingLockRelease();

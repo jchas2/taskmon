@@ -12,5 +12,11 @@ public sealed class ModuleServiceFake : IModuleService
         return this;
     }
 
-    public List<ModuleInfo> GetModules(int pid) => moduleInfos;
+    public int GetModulesCallCount { get; private set; }
+
+    public List<ModuleInfo> GetModules(int pid)
+    {
+        GetModulesCallCount++;
+        return moduleInfos;
+    }
 }

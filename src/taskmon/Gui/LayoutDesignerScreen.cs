@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
@@ -72,7 +73,7 @@ public sealed class LayoutDesignerScreen : Screen
     // focus colour, mapped to the colour it had before - see RefreshSelectionHighlight.
     private readonly Dictionary<Control, Color> highlightedBorders = new();
 
-    private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
+    private SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
     private int selectedNodeId;
     private string? layoutName;
     private bool isLoaded;
@@ -177,7 +178,9 @@ public sealed class LayoutDesignerScreen : Screen
             chart.ShowYAxisScale = runContext.AppConfig.ShowYAxisScale;
             chart.YAxisColour = runContext.AppConfig.Theme.ChartYAxis;
         }
-        else if (control is EmptyPaneControl) {
+        else if (control is EmptyPaneControl or CpuCoresControl) {
+            // CpuCoresControl reads its own metre colours from AppConfig - only the border, which
+            // the selection highlight swaps, needs setting here.
             control.BorderColour = runContext.AppConfig.Theme.ChartBorder;
         }
     }
@@ -513,6 +516,11 @@ public sealed class LayoutDesignerScreen : Screen
 
         Draw();
     }
+
+    // Test-only seam: applies the choice the control picker would have applied, without driving a
+    // key press per row to reach the wanted type.
+    internal void AssignSelectedPaneControlTypeForTests(PaneControlType newType) =>
+        ReassignSelectedPaneControlType(newType);
 
     private void ReassignSelectedPaneControlType(PaneControlType newType)
     {

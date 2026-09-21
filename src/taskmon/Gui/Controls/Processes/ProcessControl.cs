@@ -121,7 +121,13 @@ public sealed partial class ProcessControl : Control
 
     public string FilterText { private get; set; } = string.Empty;
 
-    public string FooterText { get; set; } = string.Empty;
+    // Shared by every host (PROCESSES screen, both summary layouts) so the hint can't drift, and
+    // worded like the Startup/Apps/Drivers lists' "r Refresh     ↑ ↓ PgUp PgDn Scroll".
+    public const string DefaultFooterText = "s Sort     ↑ ↓ PgUp PgDn Scroll";
+
+    public string FooterText { get; set; } = DefaultFooterText;
+
+    public bool IsSortSelectionActive => mode == ControlMode.SortSelection;
 
     private ListView? GetTargetControl()
     {
@@ -203,6 +209,16 @@ public sealed partial class ProcessControl : Control
                     return;
                 }
                 break;
+            // The sort menu is modal: left/right would otherwise bubble out (ProcessesControl ->
+            // info pane, MainScreen2 -> main menu) and leave it open with focus elsewhere. It
+            // only closes via Enter (pick a column), Escape or 's'.
+            case ConsoleKey.LeftArrow or ConsoleKey.RightArrow when mode == ControlMode.SortSelection:
+                handled = true;
+                return;
+            case ConsoleKey.S:
+                SetMode(mode == ControlMode.SortSelection ? ControlMode.None : ControlMode.SortSelection);
+                handled = true;
+                return;
             case ConsoleKey.A:
             case ConsoleKey.D:
                 appConfig.SortAscending = keyInfo.Key == ConsoleKey.A;
@@ -301,7 +317,10 @@ public sealed partial class ProcessControl : Control
         sortView.Y = Y;
         sortView.Width = SortControlWidth;
         sortView.Height = Height;
-        sortView.ColumnHeaders[0].Width = SortControlWidth;
+        // Inner content width, not the outer control width - the two border columns aren't part of
+        // it (see ProcessInfoControl.OnResize's identical MenuViewWidth - 2). The full outer width
+        // trips DrawItem()'s columnWidth-vs-viewport guard and silently blanks the whole menu.
+        sortView.ColumnHeaders[0].Width = SortControlWidth - 2;
 
         int pX = X;
         int pWidth = Width;

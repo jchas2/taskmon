@@ -1,5 +1,6 @@
 using System.Reflection;
 using Moq;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
@@ -307,6 +308,130 @@ public sealed class ProcessesControlTests
 
         Assert.True(ctrl.ProcessControl.HasFocus);
         Assert.Equal(2222, ctrl.ProcessInfoControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    // Pid auto-binding resumes once focus leaves ProcessInfoControl, so it must be DETAIL that's
+    // on screen then - not MODULES, which can shell out (macOS) on every rebind.
+    [Fact]
+    public void Leaving_ProcessInfoControl_Resets_Menu_To_Detail()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        bool handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
+        ctrl.ProcessInfoControl.SelectMenuItemForTests(2);
+
+        Assert.False(ctrl.ProcessInfoControl.IsDetailActiveForTests);
+
+        // Stepping into the MODULES tab and back to the menu stays inside ProcessInfoControl, so
+        // the user's choice of tab must survive it.
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.LeftArrow), ref handled);
+
+        Assert.True(ctrl.ProcessInfoControl.HasFocus);
+        Assert.False(ctrl.ProcessInfoControl.IsDetailActiveForTests);
+
+        // This LeftArrow actually leaves ProcessInfoControl.
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.LeftArrow), ref handled);
+
+        Assert.True(ctrl.ProcessControl.HasFocus);
+        Assert.True(ctrl.ProcessInfoControl.IsDetailActiveForTests);
+        Assert.Equal(0, ctrl.ProcessInfoControl.SelectedMenuIndexForTests);
+
+        ctrl.Unload();
+    }
+
+    private static ConsoleKeyInfo SortKey => new('s', ConsoleKey.S, false, false, false);
+
+    [Fact]
+    public void S_Key_Toggles_Sort_Menu()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        ctrl.KeyPressed(SortKey, ref handled);
+
+        Assert.True(handled);
+        Assert.True(ctrl.ProcessControl.IsSortSelectionActive);
+        Assert.True(ctrl.ProcessControl.HasFocus);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("SORT BY"))), Times.AtLeastOnce);
+
+        handled = false;
+        ctrl.KeyPressed(SortKey, ref handled);
+
+        Assert.True(handled);
+        Assert.False(ctrl.ProcessControl.IsSortSelectionActive);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Enter_On_Sort_Menu_Changes_Sort_And_Closes_Menu()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        bool handled = false;
+        ctrl.KeyPressed(SortKey, ref handled);
+
+        // Sort items are the visible columns in Columns order - PROCESS, then PID - so one step
+        // down from the top lands on PID, which no default config sorts by.
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(Statistics.Pid, runContext.AppConfig.SortColumn);
+        Assert.False(ctrl.ProcessControl.IsSortSelectionActive);
+        Assert.True(ctrl.ProcessControl.HasFocus);
+
+        ctrl.Unload();
+    }
+
+    // The sort menu is modal - left/right must neither leave it open behind focus moving into the
+    // info pane (RightArrow) nor bubble out towards the main menu (LeftArrow).
+    [Theory]
+    [InlineData(ConsoleKey.RightArrow)]
+    [InlineData(ConsoleKey.LeftArrow)]
+    public void Left_Right_Arrows_Do_Not_Leave_Open_Sort_Menu(ConsoleKey key)
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        bool handled = false;
+        ctrl.KeyPressed(SortKey, ref handled);
+
+        handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(key), ref handled);
+
+        Assert.True(handled);
+        Assert.True(ctrl.ProcessControl.IsSortSelectionActive);
+        Assert.True(ctrl.ProcessControl.HasFocus);
+        Assert.False(ctrl.ProcessInfoControl.HasFocus);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_Sort_And_Scroll_Hints()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Draw();
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(ProcessControl.DefaultFooterText))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Sort Asc: a"))), Times.Never);
 
         ctrl.Unload();
     }

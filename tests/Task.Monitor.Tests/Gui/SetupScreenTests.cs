@@ -278,8 +278,8 @@ public sealed class SetupScreenTests
     }
     
     // Regression coverage for the minimal LayoutDesignerScreen entry point: 'N' only means
-    // anything while the LAYOUTS tab is the active one, and it must call Open() (a fresh example
-    // tree, no name) before showing the designer, since that's the only way the singleton screen
+    // anything while the LAYOUTS tab is the active one, and it must call Open() (a fresh tree of
+    // one empty pane, no name) before showing the designer, since that's the only way the singleton screen
     // ever picks up per-visit state.
     [Fact]
     public void N_Key_On_The_Layouts_Tab_Opens_The_Layout_Designer_On_A_Fresh_Tree()
@@ -302,7 +302,7 @@ public sealed class SetupScreenTests
 
         Assert.True(handled);
         Assert.Null(designer.LayoutName);
-        Assert.Contains(designer.Tree.Panes(), p => p.ControlType == PaneControlType.Process);
+        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
 
         setupScreen.Unload();
     }
@@ -398,7 +398,7 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
-    public void Enter_On_New_Layout_Opens_An_Unnamed_Example_In_The_Designer()
+    public void Enter_On_New_Layout_Opens_An_Unnamed_Empty_Pane_In_The_Designer()
     {
         ScreenApplication localScreenApp = new(runContext.Terminal);
         LayoutDesignerScreen designer = new(runContext);
@@ -416,7 +416,8 @@ public sealed class SetupScreenTests
 
         Assert.True(handled);
         Assert.Null(designer.LayoutName);
-        Assert.Contains(designer.Tree.Panes(), p => p.ControlType == PaneControlType.Process);
+        // Replaces the leftover multi-pane tree from the previous visit, not just its name.
+        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
     }
 
     // Enter only acts once the list itself has focus (Right arrow into it) - with focus still on

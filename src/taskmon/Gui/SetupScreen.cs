@@ -651,7 +651,8 @@ public class SetupScreen : Screen
         }
     }
 
-    // A null or unknown name (e.g. the "+ New Layout" row) opens a fresh, unnamed example layout.
+    // A null or unknown name (e.g. the "+ New Layout" row) opens a fresh, unnamed layout of one
+    // empty pane.
     // The designer edits a copy (ToTree builds a new tree), so leaving it without saving changes
     // nothing here.
     private void OpenLayoutDesigner(string? layoutName)
@@ -660,7 +661,7 @@ public class SetupScreen : Screen
             l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
         LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();
-        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateExample(), layout?.Name);
+        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateEmpty(), layout?.Name);
 
         returnToLayoutsTab = true;
         screenApp.ShowScreen<LayoutDesignerScreen>();

@@ -43,6 +43,19 @@ public sealed class SummaryLayoutTree
         return tree;
     }
 
+    // A single blank pane filling the whole area - the starting point for a new layout in the
+    // designer, which the user then splits and assigns. CreateExample stays the dashboard's
+    // fallback when no saved layout exists.
+    public static SummaryLayoutTree CreateEmpty()
+    {
+        SummaryLayoutTree tree = new();
+
+        tree.AddNode(new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Empty });
+        tree.RootId = 0;
+
+        return tree;
+    }
+
     // Rebuilds a tree from a flat node list - what SummaryLayout2.ToTree() uses to turn a parsed
     // .layout file back into a tree, since AddNode/RootId are otherwise only ever set by this
     // class itself (CreateExample, and Split/Remove below).

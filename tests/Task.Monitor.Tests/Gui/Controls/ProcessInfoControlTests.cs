@@ -217,6 +217,26 @@ public sealed class ProcessInfoControlTests
     }
 
     [Fact]
+    public void ResetToDetail_Prevents_Module_Reload_On_Pid_Change()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+        ctrl.SelectMenuItemForTests(2);
+
+        int callsAfterModulesShown = moduleServiceFake.GetModulesCallCount;
+        Assert.True(callsAfterModulesShown > 0);
+
+        ctrl.ResetToDetail();
+        ctrl.LoadProcess(-2);
+
+        Assert.True(ctrl.IsDetailActiveForTests);
+        Assert.Equal(0, ctrl.SelectedMenuIndexForTests);
+        Assert.Equal(callsAfterModulesShown, moduleServiceFake.GetModulesCallCount);
+    }
+
+    [Fact]
     public void Process_Title_Persists_Across_Tab_Switch()
     {
         (int pid, string processName) = AddCurrentProcess();

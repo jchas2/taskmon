@@ -30,6 +30,24 @@ public sealed class SummaryLayout2Tests
         }
     }
 
+    // A CpuCores pane is designer-only (no menu or screen builds one), so persistence is the only
+    // thing that carries it between sessions.
+    [Fact]
+    public void CpuCores_Pane_Round_Trips()
+    {
+        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
+            [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.CpuCores }], rootId: 0);
+
+        string iniText = SummaryLayout2.FromTree("Cores", original).ToString();
+
+        ConfigParser parser = new(iniText);
+        parser.Parse();
+
+        SummaryLayoutTree tree = new SummaryLayout2(parser.Sections[0]).ToTree();
+
+        Assert.Equal(PaneControlType.CpuCores, Assert.Single(tree.Panes()).ControlType);
+    }
+
     // Confirms the round trip survives an actual reparse of the written text, not just the
     // in-memory ConfigSection - ';' is a comment marker to ConfigParser, so this is what proves
     // the "," / "+" separator choice (see the class comment) actually holds up.

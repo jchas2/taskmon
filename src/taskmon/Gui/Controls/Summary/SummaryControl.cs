@@ -212,16 +212,15 @@ public sealed class SummaryControl : Control
 
     private void OnDrawProcesses()
     {
-        UpdateProcessHeaderAndFooter();
+        UpdateProcessHeader();
         processControl.Draw();
     }
 
-    private void UpdateProcessHeaderAndFooter()
+    private void UpdateProcessHeader()
     {
         int processCount = snapshot?.Processes?.Metrics.ProcessCount ?? 0;
 
         processControl.HeaderText = $"Top {appConfig.SortColumn.ToString().ToUpper()} Processes ({processControl.NumberOfProcesses})    {processCount} Total";
-        processControl.FooterText = $"Pg Up | Pg Down | \u2193 Scroll Down | \u2191 Scroll Up | Sort Asc: a | Sort Desc: d";
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -270,8 +269,8 @@ public sealed class SummaryControl : Control
             // draws. Calling processControl.Draw() here too, before that subscription's handler
             // has run, would repaint last tick's still-unchanged data and produce a spurious
             // "reverted to plain" flash sandwiched between this tick's real change and the correct
-            // redraw moments later. Only the header/footer text needs to be current by then.
-            UpdateProcessHeaderAndFooter();
+            // redraw moments later. Only the header text needs to be current by then.
+            UpdateProcessHeader();
         }
         finally {
             Control.DrawingLockRelease();
