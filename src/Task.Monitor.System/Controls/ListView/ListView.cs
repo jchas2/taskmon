@@ -47,6 +47,27 @@ public class ListView : Control
 
     public Color BackgroundHighlightInactiveColour { get; set; } = ConsolePalette.Gray;
 
+    private Color? borderBackgroundColour;
+
+    // Background of the border glyphs (frame, scroll indicators and the header / footer labels).
+    // Follows BackgroundColour until set explicitly.
+    public Color BorderBackgroundColour
+    {
+        get => borderBackgroundColour ?? BackgroundColour;
+        set => borderBackgroundColour = value;
+    }
+
+    // Foreground of the border glyphs.
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
+
+    // Alias for BorderForegroundColour, so generic focus / selection code that swaps a control's
+    // BorderColour still recolours a list's border.
+    public override Color BorderColour
+    {
+        get => BorderForegroundColour;
+        set => BorderForegroundColour = value;
+    }
+
     private void CalculateViewPortBounds()
     {
         int inset = ShowBorder ? 1 : 0;
@@ -179,12 +200,12 @@ public class ListView : Control
         int headerRightDashes = innerWidth - headerLabelLen - headerLeftDashes;
 
         frame.MoveTo(X, Y);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u256D');
         frame.Append('\u2500', headerLeftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(headerLabelLen < headerLabel.Length ? headerLabel[..headerLabelLen] : headerLabel);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u2500', headerRightDashes);
         frame.Append('\u256E');
 
@@ -197,7 +218,7 @@ public class ListView : Control
             int y = Y + row;
 
             frame.MoveTo(X, y);
-            frame.SetColour(BorderColour, BackgroundColour);
+            SetBorderColour();
             frame.Append('\u2502');
 
             frame.MoveTo(X + Width - 1, y);
@@ -211,15 +232,17 @@ public class ListView : Control
         int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
 
         frame.MoveTo(X, Y + Height - 1);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u2570');
         frame.Append('\u2500', footerLeftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(footerLabelLen < footerLabel.Length ? footerLabel[..footerLabelLen] : footerLabel);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u2500', footerRightDashes);
         frame.Append('\u256F');
     }
+
+    private void SetBorderColour() => frame.SetColour(BorderForegroundColour, BorderBackgroundColour);
 
     private void DrawEmptyListView()
     {
@@ -454,12 +477,12 @@ public class ListView : Control
         int bottomRow = viewPort.Bounds.Y + viewPort.RowCount - 1;
 
         frame.MoveTo(x, topRow);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append(topRow == upRow ? '▲' : '│');
 
         if (bottomRow != topRow) {
             frame.MoveTo(x, bottomRow);
-            frame.SetColour(BorderColour, BackgroundColour);
+            SetBorderColour();
             frame.Append(bottomRow == downRow ? '▼' : '│');
         }
     }

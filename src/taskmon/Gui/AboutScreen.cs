@@ -312,8 +312,10 @@ public sealed class AboutScreen : Screen
         BackgroundColour = runContext.AppConfig.Theme.Background;
         ForegroundColour = runContext.AppConfig.Theme.Foreground;
         
-        statsView.BackgroundColour = BackgroundColour;
-        statsView.ForegroundColour = ForegroundColour;
+        statsView.BackgroundColour = runContext.AppConfig.Theme.ListViewBackground;
+        statsView.ForegroundColour = runContext.AppConfig.Theme.ListViewForeground;
+        statsView.BorderForegroundColour = runContext.AppConfig.Theme.ListViewBorderForeground;
+        statsView.BorderBackgroundColour = runContext.AppConfig.Theme.ListViewBorderBackground;
         
         statsView.Items.Add(new ListViewItem(new[] { "Machine:", "" }));
         statsView.Items.Add(new ListViewItem(new[] { "Operating System:", "" }));

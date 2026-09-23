@@ -12,8 +12,8 @@ public sealed partial class StartupControl
     {
         startupView.Items.Clear();
 
-        Color background = appConfig.Theme.Background;
-        Color foreground = appConfig.Theme.Foreground;
+        Color background = appConfig.Theme.ListViewBackground;
+        Color foreground = appConfig.Theme.ListViewForeground;
         Color disabledForeground = appConfig.Theme.RangeMidForeground;
 
         int enabled = 0;
@@ -29,7 +29,8 @@ public sealed partial class StartupControl
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, Cell(entry.Name), background, foreground),
                 new ListViewSubItem(null!, Cell(entry.Publisher), background, foreground),
-                new ListViewSubItem(null!, DescribeType(entry), background, foreground),
+                new ListViewSubItem(null!, DescribeType(entry.Source), background, foreground),
+                new ListViewSubItem(null!, DescribeScope(entry.Scope), background, foreground),
                 new ListViewSubItem(null!, DescribeState(entry.State), background, statusForeground),
                 new ListViewSubItem(null!, Cell(entry.Command), background, foreground)
             });
@@ -49,8 +50,8 @@ public sealed partial class StartupControl
             return;
         }
 
-        Color background = appConfig.Theme.Background;
-        Color foreground = appConfig.Theme.Foreground;
+        Color background = appConfig.Theme.ListViewBackground;
+        Color foreground = appConfig.Theme.ListViewForeground;
         Color disabledForeground = appConfig.Theme.RangeMidForeground;
 
         Color statusForeground =
@@ -58,7 +59,8 @@ public sealed partial class StartupControl
 
         detailView.Items.Add(new ListViewItem(["Name", Cell(entry.Name)], background, foreground));
         detailView.Items.Add(new ListViewItem(["Publisher", Cell(entry.Publisher)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Type", DescribeType(entry)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Type", DescribeType(entry.Source)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Scope", DescribeScope(entry.Scope)], background, foreground));
 
         detailView.Items.Add(new ListViewItem(
             [new ListViewSubItem(null!, "Status", background, foreground),
@@ -70,20 +72,16 @@ public sealed partial class StartupControl
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
-    private static string DescribeType(StartupEntry entry)
-    {
-        string source = entry.Source switch {
-            StartupEntrySource.RunKey => "Run",
-            StartupEntrySource.RunOnceKey => "RunOnce",
-            StartupEntrySource.StartupFolder => "Startup Folder",
-            StartupEntrySource.ScheduledTask => "Scheduled Task",
-            _ => entry.Source.ToString()
-        };
+    private static string DescribeType(StartupEntrySource source) => source switch {
+        StartupEntrySource.RunKey => "Run",
+        StartupEntrySource.RunOnceKey => "RunOnce",
+        StartupEntrySource.StartupFolder => "Startup Folder",
+        StartupEntrySource.ScheduledTask => "Scheduled Task",
+        _ => source.ToString()
+    };
 
-        string scope = entry.Scope == StartupEntryScope.Machine ? "Machine" : "User";
-
-        return $"{source} · {scope}";
-    }
+    private static string DescribeScope(StartupEntryScope scope) =>
+        scope == StartupEntryScope.Machine ? "Machine" : "User";
 
     private static string DescribeState(StartupEntryState state) => state switch {
         StartupEntryState.Enabled => "Enabled",

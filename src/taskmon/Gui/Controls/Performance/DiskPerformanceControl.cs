@@ -207,7 +207,8 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
         diskMetricsListView.Items.Add(diskMetricsItem);
         OnLoadListView(diskMetricsListView);
-        diskMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
+        diskMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        diskMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -223,18 +224,20 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Read:",    "0.0 GB" }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Written:", "0.0 GB" }));
         OnLoadListView(diskSpecsListView);
-        diskSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
+        diskSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        diskSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)
     {
         chart.AutoScale = autoScale;
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = yAxisScaleFormatter;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -245,8 +248,8 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.Background;
-        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

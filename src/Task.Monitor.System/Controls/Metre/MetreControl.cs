@@ -31,6 +31,7 @@ public sealed class MetreControl : Control
     private int[] subCellOwners = [];
 
     private bool border = false;
+    private Color? borderBackgroundColour;
     private int rows = 1;
     private bool showLegend = true;
 
@@ -255,6 +256,25 @@ public sealed class MetreControl : Control
         }
     }
 
+    // Background of the border glyphs (frame and the bottom label). Follows BackgroundColour
+    // until set explicitly.
+    public Color BorderBackgroundColour
+    {
+        get => borderBackgroundColour ?? BackgroundColour;
+        set => borderBackgroundColour = value;
+    }
+
+    // Foreground of the border glyphs.
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
+
+    // Alias for BorderForegroundColour, so generic focus / selection code that swaps a control's
+    // BorderColour still recolours a metre's border.
+    public override Color BorderColour
+    {
+        get => BorderForegroundColour;
+        set => BorderForegroundColour = value;
+    }
+
     public void ClearSeries()
     {
         lock (seriesLock) {
@@ -270,12 +290,12 @@ public sealed class MetreControl : Control
         int rightDashes = innerWidth - labelLength - leftDashes;
 
         frame.MoveTo(X, y);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('╰');
         frame.Append('─', leftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(labelPadded.AsSpan(0, labelLength));
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('─', rightDashes);
         frame.Append('╯');
     }
@@ -283,7 +303,7 @@ public sealed class MetreControl : Control
     private void DrawTopBorder(int y, int innerWidth)
     {
         frame.MoveTo(X, y);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('╭');
         frame.Append('─', innerWidth);
         frame.Append('╮');
@@ -349,14 +369,14 @@ public sealed class MetreControl : Control
             frame.MoveTo(X, y);
 
             if (Border) {
-                frame.SetColour(BorderColour, BackgroundColour);
+                SetBorderColour();
                 frame.Append('│');
             }
 
             AppendMetreRow(innerWidth, colours);
 
             if (Border) {
-                frame.SetColour(BorderColour, BackgroundColour);
+                SetBorderColour();
                 frame.Append('│');
             }
         }
@@ -365,14 +385,14 @@ public sealed class MetreControl : Control
             frame.MoveTo(X, y);
 
             if (Border) {
-                frame.SetColour(BorderColour, BackgroundColour);
+                SetBorderColour();
                 frame.Append('│');
             }
 
             AppendLegendRow(innerWidth, colours, labels, values);
 
             if (Border) {
-                frame.SetColour(BorderColour, BackgroundColour);
+                SetBorderColour();
                 frame.Append('│');
             }
 
@@ -409,6 +429,8 @@ public sealed class MetreControl : Control
             }
         }
     }
+
+    private void SetBorderColour() => frame.SetColour(BorderForegroundColour, BorderBackgroundColour);
 
     public IReadOnlyList<MetreControlSeries> Series
     {

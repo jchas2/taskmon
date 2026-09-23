@@ -95,10 +95,10 @@ public sealed class StartupControlTests
         string output = CapturedOutput();
 
         foreach (string fragment in new[] {
-            "NAME", "PUBLISHER", "TYPE", "STATUS", "COMMAND",
+            "NAME", "PUBLISHER", "TYPE", "SCOPE", "STATUS", "COMMAND",
             "OneDrive", "Microsoft Corporation", "C:\\Users\\me\\OneDrive.exe /background",
-            "Steam", "Valve", "Run \u00b7 Machine",
-            "OldTool", "Startup Folder \u00b7 User", "Disabled",
+            "Steam", "Valve", "Run", "Machine",
+            "OldTool", "Startup Folder", "User", "Disabled",
         }) {
             Assert.Contains(fragment, output);
         }
@@ -125,8 +125,8 @@ public sealed class StartupControlTests
         // The first row is selected by default; its fields show in full in the detail pane, even
         // though the command is too long to fit in the main table's COMMAND column.
         foreach (string fragment in new[] {
-            "FIELD", "VALUE", "Name", "Publisher", "Type", "Status", "Command",
-            "OneDrive", "Microsoft Corporation", "Run \u00b7 User", "Enabled", longCommand
+            "FIELD", "VALUE", "Name", "Publisher", "Type", "Scope", "Status", "Command",
+            "OneDrive", "Microsoft Corporation", "Run", "User", "Enabled", longCommand
         }) {
             Assert.Contains(fragment, output);
         }

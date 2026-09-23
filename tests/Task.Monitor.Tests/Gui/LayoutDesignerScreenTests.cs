@@ -1,11 +1,13 @@
 using System.Drawing;
 using System.Reflection;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
@@ -170,6 +172,46 @@ public sealed class LayoutDesignerScreenTests
         return screen;
     }
 
+    [Fact]
+    public void Chart_Panes_Use_The_Chart_Colours()
+    {
+        runContext.AppConfig.Theme.ChartBackground = ConsolePalette.DarkMagenta;
+        runContext.AppConfig.Theme.ChartBorderBackground = ConsolePalette.DarkBlue;
+        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBackground);
+        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBorderBackground);
+
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
+
+        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
+
+        Assert.Equal(ConsolePalette.DarkMagenta, cpuPane.BackgroundColour);
+        Assert.Equal(ConsolePalette.DarkBlue, cpuPane.BorderBackgroundColour);
+
+        // Cpu is selected by default, and the selection highlight reaches the chart's border
+        // foreground through the BorderColour alias.
+        Assert.Equal(Control.FocusSelectionColour, cpuPane.BorderForegroundColour);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void An_Unselected_Chart_Pane_Uses_The_Theme_Border_Foreground()
+    {
+        runContext.AppConfig.Theme.ChartBorderForeground = ConsolePalette.DarkRed;
+
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.Equal(2, screen.SelectedNodeId);
+
+        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
+
+        Assert.Equal(ConsolePalette.DarkRed, cpuPane.BorderForegroundColour);
+
+        screen.Unload();
+    }
+
     // Regression test: selection used to be an outline painted over the pane from outside, which
     // flickered - a pane with a live snapshot subscription (Process, or a chart fed on the tick)
     // repaints its own default-coloured border on every tick, and the outline could only go back
@@ -189,7 +231,7 @@ public sealed class LayoutDesignerScreenTests
         Control cpuPane = screen.Controls.Single(c => c.GetType().Name == "Chart");
 
         Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
-        Assert.Equal(runContext.AppConfig.Theme.ChartBorder, cpuPane.BorderColour);
+        Assert.Equal(runContext.AppConfig.Theme.ChartBorderForeground, cpuPane.BorderColour);
 
         screen.Unload();
     }

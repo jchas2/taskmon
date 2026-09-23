@@ -198,8 +198,10 @@ public partial class ProcessInfoControl : Control
             listView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
             listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
             listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-            listView.BackgroundColour = appConfig.Theme.Background;
-            listView.ForegroundColour = appConfig.Theme.Foreground;
+            listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+            listView.ForegroundColour = appConfig.Theme.ListViewForeground;
+            listView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+            listView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
             listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
             listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         }
@@ -208,21 +210,21 @@ public partial class ProcessInfoControl : Control
             new MenuListViewItem(
                 processInfoView,
                 "DETAIL",
-                appConfig.Theme.Background,
-                appConfig.Theme.Foreground));
+                appConfig.Theme.ListViewBackground,
+                appConfig.Theme.ListViewForeground));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 threadsView,
                 "THREADS",
-                appConfig.Theme.Background,
-                appConfig.Theme.Foreground));
+                appConfig.Theme.ListViewBackground,
+                appConfig.Theme.ListViewForeground));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 modulesView, "MODULES",
-                appConfig.Theme.Background,
-                appConfig.Theme.Foreground) {
+                appConfig.Theme.ListViewBackground,
+                appConfig.Theme.ListViewForeground) {
                 LoadItems = TryUpdateListViewModuleItems
             });
 
@@ -230,8 +232,8 @@ public partial class ProcessInfoControl : Control
             new MenuListViewItem(
                 handlesView,
                 "HANDLES",
-                appConfig.Theme.Background,
-                appConfig.Theme.Foreground));
+                appConfig.Theme.ListViewBackground,
+                appConfig.Theme.ListViewForeground));
 
         TryLoadProcessInfo();
         TryUpdateListViewThreadItems();
@@ -419,38 +421,38 @@ public partial class ProcessInfoControl : Control
             
             processInfoView.Items.Add(
                 new(["File:", processInfo.ModuleName],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
                     
             processInfoView.Items.Add(
                 new(["Description:", processInfo.FileDescription],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
                     
             processInfoView.Items.Add(
                 new(["Path:", processInfo.CmdLine],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
             
             processInfoView.Items.Add(
                 new(["User:", processInfo.UserName],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
             
             processInfoView.Items.Add(
                 new(["Version:", fvi.FileVersion ?? string.Empty],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
             
             processInfoView.Items.Add(
                 new(["Size:", finfo.Length.ToFormattedByteSize()],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
             
             processInfoView.Items.Add(
                 new(["Size on disk:", $"{finfo.Length} bytes"],
-                    appConfig.Theme.Background,
-                    appConfig.Theme.Foreground));
+                    appConfig.Theme.ListViewBackground,
+                    appConfig.Theme.ListViewForeground));
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");

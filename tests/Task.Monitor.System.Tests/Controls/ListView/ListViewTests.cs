@@ -26,7 +26,7 @@ public sealed class ListViewTests
     
     [Fact]
     public void ListView_Canary_Test() =>
-        Assert.Equal(32, CanaryTestHelper.GetPropertyCount<ListViewControl>());
+        Assert.Equal(34, CanaryTestHelper.GetPropertyCount<ListViewControl>());
     
     [Fact]
     public void Should_Construct_Default()
@@ -422,6 +422,63 @@ public sealed class ListViewTests
         Assert.Equal(0, terminal.SetCursorPositionCalls);
         Assert.Equal(0, terminal.ForegroundColorSets);
         Assert.Equal(0, terminal.BackgroundColorSets);
+    }
+
+    [Fact]
+    public void BorderBackgroundColour_Follows_BackgroundColour_Until_Set()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+
+        listView.BackgroundColour = ConsolePalette.DarkGreen;
+        Assert.Equal(ConsolePalette.DarkGreen, listView.BorderBackgroundColour);
+
+        listView.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        listView.BackgroundColour = ConsolePalette.DarkRed;
+        Assert.Equal(ConsolePalette.DarkBlue, listView.BorderBackgroundColour);
+    }
+
+    [Fact]
+    public void BorderColour_Is_An_Alias_For_BorderForegroundColour()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+
+        listView.BorderForegroundColour = ConsolePalette.Magenta;
+        Assert.Equal(ConsolePalette.Magenta, listView.BorderColour);
+
+        // Control's focus handling swaps BorderColour to the focus colour and back.
+        listView.BorderColour = ConsolePalette.Yellow;
+        Assert.Equal(ConsolePalette.Yellow, listView.BorderForegroundColour);
+    }
+
+    [Fact]
+    public void OnDraw_Paints_The_Border_With_The_Border_Colours_And_The_Rows_With_The_List_Colours()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.HeaderText = "TITLE";
+        listView.FooterText = "FOOT";
+        listView.BackgroundColour = ConsolePalette.Black;
+        listView.ForegroundColour = ConsolePalette.White;
+        listView.BorderForegroundColour = ConsolePalette.Magenta;
+        listView.BorderBackgroundColour = ConsolePalette.DarkBlue;
+
+        listView.Draw();
+
+        string output = terminal.Output;
+        string border = Bg(ConsolePalette.DarkBlue) + Fg(ConsolePalette.Magenta);
+
+        Assert.Contains(border + "╭", output);
+
+        // Header and footer labels sit on the border line: list foreground on the border background.
+        string label = Bg(ConsolePalette.DarkBlue) + Fg(ConsolePalette.White);
+        Assert.Contains(label + " TITLE ", output);
+        Assert.Contains(label + " FOOT ", output);
+
+        // ...and the border colours are restored straight after each label.
+        Assert.Contains(" TITLE " + border + "─", output);
+        Assert.Contains(" FOOT " + border + "─", output);
+
+        // The rows keep the list's own background.
+        Assert.Contains(Bg(ConsolePalette.Black), output);
     }
 
     [Fact]

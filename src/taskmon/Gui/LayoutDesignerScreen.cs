@@ -170,7 +170,9 @@ public sealed class LayoutDesignerScreen : Screen
         control.ForegroundColour = runContext.AppConfig.Theme.Foreground;
 
         if (control is Chart chart) {
-            chart.BorderColour = runContext.AppConfig.Theme.ChartBorder;
+            chart.BackgroundColour = runContext.AppConfig.Theme.ChartBackground;
+            chart.BorderForegroundColour = runContext.AppConfig.Theme.ChartBorderForeground;
+            chart.BorderBackgroundColour = runContext.AppConfig.Theme.ChartBorderBackground;
             chart.ColourHigh = runContext.AppConfig.Theme.RangeHighBackground;
             chart.ColourLow = runContext.AppConfig.Theme.RangeLowBackground;
             chart.ColourMid = runContext.AppConfig.Theme.RangeMidBackground;
@@ -181,7 +183,7 @@ public sealed class LayoutDesignerScreen : Screen
         else if (control is EmptyPaneControl or CpuCoresControl) {
             // CpuCoresControl reads its own metre colours from AppConfig - only the border, which
             // the selection highlight swaps, needs setting here.
-            control.BorderColour = runContext.AppConfig.Theme.ChartBorder;
+            control.BorderColour = runContext.AppConfig.Theme.ChartBorderForeground;
         }
     }
 

@@ -74,14 +74,18 @@ public class HelpScreen : Screen
         
         Color bg = runContext.AppConfig.Theme.Background;
         Color fg = runContext.AppConfig.Theme.Foreground;
+        Color listBg = runContext.AppConfig.Theme.ListViewBackground;
+        Color listFg = runContext.AppConfig.Theme.ListViewForeground;
         Color keyColour = runContext.AppConfig.Theme.RangeLowBackground;
         Theme theme = runContext.AppConfig.Theme;
 
         BackgroundColour = bg;
         ForegroundColour = fg;
 
-        helpView.BackgroundColour = bg;
-        helpView.ForegroundColour = fg;
+        helpView.BackgroundColour = listBg;
+        helpView.ForegroundColour = listFg;
+        helpView.BorderForegroundColour = runContext.AppConfig.Theme.ListViewBorderForeground;
+        helpView.BorderBackgroundColour = runContext.AppConfig.Theme.ListViewBorderBackground;
 
         helpView.ColumnHeaders[0].RightAligned = true;
         helpView.ColumnHeaders[1].RightAligned = false;
@@ -118,9 +122,9 @@ public class HelpScreen : Screen
         
         for (int i = 0; i < helpView.Items.Count; i++) {
             helpView.Items[i].SubItems[0].ForegroundColor = keyColour;
-            helpView.Items[i].SubItems[0].BackgroundColor = bg;
+            helpView.Items[i].SubItems[0].BackgroundColor = listBg;
             helpView.Items[i].SubItems[2].ForegroundColor = keyColour;
-            helpView.Items[i].SubItems[2].BackgroundColor = bg;
+            helpView.Items[i].SubItems[2].BackgroundColor = listBg;
         }
 
         functionHelpText.AppendLine(

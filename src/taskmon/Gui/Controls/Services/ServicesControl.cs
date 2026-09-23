@@ -172,9 +172,10 @@ public sealed partial class ServicesControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        servicesView.BackgroundColour = appConfig.Theme.Background;
-        servicesView.ForegroundColour = appConfig.Theme.Foreground;
-        servicesView.BorderColour = appConfig.Theme.ListViewBorder;
+        servicesView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        servicesView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        servicesView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        servicesView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         servicesView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         servicesView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         servicesView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
@@ -187,9 +188,10 @@ public sealed partial class ServicesControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.Background;
-        detailView.ForegroundColour = appConfig.Theme.Foreground;
-        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

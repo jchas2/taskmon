@@ -53,8 +53,8 @@ public partial class ProcessInfoControl
             Debug.Assert(threadInfo.ThreadId == ThreadId);
 
             foreach (ListViewSubItem subItem in SubItems) {
-                subItem.BackgroundColor = AppConfig.Theme.Background;
-                subItem.ForegroundColor = AppConfig.Theme.Foreground;
+                subItem.BackgroundColor = AppConfig.Theme.ListViewBackground;
+                subItem.ForegroundColor = AppConfig.Theme.ListViewForeground;
             }
             
             UpdateSubItem(

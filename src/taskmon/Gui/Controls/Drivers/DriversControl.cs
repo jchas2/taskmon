@@ -174,9 +174,10 @@ public sealed partial class DriversControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        driversView.BackgroundColour = appConfig.Theme.Background;
-        driversView.ForegroundColour = appConfig.Theme.Foreground;
-        driversView.BorderColour = appConfig.Theme.ListViewBorder;
+        driversView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        driversView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        driversView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        driversView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         driversView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         driversView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         driversView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
@@ -189,9 +190,10 @@ public sealed partial class DriversControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.Background;
-        detailView.ForegroundColour = appConfig.Theme.Foreground;
-        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

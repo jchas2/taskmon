@@ -88,8 +88,8 @@ public partial class ProcessControl
             }
             
             for (int i = 0; i < (int)Columns.Count; i++) {
-                SubItems[i].BackgroundColor = AppConfig.Theme.Background;
-                SubItems[i].ForegroundColor = AppConfig.Theme.Foreground;
+                SubItems[i].BackgroundColor = AppConfig.Theme.ListViewBackground;
+                SubItems[i].ForegroundColor = AppConfig.Theme.ListViewForeground;
             }
             
             if (!processEntry.IsRunningAsRoot) {
@@ -204,7 +204,7 @@ public partial class ProcessControl
                 SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandHighCpu;
             }
 
-            SubItems[(int)Columns.Power].BackgroundColor = AppConfig.Theme.Background;
+            SubItems[(int)Columns.Power].BackgroundColor = AppConfig.Theme.ListViewBackground;
 
             if (processEntry.PowerBucket == ProcessPowerBucket.VeryLow ||
                 processEntry.PowerBucket == ProcessPowerBucket.Low) {

@@ -1,5 +1,9 @@
+using System.Drawing;
 using Moq;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.SystemInformation;
+using Task.Monitor.System.Configuration;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
@@ -416,5 +420,58 @@ public sealed class SystemInfoControlTests
         Assert.False(handled);
 
         ctrl.Unload();
+    }
+
+    [Fact]
+    public void Labels_And_Values_Take_The_Theme_Property_Colours_In_Every_Section()
+    {
+        // Distinct from control/listview foreground, so a cell that fell back to the list view's
+        // own colours would fail.
+        Color background = ColorTranslator.FromHtml("#101010");
+        Color keyColour = ColorTranslator.FromHtml("#a1a1a1");
+        Color valueColour = ColorTranslator.FromHtml("#b2b2b2");
+
+        ConfigSection themeSection = new("Property Colours Theme");
+        themeSection.Add(Constants.Keys.Foreground, "#ffffff");
+        themeSection.Add(Constants.Keys.ListViewForeground, "#ffffff");
+        themeSection.Add(Constants.Keys.ListViewBackground, "#101010");
+        themeSection.Add(Constants.Keys.PropertyKey, "#a1a1a1");
+        themeSection.Add(Constants.Keys.PropertyValue, "#b2b2b2");
+        runContext.AppConfig.Theme.Update(themeSection);
+
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+
+        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+            ctrl.SelectSectionForTests(navIndex);
+            ctrl.Draw();
+
+            AssertPropertyColours(ctrl.SectionItemsForTests, background, keyColour, valueColour);
+        }
+
+        AssertPropertyColours(ctrl.SummaryItemsForTests, background, keyColour, valueColour);
+
+        ctrl.Unload();
+    }
+
+    // Checks every label/value row; blank spacer rows and device sub-header rows are skipped.
+    private static void AssertPropertyColours(
+        ListViewItemCollection items,
+        Color background,
+        Color keyColour,
+        Color valueColour)
+    {
+        List<ListViewItem> rows = items
+            .Where(item => item.SubItems[1].Text.Length > 0)
+            .ToList();
+
+        Assert.NotEmpty(rows);
+
+        foreach (ListViewItem row in rows) {
+            Assert.Equal(keyColour.ToArgb(), row.SubItems[0].ForegroundColor.ToArgb());
+            Assert.Equal(valueColour.ToArgb(), row.SubItems[1].ForegroundColor.ToArgb());
+            Assert.Equal(background.ToArgb(), row.SubItems[0].BackgroundColor.ToArgb());
+            Assert.Equal(background.ToArgb(), row.SubItems[1].BackgroundColor.ToArgb());
+        }
     }
 }

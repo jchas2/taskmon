@@ -105,9 +105,9 @@ public sealed class DiskSpaceHeatMapControl : Control
     private void DrawHeader(int left, int top, int width)
     {
         Color stateColour = specs?.State switch {
-            DiskSpaceScanState.Scanning => appConfig.Theme.RangeMidForeground,
-            DiskSpaceScanState.Completed => appConfig.Theme.RangeLowForeground,
-            DiskSpaceScanState.Faulted => appConfig.Theme.RangeHighForeground,
+            DiskSpaceScanState.Scanning => appConfig.Theme.HeatmapStateScanning,
+            DiskSpaceScanState.Completed => appConfig.Theme.HeatmapStateCompleted,
+            DiskSpaceScanState.Faulted => appConfig.Theme.HeatmapStateFaulted,
             _ => ForegroundColour
         };
 
@@ -140,18 +140,19 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
 
         int innerWidth = Width - 2;
-        Color borderColour = appConfig.Theme.ListViewBorder;
+        Color borderForeground = appConfig.Theme.ListViewBorderForeground;
+        Color borderBackground = appConfig.Theme.ListViewBorderBackground;
 
         frame.Clear();
         frame.MoveTo(X, top);
-        frame.SetColour(borderColour, BackgroundColour);
+        frame.SetColour(borderForeground, borderBackground);
         frame.Append('╭');
         frame.Append('─', innerWidth);
         frame.Append('╮');
 
         for (int row = 1; row < height - 1; row++) {
             frame.MoveTo(X, top + row);
-            frame.SetColour(borderColour, BackgroundColour);
+            frame.SetColour(borderForeground, borderBackground);
             frame.Append('│');
 
             frame.MoveTo(X + Width - 1, top + row);
@@ -166,12 +167,12 @@ public sealed class DiskSpaceHeatMapControl : Control
         int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
 
         frame.MoveTo(X, top + height - 1);
-        frame.SetColour(borderColour, BackgroundColour);
+        frame.SetColour(borderForeground, borderBackground);
         frame.Append('╰');
         frame.Append('─', footerLeftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(ForegroundColour, borderBackground);
         frame.Append(footerLabelLen < footerLabel.Length ? footerLabel[..footerLabelLen] : footerLabel);
-        frame.SetColour(borderColour, BackgroundColour);
+        frame.SetColour(borderForeground, borderBackground);
         frame.Append('─', footerRightDashes);
         frame.Append('╯');
 

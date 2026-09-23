@@ -37,8 +37,8 @@ public sealed partial class DiskSpaceControl
                 .Cast<FileListViewItem>()
                 .ToDictionary(row => row.FullPath, StringComparer.OrdinalIgnoreCase);
 
-            Color background = appConfig.Theme.Background;
-            Color foreground = appConfig.Theme.Foreground;
+            Color background = appConfig.Theme.ListViewBackground;
+            Color foreground = appConfig.Theme.ListViewForeground;
 
             for (int i = 0; i < files.Count; i++) {
                 if (rowsByPath.TryGetValue(files[i].FullPath, out FileListViewItem? existing)) {

@@ -84,6 +84,63 @@ public sealed class ChartTests
     }
 
     [Fact]
+    public void BorderBackgroundColour_Follows_BackgroundColour_Until_Set()
+    {
+        ChartControl chart = CreateChart(new RecordingTerminal(), width: 10, height: 6);
+
+        chart.BackgroundColour = ConsolePalette.DarkGreen;
+        Assert.Equal(ConsolePalette.DarkGreen, chart.BorderBackgroundColour);
+
+        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        chart.BackgroundColour = ConsolePalette.DarkRed;
+        Assert.Equal(ConsolePalette.DarkBlue, chart.BorderBackgroundColour);
+    }
+
+    [Fact]
+    public void BorderColour_Is_An_Alias_For_BorderForegroundColour()
+    {
+        ChartControl chart = CreateChart(new RecordingTerminal(), width: 10, height: 6);
+
+        chart.BorderForegroundColour = ConsolePalette.Magenta;
+        Assert.Equal(ConsolePalette.Magenta, chart.BorderColour);
+
+        // Generic focus / selection code recolours a border through BorderColour.
+        chart.BorderColour = ConsolePalette.Yellow;
+        Assert.Equal(ConsolePalette.Yellow, chart.BorderForegroundColour);
+    }
+
+    [Fact]
+    public void OnDraw_Paints_The_Border_With_The_Border_Colours_And_The_Plot_With_The_Chart_Colours()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        chart.Text = "CPU";
+        chart.BackgroundColour = ConsolePalette.Black;
+        chart.ForegroundColour = ConsolePalette.White;
+        chart.BorderForegroundColour = ConsolePalette.Magenta;
+        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        chart.Add(0.5);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        string border = ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.Magenta);
+
+        // Top-left corner, and the right edge drawn straight after a plot cell.
+        Assert.Contains(border + "╭", output);
+        Assert.Contains(border + "│", output);
+
+        // The bottom label sits on the border line: chart foreground on the border background.
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.White) + " CPU ",
+            output);
+
+        // The plot area keeps the chart's own background.
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.Black), output);
+    }
+
+    [Fact]
     public void OnDraw_Emits_The_Low_Bar_Colour_For_Small_Values()
     {
         RecordingTerminal terminal = new();

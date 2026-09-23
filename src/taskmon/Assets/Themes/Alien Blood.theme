@@ -22,7 +22,9 @@ control.foreground.highlight.inactive=#73fa91
 control.border=#717f24
 control.border.focused=#ffd085
 
-chart.border=#717f24
+chart.background=#0f1610
+chart.borderforeground=#717f24
+chart.borderbackground=#0f1610
 chart.yaxis=#327f77
 chart.title=#717f24
 chart.grid=#A9A9A9
@@ -33,9 +35,15 @@ chart.range.mid.foreground=#000000
 chart.range.high.background=#b082d1
 chart.range.high.foreground=#000000
 
+metre.background=#0f1610
+metre.foreground=#717f24
+metre.borderforeground=#717f24
+metre.borderbackground=#0f1610
+
 listview.background=#0f1610
 listview.foreground=#717f24
-listview.border=#717f24
+listview.borderforeground=#717f24
+listview.borderbackground=#0f1610
 listview.header.background=#121d18
 listview.header.foreground=#717f24
 
@@ -49,6 +57,9 @@ performance.memory.inuse=#b082d1
 performance.memory.modified=#327f77
 performance.memory.standby=#ffd085
 performance.memory.free=#10b981
+
+property.key=#717f24
+property.value=#717f24
 
 process.list.normaluserspace=#327f77
 process.list.lowpriority=#10b981
@@ -64,9 +75,9 @@ process.list.deltahighlight=#bda25c
 heatmap.size.small=#10b981
 heatmap.size.mid=#ffd085
 heatmap.size.large=#b082d1
-heatmap.state.scanning=#000000
-heatmap.state.completed=#000000
-heatmap.state.faulted=#000000
+heatmap.state.scanning=#717f24
+heatmap.state.completed=#717f24
+heatmap.state.faulted=#a6423f
 
 app.error=#a6423f
 

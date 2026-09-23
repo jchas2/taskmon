@@ -72,7 +72,12 @@ public sealed class Constants
         public const string ControlBorder = "control.border";
         public const string FocusSelectionColour = "control.border.focused";
 
-        public const string ChartBorder = "chart.border";
+        public const string ChartBackground = "chart.background";
+        public const string ChartBorderForeground = "chart.borderforeground";
+        public const string ChartBorderBackground = "chart.borderbackground";
+        // Superseded by chart.borderforeground; still read so custom themes written before the
+        // split keep their border colour.
+        public const string ChartBorderLegacy = "chart.border";
         public const string ChartYAxis = "chart.yaxis";
         public const string ChartTitle = "chart.title";
         public const string ChartGrid = "chart.grid";
@@ -83,9 +88,18 @@ public sealed class Constants
         public const string RangeLowForeground = "chart.range.low.foreground";
         public const string RangeMidForeground = "chart.range.mid.foreground";
 
+        public const string MetreBackground = "metre.background";
+        public const string MetreForeground = "metre.foreground";
+        public const string MetreBorderForeground = "metre.borderforeground";
+        public const string MetreBorderBackground = "metre.borderbackground";
+
         public const string ListViewBackground = "listview.background";
         public const string ListViewForeground = "listview.foreground";
-        public const string ListViewBorder = "listview.border";
+        public const string ListViewBorderForeground = "listview.borderforeground";
+        public const string ListViewBorderBackground = "listview.borderbackground";
+        // Superseded by listview.borderforeground; still read so custom themes written before the
+        // split keep their border colour.
+        public const string ListViewBorderLegacy = "listview.border";
         public const string HeaderBackground = "listview.header.background";
         public const string HeaderForeground = "listview.header.foreground";
 
@@ -99,6 +113,9 @@ public sealed class Constants
         public const string PerformanceMemoryModified = "performance.memory.modified";
         public const string PerformanceMemoryStandby = "performance.memory.standby";
         public const string PerformanceMemoryFree = "performance.memory.free";
+
+        public const string PropertyKey = "property.key";
+        public const string PropertyValue = "property.value";
 
         public const string ColCmdNormalUserSpace = "process.list.normaluserspace";
         public const string ColCmdLowPriority = "process.list.lowpriority";

@@ -199,6 +199,12 @@ public sealed partial class SystemInfoControl : Control
     internal void SelectSectionForTests(int navIndex) =>
         navMenu.MenuItems?[navIndex].LoadItems?.Invoke();
 
+    // Test-only seams: the rows as last built, so tests can inspect per-cell colours that the
+    // captured terminal output does not carry in a readable form.
+    internal ListViewItemCollection SectionItemsForTests => systemInfoView.Items;
+
+    internal ListViewItemCollection SummaryItemsForTests => systemSummaryView.Items;
+
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         switch (keyInfo.Key) {
@@ -240,9 +246,10 @@ public sealed partial class SystemInfoControl : Control
             new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
         };
 
-        systemInfoView.BackgroundColour = appConfig.Theme.Background;
-        systemInfoView.ForegroundColour = appConfig.Theme.Foreground;
-        systemInfoView.BorderColour = appConfig.Theme.ListViewBorder;
+        systemInfoView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        systemInfoView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        systemInfoView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        systemInfoView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         systemInfoView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         systemInfoView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         systemInfoView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
@@ -252,8 +259,10 @@ public sealed partial class SystemInfoControl : Control
 
         logoControl.BackgroundColour = appConfig.Theme.Background;
 
-        systemSummaryView.BackgroundColour = appConfig.Theme.Background;
-        systemSummaryView.ForegroundColour = appConfig.Theme.Foreground;
+        systemSummaryView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        systemSummaryView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        systemSummaryView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        systemSummaryView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 

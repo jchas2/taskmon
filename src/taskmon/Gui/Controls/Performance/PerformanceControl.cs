@@ -346,9 +346,10 @@ public sealed class PerformanceControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -686,7 +687,7 @@ public sealed class PerformanceControl : Control
     private Color PanelColumnBorderColour =>
         activeControl.Focused
             ? Control.FocusSelectionColour
-            : appConfig.Theme.ChartBorder;
+            : appConfig.Theme.ChartBorderForeground;
 
     private void SetActiveControl(PerformancePanelControl nextControl)
     {

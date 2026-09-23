@@ -209,7 +209,8 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(gpuMetricsListView);
-        gpuMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
+        gpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        gpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -220,18 +221,20 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
         OnLoadListView(gpuSpecsListView);
-        gpuSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
+        gpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        gpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -242,8 +245,8 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.Background;
-        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

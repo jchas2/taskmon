@@ -94,6 +94,27 @@ public sealed class Chart : Control
 
     public bool AutoScale { get; set; } = true;
 
+    private Color? borderBackgroundColour;
+
+    // Background of the border glyphs (frame, dividers and the bottom label). Follows
+    // BackgroundColour until set explicitly.
+    public Color BorderBackgroundColour
+    {
+        get => borderBackgroundColour ?? BackgroundColour;
+        set => borderBackgroundColour = value;
+    }
+
+    // Foreground of the border glyphs.
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
+
+    // Alias for BorderForegroundColour, so generic focus / selection code that swaps a control's
+    // BorderColour still recolours a chart's border.
+    public override Color BorderColour
+    {
+        get => BorderForegroundColour;
+        set => BorderForegroundColour = value;
+    }
+
     public Color ColourHigh { get; set; } = ConsolePalette.Red;
 
     public Color ColourLow { get; set; } = ConsolePalette.DarkGreen;
@@ -179,14 +200,14 @@ public sealed class Chart : Control
 
         frame.Clear();
         frame.MoveTo(X, Y);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u256D');
         frame.Append('\u2500', totalInnerWidth);
         frame.Append('\u256E');
-        
+
         for (int row = 0; row < chartHeight; row++) {
             frame.MoveTo(X, Y + 1 + row);
-            frame.SetColour(BorderColour, BackgroundColour);
+            SetBorderColour();
             frame.Append('\u2502');
 
             int rowFromBottom = chartHeight - 1 - row;
@@ -196,7 +217,7 @@ public sealed class Chart : Control
                 int sampleIndex = sampleCount - chartWidth + col;
 
                 if (sampleIndex < 0) {
-                    frame.SetColour(BorderColour, BackgroundColour);
+                    frame.SetColour(ForegroundColour, BackgroundColour);
                     frame.Append('\u2800');
                     continue;
                 }
@@ -256,7 +277,6 @@ public sealed class Chart : Control
 
             if (showScale) {
                 bool isIndexRow = (row % 2 == 0) || (row == chartHeight - 1);
-                frame.SetColour(BorderColour, BackgroundColour);
 
                 if (isIndexRow) {
                     double ratio = chartHeight > 1 ? (double)rowFromBottom / (chartHeight - 1) : 0.0;
@@ -269,16 +289,18 @@ public sealed class Chart : Control
 
                     frame.SetColour(YAxisColour, BackgroundColour);
                     frame.Append(formatted.PadLeft(scaleWidth));
-                    frame.SetColour(BorderColour, BackgroundColour);
+                    SetBorderColour();
                     frame.Append('\u2524');
                 }
                 else {
+                    frame.SetColour(ForegroundColour, BackgroundColour);
                     frame.Append(' ', scaleWidth);
+                    SetBorderColour();
                     frame.Append('\u2502');
                 }
             }
             else {
-                frame.SetColour(BorderColour, BackgroundColour);
+                SetBorderColour();
                 frame.Append('\u2502');
             }
         }
@@ -294,12 +316,12 @@ public sealed class Chart : Control
         int leftDashes = (totalInnerWidth - labelLen) / 2;
         int rightDashes = totalInnerWidth - labelLen - leftDashes;
 
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u2570');
         frame.Append('\u2500', leftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(labelLen < labelPadded.Length ? labelPadded[..labelLen] : labelPadded);
-        frame.SetColour(BorderColour, BackgroundColour);
+        SetBorderColour();
         frame.Append('\u2500', rightDashes);
         frame.Append('\u256F');
 
@@ -335,6 +357,8 @@ public sealed class Chart : Control
     }
 
     private int ScaleWidth => IsYAxisScaleVisible ? DefaultScaleWidth : 0;
+
+    private void SetBorderColour() => frame.SetColour(BorderForegroundColour, BorderBackgroundColour);
 
     private void SetCellColour(Color chartColour) => frame.SetColour(
         MetreStyle == MetreControlStyle.Blocks ? ForegroundColour : chartColour,

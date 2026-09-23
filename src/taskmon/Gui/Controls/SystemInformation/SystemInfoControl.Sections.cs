@@ -219,8 +219,20 @@ public sealed partial class SystemInfoControl
         target.Items.Add(row);
     }
 
-    private void AddRow(ListView target, string label, string value, int indent = 0) =>
-        target.Items.Add(new ListViewItem(new[] { $"{new string(' ', indent)}{label}", value }));
+    // The label cell takes the theme's property.key colour and the value cell property.value. Both
+    // keep the list view's own background so ListView still treats them as default cells and runs
+    // the selection band through them.
+    private void AddRow(ListView target, string label, string value, int indent = 0)
+    {
+        Color background = appConfig.Theme.ListViewBackground;
+
+        ListViewItem row = new(new[] {
+            new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
+            new ListViewSubItem(null!, value, background, appConfig.Theme.PropertyValue)
+        });
+
+        target.Items.Add(row);
+    }
 
     private void AddRow(ListView target) =>
         target.Items.Add(new ListViewItem(new[] { string.Empty, string.Empty }));

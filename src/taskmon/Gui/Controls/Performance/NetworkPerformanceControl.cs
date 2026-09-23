@@ -186,7 +186,8 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         ListViewItem networkMetricsItem = new(new[] { "0.0 B/s", "0.0 B/s" });
         networkMetricsListView.Items.Add(networkMetricsItem);
         OnLoadListView(networkMetricsListView);
-        networkMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
+        networkMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        networkMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -201,18 +202,20 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         }
 
         OnLoadListView(networkSpecsListView);
-        networkSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
+        networkSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        networkSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = true;
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = PerformanceChartFormatters.FormatYScaleByteRate;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -223,8 +226,8 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.Background;
-        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

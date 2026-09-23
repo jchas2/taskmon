@@ -8,8 +8,8 @@ using Task.Monitor.System.Services.Startup;
 namespace Task.Monitor.Gui.Controls.Startup;
 
 // The applications configured to run at logon - the Run / RunOnce registry keys and the Startup
-// folders - in one selectable, scrolling table: name, publisher, where it is registered, whether
-// it is enabled, and the command it runs.
+// folders - in one selectable, scrolling table: name, publisher, where it is registered and for
+// whom, whether it is enabled, and the command it runs.
 public sealed partial class StartupControl : Control
 {
     private readonly ServiceController serviceController;
@@ -22,11 +22,12 @@ public sealed partial class StartupControl : Control
 
     private const int NameColumnWidth = 24;
     private const int PublisherColumnWidth = 24;
-    private const int TypeColumnWidth = 22;
+    private const int TypeColumnWidth = 16;
+    private const int ScopeColumnWidth = 9;
     private const int StatusColumnWidth = 9;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
+    private const int DetailViewHeight = 9; // border (2) + column headers (1) + 6 field rows
 
     public StartupControl(
         ServiceController serviceController,
@@ -52,6 +53,7 @@ public sealed partial class StartupControl : Control
             .Add(new ListViewColumnHeader("NAME"))
             .Add(new ListViewColumnHeader("PUBLISHER"))
             .Add(new ListViewColumnHeader("TYPE"))
+            .Add(new ListViewColumnHeader("SCOPE"))
             .Add(new ListViewColumnHeader("STATUS"))
             .Add(new ListViewColumnHeader("COMMAND"));
 
@@ -125,7 +127,7 @@ public sealed partial class StartupControl : Control
             $"{entry.Name}:{(int)entry.Source}:{(int)entry.Scope}:{(int)entry.State}"));
 
     // Rebuilds the detail pane from whichever row is currently highlighted in the main table.
-    // Cheap enough (five rows) to call on every draw rather than tracking whether the selection or
+    // Cheap enough (six rows) to call on every draw rather than tracking whether the selection or
     // the underlying entry actually changed.
     private void RefreshDetailPane()
     {
@@ -172,9 +174,10 @@ public sealed partial class StartupControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        startupView.BackgroundColour = appConfig.Theme.Background;
-        startupView.ForegroundColour = appConfig.Theme.Foreground;
-        startupView.BorderColour = appConfig.Theme.ListViewBorder;
+        startupView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        startupView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        startupView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        startupView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         startupView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         startupView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         startupView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
@@ -187,9 +190,10 @@ public sealed partial class StartupControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.Background;
-        detailView.ForegroundColour = appConfig.Theme.Foreground;
-        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
@@ -215,13 +219,14 @@ public sealed partial class StartupControl : Control
         startupView.Width = Width;
         startupView.Height = startupViewHeight;
 
-        int fixedWidth = NameColumnWidth + PublisherColumnWidth + TypeColumnWidth + StatusColumnWidth;
+        int fixedWidth = NameColumnWidth + PublisherColumnWidth + TypeColumnWidth + ScopeColumnWidth + StatusColumnWidth;
 
         startupView.ColumnHeaders[0].Width = NameColumnWidth;
         startupView.ColumnHeaders[1].Width = PublisherColumnWidth;
         startupView.ColumnHeaders[2].Width = TypeColumnWidth;
-        startupView.ColumnHeaders[3].Width = StatusColumnWidth;
-        startupView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
+        startupView.ColumnHeaders[3].Width = ScopeColumnWidth;
+        startupView.ColumnHeaders[4].Width = StatusColumnWidth;
+        startupView.ColumnHeaders[5].Width = Math.Max(1, Width - fixedWidth - 3);
 
         detailView.X = X;
         detailView.Y = Y + startupViewHeight;

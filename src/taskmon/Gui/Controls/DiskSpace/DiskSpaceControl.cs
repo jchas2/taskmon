@@ -345,14 +345,17 @@ public sealed partial class DiskSpaceControl : Control
         heatMap.BackgroundColour = appConfig.Theme.Background;
         heatMap.ForegroundColour = appConfig.Theme.Foreground;
 
-        progressMetre.BackgroundColour = appConfig.Theme.Background;
-        progressMetre.ForegroundColour = appConfig.Theme.Foreground;
+        progressMetre.BackgroundColour = appConfig.Theme.MetreBackground;
+        progressMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        progressMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
+        progressMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
         progressMetre.MetreStyle = appConfig.MetreStyle;
         rootFoldersSeries = progressMetre.AddSeries("Root Folders", appConfig.Theme.RangeLowBackground);
 
-        filesView.BackgroundColour = appConfig.Theme.Background;
-        filesView.ForegroundColour = appConfig.Theme.Foreground;
-        filesView.BorderColour = appConfig.Theme.ListViewBorder;
+        filesView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        filesView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        filesView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        filesView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         filesView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         filesView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         filesView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;

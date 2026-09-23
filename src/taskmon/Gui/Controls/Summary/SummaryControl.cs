@@ -239,7 +239,9 @@ public sealed class SummaryControl : Control
         }
 
         foreach (Chart chart in charts) {
-            chart.BorderColour = appConfig.Theme.ChartBorder;
+            chart.BackgroundColour = appConfig.Theme.ChartBackground;
+            chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+            chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
             chart.ColourHigh = appConfig.Theme.RangeHighBackground;
             chart.ColourLow = appConfig.Theme.RangeLowBackground;
             chart.ColourMid = appConfig.Theme.RangeMidBackground;

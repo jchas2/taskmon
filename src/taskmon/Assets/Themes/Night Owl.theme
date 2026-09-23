@@ -22,7 +22,9 @@ control.foreground.highlight.inactive=#e2a2f433      ; editor.wordHighlightStron
 control.border=#c792ea
 control.border.focused=#ecc48d
 
-chart.border=#c792ea
+chart.background=transparent
+chart.borderforeground=#c792ea
+chart.borderbackground=transparent
 chart.yaxis=#ecc48d
 chart.title=#c792ea                  ; tokenColors: entity
 chart.grid=#A9A9A9
@@ -33,9 +35,15 @@ chart.range.mid.foreground=#222222
 chart.range.high.background=#F78C6C       ; tokenColors: variable
 chart.range.high.foreground=#222222
 
+metre.background=transparent
+metre.foreground=#c792ea
+metre.borderforeground=#c792ea
+metre.borderbackground=transparent
+
 listview.background=transparent
 listview.foreground=#c792ea                  ; tokenColors: entity
-listview.border=#c792ea
+listview.borderforeground=#c792ea
+listview.borderbackground=transparent
 listview.header.background=#0b2942          ; tab.activeBackground
 listview.header.foreground=#d2dee7          ; tab.activeForeground
 
@@ -49,6 +57,9 @@ performance.memory.inuse=#F78C6C       ; tokenColors: variable
 performance.memory.modified=#ecc48d    ; tokenColors: string
 performance.memory.standby=#c792ea        ; tokenColors: keyword
 performance.memory.free=#637777        ; tokenColors: comment
+
+property.key=#c792ea
+property.value=#c792ea
 
 process.list.normaluserspace=#ecc48d    ; tokenColors: string
 process.list.lowpriority=#82AAFF         ; tokenColors: constant

@@ -155,18 +155,19 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         OnLoadChart(memoryChart);
         OnLoadChart(pageFileChart);
         
-        memoryMetre.BackgroundColour = appConfig.Theme.Background;
-        memoryMetre.ForegroundColour = appConfig.Theme.Foreground;
-        memoryMetre.BorderColour = appConfig.Theme.ChartBorder;
+        memoryMetre.BackgroundColour = appConfig.Theme.MetreBackground;
+        memoryMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        memoryMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
+        memoryMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
         memoryMetre.MetreStyle = appConfig.MetreStyle;
         memoryMetre.Border = true;
         memoryMetre.Text = string.Empty;
         memoryMetre.ShowLegend = true;
 
-        memoryMetre.AddSeries("In Use", appConfig.Theme.RangeHighBackground);
-        memoryMetre.AddSeries("Modified", appConfig.Theme.ColumnCommandNormalUserSpace);
-        memoryMetre.AddSeries("Standby", appConfig.Theme.RangeMidBackground);
-        memoryMetre.AddSeries("Free", appConfig.Theme.RangeLowBackground);
+        memoryMetre.AddSeries("In Use", appConfig.Theme.PerformanceMemoryInUse);
+        memoryMetre.AddSeries("Modified", appConfig.Theme.PerformanceMemoryModified);
+        memoryMetre.AddSeries("Standby", appConfig.Theme.PerformanceMemoryStandby);
+        memoryMetre.AddSeries("Free", appConfig.Theme.PerformanceMemoryFree);
 
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("In Use"));
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Available"));
@@ -180,7 +181,8 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         OnLoadListView(memoryMetricsListView);
-        memoryMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
+        memoryMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        memoryMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -195,18 +197,20 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
         OnLoadListView(memorySpecsListView);
-        memorySpecsListView.BorderColour = appConfig.Theme.ChartBorder;
+        memorySpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        memorySpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = true;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -217,8 +221,8 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.Background;
-        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

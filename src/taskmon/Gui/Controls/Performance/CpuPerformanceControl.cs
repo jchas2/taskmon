@@ -145,17 +145,18 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuChart.ShowGrid = true;
         cpuChart.ShowYAxisScale = true;
 
-        cpuMetre.BackgroundColour = appConfig.Theme.Background;
-        cpuMetre.ForegroundColour = appConfig.Theme.Foreground;
-        cpuMetre.BorderColour = appConfig.Theme.ChartBorder;
+        cpuMetre.BackgroundColour = appConfig.Theme.MetreBackground;
+        cpuMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        cpuMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
+        cpuMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
         cpuMetre.MetreStyle = appConfig.MetreStyle;
         cpuMetre.Border = true;
         cpuMetre.Text = string.Empty;
         cpuMetre.ShowLegend = true;
         cpuMetre.Rows = 3;
 
-        cpuMetre.AddSeries("Kernel", appConfig.Theme.RangeHighBackground);
-        cpuMetre.AddSeries("User", appConfig.Theme.ColumnCommandNormalUserSpace);
+        cpuMetre.AddSeries("Kernel", appConfig.Theme.PerformanceCpuKernel);
+        cpuMetre.AddSeries("User", appConfig.Theme.PerformanceCpuUser);
 
         cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Utilization"));
         cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Speed"));
@@ -165,7 +166,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         OnLoadListView(cpuMetricsListView);
-        cpuMetricsListView.BorderColour = appConfig.Theme.ChartBorder;
+        cpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        cpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         
         cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -179,18 +181,20 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L2 cache:",            "0 KB"       }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",            "0 KB"       }));
         OnLoadListView(cpuSpecsListView);
-        cpuSpecsListView.BorderColour = appConfig.Theme.ChartBorder;
+        cpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        cpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries = string.Empty;
         chart.ShowYAxisScale = false;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -201,8 +205,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.Background;
-        listView.ForegroundColour = appConfig.Theme.Foreground;
+        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

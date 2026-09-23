@@ -12,8 +12,8 @@ public sealed partial class ServicesControl
     {
         servicesView.Items.Clear();
 
-        Color background = appConfig.Theme.Background;
-        Color foreground = appConfig.Theme.Foreground;
+        Color background = appConfig.Theme.ListViewBackground;
+        Color foreground = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
         int running = 0;
@@ -49,8 +49,8 @@ public sealed partial class ServicesControl
             return;
         }
 
-        Color background = appConfig.Theme.Background;
-        Color foreground = appConfig.Theme.Foreground;
+        Color background = appConfig.Theme.ListViewBackground;
+        Color foreground = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
         Color statusForeground =

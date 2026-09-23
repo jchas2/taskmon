@@ -22,7 +22,9 @@ control.foreground.highlight.inactive=#e6edf3
 control.border=#228b22
 control.border.focused=#ba55d3
 
-chart.border=#228b22
+chart.background=transparent
+chart.borderforeground=#228b22
+chart.borderbackground=transparent
 chart.yaxis=#FDFD96
 chart.title=#228b22
 chart.grid=#A9A9A9
@@ -33,9 +35,15 @@ chart.range.mid.foreground=#000000
 chart.range.high.background=#4cbb17
 chart.range.high.foreground=#000000
 
+metre.background=transparent
+metre.foreground=#228b22
+metre.borderforeground=#228b22
+metre.borderbackground=transparent
+
 listview.background=transparent
 listview.foreground=#228b22
-listview.border=#228b22
+listview.borderforeground=#228b22
+listview.borderbackground=transparent
 listview.header.background=#115d33
 listview.header.foreground=#ba55d3
 
@@ -49,6 +57,9 @@ performance.memory.inuse=#4cbb17
 performance.memory.modified=#FDFD96
 performance.memory.standby=#70c247
 performance.memory.free=#8dd06c
+
+property.key=#228b22
+property.value=#228b22
 
 process.list.normaluserspace=#FDFD96
 process.list.lowpriority=#115d33

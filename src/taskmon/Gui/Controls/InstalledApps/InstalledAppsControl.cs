@@ -174,9 +174,10 @@ public sealed partial class InstalledAppsControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        installedAppsView.BackgroundColour = appConfig.Theme.Background;
-        installedAppsView.ForegroundColour = appConfig.Theme.Foreground;
-        installedAppsView.BorderColour = appConfig.Theme.ListViewBorder;
+        installedAppsView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        installedAppsView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        installedAppsView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        installedAppsView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         installedAppsView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         installedAppsView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         installedAppsView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
@@ -189,9 +190,10 @@ public sealed partial class InstalledAppsControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.Background;
-        detailView.ForegroundColour = appConfig.Theme.Foreground;
-        detailView.BorderColour = appConfig.Theme.ListViewBorder;
+        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 

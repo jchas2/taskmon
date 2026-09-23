@@ -184,8 +184,6 @@ public sealed class CpuCoresControl : Control
         metre.Y = top;
         metre.Width = grid.BarWidth;
         metre.MetreStyle = appConfig.MetreStyle;
-        metre.BackgroundColour = BackgroundColour;
-        metre.ForegroundColour = ForegroundColour;
         metre.Series[0].Colour = LoadColour(value);
         metre.SetValue(0, value);
 
@@ -221,6 +219,10 @@ public sealed class CpuCoresControl : Control
             MetreControl metre = new(Terminal) {
                 ShowLegend = false,
                 Rows = 1,
+                BackgroundColour = appConfig.Theme.MetreBackground,
+                ForegroundColour = appConfig.Theme.MetreForeground,
+                BorderForegroundColour = appConfig.Theme.MetreBorderForeground,
+                BorderBackgroundColour = appConfig.Theme.MetreBorderBackground,
             };
 
             metre.AddSeries(string.Empty, appConfig.Theme.RangeLowBackground);

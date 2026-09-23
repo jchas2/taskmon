@@ -60,13 +60,14 @@ public sealed class MenuControl : Control
             menuControl.Items.Add(MenuItems[i]);
         }
 
-        menuControl.BorderColour = appConfig.Theme.ListViewBorder;
+        menuControl.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
+        menuControl.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         menuControl.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
         menuControl.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
         menuControl.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         menuControl.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-        menuControl.BackgroundColour = appConfig.Theme.Background;
-        menuControl.ForegroundColour = appConfig.Theme.Foreground;
+        menuControl.BackgroundColour = appConfig.Theme.ListViewBackground;
+        menuControl.ForegroundColour = appConfig.Theme.ListViewForeground;
         menuControl.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         menuControl.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
         menuControl.ItemClicked += OnMenuItemClicked;

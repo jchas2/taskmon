@@ -21,10 +21,17 @@ public sealed class Theme
         Constants.Keys.Background,
         Constants.Keys.BackgroundHighlight,
         Constants.Keys.BackgroundHighlightInactive,
-        Constants.Keys.ChartBorder,
+        Constants.Keys.ChartBackground,
+        Constants.Keys.ChartBorderForeground,
+        Constants.Keys.ChartBorderBackground,
+        Constants.Keys.ChartBorderLegacy,
         Constants.Keys.ChartYAxis,
         Constants.Keys.ChartTitle,
         Constants.Keys.ChartGrid,
+        Constants.Keys.MetreBackground,
+        Constants.Keys.MetreForeground,
+        Constants.Keys.MetreBorderForeground,
+        Constants.Keys.MetreBorderBackground,
         Constants.Keys.ColCmdNormalUserSpace,
         Constants.Keys.ColCmdLowPriority,
         Constants.Keys.ColCmdHighCpu,
@@ -53,7 +60,9 @@ public sealed class Theme
         Constants.Keys.HeatmapStateFaulted,
         Constants.Keys.ListViewBackground,
         Constants.Keys.ListViewForeground,
-        Constants.Keys.ListViewBorder,
+        Constants.Keys.ListViewBorderForeground,
+        Constants.Keys.ListViewBorderBackground,
+        Constants.Keys.ListViewBorderLegacy,
         Constants.Keys.MenubarBackground,
         Constants.Keys.MenubarForeground,
         Constants.Keys.PerformanceCpuKernel,
@@ -66,6 +75,8 @@ public sealed class Theme
         Constants.Keys.PerformancePanelForeground,
         Constants.Keys.PerformancePanelTitlebarBackground,
         Constants.Keys.PerformancePanelTitlebarForeground,
+        Constants.Keys.PropertyKey,
+        Constants.Keys.PropertyValue,
         Constants.Keys.RangeHighBackground,
         Constants.Keys.RangeLowBackground,
         Constants.Keys.RangeMidBackground,
@@ -116,10 +127,55 @@ public sealed class Theme
         set => SetColour(Constants.Keys.BackgroundHighlightInactive, value);
     }
 
-    public Color ChartBorder
+    // Falls back to the control background, so a custom theme written before this key existed
+    // keeps its charts looking the same.
+    public Color ChartBackground
     {
-        get => GetColour(Constants.Keys.ChartBorder, ConsolePalette.White);
-        set => SetColour(Constants.Keys.ChartBorder, value);
+        get => GetColour(Constants.Keys.ChartBackground, Background);
+        set => SetColour(Constants.Keys.ChartBackground, value);
+    }
+
+    // Falls back to a legacy chart.border value, then the control foreground.
+    public Color ChartBorderForeground
+    {
+        get => GetColour(Constants.Keys.ChartBorderForeground,
+            GetColour(Constants.Keys.ChartBorderLegacy, Foreground));
+        set => SetColour(Constants.Keys.ChartBorderForeground, value);
+    }
+
+    // Falls back to the control background.
+    public Color ChartBorderBackground
+    {
+        get => GetColour(Constants.Keys.ChartBorderBackground, Background);
+        set => SetColour(Constants.Keys.ChartBorderBackground, value);
+    }
+
+    // Falls back to the control background.
+    public Color MetreBackground
+    {
+        get => GetColour(Constants.Keys.MetreBackground, Background);
+        set => SetColour(Constants.Keys.MetreBackground, value);
+    }
+
+    // Falls back to the control foreground.
+    public Color MetreForeground
+    {
+        get => GetColour(Constants.Keys.MetreForeground, Foreground);
+        set => SetColour(Constants.Keys.MetreForeground, value);
+    }
+
+    // Falls back to the control foreground.
+    public Color MetreBorderForeground
+    {
+        get => GetColour(Constants.Keys.MetreBorderForeground, Foreground);
+        set => SetColour(Constants.Keys.MetreBorderForeground, value);
+    }
+
+    // Falls back to the control background.
+    public Color MetreBorderBackground
+    {
+        get => GetColour(Constants.Keys.MetreBorderBackground, Background);
+        set => SetColour(Constants.Keys.MetreBorderBackground, value);
     }
 
     public Color ChartYAxis
@@ -298,10 +354,19 @@ public sealed class Theme
         set => SetColour(Constants.Keys.HeaderForeground, value);
     }
     
-    public Color ListViewBorder
+    // Falls back to a legacy listview.border value, then the control foreground.
+    public Color ListViewBorderForeground
     {
-        get => GetColour(Constants.Keys.ListViewBorder, ConsolePalette.White);
-        set => SetColour(Constants.Keys.ListViewBorder, value);
+        get => GetColour(Constants.Keys.ListViewBorderForeground,
+            GetColour(Constants.Keys.ListViewBorderLegacy, Foreground));
+        set => SetColour(Constants.Keys.ListViewBorderForeground, value);
+    }
+
+    // Falls back to the control background.
+    public Color ListViewBorderBackground
+    {
+        get => GetColour(Constants.Keys.ListViewBorderBackground, Background);
+        set => SetColour(Constants.Keys.ListViewBorderBackground, value);
     }
 
     public Color ListViewBackground
@@ -386,6 +451,20 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.PerformanceMemoryFree, ConsolePalette.Green);
         set => SetColour(Constants.Keys.PerformanceMemoryFree, value);
+    }
+
+    // Falls back to the control foreground.
+    public Color PropertyKey
+    {
+        get => GetColour(Constants.Keys.PropertyKey, Foreground);
+        set => SetColour(Constants.Keys.PropertyKey, value);
+    }
+
+    // Falls back to the control foreground.
+    public Color PropertyValue
+    {
+        get => GetColour(Constants.Keys.PropertyValue, Foreground);
+        set => SetColour(Constants.Keys.PropertyValue, value);
     }
 
     public Color RangeHighBackground

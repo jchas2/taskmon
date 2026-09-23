@@ -176,9 +176,10 @@ public sealed class ThermalsControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.Theme.Background;
+        chart.BackgroundColour = appConfig.Theme.ChartBackground;
         chart.ForegroundColour = appConfig.Theme.Foreground;
-        chart.BorderColour = appConfig.Theme.ChartBorder;
+        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         chart.ColourHigh = appConfig.Theme.RangeHighBackground;
         chart.ColourLow = appConfig.Theme.RangeLowBackground;
         chart.ColourMid = appConfig.Theme.RangeMidBackground;
@@ -296,7 +297,7 @@ public sealed class ThermalsControl : Control
     {
         int x = X + Width - 1;
 
-        DrawVerticalLine(x, Y, Y + Height, appConfig.Theme.ChartBorder);
+        DrawVerticalLine(x, Y, Y + Height, appConfig.Theme.ChartBorderForeground);
 
         if (scrollOffset > 0) {
             DrawGlyph(x, Y, '▲');
@@ -311,7 +312,7 @@ public sealed class ThermalsControl : Control
     {
         frame.Clear();
         frame.MoveTo(x, y);
-        frame.SetColour(appConfig.Theme.ChartBorder, BackgroundColour);
+        frame.SetColour(appConfig.Theme.ChartBorderForeground, BackgroundColour);
         frame.Append(glyph);
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());

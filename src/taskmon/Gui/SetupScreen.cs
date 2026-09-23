@@ -762,8 +762,9 @@ public class SetupScreen : Screen
             ctrl.ForegroundColour = previewTheme.Foreground;
         }
 
+        UpdateTheme(headerView);
         UpdateTheme(menuView);
-        
+
         foreach (ListView ctrl in tabControls) {
             UpdateTheme(ctrl);
         }
@@ -771,6 +772,10 @@ public class SetupScreen : Screen
 
     private void UpdateTheme(ListView ctrl)
     {
+        ctrl.BackgroundColour = previewTheme.ListViewBackground;
+        ctrl.ForegroundColour = previewTheme.ListViewForeground;
+        ctrl.BorderForegroundColour = previewTheme.ListViewBorderForeground;
+        ctrl.BorderBackgroundColour = previewTheme.ListViewBorderBackground;
         ctrl.BackgroundHighlightColour = previewTheme.BackgroundHighlight;
         ctrl.ForegroundHighlightColour = previewTheme.ForegroundHighlight;
         ctrl.BackgroundHighlightInactiveColour = previewTheme.BackgroundHighlightInactive;

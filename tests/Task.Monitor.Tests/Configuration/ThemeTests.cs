@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.Tests.Common;
@@ -21,7 +23,9 @@ control.foreground.highlight.inactive=#222222
 control.border=#212121
 control.border.focused=#363636
 
-chart.border=#334455
+chart.background=#3a3a3a
+chart.borderforeground=#334455
+chart.borderbackground=#3b3b3b
 chart.yaxis=#667788
 chart.title=#1f1f1f
 chart.grid=#202020
@@ -32,7 +36,13 @@ chart.range.high.foreground=#000000
 chart.range.low.foreground=#000000
 chart.range.mid.foreground=#000000
 
-listview.border=#232323
+metre.background=#3c3c3c
+metre.foreground=#3f3f3f
+metre.borderforeground=#3d3d3d
+metre.borderbackground=#3e3e3e
+
+listview.borderforeground=#232323
+listview.borderbackground=#393939
 listview.background=#242424
 listview.foreground=#252525
 listview.header.background=#121d18
@@ -48,6 +58,9 @@ performance.memory.inuse=#2c2c2c
 performance.memory.modified=#2d2d2d
 performance.memory.standby=#2e2e2e
 performance.memory.free=#2f2f2f
+
+property.key=#414141
+property.value=#424242
 
 process.list.normaluserspace=#327f77
 process.list.lowpriority=#10b981
@@ -82,7 +95,7 @@ command.background=#121d18
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(56, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
 
     [Fact]
     public void Constructor_Initialises_Successfully()
@@ -103,7 +116,9 @@ command.background=#121d18
             Background                         = ColorTranslator.FromHtml("#0f1610"),
             BackgroundHighlight                = ColorTranslator.FromHtml("#1d4125"),
             BackgroundHighlightInactive        = ColorTranslator.FromHtml("#1e1e1e"),
-            ChartBorder                        = ColorTranslator.FromHtml("#334455"),
+            ChartBackground                    = ColorTranslator.FromHtml("#3a3a3a"),
+            ChartBorderForeground              = ColorTranslator.FromHtml("#334455"),
+            ChartBorderBackground              = ColorTranslator.FromHtml("#3b3b3b"),
             ChartYAxis                         = ColorTranslator.FromHtml("#667788"),
             ChartTitle                         = ColorTranslator.FromHtml("#1f1f1f"),
             ChartGrid                          = ColorTranslator.FromHtml("#202020"),
@@ -133,9 +148,14 @@ command.background=#121d18
             HeatmapStateScanning               = ColorTranslator.FromHtml("#333333"),
             HeatmapStateCompleted              = ColorTranslator.FromHtml("#343434"),
             HeatmapStateFaulted                = ColorTranslator.FromHtml("#353535"),
-            ListViewBorder                     = ColorTranslator.FromHtml("#232323"),
+            ListViewBorderForeground           = ColorTranslator.FromHtml("#232323"),
+            ListViewBorderBackground           = ColorTranslator.FromHtml("#393939"),
             ListViewBackground                 = ColorTranslator.FromHtml("#242424"),
             ListViewForeground                 = ColorTranslator.FromHtml("#252525"),
+            MetreBackground                    = ColorTranslator.FromHtml("#3c3c3c"),
+            MetreForeground                    = ColorTranslator.FromHtml("#3f3f3f"),
+            MetreBorderForeground              = ColorTranslator.FromHtml("#3d3d3d"),
+            MetreBorderBackground              = ColorTranslator.FromHtml("#3e3e3e"),
             MenubarBackground                  = ColorTranslator.FromHtml("#121d18"),
             MenubarForeground                  = ColorTranslator.FromHtml("#717f24"),
             PerformancePanelBackground         = ColorTranslator.FromHtml("#262626"),
@@ -148,6 +168,8 @@ command.background=#121d18
             PerformanceMemoryModified          = ColorTranslator.FromHtml("#2d2d2d"),
             PerformanceMemoryStandby           = ColorTranslator.FromHtml("#2e2e2e"),
             PerformanceMemoryFree              = ColorTranslator.FromHtml("#2f2f2f"),
+            PropertyKey                        = ColorTranslator.FromHtml("#414141"),
+            PropertyValue                      = ColorTranslator.FromHtml("#424242"),
             RangeHighBackground                = ColorTranslator.FromHtml("#b082d1"),
             RangeLowBackground                 = ColorTranslator.FromHtml("#10b981"),
             RangeMidBackground                 = ColorTranslator.FromHtml("#ffd085"),
@@ -171,7 +193,9 @@ command.background=#121d18
         theme.Background                  = ColorTranslator.FromHtml("#010101");
         theme.BackgroundHighlight         = ColorTranslator.FromHtml("#020202");
         theme.BackgroundHighlightInactive = ColorTranslator.FromHtml("#1e1e1e");
-        theme.ChartBorder                 = ColorTranslator.FromHtml("#1c1c1c");
+        theme.ChartBackground             = ColorTranslator.FromHtml("#373737");
+        theme.ChartBorderForeground       = ColorTranslator.FromHtml("#1c1c1c");
+        theme.ChartBorderBackground       = ColorTranslator.FromHtml("#383838");
         theme.ChartYAxis                  = ColorTranslator.FromHtml("#1d1d1d");
         theme.ChartTitle                  = ColorTranslator.FromHtml("#1f1f1f");
         theme.ChartGrid                   = ColorTranslator.FromHtml("#202020");
@@ -201,9 +225,14 @@ command.background=#121d18
         theme.HeatmapStateScanning        = ColorTranslator.FromHtml("#333333");
         theme.HeatmapStateCompleted       = ColorTranslator.FromHtml("#343434");
         theme.HeatmapStateFaulted         = ColorTranslator.FromHtml("#353535");
-        theme.ListViewBorder              = ColorTranslator.FromHtml("#232323");
+        theme.ListViewBorderForeground    = ColorTranslator.FromHtml("#232323");
+        theme.ListViewBorderBackground    = ColorTranslator.FromHtml("#393939");
         theme.ListViewBackground          = ColorTranslator.FromHtml("#242424");
         theme.ListViewForeground          = ColorTranslator.FromHtml("#252525");
+        theme.MetreBackground             = ColorTranslator.FromHtml("#3c3c3c");
+        theme.MetreForeground             = ColorTranslator.FromHtml("#3f3f3f");
+        theme.MetreBorderForeground       = ColorTranslator.FromHtml("#3d3d3d");
+        theme.MetreBorderBackground       = ColorTranslator.FromHtml("#3e3e3e");
         theme.MenubarBackground           = ColorTranslator.FromHtml("#141414");
         theme.MenubarForeground           = ColorTranslator.FromHtml("#151515");
         theme.PerformancePanelBackground         = ColorTranslator.FromHtml("#262626");
@@ -216,6 +245,8 @@ command.background=#121d18
         theme.PerformanceMemoryModified    = ColorTranslator.FromHtml("#2d2d2d");
         theme.PerformanceMemoryStandby     = ColorTranslator.FromHtml("#2e2e2e");
         theme.PerformanceMemoryFree        = ColorTranslator.FromHtml("#2f2f2f");
+        theme.PropertyKey                 = ColorTranslator.FromHtml("#434343");
+        theme.PropertyValue               = ColorTranslator.FromHtml("#444444");
         theme.RangeHighBackground         = ColorTranslator.FromHtml("#161616");
         theme.RangeLowBackground          = ColorTranslator.FromHtml("#171717");
         theme.RangeMidBackground          = ColorTranslator.FromHtml("#181818");
@@ -227,7 +258,9 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#010101"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#020202"), theme.BackgroundHighlight);
         Assert.Equal(ColorTranslator.FromHtml("#1e1e1e"), theme.BackgroundHighlightInactive);
-        Assert.Equal(ColorTranslator.FromHtml("#1c1c1c"), theme.ChartBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#373737"), theme.ChartBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#1c1c1c"), theme.ChartBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#383838"), theme.ChartBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#1d1d1d"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#1f1f1f"), theme.ChartTitle);
         Assert.Equal(ColorTranslator.FromHtml("#202020"), theme.ChartGrid);
@@ -257,9 +290,14 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
-        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
         Assert.Equal(ColorTranslator.FromHtml("#252525"), theme.ListViewForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3c3c3c"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#3f3f3f"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3d3d3d"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3e3e3e"), theme.MetreBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#141414"), theme.MenubarBackground);
         Assert.Equal(ColorTranslator.FromHtml("#151515"), theme.MenubarForeground);
         Assert.Equal(ColorTranslator.FromHtml("#262626"), theme.PerformancePanelBackground);
@@ -272,6 +310,8 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#2d2d2d"), theme.PerformanceMemoryModified);
         Assert.Equal(ColorTranslator.FromHtml("#2e2e2e"), theme.PerformanceMemoryStandby);
         Assert.Equal(ColorTranslator.FromHtml("#2f2f2f"), theme.PerformanceMemoryFree);
+        Assert.Equal(ColorTranslator.FromHtml("#434343"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#444444"), theme.PropertyValue);
         Assert.Equal(ColorTranslator.FromHtml("#161616"), theme.RangeHighBackground);
         Assert.Equal(ColorTranslator.FromHtml("#171717"), theme.RangeLowBackground);
         Assert.Equal(ColorTranslator.FromHtml("#181818"), theme.RangeMidBackground);
@@ -285,7 +325,9 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
         Assert.Equal(ColorTranslator.FromHtml("#1d4125"), theme.BackgroundHighlight);
         Assert.Equal(ColorTranslator.FromHtml("#1e1e1e"), theme.BackgroundHighlightInactive);
-        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#3a3a3a"), theme.ChartBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3b3b3b"), theme.ChartBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#667788"), theme.ChartYAxis);
         Assert.Equal(ColorTranslator.FromHtml("#1f1f1f"), theme.ChartTitle);
         Assert.Equal(ColorTranslator.FromHtml("#202020"), theme.ChartGrid);
@@ -315,9 +357,14 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
-        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
         Assert.Equal(ColorTranslator.FromHtml("#252525"), theme.ListViewForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3c3c3c"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#3f3f3f"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3d3d3d"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3e3e3e"), theme.MetreBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.MenubarBackground);
         Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.MenubarForeground);
         Assert.Equal(ColorTranslator.FromHtml("#262626"), theme.PerformancePanelBackground);
@@ -330,6 +377,8 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#2d2d2d"), theme.PerformanceMemoryModified);
         Assert.Equal(ColorTranslator.FromHtml("#2e2e2e"), theme.PerformanceMemoryStandby);
         Assert.Equal(ColorTranslator.FromHtml("#2f2f2f"), theme.PerformanceMemoryFree);
+        Assert.Equal(ColorTranslator.FromHtml("#414141"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#424242"), theme.PropertyValue);
         Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.RangeHighBackground);
         Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.RangeLowBackground);
         Assert.Equal(ColorTranslator.FromHtml("#ffd085"), theme.RangeMidBackground);
@@ -384,5 +433,214 @@ command.background=#121d18
         new Theme(section).Normalize();
 
         Assert.False(section.Contains(Constants.Keys.Foreground));
+    }
+
+    [Fact]
+    public void ChartBackground_Falls_Back_To_Background_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBackground);
+    }
+
+    [Fact]
+    public void ChartBackground_Falls_Back_To_Transparent_Background_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "transparent");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ConsolePalette.Transparent, theme.ChartBackground);
+    }
+
+    [Fact]
+    public void ChartBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ChartBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBorderBackground);
+    }
+
+    [Fact]
+    public void ChartBorderForeground_Falls_Back_To_Legacy_ChartBorder_Key()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.ChartBorderLegacy, "#334455");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorderForeground);
+    }
+
+    [Fact]
+    public void ChartBorderForeground_Overrides_Legacy_ChartBorder_Key_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.ChartBorderLegacy, "#334455");
+        section.Add(Constants.Keys.ChartBorderForeground, "#665544");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#665544"), theme.ChartBorderForeground);
+    }
+
+    [Fact]
+    public void ListViewBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ListViewBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ListViewBorderBackground);
+    }
+
+    [Fact]
+    public void ListViewBorderForeground_Falls_Back_To_Legacy_ListViewBorder_Key()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.ListViewBorderLegacy, "#334455");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ListViewBorderForeground);
+    }
+
+    [Fact]
+    public void ListViewBorderForeground_Overrides_Legacy_ListViewBorder_Key_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.ListViewBorderLegacy, "#334455");
+        section.Add(Constants.Keys.ListViewBorderForeground, "#665544");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#665544"), theme.ListViewBorderForeground);
+    }
+
+    [Fact]
+    public void ChartBackground_Overrides_Background_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.ChartBackground, "#654321");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.ChartBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.Background);
+    }
+
+    [Fact]
+    public void Metre_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Metre_Colours_Do_Not_Fall_Back_To_Chart_Colours()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.ChartBackground, "#111111");
+        section.Add(Constants.Keys.ChartBorderForeground, "#222222");
+        section.Add(Constants.Keys.ChartBorderBackground, "#333333");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Metre_Colours_Override_Control_Colours_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.MetreBackground, "#654321");
+        section.Add(Constants.Keys.MetreForeground, "#123abc");
+        section.Add(Constants.Keys.MetreBorderForeground, "#fedcba");
+        section.Add(Constants.Keys.MetreBorderBackground, "#0a0b0c");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#0a0b0c"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Property_Colours_Fall_Back_To_Control_Foreground_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyValue);
+    }
+
+    [Fact]
+    public void Property_Colours_Override_Control_Foreground_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.PropertyKey, "#123abc");
+        section.Add(Constants.Keys.PropertyValue, "#fedcba");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.PropertyValue);
+    }
+
+    [Fact]
+    public void Shipped_Themes_Define_Property_Colours()
+    {
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+            ConfigSection section = parser.Sections[0];
+
+            Assert.True(section.Contains(Constants.Keys.PropertyKey), $"{name} is missing {Constants.Keys.PropertyKey}");
+            Assert.True(section.Contains(Constants.Keys.PropertyValue), $"{name} is missing {Constants.Keys.PropertyValue}");
+        }
     }
 }

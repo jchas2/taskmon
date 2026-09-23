@@ -94,6 +94,7 @@ use-irix-cpu-reporting=True
         Assert.NotNull(appConfig.Theme);
         Assert.Equal("Taskmon Default", appConfig.Theme.Name);
         //Assert.Equal(ConsolePalette.Transparent, appConfig.DefaultTheme.Background);
+        Assert.Equal(appConfig.Theme.Background, appConfig.Theme.ChartBackground);
         Assert.Equal(ConsolePalette.Cyan,       appConfig.Theme.BackgroundHighlight);
         Assert.Equal(ConsolePalette.Blue,       appConfig.Theme.ColumnCommandLowPriority);
         Assert.Equal(ConsolePalette.Red,        appConfig.Theme.ColumnCommandHighCpu);
