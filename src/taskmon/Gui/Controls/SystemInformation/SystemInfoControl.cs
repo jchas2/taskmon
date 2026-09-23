@@ -246,8 +246,8 @@ public sealed partial class SystemInfoControl : Control
             new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
         };
 
-        systemInfoView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        systemInfoView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        systemInfoView.BackgroundColour = appConfig.Theme.Background;
+        systemInfoView.ForegroundColour = appConfig.Theme.Foreground;
         systemInfoView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         systemInfoView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         systemInfoView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
@@ -259,8 +259,8 @@ public sealed partial class SystemInfoControl : Control
 
         logoControl.BackgroundColour = appConfig.Theme.Background;
 
-        systemSummaryView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        systemSummaryView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        systemSummaryView.BackgroundColour = appConfig.Theme.Background;
+        systemSummaryView.ForegroundColour = appConfig.Theme.Foreground;
         systemSummaryView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         systemSummaryView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
 

@@ -224,7 +224,7 @@ public sealed partial class SystemInfoControl
     // the selection band through them.
     private void AddRow(ListView target, string label, string value, int indent = 0)
     {
-        Color background = appConfig.Theme.ListViewBackground;
+        Color background = appConfig.Theme.Background;
 
         ListViewItem row = new(new[] {
             new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
