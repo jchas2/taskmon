@@ -48,11 +48,13 @@ public sealed class MainScreen2 : Screen
     private Control focusedControl;
     private List<Control> menuControls;
     
-    private const int HeaderHeight = 3;
+    private const int HeaderHeight = HeaderControl2.HeaderRows;
     private const int FooterHeight = 1;
     private const int BannerHeight = 1;
     private const int MenuWidth = 16;
-    private const int ActiveControlTop = HeaderHeight + 1;
+    // The header's bottom border already separates it from the banners, so they start on the very
+    // next row.
+    private const int ActiveControlTop = HeaderHeight;
 
     public MainScreen2(RunContext runContext, ScreenApplication screenApp)
     : base(runContext.Terminal)

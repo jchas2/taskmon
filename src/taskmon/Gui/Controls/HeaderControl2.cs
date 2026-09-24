@@ -36,7 +36,12 @@ public sealed class HeaderControl2 : Control
     // A stand-in for the first draw, before the process service has published anything.
     private static readonly ProcessMetrics EmptyProcessMetrics = new();
 
-    private const int MinHeaderRows = 3;
+    // The bordered box is built here and written in one go - the header redraws on every snapshot.
+    private readonly AnsiScreenBuffer frame = new();
+
+    // The banner row, then the two info rows framed by a top and bottom border. MainScreen2 sizes
+    // the header from this.
+    public const int HeaderRows = 5;
 
     public HeaderControl2(
         ServiceController serviceController,
@@ -77,29 +82,50 @@ public sealed class HeaderControl2 : Control
         Terminal.BackgroundColor = BackgroundColour;
         Terminal.ForegroundColor = ForegroundColour;
 
+        // The two info rows sit inside the border, so they need at least one column between its
+        // left and right edges.
+        int innerWidth = Width - 2;
+
+        if (innerWidth < 1) {
+            return;
+        }
+
         Color lbColor = appConfig.Theme.Foreground;
         Color fgColour = appConfig.Theme.RangeLowBackground;
         Color bgColour = appConfig.Theme.Background;
+        Color borderColour = appConfig.Theme.ControlBorder;
+
+        frame.Clear();
+
+        frame.MoveTo(X, Y + 1);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('╭');
+        frame.Append('─', innerWidth);
+        frame.Append('╮');
 
         string ipAddress = privateIPv4Address;
 
-        Terminal.Write(MachineLabel.ToColour(lbColor, bgColour));
-        Terminal.Write(machineName.ToColour(fgColour, bgColour));
-        Terminal.Write(OSLabel.ToColour(lbColor, bgColour));
-        Terminal.Write(osVersion.ToColour(fgColour, bgColour));
-        Terminal.Write(IpLabel.ToColour(lbColor, bgColour));
-        Terminal.Write(ipAddress.ToColour(fgColour, bgColour));
+        BeginRow(Y + 2, borderColour, bgColour);
+        int remaining = innerWidth;
 
-        int nchars =
-            MachineLabel.Length + machineName.Length +
-            OSLabel.Length + osVersion.Length +
-            IpLabel.Length + ipAddress.Length;
+        AppendSegment(MachineLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(machineName, fgColour, bgColour, ref remaining);
+        AppendSegment(OSLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(osVersion, fgColour, bgColour, ref remaining);
+        AppendSegment(IpLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(ipAddress, fgColour, bgColour, ref remaining);
 
-        int themeLen = appConfig.Theme.Name.Length + 1;
+        // Right-aligned, and dropped first when the row is too narrow to hold it after the
+        // machine details.
+        string themeText = $"{appConfig.Theme.Name} ";
 
-        Terminal.BackgroundColor = bgColour;
-        Terminal.WriteEmptyLineTo(Width - nchars - themeLen);
-        Terminal.Write($"{appConfig.Theme.Name.ToColour(fgColour, bgColour)} ");
+        if (themeText.Length <= remaining) {
+            AppendPadding(remaining - themeText.Length, bgColour);
+            remaining = themeText.Length;
+            AppendSegment(themeText, fgColour, bgColour, ref remaining);
+        }
+
+        EndRow(remaining, borderColour, bgColour);
 
         // Nothing has published yet on the first draw. The header still paints its chrome and its
         // labels, with the figures left at zero, rather than leaving the top rows unwritten.
@@ -144,29 +170,75 @@ public sealed class HeaderControl2 : Control
             cpuInfoText += " Solaris Mode";
         }
 
-        Terminal.Write(CpuLabel.ToColour(lbColor, bgColour));
-        Terminal.Write(cpuInfoText.ToColour(fgColour, bgColour));
-        nchars = CpuLabel.Length + cpuInfoText.Length;
-
         ProcessMetrics processMetrics = processInfo?.Metrics ?? EmptyProcessMetrics;
 
         string processCount = processMetrics.ProcessCount.ToString();
         string threadCount = processMetrics.ThreadCount.ToString();
         string runningCount = processMetrics.RunningCount.ToString();
 
-        Terminal.Write(TasksLabel.ToColour(lbColor, bgColour));
-        Terminal.Write(processCount.ToColour(fgColour, bgColour));
-        Terminal.Write(ThreadsLabel.ToColour(lbColor, bgColour));
-        Terminal.Write((threadCount + ", ").ToColour(fgColour, bgColour));
-        Terminal.Write(runningCount.ToColour(fgColour, bgColour));
-        Terminal.Write(RunningLabel.ToColour(lbColor, bgColour));
+        BeginRow(Y + 3, borderColour, bgColour);
+        remaining = innerWidth;
 
-        nchars += TasksLabel.Length + processCount.Length +
-                  ThreadsLabel.Length + threadCount.Length + 2 +
-                  runningCount.Length + RunningLabel.Length;
+        AppendSegment(CpuLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(cpuInfoText, fgColour, bgColour, ref remaining);
+        AppendSegment(TasksLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(processCount, fgColour, bgColour, ref remaining);
+        AppendSegment(ThreadsLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(threadCount + ", ", fgColour, bgColour, ref remaining);
+        AppendSegment(runningCount, fgColour, bgColour, ref remaining);
+        AppendSegment(RunningLabel, lbColor, bgColour, ref remaining);
 
-        Terminal.BackgroundColor = bgColour;
-        Terminal.WriteEmptyLineTo(Width - nchars);
+        EndRow(remaining, borderColour, bgColour);
+
+        frame.MoveTo(X, Y + 4);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('╰');
+        frame.Append('─', innerWidth);
+        frame.Append('╯');
+
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+
+    private void BeginRow(int y, Color borderColour, Color bgColour)
+    {
+        frame.MoveTo(X, y);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('│');
+    }
+
+    // Pads whatever is left of the inner width, so a shorter row overwrites a longer previous one,
+    // then closes the row with the right border.
+    private void EndRow(int remaining, Color borderColour, Color bgColour)
+    {
+        AppendPadding(remaining, bgColour);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('│');
+    }
+
+    // Writes as much of the text as still fits inside the border and takes it off what is left, so
+    // a row that is too long for the width is cut short rather than pushing the right border out.
+    private void AppendSegment(string text, Color fgColour, Color bgColour, ref int remaining)
+    {
+        int length = Math.Min(text.Length, remaining);
+
+        if (length <= 0) {
+            return;
+        }
+
+        frame.SetColour(fgColour, bgColour);
+        frame.Append(text.AsSpan(0, length));
+        remaining -= length;
+    }
+
+    private void AppendPadding(int count, Color bgColour)
+    {
+        if (count <= 0) {
+            return;
+        }
+
+        frame.SetColour(ForegroundColour, bgColour);
+        frame.Append(' ', count);
     }
 
     protected override void OnLoad()

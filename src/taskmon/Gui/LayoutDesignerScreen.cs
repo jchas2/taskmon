@@ -1,11 +1,9 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Task.Monitor.Configuration;
-using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
-using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Controls.PickerBox;
@@ -164,28 +162,8 @@ public sealed class LayoutDesignerScreen : Screen
         Controls.Remove(control);
     }
 
-    private void ApplyTheme(Control control)
-    {
-        control.BackgroundColour = runContext.AppConfig.Theme.Background;
-        control.ForegroundColour = runContext.AppConfig.Theme.Foreground;
-
-        if (control is Chart chart) {
-            chart.BackgroundColour = runContext.AppConfig.Theme.ChartBackground;
-            chart.BorderForegroundColour = runContext.AppConfig.Theme.ChartBorderForeground;
-            chart.BorderBackgroundColour = runContext.AppConfig.Theme.ChartBorderBackground;
-            chart.ColourHigh = runContext.AppConfig.Theme.RangeHighBackground;
-            chart.ColourLow = runContext.AppConfig.Theme.RangeLowBackground;
-            chart.ColourMid = runContext.AppConfig.Theme.RangeMidBackground;
-            chart.MetreStyle = runContext.AppConfig.MetreStyle;
-            chart.ShowYAxisScale = runContext.AppConfig.ShowYAxisScale;
-            chart.YAxisColour = runContext.AppConfig.Theme.ChartYAxis;
-        }
-        else if (control is EmptyPaneControl or CpuCoresControl) {
-            // CpuCoresControl reads its own metre colours from AppConfig - only the border, which
-            // the selection highlight swaps, needs setting here.
-            control.BorderColour = runContext.AppConfig.Theme.ChartBorderForeground;
-        }
-    }
+    private void ApplyTheme(Control control) =>
+        SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
     private int ContentY => Y + BannerHeight;
 

@@ -29,6 +29,7 @@ public sealed class DiskSpaceHeatMapControl : Control
     private readonly AnsiScreenBuffer frame = new();
     private readonly StableTreemapLayout stableLayout = new();
     private readonly Dictionary<string, int> fadeStepByCellId = new();
+    private readonly Dictionary<string, Color> heatColourById = new();
 
     private DiskSpaceSpecs? specs;
 
@@ -89,18 +90,37 @@ public sealed class DiskSpaceHeatMapControl : Control
 
         PruneFadeState(cells);
 
-        // items is already sorted largest-first (root.Children comes pre-sorted that way), so its
-        // index doubles as each cell's rank for colouring.
-        Dictionary<string, int> rankById = new(StringComparer.OrdinalIgnoreCase);
-
-        for (int i = 0; i < items.Length; i++) {
-            rankById[items[i].Id] = i;
-        }
+        // Ranked across the cells actually drawn, not every child folder in the snapshot: the
+        // layout stops placing items once the space runs out, so counting the undrawn ones would
+        // shift every visible cell's colour each time the scan found another tiny folder, with no
+        // new rectangle on screen. The cells only change when StableTreemapLayout relays out, so
+        // neither do the colours.
+        Dictionary<string, int> rankById = RankByArea(cells);
+        heatColourById.Clear();
 
         foreach (TreemapCell cell in cells) {
-            DrawCell(cell, nodesById[cell.Id], rankById[cell.Id], items.Length);
+            DrawCell(cell, nodesById[cell.Id], rankById[cell.Id], cells.Count);
         }
     }
+
+    // Largest drawn area first, so the biggest box on screen is always rank 0 (the high colour)
+    // even where integer rounding has drawn a near-tied, lighter folder a cell larger. Equal areas
+    // keep the layout's own order - heaviest first - since OrderByDescending is a stable sort.
+    internal static Dictionary<string, int> RankByArea(IReadOnlyList<TreemapCell> cells)
+    {
+        Dictionary<string, int> rankById = new();
+        int rank = 0;
+
+        foreach (TreemapCell cell in cells.OrderByDescending(cell => (long)cell.Bounds.Width * cell.Bounds.Height)) {
+            rankById[cell.Id] = rank++;
+        }
+
+        return rankById;
+    }
+
+    // Test-only seam: each drawn cell's heat colour from the last draw, before any fade-in, so
+    // tests can check the colouring without decoding the ANSI output.
+    internal IReadOnlyDictionary<string, Color> HeatColoursForTests => heatColourById;
 
     private void DrawHeader(int left, int top, int width)
     {
@@ -197,6 +217,7 @@ public sealed class DiskSpaceHeatMapControl : Control
     private void DrawCell(TreemapCell cell, DiskSpaceFolderNode node, int rank, int cellCount)
     {
         Color heatColour = RankColour(rank, cellCount);
+        heatColourById[cell.Id] = heatColour;
         Color fillColour = ApplyFade(cell.Id, heatColour);
 
         DrawRectangle(cell.Bounds.X, cell.Bounds.Y, cell.Bounds.Width, cell.Bounds.Height, fillColour);
@@ -209,7 +230,7 @@ public sealed class DiskSpaceHeatMapControl : Control
     // Rank 0 (the largest cell) is always the hottest, the smallest is always the coolest, and
     // everything else spreads evenly between them along the gradient - a continuous function of
     // rank rather than a fixed set of bands, so every cell lands at its own point on it.
-    private Color RankColour(int rank, int cellCount)
+    internal Color RankColour(int rank, int cellCount)
     {
         double t = cellCount <= 1 ? 1.0 : 1.0 - (rank / (double)(cellCount - 1));
 

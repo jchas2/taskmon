@@ -1,5 +1,10 @@
+using System.Drawing;
 using System.Reflection;
+using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Summary2;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
@@ -350,5 +355,52 @@ public sealed class SummaryControl2Tests
             "FindFocusedPane", BindingFlags.NonPublic | BindingFlags.Instance);
 
         return (Control?)method!.Invoke(ctrl, null);
+    }
+
+    // The runtime summary used to theme only its Chart panes, leaving a CpuCores (or Empty) pane's
+    // border at the white Control default while the designer showed it in the theme colour.
+    [Fact]
+    public void CpuCores_And_Empty_Panes_Take_The_Theme_Border_Colour()
+    {
+        Color chartBorder = ColorTranslator.FromHtml("#404040");
+
+        ConfigSection themeSection = new("Summary Border Theme");
+        themeSection.Add(Constants.Keys.ChartBorderForeground, "#404040");
+        runContext.AppConfig.Theme.Update(themeSection);
+
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        (int cpuCoresId, _) = tree.Split(tree.RootId, Orientation.Row);
+        tree.Nodes[cpuCoresId].ControlType = PaneControlType.CpuCores;
+
+        UseSummaryLayout(SummaryLayout2.FromTree("CpuCores Border Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        Assert.Single(ctrl.Controls.OfType<CpuCoresControl>());
+        Assert.Single(ctrl.Controls.OfType<EmptyPaneControl>());
+
+        Assert.All(ctrl.Controls, pane =>
+            Assert.Equal(chartBorder.ToArgb(), pane.BorderColour.ToArgb()));
+
+        ctrl.Unload();
+    }
+
+    // AppConfig only takes a default layout it already knows about, and SaveSummaryLayout2 needs a
+    // real config directory - so the layout is added to its list directly.
+    private void UseSummaryLayout(SummaryLayout2 layout)
+    {
+        FieldInfo? field = typeof(AppConfig).GetField(
+            "allSummaryLayouts2", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        ((List<SummaryLayout2>)field!.GetValue(runContext.AppConfig)!).Add(layout);
+        runContext.AppConfig.DefaultSummaryLayout2 = layout;
     }
 }

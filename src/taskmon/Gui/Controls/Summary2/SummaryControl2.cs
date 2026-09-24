@@ -3,7 +3,6 @@ using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
-using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Gui.Controls.Summary2;
@@ -169,23 +168,10 @@ public sealed class SummaryControl2 : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        foreach (Control control in Controls) {
-            control.BackgroundColour = appConfig.Theme.Background;
-            control.ForegroundColour = appConfig.Theme.Foreground;
-        }
-
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
-            if (paneControls[pane.Id] is Chart chart) {
-                chart.BackgroundColour = appConfig.Theme.ChartBackground;
-                chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-                chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-                chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-                chart.ColourLow = appConfig.Theme.RangeLowBackground;
-                chart.ColourMid = appConfig.Theme.RangeMidBackground;
-                chart.MetreStyle = appConfig.MetreStyle;
-                chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-                chart.YAxisColour = appConfig.Theme.ChartYAxis;
-            }
+        // Themed before base.OnLoad() loads the panes, so a focus swap saves and later restores the
+        // themed border rather than a control's pre-theme default.
+        foreach (Control control in paneControls.Values) {
+            SummaryPaneTheme.Apply(control, appConfig);
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
