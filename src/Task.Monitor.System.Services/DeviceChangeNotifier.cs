@@ -1,3 +1,5 @@
+using Task.Monitor.Cli.Utils;
+
 namespace Task.Monitor.System.Services;
 
 public enum DeviceCategory
@@ -7,12 +9,6 @@ public enum DeviceCategory
     Gpu,
 }
 
-/// <summary>
-/// Watches for plug and play device interface arrival and removal and raises
-/// <see cref="DeviceChanged"/> within milliseconds, so a service can re-enumerate its hardware
-/// immediately instead of waiting for the next poll. Windows only; a no-op on other platforms,
-/// where services fall back to their normal sampling cadence.
-/// </summary>
 public sealed partial class DeviceChangeNotifier : IDisposable
 {
     public event Action<DeviceCategory>? DeviceChanged;
@@ -30,8 +26,9 @@ public sealed partial class DeviceChangeNotifier : IDisposable
         try {
             DeviceChanged?.Invoke(category);
         }
-        catch {
+        catch (Exception ex) {
             // A subscriber must never throw back across the native notification callback.
+            ExceptionHelper.LogException(ex);
         }
     }
 }

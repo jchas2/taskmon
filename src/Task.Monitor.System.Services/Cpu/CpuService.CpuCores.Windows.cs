@@ -120,10 +120,7 @@ public partial class CpuService
                     }
                 }
 
-                // PDH returns the \Processor(*) instances in lexicographic order (0, 1, 10, 2, ...).
-                // Sort by the core index so consumers that bind positionally show 0..N in order.
                 arrayBuilder.Sort(static (left, right) => CpuCoreMetricOrdering.Compare(left.Name, right.Name));
-
                 cpuInfo.CoreMetrics = arrayBuilder.ToImmutable();
             }
             else {

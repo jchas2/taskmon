@@ -7,10 +7,6 @@ namespace Task.Monitor.System.Services.Drivers;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-// The enumeration side of DriversService, split out the same way WindowsServiceLookup is split
-// from WindowsServicesService - the Service Control Manager calls stay independently testable in
-// spirit (interop-only, no cadence/publish concerns) even though, unlike WindowsServiceLookup,
-// there is no pid map to maintain here.
 internal static class DriverLookup
 {
 #if __WIN32__
@@ -18,10 +14,10 @@ internal static class DriverLookup
     {
         DriverInfo[] drivers = [];
 
-        // SC_MANAGER_CONNECT is required to OpenService each driver below for its config; plain
-        // enumeration only needs SC_MANAGER_ENUMERATE_SERVICE.
         nint hSCM = WinService.OpenSCManager(
-            null!, null!, WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT);
+            lpMachineName: null!, 
+            lpDatabaseName: null!, 
+            WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT);
 
         if (hSCM == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
@@ -96,9 +92,7 @@ internal static class DriverLookup
             };
 
             PopulateDriverConfig(hSCM, driver);
-
             drivers[i] = driver;
-
             currentPtr = nint.Add(currentPtr, structSize);
         }
 
@@ -107,9 +101,6 @@ internal static class DriverLookup
         return drivers;
     }
 
-    // Fills in StartType, DelayedAutoStart, ImagePath and Version. A driver whose handle cannot be
-    // opened (some protected drivers, without elevation) keeps the Name/DisplayName/Status it
-    // already has from the enumeration - partial data rather than dropping it from the list.
     private static void PopulateDriverConfig(nint hSCM, DriverInfo driver)
     {
         nint hService = WinService.OpenService(hSCM, driver.ServiceName, WinService.SERVICE_QUERY_CONFIG);
@@ -117,6 +108,7 @@ internal static class DriverLookup
         if (hService == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
                 $"{nameof(WinService.OpenService)}_{driver.ServiceName}_Config");
+            
             return;
         }
 
@@ -135,7 +127,11 @@ internal static class DriverLookup
 
     private static void PopulateStartTypeAndImagePath(nint hService, DriverInfo driver)
     {
-        WinService.QueryServiceConfig(hService, nint.Zero, 0, out uint bytesNeeded);
+        WinService.QueryServiceConfig(
+            hService, 
+            nint.Zero, 
+            0, 
+            out uint bytesNeeded);
 
         if (bytesNeeded == 0) {
             return;
@@ -147,6 +143,7 @@ internal static class DriverLookup
             if (!WinService.QueryServiceConfig(hService, buffer, bytesNeeded, out _)) {
                 PInvokeErrorHelpers.TraceOnceOnLastError(
                     $"{nameof(WinService.QueryServiceConfig)}_{driver.ServiceName}");
+                
                 return;
             }
 
@@ -154,16 +151,16 @@ internal static class DriverLookup
                 Marshal.PtrToStructure<WinService.QUERY_SERVICE_CONFIGW>(buffer);
 
             driver.StartType = WindowsServiceConfigMapper.MapStartType((WinService.ServiceStartType)config.dwStartType);
-            driver.ImagePath = string.IsNullOrEmpty(config.lpBinaryPathName) ? null : config.lpBinaryPathName;
+            
+            driver.ImagePath = string.IsNullOrEmpty(config.lpBinaryPathName) 
+                ? null 
+                : config.lpBinaryPathName;
         }
         finally {
             Marshal.FreeHGlobal(buffer);
         }
     }
 
-    // Only queried for an auto-start driver - the flag is meaningless for Manual/Disabled/Boot/
-    // System ones, and virtually no driver sets it, but the check is free and keeps this
-    // consistent with WindowsServiceLookup's own handling of the same flag.
     private static void PopulateDelayedAutoStart(nint hService, DriverInfo driver)
     {
         if (driver.StartType != WindowsServiceStartType.AutomaticStart) {
@@ -175,7 +172,12 @@ internal static class DriverLookup
 
         try {
             if (!WinService.QueryServiceConfig2(
-                    hService, WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, buffer, (uint)size, out _)) {
+                hService, 
+                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
+                buffer, 
+                (uint)size, 
+                out _)) {
+
                 return;
             }
 
@@ -190,5 +192,4 @@ internal static class DriverLookup
     }
 #endif
 }
-
 #pragma warning restore CA1416 // Validate platform compatibility

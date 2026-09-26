@@ -1,20 +1,15 @@
 using System.Globalization;
+using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.Gpu;
 
-// Pure decode helpers for the GPU subsystem: a PCI id to a vendor name, a DXGI adapter
-// description to an adapter type, and a \GPU Engine(*) / \GPU Adapter Memory(*) counter instance
-// name to its pid, engine key and adapter LUID. No interop dependency, so it is unit tested the
-// same way DiskDeviceParser and NetworkDeviceParser are.
 public static class GpuDeviceParser
 {
     public const string NotAvailable = "N/A";
-
-    // DXGI_ADAPTER_FLAG_SOFTWARE. Duplicated here so the parser stays free of an interop reference.
     private const uint DxgiAdapterFlagSoftware = 2;
 
     // An adapter reporting less dedicated VRAM than this is taken to be an integrated GPU carving a
-    // slice of system memory rather than a discrete card. A heuristic: no DXGI field states it.
+    // slice of system memory rather than a discrete card (not available through DXGI).
     private const long IntegratedVramThreshold = 512L * 1024 * 1024;
 
     public static string DecodeVendor(uint vendorId) => vendorId switch
@@ -42,7 +37,9 @@ public static class GpuDeviceParser
             return "Virtual";
         }
 
-        return dedicatedVideoMemory >= IntegratedVramThreshold ? "Discrete" : "Integrated";
+        return dedicatedVideoMemory >= IntegratedVramThreshold 
+            ? "Discrete" 
+            : "Integrated";
     }
 
     private static bool IsVirtualVendor(uint vendorId) => vendorId switch
@@ -75,12 +72,6 @@ public static class GpuDeviceParser
             : -1;
     }
 
-    // Everything after the pid identifies one engine on one adapter, and is the key the processes
-    // sharing that engine have in common.
-    //
-    // Every engtype counts. The suffix is not limited to the DXGK_ENGINE_TYPE enum names: drivers
-    // name their own nodes, so an NVIDIA card also reports engtype_Compute_0, engtype_OFA_0,
-    // engtype_VR and engtype_Security.
     public static string? ParseEngineFromInstance(string instanceName)
     {
         const string pidPrefix = "pid_";
@@ -165,7 +156,11 @@ public static class GpuDeviceParser
         }
 
         return end > start &&
-               uint.TryParse(text.AsSpan(start, end - start), NumberStyles.HexNumber, null, out value);
+           uint.TryParse(
+               text.AsSpan(start, end - start), 
+               NumberStyles.HexNumber, 
+               null, 
+               out value);
     }
 
     private static bool TryReadHexGroup(ref ReadOnlySpan<char> span, out uint value)
@@ -184,7 +179,12 @@ public static class GpuDeviceParser
         }
 
         if (end == 0 ||
-            !uint.TryParse(digits[..end], NumberStyles.HexNumber, null, out value)) {
+            !uint.TryParse(
+                digits[..end], 
+                NumberStyles.HexNumber, 
+                null, 
+                out value)) {
+            
             return false;
         }
 

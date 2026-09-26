@@ -8,8 +8,6 @@ namespace Task.Monitor.System.Services.Disk;
 public partial class DiskService
 {
 #if __WIN32__
-    // \\.\PhysicalDriveN numbering can have gaps, so the scan runs the whole range and skips the
-    // indices that fail to open rather than stopping at the first one.
     private const int MaxPhysicalDrives = 64;
 
     private const uint DeviceQueryAccess = 0;
@@ -18,6 +16,7 @@ public partial class DiskService
     private unsafe void OnStartDiskSpecs(DiskSpecs specs)
     {
         uint previousErrorMode = 0;
+        
         bool errorModeChanged = ErrHandlingApi.SetThreadErrorMode(
             ErrHandlingApi.SEM_FAILCRITICALERRORS,
             &previousErrorMode);
@@ -81,7 +80,7 @@ public partial class DiskService
         WinIoCtl.STORAGE_DESCRIPTOR_HEADER header = new();
         uint returned = 0;
 
-        // The descriptor is variable length, so the header is fetched first purely for its Size.
+        // The descriptor is variable length, so the header is fetched first purely for its size.
         if (!IoApiSet.DeviceIoControl(
             handle,
             WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
@@ -146,9 +145,6 @@ public partial class DiskService
             trimEnabled);
     }
 
-    // Both of these are optional properties that plenty of controllers decline to answer,
-    // notably USB bridges. A failure is an expected answer of "do not know" rather than an
-    // error worth tracing once per device.
     private static unsafe bool TryQuerySeekPenalty(nint handle, out bool incursSeekPenalty)
     {
         incursSeekPenalty = false;
@@ -207,8 +203,6 @@ public partial class DiskService
         return true;
     }
 
-    // IOCTL_DISK_GET_DRIVE_GEOMETRY_EX rather than IOCTL_DISK_GET_LENGTH_INFO: the latter needs a
-    // read handle and therefore an elevated token, the former runs on the query handle above.
     private static unsafe long QueryCapacity(nint handle, string devicePath)
     {
         byte* buffer = stackalloc byte[WinIoCtl.DiskGeometryExBufferSize];
@@ -216,6 +210,7 @@ public partial class DiskService
 
         uint returned = 0;
 
+        // IOCTL_DISK_GET_DRIVE_GEOMETRY_EX does not require elevated handle.
         if (!IoApiSet.DeviceIoControl(
             handle,
             WinIoCtl.IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
@@ -289,7 +284,12 @@ public partial class DiskService
         char* names = stackalloc char[Kernel32.MAX_PATH];
         uint length = Kernel32.MAX_PATH;
 
-        if (FileApi.GetVolumePathNamesForVolumeNameW(volumeName, names, (uint)Kernel32.MAX_PATH, &length)) {
+        if (FileApi.GetVolumePathNamesForVolumeNameW(
+            volumeName, 
+            names, 
+            (uint)Kernel32.MAX_PATH, 
+            &length)) {
+
             return MultiSzParser.Parse(
                 new ReadOnlySpan<char>(names, (int)Math.Min(length, Kernel32.MAX_PATH)));
         }
@@ -302,7 +302,6 @@ public partial class DiskService
             return [];
         }
 
-        // A volume mounted at many paths at once needs more room than MAX_PATH.
         if (length == 0) {
             return [];
         }
@@ -310,7 +309,12 @@ public partial class DiskService
         char[] buffer = new char[length];
 
         fixed (char* heapNames = buffer) {
-            if (!FileApi.GetVolumePathNamesForVolumeNameW(volumeName, heapNames, length, &length)) {
+            if (!FileApi.GetVolumePathNamesForVolumeNameW(
+                volumeName, 
+                heapNames, 
+                length, 
+                &length)) {
+
                 PInvokeErrorHelpers.TraceOnceOnLastError(
                     $"{nameof(FileApi.GetVolumePathNamesForVolumeNameW)} grown {volumeName}",
                     $"Failed {nameof(QueryMountPoints)} for {volumeName}");
@@ -331,8 +335,6 @@ public partial class DiskService
         uint maximumComponentLength = 0;
         uint fileSystemFlags = 0;
 
-        // Fails for an empty card reader, an unformatted RAW volume or a disconnected network
-        // mount. The volume is still worth keeping, just without its filesystem detail.
         if (!FileApi.GetVolumeInformationW(
             volumeName,
             label,
@@ -370,6 +372,7 @@ public partial class DiskService
 
         volume.FormattedCapacity = (long)totalBytes;
         volume.AvailableFreeSpace = (long)freeBytesAvailable;
+        
         volume.UsedRatio = totalBytes > 0
             ? 1.0 - (freeBytesAvailable / (double)totalBytes)
             : 0.0;
@@ -377,8 +380,6 @@ public partial class DiskService
 
     private static void AttachVolume(DiskSpecs specs, string volumeName, DiskVolume volume)
     {
-        // The query APIs above require the trailing separator on a volume GUID path. CreateFileW
-        // rejects it. Same string, two forms.
         string devicePath = volumeName.TrimEnd('\\');
 
         nint handle = FileApi.CreateFileW(
@@ -403,8 +404,6 @@ public partial class DiskService
 
             bool attached = false;
 
-            // A spanned or striped volume genuinely lives on several disks, so it is attached to
-            // each of them rather than arbitrarily to the first.
             foreach (uint diskNumber in diskNumbers) {
                 DiskDevice? device = specs.Devices.FirstOrDefault(disk => disk.Index == (int)diskNumber);
 
@@ -428,11 +427,8 @@ public partial class DiskService
     private static unsafe bool TryQueryDiskExtents(nint handle, out uint[] diskNumbers)
     {
         diskNumbers = [];
-
         int size = WinIoCtl.VolumeDiskExtentsArrayOffset + WinIoCtl.DiskExtentSize;
 
-        // The first call reports how many extents there really are, so a second sized call can
-        // collect them all.
         for (int attempt = 0; attempt < 2; attempt++)
         {
             byte[] buffer = new byte[size];
@@ -452,6 +448,7 @@ public partial class DiskService
             }
 
             int error = Marshal.GetLastPInvokeError();
+
             uint extentCount = BinaryPrimitives.ReadUInt32LittleEndian(
                 buffer.AsSpan(WinIoCtl.VolumeDiskExtentsCountOffset));
 
@@ -476,7 +473,7 @@ public partial class DiskService
 
             for (int extent = 0; extent < usable; extent++) {
                 int offset = WinIoCtl.VolumeDiskExtentsArrayOffset +
-                             (extent * WinIoCtl.DiskExtentSize) +
+                             extent * WinIoCtl.DiskExtentSize +
                              WinIoCtl.DiskExtentDiskNumberOffset;
 
                 numbers[extent] = BinaryPrimitives.ReadUInt32LittleEndian(buffer.AsSpan(offset));

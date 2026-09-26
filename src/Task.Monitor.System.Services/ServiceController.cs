@@ -19,9 +19,6 @@ namespace Task.Monitor.System.Services;
 
 public sealed class ServiceController : WorkerService
 {
-    // Owns all services and uses a single clock that publishes a snapshot of all system metrics.
-    // Each service runs its own sampling thread and updates a system metric slot. 
-    // Subscribers receive a single SystemSnapshotEventArgs at consistent update intervals.    
     private readonly List<ISystemService> allServices = new();
     private readonly ConcurrentDictionary<Type, object> systemMetrics = new();
     private readonly DeviceChangeNotifier deviceChangeNotifier = new();
@@ -45,19 +42,9 @@ public sealed class ServiceController : WorkerService
         return this;
     }
 
-    // Returns the service itself, typed, so a caller that needs to change a setting on it can do
-    // so without a cast. Reading what a service produced still goes through the published snapshot;
-    // this is for the settings that are inputs to the sampling, not outputs of it.
     public T GetService<T>() where T : ISystemService =>
         (T)allServices.Single(srv => srv.GetType() == typeof(T));
 
-    // The one interval for the whole app: every registered service samples at it, and this
-    // controller publishes at it. Kept equal on purpose. Publishing faster than the services sample
-    // re-emits identical snapshots and costs a redraw for no new data; publishing slower drops
-    // samples the ui never sees.
-    //
-    // Applies to the services registered when it is called, so call it after the AddService chain.
-    // Safe to call while running: each service picks the new interval up on its next wait.
     public void SetSamplingDelay(int delayInMilliseconds)
     {
         Delay = delayInMilliseconds;
@@ -81,7 +68,7 @@ public sealed class ServiceController : WorkerService
             Network      = GetLatestInfo<NetworkInfo>(),
             Processes    = GetLatestInfo<ProcessInfo>(),
             Startup      = GetLatestInfo<StartupInfo>(),
-            InstalledApps = GetLatestInfo<InstalledAppsInfo>(),
+            InstalledApps   = GetLatestInfo<InstalledAppsInfo>(),
             WindowsServices = GetLatestInfo<WindowsServicesInfo>(),
             Drivers      = GetLatestInfo<DriversInfo>(),
             Thermal      = GetLatestInfo<ThermalInfo>(),
@@ -128,8 +115,6 @@ public sealed class ServiceController : WorkerService
 
     internal void Store(Type infoType, object info) => systemMetrics[infoType] = info;
 
-    // A plug and play device arrived or left: wake the service that owns that hardware so it
-    // re-enumerates now instead of on its next poll boundary.
     private void OnDeviceChanged(DeviceCategory category)
     {
         switch (category) {

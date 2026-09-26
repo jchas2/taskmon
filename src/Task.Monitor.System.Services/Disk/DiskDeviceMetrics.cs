@@ -1,6 +1,5 @@
 namespace Task.Monitor.System.Services.Disk;
 
-// Throughput for a single physical disk, matched to DiskDevice.Index.
 public sealed class DiskDeviceMetrics
 {
     public int    Index                   { get; set; }

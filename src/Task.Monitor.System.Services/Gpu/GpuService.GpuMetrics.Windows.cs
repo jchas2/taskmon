@@ -9,10 +9,6 @@ namespace Task.Monitor.System.Services.Gpu;
 public partial class GpuService
 {
 #if __WIN32__
-    // "Utilization Percentage" is a rate counter, so Pdh derives the busy time over the interval
-    // between two collections rather than us differencing "Running Time" against a nominal Delay
-    // that ignores how long the cycle actually took. That requires a query which stays open across
-    // ticks, so consecutive samples bracket one poll interval.
     private const string GpuEngineCounterPath = @"\GPU Engine(*)\Utilization Percentage";
     private const uint PDH_CSTATUS_NEW_DATA = 0x00000001;
 
@@ -22,9 +18,6 @@ public partial class GpuService
     private uint counterBufferSize = 0;
     private bool counterPrimed = false;
 
-    // Busiest engine per adapter LUID from the last \GPU Engine(*) collection, so the memory pass
-    // can fold a utilisation figure into each per adapter GpuDeviceMetrics without opening a
-    // second query on the same provider.
     private readonly Dictionary<long, double> engineUtilisationByLuid = new();
 
     private unsafe void OnStartGpuPidMetrics()
@@ -46,8 +39,6 @@ public partial class GpuService
             return;
         }
 
-        // The wildcard is re-expanded on every PdhCollectQueryData, so engines that appear after
-        // this point (a process starting up, a second adapter waking) are still picked up.
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
             query,
             GpuEngineCounterPath,
@@ -105,8 +96,6 @@ public partial class GpuService
             return;
         }
 
-        // A rate counter has no value until a second collection supplies the interval to divide
-        // by, so the first cycle only primes it and reports nothing.
         if (!counterPrimed) {
             counterPrimed = true;
             return;
@@ -116,9 +105,6 @@ public partial class GpuService
             return;
         }
 
-        // Processes time-share an engine, so an engine's load is the sum of the processes on it.
-        // The headline figure is then the busiest engine rather than the sum of every engine,
-        // matching Task Manager: 3D and Copy both at 50% is a card at 50%, not 100%.
         Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)counterBuffer;
         Dictionary<string, double> engineTotals = new();
         Dictionary<int, double> processTotals = new();
@@ -144,14 +130,6 @@ public partial class GpuService
             }
 
             engineTotals[engineKey] = engineTotals.GetValueOrDefault(engineKey) + item.doubleValue;
-
-            // The same array projected by process rather than by engine, so ProcessService can
-            // join per pid figures that are guaranteed to agree with the headline above without
-            // opening a second query on the same provider.
-            //
-            // Max across the engines a process is using, matching the busiest engine rule the
-            // aggregate follows: a process at 50% on 3D and 50% on Copy is using half a card,
-            // not all of it.
             int pid = GpuDeviceParser.ParsePidFromInstance(instanceName);
 
             if (pid >= 0 && item.doubleValue > 0.0) {
@@ -164,8 +142,6 @@ public partial class GpuService
         foreach ((string engineKey, double engineTotal) in engineTotals) {
             busiestEngine = Math.Max(busiestEngine, engineTotal);
 
-            // The same busiest engine rule as the headline, but per adapter: the luid token is the
-            // part of the engine key every engine on one card has in common.
             if (GpuDeviceParser.TryParseAdapterLuid(engineKey, out long luid)) {
                 engineUtilisationByLuid[luid] =
                     Math.Max(engineUtilisationByLuid.GetValueOrDefault(luid), engineTotal);
@@ -183,9 +159,6 @@ public partial class GpuService
     {
         itemCount = 0;
 
-        // Pdh sizes the buffer for us. Instances come and go between ticks, so a buffer that was
-        // large enough last cycle can fall short on this one; the buffer is grown and kept rather
-        // than reallocated every cycle.
         for (int attempt = 0; attempt < 3; attempt++) {
             uint bufferSize = counterBufferSize;
             uint count = 0;
@@ -253,12 +226,13 @@ public partial class GpuService
                 TraceEx.WriteLineOnce(
                     nameof(Dxgi.CreateDXGIFactory1),
                     $"Failed {nameof(OnDoWorkGpuMemoryMetrics)}: HRESULT 0x{hr:X8}");
+
                 return false;
             }
 
             byte* buffer = stackalloc byte[D3DKmt.QueryStatisticsBufferSize];
-
             uint adapterIndex = 0;
+
             while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapter1Ptr) == 0) // S_OK
             {
                 try
@@ -295,19 +269,19 @@ public partial class GpuService
                     long deviceDedicated = (long)(ulong)desc.DedicatedVideoMemory;
                     long deviceShared = (long)(ulong)desc.SharedSystemMemory;
 
-                    gpuInfo.Metrics.Devices.Add(new GpuDeviceMetrics {
-                        Index = (int)adapterIndex,
-                        AdapterLuid = desc.AdapterLuid,
-                        GpuPercentTime = Math.Clamp(
-                            engineUtilisationByLuid.GetValueOrDefault(desc.AdapterLuid) / 100.0, 0.0, 1.0),
-                        TotalGpuMemory = deviceDedicated,
-                        AvailableGpuMemory = deviceDedicated - dedicatedResident,
-                        TotalSharedGpuMemory = deviceShared,
-                        AvailableSharedGpuMemory = deviceShared - sharedResident,
-                        TotalCombinedGpuMemory = deviceDedicated + deviceShared,
-                        AvailableCombinedGpuMemory =
-                            (deviceDedicated + deviceShared) - (dedicatedResident + sharedResident),
-                    });
+                    GpuDeviceMetrics metrics = new();
+                    // Not inline declared to assist with debugging.
+                    metrics.Index                      = (int)adapterIndex;
+                    metrics.AdapterLuid                = desc.AdapterLuid;
+                    metrics.GpuPercentTime             = Math.Clamp(engineUtilisationByLuid.GetValueOrDefault(desc.AdapterLuid) / 100.0, 0.0, 1.0);
+                    metrics.TotalGpuMemory             = deviceDedicated;
+                    metrics.AvailableGpuMemory         = deviceDedicated - dedicatedResident;
+                    metrics.TotalSharedGpuMemory       = deviceShared;
+                    metrics.AvailableSharedGpuMemory   = deviceShared - sharedResident;
+                    metrics.TotalCombinedGpuMemory     = deviceDedicated + deviceShared;
+                    metrics.AvailableCombinedGpuMemory = (deviceDedicated + deviceShared) - (dedicatedResident + sharedResident);
+
+                    gpuInfo.Metrics.Devices.Add(metrics);
                 }
                 finally
                 {
@@ -352,8 +326,7 @@ public partial class GpuService
         gpuInfo.Metrics.AvailableSharedGpuMemory = totalShared - usedShared;
 
         gpuInfo.Metrics.TotalCombinedGpuMemory = dedicatedTotal + totalShared;
-        gpuInfo.Metrics.AvailableCombinedGpuMemory =
-            (dedicatedTotal + totalShared) - (usedDedicated + usedShared);
+        gpuInfo.Metrics.AvailableCombinedGpuMemory = (dedicatedTotal + totalShared) - (usedDedicated + usedShared);
 
         return true;
     }
@@ -395,7 +368,12 @@ public partial class GpuService
         }
 
         for (uint segment = 0; segment < segmentCount; segment++) {
-            if (QuerySegmentStatistics(buffer, adapterLuid, offset, segment) != D3DKmt.STATUS_SUCCESS) {
+            if (QuerySegmentStatistics(
+                    buffer, 
+                    adapterLuid, 
+                    offset, 
+                    segment) != D3DKmt.STATUS_SUCCESS) {
+                
                 continue;
             }
 
@@ -449,8 +427,16 @@ public partial class GpuService
     }
 
     private static unsafe bool IsSegmentIdOffset(byte* buffer, long adapterLuid, int offset) =>
-        QuerySegmentStatistics(buffer, adapterLuid, offset, D3DKmt.InvalidSegmentId) != D3DKmt.STATUS_SUCCESS &&
-        QuerySegmentStatistics(buffer, adapterLuid, offset, 0) == D3DKmt.STATUS_SUCCESS;
+        QuerySegmentStatistics(
+            buffer, 
+            adapterLuid, 
+            offset, 
+            D3DKmt.InvalidSegmentId) != D3DKmt.STATUS_SUCCESS &&
+        QuerySegmentStatistics(
+            buffer, 
+            adapterLuid, 
+            offset, 
+            0) == D3DKmt.STATUS_SUCCESS;
 
     private static unsafe void InitQueryStatistics(byte* buffer, uint type, long adapterLuid)
     {

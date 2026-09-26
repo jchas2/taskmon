@@ -105,6 +105,27 @@ public sealed class DiskSpaceHeatMapControlTests
         ctrl.Unload();
     }
 
+    [Fact]
+    public void IsFading_Until_New_Cells_Reach_Full_Colour()
+    {
+        DiskSpaceHeatMapControl ctrl = CreateControl(60, 16);
+
+        Assert.False(ctrl.IsFading);
+
+        ctrl.Sample(Specs(("Windows", 40_000), ("Users", 30_000)));
+        ctrl.Draw();
+
+        Assert.True(ctrl.IsFading);
+
+        for (int i = 0; i < 10 && ctrl.IsFading; i++) {
+            ctrl.Draw();
+        }
+
+        Assert.False(ctrl.IsFading);
+
+        ctrl.Unload();
+    }
+
     // The bug: every visible cell's colour moved whenever the scan found another folder too small
     // to be given a rectangle, because the gradient was spread across every child folder rather
     // than the cells actually drawn.

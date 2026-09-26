@@ -239,9 +239,13 @@ public sealed class DiskSpaceHeatMapControl : Control
             : Lerp(appConfig.Theme.RangeMidBackground, appConfig.Theme.RangeHighBackground, (t - 0.5) / 0.5);
     }
 
+    // True while any drawn cell is still easing in from the background: ApplyFade advances a
+    // cell's step once per draw, so its owner keeps redrawing until every cell has reached FadeSteps.
+    internal bool IsFading => fadeStepByCellId.Values.Any(step => step < FadeSteps);
+
     // Eases a newly-appeared cell in from the background colour over the next few redraws rather
-    // than popping in at full saturation - each redraw only happens when a throttled scan publish
-    // arrives, so this paces itself off real progress rather than needing its own clock.
+    // than popping in at full saturation. The owner redraws when a throttled scan publish arrives,
+    // and on following ticks while IsFading, so this paces itself without needing its own clock.
     private Color ApplyFade(string cellId, Color targetColour)
     {
         int step = fadeStepByCellId.GetValueOrDefault(cellId);

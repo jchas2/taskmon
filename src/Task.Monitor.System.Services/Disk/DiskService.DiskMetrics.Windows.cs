@@ -7,21 +7,13 @@ namespace Task.Monitor.System.Services.Disk;
 public partial class DiskService
 {
 #if __WIN32__
-    // The raw value behind these two counters is cumulative bytes since boot rather than a rate,
-    // which is what makes an exact running total possible. The rate is then derived from the same
-    // delta over the interval the counter itself timestamps, rather than over a nominal Delay that
-    // ignores how long the cycle actually took. That needs a query which stays open across ticks.
     private const string DiskReadBytesCounterPath  = @"\PhysicalDisk(*)\Disk Read Bytes/sec";
     private const string DiskWriteBytesCounterPath = @"\PhysicalDisk(*)\Disk Write Bytes/sec";
-
-    // Task Manager's "Active time" is the inverse of idle. "% Disk Time" is a different number:
-    // it is derived from queue length and reads well above 100% on a multi queue NVMe device.
     private const string DiskIdleTimeCounterPath   = @"\PhysicalDisk(*)\% Idle Time";
 
     private const string TotalInstanceName = "_Total";
     private const uint   PDH_CSTATUS_NEW_DATA = 0x00000001;
 
-    // 1024 based, matching how Task Manager formats its KB/s readouts.
     private const double BytesPerMegabyte = 1024.0 * 1024.0;
     private const double FileTimeTicksPerSecond = 10_000_000.0;
 
@@ -42,8 +34,6 @@ public partial class DiskService
         public long PreviousTimeStamp;
         public bool Primed;
 
-        // Successful collections in a row that did not list this instance. An eject is permanent;
-        // a single miss is usually the provider rebuilding its instance list.
         public int ConsecutiveMisses;
 
         public ulong  TotalBytesRead;
@@ -53,16 +43,10 @@ public partial class DiskService
         public double PercentActiveTime;
     }
 
-    private readonly struct RawSample
+    private readonly struct RawSample(long value, long timeStamp)
     {
-        public RawSample(long value, long timeStamp)
-        {
-            Value = value;
-            TimeStamp = timeStamp;
-        }
-
-        public long Value { get; }
-        public long TimeStamp { get; }
+        public long Value { get; } = value;
+        public long TimeStamp { get; } = timeStamp;
     }
 
     private unsafe void OnStartDiskMetrics()
@@ -83,8 +67,6 @@ public partial class DiskService
             return;
         }
 
-        // The wildcard is re-expanded on every PdhCollectQueryData, so a disk attached after this
-        // point is still picked up.
         if (!TryAddCounter(query, DiskReadBytesCounterPath, out nint readCounter) ||
             !TryAddCounter(query, DiskWriteBytesCounterPath, out nint writeCounter) ||
             !TryAddCounter(query, DiskIdleTimeCounterPath, out nint idleCounter)) {
@@ -104,7 +86,12 @@ public partial class DiskService
     private static unsafe bool TryAddCounter(nint query, string counterPath, out nint counter)
     {
         nint handle = nint.Zero;
-        uint pdhResult = Pdh.PdhAddEnglishCounter(query, counterPath, nint.Zero, &handle);
+        
+        uint pdhResult = Pdh.PdhAddEnglishCounter(
+            query, 
+            counterPath, 
+            nint.Zero, 
+            &handle);
 
         counter = handle;
 
@@ -144,15 +131,7 @@ public partial class DiskService
         if (diskQuery == nint.Zero) {
             return;
         }
-
-        // The sampling and the publishing are deliberately separate. PdhCollectQueryData returns
-        // PDH_NO_DATA now and again while the provider rebuilds its instance list, and a cycle
-        // that gave up at that point would publish an empty DiskMetrics: the device list would
-        // vanish and the cumulative totals would collapse to zero and recover a cycle later.
-        // instanceStates holds the last good sample, so a failed cycle republishes it untouched
-        // and only skips the update. The next successful cycle spans two intervals and still
-        // reports the right rate, because the interval comes from the counter's own timestamps
-        // rather than from a nominal Delay.
+        
         UpdateInstanceStates();
         BuildMetrics(diskInfo.Metrics);
     }
@@ -174,8 +153,6 @@ public partial class DiskService
         Dictionary<string, RawSample> writes = new();
         Dictionary<string, RawSample> idleTimes = new();
 
-        // One buffer serves all three reads: each copies its values into managed state before the
-        // next overwrites it.
         if (!TryReadRawCounterArray(readBytesCounter, DiskReadBytesCounterPath, reads) ||
             !TryReadRawCounterArray(writeBytesCounter, DiskWriteBytesCounterPath, writes) ||
             !TryReadRawCounterArray(idleTimeCounter, DiskIdleTimeCounterPath, idleTimes)) {
@@ -193,23 +170,14 @@ public partial class DiskService
             UpdateInstanceState(instanceName, read, write, idleTime);
         }
 
-        // Forget instances the provider has stopped listing, e.g. an ejected removable drive, so
-        // BuildMetrics stops republishing a device that is no longer there. Guarded on a non-empty
-        // collection: a cycle that read nothing at all is a transient provider hiccup handled by
-        // the early returns above, not every disk disappearing at once.
         if (reads.Count > 0) {
             PruneMissingInstances(reads);
         }
     }
 
-    // The provider intermittently returns a successful, non-empty collection that omits a disk
-    // that is still plugged in, then lists it again the next cycle. Dropping it on the first miss
-    // makes the panel flicker, so an instance is only forgotten once it has been absent from
-    // several collections in a row.
-    private const int MissesBeforeInstanceForgotten = 3;
-
     private void PruneMissingInstances(Dictionary<string, RawSample> liveInstances)
     {
+        const int MaxMisses = 3;
         List<string>? stale = null;
 
         foreach ((string instanceName, DiskInstanceState state) in instanceStates) {
@@ -218,7 +186,7 @@ public partial class DiskService
                 continue;
             }
 
-            if (++state.ConsecutiveMisses >= MissesBeforeInstanceForgotten) {
+            if (++state.ConsecutiveMisses >= MaxMisses) {
                 (stale ??= new()).Add(instanceName);
             }
         }
@@ -245,8 +213,6 @@ public partial class DiskService
 
         long elapsedTicks = read.TimeStamp - state.PreviousTimeStamp;
 
-        // The first sighting of an instance only records a baseline, since a delta needs two
-        // samples.
         if (!state.Primed) {
             state.PreviousReadBytes = read.Value;
             state.PreviousWriteBytes = write.Value;
@@ -257,11 +223,6 @@ public partial class DiskService
             return;
         }
 
-        // A timestamp that has not advanced means the provider has not refreshed since the last
-        // cycle, so there is no interval to divide by. The baseline is deliberately left alone:
-        // moving it up to the current byte counts while keeping the old timestamp would absorb
-        // every byte transferred since the last refresh into the baseline, where no later delta
-        // can ever see them. The previous rates stand until the provider does refresh.
         if (elapsedTicks <= 0) {
             return;
         }
@@ -271,8 +232,6 @@ public partial class DiskService
         long idleDelta = idleTime.Value - state.PreviousIdleTime;
         double elapsedSeconds = elapsedTicks / FileTimeTicksPerSecond;
 
-        // Totals accumulate deltas rather than tracking an absolute baseline, so a counter that
-        // resets underneath us costs one cycle instead of corrupting the running total.
         if (readDelta > 0) {
             state.TotalBytesRead += (ulong)readDelta;
             state.ReadBytesPerSecond = readDelta / elapsedSeconds;
@@ -289,8 +248,6 @@ public partial class DiskService
             state.WriteBytesPerSecond = 0.0;
         }
 
-        // Both idle time and the timestamp are in 100ns units, so the ratio is the fraction of the
-        // interval the disk spent doing nothing.
         state.PercentActiveTime = idleDelta >= 0
             ? Math.Clamp(100.0 * (1.0 - (idleDelta / (double)elapsedTicks)), 0.0, 100.0)
             : 0.0;
@@ -339,15 +296,14 @@ public partial class DiskService
             summedReadBytesPerSecond += state.ReadBytesPerSecond;
             summedWriteBytesPerSecond += state.WriteBytesPerSecond;
 
-            // Busiest single disk rather than the sum: two disks at 50% is a machine at 50%.
+            // Busiest single disk rather than the sum.
             busiestDisk = Math.Max(busiestDisk, state.PercentActiveTime);
         }
 
         metrics.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
         metrics.PercentActiveTime = busiestDisk;
 
-        // Pdh maintains "_Total" itself, so it is preferred over the sum assembled above. The sum
-        // is the fallback for a machine whose provider does not publish the total instance.
+        // Prefer the Pdh _Total counter over the summed stats.
         if (instanceStates.TryGetValue(TotalInstanceName, out DiskInstanceState? total)) {
             metrics.TotalBytesRead = total.TotalBytesRead;
             metrics.TotalBytesWritten = total.TotalBytesWritten;
@@ -374,8 +330,6 @@ public partial class DiskService
             return false;
         }
 
-        // PDH_RAW_COUNTER_ITEM carries an LPWSTR, so it is not blittable and the buffer cannot be
-        // cast to a pointer the way a formatted counter array can.
         int itemSize = Marshal.SizeOf<Pdh.PDH_RAW_COUNTER_ITEM>();
 
         for (uint item = 0; item < itemCount; item++) {
@@ -392,7 +346,9 @@ public partial class DiskService
                 continue;
             }
 
-            samples[raw.szName] = new RawSample(raw.RawValue.FirstValue, raw.RawValue.TimeStamp.ToLong());
+            samples[raw.szName] = new RawSample(
+                raw.RawValue.FirstValue, 
+                raw.RawValue.TimeStamp.ToLong());
         }
 
         return true;
@@ -402,9 +358,6 @@ public partial class DiskService
     {
         itemCount = 0;
 
-        // Pdh sizes the buffer for us. Instances come and go between ticks, so a buffer that was
-        // large enough last cycle can fall short on this one; the buffer is grown and kept rather
-        // than reallocated every cycle, and is shared by all three counters.
         for (int attempt = 0; attempt < 3; attempt++) {
             uint bufferSize = counterBufferSize;
             uint count = 0;

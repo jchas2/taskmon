@@ -265,6 +265,55 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // The controller raises a snapshot every tick whether or not the scan published anything, so
+    // once a scan has finished the same specs keep arriving. Redrawing them each time repainted
+    // every heat map cell and flickered; they should only redraw while cells are still fading in.
+    [Fact]
+    public void Sample_Stops_Redrawing_Unchanged_Specs_Once_The_Heat_Map_Has_Faded_In()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        DiskSpaceSpecs specs = BuildScanningSpecs();
+
+        ctrl.Sample(SnapshotWith(specs));
+        Assert.NotEmpty(CapturedOutput());
+
+        // The first repeat still draws: the cells from the first draw are part way through fading in.
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(SnapshotWith(specs));
+        Assert.NotEmpty(CapturedOutput());
+
+        bool stoppedRedrawing = false;
+
+        for (int i = 0; i < 10 && !stoppedRedrawing; i++) {
+            runContextHelper.terminal.Invocations.Clear();
+            ctrl.Sample(SnapshotWith(specs));
+            stoppedRedrawing = CapturedOutput().Length == 0;
+        }
+
+        Assert.True(stoppedRedrawing);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Sample_Redraws_When_The_Scan_Publishes_New_Specs()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        DiskSpaceSpecs specs = BuildScanningSpecs();
+
+        // Settle on one set of specs until an unchanged snapshot no longer draws.
+        for (int i = 0; i < 10; i++) {
+            ctrl.Sample(SnapshotWith(specs));
+        }
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(SnapshotWith(BuildSpecsWithRootProgress(total: 2, completed: 1)));
+
+        Assert.Contains("50.0%", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Ignores_A_Snapshot_With_No_DiskSpace_Info()
     {

@@ -29,12 +29,7 @@ public sealed record SystemSnapshot
     public InstalledAppsInfo? InstalledApps { get; init; }
     public ThermalInfo? Thermal { get; init; }
     public PowerInfo? Power { get; init; }
-
-    // Windows services (daemons) - distinct from Services below, which is this app's own worker
-    // services.
     public WindowsServicesInfo? WindowsServices { get; init; }
-
     public DriversInfo? Drivers { get; init; }
-
     public IReadOnlyList<ServiceHealth> Services { get; init; } = [];
 }

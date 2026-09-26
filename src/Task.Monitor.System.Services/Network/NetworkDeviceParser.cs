@@ -65,19 +65,11 @@ public static class NetworkDeviceParser
         _                                   => NotAvailable,
     };
 
-    // An adapter is worth monitoring when it is up, is not the loopback pseudo interface, and
-    // holds at least one address. On a typical machine that reduces a list of half a dozen
-    // adapters (VPN, Bluetooth PAN, an idle Wi-Fi radio) to the one actually carrying traffic.
     public static bool IsActiveAdapter(uint ifType, uint operStatus, int addressCount) =>
         operStatus == NetIoApi.IfOperStatusUp &&
         ifType != NetIoApi.IF_TYPE_SOFTWARE_LOOPBACK &&
         addressCount > 0;
 
-    // An overlay adapter sits on top of a physical adapter and reports the same bytes a second
-    // time, so including it in the aggregate would count everything sent over the VPN twice.
-    //
-    // PROP_VIRTUAL matters as much as TUNNEL here: a Private Internet Access adapter on this
-    // machine reports type 53, not 131, so excluding only tunnels would still double count it.
     public static bool CountsTowardAggregate(uint ifType, bool isActive) =>
         isActive &&
         ifType != NetIoApi.IF_TYPE_TUNNEL &&
@@ -99,16 +91,12 @@ public static class NetworkDeviceParser
             if (i > 0) {
                 builder.Append('-');
             }
-
             builder.Append(physicalAddress[i].ToString("X2"));
         }
 
         return builder.ToString();
     }
 
-    // The raw sockaddr bytes come from native enumeration; IPAddress is used only to render them.
-    // Hand rolling RFC 5952 IPv6 zero compression is easy to get subtly wrong and this keeps the
-    // formatting testable.
     public static string FormatIPv4Address(ReadOnlySpan<byte> addressBytes) =>
         addressBytes.Length != WS2Def.SockAddrIn4DataLength
             ? string.Empty

@@ -44,10 +44,6 @@ public partial class CpuService
 
         long now = Stopwatch.GetTimestamp();
 
-        // GetSystemTimes is cumulative since boot, so the first reading has nothing to difference
-        // against. Differencing it against zero reports the machine's entire uptime as though it
-        // happened in one interval. This cycle publishes the zeros CpuMetrics starts with and
-        // establishes the baseline instead.
         if (!primed) {
             Rebase(now);
             primed = true;
@@ -56,9 +52,6 @@ public partial class CpuService
 
         double elapsedSeconds = (now - previousTimestamp) / (double)Stopwatch.Frequency;
 
-        // No interval means no rate. The baseline is deliberately left where it is: moving it
-        // without advancing the timestamp would fold this cycle's cpu time into the baseline where
-        // no later delta could see it.
         if (elapsedSeconds <= 0.0) {
             return;
         }
@@ -67,10 +60,6 @@ public partial class CpuService
         deltaTimes.Kernel = currTimes.Kernel - prevTimes.Kernel;
         deltaTimes.User   = currTimes.User - prevTimes.User;
 
-        // Measured, not the nominal Delay. A cycle actually takes Delay plus however long the
-        // sampling itself took, so dividing by Delay overstated every percentage by that fraction;
-        // and once Delay became changeable at runtime, the cycle spanning a change would have been
-        // divided by an interval it was never measured over.
         double totalSysTime = Environment.ProcessorCount * elapsedSeconds * FileTimeTicksPerSecond;
 
         cpuInfo.Metrics.CpuPercentUserTime   = deltaTimes.User / totalSysTime;

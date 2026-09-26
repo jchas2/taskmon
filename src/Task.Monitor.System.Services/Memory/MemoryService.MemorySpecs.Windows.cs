@@ -1,7 +1,7 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
-using Task.Monitor.Interop.Win32;
+ using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.Memory;
 
@@ -9,9 +9,7 @@ public partial class MemoryService
 {
 #if __WIN32__
     private const uint RawSmbiosProvider = 0x5253_4D42;
-    private const int RawSmbiosHeaderLength = 8;
-    private const int Type17 = 17;
-    private const int Type17Length = 0x28;              
+    private const int  RawSmbiosHeaderLength = 8;
     
     private void OnStartMemorySpecs(MemorySpecs specs)
     {
@@ -28,40 +26,7 @@ public partial class MemoryService
         int length = (int)Math.Min(tableLength, (uint)Math.Max(available, 0));
         ReadOnlySpan<byte> table = rawData.AsSpan(RawSmbiosHeaderLength, length);
 
-        int slotCount = 0;
-        int cursor = 0;
-
-        while (cursor + 4 <= table.Length)
-        {
-            byte type = table[cursor];
-            byte formattedLength = table[cursor + 1];
-
-            // Bail out on a zero length to avoid spinning forever on a corrupted table.
-            if (formattedLength < 4 || cursor + formattedLength > table.Length) {
-                break;
-            }
-
-            int end = FindStructureEnd(table, cursor + formattedLength);
-            
-            if (type == Type17 && formattedLength >= Type17Length) {
-                MemoryDevice device = MemoryDeviceParser.Parse(table[cursor..end]);
-                device.Slot = ++slotCount;
-                specs.Devices.Add(device);
-            }
-
-            cursor = end;
-        }
-    }
-    
-    private static int FindStructureEnd(ReadOnlySpan<byte> table, int stringTableStart)
-    {
-        int i = stringTableStart;
-        
-        while (i + 1 < table.Length && !(table[i] == 0 && table[i + 1] == 0)) {
-            i++;
-        }
-
-        return Math.Min(i + 2, table.Length);
+        specs.Devices.AddRange(MemoryDeviceParser.ParseTable(table));
     }
 
     private static byte[]? ReadRawSmbiosTable()
@@ -99,11 +64,11 @@ public partial class MemoryService
             return null;
         }
 
-        byte[] managed = new byte[written];
-        Marshal.Copy(buffer, managed, 0, (int)written);
+        byte[] table = new byte[written];
+        Marshal.Copy(buffer, table, 0, (int)written);
         Marshal.FreeHGlobal(buffer);
         
-        return managed;
+        return table;
     }
 #endif
 }

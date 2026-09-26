@@ -12,13 +12,11 @@ public sealed partial class DiskService : WorkerService
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        // A drive was inserted or ejected: rebuild the drive list so a new disk gets its model and
-        // capacity, and a removed one drops out. OnStartDiskSpecs appends, so it runs against a
-        // fresh DiskSpecs rather than the live one.
+        // Caters for new drives inserted or ejected.
         if (ConsumeRefreshRequest()) {
-            DiskSpecs refreshed = new();
-            OnStartDiskSpecs(refreshed);
-            diskSpecs = refreshed;
+            DiskSpecs refreshedSpecs = new();
+            OnStartDiskSpecs(refreshedSpecs);
+            diskSpecs = refreshedSpecs;
         }
 
         DiskInfo diskInfo = new();

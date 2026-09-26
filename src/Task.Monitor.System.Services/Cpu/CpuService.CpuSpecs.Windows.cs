@@ -14,15 +14,30 @@ public partial class CpuService
 
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
-        const string RegPath = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0\";
-        const string RegKeyProcessorName = "ProcessorNameString";
-        const string RegKeyFrequencyMhz = "~Mhz";
-
         specs.CpuCores = (ulong)Environment.ProcessorCount;
         specs.CpuFrequency = 0;
         specs.CpuName = string.Empty;
+        specs.CpuSockets = 0;
+        specs.CpuL1CacheBytes = 0;
+        specs.CpuL2CacheBytes = 0;
+        specs.CpuL3CacheBytes = 0;
+        specs.CpuEfficiencyCores = 0;
+        specs.CpuEfficiencyFrequency = 0.0;
+        specs.CpuPerformanceCores = 0;
+        specs.CpuPerformanceFrequency = 0.0;
+        specs.CpuSuperCores = 0;
+        specs.CpuSuperFrequency = 0.0;
+        specs.CpuVirtualizationFirmwareEnabled = false;
 
-        PopulateTopology(ref specs);
+        PopulateCpuSpecs(ref specs);
+        PopulateCpuTopology(ref specs);
+    }
+
+    private static void PopulateCpuSpecs(ref CpuSpecs specs)
+    {
+        const string RegPath = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0\";
+        const string RegKeyProcessorName = "ProcessorNameString";
+        const string RegKeyFrequencyMhz = "~Mhz";
 
         specs.CpuVirtualizationFirmwareEnabled = ProcessThreadsApi.IsProcessorFeaturePresent(
             ProcessThreadsApi.PF_VIRT_FIRMWARE_ENABLED);
@@ -56,9 +71,8 @@ public partial class CpuService
         
         specs.CpuFrequency = frequencyInt32;
     }
-
-    // Socket count and L1/L2/L3 cache totals, decoded from the processor relationship stream.
-    private static unsafe void PopulateTopology(ref CpuSpecs specs)
+    
+    private static unsafe void PopulateCpuTopology(ref CpuSpecs specs)
     {
         const WinNt.LOGICAL_PROCESSOR_RELATIONSHIP RelationAll = WinNt.LOGICAL_PROCESSOR_RELATIONSHIP.RelationAll;
 
@@ -88,7 +102,6 @@ public partial class CpuService
 
             CpuTopology topology = CpuTopologyParser.Parse(new ReadOnlySpan<byte>((void*)buffer, (int)length));
 
-            // There is always at least one package even if the enumeration reported none.
             specs.CpuSockets      = topology.SocketCount == 0 ? 1 : topology.SocketCount;
             specs.CpuL1CacheBytes = topology.L1CacheBytes;
             specs.CpuL2CacheBytes = topology.L2CacheBytes;

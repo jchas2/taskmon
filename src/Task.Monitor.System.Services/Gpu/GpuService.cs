@@ -12,8 +12,7 @@ public sealed partial class GpuService : WorkerService
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        // A display adapter arrived or left (an eGPU over Thunderbolt, a hot-swapped card):
-        // rebuild the adapter list. OnStartGpuSpecs appends, so it runs against a fresh GpuSpecs.
+        // Caters for swappable GPUs.
         if (ConsumeRefreshRequest()) {
             GpuSpecs refreshed = new();
             OnStartGpuSpecs(refreshed);

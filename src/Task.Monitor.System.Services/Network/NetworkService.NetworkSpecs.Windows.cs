@@ -9,7 +9,7 @@ namespace Task.Monitor.System.Services.Network;
 public partial class NetworkService
 {
 #if __WIN32__
-    // GetAdaptersAddresses recommends starting at 15KB to avoid the resize round trip.
+    // Native GetAdaptersAddresses recommends starting at 16KB.
     private const uint InitialAdapterBufferSize = 16 * 1024;
     private const int MaxAdapterBufferAttempts = 4;
 
@@ -55,6 +55,7 @@ public partial class NetworkService
         nint buffer = nint.Zero;
 
         try {
+            // First iteration sizes the buffer.
             for (int attempt = 0; attempt < MaxAdapterBufferAttempts; attempt++) {
                 buffer = Marshal.AllocHGlobal((int)size);
 
@@ -72,7 +73,7 @@ public partial class NetworkService
                 Marshal.FreeHGlobal(buffer);
                 buffer = nint.Zero;
 
-                // No adapters at all is a valid answer, not a failure.
+                // There can genuinely be no adapters.
                 if (result == IpHlpApi.ERROR_NO_DATA) {
                     return new List<NetworkDevice>();
                 }
@@ -85,8 +86,6 @@ public partial class NetworkService
 
                     return null;
                 }
-
-                // size now holds the length the call actually needs.
             }
 
             TraceEx.WriteLineOnce(

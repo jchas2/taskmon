@@ -5,6 +5,10 @@ namespace Task.Monitor.System.Services.Memory;
 
 public static class MemoryDeviceParser
 {
+    private const int  StructureHeaderLength     = 4;
+    private const byte MemoryDeviceType          = 17;
+    private const int  MemoryDeviceMinimumLength = 0x28;
+
     private const int SizeOffset                 = 0x0C;
     private const int FormFactorOffset           = 0x0E;
     private const int DeviceLocatorOffset        = 0x10;
@@ -53,6 +57,45 @@ public static class MemoryDeviceParser
         return (size & 0x8000) == 0
             ? (uint)size                    // Already Megabytes.
             : (uint)(size & 0x7FFF) / 1024; // Kilobytes.
+    }
+
+    // Walks a SMBIOS structure table - the raw firmware table past its 8 byte header - and
+    // decodes every Type 17 (Memory Device) structure, numbering them as slots in table order.
+    public static List<MemoryDevice> ParseTable(ReadOnlySpan<byte> table)
+    {
+        List<MemoryDevice> devices = new();
+        int cursor = 0;
+
+        while (cursor + StructureHeaderLength <= table.Length) {
+            byte type = table[cursor];
+            byte formattedLength = table[cursor + 1];
+
+            // Avoid spinning forever on a corrupted table.
+            if (formattedLength < StructureHeaderLength || cursor + formattedLength > table.Length) {
+                break;
+            }
+
+            int stringTableStart = cursor + formattedLength;
+            int ptr = stringTableStart;
+
+            // Each structure is terminated with a double null.
+            while (ptr + 1 < table.Length && !(table[ptr] == 0 && table[ptr + 1] == 0)) {
+                ptr++;
+            }
+
+            int end = Math.Min(ptr + 2, table.Length);
+
+            // Decode the Type 17 Memory Device structure.
+            if (type == MemoryDeviceType && formattedLength >= MemoryDeviceMinimumLength) {
+                MemoryDevice device = Parse(table[cursor..end]);
+                device.Slot = devices.Count + 1;
+                devices.Add(device);
+            }
+
+            cursor = end;
+        }
+
+        return devices;
     }
 
     public static MemoryDevice Parse(ReadOnlySpan<byte> structure)

@@ -43,9 +43,7 @@ public static class DiskDeviceParser
         _                         => NotAvailable,
     };
 
-    // Decodes the fixed header of a STORAGE_DEVICE_DESCRIPTOR. The four string fields are byte
-    // offsets into the same buffer pointing at NUL terminated ASCII, so the whole descriptor has
-    // to stay intact rather than being marshalled into a fixed size struct.
+    // Decodes the fixed header of a STORAGE_DEVICE_DESCRIPTOR.
     public static DiskDevice Parse(ReadOnlySpan<byte> descriptor)
     {
         DiskDevice device = new();
@@ -66,9 +64,6 @@ public static class DiskDeviceParser
         return device;
     }
 
-    // NVMe is solid state by definition. Otherwise the seek penalty descriptor is authoritative
-    // when the driver answers it, and TRIM support is the fallback for the USB bridges and older
-    // controllers that do not.
     public static string DecodeMediaType(
         string busType,
         bool isRemovable,
@@ -82,21 +77,24 @@ public static class DiskDeviceParser
         }
 
         if (hasSeekPenalty) {
-            return incursSeekPenalty ? "HDD" : "SSD";
+            return incursSeekPenalty 
+                ? "HDD" 
+                : "SSD";
         }
 
         if (hasTrim && trimEnabled) {
             return "SSD";
         }
 
-        return isRemovable ? "Removable" : NotAvailable;
+        return isRemovable 
+            ? "Removable" 
+            : NotAvailable;
     }
 
     private static string GetString(ReadOnlySpan<byte> descriptor, int fieldOffset)
     {
         uint stringOffset = BinaryPrimitives.ReadUInt32LittleEndian(descriptor[fieldOffset..]);
 
-        // Zero means the device did not supply this field.
         if (stringOffset == 0 || stringOffset >= (uint)descriptor.Length) {
             return NotAvailable;
         }
@@ -109,7 +107,6 @@ public static class DiskDeviceParser
         }
 
         string text = Encoding.Latin1.GetString(value).Trim();
-
         return text.Length > 0 ? text : NotAvailable;
     }
 }

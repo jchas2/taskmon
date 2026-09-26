@@ -105,12 +105,20 @@ public sealed partial class DiskSpaceControl : Control
     // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
-        if (snapshot.DiskSpace is null) {
+        if (snapshot.DiskSpace is not { } latest) {
             return;
         }
 
-        diskSpace = snapshot.DiskSpace;
-        Draw();
+        // The controller raises a snapshot every tick whether or not the scan has published
+        // anything, and a full redraw repaints every heat map cell and its label - visible flicker
+        // once a scan has finished and nothing is changing. Only redraw for new specs, or to let
+        // the heat map finish fading in cells from the last publish.
+        bool changed = !ReferenceEquals(latest.Specs, diskSpace?.Specs);
+        diskSpace = latest;
+
+        if (changed || heatMap.IsFading) {
+            Draw();
+        }
     }
 
     private void DrawFileCountRow(DiskSpaceSpecs? specs)

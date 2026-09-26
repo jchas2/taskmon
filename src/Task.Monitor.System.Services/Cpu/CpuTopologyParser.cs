@@ -9,17 +9,13 @@ public readonly record struct CpuTopology(
     ulong L3CacheBytes);
 
 // Decodes the SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX record stream returned by
-// GetLogicalProcessorInformationEx. Kept free of P/Invoke so the buffer walk can be unit tested
-// from a captured payload, in the same spirit as MemoryDeviceParser.
+// GetLogicalProcessorInformationEx. 
 public static class CpuTopologyParser
 {
-    // Common record header: LOGICAL_PROCESSOR_RELATIONSHIP Relationship; DWORD Size.
     private const int HeaderSize          = 8;
     private const int RelationshipOffset  = 0;
     private const int SizeOffset          = 4;
 
-    // CACHE_RELATIONSHIP begins at the end of the header: BYTE Level; BYTE Associativity;
-    // WORD LineSize; DWORD CacheSize; PROCESSOR_CACHE_TYPE Type; ...
     private const int CacheLevelOffset    = HeaderSize + 0;
     private const int CacheSizeOffset     = HeaderSize + 4;
 
@@ -40,7 +36,8 @@ public static class CpuTopologyParser
             uint relationship = BinaryPrimitives.ReadUInt32LittleEndian(buffer[(cursor + RelationshipOffset)..]);
             uint size = BinaryPrimitives.ReadUInt32LittleEndian(buffer[(cursor + SizeOffset)..]);
 
-            // A zero or overrunning Size would spin forever or read out of bounds on a corrupt buffer.
+            // A zero or overrunning Size would spin forever or read
+            // out of bounds on a corrupt buffer.
             if (size < HeaderSize || cursor + (long)size > buffer.Length) {
                 break;
             }
@@ -50,7 +47,6 @@ public static class CpuTopologyParser
                 case RelationProcessorPackage:
                     sockets++;
                     break;
-
                 case RelationCache when cursor + CacheSizeOffset + sizeof(uint) <= cursor + size:
                     byte level = buffer[cursor + CacheLevelOffset];
                     uint cacheSize = BinaryPrimitives.ReadUInt32LittleEndian(buffer[(cursor + CacheSizeOffset)..]);
@@ -61,7 +57,6 @@ public static class CpuTopologyParser
                         case 2:      l2 += cacheSize; break;
                         case >= 3:   l3 += cacheSize; break; // fold the rare L4 into L3
                     }
-
                     break;
             }
 

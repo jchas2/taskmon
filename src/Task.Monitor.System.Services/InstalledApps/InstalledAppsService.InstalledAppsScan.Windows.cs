@@ -9,22 +9,31 @@ namespace Task.Monitor.System.Services.InstalledApps;
 public partial class InstalledAppsService
 {
 #if __WIN32__
-    private const string UninstallKeyPath =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
+    private const string UninstallKeyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall";
 
     private partial InstalledAppsSpecs ScanInstalledApps()
     {
         InstalledAppsSpecs specs = new();
 
-        ScanUninstallKey(specs, RegistryHive.LocalMachine, RegistryView.Registry64, InstalledAppScope.Machine);
+        ScanUninstallKey(
+            specs, 
+            RegistryHive.LocalMachine, 
+            RegistryView.Registry64, 
+            InstalledAppScope.Machine);
 
-        // The 32-bit registry view is a distinct set of keys only on a 64-bit OS; on 32-bit Windows
-        // it aliases the same key and would double every entry.
         if (Environment.Is64BitOperatingSystem) {
-            ScanUninstallKey(specs, RegistryHive.LocalMachine, RegistryView.Registry32, InstalledAppScope.Machine);
+            ScanUninstallKey(
+                specs, 
+                RegistryHive.LocalMachine, 
+                RegistryView.Registry32, 
+                InstalledAppScope.Machine);
         }
 
-        ScanUninstallKey(specs, RegistryHive.CurrentUser, RegistryView.Default, InstalledAppScope.User);
+        ScanUninstallKey(
+            specs, 
+            RegistryHive.CurrentUser, 
+            RegistryView.Default, 
+            InstalledAppScope.User);
 
         specs.Apps.Sort(static (left, right) =>
             string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase));
@@ -33,7 +42,10 @@ public partial class InstalledAppsService
     }
 
     private void ScanUninstallKey(
-        InstalledAppsSpecs specs, RegistryHive hive, RegistryView view, InstalledAppScope scope)
+        InstalledAppsSpecs specs, 
+        RegistryHive hive, 
+        RegistryView view, 
+        InstalledAppScope scope)
     {
         using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
         using RegistryKey? uninstallKey = baseKey.OpenSubKey(UninstallKeyPath);
@@ -52,19 +64,19 @@ public partial class InstalledAppsService
             }
 
             InstalledApp? app = InstalledAppRegistryEntry.Parse(
-                displayName: appKey.GetValue("DisplayName") as string,
-                displayVersion: appKey.GetValue("DisplayVersion") as string,
-                publisher: appKey.GetValue("Publisher") as string,
-                installDate: appKey.GetValue("InstallDate") as string,
-                installLocation: appKey.GetValue("InstallLocation") as string,
-                uninstallString: appKey.GetValue("UninstallString") as string,
+                displayName:          appKey.GetValue("DisplayName") as string,
+                displayVersion:       appKey.GetValue("DisplayVersion") as string,
+                publisher:            appKey.GetValue("Publisher") as string,
+                installDate:          appKey.GetValue("InstallDate") as string,
+                installLocation:      appKey.GetValue("InstallLocation") as string,
+                uninstallString:      appKey.GetValue("UninstallString") as string,
                 quietUninstallString: appKey.GetValue("QuietUninstallString") as string,
-                estimatedSizeKb: appKey.GetValue("EstimatedSize") as int?,
-                systemComponent: appKey.GetValue("SystemComponent") as int?,
-                parentKeyName: appKey.GetValue("ParentKeyName") as string,
-                releaseType: appKey.GetValue("ReleaseType") as string,
-                scope: scope,
-                origin: $"{originPrefix}\\{subKeyName}");
+                estimatedSizeKb:      appKey.GetValue("EstimatedSize") as int?,
+                systemComponent:      appKey.GetValue("SystemComponent") as int?,
+                parentKeyName:        appKey.GetValue("ParentKeyName") as string,
+                releaseType:          appKey.GetValue("ReleaseType") as string,
+                scope:                scope,
+                origin:               $"{originPrefix}\\{subKeyName}");
 
             if (app is not null) {
                 specs.Apps.Add(app);

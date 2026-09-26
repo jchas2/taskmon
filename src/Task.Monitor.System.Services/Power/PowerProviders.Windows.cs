@@ -8,8 +8,8 @@ namespace Task.Monitor.System.Services.Power;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-// NVIDIA GPUs via NVML - a measured, milliwatt reading. Handles are matched back to a DXGI adapter
-// by PCI vendor + device id.
+// NVIDIA GPUs via NVML - a measured, milliwatt reading.
+// Handles are matched back to a DXGI adapter by PCI vendor + device id.
 internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IPowerProvider
 {
     private bool initialised;

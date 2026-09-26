@@ -53,7 +53,7 @@ public partial class MemoryService
     private unsafe void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
         if (!QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION memListInfo, out int status)) {
-            Console.WriteLine($"Failed to query NtQuerySystemInformation. Status: 0x{status:X8}");
+            TraceEx.WriteLineOnce(nameof(QueryMemoryList), $"Failed to query NtQuerySystemInformation. Status: 0x{status:X8}");
             return;
         }
 
@@ -61,7 +61,10 @@ public partial class MemoryService
         memStatus.dwLength = (uint)sizeof(SysInfoApi.MEMORYSTATUSEX);
         
         if (!SysInfoApi.GlobalMemoryStatusEx(&memStatus)) {
-            Console.WriteLine($"GlobalMemoryStatusEx failed. Error: {Marshal.GetLastWin32Error()}");
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(SysInfoApi.GlobalMemoryStatusEx), 
+                $"GlobalMemoryStatusEx failed. Error: {Marshal.GetLastWin32Error()}");
+            
             return;
         }
 
@@ -119,7 +122,7 @@ public partial class MemoryService
             return false;
         }
 
-        // Kernel wants a bigger buffer than our struct: allocate it, then take the prefix.
+        // Kernel wants a bigger buffer than our struct.
         void* buffer = NativeMemory.AllocZeroed(returnLength);
         status = Winternl.NtQuerySystemInformation(
             Winternl.SystemMemoryListInformation, 

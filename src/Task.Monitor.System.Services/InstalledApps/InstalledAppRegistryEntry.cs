@@ -2,12 +2,6 @@ using System.Globalization;
 
 namespace Task.Monitor.System.Services.InstalledApps;
 
-// Decides whether an Uninstall registry subkey represents a user-facing installed application, and
-// normalises its raw values into an InstalledApp. Takes plain values rather than a RegistryKey so
-// the filtering rules - the same ones Programs and Features applies to this same key - are testable
-// without touching the registry: skip entries with no display name, skip internal components
-// (SystemComponent), and skip updates/patches attached to a parent product (ParentKeyName,
-// ReleaseType).
 public static class InstalledAppRegistryEntry
 {
     public static InstalledApp? Parse(
@@ -54,17 +48,23 @@ public static class InstalledAppRegistryEntry
         };
     }
 
-    private static bool IsUpdateReleaseType(string? releaseType) =>
-        releaseType is "Update" or "Security Update" or "Hotfix" or "ServicePack";
+    private static bool IsUpdateReleaseType(string? releaseType) => releaseType 
+        is "Update" 
+        or "Security Update" 
+        or "Hotfix" 
+        or "ServicePack";
 
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrEmpty(value) ? null : value;
 
-    // Stored as an 8-digit "yyyyMMdd" string when present at all.
     private static DateTime? ParseInstallDate(string? installDate) =>
         !string.IsNullOrEmpty(installDate) &&
         DateTime.TryParseExact(
-            installDate, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsed)
-            ? parsed
-            : null;
+            installDate, 
+            "yyyyMMdd", 
+            CultureInfo.InvariantCulture, 
+            DateTimeStyles.None, 
+            out DateTime parsed)
+                ? parsed
+                : null;
 }
