@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Task.Monitor.Cli.Utils;
 using WorkerTask = System.Threading.Tasks.Task;
 

@@ -2,22 +2,12 @@ using System.Runtime.InteropServices;
 
 namespace Task.Monitor.Interop.Win32;
 
-/// <summary>
-/// NVIDIA Management Library (nvml.dll), the subset needed to read a GPU's power draw. NVML ships
-/// with every NVIDIA driver and is a flat, documented C API, so plain <c>[DllImport]</c> is fine -
-/// no vtable. Absent when there is no NVIDIA driver, so every entry is reached through
-/// <see cref="Initialize"/>, which swallows <see cref="DllNotFoundException"/>.
-///
-/// Power comes back in milliwatts (instantaneous) and energy in millijoules (cumulative); the
-/// caller can use either.
-/// </summary>
+// NVIDIA Management Library, declaring the functions needed to read a GPU's power draw.
 public static unsafe class Nvml
 {
     private const string NvmlDll = "nvml.dll";
 
     private const int NvmlSuccess = 0;
-
-    // nvmlPciInfo_t: char busIdLegacy[16], uint domain, uint bus, uint device, uint pciDeviceId, ...
     private const int PciInfoSize = 64;
     private const int PciInfoDeviceIdOffset = 28;
 
@@ -47,10 +37,7 @@ public static unsafe class Nvml
         try {
             return nvmlInit_v2() == NvmlSuccess;
         }
-        catch (DllNotFoundException) {
-            return false;
-        }
-        catch (EntryPointNotFoundException) {
+        catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException) {
             return false;
         }
     }
@@ -60,9 +47,7 @@ public static unsafe class Nvml
         try {
             nvmlShutdown();
         }
-        catch (DllNotFoundException) {
-            // Driver went away - nothing to shut down.
-        }
+        catch (DllNotFoundException) { /* Driver dropped */ }
     }
 
     public static int DeviceCount() =>
@@ -88,7 +73,6 @@ public static unsafe class Nvml
             ? milliwatts / 1000.0
             : null;
 
-    // pciDeviceId packs (deviceId << 16) | vendorId.
     public static bool TryGetPciIds(nint handle, out uint vendorId, out uint deviceId)
     {
         vendorId = 0;
@@ -101,6 +85,7 @@ public static unsafe class Nvml
             return false;
         }
 
+        // pciDeviceId packs (deviceId << 16) | vendorId.
         uint pciDeviceId = *(uint*)(buffer + PciInfoDeviceIdOffset);
         vendorId = pciDeviceId & 0xFFFF;
         deviceId = (pciDeviceId >> 16) & 0xFFFF;

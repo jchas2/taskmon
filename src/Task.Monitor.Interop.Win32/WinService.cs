@@ -6,21 +6,17 @@ public static class WinService
 {
     public const int  SC_MANAGER_CONNECT    = 0x0001;
     public const uint SC_MANAGER_ALL_ACCESS = 0xF003F;
-    public const int SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
+    public const int  SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
 
     public const uint SERVICE_TYPE_ALL = 0x00000030;
     public const uint SERVICE_STATE_ALL = 0x00000003;
 
-    // Despite the name, SERVICE_TYPE_ALL above is only the Win32 service types (own-process +
-    // share-process) - EnumServicesStatusEx never returns drivers unless one of these is also
-    // passed. SERVICE_KERNEL_DRIVER covers .sys drivers loaded directly; SERVICE_FILE_SYSTEM_DRIVER
-    // covers filter/file-system drivers - both are enumerated together for a "Drivers" screen.
-    public const uint SERVICE_KERNEL_DRIVER = 0x00000001;
+    public const uint SERVICE_KERNEL_DRIVER      = 0x00000001;
     public const uint SERVICE_FILE_SYSTEM_DRIVER = 0x00000002;
     public const uint SERVICE_DRIVER = SERVICE_KERNEL_DRIVER | SERVICE_FILE_SYSTEM_DRIVER;
 
-    public const int SC_ENUM_PROCESS_INFO = 0;
-    public const uint INFO_LEVEL_STANDARD = 0;
+    public const int  SC_ENUM_PROCESS_INFO = 0;
+    public const uint INFO_LEVEL_STANDARD  = 0;
 
     public const uint SERVICE_ERROR_NORMAL      = 0x00000001;
     public const uint SERVICE_AUTO_START        = 0x00000002;
@@ -31,8 +27,7 @@ public static class WinService
     public const uint SERVICE_WIN32             = 0x00000030;
     public const uint SERVICE_ALL_ACCESS        = 0xF01FF;
 
-    // QueryServiceConfig2 dwInfoLevel values.
-    public const uint SERVICE_CONFIG_DESCRIPTION            = 1;
+    public const uint SERVICE_CONFIG_DESCRIPTION             = 1;
     public const uint SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
     public enum ServiceCurrentState : uint
@@ -46,7 +41,6 @@ public static class WinService
         SERVICE_PAUSED           = 0x00000007
     }
 
-    // QUERY_SERVICE_CONFIGW.dwStartType values.
     public enum ServiceStartType : uint
     {
         SERVICE_BOOT_START   = 0x00000000,
@@ -88,9 +82,6 @@ public static class WinService
         public int dwServiceFlags;
     }
 
-    // Returned by QueryServiceConfig. A variable-size structure - the embedded LPWSTR fields are
-    // read via the standard two-call sizing pattern (call once with no buffer to learn the size,
-    // then again with a buffer of that size).
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct QUERY_SERVICE_CONFIGW
     {
@@ -105,16 +96,12 @@ public static class WinService
         public string lpDisplayName;
     }
 
-    // Returned by QueryServiceConfig2 with dwInfoLevel = SERVICE_CONFIG_DESCRIPTION.
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct SERVICE_DESCRIPTIONW
     {
         public string lpDescription;
     }
 
-    // Returned by QueryServiceConfig2 with dwInfoLevel = SERVICE_CONFIG_DELAYED_AUTO_START_INFO.
-    // Only meaningful for a service whose dwStartType is SERVICE_AUTO_START - it is what
-    // distinguishes "Automatic" from "Automatic (Delayed Start)" in the Services snap-in.
     [StructLayout(LayoutKind.Sequential)]
     public struct SERVICE_DELAYED_AUTO_START_INFO
     {

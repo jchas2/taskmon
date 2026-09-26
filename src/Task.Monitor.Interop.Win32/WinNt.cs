@@ -4,7 +4,6 @@ namespace Task.Monitor.Interop.Win32;
 
 public static class WinNt
 {
-    // GetLogicalProcessorInformationEx relationship selector / record discriminator.
     public enum LOGICAL_PROCESSOR_RELATIONSHIP : uint
     {
         RelationProcessorCore    = 0,

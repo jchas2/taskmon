@@ -23,8 +23,6 @@ public static class IpHlpApi
         void* adapterAddresses,
         uint* sizePointer);
 
-    // Allocates the table itself and hands back a pointer to it, so every path out of a caller
-    // has to reach FreeMibTable.
     [DllImport(Libraries.IpHlpApi)]
     public static extern unsafe uint GetIfTable2(nint* table);
 

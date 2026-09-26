@@ -1,11 +1,7 @@
+using System.Diagnostics.Contracts;
+
 namespace Task.Monitor.Interop.Win32;
 
-/// <summary>
-/// NVMe pass-through queries that run against the zero-access <c>\\.\PhysicalDriveN</c> handle
-/// (no elevation): a log page, or an Identify structure. Built on
-/// <see cref="IoApiSet.DeviceIoControl"/> with <see cref="WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY"/>
-/// and a <c>STORAGE_PROTOCOL_SPECIFIC_DATA</c> request.
-/// </summary>
 public static unsafe class Nvme
 {
     private const int HeaderSize = 8;            // PropertyId + QueryType
@@ -36,55 +32,51 @@ public static unsafe class Nvme
             return false;
         }
 
-        try {
-            int total = HeaderSize + ProtocolDataSize + output.Length;
-            byte[] buffer = new byte[total];
+        int total = HeaderSize + ProtocolDataSize + output.Length;
+        byte[] buffer = new byte[total];
 
-            fixed (byte* p = buffer) {
-                *(uint*)p = WinIoCtl.StorageDeviceProtocolSpecificProperty;
-                *(uint*)(p + 4) = WinIoCtl.PropertyStandardQuery;
+        fixed (byte* p = buffer) {
+            *(uint*)p = WinIoCtl.StorageDeviceProtocolSpecificProperty;
+            *(uint*)(p + 4) = WinIoCtl.PropertyStandardQuery;
 
-                byte* proto = p + HeaderSize;
-                *(uint*)(proto + WinIoCtl.ProtocolSpecificProtocolTypeOffset) = WinIoCtl.ProtocolTypeNvme;
-                *(uint*)(proto + WinIoCtl.ProtocolSpecificDataTypeOffset) = dataType;
-                *(uint*)(proto + WinIoCtl.ProtocolSpecificRequestValueOffset) = requestValue;
-                *(uint*)(proto + WinIoCtl.ProtocolSpecificDataOffsetOffset) = ProtocolDataSize;
-                *(uint*)(proto + WinIoCtl.ProtocolSpecificDataLengthOffset) = (uint)output.Length;
+            byte* proto = p + HeaderSize;
+            *(uint*)(proto + WinIoCtl.ProtocolSpecificProtocolTypeOffset) = WinIoCtl.ProtocolTypeNvme;
+            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataTypeOffset)     = dataType;
+            *(uint*)(proto + WinIoCtl.ProtocolSpecificRequestValueOffset) = requestValue;
+            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataOffsetOffset)   = ProtocolDataSize;
+            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataLengthOffset)   = (uint)output.Length;
 
-                uint returned = 0;
+            uint returned = 0;
 
-                bool ok = IoApiSet.DeviceIoControl(
-                    handle,
-                    WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-                    p, (uint)total,
-                    p, (uint)total,
-                    &returned, nint.Zero);
+            bool result = IoApiSet.DeviceIoControl(
+                handle,
+                WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
+                p,
+                (uint)total,
+                p,
+                (uint)total,
+                &returned,
+                nint.Zero);
 
-                if (!ok || returned < HeaderSize + ProtocolDataSize) {
-                    return false;
-                }
-
-                byte* responseProto = p + HeaderSize;
-                uint dataOffset = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataOffsetOffset);
-                uint dataLength = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataLengthOffset);
-
-                int start = HeaderSize + (int)dataOffset;
-
-                // Some drivers leave the response descriptor blank; fall back to the standard place.
-                if (dataLength < (uint)output.Length || start < 0 || start + output.Length > total) {
-                    start = HeaderSize + ProtocolDataSize;
-                }
-
-                if (start + output.Length > total) {
-                    return false;
-                }
-
-                new ReadOnlySpan<byte>(p + start, output.Length).CopyTo(output);
-                return true;
+            if (!result || returned < HeaderSize + ProtocolDataSize) {
+                Kernel32.CloseHandle(handle);
+                return false;
             }
-        }
-        finally {
+
+            byte* responseProto = p + HeaderSize;
+            uint dataOffset = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataOffsetOffset);
+            uint dataLength = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataLengthOffset);
+
+            int start = HeaderSize + ProtocolDataSize;
+            long reportedStart = HeaderSize + (long)dataOffset;
+
+            if (dataLength >= (uint)output.Length && reportedStart + output.Length <= total) {
+                start = (int)reportedStart;
+            }
+
+            new ReadOnlySpan<byte>(p + start, output.Length).CopyTo(output);
             Kernel32.CloseHandle(handle);
+            return true;
         }
     }
 }

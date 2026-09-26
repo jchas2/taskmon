@@ -106,7 +106,7 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
         HashSet<long> assigned = new();
 
         foreach (Adl.Adapter adapter in Adl.GetAdapters(context)) {
-            if (!Adl.TryGetPowerWatts(context, adapter.AdapterIndex, out double watts)) {
+            if (!Adl.GetPowerWatts(context, adapter.AdapterIndex, out double watts)) {
                 continue;
             }
 

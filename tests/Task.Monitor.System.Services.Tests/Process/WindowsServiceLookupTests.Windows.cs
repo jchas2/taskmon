@@ -1,3 +1,4 @@
+#if __WIN32__
 using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.Tests.Process;
@@ -76,3 +77,4 @@ public sealed class WindowsServiceLookupTests
         Assert.Equal(mapped, WindowsServiceLookup.MappedServiceCount);
     }
 }
+#endif

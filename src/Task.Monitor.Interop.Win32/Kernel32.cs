@@ -64,8 +64,8 @@ public static class Kernel32
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern unsafe bool QueryFullProcessImageNameW(
-        nint hProcess,
-        uint dwFlags,
+        nint  hProcess,
+        uint  dwFlags,
         char* lpExeName,
         uint* lpdwSize);
 }

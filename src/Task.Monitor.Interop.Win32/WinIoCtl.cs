@@ -4,12 +4,8 @@ namespace Task.Monitor.Interop.Win32;
 
 public static class WinIoCtl
 {
-    // CTL_CODE(DeviceType, Function, Method, Access) packs to
-    // (DeviceType << 16) | (Access << 14) | (Function << 2) | Method.
-    // All three below are METHOD_BUFFERED with FILE_ANY_ACCESS, which is what lets them run
-    // against a handle opened with no access rights.
-    public const uint IOCTL_STORAGE_QUERY_PROPERTY        = 0x002D1400;
-    public const uint IOCTL_DISK_GET_DRIVE_GEOMETRY_EX    = 0x000700A0;
+    public const uint IOCTL_STORAGE_QUERY_PROPERTY         = 0x002D1400;
+    public const uint IOCTL_DISK_GET_DRIVE_GEOMETRY_EX     = 0x000700A0;
     public const uint IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = 0x00560000;
 
     public const uint StorageDeviceProperty                   = 0;
@@ -20,33 +16,28 @@ public static class WinIoCtl
 
     public const uint PropertyStandardQuery = 0;
 
-    // STORAGE_PROTOCOL_TYPE
     public const uint ProtocolTypeAta  = 2;
     public const uint ProtocolTypeNvme = 3;
 
-    // STORAGE_PROTOCOL_NVME_DATA_TYPE
     public const uint NVMeDataTypeIdentify = 1;
     public const uint NVMeDataTypeLogPage  = 2;
 
-    // NVMe log page identifiers
     public const uint NVMeLogPageHealthInfo = 0x02;
 
-    // STORAGE_PROTOCOL_SPECIFIC_DATA sits in the AdditionalParameters area of STORAGE_PROPERTY_QUERY
-    // (offset 8) on the way in, and inside STORAGE_PROTOCOL_DATA_DESCRIPTOR (also offset 8) on the
-    // way out. It is 40 bytes: 10 DWORDs.
-    //   +0  ProtocolType          (STORAGE_PROTOCOL_TYPE)
-    //   +4  DataType              (protocol-specific: NVMeDataTypeLogPage etc.)
-    //   +8  ProtocolDataRequestValue      (log page id / CNS)
+    // STORAGE_PROTOCOL_SPECIFIC_DATA, 40 bytes:
+    //   +0  ProtocolType (STORAGE_PROTOCOL_TYPE)
+    //   +4  DataType
+    //   +8  ProtocolDataRequestValue
     //   +12 ProtocolDataRequestSubValue
-    //   +16 ProtocolDataOffset    (bytes from the start of this struct to the returned data)
+    //   +16 ProtocolDataOffset
     //   +20 ProtocolDataLength
     //   +24 FixedProtocolReturnData
     //   +28 ProtocolDataRequestSubValue2
     //   +32 ProtocolDataRequestSubValue3
     //   +36 ProtocolDataRequestSubValue4
-    public const int StoragePropertyQueryHeaderSize   = 8;   // PropertyId + QueryType
+    public const int StoragePropertyQueryHeaderSize   = 8;
     public const int StorageProtocolSpecificDataSize  = 40;
-    public const int StorageProtocolDataDescriptorHeaderSize = 8; // Version + Size
+    public const int StorageProtocolDataDescriptorHeaderSize = 8;
 
     public const int ProtocolSpecificProtocolTypeOffset  = 0;
     public const int ProtocolSpecificDataTypeOffset      = 4;
@@ -55,19 +46,15 @@ public static class WinIoCtl
     public const int ProtocolSpecificDataLengthOffset    = 20;
 
     // NVMe SMART / Health Information log page (log page 0x02), 512 bytes.
-    //   +1..2   Composite Temperature      (uint16 LE, Kelvin)
-    //   +200..  Temperature Sensor 1..8    (uint16 LE, Kelvin; 0 = not implemented)
-    public const int NVMeHealthLogSize                   = 512;
+    public const int NVMeHealthLogSize                    = 512;
     public const int NVMeHealthCompositeTemperatureOffset = 1;
     public const int NVMeHealthTemperatureSensorOffset    = 200;
     public const int NVMeHealthTemperatureSensorCount     = 8;
 
     // NVMe Identify Controller data (CNS 0x01), 4096 bytes.
-    //   Power State Descriptors start at +2048, 32 bytes each (PSD0 is the peak-performance state).
-    //   PSD:  +0..1 MP (Maximum Power)    +3 bit0 MXPS (0 => MP in 0.01 W, 1 => MP in 0.0001 W)
-    public const int NVMeIdentifyControllerSize          = 4096;
+    public const int  NVMeIdentifyControllerSize         = 4096;
     public const uint NVMeIdentifyCnsController          = 0x01;
-    public const int NVMeIdentifyPowerStateDescriptorOffset = 2048;
+    public const int  NVMeIdentifyPowerStateDescriptorOffset = 2048;
 
     public const uint BusTypeUnknown           = 0x00;
     public const uint BusTypeScsi              = 0x01;
@@ -121,10 +108,8 @@ public static class WinIoCtl
         public byte TrimEnabled;
     }
 
-    // STORAGE_DEVICE_DESCRIPTOR is variable length: a fixed header followed by a raw properties
-    // area that VendorIdOffset and friends index into. It is read as a byte span rather than
-    // marshalled, so the layout is expressed as offsets in the same style as the SMBIOS decode
-    // in MemoryDeviceParser.
+    // STORAGE_DEVICE_DESCRIPTOR is variable length, the layout is expressed as
+    // offsets in the same style as the SMBIOS decode in MemoryDeviceParser.
     public const int StorageDeviceDescriptorSizeOffset             = 0x04;
     public const int StorageDeviceDescriptorRemovableMediaOffset   = 0x0A;
     public const int StorageDeviceDescriptorVendorIdOffset         = 0x0C;
@@ -134,14 +119,12 @@ public static class WinIoCtl
     public const int StorageDeviceDescriptorBusTypeOffset          = 0x1C;
     public const int StorageDeviceDescriptorMinimumLength          = 0x24;
 
-    // DISK_GEOMETRY_EX: DISK_GEOMETRY (24 bytes) then LARGE_INTEGER DiskSize, then a trailing
-    // partition information blob whose size varies by partition style.
+    // DISK_GEOMETRY_EX, 24 bytes.
     public const int DiskGeometryExDiskSizeOffset = 0x18;
     public const int DiskGeometryExBufferSize     = 512;
 
     // VOLUME_DISK_EXTENTS: DWORD NumberOfDiskExtents then DISK_EXTENT Extents[1]. The extent
-    // array is eight byte aligned because DISK_EXTENT leads with a DWORD followed by two
-    // LARGE_INTEGERs.
+    // array is eight byte aligned.
     public const int VolumeDiskExtentsCountOffset      = 0x00;
     public const int VolumeDiskExtentsArrayOffset      = 0x08;
     public const int DiskExtentSize                    = 0x18;

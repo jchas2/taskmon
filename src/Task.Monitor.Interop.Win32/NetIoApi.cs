@@ -8,8 +8,8 @@ public static class NetIoApi
     public const uint IF_TYPE_PPP                = 23;
     public const uint IF_TYPE_SOFTWARE_LOOPBACK  = 24;
     public const uint IF_TYPE_ATM                = 37;
-    // What a VPN client adapter reports. Observed on a Private Internet Access adapter, which
-    // presents as PROP_VIRTUAL rather than TUNNEL.
+    
+    // What a VPN client adapter reports.
     public const uint IF_TYPE_PROP_VIRTUAL       = 53;
     public const uint IF_TYPE_IEEE80211          = 71;
     public const uint IF_TYPE_TUNNEL             = 131;
@@ -47,13 +47,11 @@ public static class NetIoApi
     public const uint NdisPhysicalMediumWiredCoWan    = 18;
     public const uint NdisPhysicalMediumOther         = 19;
 
-    // MIB_IF_TABLE2: ULONG NumEntries then MIB_IF_ROW2 Table[ANY_SIZE]. The row array is eight
-    // byte aligned because MIB_IF_ROW2 leads with a ULONG64 LUID.
+    // MIB_IF_TABLE2.
     public const int IfTable2NumEntriesOffset = 0x00;
     public const int IfTable2TableOffset      = 0x08;
 
-    // MIB_IF_ROW2, 1352 bytes on x64. Only the identity and the octet/packet counters are read,
-    // so the layout is expressed as offsets rather than marshalled through a 1.3KB struct.
+    // MIB_IF_ROW2.
     public const int IfRow2Size                      = 1352;
     public const int IfRow2InterfaceLuidOffset       = 0;
     public const int IfRow2InterfaceIndexOffset      = 8;

@@ -5,8 +5,6 @@ namespace Task.Monitor.Interop.Win32;
 
 public static class ProcessThreadsApi
 {
-    // Firmware (BIOS/UEFI) has hardware virtualisation enabled. Note a running hypervisor
-    // (Hyper-V, VBS, WSL2) can claim the feature and make this report false.
     public const uint PF_VIRT_FIRMWARE_ENABLED = 21;
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
@@ -23,7 +21,7 @@ public static class ProcessThreadsApi
     [DllImport(Libraries.Advapi32, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool OpenProcessToken(
-        SafeProcessHandle processHandle,
-        uint desiredAccess,
+        SafeProcessHandle     processHandle,
+        uint                  desiredAccess,
         out SafeProcessHandle tokenHandle);
 }

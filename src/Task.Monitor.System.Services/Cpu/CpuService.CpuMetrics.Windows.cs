@@ -6,6 +6,7 @@ namespace Task.Monitor.System.Services.Cpu;
 
 public partial class CpuService
 {
+#if __WIN32__
     // GetSystemTimes reports FILETIME ticks, which are 100ns units.
     private const double FileTimeTicksPerSecond = 10_000_000.0;
 
@@ -16,7 +17,6 @@ public partial class CpuService
     private long previousTimestamp;
     private bool primed;
 
-#if __WIN32__
     private unsafe void OnDoWorkCpuMetrics(CpuInfo cpuInfo)
     {
         MinWinBase.FILETIME lpIdleFileTime;

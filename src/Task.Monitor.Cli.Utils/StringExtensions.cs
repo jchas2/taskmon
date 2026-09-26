@@ -45,17 +45,13 @@ public static class StringExtensions
         actualWidth = width;
         return charLength;
     }
-
-    // Approximate Unicode East Asian Wide/Fullwidth ranges - the common terminal "this renders as
-    // two columns" set: CJK ideographs, Hangul, Hiragana/Katakana, fullwidth forms, and their
-    // supplementary-plane extensions. Not exhaustive (combining marks and emoji variation selectors
-    // are not modelled), but covers what shows up in real-world strings like version-resource
-    // metadata.
+    
+    // Generally Covers what shows up in real-world strings like file version-resource metadata.
     private static bool IsWideRune(int codePoint) =>
         (codePoint >= 0x1100 && codePoint <= 0x115F)  ||  // Hangul Jamo
         codePoint == 0x2329 || codePoint == 0x232A    ||
-        (codePoint >= 0x2E80 && codePoint <= 0x303E)  ||  // CJK Radicals .. CJK Symbols/Punctuation
-        (codePoint >= 0x3041 && codePoint <= 0x33FF)  ||  // Hiragana .. CJK Compatibility
+        (codePoint >= 0x2E80 && codePoint <= 0x303E)  ||  // CJK Radicals, CJK Symbols/Punctuation
+        (codePoint >= 0x3041 && codePoint <= 0x33FF)  ||  // Hiragana, CJK Compatibility
         (codePoint >= 0x3400 && codePoint <= 0x4DBF)  ||  // CJK Unified Ideographs Extension A
         (codePoint >= 0x4E00 && codePoint <= 0x9FFF)  ||  // CJK Unified Ideographs
         (codePoint >= 0xA000 && codePoint <= 0xA4CF)  ||  // Yi Syllables / Radicals
