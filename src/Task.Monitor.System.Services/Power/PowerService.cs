@@ -2,9 +2,6 @@ using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Services.Power;
 
-// Publishes device power draw: NVIDIA and AMD GPUs (measured), the whole system on battery, an
-// ACPI power meter where present, and an NVMe drive's rated peak power. There is no CPU package
-// power without a kernel driver, so on most desktops this reports GPU only.
 public sealed partial class PowerService : WorkerService
 {
     private const int ReprobeEveryCycles = 20;

@@ -1,6 +1,7 @@
 #if __WIN32__
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
+using Task.Monitor.System.Services.Power.Providers.Windows;
 
 namespace Task.Monitor.System.Services.Power;
 
@@ -12,11 +13,11 @@ public partial class PowerService
         IReadOnlyList<GpuDevice> Gpus() => GetLatest<GpuInfo>()?.Specs.Devices ?? [];
 
         return [
-            new NvmlPowerProvider(Gpus),
-            new AdlPowerProvider(Gpus),
-            new PowerMeterPdhProvider(),
+            new NvmlPowerProvider(Gpus),        // Nvidia GPUs.
+            new AdlPowerProvider(Gpus),         // AMD GPUs.
+            new PowerMeterPdhProvider(),        
             new BatteryPowerProvider(),
-            new NvmeRatedPowerProvider(Disks),
+            new NvmeRatedPowerProvider(Disks),  // Non-volatile Memory Express interface.
         ];
     }
 }

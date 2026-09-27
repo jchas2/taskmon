@@ -16,4 +16,8 @@
       <ProjectReference Include="..\Task.Monitor.Interop.Win32\Task.Monitor.Interop.Win32.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Power\Providers\MacOS\" />
+    </ItemGroup>
+
 </Project>
