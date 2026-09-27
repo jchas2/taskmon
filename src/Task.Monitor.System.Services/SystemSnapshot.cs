@@ -16,20 +16,20 @@ namespace Task.Monitor.System.Services;
 
 public sealed record SystemSnapshot
 {
-    public long Sequence { get; init; }
-    public DateTime TimestampUtc { get; init; }
-    public CpuInfo? Cpu { get; init; }
-    public MemoryInfo? Memory { get; init; }
-    public GpuInfo? Gpu { get; init; }
-    public DiskInfo? Disk { get; init; }
-    public DiskSpaceInfo? DiskSpace { get; init; }
-    public NetworkInfo? Network { get; init; }
-    public ProcessInfo? Processes { get; init; }
-    public StartupInfo? Startup { get; init; }
-    public InstalledAppsInfo? InstalledApps { get; init; }
-    public ThermalInfo? Thermal { get; init; }
-    public PowerInfo? Power { get; init; }
+    public long                 Sequence        { get; init; }
+    public DateTime             TimestampUtc    { get; init; }
+    public CpuInfo?             Cpu             { get; init; }
+    public MemoryInfo?          Memory          { get; init; }
+    public GpuInfo?             Gpu             { get; init; }
+    public DiskInfo?            Disk            { get; init; }
+    public DiskSpaceInfo?       DiskSpace       { get; init; }
+    public NetworkInfo?         Network         { get; init; }
+    public ProcessInfo?         Processes       { get; init; }
+    public StartupInfo?         Startup         { get; init; }
+    public InstalledAppsInfo?   InstalledApps   { get; init; }
+    public ThermalInfo?         Thermal         { get; init; }
+    public PowerInfo?           Power           { get; init; }
     public WindowsServicesInfo? WindowsServices { get; init; }
-    public DriversInfo? Drivers { get; init; }
+    public DriversInfo?         Drivers         { get; init; }
     public IReadOnlyList<ServiceHealth> Services { get; init; } = [];
 }

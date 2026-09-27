@@ -4,7 +4,7 @@ using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
-// The peak power of an NVMe drive's top power state
+// The peak power of an NVMe drive's top power state.
 internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IPowerProvider
 {
     private readonly Dictionary<int, double?> cache = new();

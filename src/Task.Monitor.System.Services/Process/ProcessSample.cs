@@ -1,8 +1,5 @@
 namespace Task.Monitor.System.Services.Process;
 
-// One process exactly as the operating system reported it this cycle. Everything here is either
-// fixed for the life of the process or a cumulative counter; nothing is a rate. Rates are derived
-// in ProcessEntry by differencing two of these.
 public sealed class ProcessSample
 {
     public int Pid { get; internal set; }

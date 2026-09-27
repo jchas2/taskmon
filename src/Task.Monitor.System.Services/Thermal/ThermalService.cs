@@ -2,10 +2,6 @@ using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Services.Thermal;
 
-// Publishes every temperature the machine will report without a kernel driver: NVMe / ATA drive
-// sensors, NVIDIA and AMD GPU sensors, and the ACPI thermal zones (the only, approximate, CPU
-// source). Providers are probed once at start; a provider that fails to initialise or throws is
-// dropped and re-probed on the next refresh.
 public sealed partial class ThermalService : WorkerService
 {
     private const int ReprobeEveryCycles = 20;
@@ -32,7 +28,11 @@ public sealed partial class ThermalService : WorkerService
             }
         }
 
-        Publish(new ThermalInfo { Metrics = new ThermalMetrics { Sensors = sensors } });
+        Publish(new ThermalInfo {
+            Metrics = new ThermalMetrics {
+                Sensors = sensors
+            }
+        });
     }
 
     protected override void OnStop() => DisposeProviders();
@@ -77,8 +77,6 @@ public sealed partial class ThermalService : WorkerService
         }
     }
 
-    // Platform-specific. The Windows list is in ThermalService.Providers.Windows.cs; other
-    // platforms get the empty stub below until they grow one.
     private partial IEnumerable<IThermalProvider> CreateProviders();
 
 #if !__WIN32__

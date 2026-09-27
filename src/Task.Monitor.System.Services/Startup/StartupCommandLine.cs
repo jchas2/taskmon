@@ -1,8 +1,5 @@
 namespace Task.Monitor.System.Services.Startup;
 
-// Splits a stored startup command into its executable path and argument tail. Handles the common
-// forms: a quoted path, an unquoted path (with or without spaces), and rundll32-style
-// "host.exe target,Entry" invocations. Environment variables are expanded first.
 public static class StartupCommandLine
 {
     public static (string Path, string Arguments) Split(string? command)
@@ -21,8 +18,6 @@ public static class StartupCommandLine
                 : (expanded[1..], string.Empty);
         }
 
-        // Unquoted: the path may itself contain spaces. Walk the space boundaries and stop at the
-        // first prefix that names a file that exists.
         int searchFrom = 0;
 
         while (true) {

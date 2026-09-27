@@ -16,20 +16,11 @@ public partial class ProcessService
 
     private void OnDoWorkProcessMetrics(ProcessMetrics metrics, ProcessSpecs specs)
     {
-        // Rebuilt on its own slow cadence, and done before the enumeration rather than during it so
-        // the map cannot change halfway through a cycle and label two processes inconsistently.
         WindowsServiceLookup.RefreshIfDue();
 
-        // One enumeration per cycle, differenced against the state retained from the last one. The
-        // old Processor held no state between cycles, so it enumerated every process twice per tick
-        // and slept in the middle purely to obtain the same deltas.
         List<ProcessSample> samples = GetProcessSamples();
         long now = Stopwatch.GetTimestamp();
 
-        // GpuService owns the \GPU Engine(*) provider and publishes the per pid projection of the
-        // same counter array its headline figure comes from. Joining on that here, rather than
-        // opening a second query, keeps the two numbers consistent and leaves one enumeration of
-        // the provider per tick.
         Dictionary<int, double> gpuPercentByPid =
             GetLatest<GpuInfo>()?.Metrics.ProcessPercentTime ?? NoGpuPercent;
 
@@ -51,20 +42,25 @@ public partial class ProcessService
 
             ProcessEntry entry = BuildEntry(sample);
 
-            // Already a ratio derived by Pdh over the true interval, so there is no delta to take.
             entry.GpuTimePercent = gpuPercentByPid.GetValueOrDefault(sample.Pid);
 
-            ApplyRates(entry, state, sample, now, specs);
+            ApplyRates(
+                entry, 
+                state, 
+                sample, 
+                now, 
+                specs);
 
-            // CpuTimePercent is scaled by the Irix factor; divide it back out so the bucket is
-            // always judged against the whole machine regardless of the reporting mode.
+            // CpuTimePercent is scaled by the Irix factor; divide it out so the bucket is
+            // always calculated against the whole machine regardless of the reporting mode.
             double cpuFractionOfMachine = entry.CpuTimePercent /
                 ProcessEntryCalculator.IrixFactor(specs.IrixMode, specs.LogicalProcessorCount);
 
             entry.PowerBucket = ProcessPowerScore.Classify(
-                cpuFractionOfMachine, entry.GpuTimePercent, entry.DiskBytesPerSecond);
+                cpuFractionOfMachine, 
+                entry.GpuTimePercent, 
+                entry.DiskBytesPerSecond);
 
-            // Running means the process used cpu or gpu over the interval that just elapsed.
             if (entry.CpuTimePercent > 0.0 || entry.GpuTimePercent > 0.0) {
                 metrics.RunningCount++;
             }
@@ -74,29 +70,26 @@ public partial class ProcessService
         }
 
         PruneStaleStates();
-
-        // After the prune, the retained state's keys are exactly the pids that were alive this
-        // cycle, so the staleness check costs nothing beyond one lookup per mapped service.
         WindowsServiceLookup.RequestRefreshIfStale(sampleStates.Keys);
     }
 
     private static ProcessEntry BuildEntry(ProcessSample sample) =>
         new() {
-            Pid = sample.Pid,
-            ParentPid = sample.ParentPid,
-            ThreadCount = sample.ThreadCount,
-            HandleCount = sample.HandleCount,
-            BasePriority = sample.BasePriority,
-            IsDaemon = sample.IsDaemon,
-            IsLowPriority = sample.IsLowPriority,
+            Pid             = sample.Pid,
+            ParentPid       = sample.ParentPid,
+            ThreadCount     = sample.ThreadCount,
+            HandleCount     = sample.HandleCount,
+            BasePriority    = sample.BasePriority,
+            IsDaemon        = sample.IsDaemon,
+            IsLowPriority   = sample.IsLowPriority,
             IsRunningAsRoot = sample.IsRunningAsRoot,
-            ProcessName = sample.ProcessName,
+            ProcessName     = sample.ProcessName,
             FileDescription = sample.FileDescription,
-            UserName = sample.UserName,
-            CmdLine = sample.CmdLine,
-            UsedMemory = sample.UsedMemory,
-            DiskReadBytes = sample.DiskReadBytes,
-            DiskWriteBytes = sample.DiskWriteBytes
+            UserName        = sample.UserName,
+            CmdLine         = sample.CmdLine,
+            UsedMemory      = sample.UsedMemory,
+            DiskReadBytes   = sample.DiskReadBytes,
+            DiskWriteBytes  = sample.DiskWriteBytes
         };
 
     private static void ApplyRates(
@@ -106,9 +99,6 @@ public partial class ProcessService
         long now,
         ProcessSpecs specs)
     {
-        // First sight of this pid. It is published now with zero rates rather than withheld for a
-        // cycle: the old Processor iterated the pids of the earlier of its two samples, so a
-        // process that started and exited inside one interval never appeared at all.
         if (!state.Primed) {
             Rebase(state, sample, now);
             state.Primed = true;
@@ -117,9 +107,6 @@ public partial class ProcessService
 
         double elapsedSeconds = ProcessEntryCalculator.ElapsedSeconds(state.TimestampTicks, now);
 
-        // The baseline is never moved without a real interval to divide by. Moving it while keeping
-        // the old timestamp would absorb the cpu time and the bytes accumulated since the last
-        // cycle into the baseline, where no later delta could ever see them.
         if (elapsedSeconds <= 0.0) {
             return;
         }
@@ -144,7 +131,7 @@ public partial class ProcessService
 
         entry.CpuTimePercent = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
 
-        ulong readDelta = ProcessEntryCalculator.Delta(sample.DiskReadBytes, state.DiskReadBytes);
+        ulong readDelta  = ProcessEntryCalculator.Delta(sample.DiskReadBytes, state.DiskReadBytes);
         ulong writeDelta = ProcessEntryCalculator.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
 
         entry.DiskBytesPerSecond = ProcessEntryCalculator.BytesPerSecond(
@@ -156,9 +143,9 @@ public partial class ProcessService
 
     private static void Rebase(ProcessSampleState state, ProcessSample sample, long now)
     {
-        state.KernelTime = sample.KernelTime;
-        state.UserTime = sample.UserTime;
-        state.DiskReadBytes = sample.DiskReadBytes;
+        state.KernelTime     = sample.KernelTime;
+        state.UserTime       = sample.UserTime;
+        state.DiskReadBytes  = sample.DiskReadBytes;
         state.DiskWriteBytes = sample.DiskWriteBytes;
         state.TimestampTicks = now;
     }
@@ -167,23 +154,19 @@ public partial class ProcessService
     {
         average.Add(entry);
 
-        entry.CpuTimePercentAvg = average.CpuTimePercent;
-        entry.GpuTimePercentAvg = average.GpuTimePercent;
-        entry.UsedMemoryAvg = average.UsedMemory;
+        entry.CpuTimePercentAvg     = average.CpuTimePercent;
+        entry.GpuTimePercentAvg     = average.GpuTimePercent;
+        entry.UsedMemoryAvg         = average.UsedMemory;
         entry.DiskBytesPerSecondAvg = average.DiskBytesPerSecond;
 
-        entry.CpuTimePercentMax = average.CpuTimePercentMax;
-        entry.GpuTimePercentMax = average.GpuTimePercentMax;
-        entry.UsedMemoryMax = average.UsedMemoryMax;
+        entry.CpuTimePercentMax     = average.CpuTimePercentMax;
+        entry.GpuTimePercentMax     = average.GpuTimePercentMax;
+        entry.UsedMemoryMax         = average.UsedMemoryMax;
         entry.DiskBytesPerSecondMax = average.DiskBytesPerSecondMax;
     }
 
     private void PruneStaleStates()
     {
-        // Swept every cycle rather than only when the state map outgrows the live set. A cycle in
-        // which one process exits and another starts leaves those two counts equal, so the old
-        // comparison skipped the sweep and the dead pid's averages survived. If Windows then
-        // recycled that pid, the new process inherited the previous process's mean and max.
         if (sampleStates.Count == 0) {
             return;
         }

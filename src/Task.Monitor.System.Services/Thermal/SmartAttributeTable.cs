@@ -1,9 +1,6 @@
 namespace Task.Monitor.System.Services.Thermal;
 
-// Reads temperature out of the 512-byte ATA SMART attribute table (the data area of a
-// SMART_RCV_DRIVE_DATA / READ_ATTRIBUTES response, past the SENDCMDOUTPARAMS header).
-// Attribute entries are 12 bytes each starting at offset 2:
-//   +0 id   +1..2 flags   +3 value   +4 worst   +5..10 raw (48-bit LE)   +11 reserved
+// Reads temperature out of the 512-byte ATA SMART attribute table.
 public static class SmartAttributeTable
 {
     private const int FirstAttributeOffset = 2;
@@ -23,7 +20,9 @@ public static class SmartAttributeTable
     }
 
     private static double? Plausible(int? rawLowByte) =>
-        rawLowByte is > 0 and < 120 ? rawLowByte : null;
+        rawLowByte is > 0 and < 120 
+            ? rawLowByte 
+            : null;
 
     private static int? RawLowByte(ReadOnlySpan<byte> attributeTable, byte attributeId)
     {

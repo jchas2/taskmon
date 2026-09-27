@@ -1,18 +1,15 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
 
-namespace Task.Monitor.System.Services.Thermal;
+namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
-// CPU / chassis temperatures from WMI's MSAcpi_ThermalZoneTemperature - the only source available
-// without a kernel driver. On many desktops it exposes nothing, and where it does the zone is
-// often not the CPU die, so readings are surfaced honestly as "ACPI <zone>".
 internal sealed class AcpiThermalZoneProvider : IThermalProvider
 {
     private const string Namespace = @"root\WMI";
     private const string Wql =
         "SELECT InstanceName, CurrentTemperature, CriticalTripPoint FROM MSAcpi_ThermalZoneTemperature";
 
-    // The WMI round trip costs tens of milliseconds, so a result is reused for a couple of seconds.
+    // WMI calls are expensive, so a result is reused for a couple of seconds.
     private static readonly TimeSpan CacheWindow = TimeSpan.FromMilliseconds(2500);
 
     private bool available;
@@ -23,7 +20,6 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
 
     public bool TryInitialise()
     {
-        // Probe once: if the class returns nothing now, it will keep returning nothing.
         try {
             available = Wbem.Query(Namespace, Wql, "InstanceName").Count > 0;
         }
@@ -46,42 +42,45 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
 
         List<ThermalSensor> sensors = new();
 
-        foreach (Dictionary<string, object?> row in
-                 Wbem.Query(Namespace, Wql, "InstanceName", "CurrentTemperature", "CriticalTripPoint")) {
+        foreach (Dictionary<string, object?> row in 
+            Wbem.Query(
+                Namespace, 
+                Wql, 
+                "InstanceName", 
+                "CurrentTemperature", 
+                "CriticalTripPoint")) {
 
             string? instanceName = row.GetValueOrDefault("InstanceName") as string;
 
-            if (AcpiThermalZone.TenthKelvinToCelsius(ToDouble(row.GetValueOrDefault("CurrentTemperature")))
-                is not { } celsius) {
-
+            if (AcpiThermalZone.TenthKelvinToCelsius(
+                    ToDouble(row.GetValueOrDefault("CurrentTemperature"))) is not { } celsius) {
                 continue;
             }
 
             sensors.Add(new ThermalSensor {
-                Component = AcpiThermalZone.ClassifyZone(instanceName),
-                ComponentId = string.Empty,
-                SensorName = $"ACPI {AcpiThermalZone.ZoneLabel(instanceName)}",
-                Celsius = celsius,
+                Component       = AcpiThermalZone.ClassifyZone(instanceName),
+                ComponentId     = string.Empty,
+                SensorName      = $"ACPI {AcpiThermalZone.ZoneLabel(instanceName)}",
+                Celsius         = celsius,
                 CriticalCelsius = AcpiThermalZone.TenthKelvinToCelsius(
                     ToDouble(row.GetValueOrDefault("CriticalTripPoint"))),
-                Source = ThermalSource.AcpiThermalZone
+                Source          = ThermalSource.AcpiThermalZone
             });
         }
 
         cached = sensors;
         lastQueryUtc = DateTime.UtcNow;
-
         return sensors;
     }
 
     private static double ToDouble(object? value) => value switch {
-        double d => d,
-        float f => f,
-        int i => i,
-        uint u => u,
-        long l => l,
-        ulong ul => ul,
-        short s => s,
+        double d  => d,
+        float  f  => f,
+        int    i  => i,
+        uint   u  => u,
+        long   l  => l,
+        ulong  ul => ul,
+        short  s  => s,
         ushort us => us,
         string str when double.TryParse(str, out double parsed) => parsed,
         _ => 0

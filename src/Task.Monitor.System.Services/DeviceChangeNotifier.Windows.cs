@@ -114,7 +114,6 @@ public sealed unsafe partial class DeviceChangeNotifier
             }
         }
         catch (Exception ex) {
-            // Never let an exception unwind into the PnP manager's callback.
             TraceEx.WriteLineOnce(nameof(NotificationCallback), ex.ToString());
         }
 

@@ -22,8 +22,6 @@ public partial class StartupService
     private const string ApprovedFolderPath =
         @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
 
-    // Publisher lookups open and read a file's version resource, so the answer is memoised for the
-    // duration of one scan (many entries under one vendor's install folder share a target).
     private readonly Dictionary<string, string?> publisherCache =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -48,28 +46,63 @@ public partial class StartupService
         return specs;
     }
 
-    // ---- Registry Run / RunOnce ----------------------------------------------------------------
-
     private void ScanRunKeys(StartupSpecs specs)
     {
-        ScanRunKey(specs, RegistryHive.LocalMachine, RegistryView.Registry64,
-            StartupEntryScope.Machine, RunKeyPath, ApprovedRunPath, StartupEntrySource.RunKey);
-        ScanRunKey(specs, RegistryHive.LocalMachine, RegistryView.Registry64,
-            StartupEntryScope.Machine, RunOnceKeyPath, ApprovedRunPath, StartupEntrySource.RunOnceKey);
+        ScanRunKey(
+            specs, 
+            RegistryHive.LocalMachine, 
+            RegistryView.Registry64,
+            StartupEntryScope.Machine, 
+            RunKeyPath, 
+            ApprovedRunPath, 
+            StartupEntrySource.RunKey);
+        
+        ScanRunKey(
+            specs, 
+            RegistryHive.LocalMachine, 
+            RegistryView.Registry64,
+            StartupEntryScope.Machine, 
+            RunOnceKeyPath, 
+            ApprovedRunPath, 
+            StartupEntrySource.RunOnceKey);
 
-        // The 32-bit registry view is a distinct set of keys only on a 64-bit OS; on 32-bit
-        // Windows it aliases the same key and would double every entry.
         if (Environment.Is64BitOperatingSystem) {
-            ScanRunKey(specs, RegistryHive.LocalMachine, RegistryView.Registry32,
-                StartupEntryScope.Machine, RunKeyPath, ApprovedRun32Path, StartupEntrySource.RunKey);
-            ScanRunKey(specs, RegistryHive.LocalMachine, RegistryView.Registry32,
-                StartupEntryScope.Machine, RunOnceKeyPath, ApprovedRun32Path, StartupEntrySource.RunOnceKey);
+            ScanRunKey(
+                specs, 
+                RegistryHive.LocalMachine, 
+                RegistryView.Registry32,
+                StartupEntryScope.Machine, 
+                RunKeyPath, 
+                ApprovedRun32Path, 
+                StartupEntrySource.RunKey);
+            
+            ScanRunKey(
+                specs, 
+                RegistryHive.LocalMachine, 
+                RegistryView.Registry32,
+                StartupEntryScope.Machine, 
+                RunOnceKeyPath, 
+                ApprovedRun32Path, 
+                StartupEntrySource.RunOnceKey);
         }
 
-        ScanRunKey(specs, RegistryHive.CurrentUser, RegistryView.Default,
-            StartupEntryScope.User, RunKeyPath, ApprovedRunPath, StartupEntrySource.RunKey);
-        ScanRunKey(specs, RegistryHive.CurrentUser, RegistryView.Default,
-            StartupEntryScope.User, RunOnceKeyPath, ApprovedRunPath, StartupEntrySource.RunOnceKey);
+        ScanRunKey(
+            specs, 
+            RegistryHive.CurrentUser, 
+            RegistryView.Default,
+            StartupEntryScope.User, 
+            RunKeyPath, 
+            ApprovedRunPath, 
+            StartupEntrySource.RunKey);
+        
+        ScanRunKey(
+            specs, 
+            RegistryHive.CurrentUser, 
+            RegistryView.Default,
+            StartupEntryScope.User, 
+            RunOnceKeyPath, 
+            ApprovedRunPath, 
+            StartupEntrySource.RunOnceKey);
     }
 
     private void ScanRunKey(
@@ -105,11 +138,11 @@ public partial class StartupService
             }
 
             StartupEntry entry = new() {
-                Name = valueName,
+                Name    = valueName,
                 Command = Environment.ExpandEnvironmentVariables(rawCommand),
-                Source = source,
-                Scope = scope,
-                Origin = origin
+                Source  = source,
+                Scope   = scope,
+                Origin  = origin
             };
 
             (entry.State, entry.DisabledOnUtc) = ReadApprovedState(approvedKey, valueName);
@@ -119,16 +152,21 @@ public partial class StartupService
         }
     }
 
-    // ---- Startup folders ---------------------------------------------------------------------
-
     private void ScanStartupFolders(StartupSpecs specs)
     {
-        using RegistryKey approvedBase =
-            RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+        using RegistryKey approvedBase = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
         using RegistryKey? approvedKey = approvedBase.OpenSubKey(ApprovedFolderPath);
 
-        ScanStartupFolder(specs, Environment.SpecialFolder.CommonStartup, StartupEntryScope.Machine, approvedKey);
-        ScanStartupFolder(specs, Environment.SpecialFolder.Startup, StartupEntryScope.User, approvedKey);
+        ScanStartupFolder(
+            specs, 
+            Environment.SpecialFolder.CommonStartup, 
+            StartupEntryScope.Machine, 
+            approvedKey);
+        
+        ScanStartupFolder(specs, 
+            Environment.SpecialFolder.Startup, 
+            StartupEntryScope.User, 
+            approvedKey);
     }
 
     private void ScanStartupFolder(
@@ -161,9 +199,9 @@ public partial class StartupService
             }
 
             StartupEntry entry = new() {
-                Name = Path.GetFileNameWithoutExtension(file),
+                Name   = Path.GetFileNameWithoutExtension(file),
                 Source = StartupEntrySource.StartupFolder,
-                Scope = scope,
+                Scope  = scope,
                 Origin = folderPath
             };
 
@@ -172,12 +210,11 @@ public partial class StartupService
             }
             else {
                 entry.ExecutablePath = file;
-                entry.Command = file;
-                entry.Publisher = ResolvePublisher(file);
+                entry.Command        = file;
+                entry.Publisher      = ResolvePublisher(file);
             }
 
             (entry.State, entry.DisabledOnUtc) = ReadApprovedState(approvedKey, fileName);
-
             specs.Entries.Add(entry);
         }
     }
@@ -190,26 +227,15 @@ public partial class StartupService
         }
 
         entry.ExecutablePath = target.Path;
-        entry.Arguments = target.Arguments.Length > 0 ? target.Arguments : null;
-        entry.Command = target.Arguments.Length > 0
+        entry.Arguments      = target.Arguments.Length > 0 ? target.Arguments : null;
+        entry.Command        = target.Arguments.Length > 0
             ? $"\"{target.Path}\" {target.Arguments}"
             : target.Path;
-        entry.Publisher = ResolvePublisher(target.Path);
+        entry.Publisher      = ResolvePublisher(target.Path);
     }
 
-    // ---- Scheduled tasks -----------------------------------------------------------------------
-
-    // Windows registers dozens of its own maintenance tasks (backup, diagnostics, provisioning,
-    // language components, ...) with Logon or Boot triggers under this folder. They are OS
-    // plumbing, not applications starting themselves up, so they are excluded the way Autoruns'
-    // "hide Microsoft entries" option would - by folder rather than a signature check, since taskmon
-    // has no Authenticode verification interop.
     private const string BuiltInWindowsTaskFolderPrefix = @"\Microsoft\Windows\";
 
-    // Only tasks with a Logon or Boot trigger are shown - those are the ones that actually run at
-    // startup, the same signal Run/RunOnce/StartupFolder entries share by construction. Tasks whose
-    // only triggers are time/event/idle-based belong to the wider Task Scheduler, not "why does
-    // something start when I log in".
     private void ScanScheduledTasks(StartupSpecs specs)
     {
         foreach (ScheduledTasks.TaskRecord record in ScheduledTasks.EnumerateTasks()) {
@@ -224,20 +250,20 @@ public partial class StartupService
             }
 
             StartupEntry entry = new() {
-                Name = record.Name,
+                Name   = record.Name,
                 Source = StartupEntrySource.ScheduledTask,
-                Scope = ResolveScheduledTaskScope(definition),
+                Scope  = ResolveScheduledTaskScope(definition),
                 Origin = record.FolderPath,
-                State = record.Enabled ? StartupEntryState.Enabled : StartupEntryState.Disabled
+                State  = record.Enabled ? StartupEntryState.Enabled : StartupEntryState.Disabled
             };
 
             if (definition.ExecutablePath is { Length: > 0 } executablePath) {
                 entry.ExecutablePath = executablePath;
-                entry.Arguments = definition.Arguments;
-                entry.Command = definition.Arguments is { Length: > 0 }
+                entry.Arguments      = definition.Arguments;
+                entry.Command        = definition.Arguments is { Length: > 0 }
                     ? $"\"{executablePath}\" {definition.Arguments}"
                     : executablePath;
-                entry.Publisher = ResolvePublisher(executablePath) ?? definition.Author;
+                entry.Publisher      = ResolvePublisher(executablePath) ?? definition.Author;
             }
             else {
                 entry.Publisher = definition.Author;
@@ -247,10 +273,6 @@ public partial class StartupService
         }
     }
 
-    // A boot trigger fires before any specific user logs in, so it is a Machine entry regardless of
-    // the account it runs as. A logon trigger scoped to the current user is a User entry; one that
-    // fires for any user (an empty UserId) or for a different named user is treated as Machine, the
-    // same way the all-users Startup folder is.
     private static StartupEntryScope ResolveScheduledTaskScope(ScheduledTaskDefinition definition)
     {
         if (definition.HasBootTrigger) {
@@ -270,13 +292,10 @@ public partial class StartupService
             : StartupEntryScope.Machine;
     }
 
-    // ---- Shared helpers --------------------------------------------------------------------
-
     private static (StartupEntryState State, DateTime? DisabledOnUtc) ReadApprovedState(
-        RegistryKey? approvedKey, string valueName)
+        RegistryKey? approvedKey, 
+        string valueName)
     {
-        // No StartupApproved record means the OS runs the entry, which Task Manager shows as
-        // Enabled.
         return approvedKey?.GetValue(valueName) is byte[] blob
             ? StartupApprovedState.Parse(blob)
             : (StartupEntryState.Enabled, null);
@@ -291,8 +310,8 @@ public partial class StartupService
         }
 
         entry.ExecutablePath = path;
-        entry.Arguments = arguments.Length > 0 ? arguments : null;
-        entry.Publisher = ResolvePublisher(path);
+        entry.Arguments      = arguments.Length > 0 ? arguments : null;
+        entry.Publisher      = ResolvePublisher(path);
     }
 
     private string? ResolvePublisher(string executablePath)
@@ -309,8 +328,8 @@ public partial class StartupService
 
     private static string HiveShortName(RegistryHive hive) => hive switch {
         RegistryHive.LocalMachine => "HKLM",
-        RegistryHive.CurrentUser => "HKCU",
-        _ => hive.ToString()
+        RegistryHive.CurrentUser  => "HKCU",
+                                _ => hive.ToString()
     };
 #endif
 }

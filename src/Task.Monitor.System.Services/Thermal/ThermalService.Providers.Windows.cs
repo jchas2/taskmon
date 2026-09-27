@@ -1,6 +1,7 @@
 #if __WIN32__
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
+using Task.Monitor.System.Services.Thermal.Providers.Windows;
 
 namespace Task.Monitor.System.Services.Thermal;
 

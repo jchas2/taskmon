@@ -31,7 +31,7 @@ public sealed class ServiceController : WorkerService
         ISystemService service = serviceFactory();
 
         if (allServices.Any(srv => srv.GetType() == service.GetType())) {
-            throw new global::System.InvalidOperationException($"Service '{service.GetType()}' is already registered.");
+            throw new InvalidOperationException($"Service '{service.GetType()}' is already registered.");
         }
 
         if (service is WorkerService workerService) {
@@ -58,22 +58,22 @@ public sealed class ServiceController : WorkerService
 
     private SystemSnapshot BuildSnapshot() =>
         new() {
-            Sequence     = Interlocked.Increment(ref sequence),
-            TimestampUtc = DateTime.UtcNow,
-            Cpu          = GetLatestInfo<CpuInfo>(),
-            Memory       = GetLatestInfo<MemoryInfo>(),
-            Gpu          = GetLatestInfo<GpuInfo>(),
-            Disk         = GetLatestInfo<DiskInfo>(),
-            DiskSpace    = GetLatestInfo<DiskSpaceInfo>(),
-            Network      = GetLatestInfo<NetworkInfo>(),
-            Processes    = GetLatestInfo<ProcessInfo>(),
-            Startup      = GetLatestInfo<StartupInfo>(),
+            Sequence        = Interlocked.Increment(ref sequence),
+            TimestampUtc    = DateTime.UtcNow,
+            Cpu             = GetLatestInfo<CpuInfo>(),
+            Memory          = GetLatestInfo<MemoryInfo>(),
+            Gpu             = GetLatestInfo<GpuInfo>(),
+            Disk            = GetLatestInfo<DiskInfo>(),
+            DiskSpace       = GetLatestInfo<DiskSpaceInfo>(),
+            Network         = GetLatestInfo<NetworkInfo>(),
+            Processes       = GetLatestInfo<ProcessInfo>(),
+            Startup         = GetLatestInfo<StartupInfo>(),
             InstalledApps   = GetLatestInfo<InstalledAppsInfo>(),
             WindowsServices = GetLatestInfo<WindowsServicesInfo>(),
-            Drivers      = GetLatestInfo<DriversInfo>(),
-            Thermal      = GetLatestInfo<ThermalInfo>(),
-            Power        = GetLatestInfo<PowerInfo>(),
-            Services     = BuildServiceHealth()
+            Drivers         = GetLatestInfo<DriversInfo>(),
+            Thermal         = GetLatestInfo<ThermalInfo>(),
+            Power           = GetLatestInfo<PowerInfo>(),
+            Services        = BuildServiceHealth()
         };
 
     private ServiceHealth[] BuildServiceHealth()

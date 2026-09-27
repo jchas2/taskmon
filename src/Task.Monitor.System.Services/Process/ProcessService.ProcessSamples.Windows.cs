@@ -14,10 +14,6 @@ public partial class ProcessService
 #if __WIN32__
     private static readonly Dictionary<string, string> userMap = new();
 
-    // Enumerates every process the caller can open. This is the expensive half of a cycle: per pid
-    // it opens the process, resolves its image path, its version resource, its owning SID and its
-    // service registration. Most of that is fixed for the life of the process and is the candidate
-    // for caching against ProcessSampleState later.
     private static unsafe List<ProcessSample> GetProcessSamples()
     {
         List<ProcessSample> samples = new();
@@ -53,9 +49,6 @@ public partial class ProcessService
         return samples;
     }
 
-    // A point lookup for a single process, for detail views that want one process rather than the
-    // published list. Unlike the old implementation this does not run a Pdh query for the process's
-    // gpu time: gpu is joined from GpuService's published per pid projection instead.
     public static unsafe ProcessSample? GetProcessSample(int pid)
     {
         ProcessSample? sample = null;
@@ -127,14 +120,14 @@ public partial class ProcessService
             sample.FileName,
             sample.ProcessName);
 
-        sample.ModuleName = Path.GetFileName(exeFile);
-        sample.IsDaemon = WindowsServiceLookup.GetService((int)entry->th32ProcessID, out WindowsServiceInfo? _);
+        sample.ModuleName    = Path.GetFileName(exeFile);
+        sample.IsDaemon      = WindowsServiceLookup.GetService((int)entry->th32ProcessID, out WindowsServiceInfo? _);
         sample.IsLowPriority = entry->pcPriClassBase < 8;
-        sample.UserName = GetProcessUserName(processHandle);
-        sample.CmdLine = GetProcessCommandLine((int)entry->th32ProcessID, sample.FileName);
-        sample.ThreadCount = (int)entry->cntThreads;
-        sample.HandleCount = 0;
-        sample.BasePriority = entry->pcPriClassBase;
+        sample.UserName      = GetProcessUserName(processHandle);
+        sample.CmdLine       = GetProcessCommandLine((int)entry->th32ProcessID, sample.FileName);
+        sample.ThreadCount   = (int)entry->cntThreads;
+        sample.HandleCount   = 0;
+        sample.BasePriority  = entry->pcPriClassBase;
 
         PsApi.PROCESS_MEMORY_COUNTERS memCounters = new();
         GetProcessMemCounters(hProcess, &memCounters);
@@ -214,12 +207,12 @@ public partial class ProcessService
         out long userTime)
     {
         MinWinBase.FILETIME creationFileTime = new();
-        MinWinBase.FILETIME exitFileTime = new();
-        MinWinBase.FILETIME kernelFileTime = new();
-        MinWinBase.FILETIME userFileTime = new();
+        MinWinBase.FILETIME exitFileTime     = new();
+        MinWinBase.FILETIME kernelFileTime   = new();
+        MinWinBase.FILETIME userFileTime     = new();
 
         kernelTime = 0;
-        userTime = 0;
+        userTime   = 0;
 
         if (!Kernel32.GetProcessTimes(hProcess,
             &creationFileTime,
@@ -232,7 +225,7 @@ public partial class ProcessService
         }
 
         kernelTime = kernelFileTime.ToLong();
-        userTime = userFileTime.ToLong();
+        userTime   = userFileTime.ToLong();
     }
 
     private static unsafe string GetProcessPath(nint hProcess, uint flags = Kernel32.PROCESS_NAME_WIN32)
@@ -316,8 +309,6 @@ public partial class ProcessService
             return null;
         }
 
-        // Disposed rather than left to the finaliser. One token is opened per process per cycle, so
-        // several hundred finalisable handles per tick is avoidable pressure.
         using (tokenHandle) {
             return GetProcessTokenSid(tokenHandle, out SecurityIdentifier sid)
                 ? sid

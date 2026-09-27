@@ -18,6 +18,7 @@
 
     <ItemGroup>
       <Folder Include="Power\Providers\MacOS\" />
+      <Folder Include="Thermal\Providers\MacOS\" />
     </ItemGroup>
 
 </Project>

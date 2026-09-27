@@ -7,12 +7,6 @@ namespace Task.Monitor.System.Services.Process;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-// Maps a pid to the Windows service running in it, so a process can be reported as a daemon and
-// labelled with the service's display name rather than its executable name.
-//
-// The map is rebuilt on a slow cadence rather than once at startup. Enumerating the service control
-// manager is far too expensive to do per process per cycle, but building it once left every service
-// started after taskmon permanently unidentified.
 internal static class WindowsServiceLookup
 {
 #if __WIN32__
@@ -23,24 +17,20 @@ internal static class WindowsServiceLookup
     private static bool refreshRequested;
     private static bool attempted;
 
-    // Counts successful rebuilds. Exposed so the cadence can be asserted directly rather than
-    // inferred from timing, and useful when tracing why a daemon label looks stale.
     internal static int RebuildCount { get; private set; }
 
-    // How many pids the map currently resolves. Diagnostic, and lets a test skip the staleness
-    // case on a machine where no service handle can be opened at all.
     internal static int MappedServiceCount
     {
-        get { lock (criticalSection) { return serviceMap.Count; } }
+        get {
+            lock (criticalSection) {
+                return serviceMap.Count;
+            }
+        }
     }
 
-    // Called once at the start of a sampling cycle, before the enumeration that will query the map
-    // several hundred times, so the map cannot change underneath a single cycle's results.
     internal static void RefreshIfDue()
     {
         lock (criticalSection) {
-            // Nothing built yet. The first GetService of the cycle builds it, and the interval
-            // starts from there.
             if (!attempted) {
                 return;
             }
@@ -54,7 +44,6 @@ internal static class WindowsServiceLookup
         }
     }
 
-    // Called at the end of a sampling cycle with the pids that were alive during it.
     internal static void RequestRefreshIfStale(ICollection<int> livePids)
     {
         lock (criticalSection) {
@@ -69,10 +58,6 @@ internal static class WindowsServiceLookup
     public static bool GetService(int pid, out WindowsServiceInfo? service)
     {
         lock (criticalSection) {
-            // Built on first use rather than at construction, and only ever attempted once here:
-            // a machine on which no service can be opened would otherwise re-enumerate the whole
-            // service control manager for every process, every cycle. A failed build is retried on
-            // the normal cadence instead.
             if (!attempted) {
                 RebuildServiceMap();
             }
@@ -97,12 +82,8 @@ internal static class WindowsServiceLookup
     private static void RebuildServiceMap()
     {
         attempted = true;
-
         Dictionary<int, WindowsServiceInfo>? rebuilt = TryBuildServiceMap();
 
-        // A failed rebuild keeps the map that was already there. Clearing first and repopulating
-        // would blank every daemon flag on the machine for a cycle whenever the service control
-        // manager was momentarily unavailable.
         if (rebuilt == null) {
             return;
         }
@@ -137,15 +118,12 @@ internal static class WindowsServiceLookup
                 service.ServiceName,
                 WinService.SERVICE_QUERY_STATUS);
 
-            // Expected without elevation: most service handles cannot be opened, so those services
-            // simply do not appear in the map.
             if (hService == nint.Zero) {
                 PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
                 continue;
             }
 
             int pid = GetServiceProcessId(hService);
-
             WinService.CloseServiceHandle(hService);
 
             if (pid == 0) {
@@ -192,18 +170,10 @@ internal static class WindowsServiceLookup
         return pid;
     }
 
-    // Every service is returned fully populated - Description, StartType, DelayedAutoStart, LogOnAs
-    // and Status - regardless of whether it maps to a running pid, so this is a complete inventory
-    // usable on its own (e.g. by a Services screen), not just the pid-keyed daemon lookup above.
-    // That means opening a second handle per service beyond TryBuildServiceMap's own
-    // SERVICE_QUERY_STATUS handle, but both run on the same slow rebuild cadence, so the extra
-    // Service Control Manager calls are cheap relative to how rarely this runs.
     internal static unsafe WindowsServiceInfo[] GetServices()
     {
         WindowsServiceInfo[] services = [];
 
-        // SC_MANAGER_CONNECT is required to OpenService each service below for its config; plain
-        // enumeration only needs SC_MANAGER_ENUMERATE_SERVICE.
         nint hSCM = WinService.OpenSCManager(
             null!, null!, WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT);
 
@@ -280,9 +250,7 @@ internal static class WindowsServiceLookup
             };
 
             PopulateServiceConfig(hSCM, service);
-
             services[i] = service;
-
             currentPtr = nint.Add(currentPtr, structSize);
         }
 
@@ -291,10 +259,6 @@ internal static class WindowsServiceLookup
         return services;
     }
 
-    // Fills in Description, StartType, DelayedAutoStart and LogOnAs. A service whose handle cannot
-    // be opened (some protected services, without elevation) keeps the Name/DisplayName/Status it
-    // already has from the enumeration and leaves the rest at their defaults - partial data rather
-    // than dropping the service from the list entirely.
     private static void PopulateServiceConfig(nint hSCM, WindowsServiceInfo service)
     {
         nint hService = WinService.OpenService(hSCM, service.ServiceName, WinService.SERVICE_QUERY_CONFIG);
@@ -317,7 +281,11 @@ internal static class WindowsServiceLookup
 
     private static void PopulateStartTypeAndLogOnAs(nint hService, WindowsServiceInfo service)
     {
-        WinService.QueryServiceConfig(hService, nint.Zero, 0, out uint bytesNeeded);
+        WinService.QueryServiceConfig(
+            hService, 
+            nint.Zero, 
+            0, 
+            out uint bytesNeeded);
 
         if (bytesNeeded == 0) {
             return;
@@ -326,7 +294,12 @@ internal static class WindowsServiceLookup
         nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
 
         try {
-            if (!WinService.QueryServiceConfig(hService, buffer, bytesNeeded, out _)) {
+            if (!WinService.QueryServiceConfig(
+                hService, 
+                buffer, 
+                bytesNeeded, 
+                out _)) {
+
                 PInvokeErrorHelpers.TraceOnceOnLastError(
                     $"{nameof(WinService.QueryServiceConfig)}_{service.ServiceName}");
                 return;
@@ -336,7 +309,9 @@ internal static class WindowsServiceLookup
                 Marshal.PtrToStructure<WinService.QUERY_SERVICE_CONFIGW>(buffer);
 
             service.StartType = WindowsServiceConfigMapper.MapStartType((WinService.ServiceStartType)config.dwStartType);
-            service.LogOnAs = string.IsNullOrEmpty(config.lpServiceStartName) ? null : config.lpServiceStartName;
+            service.LogOnAs   = string.IsNullOrEmpty(config.lpServiceStartName) 
+                ? null 
+                : config.lpServiceStartName;
         }
         finally {
             Marshal.FreeHGlobal(buffer);
@@ -346,7 +321,11 @@ internal static class WindowsServiceLookup
     private static void PopulateDescription(nint hService, WindowsServiceInfo service)
     {
         WinService.QueryServiceConfig2(
-            hService, WinService.SERVICE_CONFIG_DESCRIPTION, nint.Zero, 0, out uint bytesNeeded);
+            hService, 
+            WinService.SERVICE_CONFIG_DESCRIPTION, 
+            nint.Zero, 
+            0, 
+            out uint bytesNeeded);
 
         if (bytesNeeded == 0) {
             return;
@@ -356,22 +335,27 @@ internal static class WindowsServiceLookup
 
         try {
             if (!WinService.QueryServiceConfig2(
-                    hService, WinService.SERVICE_CONFIG_DESCRIPTION, buffer, bytesNeeded, out _)) {
+                hService, 
+                WinService.SERVICE_CONFIG_DESCRIPTION, 
+                buffer, 
+                bytesNeeded, 
+                out _)) {
+                
                 return;
             }
 
             WinService.SERVICE_DESCRIPTIONW description =
                 Marshal.PtrToStructure<WinService.SERVICE_DESCRIPTIONW>(buffer);
 
-            service.Description = string.IsNullOrEmpty(description.lpDescription) ? null : description.lpDescription;
+            service.Description = string.IsNullOrEmpty(description.lpDescription) 
+                ? null 
+                : description.lpDescription;
         }
         finally {
             Marshal.FreeHGlobal(buffer);
         }
     }
 
-    // Only queried for an auto-start service - the flag is meaningless for Manual/Disabled/Boot/
-    // System ones, and this saves a call for the majority of services that are not auto-start.
     private static void PopulateDelayedAutoStart(nint hService, WindowsServiceInfo service)
     {
         if (service.StartType != WindowsServiceStartType.AutomaticStart) {
@@ -383,7 +367,12 @@ internal static class WindowsServiceLookup
 
         try {
             if (!WinService.QueryServiceConfig2(
-                    hService, WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, buffer, (uint)size, out _)) {
+                hService, 
+                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
+                buffer, 
+                (uint)size, 
+                out _)) {
+                
                 return;
             }
 
