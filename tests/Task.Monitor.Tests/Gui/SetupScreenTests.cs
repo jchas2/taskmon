@@ -366,7 +366,7 @@ public sealed class SetupScreenTests
 
         Assert.Equal("+ New Layout", rows[0]);
         Assert.Equal(
-            runContext.AppConfig.SummaryLayouts2.Select(l => l.Name).OrderBy(n => n),
+            runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n),
             rows.Skip(1));
         Assert.Equal("All Charts", layoutView.SelectedItem?.Text);
 
@@ -458,7 +458,7 @@ public sealed class SetupScreenTests
         bool handled = false;
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
 
-        Assert.Equal("Disk Read and Write Bytes", runContext.AppConfig.DefaultSummaryLayout2?.Name);
+        Assert.Equal("Disk Read and Write Bytes", runContext.AppConfig.DefaultLayout?.Name);
 
         setupScreen.Unload();
     }
@@ -477,7 +477,7 @@ public sealed class SetupScreenTests
         bool handled = false;
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
 
-        Assert.Equal("All Charts", runContext.AppConfig.DefaultSummaryLayout2?.Name);
+        Assert.Equal("All Charts", runContext.AppConfig.DefaultLayout?.Name);
 
         setupScreen.Unload();
     }

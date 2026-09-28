@@ -23,7 +23,6 @@ public sealed class RunAppAction(RunContext runContext) : IAction
     public int Run()
     {
         ConsoleEx.SetAlternateScreenBuffer();
-
         Control.FocusSelectionColour = runContext.AppConfig.Theme.FocusSelectionColour;
 
         runContext.ServiceController
@@ -43,8 +42,6 @@ public sealed class RunAppAction(RunContext runContext) : IAction
             .AddService(() => new ThermalService())
             .AddService(() => new PowerService());
 
-        // After the chain, so it reaches every service registered above as well as the controller's
-        // own publish cycle. Setup calls the same method when the delay is changed at runtime.
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
 
         ScreenApplication screenApp = new(runContext.Terminal);

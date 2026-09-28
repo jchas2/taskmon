@@ -7,9 +7,7 @@ using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Gui.Controls.Summary2;
 
-// A recursive-split-tree replacement for SummaryControl, built alongside it rather than instead
-// of it (see MainScreen2.UseSummaryControl2) so the existing fixed-grid dashboard stays available
-// and reverting is a one-line change while this is unproven. Renders appConfig.DefaultSummaryLayout2
+// The SUMMARY screen's dashboard: a recursive split tree of panes. Renders appConfig.DefaultLayout
 // (chosen on Setup's LAYOUTS tab, edited in LayoutDesignerScreen), or the built-in example tree if
 // there is none, and rebuilds its panes on Load whenever that default has changed.
 public sealed class SummaryControl2 : Control
@@ -21,10 +19,10 @@ public sealed class SummaryControl2 : Control
 
     private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
 
-    // The layout the panes were built from - compared against appConfig.DefaultSummaryLayout2 on
+    // The layout the panes were built from - compared against appConfig.DefaultLayout on
     // every Load, so a different default chosen in Setup (or the default re-saved from the
     // designer, which AppConfig replaces with a new instance) shows up when this is next shown.
-    private SummaryLayout2? builtFrom;
+    private SummaryControlLayout? builtFrom;
 
     private SystemSnapshot? snapshot;
     private int? focusedPaneId;
@@ -45,7 +43,7 @@ public sealed class SummaryControl2 : Control
     // new panes) - the previous panes were already unloaded by this control's own Unload().
     private void BuildPanes()
     {
-        builtFrom = appConfig.DefaultSummaryLayout2;
+        builtFrom = appConfig.DefaultLayout;
         tree = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
 
         Controls.Clear();
@@ -79,8 +77,8 @@ public sealed class SummaryControl2 : Control
         }
     }
 
-    // Same source data/labels as SummaryControl.OnDrawCharts(), fed to whichever chart panes are
-    // actually in the tree - shared with LayoutDesignerScreen via SummaryChartFeeder.
+    // Feeds whichever chart panes are actually in the tree - shared with LayoutDesignerScreen via
+    // SummaryChartFeeder.
     private void OnDrawCharts()
     {
         if (snapshot == null) {
@@ -161,7 +159,7 @@ public sealed class SummaryControl2 : Control
 
     protected override void OnLoad()
     {
-        if (appConfig.DefaultSummaryLayout2 != builtFrom) {
+        if (appConfig.DefaultLayout != builtFrom) {
             BuildPanes();
         }
 

@@ -54,6 +54,61 @@ public class ConfigSectionTests
         Assert.Equal("value1", configSection.GetString("key1"));
     }
 
+    // Regression test: the typed getters used to ignore their default, returning 0 / false for a
+    // missing or unreadable value whatever the caller asked for.
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("not a value")]
+    public void Typed_Getters_Return_The_Callers_Default_For_A_Missing_Or_Unreadable_Value(string? value)
+    {
+        ConfigSection configSection = new("MySection");
+
+        if (value != null) {
+            configSection.Add("int", value).Add("float", value).Add("bool", value);
+        }
+
+        Assert.Equal(1500, configSection.GetInt("int", 1500));
+        Assert.Equal(-1, configSection.GetInt("int", -1));
+        Assert.Equal(0.5f, configSection.GetFloat("float", 0.5f));
+        Assert.True(configSection.GetBool("bool", true));
+        Assert.False(configSection.GetBool("bool", false));
+    }
+
+    [Fact]
+    public void Typed_Getters_Return_A_Readable_Value_Over_The_Default()
+    {
+        ConfigSection configSection = new("MySection");
+        configSection.Add("int", "42").Add("float", "2").Add("bool", "False");
+
+        Assert.Equal(42, configSection.GetInt("int", 1500));
+        Assert.Equal(2f, configSection.GetFloat("float", 0.5f));
+        Assert.False(configSection.GetBool("bool", true));
+    }
+
+    [Fact]
+    public void Remove_Deletes_The_Key()
+    {
+        ConfigSection configSection = new("MySection");
+        configSection.Add("key", "value").Add("other", "kept");
+
+        configSection.Remove("key");
+
+        Assert.False(configSection.Contains("key"));
+        Assert.Equal("kept", configSection.GetString("other"));
+    }
+
+    [Fact]
+    public void Remove_Of_A_Missing_Key_Does_Nothing()
+    {
+        ConfigSection configSection = new("MySection");
+        configSection.Add("key", "value");
+
+        configSection.Remove("missing");
+
+        Assert.Equal("value", configSection.GetString("key"));
+    }
+
     [Fact]
     public void Should_Return_True_When_Key_Exists()
     {

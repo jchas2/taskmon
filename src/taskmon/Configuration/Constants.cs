@@ -5,7 +5,8 @@ public sealed class Constants
     public const string AppName = "taskmon";
     public const string ThemeDirectory = "themes";
     public const string ThemeExtension = ".theme";
-    public const string LayoutDirectory = "layouts";
+    // Not "layouts": that is version 1's folder of fixed-grid layouts, which this version leaves alone.
+    public const string LayoutDirectory = "summary-layouts";
     public const string LayoutExtension = ".layout";
     
     public sealed class Sections
@@ -43,7 +44,8 @@ public sealed class Constants
         public const string ColourMode = "colour-mode";
         public const string ConfirmTaskDelete = "confirm-task-delete";
         public const string DefaultTheme = "default-theme";
-        public const string DefaultLayout = "default-layout";
+        public const string DefaultSummaryLayout = "default-summary-layout";
+        // Where earlier version 2 builds stored the default layout; moved to DefaultSummaryLayout on load.
         public const string DefaultSummaryLayout2 = "default-summary-layout2";
         public const string HighlightDaemons = "highlight-daemons";
         public const string HighlightStatsColUpdate = "highlight-stats-col-update";
@@ -59,7 +61,6 @@ public sealed class Constants
         public const string ShowMetreGpuMemNumerically = "show-metre-gpu-mem-numerically";
         public const string ShowMetreNetworkNumerically = "show-metre-network-numerically";
         public const string ShowYAxisScale = "show-y-axis-scale";
-        public const string UseLargeCharts = "use-large-charts";
         public const string UseIrixCpuReporting = "use-irix-cpu-reporting";
 
         // Theme keys.
@@ -143,15 +144,9 @@ public sealed class Constants
         public const string CommandBackground = "command.background";
         public const string CommandForeground = "command.foreground";
         
-        // Layout keys.
-        public const string Ratio = "ratio";
-        public const string NumRows = "num-rows";
-        public const string NumCols = "num-cols";
-        public const string Charts = "charts";
-
-        // SummaryLayout2 (recursive split-tree) keys. Shares the layouts folder and .layout
-        // extension with the fixed-grid Layout format above - LayoutType is what tells the two
-        // apart (see SummaryLayout2.IsTreeLayout / AppConfig.LoadLayouts).
+        // SummaryControlLayout (recursive split-tree) keys. LayoutType is what tells a tree layout
+        // apart from a version 1 fixed-grid layout file, which is no longer loaded (see
+        // SummaryControlLayout.IsTreeLayout / AppConfig.LoadLayouts).
         public const string LayoutType = "layout-type";
         public const string SummaryRoot = "root";
         public const string SummaryNodes = "nodes";

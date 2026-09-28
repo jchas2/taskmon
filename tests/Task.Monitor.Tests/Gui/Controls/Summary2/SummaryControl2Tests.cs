@@ -165,8 +165,8 @@ public sealed class SummaryControl2Tests
         Assert.Equal(9, ctrl.Controls.Count); // All Charts: 8 charts + the process list
         ctrl.Unload();
 
-        runContext.AppConfig.DefaultSummaryLayout2 =
-            runContext.AppConfig.SummaryLayouts2.Single(l => l.Name == "Cpu and Memory");
+        runContext.AppConfig.DefaultLayout =
+            runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
 
         ctrl.Load();
         Assert.Equal(3, ctrl.Controls.Count); // Cpu, Memory, the process list
@@ -276,7 +276,7 @@ public sealed class SummaryControl2Tests
     {
         // The pane count below is the built-in example tree's (Cpu, Memory, Gpu, Process) - clear
         // the configured default so that's the tree loaded, not the shipped 9-pane "All Charts".
-        runContext.AppConfig.DefaultSummaryLayout2 = null;
+        runContext.AppConfig.DefaultLayout = null;
 
         ForwardingTerminal terminal = new(runContext.Terminal);
         Screen screen = new(terminal) { Width = 120, Height = 40 };
@@ -372,7 +372,7 @@ public sealed class SummaryControl2Tests
         (int cpuCoresId, _) = tree.Split(tree.RootId, Orientation.Row);
         tree.Nodes[cpuCoresId].ControlType = PaneControlType.CpuCores;
 
-        UseSummaryLayout(SummaryLayout2.FromTree("CpuCores Border Test", tree));
+        UseSummaryLayout(SummaryControlLayout.FromTree("CpuCores Border Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -393,14 +393,14 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
-    // AppConfig only takes a default layout it already knows about, and SaveSummaryLayout2 needs a
+    // AppConfig only takes a default layout it already knows about, and SaveLayout needs a
     // real config directory - so the layout is added to its list directly.
-    private void UseSummaryLayout(SummaryLayout2 layout)
+    private void UseSummaryLayout(SummaryControlLayout layout)
     {
         FieldInfo? field = typeof(AppConfig).GetField(
-            "allSummaryLayouts2", BindingFlags.NonPublic | BindingFlags.Instance);
+            "allLayouts", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        ((List<SummaryLayout2>)field!.GetValue(runContext.AppConfig)!).Add(layout);
-        runContext.AppConfig.DefaultSummaryLayout2 = layout;
+        ((List<SummaryControlLayout>)field!.GetValue(runContext.AppConfig)!).Add(layout);
+        runContext.AppConfig.DefaultLayout = layout;
     }
 }

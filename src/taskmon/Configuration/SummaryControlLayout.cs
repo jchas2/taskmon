@@ -4,11 +4,9 @@ using Task.Monitor.System.Configuration;
 
 namespace Task.Monitor.Configuration;
 
-// The persisted (.layout file) form of a SummaryLayoutTree - parallel to Layout (the fixed-grid
-// format) rather than replacing it, so existing grid .layout files keep parsing exactly as
-// before. Both live in the same layouts folder with the same .layout extension; LayoutType is
-// what tells a parsed ConfigSection apart as one or the other (see IsTreeLayout and
-// AppConfig.LoadLayouts).
+// The persisted (.layout file) form of a SummaryLayoutTree, the layout SummaryControl2 renders.
+// Version 1 fixed-grid .layout files share the extension; LayoutType is what tells a tree layout
+// apart from one of those, which is no longer loaded (see IsTreeLayout and AppConfig.LoadLayouts).
 //
 // A tree round-trips as (using "," between a node's own fields and "+" between the entries of a
 // Process pane's column list - ';' is a comment marker to ConfigParser, so it can't be used here):
@@ -19,7 +17,7 @@ namespace Task.Monitor.Configuration;
 //   node.0=split,row,0.5,1,2
 //   node.1=pane,cpu
 //   node.2=pane,process,process+pid+cpu+mem
-public sealed class SummaryLayout2
+public sealed class SummaryControlLayout
 {
     private const string LayoutTypeTree = "tree";
     private const char FieldSeparator = ',';
@@ -27,16 +25,19 @@ public sealed class SummaryLayout2
 
     private ConfigSection? layoutSection;
 
-    public SummaryLayout2() { }
+    public SummaryControlLayout() { }
 
-    public SummaryLayout2(ConfigSection configSection) => layoutSection = configSection;
+    public SummaryControlLayout(ConfigSection configSection) => layoutSection = configSection;
 
     public string Name => layoutSection?.Name ?? string.Empty;
 
+    // Shipped with the app as an embedded resource, rather than saved from the layout designer.
+    public bool IsBuiltIn { get; init; }
+
     public void Update(ConfigSection configSection) => layoutSection = configSection;
 
-    // False for a section with no layout-type key (an ordinary grid Layout file) or any value
-    // other than "tree" - what keeps the two layout kinds from being misparsed as one another.
+    // False for a section with no layout-type key (a version 1 fixed-grid layout file) or any
+    // value other than "tree" - what keeps a version 1 file from being misread as a tree.
     public bool IsTreeLayout =>
         layoutSection?.GetString(Constants.Keys.LayoutType, string.Empty) == LayoutTypeTree;
 
@@ -122,7 +123,7 @@ public sealed class SummaryLayout2
         return result == 0 ? null : result;
     }
 
-    public static SummaryLayout2 FromTree(string name, SummaryLayoutTree tree)
+    public static SummaryControlLayout FromTree(string name, SummaryLayoutTree tree)
     {
         ConfigSection section = new(name);
 
@@ -134,7 +135,7 @@ public sealed class SummaryLayout2
             section.Add($"{Constants.Keys.SummaryNodePrefix}{id}", SerializeNode(node));
         }
 
-        return new SummaryLayout2(section);
+        return new SummaryControlLayout(section);
     }
 
     private static string SerializeNode(SummaryLayoutNode node) =>

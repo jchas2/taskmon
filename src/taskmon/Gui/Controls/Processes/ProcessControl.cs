@@ -268,7 +268,7 @@ public sealed partial class ProcessControl : Control
 
     // ProcessControl itself draws no border - whichever of sortView/processView is currently
     // active is the actual bordered, focusable panel - so a SetFocus() call on this composite
-    // (e.g. from a parent like SummaryControl) needs to be redirected down to it.
+    // (e.g. from a parent like SummaryControl2) needs to be redirected down to it.
     protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;

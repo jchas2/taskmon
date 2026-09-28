@@ -383,9 +383,9 @@ public class SetupScreen : Screen
         // saved from the designer - with the one currently in use highlighted.
         layoutView.Items.Add(new ListViewItem(NewLayoutRow));
 
-        string? defaultLayoutName = runContext.AppConfig.DefaultSummaryLayout2?.Name;
+        string? defaultLayoutName = runContext.AppConfig.DefaultLayout?.Name;
 
-        foreach (string name in runContext.AppConfig.SummaryLayouts2.Select(l => l.Name).OrderBy(n => n)) {
+        foreach (string name in runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n)) {
             layoutView.Items.Add(new ListViewItem(name));
 
             if (name.Equals(defaultLayoutName, StringComparison.CurrentCultureIgnoreCase)) {
@@ -441,11 +441,11 @@ public class SetupScreen : Screen
         }
 
         // The "+ New Layout" row matches no layout, so leaving it highlighted keeps the current one.
-        SummaryLayout2? chosenLayout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(
+        SummaryControlLayout? chosenLayout = runContext.AppConfig.Layouts.FirstOrDefault(
             l => l.Name.Equals(layoutView.SelectedItem?.Text, StringComparison.CurrentCultureIgnoreCase));
 
         if (chosenLayout != null) {
-            runContext.AppConfig.DefaultSummaryLayout2 = chosenLayout;
+            runContext.AppConfig.DefaultLayout = chosenLayout;
         }
 
         runContext.AppConfig.MetreStyle = Enum.GetValues<MetreControlStyle>()
@@ -657,7 +657,7 @@ public class SetupScreen : Screen
     // nothing here.
     private void OpenLayoutDesigner(string? layoutName)
     {
-        SummaryLayout2? layout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(
+        SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(
             l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
         LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();

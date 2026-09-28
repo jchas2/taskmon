@@ -161,13 +161,11 @@ public sealed class TaskMonApp(RunContext runContext)
                 ? (Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
                 : (Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
             
-            // The shipped layouts are SummaryLayout2 trees (what the SUMMARY screen's
-            // SummaryControl2 renders), not grid Layouts, so look the name up among those.
-            SummaryLayout2? layout = runContext.AppConfig.SummaryLayouts2.FirstOrDefault(l =>
+            SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
                     l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
             if (layout != null) {
-                runContext.AppConfig.DefaultSummaryLayout2 = layout;
+                runContext.AppConfig.DefaultLayout = layout;
                 runContext.AppConfig.SortColumn = sortCol;
             }
             else {

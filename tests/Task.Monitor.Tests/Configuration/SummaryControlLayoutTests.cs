@@ -4,13 +4,34 @@ using Task.Monitor.System.Configuration;
 
 namespace Task.Monitor.Tests.Configuration;
 
-public sealed class SummaryLayout2Tests
+public sealed class SummaryControlLayoutTests
 {
+    // Regression test: with no root= line the root used to come back as node 0 whatever the
+    // file's node ids were - ConfigSection.GetInt ignored the first-node default - leaving a tree
+    // rooted at a node that doesn't exist.
+    [Fact]
+    public void ToTree_Without_A_Root_Key_Roots_The_Tree_At_The_First_Node()
+    {
+        ConfigSection section = new ConfigSection("No Root")
+            .Add(Constants.Keys.LayoutType, "tree")
+            .Add(Constants.Keys.SummaryNodes, "3,4,5")
+            .Add($"{Constants.Keys.SummaryNodePrefix}3", "split,Row,0.5,4,5")
+            .Add($"{Constants.Keys.SummaryNodePrefix}4", "pane,Cpu")
+            .Add($"{Constants.Keys.SummaryNodePrefix}5", "pane,Memory");
+
+        SummaryLayoutTree tree = new SummaryControlLayout(section).ToTree();
+
+        Assert.Equal(3, tree.RootId);
+        Assert.Equal(
+            [PaneControlType.Cpu, PaneControlType.Memory],
+            tree.Panes().Select(pane => pane.ControlType).ToArray());
+    }
+
     [Fact]
     public void FromTree_Then_ToTree_Round_Trips_The_Example_Tree()
     {
         SummaryLayoutTree original = SummaryLayoutTree.CreateExample();
-        SummaryLayout2 layout = SummaryLayout2.FromTree("My Dashboard", original);
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("My Dashboard", original);
 
         SummaryLayoutTree roundTripped = layout.ToTree();
 
@@ -38,12 +59,12 @@ public sealed class SummaryLayout2Tests
         SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
             [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.CpuCores }], rootId: 0);
 
-        string iniText = SummaryLayout2.FromTree("Cores", original).ToString();
+        string iniText = SummaryControlLayout.FromTree("Cores", original).ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
 
-        SummaryLayoutTree tree = new SummaryLayout2(parser.Sections[0]).ToTree();
+        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
         Assert.Equal(PaneControlType.CpuCores, Assert.Single(tree.Panes()).ControlType);
     }
@@ -55,13 +76,13 @@ public sealed class SummaryLayout2Tests
     public void ToString_Output_Reparses_To_An_Equivalent_Tree()
     {
         SummaryLayoutTree original = SummaryLayoutTree.CreateExample();
-        SummaryLayout2 layout = SummaryLayout2.FromTree("My Dashboard", original);
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("My Dashboard", original);
 
         string iniText = layout.ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
-        SummaryLayout2 reparsed = new(parser.Sections[0]);
+        SummaryControlLayout reparsed = new(parser.Sections[0]);
 
         Assert.Equal("My Dashboard", reparsed.Name);
         Assert.True(reparsed.IsTreeLayout);
@@ -85,7 +106,7 @@ public sealed class SummaryLayout2Tests
             .Add("num-rows", "2")
             .Add("num-cols", "4");
 
-        SummaryLayout2 layout = new(gridSection);
+        SummaryControlLayout layout = new(gridSection);
 
         Assert.False(layout.IsTreeLayout);
     }
@@ -94,7 +115,7 @@ public sealed class SummaryLayout2Tests
     public void IsTreeLayout_Is_False_For_An_Unrecognised_LayoutType_Value()
     {
         ConfigSection section = new ConfigSection("Something Else").Add("layout-type", "grid");
-        SummaryLayout2 layout = new(section);
+        SummaryControlLayout layout = new(section);
 
         Assert.False(layout.IsTreeLayout);
     }
@@ -102,7 +123,7 @@ public sealed class SummaryLayout2Tests
     [Fact]
     public void ToTree_With_No_Backing_Section_Falls_Back_To_The_Example_Tree()
     {
-        SummaryLayout2 layout = new();
+        SummaryControlLayout layout = new();
 
         SummaryLayoutTree tree = layout.ToTree();
 
@@ -113,7 +134,7 @@ public sealed class SummaryLayout2Tests
     public void ToTree_With_No_Node_Keys_Falls_Back_To_The_Example_Tree()
     {
         ConfigSection section = new ConfigSection("Empty").Add("layout-type", "tree");
-        SummaryLayout2 layout = new(section);
+        SummaryControlLayout layout = new(section);
 
         SummaryLayoutTree tree = layout.ToTree();
 
@@ -123,7 +144,7 @@ public sealed class SummaryLayout2Tests
     [Fact]
     public void Name_Reflects_The_Backing_Sections_Name()
     {
-        SummaryLayout2 layout = SummaryLayout2.FromTree("Custom Name", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Custom Name", SummaryLayoutTree.CreateExample());
 
         Assert.Equal("Custom Name", layout.Name);
     }

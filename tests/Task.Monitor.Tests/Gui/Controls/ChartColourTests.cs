@@ -1,7 +1,6 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.Performance;
-using Task.Monitor.Gui.Controls.Summary;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System;
@@ -67,11 +66,6 @@ public sealed class ChartColourTests
     public void PerformanceControl_Charts_Use_The_Chart_Colours() =>
         AssertChartsUseChartColours(Loaded(
             new PerformanceControl(runContext.ServiceController, Terminal, runContext.AppConfig)));
-
-    [Fact]
-    public void SummaryControl_Charts_Use_The_Chart_Colours() =>
-        AssertChartsUseChartColours(Loaded(
-            new SummaryControl(runContext.ServiceController, Terminal, runContext.AppConfig)));
 
     [Fact]
     public void SummaryControl2_Charts_Use_The_Chart_Colours() =>

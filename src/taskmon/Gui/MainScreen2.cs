@@ -8,7 +8,6 @@ using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
-using Task.Monitor.Gui.Controls.Summary;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.Gui.Controls.Thermals;
@@ -28,11 +27,7 @@ public sealed class MainScreen2 : Screen
     private readonly BannerControl menuBannerControl;
     private readonly BannerControl bannerControl;
     private readonly HeaderControl2 headerControl;
-
-    // Flip to false to revert to the original fixed-grid SummaryControl while SummaryControl2's
-    // recursive split-tree layout is unproven - see the Summary2 design plan.
-    private const bool UseSummaryControl2 = true;
-    private readonly Control activeSummaryControl;
+    private readonly SummaryControl2 summaryControl;
 
     private readonly PerformanceControl performanceControl;
     private readonly ProcessesControl processesControl;
@@ -86,21 +81,13 @@ public sealed class MainScreen2 : Screen
             TabStop = false
         };
 
-        activeSummaryControl = UseSummaryControl2
-            ? new SummaryControl2(
-                runContext.ServiceController,
-                runContext.Terminal,
-                runContext.AppConfig) {
-                TabStop = true,
-                TabIndex = 2
-            }
-            : new SummaryControl(
-                runContext.ServiceController,
-                runContext.Terminal,
-                runContext.AppConfig) {
-                TabStop = true,
-                TabIndex = 2
-            };
+        summaryControl = new SummaryControl2(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            TabStop = true,
+            TabIndex = 2
+        };
 
         performanceControl = new PerformanceControl(
             runContext.ServiceController,
@@ -187,7 +174,7 @@ public sealed class MainScreen2 : Screen
             .Add(menuBannerControl)
             .Add(bannerControl)
             .Add(headerControl)
-            .Add(activeSummaryControl)
+            .Add(summaryControl)
             .Add(performanceControl)
             .Add(processesControl)
             .Add(thermalsControl)
@@ -200,7 +187,7 @@ public sealed class MainScreen2 : Screen
             .Add(footerControl);
 
         menuControls = new List<Control> {
-            activeSummaryControl,
+            summaryControl,
             performanceControl,
             processesControl,
             thermalsControl,
@@ -212,7 +199,7 @@ public sealed class MainScreen2 : Screen
             diskSpaceControl
         };
         
-        activeControl = activeSummaryControl;
+        activeControl = summaryControl;
         focusedControl = menuControl;
     } 
 
@@ -308,7 +295,7 @@ public sealed class MainScreen2 : Screen
         }
 
         menuControl.MenuItems = new() {
-            new MenuListViewItem(activeSummaryControl, "SUMMARY"),
+            new MenuListViewItem(summaryControl, "SUMMARY"),
             new MenuListViewItem(performanceControl, "PERFORMANCE"),
             new MenuListViewItem(processesControl,   "PROCESSES"),
             new MenuListViewItem(thermalsControl,    "THERMALS"),
@@ -320,7 +307,7 @@ public sealed class MainScreen2 : Screen
             new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
         };
         
-        activeControl = activeSummaryControl;
+        activeControl = summaryControl;
         bannerControl.Text = menuControl.MenuItems[0].Text;
         focusedControl = menuControl;
 

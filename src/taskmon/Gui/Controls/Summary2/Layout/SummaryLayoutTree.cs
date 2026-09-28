@@ -56,7 +56,7 @@ public sealed class SummaryLayoutTree
         return tree;
     }
 
-    // Rebuilds a tree from a flat node list - what SummaryLayout2.ToTree() uses to turn a parsed
+    // Rebuilds a tree from a flat node list - what SummaryControlLayout.ToTree() uses to turn a parsed
     // .layout file back into a tree, since AddNode/RootId are otherwise only ever set by this
     // class itself (CreateExample, and Split/Remove below).
     public static SummaryLayoutTree FromNodes(IEnumerable<SummaryLayoutNode> nodes, int rootId)

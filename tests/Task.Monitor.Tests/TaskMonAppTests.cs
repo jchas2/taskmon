@@ -143,7 +143,7 @@ public class TaskMonAppTests
         bool result = app.ProcessArgs(new[] { arg }, out List<IAction> actions);
 
         Assert.True(result);
-        Assert.Equal(layoutName, runContext.AppConfig.DefaultSummaryLayout2?.Name);
+        Assert.Equal(layoutName, runContext.AppConfig.DefaultLayout?.Name);
         Assert.Equal(sortColumn, runContext.AppConfig.SortColumn);
         Assert.Equal(typeof(RunAppAction), actions[0].GetType());
     }

@@ -486,9 +486,7 @@ control.foreground=#abcdef
         // No fileSystem setup - the on-disk scan is skipped, leaving only the embedded layouts.
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.DoesNotContain(appConfig.Layouts, l => l.Name == name);
-
-        SummaryLayout2 layout = appConfig.SummaryLayouts2.Single(l => l.Name == name);
+        SummaryControlLayout layout = appConfig.Layouts.Single(l => l.Name == name);
         SummaryLayoutTree tree = layout.ToTree();
 
         Assert.Equal(expected, tree.Panes().Select(p => p.ControlType).ToArray());
@@ -503,7 +501,7 @@ control.foreground=#abcdef
     public void Shipped_All_Charts_Reproduces_The_Grid_Geometry()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayoutTree tree = appConfig.SummaryLayouts2.Single(l => l.Name == "All Charts").ToTree();
+        SummaryLayoutTree tree = appConfig.Layouts.Single(l => l.Name == "All Charts").ToTree();
 
         SummaryLayoutRenderer renderer = new();
         renderer.Layout(tree, new Dictionary<int, Task.Monitor.System.Controls.Control>(), 0, 0, 120, 40);
@@ -520,18 +518,15 @@ control.foreground=#abcdef
     }
 
     [Fact]
-    public void DefaultSummaryLayout2_Falls_Back_To_All_Charts_When_None_Is_Configured()
+    public void DefaultLayout_Falls_Back_To_All_Charts_When_None_Is_Configured()
     {
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.Equal("All Charts", appConfig.DefaultSummaryLayout2?.Name);
+        Assert.Equal("All Charts", appConfig.DefaultLayout?.Name);
     }
 
-    // Regression test: a tree .layout file left in the same folder as the fixed-grid ones (by
-    // SaveSummaryLayout2, or on a prior run) must be classified as a SummaryLayouts2 entry, never
-    // as a bogus default-ratio Layout under the same name.
     [Fact]
-    public void LoadLayouts_Custom_Tree_Layout_On_Disk_Is_Loaded_As_SummaryLayout2_Not_Layout()
+    public void LoadLayouts_Loads_A_Custom_Tree_Layout_From_Disk()
     {
         string treeLayoutIni = @"
 [My Dashboard]
@@ -543,15 +538,12 @@ node.1=pane,cpu
 node.2=pane,process,process+pid+cpu+mem
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/layouts/My Dashboard.layout"]);
-        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/layouts/My Dashboard.layout")).Returns(treeLayoutIni);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Dashboard.layout"]);
+        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Dashboard.layout")).Returns(treeLayoutIni);
 
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.Contains(appConfig.SummaryLayouts2, t => t.Name == "My Dashboard");
-        Assert.DoesNotContain(appConfig.Layouts, t => t.Name == "My Dashboard");
-
-        SummaryLayoutTree tree = appConfig.SummaryLayouts2.Single(t => t.Name == "My Dashboard").ToTree();
+        SummaryLayoutTree tree = appConfig.Layouts.Single(t => t.Name == "My Dashboard").ToTree();
         SummaryLayoutNode processPane = tree.Panes().Single(p => p.ControlType == PaneControlType.Process);
 
         Assert.Equal(
@@ -559,47 +551,214 @@ node.2=pane,process,process+pid+cpu+mem
             processPane.ProcessColumns);
     }
 
+    // A version 1 fixed-grid layout file (no layout-type key) copied into the folder is skipped,
+    // not loaded as a tree with default contents.
     [Fact]
-    public void SaveSummaryLayout2_Writes_The_File_And_Adds_It_To_SummaryLayouts2()
+    public void LoadLayouts_Skips_A_Version_1_Grid_Layout_On_Disk()
+    {
+        string gridLayoutIni = @"
+[My Grid]
+ratio=0.6
+num-rows=2
+num-cols=4
+charts=0,1,2,3,4,5,6,7
+";
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Grid.layout"]);
+        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Grid.layout")).Returns(gridLayoutIni);
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.DoesNotContain(appConfig.Layouts, t => t.Name == "My Grid");
+        Assert.Contains(appConfig.Layouts, t => t.Name == "All Charts");
+    }
+
+    [Fact]
+    public void LoadLayouts_Flags_Shipped_Layouts_As_Built_In_And_Custom_Ones_As_Not()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Dashboard.layout"]);
+        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Dashboard.layout")).Returns(TreeLayoutIni("My Dashboard"));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.True(appConfig.Layouts.Single(l => l.Name == "All Charts").IsBuiltIn);
+        Assert.False(appConfig.Layouts.Single(l => l.Name == "My Dashboard").IsBuiltIn);
+    }
+
+    // The file on disk under a shipped layout's name is its deployed copy, so the shipped layout is
+    // what loads - an edited copy doesn't shadow it, the same as a shipped theme.
+    [Theory]
+    [InlineData("/fake/path/summary-layouts/All Charts.layout")]
+    [InlineData("/fake/path/summary-layouts/Renamed File.layout")]
+    public void LoadLayouts_The_Shipped_Layout_Wins_Over_A_File_On_Disk_With_Its_Name(string layoutFile)
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns([layoutFile]);
+        fileSystem.Setup(fs => fs.ReadAllText(layoutFile)).Returns(TreeLayoutIni("All Charts"));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        SummaryControlLayout allCharts = Assert.Single(appConfig.Layouts, l => l.Name == "All Charts");
+        Assert.True(allCharts.IsBuiltIn);
+        Assert.Equal(9, allCharts.ToTree().Panes().Count());
+    }
+
+    [Fact]
+    public void LoadLayouts_Deploys_A_Shipped_Layout_Whose_Copy_On_Disk_Has_Changed()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>())).Returns("[All Charts]\nstale=true\n");
+
+        _ = new AppConfig(fileSystem.Object);
+
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => p.EndsWith($"All Charts{Constants.LayoutExtension}")),
+            It.IsAny<string>()), Times.AtLeastOnce);
+    }
+
+    [Theory]
+    [InlineData("All Charts", Constants.LayoutExtension)]
+    [InlineData("Taskmon Default", Constants.ThemeExtension)]
+    public void Load_Does_Not_Rewrite_A_Shipped_File_Whose_Copy_On_Disk_Is_Unchanged(string name, string extension)
+    {
+        // A first load with nothing on disk captures the text each shipped file is deployed with.
+        Dictionary<string, string> deployed = new();
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<string, string>((path, text) => deployed[path] = text);
+
+        _ = new AppConfig(fileSystem.Object);
+
+        string filePath = deployed.Keys.Single(p => p.EndsWith($"{name}{extension}"));
+
+        // A second load finds that same text on disk, so leaves the file alone.
+        fileSystem.Invocations.Clear();
+        fileSystem.Setup(fs => fs.FileExists(filePath)).Returns(true);
+        fileSystem.Setup(fs => fs.ReadAllText(filePath)).Returns(deployed[filePath]);
+
+        _ = new AppConfig(fileSystem.Object);
+
+        fileSystem.Verify(fs => fs.WriteAllText(filePath, It.IsAny<string>()), Times.Never);
+    }
+
+    // Version 1's layouts folder holds fixed-grid layouts this version can't read. It is left as
+    // it is, so a version 1 install alongside keeps working.
+    [Fact]
+    public void Layouts_Are_Never_Read_From_Or_Written_To_The_Version_1_Layouts_Folder()
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayout2 layout = SummaryLayout2.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample()));
 
-        bool result = appConfig.SaveSummaryLayout2(layout);
+        fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "summary-layouts")), Times.Once);
+        fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "layouts")), Times.Never);
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => Path.GetFileName(Path.GetDirectoryName(p)) == "layouts"),
+            It.IsAny<string>()), Times.Never);
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => p.EndsWith(Path.Combine("summary-layouts", $"Saved Dashboard{Constants.LayoutExtension}"))),
+            It.IsAny<string>()), Times.Once);
+    }
+
+    private AppConfig LoadFromIni(string iniText)
+    {
+        fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
+        fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Returns(iniText);
+
+        return new AppConfig(fileSystem.Object, Config.FromFile(fileSystem.Object, testConfigPath));
+    }
+
+    [Fact]
+    public void The_Default_Layout_Chosen_Under_The_Old_Key_Moves_To_The_New_Key()
+    {
+        AppConfig appConfig = LoadFromIni("[ux]\ndefault-summary-layout2=Cpu and Memory\n");
+
+        Assert.Equal("Cpu and Memory", appConfig.DefaultLayout?.Name);
+        Assert.Contains("default-summary-layout=Cpu and Memory", appConfig.ToString());
+        Assert.DoesNotContain("default-summary-layout2", appConfig.ToString());
+    }
+
+    [Fact]
+    public void The_New_Default_Layout_Key_Wins_Over_The_Old_One()
+    {
+        AppConfig appConfig = LoadFromIni(
+            "[ux]\ndefault-summary-layout=Gpu and Gpu Memory\ndefault-summary-layout2=Cpu and Memory\n");
+
+        Assert.Equal("Gpu and Gpu Memory", appConfig.DefaultLayout?.Name);
+        Assert.DoesNotContain("default-summary-layout2", appConfig.ToString());
+    }
+
+    // Version 1's keys belong to a version 1 install alongside: left alone when present, and not
+    // added to a config that doesn't have them.
+    [Fact]
+    public void Version_1_Layout_Keys_Are_Left_Alone_But_Not_Added()
+    {
+        AppConfig existing = LoadFromIni("[ux]\ndefault-layout=My Grid\nuse-large-charts=True\n");
+
+        Assert.Contains("default-layout=My Grid", existing.ToString());
+        Assert.Contains("use-large-charts=True", existing.ToString());
+        Assert.Equal("All Charts", existing.DefaultLayout?.Name);
+
+        AppConfig fresh = new(fileSystem.Object);
+
+        Assert.DoesNotContain("default-layout=", fresh.ToString());
+        Assert.DoesNotContain("use-large-charts", fresh.ToString());
+    }
+
+    private static string TreeLayoutIni(string name) => $@"
+[{name}]
+layout-type=tree
+root=0
+nodes=0,1,2
+node.0=split,row,0.5,1,2
+node.1=pane,cpu
+node.2=pane,memory
+";
+
+    [Fact]
+    public void SaveLayout_Writes_The_File_And_Adds_It_To_Layouts()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+
+        bool result = appConfig.SaveLayout(layout);
 
         Assert.True(result);
-        Assert.Contains(appConfig.SummaryLayouts2, t => t.Name == "Saved Dashboard");
+        Assert.Contains(appConfig.Layouts, t => t.Name == "Saved Dashboard");
         fileSystem.Verify(fs => fs.WriteAllText(
             It.Is<string>(p => p.EndsWith($"Saved Dashboard{Constants.LayoutExtension}")),
             It.IsAny<string>()), Times.AtLeastOnce);
     }
 
     [Fact]
-    public void DefaultSummaryLayout2_Set_To_Invalid_Layout_Throws_InvalidOperationException()
+    public void DefaultLayout_Set_To_Invalid_Layout_Throws_InvalidOperationException()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayout2 invalid = SummaryLayout2.FromTree("Not Registered", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout invalid = SummaryControlLayout.FromTree("Not Registered", SummaryLayoutTree.CreateExample());
 
-        Assert.Throws<InvalidOperationException>(() => appConfig.DefaultSummaryLayout2 = invalid);
+        Assert.Throws<InvalidOperationException>(() => appConfig.DefaultLayout = invalid);
     }
 
     [Fact]
-    public void DefaultSummaryLayout2_Set_To_A_Saved_Layout_Updates_The_Property()
+    public void DefaultLayout_Set_To_A_Saved_Layout_Updates_The_Property()
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayout2 layout = SummaryLayout2.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
-        appConfig.SaveSummaryLayout2(layout);
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+        appConfig.SaveLayout(layout);
 
-        appConfig.DefaultSummaryLayout2 = layout;
+        appConfig.DefaultLayout = layout;
 
-        Assert.Equal(layout, appConfig.DefaultSummaryLayout2);
+        Assert.Equal(layout, appConfig.DefaultLayout);
     }
 
-    // Regression test: SaveSummaryLayout2 replaces the list entry for a re-saved name, but the
+    // Regression test: SaveLayout replaces the list entry for a re-saved name, but the
     // default kept pointing at the replaced instance - so edits to the layout in use never
     // reached the SUMMARY screen (which rebuilds when the default instance changes).
     [Fact]
@@ -608,12 +767,44 @@ node.2=pane,process,process+pid+cpu+mem
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayout2 original = appConfig.DefaultSummaryLayout2!;
+        SummaryControlLayout original = SummaryControlLayout.FromTree("My Dashboard", SummaryLayoutTree.CreateExample());
+        appConfig.SaveLayout(original);
+        appConfig.DefaultLayout = original;
 
-        SummaryLayout2 edited = SummaryLayout2.FromTree(original.Name, SummaryLayoutTree.CreateExample());
-        appConfig.SaveSummaryLayout2(edited);
+        SummaryControlLayout edited = SummaryControlLayout.FromTree(original.Name, SummaryLayoutTree.CreateEmpty());
+        appConfig.SaveLayout(edited);
 
-        Assert.Same(edited, appConfig.DefaultSummaryLayout2);
+        Assert.Same(edited, appConfig.DefaultLayout);
+    }
+
+    [Fact]
+    public void SaveLayout_Refuses_A_Built_In_Layouts_Name()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        SummaryControlLayout shipped = appConfig.Layouts.Single(l => l.Name == "All Charts");
+        fileSystem.Invocations.Clear();
+
+        bool saved = appConfig.SaveLayout(SummaryControlLayout.FromTree("all charts", SummaryLayoutTree.CreateEmpty()));
+
+        Assert.False(saved);
+        Assert.Same(shipped, appConfig.Layouts.Single(l => l.Name.Equals("All Charts", StringComparison.OrdinalIgnoreCase)));
+        fileSystem.Verify(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("All Charts", true)]
+    [InlineData("all charts", true)]
+    [InlineData("My Dashboard", false)]
+    public void IsBuiltInLayout_Matches_Only_Shipped_Layout_Names(string name, bool expected)
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("My Dashboard", SummaryLayoutTree.CreateExample()));
+
+        Assert.Equal(expected, appConfig.IsBuiltInLayout(name));
     }
 
     [Fact]
@@ -622,10 +813,10 @@ node.2=pane,process,process+pid+cpu+mem
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayout2 original = appConfig.DefaultSummaryLayout2!;
+        SummaryControlLayout original = appConfig.DefaultLayout!;
 
-        appConfig.SaveSummaryLayout2(SummaryLayout2.FromTree("Something Else", SummaryLayoutTree.CreateExample()));
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("Something Else", SummaryLayoutTree.CreateExample()));
 
-        Assert.Same(original, appConfig.DefaultSummaryLayout2);
+        Assert.Same(original, appConfig.DefaultLayout);
     }
 }

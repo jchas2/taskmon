@@ -635,7 +635,7 @@ public sealed class LayoutDesignerScreenTests
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
         Assert.Equal("My Stats", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.SummaryLayouts2, l => l.Name == "My Stats");
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "My Stats");
 
         screen.Unload();
     }
@@ -658,7 +658,7 @@ public sealed class LayoutDesignerScreenTests
 
         Assert.True(handled); // swallowed by the dialog - not left to bubble out and close the screen
         Assert.Null(screen.LayoutName);
-        Assert.DoesNotContain(runContext.AppConfig.SummaryLayouts2, l => l.Name == "Nope");
+        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Nope");
 
         // Back in normal designer mode: arrows move the selection again.
         int before = screen.SelectedNodeId;
@@ -686,7 +686,7 @@ public sealed class LayoutDesignerScreenTests
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
         Assert.Null(screen.LayoutName);
-        Assert.DoesNotContain(runContext.AppConfig.SummaryLayouts2, l => l.Name == "Nope");
+        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Nope");
 
         screen.Unload();
     }
@@ -735,12 +735,12 @@ public sealed class LayoutDesignerScreenTests
         Assert.True(handled);
         Assert.Contains("Save Layout As", CapturedOutput());
         Assert.Contains("Already Named", CapturedOutput()); // the pre-filled field
-        Assert.DoesNotContain(runContext.AppConfig.SummaryLayouts2, l => l.Name == "Already Named"); // nothing saved yet
+        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Already Named"); // nothing saved yet
 
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
         Assert.Equal("Already Named", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.SummaryLayouts2, l => l.Name == "Already Named");
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Already Named");
 
         screen.Unload();
     }
@@ -763,7 +763,70 @@ public sealed class LayoutDesignerScreenTests
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
         Assert.Equal("Original Copy", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.SummaryLayouts2, l => l.Name == "Original Copy");
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Original Copy");
+
+        screen.Unload();
+    }
+
+    // Built-in layouts are read-only, so editing one starts the save from a copy's name.
+    [Fact]
+    public void S_On_A_Built_In_Layout_Prefills_A_Copys_Name_And_Enter_Saves_The_Copy()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
+        Assert.True(builtIn.IsBuiltIn);
+
+        screen.Open(builtIn.ToTree(), builtIn.Name);
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        Assert.Contains("Cpu and Memory Copy", CapturedOutput());
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal("Cpu and Memory Copy", screen.LayoutName);
+        Assert.False(runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory Copy").IsBuiltIn);
+        Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory"));
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Saving_Under_A_Built_In_Layouts_Name_Explains_Why_And_Saves_Nothing()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "All Charts");
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        foreach (char ch in "All Charts") {
+            screen.KeyPressed(Typed(ch), ref handled);
+        }
+
+        // The message box turns off the process-wide Control.RedrawEnabled until it is dismissed -
+        // always put it back, so a failed assertion can't blind every test that runs after this.
+        try {
+            runContextHelper.terminal.Invocations.Clear();
+            screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+            Assert.Contains("is a built-in layout.", CapturedOutput());
+            Assert.Null(screen.LayoutName);
+            Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "All Charts"));
+
+            // OK dismisses it, back to the designer.
+            screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+            Assert.True(Control.RedrawEnabled);
+        }
+        finally {
+            Control.RedrawEnabled = true;
+        }
 
         screen.Unload();
     }

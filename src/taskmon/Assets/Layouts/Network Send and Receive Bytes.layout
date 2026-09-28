@@ -1,5 +1,5 @@
 [Network Send and Receive Bytes]
-; A split tree (see SummaryLayout2). Each node is one of:
+; A split tree (see SummaryControlLayout). Each node is one of:
 ;   split,<Row|Column>,<ratio>,<first>,<second>  - Row = side by side, Column = stacked,
 ;                                                   ratio = the first child's share
 ;   pane,<control>[,<process columns joined with +>]

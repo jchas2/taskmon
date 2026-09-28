@@ -579,6 +579,7 @@ public sealed class LayoutDesignerScreen : Screen
     // Always prompts, pre-filled with the current name once there is one - Enter overwrites it,
     // editing the name saves a copy alongside it. Re-saving silently over the existing name gave
     // no feedback at all (the banner already showed that name), so it looked like S did nothing.
+    // A built-in layout can't be saved over, so editing one pre-fills the name of a copy instead.
     private void SaveLayout()
     {
         Control.RedrawEnabled = false;
@@ -587,7 +588,9 @@ public sealed class LayoutDesignerScreen : Screen
         saveDialog.Height = TextInputDialogControl.PreferredHeight;
         saveDialog.X = X + Math.Max(0, (Width - saveDialog.Width) / 2);
         saveDialog.Y = Y + Math.Max(0, (Height - saveDialog.Height) / 2);
-        saveDialog.SetText(layoutName ?? string.Empty);
+        saveDialog.SetText(layoutName != null && runContext.AppConfig.IsBuiltInLayout(layoutName)
+            ? $"{layoutName} Copy"
+            : layoutName ?? string.Empty);
         saveDialog.Visible = true;
         saveDialog.ShowTextInputDialog();
     }
@@ -617,8 +620,19 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void SaveLayoutAs(string name)
     {
+        if (runContext.AppConfig.IsBuiltInLayout(name)) {
+            // The name on its own line: the longest built-in name fills most of the box's width.
+            ShowMessageBox(
+                "Built-in Layout",
+                $"'{name}'\nis a built-in layout.\nSave it under a new name.",
+                MessageBoxButtons.Ok,
+                () => { });
+
+            return;
+        }
+
         layoutName = name;
-        bool saved = runContext.AppConfig.SaveSummaryLayout2(SummaryLayout2.FromTree(name, tree));
+        bool saved = runContext.AppConfig.SaveLayout(SummaryControlLayout.FromTree(name, tree));
 
         if (!saved) {
             ShowMessageBox(
