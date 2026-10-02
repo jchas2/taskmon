@@ -1,5 +1,5 @@
 using Moq;
-using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.System.Process;
 using Task.Monitor.Tests.Common;
 using Task.Monitor.Tests.Process;

@@ -91,19 +91,12 @@ public sealed partial class ServicesControl
         _ => service.StartType.ToString()
     };
 
-    // Turns the well-known built-in accounts into the names the Services snap-in shows; anything
-    // else (a named user or a domain account) is shown exactly as the Service Control Manager
-    // stores it. An absent value means the service did not specify one, which the OS treats as
-    // LocalSystem.
     private static string DescribeLogOnAs(string? logOnAs)
     {
         if (string.IsNullOrEmpty(logOnAs)) {
             return "Local System";
         }
 
-        // The Service Control Manager is inconsistent about casing here - some services store
-        // "NT AUTHORITY\LocalService", others "NT Authority\LocalService" - so match ignoring case
-        // rather than switching on the literal string.
         if (logOnAs.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)) {
             return "Local System";
         }

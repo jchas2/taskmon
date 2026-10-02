@@ -3,6 +3,7 @@ using System.Linq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;

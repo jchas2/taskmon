@@ -18,29 +18,23 @@ public sealed partial class ProcessControl : Control
 
     private List<ProcessEntry> allProcesses = [];
 
-    // The only system wide figure the rows need, for the memory column's proportion shading. It is
-    // read from the memory service rather than recomputed here, so the process list and the memory
-    // panel shade against the same total.
-    private ulong totalPhysicalMemory;
-
     private ControlMode mode = ControlMode.None;
     private Columns sortColumn;
     private readonly Lock allProcessesLock;
     private bool freezeUpdates = false;
+    private ulong totalPhysicalMemory;
     private int numberOfProcesses = 0;
 
     private const int SortControlWidth = 20;
     private const int ControlGutter = 1;
-
     private const int InvalidSelectedItemIndex = -1;
 
     private int lastKnownProcessId = InvalidSelectedItemIndex;
 
-    public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
+    // TODO: Refactor into common for sharing across all sortable, scrollable lists.
+    public const string DefaultFooterText = "s Sort     ↑ ↓ PgUp PgDn Scroll";
 
-    // Fires on any change to SelectedProcessId - arrow-key movement, Enter, or the highlighted
-    // row shifting underneath the user because of a sort re-publish - unlike ProcessItemSelected,
-    // which only fires on Enter.
+    public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
     public event EventHandler<int>? SelectedProcessIdChanged;
 
     public ProcessControl(
@@ -121,10 +115,6 @@ public sealed partial class ProcessControl : Control
 
     public string FilterText { private get; set; } = string.Empty;
 
-    // Shared by every host (PROCESSES screen, both summary layouts) so the hint can't drift, and
-    // worded like the Startup/Apps/Drivers lists' "r Refresh     ↑ ↓ PgUp PgDn Scroll".
-    public const string DefaultFooterText = "s Sort     ↑ ↓ PgUp PgDn Scroll";
-
     public string FooterText { get; set; } = DefaultFooterText;
 
     public bool IsSortSelectionActive => mode == ControlMode.SortSelection;
@@ -142,10 +132,6 @@ public sealed partial class ProcessControl : Control
     
     public string HeaderText { get; set; } = string.Empty;
 
-    // Null (default) keeps today's behaviour - every ProcessControl reflects the one global
-    // AppConfig.VisibleColumns setting. A caller hosting this in a custom layout pane (e.g.
-    // SummaryControl2) sets this to show its own nominated column subset independent of the
-    // app-wide PROCESSES screen setting.
     public Statistics? VisibleColumnsOverride { get; set; }
 
     // Process and Pid are always shown.
@@ -183,12 +169,6 @@ public sealed partial class ProcessControl : Control
         RaiseSelectedProcessIdChangedIfNeeded();
     }
 
-    // Arrow-key movement inside processView never reaches here: ListView.OnKeyPressed repaints
-    // just the two affected rows directly (RedrawItem()) instead of going through a full Draw()/
-    // OnDraw() of this control, so the check above alone only ever catches snapshot-driven
-    // changes (a new tick, or the sorted order shifting who sits at the selected index). Arrow
-    // moves are covered separately via processView.ItemClicked, which ListView does raise on
-    // every Up/Down/PageUp/PageDown - see ProcessViewOnItemClicked below.
     private void RaiseSelectedProcessIdChangedIfNeeded()
     {
         int currentProcessId = SelectedProcessId;
@@ -209,9 +189,7 @@ public sealed partial class ProcessControl : Control
                     return;
                 }
                 break;
-            // The sort menu is modal: left/right would otherwise bubble out (ProcessesControl ->
-            // info pane, MainScreen2 -> main menu) and leave it open with focus elsewhere. It
-            // only closes via Enter (pick a column), Escape or 's'.
+            // Consume arrow keys when modal sort menu is active.
             case ConsoleKey.LeftArrow or ConsoleKey.RightArrow when mode == ControlMode.SortSelection:
                 handled = true;
                 return;
@@ -231,9 +209,6 @@ public sealed partial class ProcessControl : Control
                 return;
             case ConsoleKey.I:
                 appConfig.UseIrixReporting = !appConfig.UseIrixReporting;
-                // Irix mode is an input to the sampling, so it is set on the service rather than
-                // applied to the figures on their way out. The next published cycle carries
-                // percentages computed the new way.
                 serviceController.GetService<ProcessService>().IrixMode = appConfig.UseIrixReporting;
                 handled = true;
                 return;
@@ -266,9 +241,6 @@ public sealed partial class ProcessControl : Control
         targetControl?.KeyPressed(keyInfo, ref handled);
     }
 
-    // ProcessControl itself draws no border - whichever of sortView/processView is currently
-    // active is the actual bordered, focusable panel - so a SetFocus() call on this composite
-    // (e.g. from a parent like SummaryControl2) needs to be redirected down to it.
     protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -318,9 +290,6 @@ public sealed partial class ProcessControl : Control
         sortView.Y = Y;
         sortView.Width = SortControlWidth;
         sortView.Height = Height;
-        // Inner content width, not the outer control width - the two border columns aren't part of
-        // it (see ProcessInfoControl.OnResize's identical MenuViewWidth - 2). The full outer width
-        // trips DrawItem()'s columnWidth-vs-viewport guard and silently blanks the whole menu.
         sortView.ColumnHeaders[0].Width = SortControlWidth - 2;
 
         int pX = X;
@@ -393,9 +362,6 @@ public sealed partial class ProcessControl : Control
             return;
         }
 
-        // The snapshot carries whatever each service last published, so a cycle can arrive with a
-        // memory reading and no process list, or the other way round. Each is taken when present
-        // and the previous one kept when not.
         if (e.Snapshot.Memory != null) {
             totalPhysicalMemory = e.Snapshot.Memory.Metrics.TotalPhysical;
         }
@@ -414,9 +380,6 @@ public sealed partial class ProcessControl : Control
     private void ProcessViewOnItemSelected(object? sender, ListViewItemEventArgs e) =>
         ProcessItemSelected?.Invoke(sender, e);
 
-    // ListView raises ItemClicked on every arrow-key/PageUp/PageDown move (not just Enter), so
-    // this is what actually catches a highlight change made via the keyboard - see the comment on
-    // RaiseSelectedProcessIdChangedIfNeeded for why the OnDraw() check alone misses it.
     private void ProcessViewOnItemClicked(object? sender, ListViewItemEventArgs e) =>
         RaiseSelectedProcessIdChangedIfNeeded();
 

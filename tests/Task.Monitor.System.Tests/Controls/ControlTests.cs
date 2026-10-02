@@ -26,6 +26,37 @@ public class ControlTests
         Assert.Equal(0, control.Y);
     }
     
+    public static TheoryData<string> BorderedControls() => new() { "ListView", "Chart", "Metre" };
+
+    private static Control CreateBorderedControl(string kind, ISystemTerminal terminal) => kind switch {
+        "ListView" => new Task.Monitor.System.Controls.ListView.ListView(terminal),
+        "Chart"    => new Task.Monitor.System.Controls.Chart.Chart(terminal),
+        _          => new Task.Monitor.System.Controls.Metre.MetreControl(terminal)
+    };
+
+    // Regression test: focus used to be shown by swapping BorderColour to the focus colour, so a
+    // screen re-applying its theme to a focused control (on every Load or Draw) wiped the cue out.
+    // Focus is now applied when the border is drawn; theming only ever sets the unfocused colour.
+    // Reads Control.FocusSelectionColour rather than setting it - it is a process-wide static.
+    [Theory]
+    [MemberData(nameof(BorderedControls))]
+    public void Retheming_A_Focused_Control_Keeps_The_Focus_Colour_Until_Focus_Leaves(string kind)
+    {
+        Color focusColour = Control.FocusSelectionColour;
+        Color themeColour = focusColour.ToArgb() == Color.Teal.ToArgb() ? Color.Olive : Color.Teal;
+
+        Control control = CreateBorderedControl(kind, TerminalMock.Setup().Object);
+        control.Focused = true;
+
+        control.BorderColour = themeColour;
+
+        Assert.Equal(focusColour.ToArgb(), control.DisplayBorderColour.ToArgb());
+
+        control.Focused = false;
+
+        Assert.Equal(themeColour.ToArgb(), control.DisplayBorderColour.ToArgb());
+    }
+
     public static List<Control> GetControlData()
         => new() {
             new Control(SystemTerminalSingleton.Object),

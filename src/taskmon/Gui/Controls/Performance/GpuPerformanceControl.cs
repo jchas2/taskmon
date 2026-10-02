@@ -15,8 +15,6 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 {
-    // Vendor, Description, Adapter Type, Driver Version, Driver Date. Fixed rather than taken from
-    // Items.Count so a resize that lands before the load still sizes correctly.
     private const int SpecsRowCount = 5;
 
     private readonly Lock @lock = new();
@@ -29,9 +27,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
     private GpuInfo? gpuInfo;
     private double? temperature;
     private double? powerWatts;
-
-    // Null renders the machine-wide aggregate (the default). Set to an adapter LUID to render just
-    // that adapter's slice of GpuInfo.Metrics.Devices / GpuInfo.Specs.Devices.
     private long? scopedAdapterLuid;
 
     public void SetScope(long? adapterLuid) => scopedAdapterLuid = adapterLuid;
@@ -65,8 +60,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         };
     }
 
-    // Fed every tick, whether or not this pane is on screen, so the three large charts keep a
-    // gap-free history the same way the nav mini-charts do.
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
@@ -75,8 +68,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             }
 
             gpuInfo = snapshot.Gpu;
+            
             temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
                 ThermalComponent.Gpu, scopedAdapterLuid?.ToString());
+            
             powerWatts = ResolvePower(snapshot);
 
             (GpuDeviceMetrics? device, _, bool render) = ResolveScope();
@@ -86,14 +81,15 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             }
 
             gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
+            
             gpuDedicatedMemChart.AddData(
                 device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
+            
             gpuMemChart.AddData(
                 device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
         }
     }
 
-    // Scoped: this adapter's draw. Unscoped (the aggregate panel): every adapter's draw summed.
     private double? ResolvePower(SystemSnapshot snapshot)
     {
         if (snapshot.Power is not { } power) {
@@ -117,8 +113,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         return any ? total : null;
     }
 
-    // Call while holding @lock, with gpuInfo non-null. render is false only when this pane is
-    // scoped to an adapter that is not in the current snapshot.
     private (GpuDeviceMetrics? device, GpuDevice? spec, bool render) ResolveScope()
     {
         if (scopedAdapterLuid is not { } luid) {
@@ -176,8 +170,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
             gpuMetricsListView.Draw();
 
-            // When scoped, the specs list describes that adapter; unscoped (the placeholder panel
-            // before the per-device rows arrive), it falls back to the first enumerated adapter.
             GpuDevice? specRows = scopedAdapterLuid is null
                 ? gpuInfo.Specs.Devices.FirstOrDefault()
                 : deviceSpec;
@@ -208,7 +200,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
         gpuMetricsListView.Items.Add(memoryMetricsItem);
+        
         OnLoadListView(gpuMetricsListView);
+        
         gpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         gpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
@@ -220,7 +214,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Adapter Type:",   GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
+        
         OnLoadListView(gpuSpecsListView);
+        
         gpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         gpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
@@ -258,16 +254,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnResize()
     {
+        const int MetricsHeight = 4;
+        
         int yTop = Y;
 
-        // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the three charts grow to share whatever height is left above them. Every
-        // element is stacked flush against the next, with no gap rows between them.
-        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
-        const int MetricsHeight = 4;
-
-        // +3 over the field row count: two for the specs list's own top/bottom border, one
-        // because RowCount is Bounds.Height - 1.
         int specsHeight = SpecsRowCount + 3;
         int bottomY = Y + Height - (MetricsHeight + specsHeight);
 
@@ -302,8 +292,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuMetricsListView.ColumnHeaders[3].Width = 22;
         gpuMetricsListView.ColumnHeaders[4].Width = 12;
 
-        // Keys on the left, their values on the right. The value column is wider than the disk
-        // specs list because a GPU description or driver string runs long.
         for (int i = 0; i < gpuSpecsListView.ColumnHeaders.Count(); i++) {
             gpuSpecsListView.ColumnHeaders[i].Width = i % 2 == 0
                 ? 18
@@ -319,8 +307,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Y = bottomY + MetricsHeight;
         gpuSpecsListView.Width = Width - 1;
 
-        // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the
-        // extra line.
         gpuSpecsListView.Height = specsHeight;
     }
 

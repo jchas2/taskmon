@@ -10,9 +10,6 @@ using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Gui.Controls.Thermals;
 
-// Every temperature the machine reports, one chart per sensor, stacked and scrollable. Each chart
-// keeps its own gap-free history and is drawn on a fixed 0-110 C scale so sensors stay visually
-// comparable. CPU coverage depends on ACPI thermal zones and is often absent - see the empty state.
 public sealed class ThermalsControl : Control
 {
     private const double FixedScaleCelsius = 110.0;
@@ -27,22 +24,17 @@ public sealed class ThermalsControl : Control
     private string lastSignature = string.Empty;
     private int scrollOffset;
 
-    // The charts repaint their own cells in place every frame, so the control is only wiped when
-    // the layout actually changes - a sensor added or removed, a resize, a fresh activation. A
-    // per-frame full clear is what makes charts flicker.
     private bool needsFullClear = true;
     private int lastDrawnChartCount = -1;
-
-    // Whether the last draw reserved the right-hand column for a scroll bar. A change flips the
-    // chart width, so it forces a one-off wipe.
     private bool scrollBarShown;
 
     private SystemSnapshot? snapshot;
 
-    // One row - and one chart - per hardware component, not per sensor: a drive that reports a
-    // composite plus a controller sensor is still a single "Disk 0", matching the performance
-    // panels. The chart plots that component's headline temperature (see PrimaryTemperature).
-    private sealed record SensorRow(string Key, string Title, ThermalComponent Component, string ComponentId);
+    private sealed record SensorRow(
+        string Key, 
+        string Title, 
+        ThermalComponent Component, 
+        string ComponentId);
 
     public ThermalsControl(
         ServiceController serviceController,
@@ -54,7 +46,6 @@ public sealed class ThermalsControl : Control
         this.appConfig = appConfig;
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         this.snapshot = snapshot;
@@ -66,8 +57,6 @@ public sealed class ThermalsControl : Control
 
         Draw();
     }
-
-    // ---- Rows / charts ---------------------------------------------------------------------------
 
     private void EnsureRows(ThermalMetrics metrics)
     {
@@ -95,16 +84,15 @@ public sealed class ThermalsControl : Control
             .ToList();
 
         PruneChartCache();
+        
         scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, rows.Count - 1));
-
-        // The set of charts changed - drop any residue from charts that are gone or have moved.
         needsFullClear = true;
     }
 
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
-        ThermalComponent.Cpu => "CPU",
-        ThermalComponent.Gpu => GpuLabel(componentId),
-        ThermalComponent.Disk => DiskLabel(componentId),
+        ThermalComponent.Cpu     => "CPU",
+        ThermalComponent.Gpu     => GpuLabel(componentId),
+        ThermalComponent.Disk    => DiskLabel(componentId),
         ThermalComponent.Battery => "Battery",
         ThermalComponent.Chipset => "Chipset",
         ThermalComponent.Ambient => "Ambient",
@@ -157,11 +145,13 @@ public sealed class ThermalsControl : Control
         };
 
         ConfigureChart(chart);
+        
         chart.Width = Math.Max(4, Width);
         chart.Height = ChartHeight;
         chart.Resize();
 
         chartCache[key] = chart;
+        
         return chart;
     }
 
@@ -187,8 +177,6 @@ public sealed class ThermalsControl : Control
         chart.YAxisColour = appConfig.Theme.ChartYAxis;
     }
 
-    // ---- Draw / input / lifecycle -------------------------------------------------------------
-
     protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
@@ -211,8 +199,6 @@ public sealed class ThermalsControl : Control
 
         int drawn = Math.Min(visibleCharts, rows.Count - scrollOffset);
 
-        // When there is more than one screenful, reserve the right-hand column for a scroll bar and
-        // give the charts one column less; otherwise the charts fill the whole width.
         bool scrollNeeded = rows.Count > visibleCharts;
         int chartWidth = scrollNeeded ? Math.Max(4, Width - 1) : Width;
 
@@ -221,10 +207,13 @@ public sealed class ThermalsControl : Control
             scrollBarShown = scrollNeeded;
         }
 
-        // A one-off wipe when the layout changed. In steady state nothing is cleared: each chart's
-        // Draw() overwrites every cell it owns, so repainting in place does not flicker.
         if (needsFullClear) {
-            DrawRectangle(X, Y, Width, Height, BackgroundColour);
+            DrawRectangle(
+                X, 
+                Y, 
+                Width, 
+                Height, 
+                BackgroundColour);
         }
 
         ThermalMetrics? metrics = snapshot?.Thermal?.Metrics;
@@ -253,12 +242,15 @@ public sealed class ThermalsControl : Control
             chart.Draw();
         }
 
-        // Clear the strip below the last chart only when fewer charts are on screen than last time
-        // (scrolled to the end, or a sensor went away). It never overlaps a chart, so no flicker.
         int coveredRows = drawn * ChartHeight;
 
         if (!needsFullClear && drawn < lastDrawnChartCount && coveredRows < Height) {
-            DrawRectangle(X, Y + coveredRows, Width, Height - coveredRows, BackgroundColour);
+            DrawRectangle(
+                X, 
+                Y + coveredRows, 
+                Width, 
+                Height - coveredRows, 
+                BackgroundColour);
         }
 
         if (scrollNeeded) {
@@ -286,18 +278,20 @@ public sealed class ThermalsControl : Control
             frame.MoveTo(x, y);
             frame.SetColour(appConfig.Theme.Foreground, BackgroundColour);
             frame.Append(line);
+            
             Terminal.Write(frame.AsSpan());
         }
     }
 
-    // The reserved right-hand column: a full-height rule with a ▲ / ▼ at the ends to show which
-    // way there is more to scroll. The rule's own rounded caps stand in when an arrow is absent
-    // (nothing above / nothing below).
     private void DrawScrollBar(int visibleCharts)
     {
         int x = X + Width - 1;
 
-        DrawVerticalLine(x, Y, Y + Height, appConfig.Theme.ChartBorderForeground);
+        DrawVerticalLine(
+            x, 
+            Y, 
+            Y + Height, 
+            appConfig.Theme.ChartBorderForeground);
 
         if (scrollOffset > 0) {
             DrawGlyph(x, Y, '▲');
@@ -315,6 +309,7 @@ public sealed class ThermalsControl : Control
         frame.SetColour(appConfig.Theme.ChartBorderForeground, BackgroundColour);
         frame.Append(glyph);
         frame.ResetColour();
+        
         Terminal.Write(frame.AsSpan());
     }
 
@@ -372,7 +367,6 @@ public sealed class ThermalsControl : Control
             chart.Resize();
         }
 
-        // The geometry changed - the next draw wipes once before repainting.
         needsFullClear = true;
         lastDrawnChartCount = -1;
 

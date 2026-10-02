@@ -32,8 +32,6 @@ public sealed class PerformancePanelControl : Control
         Title = title;
     }
 
-    // Stable identity for the panel list, e.g. "cpu", "gpu", "gpu:0x1234", "disk:0", "net:42".
-    // Drives the rebuild diff and the "keep the selection" logic when the device set changes.
     public string Key { get; }
 
     public string Title { get; set; }
@@ -52,8 +50,6 @@ public sealed class PerformancePanelControl : Control
 
     public bool IsSelected { get; set; } = false;
 
-    // Applies this panel's slice of the snapshot to Line1/Line2 and feeds the mini-chart. Null
-    // means the subsystem was absent from the snapshot.
     public Action<SystemSnapshot>? Bind { get; set; }
 
     public void Update(SystemSnapshot snapshot) => Bind?.Invoke(snapshot);
@@ -111,16 +107,13 @@ public sealed class PerformancePanelControl : Control
         if (!IsSelected) {
             Frame.MoveTo(X, Y + 1);
             Frame.SetColour(fgMenuColour, bgMenuColour);
-            Frame.Append('▌'); // ▌
+            Frame.Append('▌');
             Frame.Append(Title.PadOrTruncate(' ', textWidth - 2));
             Frame.MoveTo(X + textWidth - 1, Y + 1);
             Frame.SetColour(fgMenuColour, bgMenuColour);
-            Frame.Append('▐'); // ▐
+            Frame.Append('▐');
         }
         else {
-            // The bevel rectangle spans textWidth columns; its interior, between the ▐ and ▌
-            // edges, is textWidth - 2 wide. Writing from X + 1, the title must not exceed that or
-            // it paints over the right edge.
             Frame.MoveTo(X + 1, Y + 1);
             Frame.SetColour(fgColour, bgColour);
             Frame.Append(Title.PadOrTruncate(' ', textWidth - 2));

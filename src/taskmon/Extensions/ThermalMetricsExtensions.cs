@@ -4,9 +4,6 @@ namespace Task.Monitor.Extensions;
 
 public static class ThermalMetricsExtensions
 {
-    // The one temperature to show for a component. A vendor-SDK reading beats an ACPI zone; among
-    // equals the canonical sensor wins (a drive's "Composite", a GPU's "GPU" reading) and only then
-    // the hottest - so a hot controller or memory-junction sensor does not hijack the headline.
     public static double? CpuTemperature(this ThermalMetrics metrics) =>
         PrimaryTemperature(metrics, ThermalComponent.Cpu, componentId: null);
 
@@ -57,7 +54,6 @@ public static class ThermalMetricsExtensions
         return candidate.Celsius > current.Celsius;
     }
 
-    // A stable, human label for a sensor in the thermals list.
     public static string ToDisplayName(this ThermalSensor sensor, string? componentLabel) =>
         string.IsNullOrEmpty(componentLabel)
             ? sensor.SensorName

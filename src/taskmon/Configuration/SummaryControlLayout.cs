@@ -4,19 +4,6 @@ using Task.Monitor.System.Configuration;
 
 namespace Task.Monitor.Configuration;
 
-// The persisted (.layout file) form of a SummaryLayoutTree, the layout SummaryControl2 renders.
-// Version 1 fixed-grid .layout files share the extension; LayoutType is what tells a tree layout
-// apart from one of those, which is no longer loaded (see IsTreeLayout and AppConfig.LoadLayouts).
-//
-// A tree round-trips as (using "," between a node's own fields and "+" between the entries of a
-// Process pane's column list - ';' is a comment marker to ConfigParser, so it can't be used here):
-//   [My Dashboard]
-//   layout-type=tree
-//   root=0
-//   nodes=0,1,2
-//   node.0=split,row,0.5,1,2
-//   node.1=pane,cpu
-//   node.2=pane,process,process+pid+cpu+mem
 public sealed class SummaryControlLayout
 {
     private const string LayoutTypeTree = "tree";
@@ -31,13 +18,10 @@ public sealed class SummaryControlLayout
 
     public string Name => layoutSection?.Name ?? string.Empty;
 
-    // Shipped with the app as an embedded resource, rather than saved from the layout designer.
     public bool IsBuiltIn { get; init; }
 
     public void Update(ConfigSection configSection) => layoutSection = configSection;
 
-    // False for a section with no layout-type key (a version 1 fixed-grid layout file) or any
-    // value other than "tree" - what keeps a version 1 file from being misread as a tree.
     public bool IsTreeLayout =>
         layoutSection?.GetString(Constants.Keys.LayoutType, string.Empty) == LayoutTypeTree;
 

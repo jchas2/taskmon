@@ -87,29 +87,6 @@ public class ConfigSectionTests
     }
 
     [Fact]
-    public void Remove_Deletes_The_Key()
-    {
-        ConfigSection configSection = new("MySection");
-        configSection.Add("key", "value").Add("other", "kept");
-
-        configSection.Remove("key");
-
-        Assert.False(configSection.Contains("key"));
-        Assert.Equal("kept", configSection.GetString("other"));
-    }
-
-    [Fact]
-    public void Remove_Of_A_Missing_Key_Does_Nothing()
-    {
-        ConfigSection configSection = new("MySection");
-        configSection.Add("key", "value");
-
-        configSection.Remove("missing");
-
-        Assert.Equal("value", configSection.GetString("key"));
-    }
-
-    [Fact]
     public void Should_Return_True_When_Key_Exists()
     {
         ConfigSection configSection = new("MySection");

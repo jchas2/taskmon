@@ -7,8 +7,6 @@ public static class PowerMetricsExtensions
     public static double? GpuPower(this PowerMetrics metrics, long adapterLuid) =>
         Match(metrics, PowerComponent.Gpu, adapterLuid.ToString())?.Watts;
 
-    // NVMe drives report a nameplate peak, not a live draw; the reading carries IsRated so the
-    // caller can label it.
     public static PowerReading? DiskPower(this PowerMetrics metrics, int diskIndex) =>
         Match(metrics, PowerComponent.Disk, diskIndex.ToString());
 

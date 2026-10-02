@@ -271,9 +271,11 @@ public class Control
     // sets this once at startup from its theme.
     public static Color FocusSelectionColour { get; set; } = ConsolePalette.White;
 
-    // Set by GotFocus() so LostFocus() can restore whatever BorderColour the control had before
-    // it was swapped to FocusSelectionColour - a control not currently focused never has one.
-    private Color? preFocusBorderColour;
+    // The colour a control draws its border in: FocusSelectionColour while it holds focus,
+    // BorderColour otherwise. Worked out when drawing rather than swapped into BorderColour on
+    // focus, so a screen re-applying its theme to a focused control (on every Load, or every Draw)
+    // can't wipe out the focus cue.
+    public virtual Color DisplayBorderColour => Focused ? FocusSelectionColour : BorderColour;
 
     public virtual Color ForegroundColour { get; set; } = ConsolePalette.White;
     
@@ -297,12 +299,7 @@ public class Control
             : focusableControls.OrderByDescending(ctrl => ctrl.TabIndex);
     }
 
-    internal void GotFocus()
-    {
-        preFocusBorderColour = BorderColour;
-        BorderColour = FocusSelectionColour;
-        OnGotFocus();
-    }
+    internal void GotFocus() => OnGotFocus();
 
     private Screen? GetParentScreen()
     {
@@ -371,15 +368,7 @@ public class Control
     
     public void Load() => OnLoad();
 
-    internal void LostFocus()
-    {
-        if (preFocusBorderColour is Color original) {
-            BorderColour = original;
-            preFocusBorderColour = null;
-        }
-
-        OnLostFocus();
-    }
+    internal void LostFocus() => OnLostFocus();
 
     protected virtual void OnClear() =>
         DrawRectangle(

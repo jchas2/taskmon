@@ -55,8 +55,6 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
     private const int ChartWidth = 14;
     private const int ChartHeight = 7;
 
-    // Fed every tick, whether or not this pane is on screen, so the two charts keep a gap-free
-    // history the same way the nav mini-charts do.
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
@@ -180,7 +178,9 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
         memoryMetricsListView.Items.Add(memoryMetricsItem);
+        
         OnLoadListView(memoryMetricsListView);
+        
         memoryMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         memoryMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
 
@@ -196,7 +196,9 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Modified:",          "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
+        
         OnLoadListView(memorySpecsListView);
+        
         memorySpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         memorySpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
@@ -234,22 +236,14 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnResize()
     {
-        int yTop = Y;
+        const int MetricsHeight = 4;
+        const int SpecsHeight = 12;
 
         memoryMetre.Rows = 3;
+
+        int yTop = Y;
         int metreHeight = memoryMetre.RequiredHeight;
-
-        // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the two charts grow to fill whatever is left above the metre. Every element
-        // is stacked flush against the next, with no gap rows between them.
-        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
-        const int MetricsHeight = 4;
-
-        // +3 over the nine field rows: two for the specs list's own top/bottom border, one
-        // because RowCount is Bounds.Height - 1.
-        const int SpecsHeight = 12;
         int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
-
         int chartsArea = Math.Max(0, bottomY - yTop - metreHeight);
         int height = chartsArea / 2;
 

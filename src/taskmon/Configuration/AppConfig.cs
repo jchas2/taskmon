@@ -312,11 +312,42 @@ public sealed class AppConfig
         set => uxSection?.Add(Constants.Keys.UseIrixCpuReporting, value.ToString());
     }
 
-    // Built-in layouts are the ones shipped as embedded resources. They are loaded first and win
-    // by name, and their copies on disk are kept in step with the running version, the same as
-    // themes. Custom layouts are the ones saved from the layout designer, loaded from the same
-    // folder. The folder is summary-layouts, not version 1's layouts folder, which this version
-    // never reads or writes, so both versions can be installed side by side.
+    private void DeployIfChanged(string filePath, string text)
+    {
+        if (fileSystem.FileExists(filePath) && fileSystem.ReadAllText(filePath) == text) {
+            return;
+        }
+
+        Trace.WriteLine($"Creating/Overwriting {filePath}");
+        fileSystem.WriteAllText(filePath, text);
+        PathPermissions.EnsureUserOwnership(filePath);
+    }
+
+    private string? GetConfigSubdirectory(string directoryName)
+    {
+        string? configPath = DefaultConfigPath;
+
+        if (string.IsNullOrEmpty(configPath)) {
+            return null;
+        }
+
+        string path = Path.Combine(configPath, directoryName);
+
+        if (fileSystem.DirectoryExists(path)) {
+            return path;
+        }
+
+        if (!fileSystem.TryCreateDirectory(path)) {
+            return null;
+        }
+
+        PathPermissions.EnsureUserOwnership(path);
+        return path;
+    }
+
+    private bool IsLayoutNameTaken(string name) =>
+        allLayouts.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+
     private void LoadLayouts()
     {
         string? layoutPath = GetConfigSubdirectory(Constants.LayoutDirectory);
@@ -358,7 +389,6 @@ public sealed class AppConfig
                     continue;
                 }
 
-                // A built-in layout's name: the deployed copy, already loaded from the manifest.
                 if (IsLayoutNameTaken(Path.GetFileNameWithoutExtension(layoutFile))) {
                     continue;
                 }
@@ -395,53 +425,10 @@ public sealed class AppConfig
             DefaultLayout = configured;
         }
         else if (allLayouts.Count > 0 && defaultLayout == null) {
-            // No saved preference (or it named a layout that no longer exists): the shipped
-            // "All Charts" rather than whichever tree happened to be found first, which with
-            // user-saved layouts on disk could be anything.
             DefaultLayout = allLayouts.FirstOrDefault(
-                    t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
+                t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
                 ?? allLayouts[0];
         }
-    }
-
-    private bool IsLayoutNameTaken(string name) =>
-        allLayouts.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
-
-    // The named folder under the user's config folder, created if it is missing. Null when there
-    // is no usable config folder, or the folder can't be created.
-    private string? GetConfigSubdirectory(string directoryName)
-    {
-        string? configPath = DefaultConfigPath;
-
-        if (string.IsNullOrEmpty(configPath)) {
-            return null;
-        }
-
-        string path = Path.Combine(configPath, directoryName);
-
-        if (fileSystem.DirectoryExists(path)) {
-            return path;
-        }
-
-        if (!fileSystem.TryCreateDirectory(path)) {
-            return null;
-        }
-
-        PathPermissions.EnsureUserOwnership(path);
-        return path;
-    }
-
-    // Writes a shipped (embedded) theme or layout to disk when the copy there is missing or its
-    // contents differ, so the file a user sees always matches the version they are running.
-    private void DeployIfChanged(string filePath, string text)
-    {
-        if (fileSystem.FileExists(filePath) && fileSystem.ReadAllText(filePath) == text) {
-            return;
-        }
-
-        Trace.WriteLine($"Creating/Overwriting {filePath}");
-        fileSystem.WriteAllText(filePath, text);
-        PathPermissions.EnsureUserOwnership(filePath);
     }
 
     private void LoadSections()
@@ -491,6 +478,7 @@ public sealed class AppConfig
         uxSection
             .AddIfMissing(Constants.Keys.ConfirmTaskDelete, true.ToString())
             .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeTaskmonDefault)
+            .AddIfMissing(Constants.Keys.DefaultSummaryLayout, Constants.Sections.LayoutAllCharts)
             .AddIfMissing(Constants.Keys.HighlightDaemons, true.ToString())
             .AddIfMissing(Constants.Keys.HighlightStatsColUpdate, true.ToString())
             .AddIfMissing(Constants.Keys.MetreStyle, MetreControlStyle.Dots.ToString())
@@ -506,17 +494,6 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowLargeMetreGrid, true.ToString())
             .AddIfMissing(Constants.Keys.ShowYAxisScale, true.ToString())
             .AddIfMissing(Constants.Keys.UseIrixCpuReporting, useIrixMode.ToString());
-
-        // Earlier version 2 builds stored the default layout under default-summary-layout2: carry
-        // that choice over, then drop the old key. Version 1's default-layout key is left as it is
-        // for a version 1 install to keep using - its layouts aren't loaded here.
-        if (uxSection.Contains(Constants.Keys.DefaultSummaryLayout2)) {
-            uxSection.AddIfMissing(
-                Constants.Keys.DefaultSummaryLayout,
-                uxSection.GetString(Constants.Keys.DefaultSummaryLayout2));
-
-            uxSection.Remove(Constants.Keys.DefaultSummaryLayout2);
-        }
 
         if (!iniConfig.ContainsSection(uxSection.Name)) {
             iniConfig.AddConfigSection(uxSection);

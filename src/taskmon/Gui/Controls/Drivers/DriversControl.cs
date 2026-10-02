@@ -8,11 +8,6 @@ using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Gui.Controls.Drivers;
 
-// The kernel-mode and file-system drivers registered on this machine - name, status, startup
-// type, version and install path - in one selectable, scrolling table. Same shape as
-// ServicesControl (same underlying Service Control Manager, just a driver type instead of a
-// Win32 one), right down to the DETAIL pane for the columns too narrow to show a long path in
-// full.
 public sealed partial class DriversControl : Control
 {
     private readonly ServiceController serviceController;
@@ -58,8 +53,6 @@ public sealed partial class DriversControl : Control
             .Add(new ListViewColumnHeader("START TYPE"))
             .Add(new ListViewColumnHeader("PATH"));
 
-        // The main table's PATH column is too narrow to show a long driver-store path in full;
-        // this mirrors the selected row's fields one per line so every value can be read.
         detailView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
@@ -78,7 +71,6 @@ public sealed partial class DriversControl : Control
         Controls.Add(detailView);
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         if (snapshot.Drivers is null) {
@@ -89,9 +81,6 @@ public sealed partial class DriversControl : Control
         Draw();
     }
 
-    // DriversControl itself draws no border - driversView is the actual bordered, focusable
-    // panel - so a SetFocus() call on this composite (e.g. from MainScreen2's arrow-key nav)
-    // needs to be redirected down to it for the focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => driversView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -108,8 +97,6 @@ public sealed partial class DriversControl : Control
         detailView.Draw();
     }
 
-    // Rebuilds the row list only when the set of drivers changes - rather than every publish,
-    // since a rebuild resets the scroll position.
     private void EnsureRows(DriversInfo info)
     {
         string signature = BuildSignature(info.Specs.Drivers);
@@ -126,16 +113,13 @@ public sealed partial class DriversControl : Control
         entries.Count + "|" + string.Join("|", entries.Select(driver =>
             $"{driver.ServiceName}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
 
-    // Rebuilds the detail pane from whichever row is currently highlighted in the main table.
-    // Cheap enough (five rows) to call on every draw rather than tracking whether the selection or
-    // the underlying driver actually changed.
     private void RefreshDetailPane()
     {
         int index = driversView.SelectedIndex;
+
         IReadOnlyList<DriverInfo> entries = drivers?.Specs.Drivers ?? [];
-
         DriverInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
-
+        
         RebuildDetailRows(selected);
     }
 
@@ -151,8 +135,6 @@ public sealed partial class DriversControl : Control
 
         driversView.KeyPressed(keyInfo, ref handled);
 
-        // The main table redraws itself directly (bypassing this control's own OnDraw), so a
-        // selection change made by that key press needs an explicit detail-pane refresh here.
         if (handled) {
             RefreshDetailPane();
             detailView.Draw();

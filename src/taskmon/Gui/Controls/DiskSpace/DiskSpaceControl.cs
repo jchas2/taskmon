@@ -11,9 +11,6 @@ using Task.Monitor.System.Services.DiskSpace;
 
 namespace Task.Monitor.Gui.Controls.DiskSpace;
 
-// An on-demand folder-size scan: a live treemap heat map of the scan root's folders in the top
-// half, and the largest individual files found so far in the bottom half. Scanning is started and
-// cancelled from here ('s' / 'c') rather than run automatically, since a full scan is expensive.
 public sealed partial class DiskSpaceControl : Control
 {
     private readonly ServiceController serviceController;
@@ -22,16 +19,8 @@ public sealed partial class DiskSpaceControl : Control
     private readonly MetreControl progressMetre;
     private readonly ListView filesView;
 
-    // Re-captured on every OnLoad (ClearSeries() on Unload drops the previous instance) so its
-    // label can be kept in sync with the scan root - "Root Folders" is only ever a placeholder
-    // before a path is known, not a fixed series name.
     private MetreControlSeries? rootFoldersSeries;
 
-    // Not added to Controls, the same way Screen keeps its own message/input boxes out of its
-    // Controls collection - they are only ever shown modally, positioned and drawn explicitly
-    // rather than taking part in the normal child-control layout pass. driveInputBox opens first
-    // (pick a volume, or "Custom path..."); scanPathInputBox is the fallback free-text prompt for
-    // scanning a specific folder rather than a whole volume.
     private readonly DriveInputBox driveInputBox;
     private readonly InputBox scanPathInputBox;
 
@@ -60,8 +49,6 @@ public sealed partial class DiskSpaceControl : Control
             Visible = true
         };
 
-        // A single-series metre used as a plain progress bar: how many of the scan root's
-        // immediate child folders have been fully walked, out of the total found so far.
         progressMetre = new MetreControl(terminal) {
             Visible = true,
             TabStop = false,
@@ -102,17 +89,12 @@ public sealed partial class DiskSpaceControl : Control
         Controls.Add(filesView);
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         if (snapshot.DiskSpace is not { } latest) {
             return;
         }
 
-        // The controller raises a snapshot every tick whether or not the scan has published
-        // anything, and a full redraw repaints every heat map cell and its label - visible flicker
-        // once a scan has finished and nothing is changing. Only redraw for new specs, or to let
-        // the heat map finish fading in cells from the last publish.
         bool changed = !ReferenceEquals(latest.Specs, diskSpace?.Specs);
         diskSpace = latest;
 
@@ -139,9 +121,6 @@ public sealed partial class DiskSpaceControl : Control
         Terminal.Write(padded);
     }
     
-    // DiskSpaceControl itself draws no border - filesView is the actual bordered, focusable
-    // panel - so a SetFocus() call on this composite needs to be redirected down to it for the
-    // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => filesView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -166,8 +145,6 @@ public sealed partial class DiskSpaceControl : Control
         }
     }
 
-    // Rebuilds the row list only when the scan's progress counters actually changed - cheap while
-    // a scan is running (they change on every throttled publish) and free once it finishes.
     private void EnsureFileRows(DiskSpaceSpecs specs)
     {
         string signature = $"{specs.State}|{specs.FilesScanned}|{specs.TotalBytesScanned}";
@@ -180,9 +157,6 @@ public sealed partial class DiskSpaceControl : Control
         RebuildFileRows(specs.TopFiles);
     }
 
-    // RootLevelFoldersTotal settles almost immediately once a scan starts (the root's own
-    // contents are enumerated in one pass right at the start of the walk), so this is a
-    // meaningful percentage for nearly the whole scan, not just at the very end.
     private void UpdateProgressMetre(DiskSpaceSpecs? specs)
     {
         double ratio = specs switch {
@@ -192,11 +166,10 @@ public sealed partial class DiskSpaceControl : Control
             _ => 0.0
         };
 
-        // "Root Folders" is just the placeholder shown before a path is actually known - once a
-        // scan has one, the series is named after it (e.g. "C:\" or "C:\Windows") so the legend
-        // says what's actually being scanned rather than a generic label.
         if (rootFoldersSeries is not null) {
-            rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) ? "Root Folders" : specs.RootPath;
+            rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) 
+                ? "Root Folders" 
+                : specs.RootPath;
         }
 
         progressMetre.SetValue(0, ratio);
@@ -229,19 +202,12 @@ public sealed partial class DiskSpaceControl : Control
         filesView.KeyPressed(keyInfo, ref handled);
     }
 
-    // The first prompt 's' opens: a scrollable pick-list of real, scannable volumes (see
-    // ScanRootProvider), plus a trailing "Custom path..." row that falls through to
-    // ShowScanPathPrompt's free-text entry for scanning a specific folder instead of a whole
-    // volume.
     private void ShowDriveSelectionPrompt()
     {
         Control.RedrawEnabled = false;
 
         IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
 
-        // Fixed at 5 visible rows regardless of how many real candidates there are - a couple of
-        // drives shouldn't render as a cramped two-row box, and more than 5 (rare) scrolls rather
-        // than growing the dialog further.
         driveInputBox.Width = Math.Clamp(Width - 4, 30, 60);
         driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
         driveInputBox.X = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
@@ -286,15 +252,12 @@ public sealed partial class DiskSpaceControl : Control
         Draw();
     }
 
-    // Lines up with, and overlays, the drive list it's falling through from - driveInputBox is
-    // hidden by this point but its last-resized layout (and so the list's X/Y/Width) is still
-    // valid, since only Visible changed, not the geometry.
     private void ShowScanPathPrompt()
     {
         string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
-
         Control.RedrawEnabled = false;
 
+        // Overlay so it looks like an in-place edit to the user.
         scanPathInputBox.X = driveInputBox.ListX;
         scanPathInputBox.Y = driveInputBox.ListY;
         scanPathInputBox.Width = driveInputBox.ListWidth;

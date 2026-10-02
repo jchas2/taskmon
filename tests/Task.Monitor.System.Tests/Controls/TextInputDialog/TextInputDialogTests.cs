@@ -42,7 +42,7 @@ public sealed class TextInputDialogTests
 
     [Fact]
     public void TextInputDialog_Canary_Test() =>
-        Assert.Equal(25, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
+        Assert.Equal(26, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
 
     [Fact]
     public void Should_Construct_Default()

@@ -17,8 +17,6 @@ public sealed class PerformanceControl : Control
     private readonly ServiceController serviceController;
     private readonly AppConfig appConfig;
 
-    // One detail pane and one mini-chart per panel key, so nothing is shared between device
-    // panels. Both survive a rebuild if their key does, keeping their history.
     private readonly Dictionary<string, Chart> chartCache = new();
     private readonly Dictionary<string, Control> detailCache = new();
 
@@ -26,14 +24,12 @@ public sealed class PerformanceControl : Control
     private PerformancePanelControl activeControl;
     private bool loaded;
 
-    // Every panel is a fixed height; the panel column is a viewport that scrolls a whole panel
-    // at a time when the list is taller than the control.
-    private const int PanelHeight = 7;
-
     private readonly AnsiScreenBuffer scrollFrame = new();
     private int scrollOffset = 0;
     private int panelColumnWidth = 0;
     private int visiblePanelCount = 0;
+
+    private const int PanelHeight = 7;
 
     public PerformanceControl(
         ServiceController serviceController,
@@ -50,8 +46,6 @@ public sealed class PerformanceControl : Control
         activeControl = panelControls[0];
         activeControl.IsSelected = true;
     }
-
-    // ---- Panel construction ------------------------------------------------------------------
 
     private List<PerformancePanelControl> BuildPanels(SystemSnapshot? snapshot)
     {
@@ -228,8 +222,6 @@ public sealed class PerformanceControl : Control
         }
     }
 
-    // Adds a "  ·  61°C" suffix when a temperature is available, leaving the line untouched
-    // otherwise so machines with no thermal sensors read exactly as before.
     private static string AppendTemperature(string line, double? celsius) =>
         celsius is { } value ? $"{line} ({value.ToTemperatureText()})" : line;
 
@@ -252,9 +244,8 @@ public sealed class PerformanceControl : Control
             appConfig);
 
         panel.Bind = snapshot => bind(panel, snapshot);
-
         ConfigureColours(panel);
-
+        
         return panel;
     }
 
@@ -393,8 +384,6 @@ public sealed class PerformanceControl : Control
             detailCache.Remove(stale);
         }
     }
-
-    // ---- Draw / input / lifecycle ----------------------------------------------------------
 
     protected override void OnDraw() => OnDrawInternal();
 
@@ -636,7 +625,11 @@ public sealed class PerformanceControl : Control
         }
     }
 
-    internal static int ClampScrollOffset(int selectedIndex, int scrollOffset, int visibleCount, int total)
+    internal static int ClampScrollOffset(
+        int selectedIndex, 
+        int scrollOffset, 
+        int visibleCount, 
+        int total)
     {
         int maxOffset = Math.Max(0, total - visibleCount);
 
@@ -655,7 +648,12 @@ public sealed class PerformanceControl : Control
         int filledRows = visiblePanelCount * PanelHeight;
 
         if (filledRows < Height) {
-            DrawRectangle(X, Y + filledRows, panelColumnWidth, Height - filledRows, BackgroundColour);
+            DrawRectangle(
+                X, 
+                Y + filledRows, 
+                panelColumnWidth, 
+                Height - filledRows, 
+                BackgroundColour);
         }
     }
 
@@ -680,10 +678,6 @@ public sealed class PerformanceControl : Control
         Terminal.Write(scrollFrame.AsSpan());
     }
 
-    // Focus never lands on PerformanceControl itself - OnGotFocus() immediately redirects it down
-    // to activeControl (see Screen.FocusInternal's same-thread re-entrant redirect), so
-    // activeControl.Focused is the only reliable signal that this whole panel column - the
-    // vertical divider and its scroll arrows included - currently holds input focus.
     private Color PanelColumnBorderColour =>
         activeControl.Focused
             ? Control.FocusSelectionColour

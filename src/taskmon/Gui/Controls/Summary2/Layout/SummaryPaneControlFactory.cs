@@ -15,9 +15,6 @@ using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 
-// Builds the Control instance behind a single pane - shared by SummaryControl2 (read-only
-// display) and LayoutDesignerScreen (interactive editing), so a pane looks and behaves exactly
-// the same in both places by construction rather than by keeping two switch statements in sync.
 public static class SummaryPaneControlFactory
 {
     public static Control Create(
@@ -75,15 +72,14 @@ public static class SummaryPaneControlFactory
                 TabStop = true,
                 VisibleColumnsOverride = pane.ProcessColumns
             },
-            PaneControlType.Drivers => new DriversControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.Services => new ServicesControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.Startup => new StartupControl(serviceController, terminal, appConfig) { TabStop = true },
+            PaneControlType.Drivers       => new DriversControl(serviceController, terminal, appConfig)       { TabStop = true },
+            PaneControlType.Services      => new ServicesControl(serviceController, terminal, appConfig)      { TabStop = true },
+            PaneControlType.Startup       => new StartupControl(serviceController, terminal, appConfig)       { TabStop = true },
             PaneControlType.InstalledApps => new InstalledAppsControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.SystemInfo => new SystemInfoControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.DiskSpace => new DiskSpaceControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.Thermals => new ThermalsControl(serviceController, terminal, appConfig) { TabStop = true },
-            // No TabStop - it takes no input, so it shouldn't join the tab order.
-            PaneControlType.CpuCores => new CpuCoresControl(serviceController, terminal, appConfig),
-            _ => new EmptyPaneControl(terminal),
+            PaneControlType.SystemInfo    => new SystemInfoControl(serviceController, terminal, appConfig)    { TabStop = true },
+            PaneControlType.DiskSpace     => new DiskSpaceControl(serviceController, terminal, appConfig)     { TabStop = true },
+            PaneControlType.Thermals      => new ThermalsControl(serviceController, terminal, appConfig)      { TabStop = true },
+            PaneControlType.CpuCores      => new CpuCoresControl(serviceController, terminal, appConfig)      { TabStop = false },
+                                        _ => new EmptyPaneControl(terminal),
         };
 }

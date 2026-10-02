@@ -672,23 +672,20 @@ charts=0,1,2,3,4,5,6,7
     }
 
     [Fact]
-    public void The_Default_Layout_Chosen_Under_The_Old_Key_Moves_To_The_New_Key()
+    public void The_Default_Layout_Is_Read_From_The_Config()
     {
-        AppConfig appConfig = LoadFromIni("[ux]\ndefault-summary-layout2=Cpu and Memory\n");
+        AppConfig appConfig = LoadFromIni("[ux]\ndefault-summary-layout=Cpu and Memory\n");
 
         Assert.Equal("Cpu and Memory", appConfig.DefaultLayout?.Name);
-        Assert.Contains("default-summary-layout=Cpu and Memory", appConfig.ToString());
-        Assert.DoesNotContain("default-summary-layout2", appConfig.ToString());
     }
 
     [Fact]
-    public void The_New_Default_Layout_Key_Wins_Over_The_Old_One()
+    public void A_New_Config_Starts_With_All_Charts_As_The_Default_Layout()
     {
-        AppConfig appConfig = LoadFromIni(
-            "[ux]\ndefault-summary-layout=Gpu and Gpu Memory\ndefault-summary-layout2=Cpu and Memory\n");
+        AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.Equal("Gpu and Gpu Memory", appConfig.DefaultLayout?.Name);
-        Assert.DoesNotContain("default-summary-layout2", appConfig.ToString());
+        Assert.Contains("default-summary-layout=All Charts", appConfig.ToString());
+        Assert.Equal("All Charts", appConfig.DefaultLayout?.Name);
     }
 
     // Version 1's keys belong to a version 1 install alongside: left alone when present, and not

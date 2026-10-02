@@ -1,6 +1,6 @@
 using Moq;
 using Task.Monitor.Configuration;
-using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Process;
 

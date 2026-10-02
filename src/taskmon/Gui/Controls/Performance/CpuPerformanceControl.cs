@@ -61,8 +61,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     private const int ChartWidth = 14;
     private const int ChartHeight = 7;
 
-    // Fed every tick, whether or not this pane is on screen, so the core charts and the CPU chart
-    // keep a gap-free history the same way the nav mini-charts do.
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
@@ -107,8 +105,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
                 : cpuInfo.Metrics.ToCpuKernelUserPercentage();
             cpuChart.Draw();
 
-            // Kernel and User time as measured; the unfilled remainder of the metre is the idle
-            // portion, so it needs no series of its own.
             double kernelTime = cpuInfo.Metrics.CpuPercentKernelTime;
             double userTime = cpuInfo.Metrics.CpuPercentUserTime;
 
@@ -218,6 +214,9 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnResize()
     {
+        const int MetricsHeight = 4;
+        const int SpecsHeight = 11;
+
         int numCols = Width / ChartWidth;
         int numRows = Height / ChartHeight;
         int rowCount = 0;
@@ -245,15 +244,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetre.Rows = 3;
         int metreHeight = cpuMetre.RequiredHeight;
 
-        // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the CPU chart grows to fill whatever is left above the metre. Every element
-        // is stacked flush against the next, with no gap rows between them.
-        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
-        const int MetricsHeight = 4;
-
-        // +3 over the eight field rows: two for the specs list's own top/bottom border, one
-        // because RowCount is Bounds.Height - 1.
-        const int SpecsHeight = 11;
         int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
 
         int height = Math.Max(0, bottomY - yTop - metreHeight);

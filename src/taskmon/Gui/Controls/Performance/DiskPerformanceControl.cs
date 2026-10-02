@@ -13,10 +13,6 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 {
-    // The scoped view is the wide one: Model, Manufacturer, Firmware Revision, Serial Number, Bus
-    // Type, Media Type, Capacity, Removable, Total Bytes Read, Total Bytes Written. The aggregate
-    // view fills only the first four rows and blanks the rest. Fixed rather than taken from
-    // Items.Count so a resize that lands before the load still sizes correctly.
     private const int SpecsRowCount = 10;
 
     private readonly Lock @lock = new();
@@ -28,9 +24,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     private DiskInfo? diskInfo;
     private double? temperature;
     private string powerText = "N/A";
-
-    // Null renders the aggregate across every physical disk (the default). Set to a physical drive
-    // index to render just that disk's slice of DiskInfo.Metrics.Devices / DiskInfo.Specs.Devices.
     private int? scopedDiskIndex;
 
     public void SetScope(int? diskIndex) => scopedDiskIndex = diskIndex;
@@ -63,8 +56,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         };
     }
 
-    // Fed every tick, whether or not this pane is on screen, so the two large charts keep a
-    // gap-free history the same way the nav mini-charts do.
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
@@ -73,8 +64,10 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             }
 
             diskInfo = snapshot.Disk;
+            
             temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
                 ThermalComponent.Disk, scopedDiskIndex?.ToString());
+            
             powerText = ResolvePowerText(snapshot);
 
             (DiskDeviceMetrics? device, _, bool render) = ResolveScope();
@@ -85,13 +78,12 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
             activeTimeChart.AddData(
                 device?.ToDiskActiveTimeRatio() ?? diskInfo.Metrics.ToDiskActiveTimeRatio());
+            
             transferRateChart.AddData(
                 device?.ToDiskTransferBytesPerSecond() ?? diskInfo.Metrics.ToDiskTransferBytesPerSecond());
         }
     }
 
-    // NVMe rated peak power for the scoped drive. The aggregate view has nothing meaningful to
-    // show (summing nameplate peaks is not a real figure), so it stays "N/A".
     private string ResolvePowerText(SystemSnapshot snapshot)
     {
         if (scopedDiskIndex is not { } index || snapshot.Power is not { } power) {
@@ -107,8 +99,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             : reading.Watts.ToWattText();
     }
 
-    // Call while holding @lock, with diskInfo non-null. render is false only when this pane is
-    // scoped to a disk that is not in the current snapshot.
     private (DiskDeviceMetrics? device, DiskDevice? spec, bool render) ResolveScope()
     {
         if (scopedDiskIndex is not { } index) {
@@ -129,7 +119,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             }
 
             DiskMetrics metrics = diskInfo.Metrics;
-
             (DiskDeviceMetrics? device, DiskDevice? deviceSpec, bool render) = ResolveScope();
 
             if (!render) {
@@ -142,6 +131,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             activeTimeChart.Text = temperature is { } diskTemp
                 ? $"Active Time {activeText}   ·   {diskTemp.ToTemperatureText()}"
                 : $"Active Time {activeText}";
+            
             activeTimeChart.Draw();
 
             transferRateChart.Text = $"Disk Transfer Rate {transferText}";
@@ -153,8 +143,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             diskMetricsListView.Items[0].SubItems[3].Text = powerText;
             diskMetricsListView.Draw();
 
-            // The byte totals are cumulative since the service started, not since boot: the
-            // service accumulates per cycle deltas rather than tracking an absolute baseline.
             if (device != null) {
                 SetSpecsRow(0, "Model:",               deviceSpec?.Model            ?? DiskDeviceParser.NotAvailable);
                 SetSpecsRow(1, "Manufacturer:",        deviceSpec?.Manufacturer     ?? DiskDeviceParser.NotAvailable);
@@ -193,9 +181,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        // Active time is bounded at 100%, so it scales against a fixed ceiling like the CPU and
-        // GPU charts. Transfer rate has no ceiling to scale against, so the chart finds its own
-        // and the Y axis is labelled in byte rates instead.
         OnLoadChart(activeTimeChart, autoScale: false, Chart.FormatYScalePercentage);
         OnLoadChart(transferRateChart, autoScale: true, PerformanceChartFormatters.FormatYScaleByteRate);
 
@@ -261,16 +246,9 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnResize()
     {
-        int yTop = Y;
-
-        // The metrics and specs list views are a fixed height and anchored to the bottom of the
-        // control; the two charts grow to share whatever height is left above them. Every
-        // element is stacked flush against the next, with no gap rows between them.
-        // +2 over the single detail row (plus header) for the metrics list's own top/bottom border.
         const int MetricsHeight = 4;
-
-        // +3 over the field row count: two for the specs list's own top/bottom border, one
-        // because RowCount is Bounds.Height - 1.
+        
+        int yTop = Y;
         int specsHeight = SpecsRowCount + 3;
         int bottomY = Y + Height - (MetricsHeight + specsHeight);
 
@@ -296,8 +274,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskMetricsListView.ColumnHeaders[2].Width = 16;
         diskMetricsListView.ColumnHeaders[3].Width = 16;
 
-        // Keys on the left, values on the right. The value column is wide enough for a full drive
-        // model or serial number.
         for (int i = 0; i < diskSpecsListView.ColumnHeaders.Count(); i++) {
             diskSpecsListView.ColumnHeaders[i].Width = i % 2 == 0
                 ? 22
@@ -312,9 +288,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.X = X + 1;
         diskSpecsListView.Y = bottomY + MetricsHeight;
         diskSpecsListView.Width = Width - 1;
-
-        // ListView.DrawItems renders Height - 1 rows, so the last row is clipped without the
-        // extra line.
         diskSpecsListView.Height = specsHeight;
     }
 

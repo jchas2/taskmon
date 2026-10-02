@@ -79,8 +79,4 @@
       <EmbeddedResource Include="Assets\Themes\Night Owl.theme" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Gui\Controls\Processes\" />
-    </ItemGroup>
-
 </Project>

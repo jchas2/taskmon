@@ -11,13 +11,6 @@ using Task.Monitor.System.Services.Network;
 
 namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 
-// Charts are passive - unlike Process/Drivers/Services panes, which subscribe to snapshots
-// themselves, a Chart only moves when something calls Add() on it. Shared by SummaryControl2 and
-// LayoutDesignerScreen so a chart pane previews identically in both.
-//
-// A chart is only advanced when the service that feeds it has published - adding a zero for a
-// service that has not reported yet would put a false trough in its history that never washes
-// out, because the chart keeps every point it is given.
 public static class SummaryChartFeeder
 {
     public static void Feed(
@@ -89,9 +82,6 @@ public static class SummaryChartFeeder
                 }
 
                 case PaneControlType.Disk when snapshot.Disk is { } disk: {
-                    // Read plus write across the physical disks - the device layer figure is the
-                    // one that belongs on a chart labelled Disk; the per process counters are
-                    // logical i/o and read higher.
                     double diskMbps = disk.Metrics.ToDiskTransferBytesPerSecond().ToMbpsFromBytes();
 
                     chart.LabelSeries = appConfig.ShowMetreDiskNumerically

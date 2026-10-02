@@ -26,20 +26,16 @@ public sealed class MenuControl : Control
         menuControl.ColumnHeaders.Add(new ListViewColumnHeader(""));
     }
 
-    // MenuControl draws no border of its own - it delegates entirely to its internal ListView -
-    // so the inherited focus-swap in Control.GotFocus/LostFocus needs to reach that instead.
     public override Color BorderColour
     {
         get => menuControl.BorderColour;
         set => menuControl.BorderColour = value;
     }
 
+    public override Color DisplayBorderColour => menuControl.DisplayBorderColour;
+
     public List<MenuListViewItem>? MenuItems { get; set; }
 
-    // The internal ListView is never added to any Controls collection, so Screen.FocusInternal
-    // never sets its Focused directly - without this, its selected row always renders in the
-    // muted unfocused colours (ListView.SelectionColours()) even while the menu genuinely has
-    // input focus.
     protected override void OnGotFocus() => menuControl.Focused = true;
 
     protected override void OnLostFocus() => menuControl.Focused = false;

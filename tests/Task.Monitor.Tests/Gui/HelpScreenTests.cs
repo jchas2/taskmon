@@ -20,7 +20,7 @@ public sealed class HelpScreenTests
     
     [Fact]
     public void HelpScreen_Canary_Test() =>
-        Assert.Equal(20, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<HelpScreen>());
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()

@@ -33,7 +33,7 @@ public sealed class PickerBoxTests
 
     [Fact]
     public void PickerBox_Canary_Test() =>
-        Assert.Equal(26, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
 
     [Fact]
     public void Should_Construct_Default()

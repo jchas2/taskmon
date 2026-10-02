@@ -36,12 +36,6 @@ public sealed class ConfigSection
 
     public bool Contains(string key) => keys.ContainsKey(key);
 
-    public ConfigSection Remove(string key)
-    {
-        keys.Remove(key);
-        return this;
-    }
-
     public T GetEnum<T>(string key, T defaultValue) where T : struct, Enum
     {
         if (keys.TryGetValue(key, out string? value) && 

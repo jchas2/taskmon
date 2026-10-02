@@ -17,13 +17,9 @@ public sealed class HeaderControl2 : Control
     private readonly ServiceController serviceController;
     private readonly AppConfig appConfig;
 
-    // The host's own identity is fixed for the life of the process, so it is resolved once here
-    // rather than re-read out of a snapshot that would carry the same answer every cycle.
     private readonly string machineName = Environment.MachineName.ToUpper();
     private readonly string osVersion = SystemInfo.GetOsVersion();
 
-    // Each service publishes independently, so a snapshot can carry one of these and not another.
-    // The latest of each is retained and the header draws whatever it has.
     private CpuInfo? cpuInfo;
     private ProcessInfo? processInfo;
     private string privateIPv4Address = string.Empty;
@@ -33,14 +29,9 @@ public sealed class HeaderControl2 : Control
     private GpuInfo? gpuInfo;
 #endif
 
-    // A stand-in for the first draw, before the process service has published anything.
     private static readonly ProcessMetrics EmptyProcessMetrics = new();
-
-    // The bordered box is built here and written in one go - the header redraws on every snapshot.
     private readonly AnsiScreenBuffer frame = new();
 
-    // The banner row, then the two info rows framed by a top and bottom border. MainScreen2 sizes
-    // the header from this.
     public const int HeaderRows = 5;
 
     public HeaderControl2(
@@ -82,8 +73,6 @@ public sealed class HeaderControl2 : Control
         Terminal.BackgroundColor = BackgroundColour;
         Terminal.ForegroundColor = ForegroundColour;
 
-        // The two info rows sit inside the border, so they need at least one column between its
-        // left and right edges.
         int innerWidth = Width - 2;
 
         if (innerWidth < 1) {
@@ -115,8 +104,6 @@ public sealed class HeaderControl2 : Control
         AppendSegment(IpLabel, lbColor, bgColour, ref remaining);
         AppendSegment(ipAddress, fgColour, bgColour, ref remaining);
 
-        // Right-aligned, and dropped first when the row is too narrow to hold it after the
-        // machine details.
         string themeText = $"{appConfig.Theme.Name} ";
 
         if (themeText.Length <= remaining) {
@@ -126,12 +113,10 @@ public sealed class HeaderControl2 : Control
         }
 
         EndRow(remaining, borderColour, bgColour);
-
-        // Nothing has published yet on the first draw. The header still paints its chrome and its
-        // labels, with the figures left at zero, rather than leaving the top rows unwritten.
+        
         CpuSpecs cpuSpecs = cpuInfo?.Specs ?? default;
-
         string coreBreakdown = $"{cpuSpecs.CpuCores} Cores";
+        
 #if __APPLE__
         if (cpuSpecs.CpuPerformanceCores > 0) {
             coreBreakdown += $" · {cpuSpecs.CpuPerformanceCores}P";
@@ -159,8 +144,6 @@ public sealed class HeaderControl2 : Control
 
         string cpuInfoText = $"{cpuName} ({coreBreakdown})";
 
-        // Irix mode is the process service's, not the config's: it is the setting the percentages
-        // in the list below were actually calculated with.
         bool irixMode = processInfo?.Specs.IrixMode ?? appConfig.UseIrixReporting;
 
         if (irixMode) {
@@ -207,8 +190,6 @@ public sealed class HeaderControl2 : Control
         frame.Append('│');
     }
 
-    // Pads whatever is left of the inner width, so a shorter row overwrites a longer previous one,
-    // then closes the row with the right border.
     private void EndRow(int remaining, Color borderColour, Color bgColour)
     {
         AppendPadding(remaining, bgColour);
@@ -216,8 +197,6 @@ public sealed class HeaderControl2 : Control
         frame.Append('│');
     }
 
-    // Writes as much of the text as still fits inside the border and takes it off what is left, so
-    // a row that is too long for the width is cut short rather than pushing the right border out.
     private void AppendSegment(string text, Color fgColour, Color bgColour, ref int remaining)
     {
         int length = Math.Min(text.Length, remaining);
@@ -268,8 +247,6 @@ public sealed class HeaderControl2 : Control
         }
 
         if (e.Snapshot.Network != null) {
-            // Resolved on arrival rather than in the draw: an adapter list walk per repaint would
-            // be repeated work for an answer that only changes when an adapter does.
             privateIPv4Address = e.Snapshot.Network.Specs.ToPreferredIPv4Address();
         }
 

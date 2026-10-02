@@ -60,8 +60,8 @@ public class ListView : Control
     // Foreground of the border glyphs.
     public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
-    // Alias for BorderForegroundColour, so generic focus / selection code that swaps a control's
-    // BorderColour still recolours a list's border.
+    // Alias for BorderForegroundColour, so code that sets a control's BorderColour (e.g. the
+    // layout designer's selection highlight) still recolours a list's border.
     public override Color BorderColour
     {
         get => BorderForegroundColour;
@@ -242,7 +242,7 @@ public class ListView : Control
         frame.Append('\u256F');
     }
 
-    private void SetBorderColour() => frame.SetColour(BorderForegroundColour, BorderBackgroundColour);
+    private void SetBorderColour() => frame.SetColour(DisplayBorderColour, BorderBackgroundColour);
 
     private void DrawEmptyListView()
     {

@@ -45,8 +45,6 @@ public sealed class Constants
         public const string ConfirmTaskDelete = "confirm-task-delete";
         public const string DefaultTheme = "default-theme";
         public const string DefaultSummaryLayout = "default-summary-layout";
-        // Where earlier version 2 builds stored the default layout; moved to DefaultSummaryLayout on load.
-        public const string DefaultSummaryLayout2 = "default-summary-layout2";
         public const string HighlightDaemons = "highlight-daemons";
         public const string HighlightStatsColUpdate = "highlight-stats-col-update";
         public const string MetreStyle = "metre-style";
@@ -76,9 +74,6 @@ public sealed class Constants
         public const string ChartBackground = "chart.background";
         public const string ChartBorderForeground = "chart.borderforeground";
         public const string ChartBorderBackground = "chart.borderbackground";
-        // Superseded by chart.borderforeground; still read so custom themes written before the
-        // split keep their border colour.
-        public const string ChartBorderLegacy = "chart.border";
         public const string ChartYAxis = "chart.yaxis";
         public const string ChartTitle = "chart.title";
         public const string ChartGrid = "chart.grid";
@@ -98,9 +93,6 @@ public sealed class Constants
         public const string ListViewForeground = "listview.foreground";
         public const string ListViewBorderForeground = "listview.borderforeground";
         public const string ListViewBorderBackground = "listview.borderbackground";
-        // Superseded by listview.borderforeground; still read so custom themes written before the
-        // split keep their border colour.
-        public const string ListViewBorderLegacy = "listview.border";
         public const string HeaderBackground = "listview.header.background";
         public const string HeaderForeground = "listview.header.foreground";
 

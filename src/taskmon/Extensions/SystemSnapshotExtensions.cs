@@ -28,7 +28,6 @@ public static class SystemSnapshotExtensions
     public static string ToCpuSocketCount(this CpuSpecs specs) =>
         specs.CpuSockets == 0 ? "1" : specs.CpuSockets.ToString();
 
-    // Firmware bit only; a running hypervisor can hide it. See ProcessThreadsApi.PF_VIRT_FIRMWARE_ENABLED.
     public static string ToCpuVirtualization(this CpuSpecs specs) =>
         specs.CpuVirtualizationFirmwareEnabled ? "Enabled" : "Disabled";
 
@@ -135,8 +134,6 @@ public static class SystemSnapshotExtensions
         (metrics.TotalPageFile - metrics.AvailablePageFile).ToFormattedByteSize() + "/" +
          metrics.TotalPageFile.ToFormattedByteSize();
 
-    // Every disk figure below is already combined across all installed drives: the service takes
-    // active time from the busiest disk and the byte rates from the Pdh "_Total" instance.
     public static double ToDiskActiveTimeRatio(this DiskMetrics metrics) =>
         Math.Clamp(metrics.PercentActiveTime / 100.0, 0.0, 1.0);
 
@@ -155,8 +152,6 @@ public static class SystemSnapshotExtensions
     public static string ToDiskWriteRate(this DiskMetrics metrics) =>
         metrics.WriteBytesPerSecond.ToFormattedByteRate();
 
-    // The raw capacity the drives report, which is larger than the sum of the formatted volume
-    // capacities they host.
     public static long ToDiskTotalCapacity(this DiskSpecs specs)
     {
         long capacity = 0;
@@ -168,8 +163,6 @@ public static class SystemSnapshotExtensions
         return capacity;
     }
 
-    // The network figures are summed across the active adapters, with tunnel and virtual adapters
-    // left out because they report the same bytes as the adapter underneath them.
     public static string ToNetworkSendRate(this NetworkMetrics metrics) =>
         metrics.SendBytesPerSecond.ToFormattedByteRate();
 
@@ -179,10 +172,6 @@ public static class SystemSnapshotExtensions
     public static double ToNetworkThroughputBytesPerSecond(this NetworkMetrics metrics) =>
         metrics.SendBytesPerSecond + metrics.ReceiveBytesPerSecond;
 
-    // The single address the header reports as "this machine's ip". A host routinely has several,
-    // so one is picked the way the old SystemInfo.GetPreferredIpAddress did: a wired adapter first,
-    // then wireless, and only adapters that count toward the aggregate, which excludes the tunnel
-    // and virtual adapters that would otherwise shadow the real one.
     public static string ToPreferredIPv4Address(this NetworkSpecs specs)
     {
         const string Ethernet = "Ethernet";
@@ -212,11 +201,9 @@ public static class SystemSnapshotExtensions
         return null;
     }
 
-    // Packets are a count rather than a size, so they are not run through the byte formatter.
     public static string ToNetworkPacketCount(this ulong packets) =>
         packets.ToString("N0");
 
-    // Link speed is bits per second and 1000 based, the way an adapter reports "2.5 Gbps".
     public static string ToLinkSpeed(this ulong bitsPerSecond)
     {
         if (bitsPerSecond == 0) {
@@ -235,17 +222,10 @@ public static class SystemSnapshotExtensions
         return index == 0 ? $"{rate:0} {units[index]}" : $"{rate:0.#} {units[index]}";
     }
 
-    // Zero or more addresses joined for a single list-view cell.
     public static string ToAddressList(this string[] addresses) =>
         addresses.Length > 0
             ? string.Join(", ", addresses)
             : NetworkDeviceParser.NotAvailable;
-
-    // ---- Per-device projections -------------------------------------------------------------
-    //
-    // These mirror the aggregate formatters above but read one entry out of the *Metrics.Devices /
-    // *Specs.Devices lists the services already publish. Used by the *PerformanceControl screens
-    // when the matching AppConfig ShowXxxCombined flag is false.
 
     private static double UsedRatio(long total, long available) =>
         total > 0 ? 1.0 - (double)available / total : 0.0;
@@ -340,7 +320,6 @@ public static class SystemSnapshotExtensions
     public static string ToDisplayName(this NetworkDeviceMetrics device) =>
         device.FriendlyName is { Length: > 0 } ? device.FriendlyName : $"Adapter {device.InterfaceIndex}";
 
-    // 1024 based, matching ToFormattedByteSize and how Task Manager formats its disk speeds.
     public static string ToFormattedByteRate(this double bytesPerSecond)
     {
         string[] rateFormatters = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"];
@@ -352,7 +331,6 @@ public static class SystemSnapshotExtensions
             rate /= 1024.0;
         }
 
-        // A fixed decimal place so a value keeps the same width as it moves through a range.
         return $"{rate:0.0} {rateFormatters[index]}";
     }
 }

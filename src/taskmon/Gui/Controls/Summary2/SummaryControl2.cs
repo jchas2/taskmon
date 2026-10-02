@@ -7,9 +7,6 @@ using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Gui.Controls.Summary2;
 
-// The SUMMARY screen's dashboard: a recursive split tree of panes. Renders appConfig.DefaultLayout
-// (chosen on Setup's LAYOUTS tab, edited in LayoutDesignerScreen), or the built-in example tree if
-// there is none, and rebuilds its panes on Load whenever that default has changed.
 public sealed class SummaryControl2 : Control
 {
     private readonly ServiceController serviceController;
@@ -18,10 +15,6 @@ public sealed class SummaryControl2 : Control
     private readonly Dictionary<int, Control> paneControls = new();
 
     private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
-
-    // The layout the panes were built from - compared against appConfig.DefaultLayout on
-    // every Load, so a different default chosen in Setup (or the default re-saved from the
-    // designer, which AppConfig replaces with a new instance) shows up when this is next shown.
     private SummaryControlLayout? builtFrom;
 
     private SystemSnapshot? snapshot;
@@ -39,8 +32,6 @@ public sealed class SummaryControl2 : Control
         BuildPanes();
     }
 
-    // Only ever called while unloaded (the constructor, or OnLoad before base.OnLoad() loads the
-    // new panes) - the previous panes were already unloaded by this control's own Unload().
     private void BuildPanes()
     {
         builtFrom = appConfig.DefaultLayout;
@@ -57,10 +48,6 @@ public sealed class SummaryControl2 : Control
         }
     }
 
-    // SummaryControl2 itself draws no border - focus always lives on one of its pane controls,
-    // whose own OnGotFocus (where the pane type is a composite) redirects further down again -
-    // so a SetFocus() call on this composite needs to be redirected there for the focus-colour
-    // cue to reach anything visible.
     protected override void OnGotFocus()
     {
         int paneId = focusedPaneId ?? tree.Panes().First().Id;
@@ -77,15 +64,17 @@ public sealed class SummaryControl2 : Control
         }
     }
 
-    // Feeds whichever chart panes are actually in the tree - shared with LayoutDesignerScreen via
-    // SummaryChartFeeder.
     private void OnDrawCharts()
     {
         if (snapshot == null) {
             return;
         }
 
-        SummaryChartFeeder.Feed(tree, paneControls, snapshot, appConfig);
+        SummaryChartFeeder.Feed(
+            tree, 
+            paneControls, 
+            snapshot, 
+            appConfig);
     }
 
     private void OnDrawProcesses()
@@ -110,11 +99,6 @@ public sealed class SummaryControl2 : Control
             return;
         }
 
-        // The focused pane gets first refusal - a pane with its own internal left/right routing
-        // (e.g. SystemInfoControl's nav <-> detail), or its own use for up/down (e.g. a Process
-        // pane's list scrolling), keeps working unmodified. Only once that pane reports nothing
-        // further to do with the key does this control step in - and only for left/right, which
-        // cycle through panes in tree order; up/down are never used to switch panes.
         focusedPane.KeyPressed(keyInfo, ref handled);
 
         if (handled) {
@@ -122,7 +106,7 @@ public sealed class SummaryControl2 : Control
         }
 
         int? targetPaneId = keyInfo.Key switch {
-            ConsoleKey.LeftArrow => FindAdjacentPane(-1),
+            ConsoleKey.LeftArrow  => FindAdjacentPane(-1),
             ConsoleKey.RightArrow => FindAdjacentPane(1),
             _ => null
         };
@@ -138,10 +122,6 @@ public sealed class SummaryControl2 : Control
     private Control? FindFocusedPane() =>
         paneControls.Values.FirstOrDefault(control => control.HasFocus);
 
-    // Cycles through panes in tree order (the same order Panes() yields them in) rather than
-    // spatial nearest-neighbour search - simpler, and matches how a linear left/right tab order
-    // is expected to behave. Returns null at either end so Left from the first pane and Right
-    // from the last pane are left unhandled (Left bubbles out to the outer VIEW MENU).
     private int? FindAdjacentPane(int step)
     {
         List<SummaryLayoutNode> panes = tree.Panes().ToList();
@@ -154,7 +134,9 @@ public sealed class SummaryControl2 : Control
 
         int targetIndex = currentIndex + step;
 
-        return targetIndex >= 0 && targetIndex < panes.Count ? panes[targetIndex].Id : null;
+        return targetIndex >= 0 && targetIndex < panes.Count 
+            ? panes[targetIndex].Id 
+            : null;
     }
 
     protected override void OnLoad()
@@ -166,16 +148,13 @@ public sealed class SummaryControl2 : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        // Themed before base.OnLoad() loads the panes, so a focus swap saves and later restores the
-        // themed border rather than a control's pre-theme default.
         foreach (Control control in paneControls.Values) {
             SummaryPaneTheme.Apply(control, appConfig);
         }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
-        // Loads every pane (Control.OnLoad's default foreach over Controls). Never Load() them
-        // explicitly as well - that double-subscribes panes with their own snapshot handler.
+        // Loads every pane. 
         base.OnLoad();
     }
 
@@ -200,7 +179,7 @@ public sealed class SummaryControl2 : Control
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
 
-        // Unloads every pane (Control.OnUnload's default foreach over Controls).
+        // Unloads every pane.
         base.OnUnload();
     }
 }

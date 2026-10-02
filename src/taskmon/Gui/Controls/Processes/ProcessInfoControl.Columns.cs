@@ -1,4 +1,4 @@
-﻿namespace Task.Monitor.Gui.Controls;
+﻿namespace Task.Monitor.Gui.Controls.Processes;
 
 public partial class ProcessInfoControl
 {

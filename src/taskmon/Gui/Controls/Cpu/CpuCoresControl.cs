@@ -9,26 +9,15 @@ using Task.Monitor.System.Services.Cpu;
 
 namespace Task.Monitor.Gui.Controls.Cpu;
 
-// One horizontal metre per logical processor, the way htop/btop present them, stacked into as
-// many columns as the pane's width allows. Only ever reached by assigning PaneControlType.CpuCores
-// to a pane in LayoutDesignerScreen - it is on no menu or screen of its own.
-//
-// Feeds itself from the snapshot stream (like the Process/Drivers/Services panes, unlike the Chart
-// panes SummaryChartFeeder pushes into), so it shows live data in the designer preview and on a
-// SummaryControl2 dashboard without either of them knowing anything about it.
-public sealed class CpuCoresControl : Control
+public sealed class  CpuCoresControl : Control
 {
     private const string Title = "CPU CORES";
     private const string MsgNoCoreData = "Per-core CPU data is not available on this OS";
 
-    // Widths of a single core's row: "C0 <bar> 100%". The bar gets whatever the column has left
-    // over, but never less than MinBarWidth - below that the row reads as noise, so a column that
-    // narrow isn't drawn at all.
     private const int MinBarWidth = 6;
     private const int PercentWidth = 4;
     private const int ColumnGutter = 2;
 
-    // Load bands for the bar colour, matching the performance panels' low/mid/high gradient.
     private const double MidLoadThreshold = 0.5;
     private const double HighLoadThreshold = 0.85;
 
@@ -36,16 +25,12 @@ public sealed class CpuCoresControl : Control
     private readonly AppConfig appConfig;
     private readonly AnsiScreenBuffer frame = new();
 
-    // One metre per drawn core, rebuilt only when the grid shape or the core count changes - not
-    // per frame, which would churn a metre's sub-cell buffers on every tick.
     private readonly List<MetreControl> metres = [];
     private string metreSignature = string.Empty;
 
     private string[] coreNames = [];
     private double[] coreValues = [];
 
-    // A shrinking core count (or a resize) leaves rows behind that nothing would otherwise
-    // overwrite, so the content area is wiped once when the shape changes.
     private bool needsClear = true;
 
     public CpuCoresControl(
@@ -86,7 +71,6 @@ public sealed class CpuCoresControl : Control
 
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) => Sample(e.Snapshot);
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         try {
@@ -131,12 +115,24 @@ public sealed class CpuCoresControl : Control
         }
 
         if (needsClear) {
-            DrawRectangle(innerLeft, innerTop, innerWidth, innerHeight, BackgroundColour);
+            DrawRectangle(
+                innerLeft, 
+                innerTop, 
+                innerWidth, 
+                innerHeight, 
+                BackgroundColour);
+            
             needsClear = false;
         }
 
         if (coreValues.Length == 0) {
-            DrawCentredMessage(innerLeft, innerTop, innerWidth, innerHeight, MsgNoCoreData);
+            DrawCentredMessage(
+                innerLeft, 
+                innerTop, 
+                innerWidth, 
+                innerHeight, 
+                MsgNoCoreData);
+            
             return;
         }
 
@@ -162,12 +158,22 @@ public sealed class CpuCoresControl : Control
                     break;
                 }
 
-                DrawCore(metres[metreIndex++], coreIndex, columnLeft, innerTop + row, grid);
+                DrawCore(
+                    metres[metreIndex++], 
+                    coreIndex, 
+                    columnLeft, 
+                    innerTop + row, 
+                    grid);
             }
         }
     }
 
-    private void DrawCore(MetreControl metre, int coreIndex, int left, int top, CoreGrid grid)
+    private void DrawCore(
+        MetreControl metre, 
+        int coreIndex, 
+        int left, 
+        int top, 
+        CoreGrid grid)
     {
         double value = coreValues[coreIndex];
         string label = $"C{coreNames[coreIndex]}";
@@ -201,8 +207,6 @@ public sealed class CpuCoresControl : Control
         _ => appConfig.Theme.RangeLowBackground
     };
 
-    // The metres are interchangeable - each one is positioned and given its value at draw time -
-    // so only how many of them exist has to be kept in step with the grid.
     private void EnsureMetres(CoreGrid grid)
     {
         int required = Math.Min(coreValues.Length, grid.Columns * grid.Rows);
@@ -230,9 +234,6 @@ public sealed class CpuCoresControl : Control
         }
     }
 
-    // Column-major packing: every column is filled top to bottom before the next one starts, so the
-    // number of columns follows from the height. Columns that wouldn't leave room for a readable
-    // bar are dropped, and the cores that would have been in them simply aren't drawn.
     internal static CoreGrid CalculateGrid(int coreCount, int innerWidth, int innerHeight)
     {
         if (coreCount <= 0 || innerWidth <= 0 || innerHeight <= 0) {
@@ -264,7 +265,12 @@ public sealed class CpuCoresControl : Control
         int LabelWidth,
         int BarWidth);
 
-    private void DrawCentredMessage(int left, int top, int width, int height, string message)
+    private void DrawCentredMessage(
+        int left, 
+        int top, 
+        int width, 
+        int height, 
+        string message)
     {
         string shown = message.Length > width ? message[..width] : message;
         int messageLeft = left + (width - shown.Length) / 2;
@@ -277,9 +283,6 @@ public sealed class CpuCoresControl : Control
         Terminal.Write(frame.AsSpan());
     }
 
-    // Mirrors ListView.DrawBorder - rounded corners, the title centred in the top border - so the
-    // pane reads as one more bordered panel, and the designer's selection highlight (a BorderColour
-    // swap) lands on it the same way it does on a Chart or a ListView pane.
     private void DrawBorder()
     {
         int innerWidth = Width - 2;
@@ -290,18 +293,18 @@ public sealed class CpuCoresControl : Control
 
         frame.Clear();
         frame.MoveTo(X, Y);
-        frame.SetColour(BorderColour, BackgroundColour);
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
         frame.Append('╭');
         frame.Append('─', leftDashes);
         frame.SetColour(ForegroundColour, BackgroundColour);
         frame.Append(titleLabel.AsSpan(0, titleLength));
-        frame.SetColour(BorderColour, BackgroundColour);
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
         frame.Append('─', rightDashes);
         frame.Append('╮');
 
         for (int row = 1; row < Height - 1; row++) {
             frame.MoveTo(X, Y + row);
-            frame.SetColour(BorderColour, BackgroundColour);
+            frame.SetColour(DisplayBorderColour, BackgroundColour);
             frame.Append('│');
 
             frame.MoveTo(X + Width - 1, Y + row);
@@ -309,7 +312,7 @@ public sealed class CpuCoresControl : Control
         }
 
         frame.MoveTo(X, Y + Height - 1);
-        frame.SetColour(BorderColour, BackgroundColour);
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
         frame.Append('╰');
         frame.Append('─', innerWidth);
         frame.Append('╯');

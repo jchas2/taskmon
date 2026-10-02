@@ -7,24 +7,12 @@ using SysThreading = System.Threading;
 
 namespace Task.Monitor.Gui.Controls.SystemInformation;
 
-// Renders the platform ascii-art logo pinned above the detail list view, pulsing bold on/off once
-// a second. Colours are fixed (unlike AboutScreen's rotating rainbow marquee, which shares the
-// same glyph text via LogoArt but keeps its own independent colour strategy).
-//
-// Owns the app's first dedicated timer - System.Threading.Timer rather than PeriodicTimer+Task
-// because every other background-to-UI update in this app is already a synchronous callback that
-// calls Draw() directly (see ServiceController.SystemSnapshotUpdated handlers); Timer's
-// single-callback model matches that with no extra ceremony, and Dispose(WaitHandle) gives an
-// exact, blocking guarantee against a callback outliving OnUnload().
 public sealed class SystemLogoControl : Control
 {
-    private static readonly int logoWidth = LogoArt.Lines.Max(line => line.Length);
+    private static readonly int logoWidth  = LogoArt.Lines.Max(line => line.Length);
     private static readonly int logoHeight = LogoArt.Lines.Length;
 
 #if __WIN32__
-    // Precomputed once since the art is static: index at which each line's left glyph run ends
-    // and the quadrant-separating blank space begins. Row 0-1 have no right half (all left); row
-    // 15 has no left half (all right).
     private static readonly int[] SplitIndex =
         { 21, 21, 21, 20, 20, 19, 18, 16, 17, 23, 16, 15, 15, 14, 14, 0 };
 
@@ -34,14 +22,12 @@ public sealed class SystemLogoControl : Control
     private static readonly string[] RightHalves =
         LogoArt.Lines.Select((line, i) => line[SplitIndex[i]..]).ToArray();
 
-    // Clockwise from top-left: red, green, yellow, blue.
-    private static readonly Color TopLeftColour = ConsolePalette.FromHex("F25022", ConsolePalette.White);
-    private static readonly Color TopRightColour = ConsolePalette.FromHex("7FBA00", ConsolePalette.White);
+    private static readonly Color TopLeftColour     = ConsolePalette.FromHex("F25022", ConsolePalette.White);
+    private static readonly Color TopRightColour    = ConsolePalette.FromHex("7FBA00", ConsolePalette.White);
     private static readonly Color BottomRightColour = ConsolePalette.FromHex("FFB900", ConsolePalette.White);
-    private static readonly Color BottomLeftColour = ConsolePalette.FromHex("00A4EF", ConsolePalette.White);
+    private static readonly Color BottomLeftColour  = ConsolePalette.FromHex("00A4EF", ConsolePalette.White);
 #endif
 #if __APPLE__
-    // Same per-row hex values AboutScreen uses for the Apple logo, just never rotated.
     private static readonly string[] RowHex =
     {
         "3CC846", "3CC846", "3CC846", "3CC846", "3CC846",
@@ -57,7 +43,6 @@ public sealed class SystemLogoControl : Control
 
     private static readonly TimeSpan PulseInterval = TimeSpan.FromSeconds(1);
 
-    // Blank space kept clear of glyphs on every side of the logo.
     private const int Margin = 2;
 
     private readonly AnsiScreenBuffer frame = new();
@@ -66,12 +51,8 @@ public sealed class SystemLogoControl : Control
     private volatile bool pulseBold;
     private volatile bool loaded;
 
-    public SystemLogoControl(ISystemTerminal terminal) : base(terminal)
-    {
-    }
+    public SystemLogoControl(ISystemTerminal terminal) : base(terminal) { }
 
-    // Includes the margin on both sides, so a parent sizing this control from these properties
-    // gets the full footprint - glyphs plus margin - with no extra math of its own.
     public int LogoWidth => logoWidth + Margin * 2;
 
     public int LogoHeight => logoHeight + Margin * 2;
@@ -138,9 +119,16 @@ public sealed class SystemLogoControl : Control
     {
         bool topHalf = row < LogoArt.Lines.Length / 2;
 
-        frame.SetColour(topHalf ? TopLeftColour : BottomLeftColour, BackgroundColour);
+        frame.SetColour(topHalf 
+            ? TopLeftColour 
+            : BottomLeftColour, BackgroundColour);
+        
         frame.Append(LeftHalves[row]);
-        frame.SetColour(topHalf ? TopRightColour : BottomRightColour, BackgroundColour);
+        
+        frame.SetColour(topHalf 
+            ? TopRightColour 
+            : BottomRightColour, BackgroundColour);
+        
         frame.Append(RightHalves[row]);
     }
 #endif

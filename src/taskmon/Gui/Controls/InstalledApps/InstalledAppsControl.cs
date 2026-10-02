@@ -58,8 +58,6 @@ public sealed partial class InstalledAppsControl : Control
             .Add(new ListViewColumnHeader("SIZE"))
             .Add(new ListViewColumnHeader("LOCATION"));
 
-        // The main table's columns are too narrow to show a long publisher or install location in
-        // full; this mirrors the selected row's fields one per line so every value can be read.
         detailView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
@@ -78,7 +76,6 @@ public sealed partial class InstalledAppsControl : Control
         Controls.Add(detailView);
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         if (snapshot.InstalledApps is null) {
@@ -89,9 +86,6 @@ public sealed partial class InstalledAppsControl : Control
         Draw();
     }
 
-    // InstalledAppsControl itself draws no border - installedAppsView is the actual bordered,
-    // focusable panel - so a SetFocus() call on this composite needs to be redirected down to it
-    // for the focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => installedAppsView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -108,8 +102,6 @@ public sealed partial class InstalledAppsControl : Control
         detailView.Draw();
     }
 
-    // Rebuilds the row list only when the set of apps changes - installs and uninstalls - rather
-    // than every publish, since a rebuild resets the scroll position.
     private void EnsureRows(InstalledAppsInfo info)
     {
         string signature = BuildSignature(info.Specs.Apps);
@@ -126,16 +118,11 @@ public sealed partial class InstalledAppsControl : Control
         apps.Count + "|" + string.Join("|", apps.Select(app =>
             $"{app.Name}:{app.Version}:{(int)app.Scope}"));
 
-    // Rebuilds the detail pane from whichever row is currently highlighted in the main table.
-    // Cheap enough (seven rows) to call on every draw rather than tracking whether the selection or
-    // the underlying app actually changed.
     private void RefreshDetailPane()
     {
         int index = installedAppsView.SelectedIndex;
         IReadOnlyList<InstalledApp> apps = installedApps?.Specs.Apps ?? [];
-
         InstalledApp? selected = index >= 0 && index < apps.Count ? apps[index] : null;
-
         RebuildDetailRows(selected);
     }
 
@@ -151,8 +138,6 @@ public sealed partial class InstalledAppsControl : Control
 
         installedAppsView.KeyPressed(keyInfo, ref handled);
 
-        // The main table redraws itself directly (bypassing this control's own OnDraw), so a
-        // selection change made by that key press needs an explicit detail-pane refresh here.
         if (handled) {
             RefreshDetailPane();
             detailView.Draw();

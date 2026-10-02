@@ -134,8 +134,6 @@ public partial class ProcessControl
                     () => processEntry.GpuTimePercent != lastGpu);
             }
             
-            // Zero until the memory service has published. Guarded so the first frame does not
-            // divide by it and paint every row as though it were using all the memory on the box.
             double memRatio = totalPhysicalMemory > 0
                 ? processEntry.UsedMemory / (double)totalPhysicalMemory
                 : 0.0;

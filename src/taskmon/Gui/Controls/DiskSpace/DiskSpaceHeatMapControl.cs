@@ -7,22 +7,11 @@ using Task.Monitor.System.Services.DiskSpace;
 
 namespace Task.Monitor.Gui.Controls.DiskSpace;
 
-// Renders the current scan as a squarified treemap of the scan root's immediate child folders.
-// Each cell gets a distinct point along a green -> yellow -> red gradient keyed by its rank among
-// the cells currently shown, rather than a coarse three-band bucket, so no two boxes ever render
-// in the same colour. Recurses one level only in this first cut: full nested drill-down is a
-// natural follow-up once this is proven out on real scans, not a requirement of the first version.
-//
-// A child of DiskSpaceControl, drawn by its parent's OnDraw - the same relationship
-// ServicesControl has with its ListViews - rather than redrawing itself on Sample.
 public sealed class DiskSpaceHeatMapControl : Control
 {
     private const int FadeSteps = 4;
     private const int MinCellWidthForLabel = 6;
 
-    // Embedded in the bottom border rather than shown as content-area text, the same way
-    // ListView's own HeaderText/FooterText live in its border - one consistent place across every
-    // bordered panel for "how do I use this", instead of each one inventing its own placeholder.
     private const string BorderHint = "s Start scanning   c Cancel";
 
     private readonly AppConfig appConfig;
@@ -58,9 +47,6 @@ public sealed class DiskSpaceHeatMapControl : Control
             return;
         }
 
-        // The header (state/path) is the box's own first inner row, right under the top border -
-        // not a separate row above it - so the border lines up with every other bordered panel's,
-        // which all start flush at their control's own Y.
         DrawHeader(innerLeft, innerTop, innerWidth);
 
         int cellsTop = innerTop + 1;
@@ -71,30 +57,43 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
 
         if (specs?.RootNode is not { Children.Count: > 0 } root) {
-            DrawPlaceholder(innerLeft, cellsTop, innerWidth, cellsHeight);
+            DrawPlaceholder(
+                innerLeft, 
+                cellsTop, 
+                innerWidth, 
+                cellsHeight);
+            
             return;
         }
 
         TreemapItem[] items = [.. root.Children
             .Where(child => child.TotalBytes > 0)
-            .Select(child => new TreemapItem { Id = child.Path, Weight = child.TotalBytes })];
+            .Select(child => new TreemapItem {
+                Id = child.Path, 
+                Weight = child.TotalBytes
+            })];
 
         if (items.Length == 0) {
-            DrawPlaceholder(innerLeft, cellsTop, innerWidth, cellsHeight);
+            DrawPlaceholder(
+                innerLeft, 
+                cellsTop, 
+                innerWidth, 
+                cellsHeight);
+            
             return;
         }
 
-        Rectangle bounds = new(innerLeft, cellsTop, innerWidth, cellsHeight);
+        Rectangle bounds = new(
+            innerLeft, 
+            cellsTop, 
+            innerWidth, 
+            cellsHeight);
+        
         IReadOnlyList<TreemapCell> cells = stableLayout.Layout(items, bounds);
         Dictionary<string, DiskSpaceFolderNode> nodesById = root.Children.ToDictionary(child => child.Path);
 
         PruneFadeState(cells);
 
-        // Ranked across the cells actually drawn, not every child folder in the snapshot: the
-        // layout stops placing items once the space runs out, so counting the undrawn ones would
-        // shift every visible cell's colour each time the scan found another tiny folder, with no
-        // new rectangle on screen. The cells only change when StableTreemapLayout relays out, so
-        // neither do the colours.
         Dictionary<string, int> rankById = RankByArea(cells);
         heatColourById.Clear();
 
@@ -103,9 +102,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
     }
 
-    // Largest drawn area first, so the biggest box on screen is always rank 0 (the high colour)
-    // even where integer rounding has drawn a near-tied, lighter folder a cell larger. Equal areas
-    // keep the layout's own order - heaviest first - since OrderByDescending is a stable sort.
     internal static Dictionary<string, int> RankByArea(IReadOnlyList<TreemapCell> cells)
     {
         Dictionary<string, int> rankById = new();
@@ -118,8 +114,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         return rankById;
     }
 
-    // Test-only seam: each drawn cell's heat colour from the last draw, before any fade-in, so
-    // tests can check the colouring without decoding the ANSI output.
     internal IReadOnlyDictionary<string, Color> HeatColoursForTests => heatColourById;
 
     private void DrawHeader(int left, int top, int width)
@@ -135,7 +129,12 @@ public sealed class DiskSpaceHeatMapControl : Control
             ? "DISK SPACE"
             : $"DISK SPACE  {specs.RootPath}  {DescribeState(specs)}";
 
-        WriteLine(left, top, width, text, stateColour);
+        WriteLine(
+            left, 
+            top, 
+            width, 
+            text, 
+            stateColour);
     }
 
     private static string DescribeState(DiskSpaceSpecs specs) => specs.State switch {
@@ -150,9 +149,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         _ => string.Empty
     };
 
-    // Mirrors ListView's own border style (rounded corners, the same theme colour it draws
-    // with) so the treemap reads as one more bordered panel alongside the file list beneath it,
-    // rather than a plain unframed block of colour.
     private void DrawTreemapBorder(int top, int height)
     {
         if (Width < 2 || height < 2) {
@@ -179,8 +175,6 @@ public sealed class DiskSpaceHeatMapControl : Control
             frame.Append('│');
         }
 
-        // Bottom: ╰── hint ──╯ - mirrors ListView.DrawBorder's own HeaderText/FooterText
-        // convention (centred label, dashes either side) rather than a one-off layout here.
         string footerLabel = $" {BorderHint} ";
         int footerLabelLen = Math.Min(footerLabel.Length, innerWidth);
         int footerLeftDashes = (innerWidth - footerLabelLen) / 2;
@@ -200,36 +194,55 @@ public sealed class DiskSpaceHeatMapControl : Control
         Terminal.Write(frame.AsSpan());
     }
 
-    private void DrawPlaceholder(int left, int top, int width, int height)
+    private void DrawPlaceholder(
+        int left, 
+        int top, 
+        int width, 
+        int height)
     {
-        DrawRectangle(left, top, width, height, BackgroundColour);
+        DrawRectangle(
+            left, 
+            top, 
+            width, 
+            height, 
+            BackgroundColour);
 
-        // The usage hint now lives permanently in the border (see BorderHint) rather than as
-        // content-area text here - only a genuine error is worth a message in this space.
         if (specs?.State != DiskSpaceScanState.Faulted) {
             return;
         }
 
         string message = specs.ErrorMessage ?? "Scan failed.";
-        WriteLine(left, top, width, message, ForegroundColour);
+        
+        WriteLine(
+            left, 
+            top, 
+            width, 
+            message, 
+            ForegroundColour);
     }
 
-    private void DrawCell(TreemapCell cell, DiskSpaceFolderNode node, int rank, int cellCount)
+    private void DrawCell(
+        TreemapCell cell, 
+        DiskSpaceFolderNode node, 
+        int rank, 
+        int cellCount)
     {
         Color heatColour = RankColour(rank, cellCount);
         heatColourById[cell.Id] = heatColour;
         Color fillColour = ApplyFade(cell.Id, heatColour);
 
-        DrawRectangle(cell.Bounds.X, cell.Bounds.Y, cell.Bounds.Width, cell.Bounds.Height, fillColour);
+        DrawRectangle(
+            cell.Bounds.X, 
+            cell.Bounds.Y, 
+            cell.Bounds.Width, 
+            cell.Bounds.Height, 
+            fillColour);
 
         if (cell.Bounds.Width >= MinCellWidthForLabel && cell.Bounds.Height >= 1) {
             DrawCellLabel(cell.Bounds, node, fillColour);
         }
     }
 
-    // Rank 0 (the largest cell) is always the hottest, the smallest is always the coolest, and
-    // everything else spreads evenly between them along the gradient - a continuous function of
-    // rank rather than a fixed set of bands, so every cell lands at its own point on it.
     internal Color RankColour(int rank, int cellCount)
     {
         double t = cellCount <= 1 ? 1.0 : 1.0 - (rank / (double)(cellCount - 1));
@@ -239,13 +252,8 @@ public sealed class DiskSpaceHeatMapControl : Control
             : Lerp(appConfig.Theme.RangeMidBackground, appConfig.Theme.RangeHighBackground, (t - 0.5) / 0.5);
     }
 
-    // True while any drawn cell is still easing in from the background: ApplyFade advances a
-    // cell's step once per draw, so its owner keeps redrawing until every cell has reached FadeSteps.
     internal bool IsFading => fadeStepByCellId.Values.Any(step => step < FadeSteps);
 
-    // Eases a newly-appeared cell in from the background colour over the next few redraws rather
-    // than popping in at full saturation. The owner redraws when a throttled scan publish arrives,
-    // and on following ticks while IsFading, so this paces itself without needing its own clock.
     private Color ApplyFade(string cellId, Color targetColour)
     {
         int step = fadeStepByCellId.GetValueOrDefault(cellId);
@@ -286,15 +294,7 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
 
         string label = $"{node.Name} {node.TotalBytes.ToFormattedByteSize()}";
-        // int charsToTake = label.TruncateToTerminalWidth(usableWidth, out int actualWidth);
         List<string> lines = WrapLabelToLines(label, usableWidth, Math.Max(1, bounds.Height));
-
-        // frame.Clear();
-        // frame.MoveTo(bounds.X + 1, bounds.Y);
-        // frame.SetColour(ReadableTextColour(background), background);
-        // frame.Append(padded);
-        // frame.ResetColour();
-        // Terminal.Write(frame.AsSpan());
 
         for (int row = 0; row < lines.Count; row++) {
             string padded = lines[row] + new string(' ', usableWidth - lines[row].TerminalWidth());
@@ -356,16 +356,18 @@ public sealed class DiskSpaceHeatMapControl : Control
         return lines;
     }    
     
-    // The fill colour swings from green through yellow to red, so the label needs to pick its own
-    // contrasting colour per cell rather than a single theme foreground that would wash out
-    // against at least one of those.
     private static Color ReadableTextColour(Color background)
     {
         double luminance = (0.299 * background.R) + (0.587 * background.G) + (0.114 * background.B);
         return luminance > 140 ? Color.Black : Color.White;
     }
 
-    private void WriteLine(int x, int y, int width, string text, Color foreground)
+    private void WriteLine(
+        int x, 
+        int y, 
+        int width, 
+        string text, 
+        Color foreground)
     {
         if (width <= 0) {
             return;

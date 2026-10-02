@@ -28,7 +28,7 @@ public sealed class EmptyPaneControl : Control
 
         for (int y = Y; y < Y + Height; y++) {
             Terminal.SetCursorPosition(X, y);
-            Terminal.ForegroundColor = BorderColour;
+            Terminal.ForegroundColor = DisplayBorderColour;
 
             if (y == Y || y == Y + Height - 1) {
                 Terminal.Write(y == Y ? '╭' : '╰');
@@ -50,7 +50,7 @@ public sealed class EmptyPaneControl : Control
                 Terminal.Write(blank);
             }
 
-            Terminal.ForegroundColor = BorderColour;
+            Terminal.ForegroundColor = DisplayBorderColour;
             Terminal.Write('│');
         }
     }

@@ -8,9 +8,6 @@ using Task.Monitor.System.Services.WindowsServices;
 
 namespace Task.Monitor.Gui.Controls.Services;
 
-// The Windows services registered on this machine - the same inventory the Services snap-in
-// (services.msc) shows - in one selectable, scrolling table: name, status, startup type, the
-// account it logs on as, and its description.
 public sealed partial class ServicesControl : Control
 {
     private readonly ServiceController serviceController;
@@ -27,7 +24,7 @@ public sealed partial class ServicesControl : Control
     private const int LogOnAsColumnWidth = 20;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
+    private const int DetailViewHeight = 8; 
 
     public ServicesControl(
         ServiceController serviceController,
@@ -56,8 +53,6 @@ public sealed partial class ServicesControl : Control
             .Add(new ListViewColumnHeader("LOG ON AS"))
             .Add(new ListViewColumnHeader("DESCRIPTION"));
 
-        // The main table's columns are too narrow to show a long description in full; this mirrors
-        // the selected row's fields one per line so every value can be read.
         detailView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
@@ -76,7 +71,6 @@ public sealed partial class ServicesControl : Control
         Controls.Add(detailView);
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         if (snapshot.WindowsServices is null) {
@@ -87,9 +81,6 @@ public sealed partial class ServicesControl : Control
         Draw();
     }
 
-    // ServicesControl itself draws no border - servicesView is the actual bordered, focusable
-    // panel - so a SetFocus() call on this composite needs to be redirected down to it for the
-    // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => servicesView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -106,8 +97,6 @@ public sealed partial class ServicesControl : Control
         detailView.Draw();
     }
 
-    // Rebuilds the row list only when the set of services changes - rather than every publish,
-    // since a rebuild resets the scroll position.
     private void EnsureRows(WindowsServicesInfo info)
     {
         string signature = BuildSignature(info.Specs.Services);
@@ -124,9 +113,6 @@ public sealed partial class ServicesControl : Control
         entries.Count + "|" + string.Join("|", entries.Select(service =>
             $"{service.ServiceName}:{(int)service.Status}:{(int)service.StartType}:{service.DelayedAutoStart}"));
 
-    // Rebuilds the detail pane from whichever row is currently highlighted in the main table.
-    // Cheap enough (five rows) to call on every draw rather than tracking whether the selection or
-    // the underlying service actually changed.
     private void RefreshDetailPane()
     {
         int index = servicesView.SelectedIndex;
@@ -149,8 +135,6 @@ public sealed partial class ServicesControl : Control
 
         servicesView.KeyPressed(keyInfo, ref handled);
 
-        // The main table redraws itself directly (bypassing this control's own OnDraw), so a
-        // selection change made by that key press needs an explicit detail-pane refresh here.
         if (handled) {
             RefreshDetailPane();
             detailView.Draw();

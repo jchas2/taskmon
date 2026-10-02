@@ -185,8 +185,6 @@ public sealed partial class SystemInfoControl
         }
     }
 
-    // ---- Row helpers ----------------------------------------------------------------------------
-
     private void AddVolumeRow(ListView target, DiskVolume volume, int indent)
     {
         string name = volume.MountPoints.Length > 0
@@ -207,8 +205,6 @@ public sealed partial class SystemInfoControl
         AddRow(target, $"{name}:", detail.Length > 0 ? detail : NotAvailable, indent);
     }
 
-    // A row styled in the theme header colours across both cells, so the trailing fill (drawn in
-    // the last sub-item's background) carries the bar the full width of the list view.
     private void AddHeaderRow(ListView target, string title, int indent = 0)
     {
         ListViewItem row = new(new[] {
@@ -219,9 +215,6 @@ public sealed partial class SystemInfoControl
         target.Items.Add(row);
     }
 
-    // The label cell takes the theme's property.key colour and the value cell property.value. Both
-    // keep the list view's own background so ListView still treats them as default cells and runs
-    // the selection band through them.
     private void AddRow(ListView target, string label, string value, int indent = 0)
     {
         Color background = appConfig.Theme.Background;

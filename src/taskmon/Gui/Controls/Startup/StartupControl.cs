@@ -7,9 +7,6 @@ using Task.Monitor.System.Services.Startup;
 
 namespace Task.Monitor.Gui.Controls.Startup;
 
-// The applications configured to run at logon - the Run / RunOnce registry keys and the Startup
-// folders - in one selectable, scrolling table: name, publisher, where it is registered and for
-// whom, whether it is enabled, and the command it runs.
 public sealed partial class StartupControl : Control
 {
     private readonly ServiceController serviceController;
@@ -27,7 +24,7 @@ public sealed partial class StartupControl : Control
     private const int StatusColumnWidth = 9;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 9; // border (2) + column headers (1) + 6 field rows
+    private const int DetailViewHeight = 9;
 
     public StartupControl(
         ServiceController serviceController,
@@ -57,8 +54,6 @@ public sealed partial class StartupControl : Control
             .Add(new ListViewColumnHeader("STATUS"))
             .Add(new ListViewColumnHeader("COMMAND"));
 
-        // The main table's columns are too narrow to show a long publisher or command in full;
-        // this mirrors the selected row's fields one per line so every value can be read.
         detailView = new ListView(terminal) {
             EnableScroll = false,
             EnableRowSelect = false,
@@ -77,7 +72,6 @@ public sealed partial class StartupControl : Control
         Controls.Add(detailView);
     }
 
-    // Wired to the controller event in OnLoad; tests call it directly.
     public void Sample(SystemSnapshot snapshot)
     {
         if (snapshot.Startup is null) {
@@ -88,9 +82,6 @@ public sealed partial class StartupControl : Control
         Draw();
     }
 
-    // StartupControl itself draws no border - startupView is the actual bordered, focusable
-    // panel - so a SetFocus() call on this composite needs to be redirected down to it for the
-    // focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => startupView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -107,9 +98,6 @@ public sealed partial class StartupControl : Control
         detailView.Draw();
     }
 
-    // Rebuilds the row list only when the set of entries changes - installs and uninstalls, or a
-    // user enabling or disabling one - rather than every publish, since a rebuild resets the
-    // scroll position.
     private void EnsureRows(StartupInfo info)
     {
         string signature = BuildSignature(info.Specs.Entries);
@@ -126,9 +114,6 @@ public sealed partial class StartupControl : Control
         entries.Count + "|" + string.Join("|", entries.Select(entry =>
             $"{entry.Name}:{(int)entry.Source}:{(int)entry.Scope}:{(int)entry.State}"));
 
-    // Rebuilds the detail pane from whichever row is currently highlighted in the main table.
-    // Cheap enough (six rows) to call on every draw rather than tracking whether the selection or
-    // the underlying entry actually changed.
     private void RefreshDetailPane()
     {
         int index = startupView.SelectedIndex;
@@ -151,8 +136,6 @@ public sealed partial class StartupControl : Control
 
         startupView.KeyPressed(keyInfo, ref handled);
 
-        // The main table redraws itself directly (bypassing this control's own OnDraw), so a
-        // selection change made by that key press needs an explicit detail-pane refresh here.
         if (handled) {
             RefreshDetailPane();
             detailView.Draw();

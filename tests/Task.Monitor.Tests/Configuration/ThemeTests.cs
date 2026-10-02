@@ -471,30 +471,6 @@ command.background=#121d18
     }
 
     [Fact]
-    public void ChartBorderForeground_Falls_Back_To_Legacy_ChartBorder_Key()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-        section.Add(Constants.Keys.ChartBorderLegacy, "#334455");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorderForeground);
-    }
-
-    [Fact]
-    public void ChartBorderForeground_Overrides_Legacy_ChartBorder_Key_When_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.ChartBorderLegacy, "#334455");
-        section.Add(Constants.Keys.ChartBorderForeground, "#665544");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#665544"), theme.ChartBorderForeground);
-    }
-
-    [Fact]
     public void ListViewBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
     {
         ConfigSection section = new("theme-test");
@@ -505,30 +481,6 @@ command.background=#121d18
 
         Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ListViewBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ListViewBorderBackground);
-    }
-
-    [Fact]
-    public void ListViewBorderForeground_Falls_Back_To_Legacy_ListViewBorder_Key()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-        section.Add(Constants.Keys.ListViewBorderLegacy, "#334455");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ListViewBorderForeground);
-    }
-
-    [Fact]
-    public void ListViewBorderForeground_Overrides_Legacy_ListViewBorder_Key_When_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.ListViewBorderLegacy, "#334455");
-        section.Add(Constants.Keys.ListViewBorderForeground, "#665544");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#665544"), theme.ListViewBorderForeground);
     }
 
     [Fact]

@@ -2,7 +2,7 @@
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Process;
 
-namespace Task.Monitor.Gui.Controls;
+namespace Task.Monitor.Gui.Controls.Processes;
 
 public partial class ProcessInfoControl
 {

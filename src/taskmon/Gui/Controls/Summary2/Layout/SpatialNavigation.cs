@@ -4,13 +4,6 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 
 public enum SpatialDirection { Left, Right, Up, Down }
 
-// Standard tiling-window-manager neighbour search: among panes whose rect lies in the given
-// direction from a starting pane, picks the one with the smallest gap, tie-broken by whichever
-// overlaps the starting pane most along the perpendicular axis. Pulled out as a standalone helper
-// (rather than living on SummaryControl2, which cycles panes in tree order instead - see its
-// OnKeyPressed) because LayoutDesignerScreen's selection genuinely is a 2D cursor moving around a
-// visual layout, where "the pane above/below/left/right on screen" is the only sensible meaning
-// of an arrow key, unlike a linear left/right tab order between content panes.
 public static class SpatialNavigation
 {
     public static int? FindNearest(
