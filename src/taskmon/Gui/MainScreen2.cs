@@ -47,8 +47,6 @@ public sealed class MainScreen2 : Screen
     private const int FooterHeight = 1;
     private const int BannerHeight = 1;
     private const int MenuWidth = 16;
-    // The header's bottom border already separates it from the banners, so they start on the very
-    // next row.
     private const int ActiveControlTop = HeaderHeight;
 
     public MainScreen2(RunContext runContext, ScreenApplication screenApp)
@@ -228,14 +226,6 @@ public sealed class MainScreen2 : Screen
         }
         
         switch (keyInfo.Key) {
-            // Pre-existing gap, not something this session's Summary2 work introduced: the
-            // constructor has always taken a ScreenApplication (screenApp), and SetupScreen/
-            // HelpScreen/AboutScreen have always been registered in RunAppAction, but nothing
-            // ever actually called ShowScreen<T>() for any of them - there was no way to reach
-            // Setup (or Help/About) from the running app at all. This wires up F2 for Setup,
-            // the screen the SummaryControl2 layout designer (LayoutDesignerScreen, reached from
-            // Setup's LAYOUTS tab via 'N') needs to be reachable through. Help/About have the
-            // same gap and are left alone here as out of scope for this fix.
             case ConsoleKey.F2:
                 screenApp.ShowScreen<SetupScreen>();
                 handled = true;
@@ -248,9 +238,6 @@ public sealed class MainScreen2 : Screen
                 break;
 
             case ConsoleKey.LeftArrow when focusedControl == activeControl:
-                // The active screen gets first refusal on its own left/right navigation (e.g. a
-                // nav pane and a content pane, as in SystemInfoControl). Only step back out to
-                // the outer menu once it reports there is nothing further left inside it.
                 activeControl.KeyPressed(keyInfo, ref handled);
 
                 if (!handled) {
@@ -384,10 +371,6 @@ public sealed class MainScreen2 : Screen
         activeControl.Clear();
         activeControl.Draw();
 
-        // Loading the newly-previewed pane can establish its own default internal focus (e.g.
-        // ProcessControl/SystemInfoControl focusing their own nav on load) - this is only ever
-        // reached while the outer menu is what the user is actually navigating, so real focus
-        // belongs back on the menu, not silently left on whatever the pane just claimed.
         menuControl.SetFocus();
     }
 

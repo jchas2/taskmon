@@ -16,14 +16,6 @@ public class SetupScreen : Screen
 {
     private readonly RunContext runContext;
     private readonly ScreenApplication screenApp;
-
-    // First row of the LAYOUTS tab - Enter on it opens the designer on a fresh example layout.
-    // Can't collide with a real layout name: the designer's save dialog doesn't accept '+'.
-    private const string NewLayoutRow = "+ New Layout";
-
-    // Set when leaving for the designer, so the Show() that brings this screen back (after the
-    // designer is closed) returns to the LAYOUTS tab rather than resetting to GENERAL.
-    private bool returnToLayoutsTab;
     private readonly ListView headerView;
     private readonly ListView menuView;
     private readonly ListView generalView;
@@ -34,13 +26,16 @@ public class SetupScreen : Screen
     private readonly ListView delayView;
     private readonly ListView numProcsView;
     private readonly List<ListView> tabControls = [];
-
     private Theme previewTheme;
+
     private bool preferIndexedColours;
+    private bool returnToLayoutsTab;
 
     private const int ControlGutter = 1;
     private const int MenuViewWidth = 22;
     private const int CommandLength = 10;
+
+    private const string NewLayoutRow = "+ New Layout";
 
     private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
     [
@@ -379,8 +374,6 @@ public class SetupScreen : Screen
 
         AddItems(themeView, themeNames, val => runContext.AppConfig.Theme.Name.Equals(val));
         
-        // The SUMMARY screen's split-tree layouts (SummaryControl2) - the shipped ones and any
-        // saved from the designer - with the one currently in use highlighted.
         layoutView.Items.Add(new ListViewItem(NewLayoutRow));
 
         string? defaultLayoutName = runContext.AppConfig.DefaultLayout?.Name;
@@ -454,23 +447,10 @@ public class SetupScreen : Screen
         UpdateConfigValue(delayView.SelectedItem,    val => runContext.AppConfig.DelayInMilliseconds = val);
         UpdateConfigValue(numProcsView.SelectedItem, val => runContext.AppConfig.NumberOfProcesses = val);
         
-        ApplySamplingSettings();
+        runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
+        runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
     }
 
-    // The two settings above that are inputs to the sampling rather than to how it is drawn. They
-    // are pushed onto the services themselves: nothing republishes AppConfig, so a service already
-    // running would otherwise keep sampling with whatever it was given at startup.
-    //
-    // The delay goes to every service and to the controller's publish cycle, so changing it here
-    // takes effect on the charts and the repaint rate as well as on the process list. Each service
-    // picks it up within one 250ms step of its current wait rather than at the end of it.
-    private void ApplySamplingSettings()
-    {
-        runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
-        runContext.ServiceController.GetService<ProcessService>().IrixMode =
-            runContext.AppConfig.UseIrixReporting;
-    }
-    
     private void MenuViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
         tabControls.ForEach(ctrl => ctrl.Visible = false);
@@ -553,14 +533,11 @@ public class SetupScreen : Screen
                 handled = true;
                 break;
 
-            // Enter on a layout opens it in the designer; on "+ New Layout", a fresh example.
-            // Needs the list itself focused (Right arrow into it), like Space/arrows above.
             case ConsoleKey.Enter when activeControl == layoutView && focusedControl == layoutView:
                 OpenLayoutDesigner(layoutView.SelectedItem?.Text);
                 handled = true;
                 break;
 
-            // Shortcut for "+ New Layout" from anywhere on the LAYOUTS tab.
             case ConsoleKey.N when activeControl == layoutView:
                 OpenLayoutDesigner(null);
                 handled = true;
@@ -614,9 +591,6 @@ public class SetupScreen : Screen
         preferIndexedColours = ConsolePalette.PreferIndexedColours;
 
         if (returnToLayoutsTab) {
-            // Back from the designer - the list above was just rebuilt, so a layout saved there
-            // is already in it. Focus itself is set in OnShown: Screen.Show() runs Focus() after
-            // Load(), which would move it back to the category menu.
             layoutView.Visible = true;
             SelectMenuItemFor(layoutView);
         }
@@ -651,10 +625,6 @@ public class SetupScreen : Screen
         }
     }
 
-    // A null or unknown name (e.g. the "+ New Layout" row) opens a fresh, unnamed layout of one
-    // empty pane.
-    // The designer edits a copy (ToTree builds a new tree), so leaving it without saving changes
-    // nothing here.
     private void OpenLayoutDesigner(string? layoutName)
     {
         SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(
@@ -683,13 +653,6 @@ public class SetupScreen : Screen
         Draw();
     }
 
-    // Every ListView here defaults to ShowBorder = true, which insets its actual drawable
-    // viewport by one column on each side (see ListView.CalculateViewPortBounds) - a column
-    // width set to the control's raw Width, with no allowance for that inset, trips
-    // ListView.DrawItem's "does this column fit the viewport" guard on column 0 of every row,
-    // silently blanking every list on this screen. This screen was unreachable from the running
-    // app until this session wired up MainScreen2's F2 (see MainScreen2's ScreenApplication
-    // field), so nothing had ever actually exercised OnResize() against a real terminal before.
     private const int BorderInset = 2;
 
     protected override void OnResize()
