@@ -180,7 +180,23 @@ public static unsafe class Sys
         value = result;
         return true;
     }
-    
+
+    // Reads a 64-bit integer-valued sysctl by name (e.g. "hw.l2cachesize").
+    public static unsafe bool SysctlByNameLong(string name, out long value)
+    {
+        value = 0;
+        long result = 0;
+        size_t len = (IntPtr)sizeof(long);
+
+        if (SysctlByName(name, &result, &len, null, IntPtr.Zero) != 0) {
+            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
+            return false;
+        }
+
+        value = result;
+        return true;
+    }
+
     public static unsafe void FreeMemory(void* ptr)
     {
         if ((IntPtr)ptr == IntPtr.Zero) {

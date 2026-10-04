@@ -1,14 +1,26 @@
 #if __APPLE__
+using Task.Monitor.System.Services.Gpu;
+
 namespace Task.Monitor.System.Services.Process;
 
-// macOS stub: the service runs and publishes empty specs and metrics until a macOS implementation
-// replaces these.
 public sealed partial class ProcessService
 {
-    private void OnStartProcessSpecs(ProcessSpecs specs) { }
+    private void OnStartProcessSpecs(ProcessSpecs specs)
+    {
+        specs.LogicalProcessorCount = Environment.ProcessorCount;
+        specs.IrixMode = IrixMode;
+    }
 
-    private void OnDoWorkProcessMetrics(ProcessMetrics metrics, ProcessSpecs specs) { }
+    private void OnDoWorkProcessMetrics(ProcessMetrics metrics, ProcessSpecs specs)
+    {
+        List<ProcessSample> samples = GetProcessSamples();
 
-    private void OnStopProcessMetrics() { }
+        // Per-process GPU percent is published by GpuService (GpuInfo); absent a registered/primed
+        // GpuService it falls back to the empty map, leaving ProcessEntry.GpuTimePercent at 0.
+        Dictionary<int, double> gpuPercentByPid =
+            GetLatest<GpuInfo>()?.Metrics.ProcessPercentTime ?? NoGpuPercent;
+
+        BuildMetrics(metrics, specs, samples, gpuPercentByPid);
+    }
 }
 #endif

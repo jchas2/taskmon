@@ -1,18 +1,61 @@
 #if __APPLE__
+using Task.Monitor.Interop.Mach;
+
 namespace Task.Monitor.System.Services.Gpu;
 
-// macOS stub: the service runs and publishes empty specs and metrics until a macOS implementation
-// replaces these.
+// Shared macOS helpers for the GpuService partials. Per-process metrics and device-wide utilisation
+// live in GpuService.GpuPidMetrics.MacOS.cs, specs in GpuService.GpuSpecs.MacOS.cs and memory metrics
+// in GpuService.GpuMemoryMetrics.MacOS.cs.
 public sealed partial class GpuService
 {
-    private void OnStartGpuSpecs(GpuSpecs specs) { }
+    private const string IOServicePlane = "IOService";
+    private const uint RegistryIterateRecursively = 0x00000001;
 
-    private void OnStartGpuPidMetrics() { }
+    // Reads the IOAccelerator PerformanceStatistics allocation figures. These describe the single
+    // unified GPU allocation pool on Apple Silicon (bytes).
+    private static bool TryReadIOAcceleratorMemory(out long allocMemory, out long inUseMemory)
+    {
+        allocMemory = 0;
+        inUseMemory = 0;
 
-    private void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo) { }
+        IntPtr matching = IOKit.IOServiceMatching("IOAccelerator");
+        uint accelerator = IOKit.IOServiceGetMatchingService(0, matching);
 
-    private bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo) => false;
+        if (accelerator == 0) {
+            return false;
+        }
 
-    private void OnStopGpuPidMetrics() { }
+        int result = IOKit.IORegistryEntryCreateCFProperties(
+            accelerator,
+            out IntPtr properties,
+            IntPtr.Zero,
+            0);
+
+        if (result != 0 || properties == IntPtr.Zero) {
+            IOKit.IOObjectRelease(accelerator);
+            return false;
+        }
+
+        bool found = false;
+        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+
+        if (props.TryGetValue("PerformanceStatistics", out nint perfStatsRef)) {
+            Dictionary<string, nint> perfStats = CoreFoundation.ToDictionary(perfStatsRef);
+
+            if (perfStats.TryGetValue("Alloc system memory", out nint allocRef)) {
+                CoreFoundation.CFNumberGetValue(allocRef, out allocMemory);
+                found = true;
+            }
+
+            if (perfStats.TryGetValue("In use system memory", out nint inUseRef)) {
+                CoreFoundation.CFNumberGetValue(inUseRef, out inUseMemory);
+                found = true;
+            }
+        }
+
+        CoreFoundation.CFRelease(properties);
+        IOKit.IOObjectRelease(accelerator);
+        return found;
+    }
 }
 #endif
