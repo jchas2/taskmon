@@ -1,5 +1,3 @@
-using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -105,37 +103,40 @@ public partial class NetworkService
     {
         List<NetworkDevice> devices = new();
 
-        for (byte* adapter = buffer; adapter != null; adapter = ReadPointer(adapter, IpTypes.AdapterAddressesNextOffset)) {
+        for (byte* adapter = buffer;
+             adapter != null;
+             adapter = InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesNextOffset)) {
+
             NetworkDevice device = new();
 
-            device.InterfaceIndex = ReadUInt32(adapter, IpTypes.AdapterAddressesIfIndexOffset);
-            device.InterfaceLuid = ReadUInt64(adapter, IpTypes.AdapterAddressesLuidOffset);
+            device.InterfaceIndex = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfIndexOffset);
+            device.InterfaceLuid = InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesLuidOffset);
             device.Name = Marshal.PtrToStringAnsi(
-                (nint)ReadPointer(adapter, IpTypes.AdapterAddressesAdapterNameOffset)) ?? string.Empty;
+                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesAdapterNameOffset)) ?? string.Empty;
             device.FriendlyName = Marshal.PtrToStringUni(
-                (nint)ReadPointer(adapter, IpTypes.AdapterAddressesFriendlyNameOffset)) ?? string.Empty;
+                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesFriendlyNameOffset)) ?? string.Empty;
             device.Description = Marshal.PtrToStringUni(
-                (nint)ReadPointer(adapter, IpTypes.AdapterAddressesDescriptionOffset)) ?? string.Empty;
+                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesDescriptionOffset)) ?? string.Empty;
 
-            uint ifType = ReadUInt32(adapter, IpTypes.AdapterAddressesIfTypeOffset);
-            uint operStatus = ReadUInt32(adapter, IpTypes.AdapterAddressesOperStatusOffset);
+            uint ifType = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfTypeOffset);
+            uint operStatus = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesOperStatusOffset);
 
             device.ConnectionType = NetworkDeviceParser.DecodeConnectionType(ifType);
             device.OperationalStatus = NetworkDeviceParser.DecodeOperationalStatus(operStatus);
 
             device.TransmitLinkSpeed = NetworkDeviceParser.DecodeLinkSpeed(
-                ReadUInt64(adapter, IpTypes.AdapterAddressesTransmitLinkSpeedOffset));
+                InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesTransmitLinkSpeedOffset));
             device.ReceiveLinkSpeed = NetworkDeviceParser.DecodeLinkSpeed(
-                ReadUInt64(adapter, IpTypes.AdapterAddressesReceiveLinkSpeedOffset));
+                InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesReceiveLinkSpeedOffset));
 
-            uint physicalAddressLength = ReadUInt32(adapter, IpTypes.AdapterAddressesPhysicalAddressLenOffset);
+            uint physicalAddressLength = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesPhysicalAddressLenOffset);
             int macLength = (int)Math.Min(physicalAddressLength, (uint)IpTypes.MaxAdapterAddressLength);
 
             device.MacAddress = NetworkDeviceParser.FormatMacAddress(
                 new ReadOnlySpan<byte>(adapter + IpTypes.AdapterAddressesPhysicalAddressOffset, macLength));
 
             ReadUnicastAddresses(
-                ReadPointer(adapter, IpTypes.AdapterAddressesFirstUnicastAddressOffset),
+                InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesFirstUnicastAddressOffset),
                 out string[] ipv4Addresses,
                 out string[] ipv6Addresses);
 
@@ -165,11 +166,11 @@ public partial class NetworkService
 
         for (byte* unicast = firstUnicastAddress;
              unicast != null;
-             unicast = ReadPointer(unicast, IpTypes.UnicastAddressNextOffset)) {
+             unicast = InteropHelper.ReadPointer(unicast, IpTypes.UnicastAddressNextOffset)) {
 
             byte* socketAddress = unicast + IpTypes.UnicastAddressAddressOffset;
-            byte* sockAddr = ReadPointer(socketAddress, WS2Def.SocketAddressSockAddrOffset);
-            int sockAddrLength = (int)ReadUInt32(socketAddress, WS2Def.SocketAddressLengthOffset);
+            byte* sockAddr = InteropHelper.ReadPointer(socketAddress, WS2Def.SocketAddressSockAddrOffset);
+            int sockAddrLength = (int)InteropHelper.ReadUInt32(socketAddress, WS2Def.SocketAddressLengthOffset);
 
             if (sockAddr == null || sockAddrLength <= 0) {
                 continue;
@@ -192,7 +193,7 @@ public partial class NetworkService
 
                 string address = NetworkDeviceParser.FormatIPv6Address(
                     new ReadOnlySpan<byte>(sockAddr + WS2Def.SockAddrIn6DataOffset, WS2Def.SockAddrIn6DataLength),
-                    ReadUInt32(sockAddr, WS2Def.SockAddrIn6ScopeOffset));
+                    InteropHelper.ReadUInt32(sockAddr, WS2Def.SockAddrIn6ScopeOffset));
 
                 if (address.Length > 0) {
                     ipv6.Add(address);
@@ -203,14 +204,5 @@ public partial class NetworkService
         ipv4Addresses = ipv4.ToArray();
         ipv6Addresses = ipv6.ToArray();
     }
-
-    private static unsafe byte* ReadPointer(byte* structure, int offset) =>
-        (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
-
-    private static unsafe uint ReadUInt32(byte* structure, int offset) =>
-        BinaryPrimitives.ReadUInt32LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(uint)));
-
-    private static unsafe ulong ReadUInt64(byte* structure, int offset) =>
-        BinaryPrimitives.ReadUInt64LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(ulong)));
 #endif
 }

@@ -1,6 +1,7 @@
 #if __WIN32__
 using Microsoft.Win32;
 #endif
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Services.InstalledApps;
 
@@ -54,7 +55,7 @@ public partial class InstalledAppsService
             return;
         }
 
-        string originPrefix = $"{HiveShortName(hive)}\\{UninstallKeyPath}";
+        string originPrefix = $"{Win32StringHelper.HiveShortName(hive)}\\{UninstallKeyPath}";
 
         foreach (string subKeyName in uninstallKey.GetSubKeyNames()) {
             using RegistryKey? appKey = uninstallKey.OpenSubKey(subKeyName);
@@ -83,12 +84,6 @@ public partial class InstalledAppsService
             }
         }
     }
-
-    private static string HiveShortName(RegistryHive hive) => hive switch {
-        RegistryHive.LocalMachine => "HKLM",
-        RegistryHive.CurrentUser => "HKCU",
-        _ => hive.ToString()
-    };
 #endif
 }
 

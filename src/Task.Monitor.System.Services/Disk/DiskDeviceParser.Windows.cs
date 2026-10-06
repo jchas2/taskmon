@@ -1,6 +1,6 @@
 #if __WIN32__
 using System.Buffers.Binary;
-using System.Text;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.Disk;
@@ -100,14 +100,7 @@ public static class DiskDeviceParser
             return NotAvailable;
         }
 
-        ReadOnlySpan<byte> value = descriptor[(int)stringOffset..];
-        int terminator = value.IndexOf((byte)0);
-
-        if (terminator >= 0) {
-            value = value[..terminator];
-        }
-
-        string text = Encoding.Latin1.GetString(value).Trim();
+        string text = Win32StringHelper.FromNullTerminatedAnsi(descriptor[(int)stringOffset..]).Trim();
         return text.Length > 0 ? text : NotAvailable;
     }
 }

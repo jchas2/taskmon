@@ -123,7 +123,7 @@ public partial class StartupService
 
         using RegistryKey? approvedKey = baseKey.OpenSubKey(approvedPath);
 
-        string origin = $"{HiveShortName(hive)}\\{keyPath}";
+        string origin = $"{Win32StringHelper.HiveShortName(hive)}\\{keyPath}";
 
         foreach (string valueName in runKey.GetValueNames()) {
             if (string.IsNullOrEmpty(valueName)) {
@@ -325,12 +325,6 @@ public partial class StartupService
 
         return publisher;
     }
-
-    private static string HiveShortName(RegistryHive hive) => hive switch {
-        RegistryHive.LocalMachine => "HKLM",
-        RegistryHive.CurrentUser  => "HKCU",
-                                _ => hive.ToString()
-    };
 #endif
 }
 

@@ -250,7 +250,9 @@ public partial class DiskService
 
         try {
             do {
-                AddVolume(specs, new string(volumeNameBuffer));
+                AddVolume(
+                    specs,
+                    Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(volumeNameBuffer, Kernel32.MAX_PATH)));
             }
             while (FileApi.FindNextVolumeW(findHandle, volumeNameBuffer, Kernel32.MAX_PATH));
 
@@ -290,7 +292,7 @@ public partial class DiskService
             (uint)Kernel32.MAX_PATH, 
             &length)) {
 
-            return MultiSzParser.Parse(
+            return Win32StringHelper.ParseMultiSz(
                 new ReadOnlySpan<char>(names, (int)Math.Min(length, Kernel32.MAX_PATH)));
         }
 
@@ -323,7 +325,7 @@ public partial class DiskService
             }
         }
 
-        return MultiSzParser.Parse(buffer.AsSpan(0, (int)Math.Min(length, (uint)buffer.Length)));
+        return Win32StringHelper.ParseMultiSz(buffer.AsSpan(0, (int)Math.Min(length, (uint)buffer.Length)));
     }
 
     private static unsafe bool TryQueryVolumeInformation(string volumeName, DiskVolume volume)
@@ -348,8 +350,8 @@ public partial class DiskService
             return false;
         }
 
-        volume.Label = new string(label);
-        volume.FileSystem = new string(fileSystem);
+        volume.Label      = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(label, Kernel32.MAX_PATH));
+        volume.FileSystem = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(fileSystem, Kernel32.MAX_PATH));
         volume.SerialNumber = serialNumber;
 
         return true;

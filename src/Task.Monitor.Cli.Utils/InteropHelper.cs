@@ -1,4 +1,6 @@
-﻿using System.Runtime.ExceptionServices;
+﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 
 namespace Task.Monitor.Cli.Utils;
@@ -36,6 +38,17 @@ public static class InteropHelper
             return string.Empty;
         }
     }
+
+    // Field reads at a byte offset into a native structure. Unaligned and little endian, as
+    // offset-based layouts (e.g. IP_ADAPTER_ADDRESSES, MIB_IF_ROW2) don't guarantee alignment.
+    public static unsafe byte* ReadPointer(byte* structure, int offset) =>
+        (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
+
+    public static unsafe uint ReadUInt32(byte* structure, int offset) =>
+        BinaryPrimitives.ReadUInt32LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(uint)));
+
+    public static unsafe ulong ReadUInt64(byte* structure, int offset) =>
+        BinaryPrimitives.ReadUInt64LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(ulong)));
 
     public static string TryMarshalPtrToStringBSTR(nint pointer)
     {

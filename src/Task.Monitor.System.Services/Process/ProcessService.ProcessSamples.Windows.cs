@@ -107,7 +107,8 @@ public partial class ProcessService
             Pid = (int)entry->th32ProcessID
         };
 
-        string exeFile = new string(entry->szExeFile);
+        string exeFile = Win32StringHelper.FromNullTerminated(
+            new ReadOnlySpan<char>(entry->szExeFile, Kernel32.MAX_PATH));
 
         sample.ProcessName = exeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
             ? exeFile.Substring(0, exeFile.Length - 4)

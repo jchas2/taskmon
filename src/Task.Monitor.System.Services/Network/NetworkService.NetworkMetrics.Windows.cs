@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -254,20 +253,19 @@ public partial class NetworkService
 
         try {
             byte* buffer = (byte*)table;
-            uint entryCount = BinaryPrimitives.ReadUInt32LittleEndian(
-                new ReadOnlySpan<byte>(buffer + NetIoApi.IfTable2NumEntriesOffset, sizeof(uint)));
+            uint entryCount = InteropHelper.ReadUInt32(buffer, NetIoApi.IfTable2NumEntriesOffset);
 
             for (uint entry = 0; entry < entryCount; entry++) {
                 byte* row = buffer + NetIoApi.IfTable2TableOffset + (entry * (uint)NetIoApi.IfRow2Size);
 
-                ulong interfaceLuid = ReadRowUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset);
+                ulong interfaceLuid = InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset);
 
                 samples[interfaceLuid] = new InterfaceSample(
-                    ReadRowUInt32(row, NetIoApi.IfRow2InterfaceIndexOffset),
-                    ReadRowUInt64(row, NetIoApi.IfRow2OutOctetsOffset),
-                    ReadRowUInt64(row, NetIoApi.IfRow2InOctetsOffset),
-                    ReadRowUInt64(row, NetIoApi.IfRow2OutUcastPktsOffset),
-                    ReadRowUInt64(row, NetIoApi.IfRow2InUcastPktsOffset));
+                    InteropHelper.ReadUInt32(row, NetIoApi.IfRow2InterfaceIndexOffset),
+                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutOctetsOffset),
+                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InOctetsOffset),
+                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutUcastPktsOffset),
+                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InUcastPktsOffset));
             }
             
             return true;
@@ -293,14 +291,13 @@ public partial class NetworkService
 
         try {
             byte* buffer = (byte*)table;
-            uint entryCount = BinaryPrimitives.ReadUInt32LittleEndian(
-                new ReadOnlySpan<byte>(buffer + NetIoApi.IfTable2NumEntriesOffset, sizeof(uint)));
+            uint entryCount = InteropHelper.ReadUInt32(buffer, NetIoApi.IfTable2NumEntriesOffset);
 
             for (uint entry = 0; entry < entryCount; entry++) {
                 byte* row = buffer + NetIoApi.IfTable2TableOffset + (entry * (uint)NetIoApi.IfRow2Size);
 
-                mediums[ReadRowUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset)] =
-                    ReadRowUInt32(row, NetIoApi.IfRow2PhysicalMediumTypeOffset);
+                mediums[InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset)] =
+                    InteropHelper.ReadUInt32(row, NetIoApi.IfRow2PhysicalMediumTypeOffset);
             }
 
             return true;
@@ -309,11 +306,5 @@ public partial class NetworkService
             IpHlpApi.FreeMibTable(table);
         }
     }
-
-    private static unsafe uint ReadRowUInt32(byte* row, int offset) =>
-        BinaryPrimitives.ReadUInt32LittleEndian(new ReadOnlySpan<byte>(row + offset, sizeof(uint)));
-
-    private static unsafe ulong ReadRowUInt64(byte* row, int offset) =>
-        BinaryPrimitives.ReadUInt64LittleEndian(new ReadOnlySpan<byte>(row + offset, sizeof(ulong)));
 #endif
 }
