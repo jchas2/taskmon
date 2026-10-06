@@ -21,15 +21,15 @@ public sealed class TaskMonApp(RunContext runContext)
                     logPath, 
                     maxBytes: 2 * 1024 * 1024, 
                     maxFiles: 16,
-                    Constants.AppName);
+                    Configuration.Constants.AppName);
             }
         }
 
         SystemStatistics stats = new();
         _ = SystemInfo.GetSystemInfo(ref stats);
         
-        Trace.WriteLine($"{Constants.AppName} started.");
-        Trace.WriteLine($"{Constants.AppName} version = {AssemblyVersionInfo.GetVersion()}");
+        Trace.WriteLine($"{Configuration.Constants.AppName} started.");
+        Trace.WriteLine($"{Configuration.Constants.AppName} version = {AssemblyVersionInfo.GetVersion()}");
         Trace.WriteLine($"Running as root = {SystemInfo.IsRunningAsRoot()}");
         Trace.WriteLine($"CPU = {stats.CpuName}");
         Trace.WriteLine($"OS Version = {stats.OsVersion}");
@@ -95,7 +95,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.FilterPid = pid;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad pid arg: {pidArg}");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad pid arg: {pidArg}");
                 result = false;
             }
         }
@@ -114,7 +114,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.VisibleColumns |= sortCol;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad sort arg: {sortArg}");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad sort arg: {sortArg}");
                 result = false;
             }
         }
@@ -124,7 +124,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.DelayInMilliseconds = delay;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad delay arg: {delayArg}");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad delay arg: {delayArg}");
                 result = false;
             }
         }
@@ -134,7 +134,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.NumberOfProcesses = nprocs;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad nprocs arg: {nprocsArg}");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad nprocs arg: {nprocsArg}");
                 result = false;
             }
         }
@@ -148,7 +148,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.Theme = defaultTheme;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: bad theme arg: {themeArg}");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad theme arg: {themeArg}");
                 result = false;
             }
         }
@@ -158,8 +158,8 @@ public sealed class TaskMonApp(RunContext runContext)
         
         if (isGpuOnly || isCpuOnly) {
             var (layoutName, sortCol) = isGpuOnly
-                ? (Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
-                : (Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
+                ? (Configuration.Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
+                : (Configuration.Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
             
             SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
                     l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
@@ -169,7 +169,7 @@ public sealed class TaskMonApp(RunContext runContext)
                 runContext.AppConfig.SortColumn = sortCol;
             }
             else {
-                OutputWriter.Error.WriteLine($"{Constants.AppName}: Layout {layoutName} not found");
+                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: Layout {layoutName} not found");
                 result = false;
             }
         }

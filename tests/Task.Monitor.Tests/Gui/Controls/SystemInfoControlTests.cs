@@ -432,11 +432,11 @@ public sealed class SystemInfoControlTests
         Color valueColour = ColorTranslator.FromHtml("#b2b2b2");
 
         ConfigSection themeSection = new("Property Colours Theme");
-        themeSection.Add(Constants.Keys.Foreground, "#ffffff");
-        themeSection.Add(Constants.Keys.ListViewForeground, "#ffffff");
-        themeSection.Add(Constants.Keys.ListViewBackground, "#101010");
-        themeSection.Add(Constants.Keys.PropertyKey, "#a1a1a1");
-        themeSection.Add(Constants.Keys.PropertyValue, "#b2b2b2");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.Foreground, "#ffffff");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewForeground, "#ffffff");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewBackground, "#101010");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyKey, "#a1a1a1");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyValue, "#b2b2b2");
         runContext.AppConfig.Theme.Update(themeSection);
 
         SystemInfoControl ctrl = CreateControl();

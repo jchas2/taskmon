@@ -151,8 +151,6 @@ public partial class DiskService
             state.TotalBytesWritten += (ulong)writeDelta;
         }
 
-        // Active time is the fraction of the interval the device spent servicing I/O, from the
-        // cumulative nanosecond latency counters.
         double busyNanos = (readTimeDelta > 0 ? readTimeDelta : 0) + (writeTimeDelta > 0 ? writeTimeDelta : 0);
         double elapsedNanos = elapsedSeconds * NanosecondsPerSecond;
 
@@ -235,13 +233,13 @@ public partial class DiskService
 
         metrics.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
 
-        metrics.TotalBytesRead = totalRead;
-        metrics.TotalBytesWritten = totalWritten;
-        metrics.ReadBytesPerSecond = totalReadPerSec;
-        metrics.WriteBytesPerSecond = totalWritePerSec;
-        metrics.ReadMegabytesPerSecond = totalReadPerSec / BytesPerMegabyte;
+        metrics.TotalBytesRead          = totalRead;
+        metrics.TotalBytesWritten       = totalWritten;
+        metrics.ReadBytesPerSecond      = totalReadPerSec;
+        metrics.WriteBytesPerSecond     = totalWritePerSec;
+        metrics.ReadMegabytesPerSecond  = totalReadPerSec / BytesPerMegabyte;
         metrics.WriteMegabytesPerSecond = totalWritePerSec / BytesPerMegabyte;
-        metrics.PercentActiveTime = busiest;
+        metrics.PercentActiveTime       = busiest;
     }
 }
 #endif

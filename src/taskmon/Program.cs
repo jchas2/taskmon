@@ -58,7 +58,7 @@ class Program
             var version = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion ?? "Unknown";
-            Console.WriteLine($"{Constants.AppName} version {version}");
+            Console.WriteLine($"{Configuration.Constants.AppName} version {version}");
             return ExitSuccess;
         }
 

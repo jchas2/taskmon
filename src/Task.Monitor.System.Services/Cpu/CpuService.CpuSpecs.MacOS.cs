@@ -12,9 +12,7 @@ public partial class CpuService
         specs.CpuCores = (ulong)Environment.ProcessorCount;
         specs.CpuSockets = 1;
         specs.CpuName = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
-
-        // CpuVirtualizationFirmwareEnabled is a Windows firmware notion with no macOS analogue.
-        specs.CpuVirtualizationFirmwareEnabled = false;
+        specs.CpuVirtualizationFirmwareEnabled = false; // Windows only.
 
         PopulatePerfLevelCores(ref specs);
         PopulateCpuFrequency(ref specs);
@@ -23,8 +21,6 @@ public partial class CpuService
 
     private static void PopulateCpuCaches(ref CpuSpecs specs)
     {
-        // hw.*cachesize sysctls are 64-bit. On Apple Silicon these report the performance cluster;
-        // L3 is usually absent and simply stays 0. L1 uses the data cache size.
         if (Sys.SysctlByNameLong("hw.l1dcachesize", out long l1) && l1 > 0) {
             specs.CpuL1CacheBytes = (ulong)l1;
         }
@@ -33,6 +29,7 @@ public partial class CpuService
             specs.CpuL2CacheBytes = (ulong)l2;
         }
 
+        // Level 3 is usually 0 on Apple silicon.
         if (Sys.SysctlByNameLong("hw.l3cachesize", out long l3) && l3 > 0) {
             specs.CpuL3CacheBytes = (ulong)l3;
         }

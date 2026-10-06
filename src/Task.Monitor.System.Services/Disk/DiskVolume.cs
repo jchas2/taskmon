@@ -7,7 +7,7 @@ public sealed class DiskVolume
     public string   Label              { get; set; } = string.Empty;
     public string   FileSystem         { get; set; } = string.Empty;
     public uint     SerialNumber       { get; set; }
-    public string   DriveType          { get; set; } = DiskDeviceParser.NotAvailable;
+    public string   DriveType          { get; set; } = Constants.NotAvailable;
 
     public bool     IsReady            { get; set; }
 

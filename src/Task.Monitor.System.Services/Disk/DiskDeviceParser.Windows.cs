@@ -1,3 +1,4 @@
+#if __WIN32__
 using System.Buffers.Binary;
 using System.Text;
 using Task.Monitor.Interop.Win32;
@@ -110,3 +111,4 @@ public static class DiskDeviceParser
         return text.Length > 0 ? text : NotAvailable;
     }
 }
+#endif

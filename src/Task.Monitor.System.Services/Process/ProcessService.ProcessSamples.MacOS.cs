@@ -7,9 +7,6 @@ namespace Task.Monitor.System.Services.Process;
 public partial class ProcessService
 {
 #if __APPLE__
-    // ri_user_time / ri_system_time arrive in mach time units; mach_timebase_info converts them to
-    // nanoseconds, which are then folded into 100ns FILETIME-style ticks so the platform-neutral
-    // rate math (ProcessEntryCalculator.FileTimeTicksPerSecond) treats macOS and Windows alike.
     private const int NanosecondsTo100NanosecondsFactor = 100;
 
     private static MachTime.mach_timebase_info_data_t cachedTimebase;

@@ -365,7 +365,7 @@ public sealed class SummaryControl2Tests
         Color chartBorder = ColorTranslator.FromHtml("#404040");
 
         ConfigSection themeSection = new("Summary Border Theme");
-        themeSection.Add(Constants.Keys.ChartBorderForeground, "#404040");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ChartBorderForeground, "#404040");
         runContext.AppConfig.Theme.Update(themeSection);
 
         SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();

@@ -188,7 +188,7 @@ public sealed class LayoutDesignerScreen : Screen
     private void DrawFooter()
     {
         const string help =
-            "←↑→↓ Move  Ctrl+→/↓ Split  ↵ Assign  C Columns  " +
+            "←↑→↓ Move  V/H Split  ↵ Assign  C Columns  " +
             "+/- Resize  Del Remove  S Save  Esc Back";
 
         Terminal.SetCursorPosition(X, Y + Height - FooterHeight);
@@ -249,26 +249,14 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        bool ctrl = keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control);
-
         switch (keyInfo.Key) {
-            case ConsoleKey.LeftArrow when !ctrl:
+            case ConsoleKey.LeftArrow:
                 MoveSelection(SpatialDirection.Left);
-                handled = true;
-                break;
-
-            case ConsoleKey.RightArrow when ctrl:
-                SplitSelectedPane(Orientation.Row);
                 handled = true;
                 break;
 
             case ConsoleKey.RightArrow:
                 MoveSelection(SpatialDirection.Right);
-                handled = true;
-                break;
-
-            case ConsoleKey.DownArrow when ctrl:
-                SplitSelectedPane(Orientation.Column);
                 handled = true;
                 break;
 
@@ -279,6 +267,19 @@ public sealed class LayoutDesignerScreen : Screen
 
             case ConsoleKey.UpArrow:
                 MoveSelection(SpatialDirection.Up);
+                handled = true;
+                break;
+
+            // V splits the pane side-by-side (vertical divider); H splits it stacked (horizontal
+            // divider). Plain letter keys are used so the binding is identical and conflict-free on
+            // every platform's terminal (macOS intercepts Ctrl+Arrow for Mission Control).
+            case ConsoleKey.V:
+                SplitSelectedPane(Orientation.Row);
+                handled = true;
+                break;
+
+            case ConsoleKey.H:
+                SplitSelectedPane(Orientation.Column);
                 handled = true;
                 break;
 

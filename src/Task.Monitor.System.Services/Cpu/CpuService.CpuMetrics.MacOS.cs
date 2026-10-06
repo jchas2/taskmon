@@ -7,14 +7,10 @@ namespace Task.Monitor.System.Services.Cpu;
 
 public partial class CpuService
 {
-    // Per-core cumulative tick snapshot ([user, system, idle, nice] per cpu, flattened) from the
-    // previous cycle; CPU% is a ratio of deltas so no wall-clock or ticks-per-second is needed.
     private uint[] previousCoreTicks = Array.Empty<uint>();
     private int coreCount;
     private bool cpuPrimed;
 
-    // Aggregate tick deltas (summed across cores) produced by OnDoWorkCpuCore and consumed by
-    // OnDoWorkCpuMetrics, which always runs immediately after it in the same cycle.
     private long aggUserDelta;
     private long aggSystemDelta;
     private long aggIdleDelta;
@@ -40,7 +36,6 @@ public partial class CpuService
             return;
         }
 
-        // The first reading (or a changed core count) only establishes the baseline.
         if (!cpuPrimed || cpus != coreCount) {
             previousCoreTicks = current;
             coreCount = cpus;
@@ -108,8 +103,6 @@ public partial class CpuService
     private static long TickDelta(uint current, uint previous) =>
         current >= previous ? current - previous : 0;
 
-    // Reads cumulative CPU-load ticks for every logical processor in a single call and frees the
-    // kernel-allocated buffer. Returns a flat array of numCpus * CPU_STATE_MAX uints.
     private static uint[]? CaptureCpuTicks(out int cpuCount)
     {
         cpuCount = 0;

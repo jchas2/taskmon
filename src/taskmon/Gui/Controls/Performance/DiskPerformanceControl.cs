@@ -8,6 +8,7 @@ using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Thermal;
+using Constants = Task.Monitor.System.Services.Constants;
 
 namespace Task.Monitor.Gui.Controls.Performance;
 
@@ -144,12 +145,12 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             diskMetricsListView.Draw();
 
             if (device != null) {
-                SetSpecsRow(0, "Model:",               deviceSpec?.Model            ?? DiskDeviceParser.NotAvailable);
-                SetSpecsRow(1, "Manufacturer:",        deviceSpec?.Manufacturer     ?? DiskDeviceParser.NotAvailable);
-                SetSpecsRow(2, "Firmware Revision:",   deviceSpec?.FirmwareRevision ?? DiskDeviceParser.NotAvailable);
-                SetSpecsRow(3, "Serial Number:",       deviceSpec?.SerialNumber     ?? DiskDeviceParser.NotAvailable);
-                SetSpecsRow(4, "Bus Type:",            deviceSpec?.BusType          ?? DiskDeviceParser.NotAvailable);
-                SetSpecsRow(5, "Media Type:",          deviceSpec?.MediaType        ?? DiskDeviceParser.NotAvailable);
+                SetSpecsRow(0, "Model:",               deviceSpec?.Model            ?? Constants.NotAvailable);
+                SetSpecsRow(1, "Manufacturer:",        deviceSpec?.Manufacturer     ?? Constants.NotAvailable);
+                SetSpecsRow(2, "Firmware Revision:",   deviceSpec?.FirmwareRevision ?? Constants.NotAvailable);
+                SetSpecsRow(3, "Serial Number:",       deviceSpec?.SerialNumber     ?? Constants.NotAvailable);
+                SetSpecsRow(4, "Bus Type:",            deviceSpec?.BusType          ?? Constants.NotAvailable);
+                SetSpecsRow(5, "Media Type:",          deviceSpec?.MediaType        ?? Constants.NotAvailable);
                 SetSpecsRow(6, "Capacity:",            (deviceSpec?.Capacity ?? 0L).ToFormattedByteSize());
                 SetSpecsRow(7, "Removable:",           deviceSpec is { IsRemovable: true } ? "Yes" : "No");
                 SetSpecsRow(8, "Total Bytes Read:",    device.TotalBytesRead.ToFormattedByteSize());
@@ -198,12 +199,12 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
         diskSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
 
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Model:",               DiskDeviceParser.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Manufacturer:",        DiskDeviceParser.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Firmware Revision:",   DiskDeviceParser.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Serial Number:",       DiskDeviceParser.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Bus Type:",            DiskDeviceParser.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Media Type:",          DiskDeviceParser.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Model:",               Constants.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Manufacturer:",        Constants.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Firmware Revision:",   Constants.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Serial Number:",       Constants.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Bus Type:",            Constants.NotAvailable }));
+        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Media Type:",          Constants.NotAvailable }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Capacity:",            "0.0 GB" }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Removable:",           "No"     }));
         diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Read:",    "0.0 GB" }));

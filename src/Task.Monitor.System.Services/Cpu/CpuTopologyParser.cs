@@ -3,13 +3,11 @@ using System.Buffers.Binary;
 namespace Task.Monitor.System.Services.Cpu;
 
 public readonly record struct CpuTopology(
-    uint SocketCount,
+    uint  SocketCount,
     ulong L1CacheBytes,
     ulong L2CacheBytes,
     ulong L3CacheBytes);
 
-// Decodes the SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX record stream returned by
-// GetLogicalProcessorInformationEx. 
 public static class CpuTopologyParser
 {
     private const int HeaderSize          = 8;
@@ -24,6 +22,8 @@ public static class CpuTopologyParser
 
     public static CpuTopology Parse(ReadOnlySpan<byte> buffer)
     {
+        // Decodes a PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer from the
+        // call to GetLogicalProcessorInformationEx().
         uint sockets = 0;
         ulong l1 = 0;
         ulong l2 = 0;
@@ -55,7 +55,7 @@ public static class CpuTopologyParser
                     {
                         case 1:      l1 += cacheSize; break;
                         case 2:      l2 += cacheSize; break;
-                        case >= 3:   l3 += cacheSize; break; // fold the rare L4 into L3
+                        case >= 3:   l3 += cacheSize; break; // Append the rare L4 into L3.
                     }
                     break;
             }

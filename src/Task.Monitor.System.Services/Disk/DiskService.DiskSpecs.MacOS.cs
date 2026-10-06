@@ -13,7 +13,7 @@ public partial class DiskService
 
     private static void EnumerateDiskDevices(DiskSpecs specs)
     {
-        if (IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out IntPtr iterator) != 0 ||
+        if (IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out nint iterator) != 0 ||
             iterator == IntPtr.Zero) {
             return;
         }
@@ -53,7 +53,6 @@ public partial class DiskService
             device.Capacity = size;
         }
 
-        // Device/Protocol Characteristics live on the parent IOBlockStorageDevice.
         ReadDeviceCharacteristics(entry, device);
         ReadProtocolCharacteristics(entry, device);
 
@@ -62,12 +61,18 @@ public partial class DiskService
 
     private static void ReadDeviceCharacteristics(uint entry, DiskDevice device)
     {
-        IntPtr cfKey = CoreFoundation.CFStringCreate("Device Characteristics");
-        IntPtr dictRef = IOKit.IORegistryEntrySearchCFProperty(
-            entry, IOServicePlane, cfKey, IntPtr.Zero, IterateRecursively | IterateParents);
+        nint cfKey = CoreFoundation.CFStringCreate("Device Characteristics");
+        
+        nint dictRef = IOKit.IORegistryEntrySearchCFProperty(
+            entry, 
+            IOServicePlane, 
+            cfKey, 
+            nint.Zero, 
+            IterateRecursively | IterateParents);
+        
         CoreFoundation.CFRelease(cfKey);
 
-        if (dictRef == IntPtr.Zero) {
+        if (dictRef == nint.Zero) {
             return;
         }
 
@@ -93,12 +98,18 @@ public partial class DiskService
 
     private static void ReadProtocolCharacteristics(uint entry, DiskDevice device)
     {
-        IntPtr cfKey = CoreFoundation.CFStringCreate("Protocol Characteristics");
-        IntPtr dictRef = IOKit.IORegistryEntrySearchCFProperty(
-            entry, IOServicePlane, cfKey, IntPtr.Zero, IterateRecursively | IterateParents);
+        nint cfKey = CoreFoundation.CFStringCreate("Protocol Characteristics");
+        
+        nint dictRef = IOKit.IORegistryEntrySearchCFProperty(
+            entry, 
+            IOServicePlane, 
+            cfKey, 
+            nint.Zero, 
+            IterateRecursively | IterateParents);
+        
         CoreFoundation.CFRelease(cfKey);
 
-        if (dictRef == IntPtr.Zero) {
+        if (dictRef == nint.Zero) {
             return;
         }
 
@@ -120,8 +131,7 @@ public partial class DiskService
 
     private static void EnumerateVolumes(DiskSpecs specs)
     {
-        // v1: volumes are listed but not mapped back to their physical device (that needs
-        // statfs/getmntinfo interop). Pseudo/synthetic mounts (zero size) are skipped.
+        // TODO: Interop replace. 
         foreach (DriveInfo drive in DriveInfo.GetDrives()) {
             try {
                 if (!drive.IsReady || drive.TotalSize <= 0) {

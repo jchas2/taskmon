@@ -1,3 +1,4 @@
+#if __WIN32__
 using System.Buffers.Binary;
 using System.Text;
 using Task.Monitor.Interop.Win32;
@@ -266,3 +267,4 @@ public sealed class DiskDeviceParserTests
         Assert.Equal(DiskDeviceParser.NotAvailable, mediaType);
     }
 }
+#endif
