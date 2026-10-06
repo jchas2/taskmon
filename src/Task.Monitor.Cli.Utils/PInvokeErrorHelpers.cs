@@ -28,6 +28,9 @@ public static class PInvokeErrorHelpers
     public static void TraceOnceOnPInvokeError(string key, string message, uint error) =>
         TraceEx.WriteLineOnce(key, $"PINVOKE ERROR ({error}): {message}");
 
+    public static void TraceOnceOnHResult(string key, string message, int hr) =>
+        TraceEx.WriteLineOnce(key, $"HRESULT ERROR (0x{hr:X8}): {message}");
+
     private static string GetFormattedErrorMessage() => GetFormattedErrorMessage(string.Empty);
     
     private static string GetFormattedErrorMessage(string message)

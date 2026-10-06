@@ -4,6 +4,8 @@ namespace Task.Monitor.Interop.Win32;
 
 public static unsafe class SysInfoApi
 {
+    public const int ERROR_INSUFFICIENT_BUFFER = 122;
+
     [StructLayout(LayoutKind.Sequential)]
     public struct MEMORYSTATUSEX
     {

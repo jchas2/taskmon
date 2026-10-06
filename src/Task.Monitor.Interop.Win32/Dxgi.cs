@@ -7,6 +7,7 @@ namespace Task.Monitor.Interop.Win32;
 // We must call the vtable directly.
 public static unsafe class Dxgi
 {
+    public const int  S_OK = 0;
     public const uint DXGI_ADAPTER_FLAG_SOFTWARE = 2;
 
     public static readonly Guid IID_IDXGIFactory1 = new("770aae78-f26f-4dba-a829-253c83d1b387");

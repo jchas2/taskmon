@@ -126,7 +126,7 @@ public partial class CpuService
                     
                     string name = Marshal.PtrToStringUni(item.szName) ?? string.Empty;
 
-                    if (!name.Equals("_Total", StringComparison.OrdinalIgnoreCase)) {
+                    if (!Pdh.IsTotalInstance(name)) {
                         arrayBuilder.Add(new CpuInfo.CpuCoreMetric(name, item.doubleValue / 100));   
                     }
                 }

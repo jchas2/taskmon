@@ -11,7 +11,6 @@ public partial class DiskService
     private const string DiskWriteBytesCounterPath = @"\PhysicalDisk(*)\Disk Write Bytes/sec";
     private const string DiskIdleTimeCounterPath   = @"\PhysicalDisk(*)\% Idle Time";
 
-    private const string TotalInstanceName = "_Total";
     private const uint   PDH_CSTATUS_NEW_DATA = 0x00000001;
 
     private const double BytesPerMegabyte = 1024.0 * 1024.0;
@@ -267,7 +266,7 @@ public partial class DiskService
         double busiestDisk = 0.0;
 
         foreach ((string instanceName, DiskInstanceState state) in instanceStates) {
-            if (instanceName == TotalInstanceName) {
+            if (instanceName == Pdh.TotalInstanceName) {
                 continue;
             }
 
@@ -304,7 +303,7 @@ public partial class DiskService
         metrics.PercentActiveTime = busiestDisk;
 
         // Prefer the Pdh _Total counter over the summed stats.
-        if (instanceStates.TryGetValue(TotalInstanceName, out DiskInstanceState? total)) {
+        if (instanceStates.TryGetValue(Pdh.TotalInstanceName, out DiskInstanceState? total)) {
             metrics.TotalBytesRead = total.TotalBytesRead;
             metrics.TotalBytesWritten = total.TotalBytesWritten;
             metrics.ReadBytesPerSecond = total.ReadBytesPerSecond;

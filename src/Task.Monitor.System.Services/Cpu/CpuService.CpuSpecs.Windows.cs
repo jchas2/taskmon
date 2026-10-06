@@ -10,8 +10,6 @@ namespace Task.Monitor.System.Services.Cpu;
 public partial class CpuService
 {
 #if __WIN32__
-    private const int ERROR_INSUFFICIENT_BUFFER = 122;
-
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
         specs.CpuCores = (ulong)Environment.ProcessorCount;
@@ -79,7 +77,7 @@ public partial class CpuService
         uint length = 0;
 
         if (SysInfoApi.GetLogicalProcessorInformationEx(RelationAll, null, &length) ||
-            Marshal.GetLastPInvokeError() != ERROR_INSUFFICIENT_BUFFER ||
+            Marshal.GetLastPInvokeError() != SysInfoApi.ERROR_INSUFFICIENT_BUFFER ||
             length == 0) {
 
             PInvokeErrorHelpers.TraceOnceOnLastError(

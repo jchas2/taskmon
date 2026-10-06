@@ -75,7 +75,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
             string? name = Marshal.PtrToStringUni(item.szName);
 
-            if (string.Equals(name, "_Total", StringComparison.OrdinalIgnoreCase)) {
+            if (Pdh.IsTotalInstance(name)) {
                 return Normalise(item.doubleValue);
             }
 

@@ -31,8 +31,7 @@ public static class Win32StringHelper
         return values.ToArray();
     }
 
-    // String from a fixed size wide char buffer, clamped on the first \0 or the end of the buffer
-    // so an unterminated buffer can't be read past.
+    // String from a fixed size wide char buffer, terminated on the first \0 or the end of the buffer.
     public static string FromNullTerminated(ReadOnlySpan<char> buffer)
     {
         int terminator = buffer.IndexOf('\0');
@@ -42,8 +41,7 @@ public static class Win32StringHelper
             : buffer.ToString();
     }
 
-    // As FromNullTerminated, for a single byte (ANSI) buffer. Decoded as Latin1 which maps every
-    // byte to a char, so vendor-supplied metadata with high-bit characters can't fail to decode.
+    // As FromNullTerminated, for a single byte (ANSI) buffer. 
     public static string FromNullTerminatedAnsi(ReadOnlySpan<byte> buffer)
     {
         int terminator = buffer.IndexOf((byte)0);
@@ -52,6 +50,7 @@ public static class Win32StringHelper
             buffer = buffer[..terminator];
         }
 
+        // Decoded as Latin1 which maps evey byte to char.
         return Encoding.Latin1.GetString(buffer);
     }
 

@@ -32,24 +32,26 @@ public partial class GpuService
             int hr = Dxgi.CreateDXGIFactory1(ref factoryIid, out factoryPtr);
 
             if (hr < 0) {
-                TraceEx.WriteLineOnce(
+                PInvokeErrorHelpers.TraceOnceOnHResult(
                     nameof(Dxgi.CreateDXGIFactory1),
-                    $"Failed {nameof(EnumerateAdapters)}: HRESULT 0x{hr:X8}");
+                    $"Failed {nameof(EnumerateAdapters)}",
+                    hr);
 
                 return;
             }
 
             uint adapterIndex = 0;
 
-            while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapterPtr) == 0) // S_OK
+            while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapterPtr) == Dxgi.S_OK)
             {
                 try {
                     int descHr = Dxgi.GetDesc1(adapterPtr, out Dxgi.DXGI_ADAPTER_DESC1 desc);
 
                     if (descHr < 0) {
-                        TraceEx.WriteLineOnce(
+                        PInvokeErrorHelpers.TraceOnceOnHResult(
                             nameof(Dxgi.GetDesc1),
-                            $"Failed {nameof(Dxgi.GetDesc1)}: HRESULT 0x{descHr:X8}");
+                            $"Failed {nameof(Dxgi.GetDesc1)}",
+                            descHr);
 
                         continue;
                     }
