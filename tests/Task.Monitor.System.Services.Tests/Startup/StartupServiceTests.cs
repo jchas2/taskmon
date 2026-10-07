@@ -32,7 +32,7 @@ public sealed class StartupServiceTests
         Assert.NotNull(latest!.Startup);
 
         // The exact contents depend on the host, but every entry the scan produces must be
-        // well-formed, and a Windows host effectively always has at least one Run entry.
+        // well-formed, whichever platform's sources (Run keys, launchd jobs...) produced it.
         foreach (StartupEntry entry in latest.Startup!.Specs.Entries) {
             Assert.False(string.IsNullOrWhiteSpace(entry.Name));
             Assert.True(Enum.IsDefined(entry.Source));

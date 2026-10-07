@@ -81,8 +81,10 @@ public partial class CpuService
             return;
         }
 
-        if (IOKit.IORegistryEntryCreateCFProperties(pmgr, out IntPtr properties, IntPtr.Zero, 0) != 0 ||
-            properties == IntPtr.Zero) {
+        int result = IOKit.IORegistryEntryCreateCFProperties(pmgr, out IntPtr propertiesRef, IntPtr.Zero, 0);
+        using CFScope properties = new(propertiesRef);
+
+        if (result != 0 || properties.IsNull) {
 
             IOKit.IOObjectRelease(pmgr);
             return;
@@ -107,7 +109,6 @@ public partial class CpuService
             specs.CpuPerformanceFrequency,
             Math.Max(specs.CpuEfficiencyFrequency, specs.CpuSuperFrequency));
 
-        CoreFoundation.CFRelease(properties);
         IOKit.IOObjectRelease(pmgr);
     }
 

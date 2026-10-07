@@ -13,24 +13,16 @@ public partial class DiskService
 
     private static string? SearchStringProperty(uint entry, string key, uint options)
     {
-        nint cfKey = CoreFoundation.CFStringCreate(key);
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate(key));
         
-        nint value = IOKit.IORegistryEntrySearchCFProperty(
+        using CFScope value = new(IOKit.IORegistryEntrySearchCFProperty(
             entry, 
             IOServicePlane, 
             cfKey, 
             nint.Zero, 
-            options);
-        
-        CoreFoundation.CFRelease(cfKey);
+            options));
 
-        if (value == nint.Zero) {
-            return null;
-        }
-
-        string? result = CoreFoundation.GetString(value);
-        CoreFoundation.CFRelease(value);
-        return result;
+        return CoreFoundation.GetString(value);
     }
 
     private static bool SearchNumberProperty(
@@ -41,23 +33,20 @@ public partial class DiskService
     {
         value = 0;
 
-        nint cfKey = CoreFoundation.CFStringCreate(key);
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate(key));
         
-        nint number = IOKit.IORegistryEntrySearchCFProperty(
+        using CFScope number = new(IOKit.IORegistryEntrySearchCFProperty(
             entry, 
             IOServicePlane, 
             cfKey, 
             nint.Zero, 
-            options);
-        
-        CoreFoundation.CFRelease(cfKey);
+            options));
 
-        if (number == nint.Zero) {
+        if (number.IsNull) {
             return false;
         }
 
         CoreFoundation.CFNumberGetValue(number, out value);
-        CoreFoundation.CFRelease(number);
         return true;
     }
 

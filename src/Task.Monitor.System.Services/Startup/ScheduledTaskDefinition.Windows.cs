@@ -1,3 +1,4 @@
+#if __WIN32__
 using System.Xml.Linq;
 
 namespace Task.Monitor.System.Services.Startup;
@@ -60,3 +61,4 @@ public sealed class ScheduledTaskDefinition
         return schedTask;
     }
 }
+#endif

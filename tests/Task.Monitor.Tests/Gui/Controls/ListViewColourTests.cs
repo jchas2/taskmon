@@ -136,7 +136,7 @@ public sealed class ListViewColourTests
                     Entries = [
                         new StartupEntry {
                             Name = "OneDrive",
-                            Source = StartupEntrySource.RunKey,
+                            Source = StartupTestSources.Primary,
                             Scope = StartupEntryScope.User,
                             State = StartupEntryState.Enabled,
                             Command = "OneDrive.exe"

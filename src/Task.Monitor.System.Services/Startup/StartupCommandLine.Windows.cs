@@ -1,3 +1,4 @@
+#if __WIN32__
 namespace Task.Monitor.System.Services.Startup;
 
 public static class StartupCommandLine
@@ -54,3 +55,4 @@ public static class StartupCommandLine
         }
     }
 }
+#endif

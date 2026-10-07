@@ -8,7 +8,7 @@ public sealed partial class StartupControl
 {
     private const string NotAvailable = "N/A";
 
-    private void RebuildRows(IReadOnlyList<StartupEntry> entries)
+    private void RebuildRows(IReadOnlyList<StartupEntry> entries, IReadOnlyList<string> notes)
     {
         startupView.Items.Clear();
 
@@ -38,8 +38,10 @@ public sealed partial class StartupControl
             startupView.Items.Add(row);
         }
 
+        string footerNotes = notes.Count > 0 ? $"     {string.Join("  ", notes)}" : string.Empty;
+
         startupView.FooterText =
-            $"{enabled} enabled / {entries.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll";
+            $"{enabled} enabled / {entries.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
     }
 
     private void RebuildDetailRows(StartupEntry? entry)
@@ -73,10 +75,18 @@ public sealed partial class StartupControl
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeType(StartupEntrySource source) => source switch {
+#if __WIN32__
         StartupEntrySource.RunKey => "Run",
         StartupEntrySource.RunOnceKey => "RunOnce",
         StartupEntrySource.StartupFolder => "Startup Folder",
         StartupEntrySource.ScheduledTask => "Scheduled Task",
+#endif
+#if __APPLE__
+        StartupEntrySource.OpenAtLogin => "Open at Login",
+        StartupEntrySource.LoginHelper => "Login Helper",
+        StartupEntrySource.LaunchAgent => "Launch Agent",
+        StartupEntrySource.LaunchDaemon => "Launch Daemon",
+#endif
         _ => source.ToString()
     };
 

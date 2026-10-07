@@ -41,21 +41,18 @@ public partial class GpuService
         }
 
         int cores = 0;
-        IntPtr key = CoreFoundation.CFStringCreate("gpu-core-count");
+        using CFScope key = new(CoreFoundation.CFStringCreate("gpu-core-count"));
 
-        IntPtr coreCountRef = IOKit.IORegistryEntrySearchCFProperty(
+        using CFScope coreCount = new(IOKit.IORegistryEntrySearchCFProperty(
             service,
             IOServicePlane,
             key,
             IntPtr.Zero,
-            RegistryIterateRecursively);
+            RegistryIterateRecursively));
 
-        CoreFoundation.CFRelease(key);
-
-        if (coreCountRef != IntPtr.Zero) {
-            CoreFoundation.CFNumberGetValue(coreCountRef, out long coreCount);
-            cores = (int)coreCount;
-            CoreFoundation.CFRelease(coreCountRef);
+        if (!coreCount.IsNull) {
+            CoreFoundation.CFNumberGetValue(coreCount, out long value);
+            cores = (int)value;
         }
 
         IOKit.IOObjectRelease(service);

@@ -61,18 +61,16 @@ public partial class DiskService
 
     private static void ReadDeviceCharacteristics(uint entry, DiskDevice device)
     {
-        nint cfKey = CoreFoundation.CFStringCreate("Device Characteristics");
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate("Device Characteristics"));
         
-        nint dictRef = IOKit.IORegistryEntrySearchCFProperty(
+        using CFScope dictRef = new(IOKit.IORegistryEntrySearchCFProperty(
             entry, 
             IOServicePlane, 
             cfKey, 
             nint.Zero, 
-            IterateRecursively | IterateParents);
-        
-        CoreFoundation.CFRelease(cfKey);
+            IterateRecursively | IterateParents));
 
-        if (dictRef == nint.Zero) {
+        if (dictRef.IsNull) {
             return;
         }
 
@@ -92,31 +90,25 @@ public partial class DiskService
                 _             => string.IsNullOrEmpty(mediumType) ? device.MediaType : mediumType
             };
         }
-
-        CoreFoundation.CFRelease(dictRef);
     }
 
     private static void ReadProtocolCharacteristics(uint entry, DiskDevice device)
     {
-        nint cfKey = CoreFoundation.CFStringCreate("Protocol Characteristics");
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate("Protocol Characteristics"));
         
-        nint dictRef = IOKit.IORegistryEntrySearchCFProperty(
+        using CFScope dictRef = new(IOKit.IORegistryEntrySearchCFProperty(
             entry, 
             IOServicePlane, 
             cfKey, 
             nint.Zero, 
-            IterateRecursively | IterateParents);
-        
-        CoreFoundation.CFRelease(cfKey);
+            IterateRecursively | IterateParents));
 
-        if (dictRef == nint.Zero) {
+        if (dictRef.IsNull) {
             return;
         }
 
         Dictionary<string, nint> dict = CoreFoundation.ToDictionary(dictRef);
         device.BusType = ReadTrimmedString(dict, "Physical Interconnect") ?? device.BusType;
-
-        CoreFoundation.CFRelease(dictRef);
     }
 
     private static string? ReadTrimmedString(Dictionary<string, nint> dict, string key)

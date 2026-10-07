@@ -6,4 +6,7 @@ public sealed class UniStd
 {
     [DllImport(Libraries.LibC)]
     public static extern uint geteuid();
+
+    [DllImport(Libraries.LibC)]
+    public static extern uint getuid();
 }

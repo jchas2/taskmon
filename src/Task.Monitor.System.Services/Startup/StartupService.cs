@@ -8,21 +8,36 @@ public sealed partial class StartupService : WorkerService
     private int cyclesSinceScan;
 
     protected override void OnStart() =>
-        startupSpecs = ScanStartup();
+        startupSpecs = Scan();
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
-            startupSpecs = ScanStartup();
+            startupSpecs = Scan();
             cyclesSinceScan = 0;
         }
 
         Publish(new StartupInfo { Specs = startupSpecs });
     }
 
+    private StartupSpecs Scan()
+    {
+        StartupSpecs specs = ScanStartup();
+
+        specs.Entries.Sort(static (left, right) => {
+            int bySource = left.Source.CompareTo(right.Source);
+
+            return bySource != 0
+                ? bySource
+                : string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+        });
+
+        return specs;
+    }
+
     private partial StartupSpecs ScanStartup();
 
-#if !__WIN32__
+#if !__WIN32__ && !__APPLE__
     private partial StartupSpecs ScanStartup() => new();
 #endif
 }

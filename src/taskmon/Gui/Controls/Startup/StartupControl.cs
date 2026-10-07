@@ -100,14 +100,14 @@ public sealed partial class StartupControl : Control
 
     private void EnsureRows(StartupInfo info)
     {
-        string signature = BuildSignature(info.Specs.Entries);
+        string signature = BuildSignature(info.Specs.Entries) + "|" + string.Join("|", info.Specs.Notes);
 
         if (signature == lastSignature) {
             return;
         }
 
         lastSignature = signature;
-        RebuildRows(info.Specs.Entries);
+        RebuildRows(info.Specs.Entries, info.Specs.Notes);
     }
 
     private static string BuildSignature(IReadOnlyList<StartupEntry> entries) =>

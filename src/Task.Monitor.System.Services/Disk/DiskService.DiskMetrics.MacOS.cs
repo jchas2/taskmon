@@ -71,27 +71,26 @@ public partial class DiskService
             return;
         }
 
-        if (IOKit.IORegistryEntryCreateCFProperties(entry, out IntPtr properties, IntPtr.Zero, 0) != 0 ||
-            properties == IntPtr.Zero) {
+        int result = IOKit.IORegistryEntryCreateCFProperties(entry, out IntPtr propertiesRef, IntPtr.Zero, 0);
+        using CFScope properties = new(propertiesRef);
+
+        if (result != 0 || properties.IsNull) {
             return;
         }
 
         Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
 
         if (!props.TryGetValue("Statistics", out nint statsRef)) {
-            CoreFoundation.CFRelease(properties);
             return;
         }
 
-        // Values below are borrowed from the retained 'properties'; read them before releasing it.
+        // Values below are borrowed from 'properties', which the scope keeps alive.
         Dictionary<string, nint> stats = CoreFoundation.ToDictionary(statsRef);
 
         long readBytes  = ReadStat(stats, "Bytes (Read)");
         long writeBytes = ReadStat(stats, "Bytes (Write)");
         long readTime   = ReadStat(stats, "Total Time (Read)");
         long writeTime  = ReadStat(stats, "Total Time (Write)");
-
-        CoreFoundation.CFRelease(properties);
 
         live.Add(bsdName);
         ApplyDiskSample(bsdName, index, readBytes, writeBytes, readTime, writeTime);

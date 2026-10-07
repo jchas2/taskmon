@@ -35,14 +35,6 @@ public partial class StartupService
         ScanStartupFolders(specs);
         ScanScheduledTasks(specs);
 
-        specs.Entries.Sort(static (left, right) => {
-            int bySource = left.Source.CompareTo(right.Source);
-
-            return bySource != 0
-                ? bySource
-                : string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
-        });
-
         return specs;
     }
 

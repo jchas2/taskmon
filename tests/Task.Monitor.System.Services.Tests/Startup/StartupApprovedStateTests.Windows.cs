@@ -1,3 +1,4 @@
+#if __WIN32__
 using Task.Monitor.System.Services.Startup;
 
 namespace Task.Monitor.System.Services.Tests.Startup;
@@ -66,3 +67,4 @@ public sealed class StartupApprovedStateTests
         Assert.Null(disabledOn);
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if __WIN32__
 using System.Buffers.Binary;
 
 namespace Task.Monitor.System.Services.Startup;
@@ -29,3 +30,4 @@ public static class StartupApprovedState
         return (StartupEntryState.Disabled, disabledOn);
     }
 }
+#endif

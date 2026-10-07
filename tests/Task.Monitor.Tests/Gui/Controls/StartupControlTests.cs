@@ -25,7 +25,7 @@ public sealed class StartupControlTests
 
     private static StartupEntry Entry(
         string name,
-        StartupEntrySource source = StartupEntrySource.RunKey,
+        StartupEntrySource source = StartupTestSources.Primary,
         StartupEntryScope scope = StartupEntryScope.User,
         StartupEntryState state = StartupEntryState.Enabled,
         string? publisher = null,
@@ -89,7 +89,7 @@ public sealed class StartupControlTests
         ctrl.Sample(SnapshotWith(
             Entry("OneDrive", publisher: "Microsoft Corporation", command: @"C:\Users\me\OneDrive.exe /background"),
             Entry("Steam", scope: StartupEntryScope.Machine, publisher: "Valve", command: @"C:\Program Files\Steam\steam.exe -silent"),
-            Entry("OldTool", state: StartupEntryState.Disabled, source: StartupEntrySource.StartupFolder)));
+            Entry("OldTool", state: StartupEntryState.Disabled, source: StartupTestSources.Secondary)));
         ctrl.Draw();
 
         string output = CapturedOutput();
@@ -97,8 +97,8 @@ public sealed class StartupControlTests
         foreach (string fragment in new[] {
             "NAME", "PUBLISHER", "TYPE", "SCOPE", "STATUS", "COMMAND",
             "OneDrive", "Microsoft Corporation", "C:\\Users\\me\\OneDrive.exe /background",
-            "Steam", "Valve", "Run", "Machine",
-            "OldTool", "Startup Folder", "User", "Disabled",
+            "Steam", "Valve", StartupTestSources.PrimaryText, "Machine",
+            "OldTool", StartupTestSources.SecondaryText, "User", "Disabled",
         }) {
             Assert.Contains(fragment, output);
         }
@@ -126,7 +126,7 @@ public sealed class StartupControlTests
         // though the command is too long to fit in the main table's COMMAND column.
         foreach (string fragment in new[] {
             "FIELD", "VALUE", "Name", "Publisher", "Type", "Scope", "Status", "Command",
-            "OneDrive", "Microsoft Corporation", "Run", "User", "Enabled", longCommand
+            "OneDrive", "Microsoft Corporation", StartupTestSources.PrimaryText, "User", "Enabled", longCommand
         }) {
             Assert.Contains(fragment, output);
         }

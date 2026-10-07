@@ -124,20 +124,20 @@ public partial class GpuService
         while ((child = IOKit.IOIteratorNext(iterator)) != 0) {
             result = IOKit.IORegistryEntryCreateCFProperties(
                 child,
-                out IntPtr properties,
+                out IntPtr propertiesRef,
                 IntPtr.Zero,
                 0);
 
+            using CFScope properties = new(propertiesRef);
             IOKit.IOObjectRelease(child);
 
-            if (result != 0 || properties == IntPtr.Zero) {
+            if (result != 0 || properties.IsNull) {
                 continue;
             }
 
             Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
 
             if (!props.ContainsKey("IOUserClientCreator") || !props.ContainsKey("AppUsage")) {
-                CoreFoundation.CFRelease(properties);
                 continue;
             }
 
@@ -145,12 +145,10 @@ public partial class GpuService
             string? creator = CoreFoundation.GetString(props["IOUserClientCreator"]);
 
             if (creator == null || !creator.StartsWith("pid ") || !creator.Contains(',')) {
-                CoreFoundation.CFRelease(properties);
                 continue;
             }
 
             if (!int.TryParse(creator.AsSpan(4, creator.IndexOf(',') - 4), out int pid)) {
-                CoreFoundation.CFRelease(properties);
                 continue;
             }
 
@@ -158,7 +156,6 @@ public partial class GpuService
 
             // AppUsage should be a CFArray of CFDictionary entries.
             if (CoreFoundation.CFGetTypeID(appUsage) != typeIdCFArray) {
-                CoreFoundation.CFRelease(properties);
                 continue;
             }
 
@@ -181,8 +178,6 @@ public partial class GpuService
             if (totalGpuTime > 0) {
                 gpuInfo[pid] = gpuInfo.GetValueOrDefault(pid) + totalGpuTime;
             }
-
-            CoreFoundation.CFRelease(properties);
         }
 
         IOKit.IOObjectRelease(iterator);
@@ -201,18 +196,18 @@ public partial class GpuService
             return true;
         }
 
-        IntPtr group = CoreFoundation.CFStringCreate("GPU Stats");
-        IntPtr channels = IOReport.IOReportCopyChannelsInGroup(group, IntPtr.Zero, 0, 0, 0);
-        CoreFoundation.CFRelease(group);
+        using CFScope group = new(CoreFoundation.CFStringCreate("GPU Stats"));
+        using CFScope channels = new(IOReport.IOReportCopyChannelsInGroup(group, IntPtr.Zero, 0, 0, 0));
 
-        if (channels == IntPtr.Zero) {
+        if (channels.IsNull) {
             gpuReportInitFailed = true;
             return false;
         }
 
         long count = CoreFoundation.CFDictionaryGetCount(channels);
+
+        // Owned by gpuReportChannels once subscribed, so released by hand rather than scoped.
         IntPtr mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(IntPtr.Zero, count, channels);
-        CoreFoundation.CFRelease(channels);
 
         if (mutableChannels == IntPtr.Zero) {
             gpuReportInitFailed = true;
@@ -250,14 +245,10 @@ public partial class GpuService
         }
 
         if (gpuReportPrevSample != IntPtr.Zero) {
-            IntPtr delta = IOReport.IOReportCreateSamplesDelta(gpuReportPrevSample, sample, IntPtr.Zero);
+            using CFScope delta = new(IOReport.IOReportCreateSamplesDelta(gpuReportPrevSample, sample, IntPtr.Zero));
 
-            if (delta != IntPtr.Zero) {
-                if (TryGetGpuResidency(delta, out double active)) {
-                    gpuInfo.Metrics.GpuPercentTime = Math.Clamp(active, 0.0, 1.0);
-                }
-
-                CoreFoundation.CFRelease(delta);
+            if (!delta.IsNull && TryGetGpuResidency(delta, out double active)) {
+                gpuInfo.Metrics.GpuPercentTime = Math.Clamp(active, 0.0, 1.0);
             }
 
             CoreFoundation.CFRelease(gpuReportPrevSample);

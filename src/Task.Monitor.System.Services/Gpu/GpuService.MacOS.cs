@@ -27,11 +27,13 @@ public sealed partial class GpuService
 
         int result = IOKit.IORegistryEntryCreateCFProperties(
             accelerator,
-            out IntPtr properties,
+            out IntPtr propertiesRef,
             IntPtr.Zero,
             0);
 
-        if (result != 0 || properties == IntPtr.Zero) {
+        using CFScope properties = new(propertiesRef);
+
+        if (result != 0 || properties.IsNull) {
             IOKit.IOObjectRelease(accelerator);
             return false;
         }
@@ -53,7 +55,6 @@ public sealed partial class GpuService
             }
         }
 
-        CoreFoundation.CFRelease(properties);
         IOKit.IOObjectRelease(accelerator);
         return found;
     }
