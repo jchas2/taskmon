@@ -34,9 +34,9 @@ public partial class GpuService
     private static int GetGpuCoreCount()
     {
         IntPtr matching = IOKit.IOServiceMatching("AGXAccelerator");
-        uint service = IOKit.IOServiceGetMatchingService(0, matching);
+        using IOObjectScope service = new(IOKit.IOServiceGetMatchingService(0, matching));
 
-        if (service == 0) {
+        if (service.IsNull) {
             return 0;
         }
 
@@ -55,7 +55,6 @@ public partial class GpuService
             cores = (int)value;
         }
 
-        IOKit.IOObjectRelease(service);
         return cores;
     }
 }

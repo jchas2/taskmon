@@ -41,24 +41,21 @@ public partial class DiskService
 
     private void UpdateDiskStates()
     {
-        if (IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out IntPtr iterator) != 0 ||
-            iterator == IntPtr.Zero) {
+        int result = IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out IntPtr iteratorRef);
+        using IOObjectScope iterator = new(iteratorRef);
+
+        if (result != 0 || iterator.IsNull) {
             return;
         }
 
         HashSet<string> live = new();
-        uint entry;
+        uint entryRef;
 
-        while ((entry = IOKit.IOIteratorNext(iterator)) != 0) {
-            try {
-                ReadDriverStatistics(entry, live);
-            }
-            finally {
-                IOKit.IOObjectRelease(entry);
-            }
+        while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
+            using IOObjectScope entry = new(entryRef);
+            ReadDriverStatistics(entry, live);
         }
 
-        IOKit.IOObjectRelease(iterator);
         PruneMissingDisks(live);
     }
 

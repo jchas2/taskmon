@@ -75,9 +75,9 @@ public partial class CpuService
 
     private static void PopulateCpuFrequency(ref CpuSpecs specs)
     {
-        uint pmgr = FindPmgrEntry();
+        using IOObjectScope pmgr = new(FindPmgrEntry());
 
-        if (pmgr == 0) {
+        if (pmgr.IsNull) {
             return;
         }
 
@@ -85,8 +85,6 @@ public partial class CpuService
         using CFScope properties = new(propertiesRef);
 
         if (result != 0 || properties.IsNull) {
-
-            IOKit.IOObjectRelease(pmgr);
             return;
         }
 
@@ -108,19 +106,20 @@ public partial class CpuService
         specs.CpuFrequency = Math.Max(
             specs.CpuPerformanceFrequency,
             Math.Max(specs.CpuEfficiencyFrequency, specs.CpuSuperFrequency));
-
-        IOKit.IOObjectRelease(pmgr);
     }
 
     private static uint FindPmgrEntry()
     {
         IntPtr matching = IOKit.IOServiceMatching("AppleARMIODevice");
 
-        if (IOKit.IOServiceGetMatchingServices(0, matching, out IntPtr iterator) != 0) {
+        int result = IOKit.IOServiceGetMatchingServices(0, matching, out IntPtr iteratorRef);
+        using IOObjectScope iterator = new(iteratorRef);
+
+        if (result != 0 || iterator.IsNull) {
             return 0;
         }
 
-        uint found = 0;
+        uint pmgrEntry = 0;
         byte[] name = new byte[128];
         uint entry;
 
@@ -130,7 +129,7 @@ public partial class CpuService
                 len = len < 0 ? name.Length : len;
 
                 if (Encoding.ASCII.GetString(name, 0, len) == "pmgr") {
-                    found = entry;
+                    pmgrEntry = entry;
                     break;
                 }
             }
@@ -138,8 +137,7 @@ public partial class CpuService
             IOKit.IOObjectRelease(entry);
         }
 
-        IOKit.IOObjectRelease(iterator);
-        return found;
+        return pmgrEntry;
     }
 
     private static double MaxDvfsFrequencyMhz(Dictionary<string, nint> props, string key)

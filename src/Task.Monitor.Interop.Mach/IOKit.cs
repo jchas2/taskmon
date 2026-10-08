@@ -12,6 +12,12 @@ public static class IOKit
 
     [DllImport(Libraries.IOKit)]
     public static extern int IOObjectRelease(IntPtr obj);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern int IOObjectRetain(uint obj);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern uint IOObjectGetUserRetainCount(uint obj);
     
     [DllImport(Libraries.IOKit)]
     public static extern int IORegistryEntryCreateCFProperties(

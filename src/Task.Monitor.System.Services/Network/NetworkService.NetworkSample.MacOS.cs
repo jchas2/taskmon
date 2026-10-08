@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Network;
@@ -156,48 +157,45 @@ public partial class NetworkService
         byte* buffer = null;
         int length = 0;
 
-        if (!Sys.Sysctl(name, ref buffer, ref length) || buffer == null || length == 0) {
-            Sys.FreeMemory(buffer);
+        bool read = Sys.Sysctl(name, ref buffer, ref length);
+        using HGlobalScope scope = new((nint)buffer);
+
+        if (!read || buffer == null || length == 0) {
             return false;
         }
 
-        try {
-            byte* current = buffer;
-            byte* end = buffer + length;
-            int headerSize = Marshal.SizeOf<Sys.if_msghdr2>();
+        byte* current = buffer;
+        byte* end = buffer + length;
+        int headerSize = Marshal.SizeOf<Sys.if_msghdr2>();
 
-            while (current < end) {
-                if (current + sizeof(ushort) > end) {
-                    break;
-                }
-
-                ushort msgLen = *(ushort*)current;
-
-                if (msgLen == 0 || current + msgLen > end) {
-                    break;
-                }
-
-                // Byte 3 is ifm_type; RTM_IFINFO2 rows carry the per-interface statistics.
-                if (current + 4 <= end && *(current + 3) == Sys.RTM_IFINFO2 && current + headerSize <= end) {
-                    Sys.if_msghdr2* ifMsg = (Sys.if_msghdr2*)current;
-                    uint index = ifMsg->ifm_index;
-
-                    samples[index] = new InterfaceSample(
-                        index,
-                        ifMsg->ifm_data.ifi_obytes,
-                        ifMsg->ifm_data.ifi_ibytes,
-                        ifMsg->ifm_data.ifi_opackets,
-                        ifMsg->ifm_data.ifi_ipackets);
-                }
-
-                current += msgLen;
+        while (current < end) {
+            if (current + sizeof(ushort) > end) {
+                break;
             }
 
-            return samples.Count > 0;
+            ushort msgLen = *(ushort*)current;
+
+            if (msgLen == 0 || current + msgLen > end) {
+                break;
+            }
+
+            // Byte 3 is ifm_type; RTM_IFINFO2 rows carry the per-interface statistics.
+            if (current + 4 <= end && *(current + 3) == Sys.RTM_IFINFO2 && current + headerSize <= end) {
+                Sys.if_msghdr2* ifMsg = (Sys.if_msghdr2*)current;
+                uint index = ifMsg->ifm_index;
+
+                samples[index] = new InterfaceSample(
+                    index,
+                    ifMsg->ifm_data.ifi_obytes,
+                    ifMsg->ifm_data.ifi_ibytes,
+                    ifMsg->ifm_data.ifi_opackets,
+                    ifMsg->ifm_data.ifi_ipackets);
+            }
+
+            current += msgLen;
         }
-        finally {
-            Sys.FreeMemory(buffer);
-        }
+
+        return samples.Count > 0;
     }
 }
 #endif

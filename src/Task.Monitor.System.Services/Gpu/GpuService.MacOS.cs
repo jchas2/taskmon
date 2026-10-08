@@ -3,25 +3,20 @@ using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Gpu;
 
-// Shared macOS helpers for the GpuService partials. Per-process metrics and device-wide utilisation
-// live in GpuService.GpuPidMetrics.MacOS.cs, specs in GpuService.GpuSpecs.MacOS.cs and memory metrics
-// in GpuService.GpuMemoryMetrics.MacOS.cs.
 public sealed partial class GpuService
 {
     private const string IOServicePlane = "IOService";
     private const uint RegistryIterateRecursively = 0x00000001;
 
-    // Reads the IOAccelerator PerformanceStatistics allocation figures. These describe the single
-    // unified GPU allocation pool on Apple Silicon (bytes).
     private static bool TryReadIOAcceleratorMemory(out long allocMemory, out long inUseMemory)
     {
         allocMemory = 0;
         inUseMemory = 0;
 
         IntPtr matching = IOKit.IOServiceMatching("IOAccelerator");
-        uint accelerator = IOKit.IOServiceGetMatchingService(0, matching);
+        using IOObjectScope accelerator = new(IOKit.IOServiceGetMatchingService(0, matching));
 
-        if (accelerator == 0) {
+        if (accelerator.IsNull) {
             return false;
         }
 
@@ -34,7 +29,6 @@ public sealed partial class GpuService
         using CFScope properties = new(propertiesRef);
 
         if (result != 0 || properties.IsNull) {
-            IOKit.IOObjectRelease(accelerator);
             return false;
         }
 
@@ -55,7 +49,6 @@ public sealed partial class GpuService
             }
         }
 
-        IOKit.IOObjectRelease(accelerator);
         return found;
     }
 }

@@ -8,13 +8,10 @@ public partial class GpuService
 #if __APPLE__
     private const double NanosecondsPerSecond = 1_000_000_000.0;
 
-    // IOAccelerator reports a monotonically increasing per-process GPU-time counter (nanoseconds),
-    // so a busy fraction is derived the same way CPU time is: delta over the wall-clock interval.
     private readonly Dictionary<int, long> previousGpuTime = new();
     private long previousGpuTimestamp;
     private bool gpuPrimed;
 
-    // Persistent IOReport subscription for device-wide GPU performance-state residency.
     private IntPtr gpuReportSubscription = IntPtr.Zero;
     private IntPtr gpuReportChannels = IntPtr.Zero;
     private IntPtr gpuReportPrevSample = IntPtr.Zero;
@@ -41,14 +38,11 @@ public partial class GpuService
 
     private void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
     {
-        // Device-wide utilisation comes from IOReport residency (authoritative), independent of the
-        // per-process counters below. It primes on its own first reading.
         UpdateDeviceGpuUsage(gpuInfo);
 
         Dictionary<int, long> current = GetProcessGpuTime();
         long now = Stopwatch.GetTimestamp();
 
-        // The first cycle only captures baselines; a rate needs two readings.
         if (!gpuPrimed) {
             RebaseGpuPidState(current, now);
             gpuPrimed = true;
@@ -90,8 +84,6 @@ public partial class GpuService
         previousGpuTimestamp = now;
     }
 
-    // Walks the IOAccelerator children in the IORegistry and sums accumulatedGPUTime per owning pid,
-    // read from each client's "IOUserClientCreator" ("pid nnnn, name") and "AppUsage" array.
     private static Dictionary<int, long> GetProcessGpuTime()
     {
         long typeIdCFArray = CoreFoundation.CFArrayGetTypeID();
@@ -99,29 +91,32 @@ public partial class GpuService
 
         Dictionary<int, long> gpuInfo = new();
         IntPtr matching = IOKit.IOServiceMatching("IOAccelerator");
-        uint accelerator = IOKit.IOServiceGetMatchingService(0, matching);
+        using IOObjectScope accelerator = new(IOKit.IOServiceGetMatchingService(0, matching));
 
-        if (accelerator == 0) {
+        if (accelerator.IsNull) {
             Trace.WriteLine($"Failed to get IOAccelerator via IOServiceGetMatchingService in {nameof(GpuService)}.");
             return gpuInfo;
         }
 
-        IntPtr iterator = IntPtr.Zero;
+        IntPtr iteratorRef = IntPtr.Zero;
 
         int result = IOKit.IORegistryEntryGetChildIterator(
             accelerator,
             "IOService",
-            ref iterator);
+            ref iteratorRef);
 
-        if (result != 0 || iterator == IntPtr.Zero) {
+        using IOObjectScope iterator = new(iteratorRef);
+
+        if (result != 0 || iterator.IsNull) {
             Trace.WriteLine($"Failed to get IOIterator via IORegistryEntryGetChildIterator in {nameof(GpuService)}.");
-            IOKit.IOObjectRelease(accelerator);
             return gpuInfo;
         }
 
-        uint child;
+        uint childRef;
 
-        while ((child = IOKit.IOIteratorNext(iterator)) != 0) {
+        while ((childRef = IOKit.IOIteratorNext(iterator)) != 0) {
+            using IOObjectScope child = new(childRef);
+
             result = IOKit.IORegistryEntryCreateCFProperties(
                 child,
                 out IntPtr propertiesRef,
@@ -129,7 +124,6 @@ public partial class GpuService
                 0);
 
             using CFScope properties = new(propertiesRef);
-            IOKit.IOObjectRelease(child);
 
             if (result != 0 || properties.IsNull) {
                 continue;
@@ -179,9 +173,6 @@ public partial class GpuService
                 gpuInfo[pid] = gpuInfo.GetValueOrDefault(pid) + totalGpuTime;
             }
         }
-
-        IOKit.IOObjectRelease(iterator);
-        IOKit.IOObjectRelease(accelerator);
 
         return gpuInfo;
     }

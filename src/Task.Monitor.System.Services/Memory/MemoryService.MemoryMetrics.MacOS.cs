@@ -1,13 +1,12 @@
 #if __APPLE__
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Memory;
 
 public partial class MemoryService
 {
-    // Captured once by OnDoWorkMemoryMetrics and reused by OnDoWorkMemoryCompressionMetrics, which
-    // always runs immediately after it in the same cycle. Memory stats are instantaneous (no deltas).
     private MachHost.VmStatistics64 vmStats;
     private ulong totalPhysical;
     private long pageSize;
@@ -32,14 +31,11 @@ public partial class MemoryService
             ? totalPhysical - usedBytes
             : 0;
 
-        // macOS has no analogue to the Windows per-process virtual address space.
         memoryInfo.Metrics.TotalVirtual = 0;
         memoryInfo.Metrics.AvailableVirtual = 0;
 
         ReadSwapUsage(memoryInfo);
 
-        // The *Ratio fields hold the *used* fraction (1 - available/total), matching the Windows
-        // service so the UI reads identically across platforms.
         memoryInfo.Metrics.AvailablePhysicalRatio = totalPhysical > 0
             ? 1.0 - memoryInfo.Metrics.AvailablePhysical / (double)totalPhysical
             : 0.0;
@@ -59,8 +55,6 @@ public partial class MemoryService
 
         ulong page = (ulong)pageSize;
 
-        // macOS VM categories mapped onto the Windows vocabulary. InUse is closed against the total
-        // (≈ active + wired) so the four parts sum to TotalPhysical, as the Windows service does.
         ulong freeBytes = vmStats.free_count * page;
         ulong standbyBytes = vmStats.inactive_count * page;
         ulong modifiedBytes = vmStats.compressor_page_count * page;
@@ -84,19 +78,14 @@ public partial class MemoryService
 
         IntPtr host = MachHost.host_self();
         int count = Marshal.SizeOf<MachHost.VmStatistics64>() / sizeof(int);
-        IntPtr buffer = Marshal.AllocHGlobal(Marshal.SizeOf<MachHost.VmStatistics64>());
+        using HGlobalScope buffer = HGlobalScope.Allocate(Marshal.SizeOf<MachHost.VmStatistics64>());
 
-        try {
-            if (MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count) != 0) {
-                return false;
-            }
+        if (MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count) != 0) {
+            return false;
+        }
 
-            info = Marshal.PtrToStructure<MachHost.VmStatistics64>(buffer);
-            return true;
-        }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+        info = Marshal.PtrToStructure<MachHost.VmStatistics64>(buffer);
+        return true;
     }
 
     private static unsafe void ReadSwapUsage(MemoryInfo memoryInfo)
@@ -105,16 +94,16 @@ public partial class MemoryService
         byte* buffer = null;
         int length = 0;
 
-        if (!Sys.Sysctl(name, ref buffer, ref length) || length != sizeof(Sys.XswUsage)) {
-            Sys.FreeMemory(buffer);
+        bool read = Sys.Sysctl(name, ref buffer, ref length);
+        using HGlobalScope scope = new((nint)buffer);
+
+        if (!read || length != sizeof(Sys.XswUsage)) {
             return;
         }
 
         Sys.XswUsage* xsw = (Sys.XswUsage*)buffer;
         memoryInfo.Metrics.TotalPageFile = xsw->total;
         memoryInfo.Metrics.AvailablePageFile = xsw->avail;
-
-        Sys.FreeMemory(buffer);
     }
 }
 #endif

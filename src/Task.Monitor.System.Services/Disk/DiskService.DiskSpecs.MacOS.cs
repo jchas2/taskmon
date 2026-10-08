@@ -13,27 +13,24 @@ public partial class DiskService
 
     private static void EnumerateDiskDevices(DiskSpecs specs)
     {
-        if (IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out nint iterator) != 0 ||
-            iterator == IntPtr.Zero) {
+        int result = IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out nint iteratorRef);
+        using IOObjectScope iterator = new(iteratorRef);
+
+        if (result != 0 || iterator.IsNull) {
             return;
         }
 
-        uint entry;
+        uint entryRef;
 
-        while ((entry = IOKit.IOIteratorNext(iterator)) != 0) {
-            try {
-                DiskDevice? device = BuildDiskDevice(entry);
+        while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
+            using IOObjectScope entry = new(entryRef);
+            DiskDevice? device = BuildDiskDevice(entry);
 
-                if (device != null) {
-                    specs.Devices.Add(device);
-                }
-            }
-            finally {
-                IOKit.IOObjectRelease(entry);
+            if (device != null) {
+                specs.Devices.Add(device);
             }
         }
 
-        IOKit.IOObjectRelease(iterator);
         specs.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
     }
 
