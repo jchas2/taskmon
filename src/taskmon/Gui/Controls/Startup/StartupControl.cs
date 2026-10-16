@@ -9,40 +9,38 @@ namespace Task.Monitor.Gui.Controls.Startup;
 
 public sealed partial class StartupControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ListView startupView;
-    private readonly ListView detailView;
-
-    private StartupInfo? startup;
-    private string lastSignature = string.Empty;
-
-    private const int NameColumnWidth = 24;
+    private const int NameColumnWidth      = 24;
     private const int PublisherColumnWidth = 24;
-    private const int TypeColumnWidth = 16;
-    private const int ScopeColumnWidth = 9;
-    private const int StatusColumnWidth = 9;
+    private const int TypeColumnWidth      = 16;
+    private const int ScopeColumnWidth     = 9;
+    private const int StatusColumnWidth    = 9;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 9;
+    private const int DetailViewHeight       = 9;
 
-    public StartupControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          startupView;
+    private readonly ListView          detailView;
+
+    private StartupInfo? startup;
+    
+    private string lastSignature = string.Empty;
+
+
+    public StartupControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         startupView = new ListView(terminal) {
-            EnableScroll = true,
-            EnableRowSelect = true,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            ShowBorder        = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
             EmptyListViewText = "Gathering startup applications…"
         };
 
@@ -55,13 +53,13 @@ public sealed partial class StartupControl : Control
             .Add(new ListViewColumnHeader("COMMAND"));
 
         detailView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = false,
-            Visible = true,
-            HeaderText = "DETAIL"
+            ShowBorder        = true,
+            TabStop           = false,
+            Visible           = true,
+            HeaderText        = "DETAIL"
         };
 
         detailView.ColumnHeaders
@@ -117,6 +115,7 @@ public sealed partial class StartupControl : Control
     private void RefreshDetailPane()
     {
         int index = startupView.SelectedIndex;
+        
         IReadOnlyList<StartupEntry> entries = startup?.Specs.Entries ?? [];
 
         StartupEntry? selected = index >= 0 && index < entries.Count ? entries[index] : null;
@@ -157,14 +156,14 @@ public sealed partial class StartupControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        startupView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        startupView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        startupView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        startupView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        startupView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        startupView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-        startupView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        startupView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        startupView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        startupView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        startupView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        startupView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        startupView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        startupView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        startupView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        startupView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         startupView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         startupView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
@@ -173,8 +172,8 @@ public sealed partial class StartupControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
@@ -197,12 +196,17 @@ public sealed partial class StartupControl : Control
     {
         int startupViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        startupView.X = X;
-        startupView.Y = Y;
-        startupView.Width = Width;
+        startupView.X      = X;
+        startupView.Y      = Y;
+        startupView.Width  = Width;
         startupView.Height = startupViewHeight;
 
-        int fixedWidth = NameColumnWidth + PublisherColumnWidth + TypeColumnWidth + ScopeColumnWidth + StatusColumnWidth;
+        int fixedWidth = 
+            NameColumnWidth      + 
+            PublisherColumnWidth + 
+            TypeColumnWidth      + 
+            ScopeColumnWidth     + 
+            StatusColumnWidth;
 
         startupView.ColumnHeaders[0].Width = NameColumnWidth;
         startupView.ColumnHeaders[1].Width = PublisherColumnWidth;
@@ -211,9 +215,9 @@ public sealed partial class StartupControl : Control
         startupView.ColumnHeaders[4].Width = StatusColumnWidth;
         startupView.ColumnHeaders[5].Width = Math.Max(1, Width - fixedWidth - 3);
 
-        detailView.X = X;
-        detailView.Y = Y + startupViewHeight;
-        detailView.Width = Width;
+        detailView.X      = X;
+        detailView.Y      = Y + startupViewHeight;
+        detailView.Width  = Width;
         detailView.Height = DetailViewHeight;
 
         detailView.ColumnHeaders[0].Width = DetailFieldColumnWidth;

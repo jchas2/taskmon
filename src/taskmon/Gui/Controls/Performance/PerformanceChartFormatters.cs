@@ -9,8 +9,9 @@ public static class PerformanceChartFormatters
         }
 
         string[] rateFormatters = ["", "K", "M", "G", "T"];
-        int index = 0;
-        double rate = bytesPerSecond;
+        
+        int    index = 0;
+        double rate  = bytesPerSecond;
 
         while (rate >= 1024.0 && index < rateFormatters.Length - 1) {
             index++;

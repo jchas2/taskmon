@@ -5,6 +5,7 @@ public sealed partial class InstalledAppsService : WorkerService
     private const int RescanEveryCycles = 40;
 
     private InstalledAppsSpecs installedAppsSpecs = new();
+    
     private int cyclesSinceScan;
 
     protected override void OnStart() =>

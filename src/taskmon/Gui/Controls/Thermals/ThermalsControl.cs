@@ -13,37 +13,37 @@ namespace Task.Monitor.Gui.Controls.Thermals;
 public sealed class ThermalsControl : Control
 {
     private const double FixedScaleCelsius = 110.0;
-    private const int ChartHeight = 9;
+    private const int    ChartHeight       = 9;
+
+    private readonly AnsiScreenBuffer          frame      = new();
+    private readonly Dictionary<string, Chart> chartCache = new();
 
     private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly AnsiScreenBuffer frame = new();
-
-    private readonly Dictionary<string, Chart> chartCache = new();
+    private readonly AppConfig         appConfig;
+    
     private List<SensorRow> rows = new();
     private string lastSignature = string.Empty;
-    private int scrollOffset;
-
-    private bool needsFullClear = true;
-    private int lastDrawnChartCount = -1;
-    private bool scrollBarShown;
-
+    
     private SystemSnapshot? snapshot;
 
+    private int scrollOffset;
+    private int lastDrawnChartCount = -1;
+
+    private bool needsFullClear = true;
+    private bool scrollBarShown;
+
+
     private sealed record SensorRow(
-        string Key, 
-        string Title, 
+        string           Key, 
+        string           Title, 
         ThermalComponent Component, 
-        string ComponentId);
+        string           ComponentId);
 
     public ThermalsControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
     }
 
     public void Sample(SystemSnapshot snapshot)
@@ -64,7 +64,7 @@ public sealed class ThermalsControl : Control
             .Select(sensor => (sensor.Component, sensor.ComponentId))
             .Distinct()
             .OrderBy(group => group.Component)
-            .ThenBy(group => group.ComponentId, StringComparer.Ordinal)
+            .ThenBy(group  => group.ComponentId, StringComparer.Ordinal)
             .ToList();
 
         string signature = string.Join("|", groups.Select(group => $"{group.Component}:{group.ComponentId}"));
@@ -137,16 +137,16 @@ public sealed class ThermalsControl : Control
         }
 
         Chart chart = new(Terminal) {
-            AutoScale = false,
-            LabelSeries = string.Empty,
-            ShowGrid = true,
-            ShowYAxisScale = true,
+            AutoScale                 = false,
+            LabelSeries               = string.Empty,
+            ShowGrid                  = true,
+            ShowYAxisScale            = true,
             CustomYAxisScaleFormatter = value => $"{(int)Math.Round(value * FixedScaleCelsius)}°C",
         };
 
         ConfigureChart(chart);
         
-        chart.Width = Math.Max(4, Width);
+        chart.Width  = Math.Max(4, Width);
         chart.Height = ChartHeight;
         chart.Resize();
 
@@ -166,15 +166,15 @@ public sealed class ThermalsControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.BackgroundColour       = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour       = appConfig.Theme.Foreground;
         chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.ColourHigh             = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow              = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid              = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle             = appConfig.MetreStyle;
+        chart.YAxisColour            = appConfig.Theme.ChartYAxis;
     }
 
     protected override void OnDraw() => OnDrawInternal();
@@ -188,19 +188,19 @@ public sealed class ThermalsControl : Control
 
             DrawEmptyState();
 
-            needsFullClear = false;
+            needsFullClear      = false;
+            scrollBarShown      = false;
             lastDrawnChartCount = 0;
-            scrollBarShown = false;
             return;
         }
 
         int visibleCharts = Math.Max(1, Height / ChartHeight);
+        
         scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, rows.Count - visibleCharts));
 
-        int drawn = Math.Min(visibleCharts, rows.Count - scrollOffset);
-
+        int  drawn        = Math.Min(visibleCharts, rows.Count - scrollOffset);
         bool scrollNeeded = rows.Count > visibleCharts;
-        int chartWidth = scrollNeeded ? Math.Max(4, Width - 1) : Width;
+        int  chartWidth   = scrollNeeded ? Math.Max(4, Width - 1) : Width;
 
         if (scrollNeeded != scrollBarShown) {
             needsFullClear = true;
@@ -236,8 +236,8 @@ public sealed class ThermalsControl : Control
                 chart.Resize();
             }
 
-            chart.X = X;
-            chart.Y = Y + i * ChartHeight;
+            chart.X      = X;
+            chart.Y      = Y + i * ChartHeight;
             chart.Height = ChartHeight;
             chart.Draw();
         }
@@ -266,7 +266,7 @@ public sealed class ThermalsControl : Control
         string[] lines = [
             "No thermal sensors detected.",
             "GPU and NVMe drive temperatures appear here when available.",
-            "Accurate CPU temperature needs a signed kernel helper driver and is not read.",
+            "Accurate CPU temperature needs a signed kernel helper driver.",
         ];
 
         for (int i = 0; i < lines.Length; i++) {
@@ -316,24 +316,24 @@ public sealed class ThermalsControl : Control
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         int visibleCharts = Math.Max(1, Height / ChartHeight);
-        int maxOffset = Math.Max(0, rows.Count - visibleCharts);
+        int maxOffset     = Math.Max(0, rows.Count - visibleCharts);
 
         switch (keyInfo.Key) {
             case ConsoleKey.UpArrow:
                 scrollOffset = Math.Max(0, scrollOffset - 1);
-                handled = true;
+                handled      = true;
                 break;
             case ConsoleKey.DownArrow:
                 scrollOffset = Math.Min(maxOffset, scrollOffset + 1);
-                handled = true;
+                handled      = true;
                 break;
             case ConsoleKey.PageUp:
                 scrollOffset = Math.Max(0, scrollOffset - visibleCharts);
-                handled = true;
+                handled      = true;
                 break;
             case ConsoleKey.PageDown:
                 scrollOffset = Math.Min(maxOffset, scrollOffset + visibleCharts);
-                handled = true;
+                handled      = true;
                 break;
             default:
                 return;
@@ -361,13 +361,13 @@ public sealed class ThermalsControl : Control
     protected override void OnResize()
     {
         foreach (Chart chart in chartCache.Values) {
-            chart.X = X;
-            chart.Width = Math.Max(4, Width);
+            chart.X      = X;
+            chart.Width  = Math.Max(4, Width);
             chart.Height = ChartHeight;
             chart.Resize();
         }
 
-        needsFullClear = true;
+        needsFullClear      = true;
         lastDrawnChartCount = -1;
 
         base.OnResize();
@@ -377,12 +377,12 @@ public sealed class ThermalsControl : Control
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         chartCache.Clear();
-        rows = new();
-        lastSignature = string.Empty;
-        scrollOffset = 0;
-        needsFullClear = true;
+        rows                = new();
+        lastSignature       = string.Empty;
+        scrollOffset        = 0;
+        needsFullClear      = true;
         lastDrawnChartCount = -1;
-        scrollBarShown = false;
+        scrollBarShown      = false;
 
         base.OnUnload();
     }

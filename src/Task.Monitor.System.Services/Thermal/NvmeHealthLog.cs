@@ -6,8 +6,8 @@ namespace Task.Monitor.System.Services.Thermal;
 public static class NvmeHealthLog
 {
     private const int CompositeTemperatureOffset = 1;
-    private const int TemperatureSensorOffset = 200;
-    private const int TemperatureSensorCount = 8;
+    private const int TemperatureSensorOffset    = 200;
+    private const int TemperatureSensorCount     = 8;
 
     private const double KelvinToCelsius = 273.15;
 

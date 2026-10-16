@@ -6,17 +6,17 @@ namespace Task.Monitor.Interop.Mach;
 public static class SystemConfiguration
 {
     [DllImport(Libraries.SystemConfiguration)]
-    private static extern IntPtr SCDynamicStoreCopyConsoleUser(IntPtr store, out uint uid, out uint gid);
+    private static extern nint SCDynamicStoreCopyConsoleUser(nint store, out uint uid, out uint gid);
 
     // The uid of the user logged in at the console, or null at the login window or when nobody
     // is (e.g. a headless or SSH-only session).
     public static uint? GetConsoleUserId()
     {
-        IntPtr nameRef;
+        nint nameRef;
         uint uid;
 
         try {
-            nameRef = SCDynamicStoreCopyConsoleUser(IntPtr.Zero, out uid, out _);
+            nameRef = SCDynamicStoreCopyConsoleUser(nint.Zero, out uid, out _);
         }
         catch (EntryPointNotFoundException) {
             return null;

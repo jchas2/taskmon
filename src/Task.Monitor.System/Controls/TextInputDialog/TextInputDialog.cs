@@ -4,29 +4,21 @@ using Task.Monitor.System.Controls.InputBox;
 
 namespace Task.Monitor.System.Controls.TextInputDialog;
 
-// A MessageBox-style modal (rounded border, title bar, OK/Cancel buttons, help hint) around a
-// single-line text field - DriveInputBox's chrome, with a text field in place of its list. Same
-// modal contract as DriveInputBox/PickerBox: not added to a parent's Controls; a caller shows it
-// with Visible = true plus Control.RedrawEnabled = false and forwards KeyPressed() to it while it
-// is visible, reading Result once it is no longer None.
-//
-// Left/Right move the caret within the text, so - unlike DriveInputBox, whose list only needs
-// Up/Down - Tab/Shift+Tab are what move between the OK and Cancel buttons.
 public sealed class TextInputDialog : Control
 {
-    // Top border, spacer, field, spacer, button row, spacer, help row, bottom border.
     public const int PreferredHeight = 8;
-
-    private const int MinWidth = 30;
+    
+    private const int MinWidth    = 30;
     private const int ButtonWidth = 10;
-    private const int ButtonGap = 6;
-    private const int FieldRow = 2;
-    private const int ButtonRow = 4;
-    private const int HelpRow = 6;
+    private const int ButtonGap   = 6;
+    private const int FieldRow    = 2;
+    private const int ButtonRow   = 4;
+    private const int HelpRow     = 6;
 
     private readonly TextBuffer text = new();
+    
     private bool okFocused = true;
-    private int viewStart;
+    private int  viewStart;
 
     public TextInputDialog(ISystemTerminal terminal) : base(terminal) { }
 
@@ -41,8 +33,6 @@ public sealed class TextInputDialog : Control
 
     public int MaxLength { get; set; } = 64;
 
-    // Null accepts any printable character. A caller whose text ends up somewhere with its own
-    // rules (e.g. a config section name) narrows it here, so an unusable value can't be typed.
     public Func<char, bool>? CharacterFilter { get; set; }
 
     public TextInputDialogResult Result { get; private set; } = TextInputDialogResult.None;
@@ -58,11 +48,11 @@ public sealed class TextInputDialog : Control
         }
     }
 
-    // Resets the text, the result and the button focus - call before each ShowTextInputDialog.
     public void SetText(string value)
     {
         text.SetText(value);
-        Result = TextInputDialogResult.None;
+        
+        Result    = TextInputDialogResult.None;
         okFocused = true;
         viewStart = 0;
     }
@@ -94,9 +84,9 @@ public sealed class TextInputDialog : Control
         DrawRectangle(X, Y, Width, Height, DialogBackgroundColour);
 
         int dialogWidth = Width - 2;
-        string title = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen = Math.Min(title.Length, dialogWidth);
-        int leftDashes = (dialogWidth - titleLen) / 2;
+        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
+        int titleLen    = Math.Min(title.Length, dialogWidth);
+        int leftDashes  = (dialogWidth - titleLen) / 2;
         int rightDashes = dialogWidth - titleLen - leftDashes;
 
         Terminal.BackgroundColor = DialogBackgroundColour;
@@ -121,8 +111,6 @@ public sealed class TextInputDialog : Control
         Terminal.Write('╯');
     }
 
-    // The field scrolls horizontally rather than wrapping or overflowing the border - it shows
-    // the window of the text that keeps the caret visible.
     private void DrawField()
     {
         int caret = text.CursorBufferPosition;
@@ -135,6 +123,7 @@ public sealed class TextInputDialog : Control
         }
 
         string current = text.Text;
+        
         string visible = viewStart < current.Length
             ? current.Substring(viewStart, Math.Min(FieldWidth, current.Length - viewStart))
             : string.Empty;
@@ -194,8 +183,6 @@ public sealed class TextInputDialog : Control
     private void PositionCaret() =>
         Terminal.SetCursorPosition(FieldX + text.CursorBufferPosition - viewStart, Y + FieldRow);
 
-    // Redraws only what the key changed - the field row, or the button row - never the whole
-    // frame, matching DriveInputBox/PickerBox (a full repaint per keystroke flickers).
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         Result = TextInputDialogResult.None;

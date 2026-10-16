@@ -17,7 +17,7 @@ public sealed class StartupTargetUser
     public static StartupTargetUser Current()
     {
         uint euid = UniStd.geteuid();
-        uint uid = UniStd.getuid();
+        uint uid  = UniStd.getuid();
 
         uint targetUid = ResolveUid(
             euid,
@@ -35,10 +35,10 @@ public sealed class StartupTargetUser
     }
 
     public static uint ResolveUid(
-        uint euid, 
-        uint uid, 
+        uint    euid, 
+        uint    uid, 
         string? sudoUid, 
-        uint? consoleUid)
+        uint?   consoleUid)
     {
         if (euid != 0) {
             return uid;

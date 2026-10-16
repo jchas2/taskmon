@@ -5,6 +5,7 @@ public sealed partial class WindowsServicesService : WorkerService
     private const int RescanEveryCycles = 40;
 
     private WindowsServicesSpecs servicesSpecs = new();
+    
     private int cyclesSinceScan;
 
     protected override void OnStart() =>

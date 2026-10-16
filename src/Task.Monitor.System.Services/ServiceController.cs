@@ -19,9 +19,9 @@ namespace Task.Monitor.System.Services;
 
 public sealed class ServiceController : WorkerService
 {
-    private readonly List<ISystemService> allServices = new();
-    private readonly ConcurrentDictionary<Type, object> systemMetrics = new();
-    private readonly DeviceChangeNotifier deviceChangeNotifier = new();
+    private readonly List<ISystemService>               allServices          = new();
+    private readonly ConcurrentDictionary<Type, object> systemMetrics        = new();
+    private readonly DeviceChangeNotifier               deviceChangeNotifier = new();
 
     private long sequence;
     public event EventHandler<SystemSnapshotEventArgs>? SystemSnapshotUpdated;

@@ -13,24 +13,23 @@ namespace Task.Monitor.Gui.Controls.DiskSpace;
 
 public sealed partial class DiskSpaceControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
+    private const int FileColumnMinWidth        = 16;
+    private const int FileCountRowHeight        = 1;
+    private const int SizeColumnWidth           = 12;
+    private const int PreferredVisibleDriveRows = 5;
+
+    private readonly ServiceController       serviceController;
+    private readonly AppConfig               appConfig;
     private readonly DiskSpaceHeatMapControl heatMap;
-    private readonly MetreControl progressMetre;
-    private readonly ListView filesView;
+    private readonly MetreControl            progressMetre;
+    private readonly ListView                filesView;
+    private readonly DriveInputBox           driveInputBox;
+    private readonly InputBox                scanPathInputBox;
 
     private MetreControlSeries? rootFoldersSeries;
-
-    private readonly DriveInputBox driveInputBox;
-    private readonly InputBox scanPathInputBox;
-
-    private DiskSpaceInfo? diskSpace;
+    private DiskSpaceInfo?      diskSpace;
+    
     private string lastFileListSignature = string.Empty;
-
-    private const int FileColumnMinWidth = 16;
-    private const int FileCountRowHeight = 1;
-    private const int SizeColumnWidth = 12;
-    private const int PreferredVisibleDriveRows = 5;
     
     private int fileCountRowX;
     private int fileCountRowY;
@@ -38,35 +37,34 @@ public sealed partial class DiskSpaceControl : Control
 
     public DiskSpaceControl(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         heatMap = new DiskSpaceHeatMapControl(terminal, appConfig) {
             Visible = true
         };
 
         progressMetre = new MetreControl(terminal) {
-            Visible = true,
-            TabStop = false,
-            Border = false,
+            Visible    = true,
+            TabStop    = false,
+            Border     = false,
             ShowLegend = true,
-            Rows = 1
+            Rows       = 1
         };
 
         filesView = new ListView(terminal) {
-            EnableScroll = true,
-            EnableRowSelect = true,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            ShowBorder        = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
             EmptyListViewText = "No files scanned yet - press s to start a scan.",
-            HeaderText = "LARGEST FILES"
+            HeaderText        = "LARGEST FILES"
         };
 
         filesView.ColumnHeaders
@@ -79,8 +77,8 @@ public sealed partial class DiskSpaceControl : Control
         };
 
         scanPathInputBox = new InputBox(terminal) {
-            Width = 48,
-            Height = 1,
+            Width   = 48,
+            Height  = 1,
             Visible = false
         };
 
@@ -96,6 +94,7 @@ public sealed partial class DiskSpaceControl : Control
         }
 
         bool changed = !ReferenceEquals(latest.Specs, diskSpace?.Specs);
+        
         diskSpace = latest;
 
         if (changed || heatMap.IsFading) {
@@ -106,14 +105,16 @@ public sealed partial class DiskSpaceControl : Control
     private void DrawFileCountRow(DiskSpaceSpecs? specs)
     {
         string text = specs?.State switch {
-            null => string.Empty,
-            DiskSpaceScanState.Idle => string.Empty,
-            DiskSpaceScanState.Scanning or DiskSpaceScanState.Cancelling => $"Processing {specs.FilesScanned:N0} files",
-            _ => $"Processed {specs.FilesScanned:N0} files"
+            null                              => string.Empty,
+            DiskSpaceScanState.Idle           => string.Empty,
+            DiskSpaceScanState.Scanning or 
+                DiskSpaceScanState.Cancelling => $"Processing {specs.FilesScanned:N0} files",
+                                            _ => $"Processed {specs.FilesScanned:N0} files"
         };
 
         int charsToTake = text.TruncateToTerminalWidth(fileCountRowWidth, out int actualWidth);
-        string padded = text[..charsToTake] + new string(' ', fileCountRowWidth - actualWidth);
+        
+        string padded   = text[..charsToTake] + new string(' ', fileCountRowWidth - actualWidth);
         
         Terminal.SetCursorPosition(fileCountRowX, fileCountRowY);
         Terminal.BackgroundColor = BackgroundColour;
@@ -160,10 +161,10 @@ public sealed partial class DiskSpaceControl : Control
     private void UpdateProgressMetre(DiskSpaceSpecs? specs)
     {
         double ratio = specs switch {
-            null => 0.0,
-            { RootLevelFoldersTotal: > 0 } => (double)specs.RootLevelFoldersCompleted / specs.RootLevelFoldersTotal,
+            null                                    => 0.0,
+            { RootLevelFoldersTotal: > 0 }          => (double)specs.RootLevelFoldersCompleted / specs.RootLevelFoldersTotal,
             { State: DiskSpaceScanState.Completed } => 1.0,
-            _ => 0.0
+                                                  _ => 0.0
         };
 
         if (rootFoldersSeries is not null) {
@@ -208,11 +209,12 @@ public sealed partial class DiskSpaceControl : Control
 
         IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
 
-        driveInputBox.Width = Math.Clamp(Width - 4, 30, 60);
+        driveInputBox.Width  = Math.Clamp(Width - 4, 30, 60);
         driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
-        driveInputBox.X = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
-        driveInputBox.Y = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
-        driveInputBox.Title = "Select a drive";
+        driveInputBox.X      = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
+        driveInputBox.Y      = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
+        driveInputBox.Title  = "Select a drive";
+        
         driveInputBox.SetCandidates(candidates);
         driveInputBox.Visible = true;
         driveInputBox.ShowDriveInputBox();
@@ -227,8 +229,8 @@ public sealed partial class DiskSpaceControl : Control
         }
 
         DriveInputBoxResult result = driveInputBox.Result;
-        bool customPathRequested = driveInputBox.CustomPathRequested;
-        string? selectedPath = driveInputBox.SelectedPath;
+        bool customPathRequested   = driveInputBox.CustomPathRequested;
+        string? selectedPath       = driveInputBox.SelectedPath;
 
         driveInputBox.Visible = false;
 
@@ -255,14 +257,16 @@ public sealed partial class DiskSpaceControl : Control
     private void ShowScanPathPrompt()
     {
         string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
+        
         Control.RedrawEnabled = false;
 
         // Overlay so it looks like an in-place edit to the user.
-        scanPathInputBox.X = driveInputBox.ListX;
-        scanPathInputBox.Y = driveInputBox.ListY;
-        scanPathInputBox.Width = driveInputBox.ListWidth;
-        scanPathInputBox.Title = "Scan path:";
+        scanPathInputBox.X       = driveInputBox.ListX;
+        scanPathInputBox.Y       = driveInputBox.ListY;
+        scanPathInputBox.Width   = driveInputBox.ListWidth;
+        scanPathInputBox.Title   = "Scan path:";
         scanPathInputBox.Visible = true;
+        
         scanPathInputBox.SetText(defaultRoot);
         scanPathInputBox.ShowInputBox();
     }
@@ -275,10 +279,10 @@ public sealed partial class DiskSpaceControl : Control
             return;
         }
 
-        string path = scanPathInputBox.Text;
         InputBoxResult result = scanPathInputBox.Result;
+        string         path   = scanPathInputBox.Text;
 
-        Control.RedrawEnabled = true;
+        Control.RedrawEnabled    = true;
         scanPathInputBox.Visible = false;
 
         if (result == InputBoxResult.Enter && !string.IsNullOrWhiteSpace(path)) {
@@ -316,21 +320,22 @@ public sealed partial class DiskSpaceControl : Control
         heatMap.BackgroundColour = appConfig.Theme.Background;
         heatMap.ForegroundColour = appConfig.Theme.Foreground;
 
-        progressMetre.BackgroundColour = appConfig.Theme.MetreBackground;
-        progressMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        progressMetre.BackgroundColour       = appConfig.Theme.MetreBackground;
+        progressMetre.ForegroundColour       = appConfig.Theme.MetreForeground;
         progressMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
         progressMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
-        progressMetre.MetreStyle = appConfig.MetreStyle;
+        progressMetre.MetreStyle             = appConfig.MetreStyle;
+        
         rootFoldersSeries = progressMetre.AddSeries("Root Folders", appConfig.Theme.RangeLowBackground);
 
-        filesView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        filesView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        filesView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        filesView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        filesView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        filesView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-        filesView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        filesView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        filesView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        filesView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        filesView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        filesView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        filesView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        filesView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        filesView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        filesView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         filesView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         filesView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
@@ -339,13 +344,13 @@ public sealed partial class DiskSpaceControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        driveInputBox.DialogBackgroundColour = appConfig.Theme.HeaderBackground;
-        driveInputBox.DialogBorderColour = appConfig.Theme.HeaderForeground;
-        driveInputBox.DialogButtonBackgroundColour = appConfig.Theme.BackgroundHighlight;
-        driveInputBox.DialogButtonForegroundColour = appConfig.Theme.ForegroundHighlight;
-        driveInputBox.DialogForegroundColour = appConfig.Theme.HeaderForeground;
-        driveInputBox.ListBackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        driveInputBox.ListForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        driveInputBox.DialogBackgroundColour                = appConfig.Theme.HeaderBackground;
+        driveInputBox.DialogBorderColour                    = appConfig.Theme.HeaderForeground;
+        driveInputBox.DialogButtonBackgroundColour          = appConfig.Theme.BackgroundHighlight;
+        driveInputBox.DialogButtonForegroundColour          = appConfig.Theme.ForegroundHighlight;
+        driveInputBox.DialogForegroundColour                = appConfig.Theme.HeaderForeground;
+        driveInputBox.ListBackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        driveInputBox.ListForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         driveInputBox.ListBackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         driveInputBox.ListForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
         driveInputBox.Load();
@@ -365,33 +370,33 @@ public sealed partial class DiskSpaceControl : Control
     protected override void OnResize()
     {
         int progressMetreHeight = progressMetre.RequiredHeight;
-        int remainingHeight = Math.Max(0, Height - progressMetreHeight - FileCountRowHeight);
-        int heatMapHeight = Math.Max(3, remainingHeight / 2);
-        int filesViewHeight = Math.Max(1, remainingHeight - heatMapHeight);
+        int remainingHeight     = Math.Max(0, Height - progressMetreHeight - FileCountRowHeight);
+        int heatMapHeight       = Math.Max(3, remainingHeight / 2);
+        int filesViewHeight     = Math.Max(1, remainingHeight - heatMapHeight);
 
-        heatMap.X = X;
-        heatMap.Y = Y;
-        heatMap.Width = Width;
+        heatMap.X      = X;
+        heatMap.Y      = Y;
+        heatMap.Width  = Width;
         heatMap.Height = heatMapHeight;
         heatMap.Resize();
 
-        progressMetre.X = X;
-        progressMetre.Y = Y + heatMapHeight;
-        progressMetre.Width = Width - 1;
+        progressMetre.X      = X;
+        progressMetre.Y      = Y + heatMapHeight;
+        progressMetre.Width  = Width - 1;
         progressMetre.Height = progressMetreHeight;
         progressMetre.Resize();
         
-        fileCountRowX = X;
-        fileCountRowY = Y + heatMapHeight + progressMetreHeight;
+        fileCountRowX     = X;
+        fileCountRowY     = Y + heatMapHeight + progressMetreHeight;
         fileCountRowWidth = Width;
 
-        filesView.X = X;
-        filesView.Y = fileCountRowY + FileCountRowHeight;
-        filesView.Width = Width;
+        filesView.X      = X;
+        filesView.Y      = fileCountRowY + FileCountRowHeight;
+        filesView.Width  = Width;
         filesView.Height = filesViewHeight;
 
         int fileColumnWidth = Math.Max(FileColumnMinWidth, Width / 4);
-        int fixedWidth = fileColumnWidth + SizeColumnWidth;
+        int fixedWidth      = fileColumnWidth + SizeColumnWidth;
 
         filesView.ColumnHeaders[0].Width = fileColumnWidth;
         filesView.ColumnHeaders[1].Width = SizeColumnWidth;
@@ -402,13 +407,14 @@ public sealed partial class DiskSpaceControl : Control
 
     protected override void OnUnload()
     {
-        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         progressMetre.ClearSeries();
         rootFoldersSeries = null;
         filesView.Items.Clear();
         lastFileListSignature = string.Empty;
         driveInputBox.Unload();
         scanPathInputBox.Unload();
+
+        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
 
         base.OnUnload();
     }

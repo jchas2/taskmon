@@ -14,10 +14,10 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 public static class SummaryChartFeeder
 {
     public static void Feed(
-        SummaryLayoutTree tree,
+        SummaryLayoutTree                 tree,
         IReadOnlyDictionary<int, Control> paneControls,
-        SystemSnapshot snapshot,
-        AppConfig appConfig)
+        SystemSnapshot                    snapshot,
+        AppConfig                         appConfig)
     {
         foreach (SummaryLayoutNode pane in tree.Panes()) {
             if (!paneControls.TryGetValue(pane.Id, out Control? control) || control is not Chart chart) {
@@ -26,7 +26,7 @@ public static class SummaryChartFeeder
 
             switch (pane.ControlType) {
                 case PaneControlType.Cpu when snapshot.Cpu is { } cpuInfo: {
-                    CpuMetrics cpu = cpuInfo.Metrics;
+                    CpuMetrics cpu  = cpuInfo.Metrics;
                     double totalCpu = cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime;
 
                     chart.LabelSeries = appConfig.ShowMetreCpuNumerically
@@ -84,6 +84,7 @@ public static class SummaryChartFeeder
                 case PaneControlType.Disk when snapshot.Disk is { } disk: {
                     double diskMbps = disk.Metrics.ToDiskTransferBytesPerSecond().ToMbpsFromBytes();
 
+                    // TODO: SystemSnapshotExtensions?
                     chart.LabelSeries = appConfig.ShowMetreDiskNumerically
                         ? $"{diskMbps} MB/s"
                         : string.Empty;

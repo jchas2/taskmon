@@ -10,28 +10,25 @@ namespace Task.Monitor.Gui.Controls.Processes;
 
 public sealed class ProcessesControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ProcessControl processControl;
-    private readonly ProcessInfoControl processInfoControl;
-
     private const int MinWidth = 20;
     private const int MinHeight = 4;
 
-    public ProcessesControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+    private readonly ServiceController  serviceController;
+    private readonly AppConfig          appConfig;
+    private readonly ProcessControl     processControl;
+    private readonly ProcessInfoControl processInfoControl;
+
+    public ProcessesControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         processControl = new ProcessControl(
             serviceController,
             terminal,
             appConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 1
         };
 
@@ -41,7 +38,7 @@ public sealed class ProcessesControl : Control
             new ThreadService(),
             terminal,
             appConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -75,7 +72,7 @@ public sealed class ProcessesControl : Control
                 if (!handled) {
                     processControl.SetFocus();
                     handled = true;
-                    processInfoControl.ResetToDetail();
+                    processInfoControl.ResetToDetailPane();
                     processInfoControl.LoadProcess(processControl.SelectedProcessId);
                 }
 
@@ -125,13 +122,13 @@ public sealed class ProcessesControl : Control
 
         int processHeight = (int)(Height * 0.6);
 
-        processControl.X = X;
-        processControl.Y = Y;
+        processControl.X     = X;
+        processControl.Y     = Y;
         processControl.Width = Width;
         processControl.Height = processHeight;
 
-        processInfoControl.X = X;
-        processInfoControl.Y = Y + processHeight;
+        processInfoControl.X     = X;
+        processInfoControl.Y     = Y + processHeight;
         processInfoControl.Width = Width;
         processInfoControl.Height = Math.Max(1, Height - processHeight);
 

@@ -12,15 +12,16 @@ public partial class CpuService
     // GetSystemTimes reports FILETIME ticks, which are 100ns units.
     private const double FileTimeTicksPerSecond = 10_000_000.0;
 
-    private CpuSystemTimes prevTimes = new();
-    private CpuSystemTimes currTimes = new();
+    private CpuSystemTimes prevTimes  = new();
+    private CpuSystemTimes currTimes  = new();
     private CpuSystemTimes deltaTimes = new();
 
     private long previousTimestamp;
     private bool primed;
 
     private uint pdhResult = 0;
-    nint hQuery = 0; 
+
+    nint hQuery   = 0; 
     nint hCounter = 0;
 
     private unsafe void OnStartCpuCore()
@@ -85,7 +86,7 @@ public partial class CpuService
             }
             
             uint bufferSize = 0;
-            uint itemCount = 0;
+            uint itemCount  = 0;
 
             _ = Pdh.PdhGetFormattedCounterArrayW(
                 *phCounter,
@@ -166,10 +167,10 @@ public partial class CpuService
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
 
-            cpuInfo.Metrics.CpuPercentIdleTime = 0;
+            cpuInfo.Metrics.CpuPercentIdleTime   = 0;
             cpuInfo.Metrics.CpuPercentKernelTime = 0;
-            cpuInfo.Metrics.CpuPercentUserTime = 0;
-            cpuInfo.Metrics.CpuPercentIdleTime = 0;
+            cpuInfo.Metrics.CpuPercentUserTime   = 0;
+            cpuInfo.Metrics.CpuPercentIdleTime   = 0;
             return;
         }
 
@@ -207,9 +208,9 @@ public partial class CpuService
 
     private void Rebase(long now)
     {
-        prevTimes.Idle   = currTimes.Idle;
-        prevTimes.Kernel = currTimes.Kernel;
-        prevTimes.User   = currTimes.User;
+        prevTimes.Idle    = currTimes.Idle;
+        prevTimes.Kernel  = currTimes.Kernel;
+        prevTimes.User    = currTimes.User;
         previousTimestamp = now;
     }
 #endif

@@ -12,12 +12,12 @@ public sealed class SummaryLayoutRenderer
     public IReadOnlyDictionary<int, Rectangle> PaneBounds => paneBounds;
 
     public void Layout(
-        SummaryLayoutTree tree,
+        SummaryLayoutTree                 tree,
         IReadOnlyDictionary<int, Control> paneControls,
-        int x,
-        int y,
-        int width,
-        int height)
+        int                               x,
+        int                               y,
+        int                               width,
+        int                               height)
     {
         paneBounds.Clear();
         
@@ -32,13 +32,13 @@ public sealed class SummaryLayoutRenderer
     }
 
     private void LayoutNode(
-        SummaryLayoutTree tree,
+        SummaryLayoutTree                 tree,
         IReadOnlyDictionary<int, Control> paneControls,
-        int nodeId,
-        int x,
-        int y,
-        int width,
-        int height)
+        int                               nodeId,
+        int                               x,
+        int                               y,
+        int                               width,
+        int                               height)
     {
         SummaryLayoutNode node = tree.Nodes[nodeId];
 
@@ -46,9 +46,9 @@ public sealed class SummaryLayoutRenderer
             paneBounds[nodeId] = new Rectangle(x, y, width, height);
 
             if (paneControls.TryGetValue(nodeId, out Control? control)) {
-                control.X = x;
-                control.Y = y;
-                control.Width = width;
+                control.X      = x;
+                control.Y      = y;
+                control.Width  = width;
                 control.Height = height;
                 control.Resize();
             }
@@ -57,7 +57,7 @@ public sealed class SummaryLayoutRenderer
         }
 
         if (node.Orientation == Orientation.Row) {
-            int firstWidth = (int)(width * node.Ratio);
+            int firstWidth  = (int)(width * node.Ratio);
             int secondWidth = width - firstWidth;
 
             LayoutNode(
@@ -79,7 +79,7 @@ public sealed class SummaryLayoutRenderer
                 height);
         }
         else {
-            int firstHeight = (int)(height * node.Ratio);
+            int firstHeight  = (int)(height * node.Ratio);
             int secondHeight = height - firstHeight;
 
             LayoutNode(

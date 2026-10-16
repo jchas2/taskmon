@@ -8,7 +8,7 @@ namespace Task.Monitor.Gui.Controls;
 
 public sealed class MenuControl : Control
 {
-    private readonly ListView menuControl;
+    private readonly ListView  menuControl;
     private readonly AppConfig appConfig;
 
     public event EventHandler<MenuItemEventArgs>? MenuItemClicked;
@@ -19,8 +19,8 @@ public sealed class MenuControl : Control
         
         menuControl = new ListView(terminal) {
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true
+            ShowCheckboxes    = false,
+            Visible           = true
         };
         
         menuControl.ColumnHeaders.Add(new ListViewColumnHeader(""));
@@ -56,16 +56,17 @@ public sealed class MenuControl : Control
             menuControl.Items.Add(MenuItems[i]);
         }
 
-        menuControl.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        menuControl.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        menuControl.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        menuControl.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        menuControl.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        menuControl.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        menuControl.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        menuControl.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         menuControl.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         menuControl.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-        menuControl.BackgroundColour = appConfig.Theme.ListViewBackground;
-        menuControl.ForegroundColour = appConfig.Theme.ListViewForeground;
-        menuControl.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        menuControl.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+        menuControl.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        menuControl.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        menuControl.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        menuControl.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        
         menuControl.ItemClicked += OnMenuItemClicked;
 
         base.OnLoad();
@@ -81,9 +82,9 @@ public sealed class MenuControl : Control
 
     protected override void OnResize()
     {
-        menuControl.X = X;
-        menuControl.Y = Y;
-        menuControl.Width = Width;
+        menuControl.X      = X;
+        menuControl.Y      = Y;
+        menuControl.Width  = Width;
         menuControl.Height = Height;
         menuControl.ColumnHeaders[0].Width = Width - 2;
 

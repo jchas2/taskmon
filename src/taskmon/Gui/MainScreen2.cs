@@ -20,40 +20,40 @@ namespace Task.Monitor.Gui;
 
 public sealed class MainScreen2 : Screen
 {
-    private readonly RunContext runContext;
+    private readonly RunContext        runContext;
     private readonly ScreenApplication screenApp;
 
-    private readonly MenuControl menuControl;
-    private readonly BannerControl menuBannerControl;
-    private readonly BannerControl bannerControl;
-    private readonly HeaderControl2 headerControl;
-    private readonly SummaryControl2 summaryControl;
-
-    private readonly PerformanceControl performanceControl;
-    private readonly ProcessesControl processesControl;
-    private readonly ThermalsControl thermalsControl;
-    private readonly SystemInfoControl systemInfoControl;
-    private readonly StartupControl startupControl;
+    private readonly MenuControl          menuControl;
+    private readonly BannerControl        menuBannerControl;
+    private readonly BannerControl        bannerControl;
+    private readonly HeaderControl2       headerControl;
+    private readonly SummaryControl2      summaryControl;
+    private readonly PerformanceControl   performanceControl;
+    private readonly ProcessesControl     processesControl;
+    private readonly ThermalsControl      thermalsControl;
+    private readonly SystemInfoControl    systemInfoControl;
+    private readonly StartupControl       startupControl;
     private readonly InstalledAppsControl installedAppsControl;
-    private readonly ServicesControl servicesControl;
-    private readonly DriversControl driversControl;
-    private readonly DiskSpaceControl diskSpaceControl;
-    private readonly FooterControl footerControl;
-    private Control activeControl;
-    private Control focusedControl;
+    private readonly ServicesControl      servicesControl;
+    private readonly DriversControl       driversControl;
+    private readonly DiskSpaceControl     diskSpaceControl;
+    private readonly FooterControl        footerControl;
+    
+    private Control       activeControl;
+    private Control       focusedControl;
     private List<Control> menuControls;
     
-    private const int HeaderHeight = HeaderControl2.HeaderRows;
-    private const int FooterHeight = 1;
-    private const int BannerHeight = 1;
-    private const int MenuWidth = 16;
+    private const int HeaderHeight     = HeaderControl2.HeaderRows;
+    private const int FooterHeight     = 1;
+    private const int BannerHeight     = 1;
+    private const int MenuWidth        = 16;
     private const int ActiveControlTop = HeaderHeight;
 
     public MainScreen2(RunContext runContext, ScreenApplication screenApp)
     : base(runContext.Terminal)
     {
         this.runContext = runContext;
-        this.screenApp = screenApp;
+        this.screenApp  = screenApp;
 
         headerControl = new HeaderControl2(
             runContext.ServiceController,
@@ -63,15 +63,15 @@ public sealed class MainScreen2 : Screen
         };
 
         menuControl = new MenuControl(runContext.Terminal, runContext.AppConfig) {
-            Visible = true,
-            TabStop = true,
+            Visible  = true,
+            TabStop  = true,
             TabIndex = 1
         };
 
         menuBannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
             Visible = true,
             TabStop = false,
-            Text = "VIEW MENU"
+            Text    = "VIEW MENU"
         };
 
         bannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
@@ -83,7 +83,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -91,7 +91,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -99,7 +99,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -107,7 +107,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -115,7 +115,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -123,7 +123,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -131,7 +131,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -147,7 +147,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -155,7 +155,7 @@ public sealed class MainScreen2 : Screen
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -197,7 +197,7 @@ public sealed class MainScreen2 : Screen
             diskSpaceControl
         };
         
-        activeControl = summaryControl;
+        activeControl  = summaryControl;
         focusedControl = menuControl;
     } 
 
@@ -270,9 +270,9 @@ public sealed class MainScreen2 : Screen
         BackgroundColour = runContext.AppConfig.Theme.Background;
         ForegroundColour = runContext.AppConfig.Theme.Foreground;
 
-        DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour = runContext.AppConfig.Theme.HeaderForeground;
-        DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
+        DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
+        DialogBorderColour           = runContext.AppConfig.Theme.HeaderForeground;
+        DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
         DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
         DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
         
@@ -282,21 +282,21 @@ public sealed class MainScreen2 : Screen
         }
 
         menuControl.MenuItems = new() {
-            new MenuListViewItem(summaryControl, "SUMMARY"),
-            new MenuListViewItem(performanceControl, "PERFORMANCE"),
-            new MenuListViewItem(processesControl,   "PROCESSES"),
-            new MenuListViewItem(thermalsControl,    "THERMALS"),
-            new MenuListViewItem(diskSpaceControl,   "DISK SPACE"),
-            new MenuListViewItem(startupControl,     "STARTUP"),
+            new MenuListViewItem(summaryControl,       "SUMMARY"),
+            new MenuListViewItem(performanceControl,   "PERFORMANCE"),
+            new MenuListViewItem(processesControl,     "PROCESSES"),
+            new MenuListViewItem(thermalsControl,      "THERMALS"),
+            new MenuListViewItem(diskSpaceControl,     "DISK SPACE"),
+            new MenuListViewItem(startupControl,       "STARTUP"),
             new MenuListViewItem(installedAppsControl, "APPS"),
-            new MenuListViewItem(servicesControl,    "SERVICES"),
-            new MenuListViewItem(driversControl,     "DRIVERS"),
-            new MenuListViewItem(systemInfoControl,  "SYSTEM INFO"),
+            new MenuListViewItem(servicesControl,      "SERVICES"),
+            new MenuListViewItem(driversControl,       "DRIVERS"),
+            new MenuListViewItem(systemInfoControl,    "SYSTEM INFO"),
         };
         
-        activeControl = summaryControl;
+        activeControl      = summaryControl;
         bannerControl.Text = menuControl.MenuItems[0].Text;
-        focusedControl = menuControl;
+        focusedControl     = menuControl;
 
         headerControl.Load();
         menuControl.Load();
@@ -316,37 +316,37 @@ public sealed class MainScreen2 : Screen
     {
         int headerHeight = HeaderHeight;
         
-        headerControl.X = 0;
-        headerControl.Y = 0;
+        headerControl.X      = 0;
+        headerControl.Y      = 0;
         headerControl.Height = headerHeight;
         headerControl.Width = Width;
         headerControl.Resize();
 
-        menuControl.X = 0;
-        menuControl.Y = ActiveControlTop + 1;
-        menuControl.Width = MenuWidth;
+        menuControl.X      = 0;
+        menuControl.Y      = ActiveControlTop + 1;
+        menuControl.Width  = MenuWidth;
         menuControl.Height = Height - ActiveControlTop - FooterHeight - 1;
         menuControl.Resize();
 
-        menuBannerControl.X = 0;
-        menuBannerControl.Y = ActiveControlTop;
-        menuBannerControl.Width = MenuWidth;
+        menuBannerControl.X      = 0;
+        menuBannerControl.Y      = ActiveControlTop;
+        menuBannerControl.Width  = MenuWidth;
         menuBannerControl.Height = BannerHeight;
         menuBannerControl.Resize();
 
-        bannerControl.X = MenuWidth + 1;
-        bannerControl.Y = ActiveControlTop;
-        bannerControl.Width = Width - (MenuWidth + 1);
+        bannerControl.X      = MenuWidth + 1;
+        bannerControl.Y      = ActiveControlTop;
+        bannerControl.Width  = Width - (MenuWidth + 1);
         bannerControl.Height = BannerHeight;
         bannerControl.Resize();
 
         SizeControl(activeControl);
         
-        footerControl.X = 0;
-        footerControl.Y = Height - FooterHeight;
+        footerControl.X      = 0;
+        footerControl.Y      = Height - FooterHeight;
         // Setting Width -1 prevents the auto-scroll when bottom right corner is written to on Windows, 
         // which can sometimes jump the screen around.
-        footerControl.Width = Width - 1;
+        footerControl.Width  = Width - 1;
         footerControl.Height = FooterHeight;
         footerControl.Resize();
     }
@@ -376,9 +376,9 @@ public sealed class MainScreen2 : Screen
 
     private void SizeControl(Control control)
     {
-        control.X = menuControl.X + menuControl.Width;
-        control.Y = ActiveControlTop + BannerHeight;
-        control.Width = Width - menuControl.Width;
+        control.X      = menuControl.X + menuControl.Width;
+        control.Y      = ActiveControlTop + BannerHeight;
+        control.Width  = Width - menuControl.Width;
         control.Height = Height - BannerHeight - ActiveControlTop - FooterHeight;
         control.Resize();
     }

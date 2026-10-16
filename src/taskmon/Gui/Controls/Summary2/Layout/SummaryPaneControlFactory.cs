@@ -20,56 +20,57 @@ public static class SummaryPaneControlFactory
     public static Control Create(
         SummaryLayoutNode pane,
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig) =>
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) =>
+        
         pane.ControlType switch {
             PaneControlType.Cpu => new Chart(terminal) {
-                Text = "Cpu",
-                AutoScale = false,
+                Text                      = "Cpu",
+                AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.Memory => new Chart(terminal) {
-                Text = "Memory",
-                AutoScale = false,
+                Text                      = "Memory",
+                AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.VirtualMemory => new Chart(terminal) {
 #if __WIN32__
-                Text = "Virtual",
+                Text                      = "Virtual",
 #endif
 #if __APPLE__
-                Text = "Swap",
+                Text                      = "Swap",
 #endif
-                AutoScale = false,
+                AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.Disk => new Chart(terminal) {
-                Text = "Disk",
-                AutoScale = true,
+                Text                      = "Disk",
+                AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
             },
             PaneControlType.Gpu => new Chart(terminal) {
-                Text = "Gpu",
-                AutoScale = false,
+                Text                      = "Gpu",
+                AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.GpuMemory => new Chart(terminal) {
-                Text = "Gpu Memory",
-                AutoScale = false,
+                Text                      = "Gpu Memory",
+                AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.NetworkReceived => new Chart(terminal) {
-                Text = "Net Rec",
-                AutoScale = true,
+                Text                      = "Net Rec",
+                AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
             },
             PaneControlType.NetworkSent => new Chart(terminal) {
-                Text = "Net Sent",
-                AutoScale = true,
+                Text                      = "Net Sent",
+                AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
             },
             PaneControlType.Process => new ProcessControl(serviceController, terminal, appConfig) {
-                TabStop = true,
+                TabStop                = true,
                 VisibleColumnsOverride = pane.ProcessColumns
             },
             PaneControlType.Drivers       => new DriversControl(serviceController, terminal, appConfig)       { TabStop = true },

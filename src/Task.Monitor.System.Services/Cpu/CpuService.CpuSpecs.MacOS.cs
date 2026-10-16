@@ -9,9 +9,10 @@ public partial class CpuService
 {
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
-        specs.CpuCores = (ulong)Environment.ProcessorCount;
+        specs.CpuCores   = (ulong)Environment.ProcessorCount;
         specs.CpuSockets = 1;
-        specs.CpuName = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+        specs.CpuName    = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+        
         specs.CpuVirtualizationFirmwareEnabled = false; // Windows only.
 
         PopulatePerfLevelCores(ref specs);
@@ -38,8 +39,8 @@ public partial class CpuService
     private static void PopulatePerfLevelCores(ref CpuSpecs specs)
     {
         specs.CpuPerformanceCores = 0;
-        specs.CpuEfficiencyCores = 0;
-        specs.CpuSuperCores = 0;
+        specs.CpuEfficiencyCores  = 0;
+        specs.CpuSuperCores       = 0;
 
         if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
             if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
@@ -91,7 +92,7 @@ public partial class CpuService
         Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
 
         specs.CpuPerformanceFrequency = MaxDvfsFrequencyMhz(props, "voltage-states5-sram");
-        specs.CpuEfficiencyFrequency = MaxDvfsFrequencyMhz(props, "voltage-states1-sram");
+        specs.CpuEfficiencyFrequency  = MaxDvfsFrequencyMhz(props, "voltage-states1-sram");
 
         if (specs.CpuEfficiencyFrequency == 0) {
             specs.CpuEfficiencyFrequency = MaxDvfsFrequencyMhz(props, "voltage-states9-sram");
@@ -110,9 +111,9 @@ public partial class CpuService
 
     private static uint FindPmgrEntry()
     {
-        IntPtr matching = IOKit.IOServiceMatching("AppleARMIODevice");
-
-        int result = IOKit.IOServiceGetMatchingServices(0, matching, out IntPtr iteratorRef);
+        nint matching = IOKit.IOServiceMatching("AppleARMIODevice");
+        int  result   = IOKit.IOServiceGetMatchingServices(0, matching, out nint iteratorRef);
+        
         using IOObjectScope iterator = new(iteratorRef);
 
         if (result != 0 || iterator.IsNull) {
@@ -120,13 +121,17 @@ public partial class CpuService
         }
 
         uint pmgrEntry = 0;
-        byte[] name = new byte[128];
+        byte[] name    = new byte[128];
+
         uint entry;
 
         while ((entry = IOKit.IOIteratorNext(iterator)) != 0) {
             if (IOKit.IORegistryEntryGetName(entry, name) == 0) {
                 int len = Array.IndexOf(name, (byte)0);
-                len = len < 0 ? name.Length : len;
+                
+                len = len < 0 
+                    ? name.Length 
+                    : len;
 
                 if (Encoding.ASCII.GetString(name, 0, len) == "pmgr") {
                     pmgrEntry = entry;
@@ -148,8 +153,8 @@ public partial class CpuService
             return 0;
         }
 
-        long length = CoreFoundation.CFDataGetLength(data);
-        IntPtr bytes = CoreFoundation.CFDataGetBytePtr(data);
+        long length  = CoreFoundation.CFDataGetLength(data);
+        nint bytes   = CoreFoundation.CFDataGetBytePtr(data);
 
         if (length < 8 || bytes == IntPtr.Zero) {
             return 0;

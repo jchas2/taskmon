@@ -9,25 +9,24 @@ namespace Task.Monitor.Gui.Controls.Summary2;
 
 public sealed class SummaryControl2 : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly SummaryLayoutRenderer renderer = new();
+    private readonly SummaryLayoutRenderer    renderer     = new();
     private readonly Dictionary<int, Control> paneControls = new();
 
-    private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
-    private SummaryControlLayout? builtFrom;
+    private readonly ServiceController     serviceController;
+    private readonly AppConfig             appConfig;
 
-    private SystemSnapshot? snapshot;
+    private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
+    
+    private SummaryControlLayout? builtFrom;
+    private SystemSnapshot?       snapshot;
+    
     private int? focusedPaneId;
 
-    public SummaryControl2(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+    public SummaryControl2(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         BuildPanes();
     }
@@ -35,7 +34,7 @@ public sealed class SummaryControl2 : Control
     private void BuildPanes()
     {
         builtFrom = appConfig.DefaultLayout;
-        tree = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
+        tree      = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
 
         Controls.Clear();
         paneControls.Clear();
@@ -124,8 +123,9 @@ public sealed class SummaryControl2 : Control
 
     private int? FindAdjacentPane(int step)
     {
-        List<SummaryLayoutNode> panes = tree.Panes().ToList();
-        Control? focusedPane = FindFocusedPane();
+        List<SummaryLayoutNode> panes       = tree.Panes().ToList();
+        Control?                focusedPane = FindFocusedPane();
+        
         int currentIndex = panes.FindIndex(pane => paneControls[pane.Id] == focusedPane);
 
         if (currentIndex < 0) {

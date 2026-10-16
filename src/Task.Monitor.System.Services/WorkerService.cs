@@ -18,7 +18,7 @@ public class WorkerService : ISystemService
     private readonly ManualResetEventSlim wakeSignal = new(initialState: false);
 
     private volatile bool refreshRequested;
-    private volatile int delayInMilliseconds = DefaultDelayInMilliseconds;
+    private volatile int  delayInMilliseconds = DefaultDelayInMilliseconds;
 
     protected volatile ServiceStatus serviceStatus = ServiceStatus.None;
 
@@ -75,7 +75,7 @@ public class WorkerService : ISystemService
     
     public virtual void Start()
     {
-        serviceStatus = ServiceStatus.Starting;
+        serviceStatus           = ServiceStatus.Starting;
         cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Token.Register(wakeSignal.Set);
 

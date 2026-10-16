@@ -15,15 +15,15 @@ public static class SummaryPaneTheme
         control.ForegroundColour = theme.Foreground;
 
         if (control is Chart chart) {
-            chart.BackgroundColour = theme.ChartBackground;
+            chart.BackgroundColour       = theme.ChartBackground;
             chart.BorderForegroundColour = theme.ChartBorderForeground;
             chart.BorderBackgroundColour = theme.ChartBorderBackground;
-            chart.ColourHigh = theme.RangeHighBackground;
-            chart.ColourLow = theme.RangeLowBackground;
-            chart.ColourMid = theme.RangeMidBackground;
-            chart.MetreStyle = appConfig.MetreStyle;
-            chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-            chart.YAxisColour = theme.ChartYAxis;
+            chart.ColourHigh             = theme.RangeHighBackground;
+            chart.ColourLow              = theme.RangeLowBackground;
+            chart.ColourMid              = theme.RangeMidBackground;
+            chart.MetreStyle             = appConfig.MetreStyle;
+            chart.ShowYAxisScale         = appConfig.ShowYAxisScale;
+            chart.YAxisColour            = theme.ChartYAxis;
         }
         else if (control is EmptyPaneControl or CpuCoresControl) {
             control.BorderColour = theme.ChartBorderForeground;

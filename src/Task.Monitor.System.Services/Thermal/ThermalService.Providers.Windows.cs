@@ -10,7 +10,7 @@ public partial class ThermalService
     private partial IEnumerable<IThermalProvider> CreateProviders()
     {
         IReadOnlyList<DiskDevice> Disks() => GetLatest<DiskInfo>()?.Specs.Devices ?? [];
-        IReadOnlyList<GpuDevice> Gpus() => GetLatest<GpuInfo>()?.Specs.Devices ?? [];
+        IReadOnlyList<GpuDevice> Gpus()   => GetLatest<GpuInfo>()?.Specs.Devices ?? [];
 
         return [
             new NvmeDiskThermalProvider(Disks),

@@ -211,8 +211,8 @@ public static class SystemSnapshotExtensions
         }
 
         string[] units = ["bps", "Kbps", "Mbps", "Gbps", "Tbps"];
-        int index = 0;
-        double rate = bitsPerSecond;
+        int      index = 0;
+        double   rate  = bitsPerSecond;
 
         while (rate >= 1000.0 && index < units.Length - 1) {
             index++;

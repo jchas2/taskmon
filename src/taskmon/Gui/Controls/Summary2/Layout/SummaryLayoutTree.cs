@@ -118,23 +118,23 @@ public sealed class SummaryLayoutTree
         }
 
         int firstId = AddNode(new SummaryLayoutNode {
-            Id = NextId,
-            ControlType = original.ControlType,
+            Id             = NextId,
+            ControlType    = original.ControlType,
             ProcessColumns = original.ProcessColumns,
         });
 
         int secondId = AddNode(new SummaryLayoutNode {
-            Id = NextId,
+            Id          = NextId,
             ControlType = PaneControlType.Empty,
         });
 
         Nodes[paneId] = new SummaryLayoutNode {
-            Id = paneId,
-            IsSplit = true,
+            Id          = paneId,
+            IsSplit     = true,
             Orientation = orientation,
-            Ratio = 0.5f,
-            FirstId = firstId,
-            SecondId = secondId,
+            Ratio       = 0.5f,
+            FirstId     = firstId,
+            SecondId    = secondId,
         };
 
         return (firstId, secondId);
@@ -153,17 +153,21 @@ public sealed class SummaryLayoutTree
         }
 
         SummaryLayoutNode parent = Nodes[pid];
-        int siblingId = parent.FirstId == paneId ? parent.SecondId : parent.FirstId;
+        
+        int siblingId = parent.FirstId == paneId 
+            ? parent.SecondId 
+            : parent.FirstId;
+        
         SummaryLayoutNode sibling = Nodes[siblingId];
 
         Nodes[pid] = new SummaryLayoutNode {
-            Id = pid,
-            IsSplit = sibling.IsSplit,
-            Orientation = sibling.Orientation,
-            Ratio = sibling.Ratio,
-            FirstId = sibling.FirstId,
-            SecondId = sibling.SecondId,
-            ControlType = sibling.ControlType,
+            Id             = pid,
+            IsSplit        = sibling.IsSplit,
+            Orientation    = sibling.Orientation,
+            Ratio          = sibling.Ratio,
+            FirstId        = sibling.FirstId,
+            SecondId       = sibling.SecondId,
+            ControlType    = sibling.ControlType,
             ProcessColumns = sibling.ProcessColumns,
         };
 

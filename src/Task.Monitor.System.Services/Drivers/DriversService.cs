@@ -5,6 +5,7 @@ public sealed partial class DriversService : WorkerService
     private const int RescanEveryCycles = 40;
 
     private DriversSpecs driversSpecs = new();
+    
     private int cyclesSinceScan;
 
     protected override void OnStart() =>
@@ -13,7 +14,7 @@ public sealed partial class DriversService : WorkerService
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
-            driversSpecs = ScanDrivers();
+            driversSpecs    = ScanDrivers();
             cyclesSinceScan = 0;
         }
 

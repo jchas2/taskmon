@@ -4,12 +4,12 @@ namespace Task.Monitor.Interop.Mach;
 
 public sealed class ProcInfo
 {
-    public const int MAXCOMLEN = 16;
-    public const int MAXPATHLEN = 1024;
-    public const int PROC_PIDTASKALLINFO = 2;
+    public const int MAXCOMLEN              = 16;
+    public const int MAXPATHLEN             = 1024;
+    public const int PROC_PIDTASKALLINFO    = 2;
     public const int PROC_PIDREGIONPATHINFO = 8;
 
-    public const uint VM_MEMORY_DYLIB = 33;
+    public const uint VM_MEMORY_DYLIB       = 33;
 
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct proc_bsdinfo
@@ -70,11 +70,11 @@ public sealed class ProcInfo
 
     [DllImport(Libraries.LibProc, SetLastError = true)]
     public static extern unsafe int proc_pidinfo(
-        int pid,
-        int flavor,
-        ulong arg,
+        int               pid,
+        int               flavor,
+        ulong             arg,
         proc_taskallinfo* buffer,
-        int bufferSize);
+        int               bufferSize);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct proc_regioninfo

@@ -7,6 +7,7 @@ public sealed partial class ThermalService : WorkerService
     private const int ReprobeEveryCycles = 20;
 
     private readonly List<IThermalProvider> providers = new();
+    
     private int cyclesSinceProbe;
 
     protected override void OnStart() => BuildProviders();

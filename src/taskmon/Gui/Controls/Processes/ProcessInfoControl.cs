@@ -11,56 +11,58 @@ namespace Task.Monitor.Gui.Controls.Processes;
 
 public partial class ProcessInfoControl : Control
 {
-    private readonly IProcessService processService;
-    private readonly IModuleService moduleService;
-    private readonly IThreadService threadService;
-    private readonly AppConfig appConfig;
-    private readonly ListView processInfoView;
-    private readonly ListView menuView;
-    private readonly ListView modulesView;
-    private readonly ListView threadsView;
-    private readonly ListView handlesView;
-    private readonly List<ListView> tabControls = [];
-    private WorkerTask? workerTask;
-    private bool modulesLoaded;
-
-    private CancellationTokenSource? cancellationTokenSource;
-
     private const int MenuViewWidth = 10;
 
     private const string MsgNotYetImplemented = "Not yet implemented on this OS";
-    private const string MsgThreadsNotLoaded = "Threads could not be loaded";
-    private const string MsgModulesNotLoaded = "Modules could not be loaded";
-    private const string MsgLoading = "Loading, please wait...";
+    private const string MsgThreadsNotLoaded  = "Threads could not be loaded";
+    private const string MsgModulesNotLoaded  = "Modules could not be loaded";
+    private const string MsgLoading           = "Loading, please wait...";
 
+    private readonly IProcessService processService;
+    private readonly IModuleService  moduleService;
+    private readonly IThreadService  threadService;
+    private readonly AppConfig       appConfig;
+    private readonly ListView        processInfoView;
+    private readonly ListView        menuView;
+    private readonly ListView        modulesView;
+    private readonly ListView        threadsView;
+    private readonly ListView        handlesView;
+    
+    private readonly List<ListView>  tabControls = [];
+    
+    private WorkerTask?              workerTask;
+    private CancellationTokenSource? cancellationTokenSource;
+
+    private bool modulesLoaded;
+    
     public ProcessInfoControl(
         IProcessService processService,
-        IModuleService moduleService,
-        IThreadService threadService,
+        IModuleService  moduleService,
+        IThreadService  threadService,
         ISystemTerminal terminal, 
-        AppConfig appConfig) 
+        AppConfig       appConfig) 
         : base(terminal)
     {
         this.processService = processService;
-        this.moduleService = moduleService;
-        this.threadService = threadService;
-        this.appConfig = appConfig;
+        this.moduleService  = moduleService;
+        this.threadService  = threadService;
+        this.appConfig      = appConfig;
         
         menuView = new ListView(terminal) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 1,
-            Visible = true
+            Visible  = true
         };
 
         menuView.ColumnHeaders.Add(new ListViewColumnHeader("SELECT"));
         
         processInfoView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
             ShowColumnHeaders = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
         };
 
         processInfoView.ColumnHeaders
@@ -69,9 +71,9 @@ public partial class ProcessInfoControl : Control
 
         threadsView = new ListView(terminal) {
             EmptyListViewText = MsgThreadsNotLoaded,
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 3,
-            Visible = true
+            Visible  = true
         };
 
         threadsView.ColumnHeaders
@@ -86,9 +88,9 @@ public partial class ProcessInfoControl : Control
         
         modulesView = new ListView(terminal) {
             EmptyListViewText = MsgModulesNotLoaded,
-            TabStop = true,
-            TabIndex = 4,
-            Visible = false
+            TabStop           = true,
+            TabIndex          = 4,
+            Visible           = false
         };
 
         modulesView.ColumnHeaders
@@ -97,9 +99,9 @@ public partial class ProcessInfoControl : Control
 
         handlesView = new ListView(terminal) {
             EmptyListViewText = MsgNotYetImplemented,
-            TabStop = true,
-            TabIndex = 5,
-            Visible = false
+            TabStop           = true,
+            TabIndex          = 5,
+            Visible           = false
         };
 
         handlesView.ColumnHeaders
@@ -141,10 +143,6 @@ public partial class ProcessInfoControl : Control
         activeControl.Draw();
     }
 
-    // ProcessInfoControl itself draws no border - menuView is the actual bordered, focusable
-    // panel that owns internal left/right routing to whichever tab is active - so a SetFocus()
-    // call on this composite (e.g. from ProcessesControl's arrow-key nav) needs to be redirected
-    // down to it for the focus-colour cue to reach anything visible.
     protected override void OnGotFocus() => menuView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
@@ -154,11 +152,6 @@ public partial class ProcessInfoControl : Control
         ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
 
         switch (keyInfo.Key) {
-            // Only claimed when there is somewhere internal left/right to move: on the active
-            // tab, left steps back to the menu; on the menu, right steps into the active tab.
-            // Otherwise the key is left unhandled so ProcessesControl can move focus back to
-            // processControl (left) or leaves right to do nothing further (there is no pane
-            // beyond the active tab).
             case ConsoleKey.LeftArrow when GetFocusedControl == activeControl:
                 menuView.SetFocus();
                 handled = true;
@@ -194,16 +187,16 @@ public partial class ProcessInfoControl : Control
             handlesView];
 
         foreach (var listView in listViews) {
-            listView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-            listView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+            listView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+            listView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
             listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
             listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-            listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-            listView.ForegroundColour = appConfig.Theme.ListViewForeground;
-            listView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-            listView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-            listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-            listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+            listView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+            listView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+            listView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+            listView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+            listView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+            listView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
         }
 
         menuView.Items.Add(
@@ -244,11 +237,11 @@ public partial class ProcessInfoControl : Control
         menuView.SelectedIndex = 0;
 
         cancellationTokenSource = null;
-        workerTask = null;
+        workerTask              = null;
 
         if (AutoRefresh) {
             cancellationTokenSource = new CancellationTokenSource();
-            workerTask = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
+            workerTask              = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
             Trace.WriteLine($"ProcessInfoControl worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
         }
         
@@ -261,10 +254,6 @@ public partial class ProcessInfoControl : Control
         menuView.Y = Y;
         menuView.Height = Height;
         menuView.Width = MenuViewWidth;
-        // The column width is the *inner* content width, not the outer control width - the two
-        // border columns aren't part of it (see MenuControl.OnResize's identical Width - 2).
-        // Setting it to the full outer width made DrawItem()'s columnWidth > viewPort.Bounds.Width
-        // guard trip on every row, silently blanking all menu item text.
         menuView.ColumnHeaders[0].Width = MenuViewWidth - 2;
 
         tabControls.ForEach(ctrl => {
@@ -274,29 +263,24 @@ public partial class ProcessInfoControl : Control
             ctrl.Width = Width - menuView.Width;
         });
 
-        // The second column's width must leave room for the two border columns DrawItem()'s
-        // viewport actually has to draw into (see CalculateViewPortBounds: Width - inset*2) -
-        // using the raw outer Width here made the two columns sum to 2 more than the viewport,
-        // which tripped DrawItem()'s columnWidth-vs-viewport guard and silently blanked the
-        // second column's text on every row (labels rendered, values never did).
-        processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width = ColumnInfoKeyWidth;
+        processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width   = ColumnInfoKeyWidth;
         processInfoView.ColumnHeaders[(int)InfoColumns.Value].Width = processInfoView.Width - ColumnInfoKeyWidth - 2;
 
         modulesView.ColumnHeaders[(int)ModuleColumns.ModuleName].Width = ColumnModuleNameWidth;
-        modulesView.ColumnHeaders[(int)ModuleColumns.FileName].Width = modulesView.Width - ColumnModuleNameWidth - 2;
+        modulesView.ColumnHeaders[(int)ModuleColumns.FileName].Width   = modulesView.Width - ColumnModuleNameWidth - 2;
         
-        threadsView.ColumnHeaders[(int)ThreadColumns.Id].Width = ColumnThreadIdWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.State].Width = ColumnThreadStateWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.Reason].Width = ColumnThreadReasonWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.Priority].Width = ColumnThreadPriorityWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.Priority].RightAligned = true;
-        threadsView.ColumnHeaders[(int)ThreadColumns.StartAddress].Width = ColumnThreadStartAddressWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.CpuKernelTime].Width = ColumnThreadCpuKernelTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.Id].Width                   = ColumnThreadIdWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.State].Width                = ColumnThreadStateWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.Reason].Width               = ColumnThreadReasonWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.Priority].Width             = ColumnThreadPriorityWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.Priority].RightAligned      = true;
+        threadsView.ColumnHeaders[(int)ThreadColumns.StartAddress].Width         = ColumnThreadStartAddressWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuKernelTime].Width        = ColumnThreadCpuKernelTimeWidth;
         threadsView.ColumnHeaders[(int)ThreadColumns.CpuKernelTime].RightAligned = true;
-        threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].Width = ColumnThreadCpuUserTimeWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].RightAligned = true;
-        threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].Width = ColumnThreadCpuTotalTimeWidth;
-        threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].RightAligned = true;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].Width          = ColumnThreadCpuUserTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuUserTime].RightAligned   = true;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].Width         = ColumnThreadCpuTotalTimeWidth;
+        threadsView.ColumnHeaders[(int)ThreadColumns.CpuTotalTime].RightAligned  = true;
         
         base.OnResize();
     }
@@ -326,20 +310,17 @@ public partial class ProcessInfoControl : Control
 
     public int SelectedProcessId { get; set; } = -1;
 
-    // The sync entry point for a host (ProcessesControl) telling this control the highlighted
-    // process elsewhere changed. Detail and threads always refresh - both are cheap and threads
-    // already refresh every second regardless; modules stay lazy, only forced when MODULES
-    // happens to be the tab currently on screen, matching the existing lazy-load-once philosophy.
     public void LoadProcess(int pid)
     {
         if (pid == SelectedProcessId) {
             return;
         }
 
-        SelectedProcessId = pid;
         processInfoView.Items.Clear();
-        modulesLoaded = false;
         modulesView.Items.Clear();
+        
+        SelectedProcessId = pid;
+        modulesLoaded     = false;
 
         TryLoadProcessInfo();
         TryUpdateListViewThreadItems();
@@ -351,28 +332,19 @@ public partial class ProcessInfoControl : Control
         Draw();
     }
 
-    // Called by the host (ProcessesControl) when focus leaves this control, so pid auto-binding
-    // only ever refreshes the cheap DETAIL pane - never MODULES (which can shell out on macOS) or
-    // THREADS (the 1s worker loop only runs while threadsView is visible). Both lines are needed:
-    // the SelectedIndex setter only moves the highlight, it doesn't raise ItemClicked. No Draw()
-    // here - the host redraws straight after.
-    public void ResetToDetail()
+    public void ResetToDetailPane()
     {
         SetActiveControl(processInfoView);
         menuView.SelectedIndex = 0;
     }
 
-    // Test-only seams: which menu row is highlighted, and whether DETAIL is the tab on screen.
     internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
 
     internal bool IsDetailActiveForTests => processInfoView.Visible;
 
-    // Test-only seam: invokes the same click handler a real menu selection (click or arrow-key
-    // move onto the row) would fire, without needing to simulate real key presses.
     internal void SelectMenuItemForTests(int index) =>
         MenuViewOnItemClicked(this, new ListViewItemEventArgs(menuView.Items[index]));
 
-    // Test-only seam: the process name and pid shown centred in the top border of every tab view.
     internal string ProcessTitle => processInfoView.HeaderText;
 
     private void SetActiveControl(Control activeControl)

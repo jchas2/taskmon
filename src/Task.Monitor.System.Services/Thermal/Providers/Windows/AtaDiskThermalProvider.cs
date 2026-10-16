@@ -9,13 +9,13 @@ namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
 {
     private const uint SMART_RCV_DRIVE_DATA = 0x0007C088;
-    private const uint GENERIC_READ = 0x80000000;
-    private const uint GENERIC_WRITE = 0x40000000;
-    private const int  ERROR_ACCESS_DENIED = 5;
+    private const uint GENERIC_READ         = 0x80000000;
+    private const uint GENERIC_WRITE        = 0x40000000;
+    private const int  ERROR_ACCESS_DENIED  = 5;
 
-    private const int SendCmdInParamsHeaderSize = 32;
+    private const int SendCmdInParamsHeaderSize  = 32;
     private const int SendCmdOutParamsHeaderSize = 16;
-    private const int SmartDataSize = 512;
+    private const int SmartDataSize              = 512;
 
     private bool accessDenied;
 
@@ -76,10 +76,10 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
         }
 
         try {
-            int outSize = SendCmdOutParamsHeaderSize + SmartDataSize;
-
-            byte* inBuffer = stackalloc byte[SendCmdInParamsHeaderSize];
+            int outSize     = SendCmdOutParamsHeaderSize + SmartDataSize;
+            byte* inBuffer  = stackalloc byte[SendCmdInParamsHeaderSize];
             byte* outBuffer = stackalloc byte[outSize];
+            
             new Span<byte>(inBuffer, SendCmdInParamsHeaderSize).Clear();
             new Span<byte>(outBuffer, outSize).Clear();
 

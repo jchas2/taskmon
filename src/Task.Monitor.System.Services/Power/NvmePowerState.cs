@@ -26,6 +26,8 @@ public static class NvmePowerState
             ? mp * 0.0001 
             : mp * 0.01;
 
-        return watts is > 0 and < 100 ? watts : null;
+        return watts is > 0 and < 100 
+            ? watts 
+            : null;
     }
 }

@@ -3,7 +3,7 @@ namespace Task.Monitor.System.Services.Drivers;
 public static class DriverPathResolver
 {
     private const string SystemRootToken = @"\SystemRoot\";
-    private const string NtDevicePrefix = @"\??\";
+    private const string NtDevicePrefix  = @"\??\";
 
     public static string? Expand(string? imagePath, string? windowsDirectory = null)
     {

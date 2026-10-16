@@ -37,7 +37,7 @@ public class ControlCollection : IEnumerable<Control>
 
     public IEnumerator<Control> GetEnumerator()
     {
-        /* Shallow copy the items and return an enumerator off that container. */
+        // Shallow copy the items and return an enumerator off that container.
         List<Control> items = new(owner.Controls.Count);
         
         for (int i = 0; i < owner.ControlCount; i++) {

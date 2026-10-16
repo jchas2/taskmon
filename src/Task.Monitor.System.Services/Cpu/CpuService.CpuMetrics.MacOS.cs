@@ -8,8 +8,8 @@ namespace Task.Monitor.System.Services.Cpu;
 public partial class CpuService
 {
     private uint[] previousCoreTicks = Array.Empty<uint>();
-    private int coreCount;
-    private bool cpuPrimed;
+    private int    coreCount;
+    private bool   cpuPrimed;
 
     private long aggUserDelta;
     private long aggSystemDelta;
@@ -23,9 +23,9 @@ public partial class CpuService
     private void ResetCpuState()
     {
         previousCoreTicks = Array.Empty<uint>();
-        coreCount = 0;
-        cpuPrimed = false;
-        aggUserDelta = aggSystemDelta = aggIdleDelta = aggNiceDelta = 0;
+        coreCount         = 0;
+        cpuPrimed         = false;
+        aggUserDelta      = aggSystemDelta = aggIdleDelta = aggNiceDelta = 0;
     }
 
     private void OnDoWorkCpuCore(CpuInfo cpuInfo)
@@ -38,17 +38,17 @@ public partial class CpuService
 
         if (!cpuPrimed || cpus != coreCount) {
             previousCoreTicks = current;
-            coreCount = cpus;
-            cpuPrimed = true;
+            coreCount         = cpus;
+            cpuPrimed         = true;
             return;
         }
 
         const int states = MachHost.CPU_STATE_MAX;
 
-        long sumUser = 0;
+        long sumUser   = 0;
         long sumSystem = 0;
-        long sumIdle = 0;
-        long sumNice = 0;
+        long sumIdle   = 0;
+        long sumNice   = 0;
 
         ImmutableArray<CpuInfo.CpuCoreMetric>.Builder builder =
             ImmutableArray.CreateBuilder<CpuInfo.CpuCoreMetric>(cpus);
@@ -67,22 +67,22 @@ public partial class CpuService
             double value = total > 0 ? Math.Clamp((double)busy / total, 0.0, 1.0) : 0.0;
             builder.Add(new CpuInfo.CpuCoreMetric(i.ToString(), value));
 
-            sumUser += userDelta;
+            sumUser   += userDelta;
             sumSystem += systemDelta;
-            sumIdle += idleDelta;
-            sumNice += niceDelta;
+            sumIdle   += idleDelta;
+            sumNice   += niceDelta;
         }
 
         builder.Sort(static (left, right) => CpuCoreMetricOrdering.Compare(left.Name, right.Name));
         cpuInfo.CoreMetrics = builder.ToImmutable();
 
-        aggUserDelta = sumUser;
+        aggUserDelta   = sumUser;
         aggSystemDelta = sumSystem;
-        aggIdleDelta = sumIdle;
-        aggNiceDelta = sumNice;
+        aggIdleDelta   = sumIdle;
+        aggNiceDelta   = sumNice;
 
         previousCoreTicks = current;
-        coreCount = cpus;
+        coreCount         = cpus;
     }
 
     private void OnDoWorkCpuMetrics(CpuInfo cpuInfo)

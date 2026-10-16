@@ -15,19 +15,23 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 {
-    private readonly Lock @lock = new();
     private readonly List<Chart> coreCharts;
-    private Chart cpuChart;
+    private readonly AppConfig   appConfig;
+    
+    private readonly Lock @lock = new();
+    
+    private Chart        cpuChart;
     private MetreControl cpuMetre;
-    private ListView cpuMetricsListView;
-    private ListView cpuSpecsListView;
-    private readonly AppConfig appConfig;
-    private CpuInfo? cpuInfo;
+    private ListView     cpuMetricsListView;
+    private ListView     cpuSpecsListView;
+    private CpuInfo?     cpuInfo;
+    
     private double? temperature;
     
     public CpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.appConfig = appConfig;
+        
         coreCharts = new List<Chart>(Environment.ProcessorCount);
 
         for (int i = 0; i < Environment.ProcessorCount; i++) {
@@ -38,27 +42,27 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetre = new MetreControl(terminal);
 
         cpuMetricsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = true,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
 
         cpuSpecsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
     }
 
-    private const int ChartWidth = 14;
+    private const int ChartWidth  = 14;
     private const int ChartHeight = 7;
 
     public void Sample(SystemSnapshot snapshot)
@@ -68,7 +72,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
                 return;
             }
 
-            cpuInfo = cpu;
+            cpuInfo     = cpu;
             temperature = snapshot.Thermal?.Metrics.CpuTemperature();
 
             int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);
@@ -93,6 +97,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             }
 
             Debug.Assert(Environment.ProcessorCount == cpuInfo.CoreMetrics.Length);
+            
             int numCores = Math.Min(Environment.ProcessorCount, cpuInfo.CoreMetrics.Length);
 
             for (int i = 0; i < numCores; i++) {
@@ -103,10 +108,11 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             cpuChart.Text = temperature is { } cpuTemp
                 ? $"{cpuInfo.Metrics.ToCpuKernelUserPercentage()}   ·   {cpuTemp.ToTemperatureText()}"
                 : cpuInfo.Metrics.ToCpuKernelUserPercentage();
+            
             cpuChart.Draw();
 
             double kernelTime = cpuInfo.Metrics.CpuPercentKernelTime;
-            double userTime = cpuInfo.Metrics.CpuPercentUserTime;
+            double userTime   = cpuInfo.Metrics.CpuPercentUserTime;
 
             cpuMetre.SetValues(kernelTime, userTime);
 
@@ -141,18 +147,18 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuChart.ShowGrid = true;
         cpuChart.ShowYAxisScale = true;
 
-        cpuMetre.BackgroundColour = appConfig.Theme.MetreBackground;
-        cpuMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        cpuMetre.BackgroundColour       = appConfig.Theme.MetreBackground;
+        cpuMetre.ForegroundColour       = appConfig.Theme.MetreForeground;
         cpuMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
         cpuMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
-        cpuMetre.MetreStyle = appConfig.MetreStyle;
-        cpuMetre.Border = true;
-        cpuMetre.Text = string.Empty;
-        cpuMetre.ShowLegend = true;
-        cpuMetre.Rows = 3;
+        cpuMetre.MetreStyle             = appConfig.MetreStyle;
+        cpuMetre.Border                 = true;
+        cpuMetre.Text                   = string.Empty;
+        cpuMetre.ShowLegend             = true;
+        cpuMetre.Rows                   = 3;
 
         cpuMetre.AddSeries("Kernel", appConfig.Theme.PerformanceCpuKernel);
-        cpuMetre.AddSeries("User", appConfig.Theme.PerformanceCpuUser);
+        cpuMetre.AddSeries("User",   appConfig.Theme.PerformanceCpuUser);
 
         cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Utilization"));
         cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Speed"));
@@ -162,6 +168,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         OnLoadListView(cpuMetricsListView);
+        
         cpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         cpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
         
@@ -176,7 +183,9 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L1 cache:",            "0 KB"       }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L2 cache:",            "0 KB"       }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",            "0 KB"       }));
+        
         OnLoadListView(cpuSpecsListView);
+        
         cpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         cpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
@@ -184,25 +193,25 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     private void OnLoadChart(Chart chart)
     {
         chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
-        chart.LabelSeries = string.Empty;
-        chart.ShowYAxisScale = false;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowGrid = false;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.LabelSeries               = string.Empty;
+        chart.ShowYAxisScale            = false;
+        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
+        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle                = appConfig.MetreStyle;
+        chart.ShowGrid                  = false;
+        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
@@ -215,13 +224,13 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
-        const int SpecsHeight = 11;
+        const int SpecsHeight   = 11;
 
-        int numCols = Width / ChartWidth;
-        int numRows = Height / ChartHeight;
+        int numCols  = Width / ChartWidth;
+        int numRows  = Height / ChartHeight;
         int rowCount = 0;
         int colCount = 0;
-        int yTop = 0;
+        int yTop     = 0;
             
         for (int i = 0; i < Environment.ProcessorCount; i++) {
             if (i > 0 && i % numCols == 0) {
@@ -232,32 +241,34 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
                 colCount = 0;
             }
 
-            coreCharts[i].X = X + 1 + ChartWidth * colCount;
-            coreCharts[i].Y = Y + ChartHeight * rowCount;
-            coreCharts[i].Width = ChartWidth;
+            coreCharts[i].X      = X + 1 + ChartWidth * colCount;
+            coreCharts[i].Y      = Y + ChartHeight * rowCount;
+            coreCharts[i].Width  = ChartWidth;
             coreCharts[i].Height = ChartHeight;
             coreCharts[i].Resize();
+            
             yTop = Y + ChartHeight * rowCount + ChartHeight;
             colCount++;
         }
         
         cpuMetre.Rows = 3;
+        
         int metreHeight = cpuMetre.RequiredHeight;
-
-        int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
-
-        int height = Math.Max(0, bottomY - yTop - metreHeight);
-        cpuChart.X = X + 1;
-        cpuChart.Y = yTop;
-        cpuChart.Width = Width - 1;
+        int bottomY     = Y + Height - (MetricsHeight + SpecsHeight);
+        int height      = Math.Max(0, bottomY - yTop - metreHeight);
+        
+        cpuChart.X      = X + 1;
+        cpuChart.Y      = yTop;
+        cpuChart.Width  = Width - 1;
         cpuChart.Height = height;
+        
         cpuChart.Resize();
 
         yTop += height;
 
-        cpuMetre.X = X + 1;
-        cpuMetre.Y = yTop;
-        cpuMetre.Width = Width - 1;
+        cpuMetre.X      = X + 1;
+        cpuMetre.Y      = yTop;
+        cpuMetre.Width  = Width - 1;
         cpuMetre.Height = metreHeight;
 
         for (int i = 0; i < cpuMetricsListView.ColumnHeaders.Count(); i++) {
@@ -272,14 +283,14 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
                 : 40;
         }
 
-        cpuMetricsListView.X = X + 1;
-        cpuMetricsListView.Y = bottomY;
-        cpuMetricsListView.Width = Width - 1;
+        cpuMetricsListView.X      = X + 1;
+        cpuMetricsListView.Y      = bottomY;
+        cpuMetricsListView.Width  = Width - 1;
         cpuMetricsListView.Height = MetricsHeight;
 
-        cpuSpecsListView.X = X + 1;
-        cpuSpecsListView.Y = bottomY + MetricsHeight;
-        cpuSpecsListView.Width = Width - 1;
+        cpuSpecsListView.X      = X + 1;
+        cpuSpecsListView.Y      = bottomY + MetricsHeight;
+        cpuSpecsListView.Width  = Width - 1;
         cpuSpecsListView.Height = SpecsHeight;
     }
 

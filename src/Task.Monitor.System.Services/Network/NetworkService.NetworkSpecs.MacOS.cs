@@ -42,7 +42,7 @@ public partial class NetworkService
         }
 
         NetworkInterfaceType type = nic.NetworkInterfaceType;
-        bool isUp = nic.OperationalStatus == OperationalStatus.Up;
+        bool isUp     = nic.OperationalStatus == OperationalStatus.Up;
         bool isActive = isUp && type != NetworkInterfaceType.Loopback;
 
         // Only real wired/wireless links count toward the headline throughput. macOS reports tunnels

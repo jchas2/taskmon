@@ -14,26 +14,22 @@ public sealed class Chart : Control
     //   3/4  ⣶  U+28F6  0xF6  dots 2,3,5,6,7,8
     //   4/4  ⣿  U+28FF  0xFF  all dots        (full)
     private static readonly char[] BrailleChars = ['\u2800', '\u28C0', '\u28E4', '\u28F6', '\u28FF'];
-    private static readonly char BarChar = '|';
-    private static readonly char BlockChar = ' ';
+    private static readonly char   BarChar      = '|';
+    private static readonly char   BlockChar    = ' ';
 
     private const int DefaultScaleWidth = 5;
     
-    private double[] data = [];
-    private int dataHead  = 0;
-    private int dataCount = 0;
-    private double dataMax = 0.0;
-    private bool showYAxisScale = true;
-    private readonly object dataLock = new();
+    private double[] data           = [];
+    private int      dataHead       = 0;
+    private int      dataCount      = 0;
+    private double   dataMax        = 0.0;
+    private bool     showYAxisScale = true;
+    
+    private readonly object dataLock        = new();
     private readonly AnsiScreenBuffer frame = new();
     
     public Chart(ISystemTerminal terminal) : base(terminal) { }
 
-    /// <summary>
-    /// Appends a sample without repainting. Used by a control that is fed every tick but only
-    /// drawn while it is on screen, so its history keeps accumulating in the background and it
-    /// repaints from a full buffer the moment it becomes visible.
-    /// </summary>
     public void AddData(double value)
     {
         lock (dataLock) {
@@ -47,15 +43,12 @@ public sealed class Chart : Control
         Draw();
     }
 
-    /// <summary>
-    /// Discards the plotted history.
-    /// </summary>
     public void ClearData()
     {
         lock (dataLock) {
-            dataHead = 0;
+            dataHead  = 0;
             dataCount = 0;
-            dataMax = 0.0;
+            dataMax   = 0.0;
 
             if (data.Length > 0) {
                 Array.Clear(data);
@@ -76,8 +69,9 @@ public sealed class Chart : Control
         }
         else {
             double evicted = data[dataHead];
+            
             data[dataHead] = value;
-            dataHead = (dataHead + 1) % data.Length;
+            dataHead       = (dataHead + 1) % data.Length;
 
             if (value >= dataMax) {
                 dataMax = value;
@@ -96,19 +90,14 @@ public sealed class Chart : Control
 
     private Color? borderBackgroundColour;
 
-    // Background of the border glyphs (frame, dividers and the bottom label). Follows
-    // BackgroundColour until set explicitly.
     public Color BorderBackgroundColour
     {
         get => borderBackgroundColour ?? BackgroundColour;
         set => borderBackgroundColour = value;
     }
 
-    // Foreground of the border glyphs.
     public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
-    // Alias for BorderForegroundColour, so code that sets a control's BorderColour (e.g. the
-    // layout designer's selection highlight) still recolours a chart's border.
     public override Color BorderColour
     {
         get => BorderForegroundColour;
@@ -174,7 +163,7 @@ public sealed class Chart : Control
     protected override void OnDraw()
     {
         double[] samples;
-        double snapshotMax;
+        double   snapshotMax;
 
         lock (dataLock) {
             samples = new double[dataCount];
@@ -186,13 +175,13 @@ public sealed class Chart : Control
             snapshotMax = dataMax;
         }
 
-        int chartHeight = Math.Max(0, Height - 2);
-        bool showScale = ShowYAxisScale && chartHeight > 6;
-        int scaleWidth = showScale ? DefaultScaleWidth : 0;
+        int chartHeight     = Math.Max(0, Height - 2);
+        bool showScale      = ShowYAxisScale && chartHeight > 6;
+        int scaleWidth      = showScale ? DefaultScaleWidth : 0;
         int totalInnerWidth = Math.Max(0, Width - 2);
-        int chartWidth = Math.Max(0, totalInnerWidth - scaleWidth);
-        int totalSubRows = chartHeight * 4;
-        int sampleCount = samples.Length;
+        int chartWidth      = Math.Max(0, totalInnerWidth - scaleWidth);
+        int totalSubRows    = chartHeight * 4;
+        int sampleCount     = samples.Length;
 
         double displayScale = AutoScale
             ? (snapshotMax > 0.0 ? 1.0 / snapshotMax : 1.0)
@@ -222,12 +211,12 @@ public sealed class Chart : Control
                     continue;
                 }
 
-                double value = Math.Clamp(samples[sampleIndex] * displayScale, 0.0, 1.0);
-                int barSubRows = (int)(value * totalSubRows);
-                int fullRows = barSubRows / 4;
+                double value    = Math.Clamp(samples[sampleIndex] * displayScale, 0.0, 1.0);
+                int barSubRows  = (int)(value * totalSubRows);
+                int fullRows    = barSubRows / 4;
                 int partialDots = barSubRows % 4;
 
-                double ratio = (double)barSubRows / (double)totalSubRows;
+                double ratio    = (double)barSubRows / (double)totalSubRows;
 
                 Color chartColour;
 
@@ -242,9 +231,9 @@ public sealed class Chart : Control
                 }
 
                 char ch = MetreStyle switch {
-                    MetreControlStyle.Bars => BarChar,
+                    MetreControlStyle.Bars   => BarChar,
                     MetreControlStyle.Blocks => BlockChar,
-                    _ => BrailleChars[4]
+                    _                        => BrailleChars[4]
                 };
 
                 if (rowFromBottom < fullRows) {
@@ -279,9 +268,9 @@ public sealed class Chart : Control
                 bool isIndexRow = (row % 2 == 0) || (row == chartHeight - 1);
 
                 if (isIndexRow) {
-                    double ratio = chartHeight > 1 ? (double)rowFromBottom / (chartHeight - 1) : 0.0;
+                    double ratio      = chartHeight > 1 ? (double)rowFromBottom / (chartHeight - 1) : 0.0;
                     double scaleValue = (AutoScale ? snapshotMax : 1.0) * ratio;
-                    string formatted = FormatScaleValue(scaleValue, snapshotMax);
+                    string formatted  = FormatScaleValue(scaleValue, snapshotMax);
                     
                     if (formatted.Length > scaleWidth) {
                         formatted = formatted[..scaleWidth];
@@ -312,9 +301,9 @@ public sealed class Chart : Control
             : $"{Text} {LabelSeries}";
 
         string labelPadded = label.Length > 0 ? $" {label} " : string.Empty;
-        int labelLen = Math.Min(labelPadded.Length, totalInnerWidth);
-        int leftDashes = (totalInnerWidth - labelLen) / 2;
-        int rightDashes = totalInnerWidth - labelLen - leftDashes;
+        int labelLen       = Math.Min(labelPadded.Length, totalInnerWidth);
+        int leftDashes     = (totalInnerWidth - labelLen) / 2;
+        int rightDashes    = totalInnerWidth - labelLen - leftDashes;
 
         SetBorderColour();
         frame.Append('\u2570');
@@ -336,14 +325,14 @@ public sealed class Chart : Control
         lock (dataLock) {
             if (data.Length != DataCapacity) {
                 double[] newData = new double[DataCapacity];
-                int toCopy = Math.Min(dataCount, DataCapacity);
+                int toCopy       = Math.Min(dataCount, DataCapacity);
 
                 for (int i = 0; i < toCopy; i++) {
                     newData[i] = DataAt(dataCount - toCopy + i);
                 }
 
-                data = newData;
-                dataHead = 0;
+                data      = newData;
+                dataHead  = 0;
                 dataCount = toCopy;
 
                 // Recompute max — older samples may have been dropped during truncation.

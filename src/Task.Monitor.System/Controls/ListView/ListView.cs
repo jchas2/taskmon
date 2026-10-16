@@ -10,11 +10,11 @@ public class ListView : Control
     // This provides a clean api for interacting with Collections on the ListView
     // control, similar to the Win32 ListView common control. 
     private readonly ListViewColumnHeaderCollection columnHeaderCollection;
-    private readonly ListViewItemCollection itemCollection;
+    private readonly ListViewItemCollection         itemCollection;
 
     // The containers holding the List<T> for rendering. We don't expose them via a public api.
     private List<ListViewColumnHeader> columnHeaders = [];
-    private List<ListViewItem> items = [];
+    private List<ListViewItem>         items         = [];
 
     private ViewPort viewPort = new();
 
@@ -34,12 +34,12 @@ public class ListView : Control
     public ListView(ISystemTerminal terminal)
         : base(terminal)
     {
-        itemCollection = new ListViewItemCollection(this);
+        itemCollection         = new ListViewItemCollection(this);
         columnHeaderCollection = new ListViewColumnHeaderCollection(this);
 
-        EnableRowSelect = true;
-        EnableScroll = true;
-        ShowBorder = true;
+        EnableRowSelect   = true;
+        EnableScroll      = true;
+        ShowBorder        = true;
         ShowColumnHeaders = true;
     }
     
@@ -49,19 +49,14 @@ public class ListView : Control
 
     private Color? borderBackgroundColour;
 
-    // Background of the border glyphs (frame, scroll indicators and the header / footer labels).
-    // Follows BackgroundColour until set explicitly.
     public Color BorderBackgroundColour
     {
         get => borderBackgroundColour ?? BackgroundColour;
         set => borderBackgroundColour = value;
     }
 
-    // Foreground of the border glyphs.
     public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
-    // Alias for BorderForegroundColour, so code that sets a control's BorderColour (e.g. the
-    // layout designer's selection highlight) still recolours a list's border.
     public override Color BorderColour
     {
         get => BorderForegroundColour;
@@ -82,8 +77,6 @@ public class ListView : Control
             Width - inset * 2,
             Height - inset * 2);
 
-        // Computed here rather than lazily in DrawItems() so it - and therefore where the scroll
-        // indicators belong - is already correct by the time DrawBorder() runs.
         viewPort.RowCount = viewPort.Bounds.Height - 1;
 
         if (viewPort.SelectedIndex >= items.Count) {
@@ -191,12 +184,10 @@ public class ListView : Control
             return;
         }
 
-        int innerWidth = Width - 2;
-
-        // Top: ╭── HeaderText ──╮
-        string headerLabel = string.IsNullOrEmpty(HeaderText) ? string.Empty : $" {HeaderText} ";
-        int headerLabelLen = Math.Min(headerLabel.Length, innerWidth);
-        int headerLeftDashes = (innerWidth - headerLabelLen) / 2;
+        int innerWidth        = Width - 2;
+        string headerLabel    = string.IsNullOrEmpty(HeaderText) ? string.Empty : $" {HeaderText} ";
+        int headerLabelLen    = Math.Min(headerLabel.Length, innerWidth);
+        int headerLeftDashes  = (innerWidth - headerLabelLen) / 2;
         int headerRightDashes = innerWidth - headerLabelLen - headerLeftDashes;
 
         frame.MoveTo(X, Y);
@@ -209,9 +200,6 @@ public class ListView : Control
         frame.Append('\u2500', headerRightDashes);
         frame.Append('\u256E');
 
-        // Left and right sides: │, with the right edge carrying the ▲ / ▼ overscroll glyph at the
-        // rows computed up front - written once here rather than drawn plain and overwritten a
-        // moment later, which is what caused the flicker.
         (int upRow, int downRow) = GetScrollIndicatorRows();
 
         for (int row = 1; row < Height - 1; row++) {
@@ -222,13 +210,16 @@ public class ListView : Control
             frame.Append('\u2502');
 
             frame.MoveTo(X + Width - 1, y);
-            frame.Append(y == upRow ? '\u25b2' : y == downRow ? '\u25bc' : '\u2502');
+            frame.Append(y == upRow 
+                ? '\u25b2' 
+                : y == downRow 
+                    ? '\u25bc' 
+                    : '\u2502');
         }
 
-        // Bottom: ╰── FooterText ──╯
-        string footerLabel = string.IsNullOrEmpty(FooterText) ? string.Empty : $" {FooterText} ";
-        int footerLabelLen = Math.Min(footerLabel.Length, innerWidth);
-        int footerLeftDashes = (innerWidth - footerLabelLen) / 2;
+        string footerLabel    = string.IsNullOrEmpty(FooterText) ? string.Empty : $" {FooterText} ";
+        int footerLabelLen    = Math.Min(footerLabel.Length, innerWidth);
+        int footerLeftDashes  = (innerWidth - footerLabelLen) / 2;
         int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
 
         frame.MoveTo(X, Y + Height - 1);
@@ -267,21 +258,17 @@ public class ListView : Control
         frame.Append(EmptyListViewText);
     }
     
-    // Formats text into a fixed-width column cell (width terminal columns, including the trailing
-    // separator space). Measures and truncates by terminal display width rather than char count:
-    // a column sized in chars would overflow whenever the text contains an East Asian wide
-    // character (each renders as two columns), corrupting everything drawn after it in the row.
     internal static string FormatColumnCell(string text, int width, bool rightAligned)
     {
-        int contentWidth = width - 1;
+        int contentWidth  = width - 1;
         int contentLength = text.TruncateToTerminalWidth(contentWidth, out int contentDisplayWidth);
-        int padding = contentWidth - contentDisplayWidth;
+        int padding       = contentWidth - contentDisplayWidth;
 
         return string.Create(contentLength + padding + 1, (text, contentLength, padding, rightAligned),
             static (span, state) =>
         {
             var (txt, len, pad, rightAlign) = state;
-            ReadOnlySpan<char> content = txt.AsSpan(0, len);
+            ReadOnlySpan<char> content      = txt.AsSpan(0, len);
 
             if (rightAlign) {
                 span.Slice(0, pad).Fill(' ');
@@ -324,17 +311,18 @@ public class ListView : Control
                 break;
             }
 
-            int colWidth = columnHeaders[i].Width;
-            var text = columnHeaders[i].Text;
+            int colWidth      = columnHeaders[i].Width;
+            var text          = columnHeaders[i].Text;
             bool rightAligned = columnHeaders[i].RightAligned;
 
-            string columnStr = FormatColumnCell(text, colWidth, rightAligned);
+            string columnStr  = FormatColumnCell(text, colWidth, rightAligned);
             
-            Color foreground = columnHeaders[i].ForegroundColour ?? HeaderForegroundColour;
-            Color background = columnHeaders[i].BackgroundColour ?? HeaderBackgroundColour;
+            Color foreground  = columnHeaders[i].ForegroundColour ?? HeaderForegroundColour;
+            Color background  = columnHeaders[i].BackgroundColour ?? HeaderBackgroundColour;
 
             frame.SetColour(foreground, background);
             frame.Append(columnStr);
+            
             c += colWidth;
         }
 
@@ -356,9 +344,17 @@ public class ListView : Control
 
         if (ShowCheckboxes) {
             frame.SetColour(
-                selected ? selectionForeground : ForegroundColour,
-                selected ? selectionBackground : BackgroundColour);
-            frame.Append(item.Checked ? CheckedText : UnCheckedText);
+                selected 
+                    ? selectionForeground 
+                    : ForegroundColour,
+                selected 
+                    ? selectionBackground 
+                    : BackgroundColour);
+            
+            frame.Append(item.Checked 
+                ? CheckedText 
+                : UnCheckedText);
+            
             c += CheckboxWidth;
         }
 
@@ -370,11 +366,11 @@ public class ListView : Control
             ListViewSubItem subItem = item.SubItems[i];
 
             bool rightAligned = false;
-            int columnWidth = DefaultColumnWidth;
+            int columnWidth   = DefaultColumnWidth;
 
             if (i < ColumnHeaderCount) {
                 rightAligned = columnHeaders[i].RightAligned;
-                columnWidth = columnHeaders[i].Width;
+                columnWidth  = columnHeaders[i].Width;
             }
 
             if (c + columnWidth > viewPort.Bounds.Width) {
@@ -383,10 +379,6 @@ public class ListView : Control
 
             string columnStr = FormatColumnCell(subItem.Text, columnWidth, rightAligned);
 
-            // A cell that set its own background (a heat / severity colour) keeps its own colours
-            // through the selection band. Cells left at the list's default background, and the
-            // filler past the last column, take the highlight so the selected row still reads as
-            // one strip.
             bool cellHasCustomBackground = !SameColour(subItem.BackgroundColor, BackgroundColour);
 
             Color foregroundColour;
@@ -403,6 +395,7 @@ public class ListView : Control
 
             frame.SetColour(foregroundColour, backgroundColour);
             frame.Append(columnStr);
+            
             c += columnWidth;
         }
 
@@ -437,11 +430,6 @@ public class ListView : Control
         }
     }
 
-    // The screen row for the up/down overscroll glyph, or -1 when that direction has nothing
-    // further to scroll to (plain border character there instead). Shared by DrawBorder(), which
-    // paints the border's side rows in a single pass, and DrawScrollIndicators() below, which
-    // repaints only these two cells on the key-driven partial redraw that doesn't touch the border
-    // at all - so the two draw paths can never disagree with each other.
     private (int UpRow, int DownRow) GetScrollIndicatorRows()
     {
         if (!EnableScroll || viewPort.RowCount <= 0 || ItemCount <= viewPort.RowCount) {
@@ -459,11 +447,6 @@ public class ListView : Control
         return (upRow, downRow);
     }
 
-    // Repaints just the two indicator cells: used only by the arrow/PageUp/PageDown partial
-    // redraw, where the border itself is left untouched. A full redraw never calls this - DrawBorder()
-    // already paints the correct character there in its one pass over the side rows, so writing the
-    // plain character first and overwriting it here a moment later (the previous approach) doesn't
-    // happen anymore; that double-write was what caused the flicker.
     private void DrawScrollIndicators()
     {
         if (!ShowBorder || viewPort.RowCount <= 0) {
@@ -472,8 +455,8 @@ public class ListView : Control
 
         (int upRow, int downRow) = GetScrollIndicatorRows();
 
-        int x = X + Width - 1;
-        int topRow = viewPort.Bounds.Y;
+        int x         = X + Width - 1;
+        int topRow    = viewPort.Bounds.Y;
         int bottomRow = viewPort.Bounds.Y + viewPort.RowCount - 1;
 
         frame.MoveTo(x, topRow);
@@ -595,8 +578,6 @@ public class ListView : Control
         }
 
         if (Items.Count > 0) {
-            // The right border already carries the correct ▲ / ▼ glyph from DrawBorder() above -
-            // no separate indicator pass needed (and none wanted; see DrawScrollIndicators()).
             DrawItems();
         }
         else {
@@ -687,6 +668,7 @@ public class ListView : Control
 
         if (viewPort.PreviousSelectedIndex != viewPort.SelectedIndex) {
             ListViewItem previousSelectedItem = items[viewPort.PreviousSelectedIndex];
+            
             DrawItem(
                 previousSelectedItem,
                 viewPort.Bounds.Y + viewPort.PreviousSelectedIndex - viewPort.CurrentPageIndex,
@@ -739,8 +721,6 @@ public class ListView : Control
 
     private void SelectItemCheckbox(ListViewItem item) => item.Checked = !item.Checked;
 
-    // The colours a selected row is drawn in: the configured highlight pair when the control has
-    // focus, otherwise the muted inactive highlight pair used for an unfocused selection.
     private (Color Foreground, Color Background) SelectionColours() =>
         Focused
             ? (ForegroundHighlightColour, BackgroundHighlightColour)

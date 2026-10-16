@@ -12,8 +12,8 @@ public sealed partial class ServicesControl
     {
         servicesView.Items.Clear();
 
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
+        Color background        = appConfig.Theme.ListViewBackground;
+        Color foreground        = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
         int running = 0;
@@ -27,11 +27,11 @@ public sealed partial class ServicesControl
                 service.Status == WindowsServiceStatus.Running ? foreground : stoppedForeground;
 
             ListViewItem row = new(new[] {
-                new ListViewSubItem(null!, Cell(service.DisplayName), background, foreground),
-                new ListViewSubItem(null!, DescribeStatus(service.Status), background, statusForeground),
-                new ListViewSubItem(null!, DescribeStartType(service), background, foreground),
+                new ListViewSubItem(null!, Cell(service.DisplayName),        background, foreground),
+                new ListViewSubItem(null!, DescribeStatus(service.Status),   background, statusForeground),
+                new ListViewSubItem(null!, DescribeStartType(service),       background, foreground),
                 new ListViewSubItem(null!, DescribeLogOnAs(service.LogOnAs), background, foreground),
-                new ListViewSubItem(null!, Cell(service.Description), background, foreground)
+                new ListViewSubItem(null!, Cell(service.Description),        background, foreground)
             });
 
             servicesView.Items.Add(row);
@@ -49,12 +49,13 @@ public sealed partial class ServicesControl
             return;
         }
 
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
+        Color background        = appConfig.Theme.ListViewBackground;
+        Color foreground        = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
-
-        Color statusForeground =
-            service.Status == WindowsServiceStatus.Running ? foreground : stoppedForeground;
+        
+        Color statusForeground  = service.Status == WindowsServiceStatus.Running 
+            ? foreground 
+            : stoppedForeground;
 
         detailView.Items.Add(new ListViewItem(["Name", Cell(service.DisplayName)], background, foreground));
 
@@ -62,33 +63,32 @@ public sealed partial class ServicesControl
             [new ListViewSubItem(null!, "Status", background, foreground),
              new ListViewSubItem(null!, DescribeStatus(service.Status), background, statusForeground)]));
 
-        detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(service)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Log On As", DescribeLogOnAs(service.LogOnAs)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Description", Cell(service.Description)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(service)],       background, foreground));
+        detailView.Items.Add(new ListViewItem(["Log On As",    DescribeLogOnAs(service.LogOnAs)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Description",  Cell(service.Description)],        background, foreground));
     }
 
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeStatus(WindowsServiceStatus status) => status switch {
-        WindowsServiceStatus.Stopped => "Stopped",
-        WindowsServiceStatus.StartPending => "Start Pending",
-        WindowsServiceStatus.StopPending => "Stop Pending",
-        WindowsServiceStatus.Running => "Running",
+        WindowsServiceStatus.Stopped         => "Stopped",
+        WindowsServiceStatus.StartPending    => "Start Pending",
+        WindowsServiceStatus.StopPending     => "Stop Pending",
+        WindowsServiceStatus.Running         => "Running",
         WindowsServiceStatus.ContinuePending => "Continue Pending",
-        WindowsServiceStatus.PausePending => "Pause Pending",
-        WindowsServiceStatus.Paused => "Paused",
-        _ => status.ToString()
+        WindowsServiceStatus.PausePending    => "Pause Pending",
+        WindowsServiceStatus.Paused          => "Paused",
+                                           _ => status.ToString()
     };
 
     private static string DescribeStartType(WindowsServiceInfo service) => service.StartType switch {
-        WindowsServiceStartType.AutomaticStart =>
-            service.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
-        WindowsServiceStartType.ManualStart => "Manual",
-        WindowsServiceStartType.Disabled => "Disabled",
-        WindowsServiceStartType.BootStart => "Boot Start",
-        WindowsServiceStartType.SystemStart => "System Start",
-        _ => service.StartType.ToString()
+        WindowsServiceStartType.AutomaticStart => service.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
+        WindowsServiceStartType.ManualStart    => "Manual",
+        WindowsServiceStartType.Disabled       => "Disabled",
+        WindowsServiceStartType.BootStart      => "Boot Start",
+        WindowsServiceStartType.SystemStart    => "System Start",
+                                             _ => service.StartType.ToString()
     };
 
     private static string DescribeLogOnAs(string? logOnAs)

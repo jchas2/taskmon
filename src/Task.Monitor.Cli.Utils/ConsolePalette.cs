@@ -100,7 +100,7 @@ public static class ConsolePalette
         }
 
         string text = value.Trim();
-        string hex = text.StartsWith('#') ? text[1..] : text;
+        string hex  = text.StartsWith('#') ? text[1..] : text;
 
         if ((hex.Length == 6 || hex.Length == 8) &&
             uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint packed)) {

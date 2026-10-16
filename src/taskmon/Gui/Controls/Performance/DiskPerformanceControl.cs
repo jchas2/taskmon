@@ -17,15 +17,19 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     private const int SpecsRowCount = 10;
 
     private readonly Lock @lock = new();
-    private readonly Chart activeTimeChart;
-    private readonly Chart transferRateChart;
+    
+    private readonly Chart    activeTimeChart;
+    private readonly Chart    transferRateChart;
     private readonly ListView diskMetricsListView;
     private readonly ListView diskSpecsListView;
     private readonly AppConfig appConfig;
+    
     private DiskInfo? diskInfo;
+    
     private double? temperature;
-    private string powerText = "N/A";
-    private int? scopedDiskIndex;
+    private int?    scopedDiskIndex;
+
+    private string  powerText = "N/A";
 
     public void SetScope(int? diskIndex) => scopedDiskIndex = diskIndex;
 
@@ -33,27 +37,27 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     {
         this.appConfig = appConfig;
 
-        activeTimeChart = new Chart(terminal);
+        activeTimeChart   = new Chart(terminal);
         transferRateChart = new Chart(terminal);
 
         diskMetricsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = true,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
 
         diskSpecsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
     }
 
@@ -64,12 +68,9 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
                 return;
             }
 
-            diskInfo = snapshot.Disk;
-            
-            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
-                ThermalComponent.Disk, scopedDiskIndex?.ToString());
-            
-            powerText = ResolvePowerText(snapshot);
+            diskInfo    = snapshot.Disk;
+            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(ThermalComponent.Disk, scopedDiskIndex?.ToString());
+            powerText   = ResolvePowerText(snapshot);
 
             (DiskDeviceMetrics? device, _, bool render) = ResolveScope();
 
@@ -107,7 +108,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         }
 
         DiskDeviceMetrics? device = diskInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == index);
-        DiskDevice? spec = diskInfo.Specs.Devices.FirstOrDefault(candidate => candidate.Index == index);
+        DiskDevice?        spec   = diskInfo.Specs.Devices.FirstOrDefault(candidate => candidate.Index == index);
 
         return (device, spec, device != null);
     }
@@ -120,6 +121,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             }
 
             DiskMetrics metrics = diskInfo.Metrics;
+            
             (DiskDeviceMetrics? device, DiskDevice? deviceSpec, bool render) = ResolveScope();
 
             if (!render) {
@@ -216,26 +218,26 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)
     {
-        chart.AutoScale = autoScale;
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.AutoScale                 = autoScale;
+        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = yAxisScaleFormatter;
-        chart.LabelSeries = string.Empty;
-        chart.ShowYAxisScale = true;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.LabelSeries               = string.Empty;
+        chart.ShowYAxisScale            = true;
+        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
+        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle                = appConfig.MetreStyle;
+        chart.ShowGrid                  = true;
+        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
@@ -249,24 +251,23 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     {
         const int MetricsHeight = 4;
         
-        int yTop = Y;
+        int yTop        = Y;
         int specsHeight = SpecsRowCount + 3;
-        int bottomY = Y + Height - (MetricsHeight + specsHeight);
+        int bottomY     = Y + Height - (MetricsHeight + specsHeight);
+        int chartsArea  = Math.Max(0, bottomY - yTop);
+        int height      = chartsArea / 2;
 
-        int chartsArea = Math.Max(0, bottomY - yTop);
-        int height = chartsArea / 2;
-
-        activeTimeChart.X = X + 1;
-        activeTimeChart.Y = yTop;
-        activeTimeChart.Width = Width - 1;
+        activeTimeChart.X      = X + 1;
+        activeTimeChart.Y      = yTop;
+        activeTimeChart.Width  = Width - 1;
         activeTimeChart.Height = height;
         activeTimeChart.Resize();
 
         yTop += height;
 
-        transferRateChart.X = X + 1;
-        transferRateChart.Y = yTop;
-        transferRateChart.Width = Width - 1;
+        transferRateChart.X      = X + 1;
+        transferRateChart.Y      = yTop;
+        transferRateChart.Width  = Width - 1;
         transferRateChart.Height = chartsArea - height;
         transferRateChart.Resize();
 
@@ -281,14 +282,14 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
                 : 40;
         }
 
-        diskMetricsListView.X = X + 1;
-        diskMetricsListView.Y = bottomY;
-        diskMetricsListView.Width = Width - 1;
+        diskMetricsListView.X      = X + 1;
+        diskMetricsListView.Y      = bottomY;
+        diskMetricsListView.Width  = Width - 1;
         diskMetricsListView.Height = MetricsHeight;
 
-        diskSpecsListView.X = X + 1;
-        diskSpecsListView.Y = bottomY + MetricsHeight;
-        diskSpecsListView.Width = Width - 1;
+        diskSpecsListView.X      = X + 1;
+        diskSpecsListView.Y      = bottomY + MetricsHeight;
+        diskSpecsListView.Width  = Width - 1;
         diskSpecsListView.Height = specsHeight;
     }
 

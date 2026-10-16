@@ -10,39 +10,38 @@ namespace Task.Monitor.Gui.Controls.Drivers;
 
 public sealed partial class DriversControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ListView driversView;
-    private readonly ListView detailView;
-
-    private DriversInfo? drivers;
-    private string lastSignature = string.Empty;
-
-    private const int NameColumnWidth = 30;
-    private const int VersionColumnWidth = 16;
-    private const int StatusColumnWidth = 16;
+    private const int NameColumnWidth        = 30;
+    private const int VersionColumnWidth     = 16;
+    private const int StatusColumnWidth      = 16;
     private const int StartupTypeColumnWidth = 26;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 8; // border (2) + column headers (1) + 5 field rows
+    private const int DetailViewHeight       = 8;   // border (2) + column headers (1) + 5 field rows
 
-    public DriversControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          driversView;
+    private readonly ListView          detailView;
+
+    private DriversInfo? drivers;
+    
+    private string lastSignature = string.Empty;
+
+
+    public DriversControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) 
         : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig = appConfig;
 
         driversView = new ListView(terminal) {
-            EnableScroll = true,
-            EnableRowSelect = true,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            ShowBorder        = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
             EmptyListViewText = "Gathering drivers…"
         };
 
@@ -54,13 +53,13 @@ public sealed partial class DriversControl : Control
             .Add(new ListViewColumnHeader("PATH"));
 
         detailView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = false,
-            Visible = true,
-            HeaderText = "DETAIL"
+            ShowBorder        = true,
+            TabStop           = false,
+            Visible           = true,
+            HeaderText        = "DETAIL"
         };
 
         detailView.ColumnHeaders
@@ -110,7 +109,8 @@ public sealed partial class DriversControl : Control
     }
 
     private static string BuildSignature(IReadOnlyList<DriverInfo> entries) =>
-        entries.Count + "|" + string.Join("|", entries.Select(driver =>
+        entries.Count + "|" + 
+        string.Join("|", entries.Select(driver =>
             $"{driver.ServiceName}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
 
     private void RefreshDetailPane()
@@ -156,14 +156,14 @@ public sealed partial class DriversControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        driversView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        driversView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        driversView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        driversView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        driversView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        driversView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-        driversView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        driversView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        driversView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        driversView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        driversView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        driversView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        driversView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        driversView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        driversView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        driversView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         driversView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         driversView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
@@ -172,8 +172,8 @@ public sealed partial class DriversControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
@@ -196,9 +196,9 @@ public sealed partial class DriversControl : Control
     {
         int driversViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        driversView.X = X;
-        driversView.Y = Y;
-        driversView.Width = Width;
+        driversView.X      = X;
+        driversView.Y      = Y;
+        driversView.Width  = Width;
         driversView.Height = driversViewHeight;
 
         int fixedWidth = NameColumnWidth + VersionColumnWidth + StatusColumnWidth + StartupTypeColumnWidth;
@@ -209,9 +209,9 @@ public sealed partial class DriversControl : Control
         driversView.ColumnHeaders[3].Width = StartupTypeColumnWidth;
         driversView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
 
-        detailView.X = X;
-        detailView.Y = Y + driversViewHeight;
-        detailView.Width = Width;
+        detailView.X      = X;
+        detailView.Y      = Y + driversViewHeight;
+        detailView.Width  = Width;
         detailView.Height = DetailViewHeight;
 
         detailView.ColumnHeaders[0].Width = DetailFieldColumnWidth;

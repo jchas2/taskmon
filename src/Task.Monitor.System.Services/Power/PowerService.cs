@@ -7,6 +7,7 @@ public sealed partial class PowerService : WorkerService
     private const int ReprobeEveryCycles = 20;
 
     private readonly List<IPowerProvider> providers = new();
+    
     private int cyclesSinceProbe;
 
     protected override void OnStart() => BuildProviders();

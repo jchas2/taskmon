@@ -5,11 +5,11 @@ namespace Task.Monitor.System.Controls.InputBox;
 
 public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 {
-    private const int MinWidth = 10;
+    private const int MinWidth  = 10;
     private const int MinHeight = 1;
 
     private readonly TextBuffer textBuffer = new();
-    private readonly Color boxColour = ConsolePalette.Gray;
+    private readonly Color      boxColour  = ConsolePalette.Gray;
 
     protected override void OnDraw()
     {
@@ -35,7 +35,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        Result = InputBoxResult.None;
+        Result  = InputBoxResult.None;
         handled = true;
 
         Terminal.BackgroundColor = boxColour;
@@ -53,7 +53,6 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
             
             case ConsoleKey.Backspace:
                 if (textBuffer.MoveBackwards()) {
-                    // Redraw the tail from the caret, plus a space to clear the vacated cell.
                     PositionCaret();
                     Terminal.Write(textBuffer.Text[textBuffer.CursorBufferPosition..] + " ");
                     PositionCaret();
@@ -103,7 +102,6 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
         }
     }
 
-    // The screen caret is always at column X + the buffer caret index on the box's row.
     private void PositionCaret() => Terminal.CursorLeft = X + textBuffer.CursorBufferPosition;
 
     public InputBoxResult Result { get; private set; } = InputBoxResult.Enter;
@@ -116,8 +114,6 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
     public string Text => textBuffer.Text;
 
-    // Pre-fills the box with a default value the user can accept as-is or edit, rather than
-    // always starting from empty. Call before ShowInputBox so the initial paint reflects it.
     public void SetText(string text) => textBuffer.SetText(text);
 
     public override bool Visible
@@ -125,7 +121,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
         get => base.Visible;
         set {
             Terminal.CursorVisible = value;
-            base.Visible = value;
+            base.Visible           = value;
         }
     }
 

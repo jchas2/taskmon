@@ -9,6 +9,7 @@ public static class ConsoleEx
     {
         Console.Write("\x1b[?1049h\x1b[2J\x1b[H");
         Console.Out.Flush();
+        
         isAltBufferActive = true;
     }
 
@@ -20,6 +21,7 @@ public static class ConsoleEx
 
         Console.Write("\x1b[2J\x1b[?1049l");
         Console.Out.Flush();
+        
         isAltBufferActive = false;
     }
 }

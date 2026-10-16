@@ -7,13 +7,14 @@ namespace Task.Monitor.System.Services.Network;
 public partial class NetworkService
 {
 #if __WIN32__
-    private const double BytesPerMegabyte = 1024.0 * 1024.0;
-    private const int SpecsRefreshCycles = 10;
+    private const double BytesPerMegabyte    = 1024.0 * 1024.0;
+    private const int    SpecsRefreshCycles  = 10;
 
     private readonly Dictionary<ulong, NetworkInstanceState> instanceStates = new();
+
     private long previousTimestamp;
     private bool primed;
-    private int cyclesSinceSpecsRefresh;
+    private int  cyclesSinceSpecsRefresh;
     private bool sawUnknownAdapter;
 
     private sealed class NetworkInstanceState
@@ -38,16 +39,16 @@ public partial class NetworkService
     private readonly struct InterfaceSample
     {
         public InterfaceSample(
-            uint interfaceIndex,
+            uint  interfaceIndex,
             ulong bytesSent,
             ulong bytesReceived,
             ulong packetsSent,
             ulong packetsReceived)
         {
-            InterfaceIndex = interfaceIndex;
-            BytesSent = bytesSent;
-            BytesReceived = bytesReceived;
-            PacketsSent = packetsSent;
+            InterfaceIndex  = interfaceIndex;
+            BytesSent       = bytesSent;
+            BytesReceived   = bytesReceived;
+            PacketsSent     = packetsSent;
             PacketsReceived = packetsReceived;
         }
 
@@ -61,10 +62,11 @@ public partial class NetworkService
     private void OnStopNetworkMetrics()
     {
         instanceStates.Clear();
-        previousTimestamp = 0;
-        primed = false;
+
+        previousTimestamp       = 0;
+        primed                  = false;
         cyclesSinceSpecsRefresh = 0;
-        sawUnknownAdapter = false;
+        sawUnknownAdapter       = false;
     }
 
     private void OnDoWorkNetworkSample()
@@ -104,12 +106,12 @@ public partial class NetworkService
     private void PrimeInstanceState(ulong interfaceLuid, InterfaceSample sample)
     {
         NetworkInstanceState state = new();
-        state.InterfaceIndex = sample.InterfaceIndex;
-        state.PreviousBytesSent = sample.BytesSent;
-        state.PreviousBytesReceived = sample.BytesReceived;
-        state.PreviousPacketsSent = sample.PacketsSent;
+        state.InterfaceIndex          = sample.InterfaceIndex;
+        state.PreviousBytesSent       = sample.BytesSent;
+        state.PreviousBytesReceived   = sample.BytesReceived;
+        state.PreviousPacketsSent     = sample.PacketsSent;
         state.PreviousPacketsReceived = sample.PacketsReceived;
-        state.Primed = true;
+        state.Primed                  = true;
 
         instanceStates[interfaceLuid] = state;
     }
@@ -150,10 +152,10 @@ public partial class NetworkService
     }
 
     private static double AccumulateDelta(
-        ulong current,
+        ulong     current,
         ref ulong previous,
         ref ulong total,
-        double elapsedSeconds)
+        double    elapsedSeconds)
     {
         double rate = 0.0;
 
@@ -170,7 +172,7 @@ public partial class NetworkService
     private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
     {
         if (sawUnknownAdapter) {
-            sawUnknownAdapter = false;
+            sawUnknownAdapter       = false;
             cyclesSinceSpecsRefresh = 0;
             return true;
         }
@@ -229,13 +231,14 @@ public partial class NetworkService
         }
 
         metrics.Devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
+
         metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
         metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
     }
 
     private static unsafe bool TryReadInterfaceTable(Dictionary<ulong, InterfaceSample> samples)
     {
-        nint table = nint.Zero;
+        nint table  = nint.Zero;
         uint result = IpHlpApi.GetIfTable2(&table);
 
         if (result != IpHlpApi.ERROR_SUCCESS) {
@@ -277,7 +280,7 @@ public partial class NetworkService
 
     private static unsafe bool TryReadPhysicalMediums(Dictionary<ulong, uint> mediums)
     {
-        nint table = nint.Zero;
+        nint table  = nint.Zero;
         uint result = IpHlpApi.GetIfTable2(&table);
 
         if (result != IpHlpApi.ERROR_SUCCESS || table == nint.Zero) {
@@ -290,7 +293,7 @@ public partial class NetworkService
         }
 
         try {
-            byte* buffer = (byte*)table;
+            byte* buffer    = (byte*)table;
             uint entryCount = InteropHelper.ReadUInt32(buffer, NetIoApi.IfTable2NumEntriesOffset);
 
             for (uint entry = 0; entry < entryCount; entry++) {

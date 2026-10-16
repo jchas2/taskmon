@@ -44,11 +44,11 @@ public partial class InstalledAppsService
 
     private void ScanUninstallKey(
         InstalledAppsSpecs specs, 
-        RegistryHive hive, 
-        RegistryView view, 
-        InstalledAppScope scope)
+        RegistryHive       hive, 
+        RegistryView       view, 
+        InstalledAppScope  scope)
     {
-        using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
+        using RegistryKey baseKey       = RegistryKey.OpenBaseKey(hive, view);
         using RegistryKey? uninstallKey = baseKey.OpenSubKey(UninstallKeyPath);
 
         if (uninstallKey is null) {

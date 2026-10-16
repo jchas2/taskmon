@@ -8,18 +8,17 @@ public static class IntegerExtensions
 
     public static long PackFloat(this float value)
     {
-        long integralPart = (long)value;
+        long integralPart    = (long)value;
         float fractionalPart = value - integralPart;
-        uint fractionalBits = (uint)(fractionalPart * uint.MaxValue);
+        uint fractionalBits  = (uint)(fractionalPart * uint.MaxValue);
 
         return (integralPart << 32) | (fractionalBits & 0xFFFFFFFFL);
     }
     
     public static double UnpackToDouble(this long packed)
     {
-        long integralPart = packed >> 32;
-
-        uint fractionalBits = (uint)(packed & 0xFFFFFFFF);
+        long integralPart     = packed >> 32;
+        uint fractionalBits   = (uint)(packed & 0xFFFFFFFF);
         double fractionalPart = (double)fractionalBits / uint.MaxValue;
 
         return integralPart + fractionalPart;
@@ -36,7 +35,8 @@ public static class IntegerExtensions
     private static string ToFormattedByteSizeInternal(this ulong num)
     {
         string[] byteFormatters = ["B", "KB", "MB", "GB", "TB"];
-        int index = 0;
+        
+        int    index = 0;
         double count = num;
 
         while (count >= 1024 && index < byteFormatters.Length - 1) {

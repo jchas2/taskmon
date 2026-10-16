@@ -6,39 +6,39 @@ public static class AnsiConsoleStringExtensions
 {
     public const string Reset = "\u001b[0m";
     
-    private const string BlackBackground = "\u001b[40m";
-    private const string DarkBlueBackground = "\u001b[44m";
-    private const string DarkGreenBackground = "\u001b[42m";
-    private const string DarkCyanBackground = "\u001b[46m";
-    private const string DarkRedBackground = "\u001b[41m";
+    private const string BlackBackground       = "\u001b[40m";
+    private const string DarkBlueBackground    = "\u001b[44m";
+    private const string DarkGreenBackground   = "\u001b[42m";
+    private const string DarkCyanBackground    = "\u001b[46m";
+    private const string DarkRedBackground     = "\u001b[41m";
     private const string DarkMagentaBackground = "\u001b[45m";
-    private const string DarkYellowBackground = "\u001b[43m";
-    private const string GrayBackground = "\u001b[47m";
-    private const string DarkGrayBackground = "\u001b[100m";
-    private const string BlueBackground = "\u001b[104m";
-    private const string GreenBackground = "\u001b[102m";
-    private const string CyanBackground = "\u001b[106m";
-    private const string RedBackground = "\u001b[101m";
-    private const string MagentaBackground = "\u001b[105m";
-    private const string YellowBackground = "\u001b[103m";
-    private const string WhiteBackground = "\u001b[107m";
+    private const string DarkYellowBackground  = "\u001b[43m";
+    private const string GrayBackground        = "\u001b[47m";
+    private const string DarkGrayBackground    = "\u001b[100m";
+    private const string BlueBackground        = "\u001b[104m";
+    private const string GreenBackground       = "\u001b[102m";
+    private const string CyanBackground        = "\u001b[106m";
+    private const string RedBackground         = "\u001b[101m";
+    private const string MagentaBackground     = "\u001b[105m";
+    private const string YellowBackground      = "\u001b[103m";
+    private const string WhiteBackground       = "\u001b[107m";
     
-    private const string BlackForeground = "\u001b[30m";
-    private const string DarkBlueForeground = "\u001b[34m";
-    private const string DarkGreenForeground = "\u001b[32m";
-    private const string DarkCyanForeground = "\u001b[36m";
-    private const string DarkRedForeground = "\u001b[31m";
+    private const string BlackForeground       = "\u001b[30m";
+    private const string DarkBlueForeground    = "\u001b[34m";
+    private const string DarkGreenForeground   = "\u001b[32m";
+    private const string DarkCyanForeground    = "\u001b[36m";
+    private const string DarkRedForeground     = "\u001b[31m";
     private const string DarkMagentaForeground = "\u001b[35m";
-    private const string DarkYellowForeground = "\u001b[33m";
-    private const string GrayForeground = "\u001b[37m";
-    private const string DarkGrayForeground = "\u001b[90m";
-    private const string BlueForeground = "\u001b[94m";
-    private const string GreenForeground = "\u001b[92m";
-    private const string CyanForeground = "\u001b[96m";
-    private const string RedForeground = "\u001b[91m";
-    private const string MagentaForeground = "\u001b[95m";
-    private const string YellowForeground = "\u001b[93m";
-    private const string WhiteForeground = "\u001b[97m";
+    private const string DarkYellowForeground  = "\u001b[33m";
+    private const string GrayForeground        = "\u001b[37m";
+    private const string DarkGrayForeground    = "\u001b[90m";
+    private const string BlueForeground        = "\u001b[94m";
+    private const string GreenForeground       = "\u001b[92m";
+    private const string CyanForeground        = "\u001b[96m";
+    private const string RedForeground         = "\u001b[91m";
+    private const string MagentaForeground     = "\u001b[95m";
+    private const string YellowForeground      = "\u001b[93m";
+    private const string WhiteForeground       = "\u001b[97m";
     
     public static string ToBold(this string str) => $"\u001b[1m{str}\u001b[1m";
     
@@ -46,7 +46,7 @@ public static class AnsiConsoleStringExtensions
     {
         ReadOnlySpan<char> prefix = colourCode;
         ReadOnlySpan<char> suffix = Reset;
-        ReadOnlySpan<char> text = str;
+        ReadOnlySpan<char> text   = str;
         
         return string.Create(
             prefix.Length + text.Length + suffix.Length,
@@ -54,8 +54,8 @@ public static class AnsiConsoleStringExtensions
             (span, state) =>
             {
                 ReadOnlySpan<char> colourCodeSpan = state.colourCode;
-                ReadOnlySpan<char> strSpan = state.str;
-                ReadOnlySpan<char> resetSpan = Reset;
+                ReadOnlySpan<char> strSpan        = state.str;
+                ReadOnlySpan<char> resetSpan      = Reset;
                 
                 colourCodeSpan.CopyTo(span);
                 strSpan.CopyTo(span.Slice(colourCodeSpan.Length));

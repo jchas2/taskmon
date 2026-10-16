@@ -228,7 +228,7 @@ public sealed class ProcessInfoControlTests
         int callsAfterModulesShown = moduleServiceFake.GetModulesCallCount;
         Assert.True(callsAfterModulesShown > 0);
 
-        ctrl.ResetToDetail();
+        ctrl.ResetToDetailPane();
         ctrl.LoadProcess(-2);
 
         Assert.True(ctrl.IsDetailActiveForTests);

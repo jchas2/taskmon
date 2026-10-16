@@ -11,9 +11,10 @@ internal static class WindowsServiceLookup
 {
 #if __WIN32__
     private static Dictionary<int, WindowsServiceInfo> serviceMap = new();
+    
     private static readonly Lock criticalSection = new();
 
-    private static int cyclesSinceRefresh;
+    private static int   cyclesSinceRefresh;
     private static bool refreshRequested;
     private static bool attempted;
 
@@ -69,7 +70,9 @@ internal static class WindowsServiceLookup
     public static string? GetServiceImagePath(string serviceName)
     {
         const string RegPath = @"SYSTEM\CurrentControlSet\Services\";
+
         string subKey = $"{RegPath}{serviceName}";
+
         using RegistryKey? key = Registry.LocalMachine.OpenSubKey(subKey);
 
         if (key == null) {
@@ -139,8 +142,8 @@ internal static class WindowsServiceLookup
 
     private static unsafe int GetServiceProcessId(nint hService)
     {
-        int pid = 0;
-        nint pss = Marshal.AllocHGlobal(Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>());
+        int pid          = 0;
+        nint pss         = Marshal.AllocHGlobal(Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>());
         uint bytesNeeded = 0;
 
         if (!WinService.QueryServiceStatusEx(
@@ -185,9 +188,9 @@ internal static class WindowsServiceLookup
             return services;
         }
 
-        uint bytesNeeded = 0;
+        uint bytesNeeded      = 0;
         uint servicesReturned = 0;
-        uint resumeHandle = 0;
+        uint resumeHandle     = 0;
 
         WinService.EnumServicesStatusEx(
             hSCM,
@@ -246,12 +249,12 @@ internal static class WindowsServiceLookup
             WindowsServiceInfo service = new() {
                 ServiceName = status.lpServiceName,
                 DisplayName = status.lpDisplayName,
-                Status = WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)status.dwCurrentState)
+                Status      = WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)status.dwCurrentState)
             };
 
             PopulateServiceConfig(hSCM, service);
             services[i] = service;
-            currentPtr = nint.Add(currentPtr, structSize);
+            currentPtr  = nint.Add(currentPtr, structSize);
         }
 
         Marshal.FreeHGlobal(buffer);
@@ -362,7 +365,7 @@ internal static class WindowsServiceLookup
             return;
         }
 
-        int size = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
+        int size    = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
         nint buffer = Marshal.AllocHGlobal(size);
 
         try {

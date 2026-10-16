@@ -4,36 +4,25 @@ using Task.Monitor.System.Controls.Chart;
 
 namespace Task.Monitor.System.Controls.Metre;
 
-/// <summary>
-/// A horizontal metre rendering one or more series stacked left to right over the
-/// range 0.0 - 1.0, i.e. a CPU metre carrying a Kernel % series and a User % series,
-/// each drawn in its own colour. A legend row is printed directly below the metre.
-/// </summary>
 public sealed class MetreControl : Control
 {
-    // Braille dots occupy two columns; the left column is dots 1,2,3,7 (bits 0,1,2,6).
-    //
-    //   0/2  ⠀  U+2800  0x00  (empty)
-    //   1/2  ⡇  U+2847  0x47  dots 1,2,3,7   (left column)
-    //   2/2  ⣿  U+28FF  0xFF  all dots       (full)
-    private static readonly char[] BrailleChars = ['⠀', '⡇', '⣿'];
-    private static readonly char BarChar = '|';
-    private static readonly char BlockChar = ' ';
-    private static readonly char HalfBlockChar = '▌';
+    private static readonly char[] BrailleChars  = ['⠀', '⡇', '⣿'];
+    private static readonly char   BarChar       = '|';
+    private static readonly char   BlockChar     = ' ';
+    private static readonly char   HalfBlockChar = '▌';
 
     private const int LegendSpacing = 2;
 
-    private readonly List<MetreControlSeries> series = [];
-    private readonly object seriesLock = new();
-    private readonly AnsiScreenBuffer frame = new();
+    private readonly List<MetreControlSeries> series     = [];
+    private readonly object                   seriesLock = new();
+    private readonly AnsiScreenBuffer         frame      = new();
 
-    // Ownership of each sub-cell of the metre; -1 marks an unfilled sub-cell.
     private int[] subCellOwners = [];
+    private bool  border        = false;
+    private int   rows          = 1;
+    private bool  showLegend    = true;
 
-    private bool border = false;
     private Color? borderBackgroundColour;
-    private int rows = 1;
-    private bool showLegend = true;
 
     public MetreControl(ISystemTerminal terminal) : base(terminal) => Height = RequiredHeight;
 
@@ -57,7 +46,6 @@ public sealed class MetreControl : Control
         }
     }
 
-    // Distributes the filled portion of the metre across the series in declaration order.
     private static void AllocateSubCells(double[] values, int totalSubCells, int[] owners)
     {
         Array.Fill(owners, -1);
@@ -72,23 +60,22 @@ public sealed class MetreControl : Control
             return;
         }
 
-        // The metre spans 0.0 - 1.0; anything past a full metre is truncated rather than rescaled.
         int fillSubCells = (int)Math.Round(Math.Min(total, 1.0) * totalSubCells);
 
         if (fillSubCells <= 0) {
             return;
         }
 
-        // Largest remainder: hand out whole sub-cells first, then give the rounding slack to the
-        // series with the biggest fractional part so the segments always sum to fillSubCells.
-        int[] counts = new int[values.Length];
+        int[]    counts     = new int[values.Length];
         double[] remainders = new double[values.Length];
-        int assigned = 0;
+        int      assigned   = 0;
 
         for (int i = 0; i < values.Length; i++) {
             double exact = Math.Max(0.0, values[i]) / total * fillSubCells;
-            counts[i] = (int)exact;
+            
+            counts[i]     = (int)exact;
             remainders[i] = exact - counts[i];
+            
             assigned += counts[i];
         }
 
@@ -152,8 +139,8 @@ public sealed class MetreControl : Control
     }
 
     private void AppendLegendRow(
-        int innerWidth,
-        Color[] colours,
+        int      innerWidth,
+        Color[]  colours,
         string[] labels,
         double[] values)
     {
@@ -171,8 +158,6 @@ public sealed class MetreControl : Control
                 }
             }
 
-            // A single cell in the metre style and colour, one space, then the label
-            // with the series percentage appended.
             AppendCell(SubCellsPerCell, colours[i]);
             remaining--;
 
@@ -204,9 +189,9 @@ public sealed class MetreControl : Control
         int subCells = SubCellsPerCell;
 
         for (int col = 0; col < innerWidth; col++) {
-            int start = col * subCells;
-            int fill = 0;
-            int owner = -1;
+            int start         = col * subCells;
+            int fill          = 0;
+            int owner         = -1;
             int ownerSubCells = 0;
 
             for (int s = 0; s < subCells; s++) {
@@ -225,7 +210,6 @@ public sealed class MetreControl : Control
                     }
                 }
 
-                // A cell straddling two series is drawn in the colour of the dominant one.
                 if (candidateSubCells > ownerSubCells) {
                     ownerSubCells = candidateSubCells;
                     owner = candidate;
@@ -241,10 +225,6 @@ public sealed class MetreControl : Control
         }
     }
 
-    /// <summary>
-    /// Draws a border around the control, consuming a row above and below the metre.
-    /// Toggling this resets <see cref="Control.Height"/> to <see cref="RequiredHeight"/>.
-    /// </summary>
     public bool Border
     {
         get => border;
@@ -256,19 +236,14 @@ public sealed class MetreControl : Control
         }
     }
 
-    // Background of the border glyphs (frame and the bottom label). Follows BackgroundColour
-    // until set explicitly.
     public Color BorderBackgroundColour
     {
         get => borderBackgroundColour ?? BackgroundColour;
         set => borderBackgroundColour = value;
     }
 
-    // Foreground of the border glyphs.
     public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
-    // Alias for BorderForegroundColour, so code that sets a control's BorderColour (e.g. the
-    // layout designer's selection highlight) still recolours a metre's border.
     public override Color BorderColour
     {
         get => BorderForegroundColour;
@@ -284,9 +259,12 @@ public sealed class MetreControl : Control
 
     private void DrawBottomBorder(int y, int innerWidth)
     {
-        string labelPadded = Text.Length > 0 ? $" {Text} " : string.Empty;
+        string labelPadded = Text.Length > 0 
+            ? $" {Text} " 
+            : string.Empty;
+        
         int labelLength = Math.Min(labelPadded.Length, innerWidth);
-        int leftDashes = (innerWidth - labelLength) / 2;
+        int leftDashes  = (innerWidth - labelLength) / 2;
         int rightDashes = innerWidth - labelLength - leftDashes;
 
         frame.MoveTo(X, y);
@@ -309,45 +287,38 @@ public sealed class MetreControl : Control
         frame.Append('╮');
     }
 
-    /// <summary>
-    /// Formats a series value for the legend. Values span the metre's 0.0 - 1.0 range,
-    /// so they are printed as a percentage.
-    /// </summary>
     public static string FormatLegendPercentage(double value) => $"{value:0.0%}";
 
-    /// <summary>
-    /// The style used to draw the metre cells, matching the style applied to the Chart control.
-    /// </summary>
     public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
 
     protected override void OnDraw()
     {
+        Color[]  colours;
         double[] values;
-        Color[] colours;
         string[] labels;
 
         lock (seriesLock) {
-            values = new double[series.Count];
             colours = new Color[series.Count];
-            labels = new string[series.Count];
+            values  = new double[series.Count];
+            labels  = new string[series.Count];
 
             for (int i = 0; i < series.Count; i++) {
-                values[i] = series[i].Value;
                 colours[i] = series[i].Colour;
-                labels[i] = series[i].Label;
+                values[i]  = series[i].Value;
+                labels[i]  = series[i].Label;
             }
         }
 
-        int innerWidth = Border ? Width - 2 : Width;
+        int innerWidth  = Border ? Width - 2 : Width;
         int innerHeight = Border ? Height - 2 : Height;
-        int legendRows = ShowLegend && labels.Length > 0 ? 1 : 0;
-        int metreRows = Math.Min(Rows, innerHeight - legendRows);
+        int legendRows  = ShowLegend && labels.Length > 0 ? 1 : 0;
+        int metreRows   = Math.Min(Rows, innerHeight - legendRows);
 
         if (innerWidth <= 0 || metreRows <= 0) {
             return;
         }
 
-        int subCells = SubCellsPerCell;
+        int subCells      = SubCellsPerCell;
         int totalSubCells = innerWidth * subCells;
 
         if (subCellOwners.Length != totalSubCells) {
@@ -389,7 +360,11 @@ public sealed class MetreControl : Control
                 frame.Append('│');
             }
 
-            AppendLegendRow(innerWidth, colours, labels, values);
+            AppendLegendRow(
+                innerWidth, 
+                colours, 
+                labels, 
+                values);
 
             if (Border) {
                 SetBorderColour();
@@ -407,16 +382,8 @@ public sealed class MetreControl : Control
         Terminal.Write(frame.AsSpan());
     }
 
-    /// <summary>
-    /// The height the control needs to render <see cref="Rows"/> metre rows, the legend
-    /// row and, when enabled, the border rows.
-    /// </summary>
     public int RequiredHeight => Rows + (ShowLegend ? 1 : 0) + (Border ? 2 : 0);
 
-    /// <summary>
-    /// The height of the metre in rows, i.e. 1 row or 5 rows. Every row renders the same
-    /// bar. Setting this resets <see cref="Control.Height"/> to <see cref="RequiredHeight"/>.
-    /// </summary>
     public int Rows
     {
         get => rows;
@@ -424,7 +391,7 @@ public sealed class MetreControl : Control
             int clamped = Math.Max(1, value);
 
             if (rows != clamped) {
-                rows = clamped;
+                rows   = clamped;
                 Height = RequiredHeight;
             }
         }
@@ -477,22 +444,17 @@ public sealed class MetreControl : Control
         Draw();
     }
 
-    /// <summary>
-    /// Draws the legend row directly below the metre. Toggling this resets
-    /// <see cref="Control.Height"/> to <see cref="RequiredHeight"/>.
-    /// </summary>
     public bool ShowLegend
     {
         get => showLegend;
         set {
             if (showLegend != value) {
                 showLegend = value;
-                Height = RequiredHeight;
+                Height     = RequiredHeight;
             }
         }
     }
 
-    // Bars have no sub-cell resolution; braille and half blocks split a cell in two.
     private int SubCellsPerCell => MetreStyle == MetreControlStyle.Bars ? 1 : 2;
 
     public string Text { get; set; } = string.Empty;

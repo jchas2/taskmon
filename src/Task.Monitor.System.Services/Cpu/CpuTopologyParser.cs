@@ -25,11 +25,11 @@ public static class CpuTopologyParser
         // Decodes a PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX buffer from the
         // call to GetLogicalProcessorInformationEx().
         uint sockets = 0;
-        ulong l1 = 0;
-        ulong l2 = 0;
-        ulong l3 = 0;
+        ulong l1     = 0;
+        ulong l2     = 0;
+        ulong l3     = 0;
 
-        int cursor = 0;
+        int cursor   = 0;
 
         while (cursor + HeaderSize <= buffer.Length)
         {
@@ -63,6 +63,10 @@ public static class CpuTopologyParser
             cursor += (int)size;
         }
 
-        return new CpuTopology(sockets, l1, l2, l3);
+        return new CpuTopology(
+            sockets, 
+            l1, 
+            l2, 
+            l3);
     }
 }

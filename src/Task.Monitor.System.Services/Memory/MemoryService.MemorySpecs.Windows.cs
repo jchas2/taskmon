@@ -8,7 +8,7 @@ namespace Task.Monitor.System.Services.Memory;
 public partial class MemoryService
 {
 #if __WIN32__
-    private const uint RawSmbiosProvider = 0x5253_4D42;
+    private const uint RawSmbiosProvider     = 0x5253_4D42;
     private const int  RawSmbiosHeaderLength = 8;
     
     private void OnStartMemorySpecs(MemorySpecs specs)
@@ -20,10 +20,11 @@ public partial class MemoryService
         
         byte majorVersion = rawData[1];
         byte minorVersion = rawData[2];
-        uint tableLength = BinaryPrimitives.ReadUInt32LittleEndian(rawData.AsSpan(4));
+        uint tableLength  = BinaryPrimitives.ReadUInt32LittleEndian(rawData.AsSpan(4));
         
         int available = rawData.Length - RawSmbiosHeaderLength;
-        int length = (int)Math.Min(tableLength, (uint)Math.Max(available, 0));
+        int length    = (int)Math.Min(tableLength, (uint)Math.Max(available, 0));
+        
         ReadOnlySpan<byte> table = rawData.AsSpan(RawSmbiosHeaderLength, length);
 
         specs.Devices.AddRange(MemoryDeviceParser.ParseTable(table));

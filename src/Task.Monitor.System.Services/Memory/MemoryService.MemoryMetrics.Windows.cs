@@ -18,24 +18,24 @@ public partial class MemoryService
                 nameof(SysInfoApi.GlobalMemoryStatusEx), 
                 $"Failed {nameof(OnDoWorkMemoryMetrics)}");
             
-            memoryInfo.Metrics.AvailablePageFile = 0;
-            memoryInfo.Metrics.AvailablePhysical = 0;
-            memoryInfo.Metrics.AvailableVirtual = 0;
-            memoryInfo.Metrics.TotalPageFile = 0;
-            memoryInfo.Metrics.TotalPhysical = 0;
-            memoryInfo.Metrics.TotalVirtual = 0;
+            memoryInfo.Metrics.AvailablePageFile      = 0;
+            memoryInfo.Metrics.AvailablePhysical      = 0;
+            memoryInfo.Metrics.AvailableVirtual       = 0;
+            memoryInfo.Metrics.TotalPageFile          = 0;
+            memoryInfo.Metrics.TotalPhysical          = 0;
+            memoryInfo.Metrics.TotalVirtual           = 0;
             memoryInfo.Metrics.AvailablePageFileRatio = 0.0;
             memoryInfo.Metrics.AvailablePhysicalRatio = 0.0;
-            memoryInfo.Metrics.AvailableVirtualRatio = 0.0;
+            memoryInfo.Metrics.AvailableVirtualRatio  = 0.0;
             return;
         }
 
         memoryInfo.Metrics.AvailablePageFile = memoryStatus.ullAvailPageFile;
         memoryInfo.Metrics.AvailablePhysical = memoryStatus.ullAvailPhys;
-        memoryInfo.Metrics.AvailableVirtual = memoryStatus.ullAvailVirtual;
-        memoryInfo.Metrics.TotalPageFile = memoryStatus.ullTotalPageFile;
-        memoryInfo.Metrics.TotalPhysical = memoryStatus.ullTotalPhys;
-        memoryInfo.Metrics.TotalVirtual = memoryStatus.ullTotalVirtual;
+        memoryInfo.Metrics.AvailableVirtual  = memoryStatus.ullAvailVirtual;
+        memoryInfo.Metrics.TotalPageFile     = memoryStatus.ullTotalPageFile;
+        memoryInfo.Metrics.TotalPhysical     = memoryStatus.ullTotalPhys;
+        memoryInfo.Metrics.TotalVirtual      = memoryStatus.ullTotalVirtual;
 
         memoryInfo.Metrics.AvailablePageFileRatio = memoryStatus.ullAvailPageFile > 0
             ? 1.0 - memoryStatus.ullAvailPageFile / (double)memoryStatus.ullTotalPageFile
@@ -72,7 +72,7 @@ public partial class MemoryService
         SysInfoApi.GetSystemInfo(&sysInfo);
         nuint pageSize = sysInfo.dwPageSize;
 
-        ulong freeBytes = (memListInfo.FreePageCount + memListInfo.ZeroedPageCount) * pageSize;
+        ulong freeBytes     = (memListInfo.FreePageCount + memListInfo.ZeroedPageCount) * pageSize;
         ulong modifiedBytes = (memListInfo.ModifiedPageCount + memListInfo.ModifiedNoWritePageCount) * pageSize;
 
         // Standby bytes across all 8 priority levels (0 to 7)
@@ -87,16 +87,16 @@ public partial class MemoryService
         ulong totalBytes = memStatus.ullTotalPhys;
         ulong inUseBytes = totalBytes - (standbyBytes + freeBytes + modifiedBytes);
 
-        memoryInfo.Metrics.InUseBytes = inUseBytes;
+        memoryInfo.Metrics.InUseBytes    = inUseBytes;
         memoryInfo.Metrics.ModifiedBytes = modifiedBytes;
-        memoryInfo.Metrics.StandbyBytes = standbyBytes;
-        memoryInfo.Metrics.FreeBytes = freeBytes;
+        memoryInfo.Metrics.StandbyBytes  = standbyBytes;
+        memoryInfo.Metrics.FreeBytes     = freeBytes;
 
         if (totalBytes > 0) {
-            memoryInfo.Metrics.InUseBytesRatio = (double)inUseBytes / (double)totalBytes;
+            memoryInfo.Metrics.InUseBytesRatio    = (double)inUseBytes / (double)totalBytes;
             memoryInfo.Metrics.ModifiedBytesRatio = (double)modifiedBytes / (double)totalBytes;
-            memoryInfo.Metrics.StandbyBytesRatio = (double)standbyBytes / (double)totalBytes;
-            memoryInfo.Metrics.FreeBytesRatio = (double)freeBytes / (double)totalBytes;
+            memoryInfo.Metrics.StandbyBytesRatio  = (double)standbyBytes / (double)totalBytes;
+            memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / (double)totalBytes;
         }
     }
     

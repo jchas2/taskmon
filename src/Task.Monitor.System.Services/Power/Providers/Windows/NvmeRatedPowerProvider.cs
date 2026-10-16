@@ -21,18 +21,18 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
             }
 
             if (!cache.TryGetValue(disk.Index, out double? watts)) {
-                watts = ReadPeakWatts(disk.Index);
+                watts             = ReadPeakWatts(disk.Index);
                 cache[disk.Index] = watts;
             }
 
             if (watts is { } value) {
                 yield return new PowerReading {
-                    Component = PowerComponent.Disk,
+                    Component   = PowerComponent.Disk,
                     ComponentId = disk.Index.ToString(),
-                    Rail = "Drive",
-                    Watts = value,
-                    IsRated = true,
-                    Source = PowerSource.NvmeRated
+                    Rail        = "Drive",
+                    Watts       = value,
+                    IsRated     = true,
+                    Source      = PowerSource.NvmeRated
                 };
             }
         }

@@ -19,7 +19,7 @@ public static class ExceptionHelper
         Exception? innerEx = ex.InnerException;
 
         int maxExceptions = 64;
-        int count = 0;
+        int count         = 0;
         
         while (innerEx != null && ++count < maxExceptions) {
             Trace.WriteLine($"--- INNER EXCEPTION [{ex.GetType()}]");

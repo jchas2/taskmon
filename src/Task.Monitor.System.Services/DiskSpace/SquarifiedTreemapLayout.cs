@@ -16,18 +16,24 @@ public static class SquarifiedTreemapLayout
         }
 
         double totalWeight = positive.Sum(item => item.Weight);
-        double totalArea = (double)bounds.Width * bounds.Height;
-        double[] areas = [.. positive.Select(item => item.Weight / totalWeight * totalArea)];
+        double totalArea   = (double)bounds.Width * bounds.Height;
+        double[] areas     = [.. positive.Select(item => item.Weight / totalWeight * totalArea)];
 
         List<TreemapCell> results = [];
-        SquarifyAreas(positive, areas, bounds, results);
+        
+        SquarifyAreas(
+            positive, 
+            areas, 
+            bounds, 
+            results);
+        
         return results;
     }
 
     private static void SquarifyAreas(
         List<TreemapItem> items, 
-        double[] areas, 
-        Rectangle remaining, 
+        double[]          areas, 
+        Rectangle         remaining, 
         List<TreemapCell> results)
     {
         int index = 0;
@@ -39,16 +45,16 @@ public static class SquarifiedTreemapLayout
                 return;
             }
 
-            int rowEnd = index + 1;
+            int    rowEnd  = index + 1;
             double rowArea = areas[index];
-            double rowMin = areas[index];
-            double rowMax = areas[index];
+            double rowMin  = areas[index];
+            double rowMax  = areas[index];
 
             while (rowEnd < items.Count) {
-                double candidate = areas[rowEnd];
+                double candidate   = areas[rowEnd];
                 double nextRowArea = rowArea + candidate;
-                double nextMin = Math.Min(rowMin, candidate);
-                double nextMax = Math.Max(rowMax, candidate);
+                double nextMin     = Math.Min(rowMin, candidate);
+                double nextMax     = Math.Max(rowMax, candidate);
 
                 if (WorstRatio(
                         nextRowArea, 
@@ -65,8 +71,8 @@ public static class SquarifiedTreemapLayout
                 }
 
                 rowArea = nextRowArea;
-                rowMin = nextMin;
-                rowMax = nextMax;
+                rowMin  = nextMin;
+                rowMax  = nextMax;
                 rowEnd++;
             }
 
@@ -93,7 +99,7 @@ public static class SquarifiedTreemapLayout
             return double.MaxValue;
         }
 
-        double sideSquared = sideLength * sideLength;
+        double sideSquared    = sideLength * sideLength;
         double rowAreaSquared = rowArea * rowArea;
 
         return Math.Max(
@@ -103,19 +109,17 @@ public static class SquarifiedTreemapLayout
 
     private static Rectangle LayoutRow(
         List<TreemapItem> items,
-        double[] areas,
-        int start,
-        int end,
-        double rowArea,
-        Rectangle remaining,
+        double[]          areas,
+        int               start,
+        int               end,
+        double            rowArea,
+        Rectangle         remaining,
         List<TreemapCell> results)
     {
-        double sideLength = Math.Min(remaining.Width, remaining.Height);
+        double sideLength     = Math.Min(remaining.Width, remaining.Height);
         double thicknessExact = rowArea / sideLength;
-
-        bool vertical = remaining.Width >= remaining.Height;
-
-        int thickness = Math.Max(1, (int)Math.Round(thicknessExact));
+        bool   vertical       = remaining.Width >= remaining.Height;
+        int    thickness      = Math.Max(1, (int)Math.Round(thicknessExact));
         
         thickness = Math.Min(thickness, vertical 
             ? remaining.Width 

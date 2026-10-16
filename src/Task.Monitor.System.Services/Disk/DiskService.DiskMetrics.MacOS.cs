@@ -6,7 +6,7 @@ namespace Task.Monitor.System.Services.Disk;
 
 public partial class DiskService
 {
-    private const double BytesPerMegabyte = 1024.0 * 1024.0;
+    private const double BytesPerMegabyte     = 1024.0 * 1024.0;
     private const double NanosecondsPerSecond = 1_000_000_000.0;
 
     private sealed class DiskDeviceState
@@ -90,7 +90,14 @@ public partial class DiskService
         long writeTime  = ReadStat(stats, "Total Time (Write)");
 
         live.Add(bsdName);
-        ApplyDiskSample(bsdName, index, readBytes, writeBytes, readTime, writeTime);
+        
+        ApplyDiskSample(
+            bsdName, 
+            index, 
+            readBytes, 
+            writeBytes, 
+            readTime, 
+            writeTime);
     }
 
     private static long ReadStat(Dictionary<string, nint> stats, string key)
@@ -105,11 +112,11 @@ public partial class DiskService
 
     private void ApplyDiskSample(
         string bsdName,
-        int index,
-        long readBytes,
-        long writeBytes,
-        long readTime,
-        long writeTime)
+        int    index,
+        long   readBytes,
+        long   writeBytes,
+        long   readTime,
+        long   writeTime)
     {
         if (!diskStates.TryGetValue(bsdName, out DiskDeviceState? state)) {
             state = new DiskDeviceState();
@@ -120,7 +127,14 @@ public partial class DiskService
         long now = Stopwatch.GetTimestamp();
 
         if (!state.Primed) {
-            RebaseDisk(state, readBytes, writeBytes, readTime, writeTime, now);
+            RebaseDisk(
+                state, 
+                readBytes, 
+                writeBytes, 
+                readTime, 
+                writeTime, 
+                now);
+            
             state.Primed = true;
             return;
         }
@@ -136,7 +150,7 @@ public partial class DiskService
         long readTimeDelta  = readTime - state.PrevReadTimeNanos;
         long writeTimeDelta = writeTime - state.PrevWriteTimeNanos;
 
-        state.ReadBytesPerSecond = readDelta > 0 ? readDelta / elapsedSeconds : 0.0;
+        state.ReadBytesPerSecond  = readDelta > 0 ? readDelta / elapsedSeconds : 0.0;
         state.WriteBytesPerSecond = writeDelta > 0 ? writeDelta / elapsedSeconds : 0.0;
 
         if (readDelta > 0) {
@@ -147,14 +161,20 @@ public partial class DiskService
             state.TotalBytesWritten += (ulong)writeDelta;
         }
 
-        double busyNanos = (readTimeDelta > 0 ? readTimeDelta : 0) + (writeTimeDelta > 0 ? writeTimeDelta : 0);
+        double busyNanos    = (readTimeDelta > 0 ? readTimeDelta : 0) + (writeTimeDelta > 0 ? writeTimeDelta : 0);
         double elapsedNanos = elapsedSeconds * NanosecondsPerSecond;
 
         state.PercentActiveTime = elapsedNanos > 0.0
             ? Math.Clamp(100.0 * busyNanos / elapsedNanos, 0.0, 100.0)
             : 0.0;
 
-        RebaseDisk(state, readBytes, writeBytes, readTime, writeTime, now);
+        RebaseDisk(
+            state, 
+            readBytes, 
+            writeBytes, 
+            readTime, 
+            writeTime, 
+            now);
     }
 
     private static void RebaseDisk(
@@ -199,8 +219,8 @@ public partial class DiskService
 
     private void BuildDiskMetrics(DiskMetrics metrics)
     {
-        ulong totalRead = 0;
-        ulong totalWritten = 0;
+        ulong  totalRead = 0;
+        ulong  totalWritten = 0;
         double totalReadPerSec = 0.0;
         double totalWritePerSec = 0.0;
         double busiest = 0.0;
@@ -220,10 +240,11 @@ public partial class DiskService
 
             metrics.Devices.Add(device);
 
-            totalRead += state.TotalBytesRead;
-            totalWritten += state.TotalBytesWritten;
-            totalReadPerSec += state.ReadBytesPerSecond;
+            totalRead        += state.TotalBytesRead;
+            totalWritten     += state.TotalBytesWritten;
+            totalReadPerSec  += state.ReadBytesPerSecond;
             totalWritePerSec += state.WriteBytesPerSecond;
+            
             busiest = Math.Max(busiest, state.PercentActiveTime);
         }
 

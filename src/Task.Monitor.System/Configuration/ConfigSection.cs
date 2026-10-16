@@ -7,6 +7,7 @@ namespace Task.Monitor.System.Configuration;
 public sealed class ConfigSection
 {
     private string name = string.Empty;
+    
     private readonly Dictionary<string, string> keys;
 
     internal ConfigSection() => keys = new Dictionary<string, string>();
@@ -16,7 +17,7 @@ public sealed class ConfigSection
         ArgumentException.ThrowIfNullOrEmpty(name);
         
         this.name = name;
-        keys = new Dictionary<string, string>();
+        keys      = new Dictionary<string, string>();
     }
     
     public ConfigSection Add(string key, string value)

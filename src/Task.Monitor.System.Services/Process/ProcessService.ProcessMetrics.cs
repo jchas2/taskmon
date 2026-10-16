@@ -10,16 +10,17 @@ public partial class ProcessService
     private static readonly Dictionary<int, double> NoGpuPercent = new();
 
     private readonly Dictionary<int, ProcessSampleState> sampleStates = new(InitialCapacity);
-    private readonly List<int> stalePids = new(InitialCapacity);
+    private readonly List<int>                           stalePids    = new(InitialCapacity);
+    
     private int generation;
 
     // Platform-neutral metrics core: turns a per-platform list of ProcessSample into ProcessEntry
     // rows, applying rates, averages and power classification. The only platform-specific input is
     // how the samples (and the optional GPU-percent map) are gathered.
     private void BuildMetrics(
-        ProcessMetrics metrics,
-        ProcessSpecs specs,
-        List<ProcessSample> samples,
+        ProcessMetrics          metrics,
+        ProcessSpecs            specs,
+        List<ProcessSample>     samples,
         Dictionary<int, double> gpuPercentByPid)
     {
         long now = Stopwatch.GetTimestamp();
@@ -92,11 +93,11 @@ public partial class ProcessService
         };
 
     private static void ApplyRates(
-        ProcessEntry entry,
+        ProcessEntry       entry,
         ProcessSampleState state,
-        ProcessSample sample,
-        long now,
-        ProcessSpecs specs)
+        ProcessSample      sample,
+        long               now,
+        ProcessSpecs       specs)
     {
         if (!state.Primed) {
             Rebase(state, sample, now);

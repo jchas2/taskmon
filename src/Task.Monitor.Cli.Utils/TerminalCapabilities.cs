@@ -20,7 +20,7 @@ public static class TerminalCapabilities
         "GHOSTTY_RESOURCES_DIR",
         "GHOSTTY_BIN_DIR",
         "KITTY_WINDOW_ID",
-        "WT_SESSION",          // Windows Terminal.
+        "WT_SESSION",                   // Windows Terminal.
         "WEZTERM_PANE",
         "ALACRITTY_WINDOW_ID",
         "ITERM_SESSION_ID",

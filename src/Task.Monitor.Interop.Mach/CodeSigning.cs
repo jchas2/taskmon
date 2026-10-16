@@ -4,8 +4,8 @@ namespace Task.Monitor.Interop.Mach;
 
 public static class CodeSigning
 {
-    private const int  errSecSuccess = 0;
-    private const uint kSecCSDefaultFlags = 0;
+    private const int  errSecSuccess            = 0;
+    private const uint kSecCSDefaultFlags       = 0;
     private const uint kSecCSSigningInformation = 1 << 1;
 
     private static readonly Lazy<nint> CertificatesKey = new(() =>
@@ -35,6 +35,7 @@ public static class CodeSigning
         }
 
         int status = SecStaticCodeCreateWithPath(url, kSecCSDefaultFlags, out nint staticCodeRef);
+        
         using CFScope staticCode = new(staticCodeRef);
 
         if (status != errSecSuccess) {
@@ -42,6 +43,7 @@ public static class CodeSigning
         }
 
         status = SecCodeCopySigningInformation(staticCode, kSecCSSigningInformation, out nint informationRef);
+        
         using CFScope information = new(informationRef);
 
         if (status != errSecSuccess) {

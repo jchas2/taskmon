@@ -11,79 +11,77 @@ namespace Task.Monitor.Gui.Controls.Processes;
 
 public sealed partial class ProcessControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ListView sortView;
-    private readonly ListView processView;
-
-    private List<ProcessEntry> allProcesses = [];
-
-    private ControlMode mode = ControlMode.None;
-    private Columns sortColumn;
-    private readonly Lock allProcessesLock;
-    private bool freezeUpdates = false;
-    private ulong totalPhysicalMemory;
-    private int numberOfProcesses = 0;
-
-    private const int SortControlWidth = 20;
-    private const int ControlGutter = 1;
+    private const int SortControlWidth         = 20;
+    private const int ControlGutter            = 1;
     private const int InvalidSelectedItemIndex = -1;
 
     private int lastKnownProcessId = InvalidSelectedItemIndex;
-
+    
     // TODO: Refactor into common for sharing across all sortable, scrollable lists.
     public const string DefaultFooterText = "s Sort     ↑ ↓ PgUp PgDn Scroll";
 
-    public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
-    public event EventHandler<int>? SelectedProcessIdChanged;
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          sortView;
+    private readonly ListView          processView;
+    private readonly Lock              allProcessesLock;
 
-    public ProcessControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+    private List<ProcessEntry> allProcesses = [];
+    private ControlMode        mode         = ControlMode.None;
+    
+    private Columns sortColumn;
+    
+    private bool freezeUpdates    = false;
+    private int numberOfProcesses = 0;
+
+    private ulong totalPhysicalMemory;
+
+    public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
+    public event EventHandler<int>?                   SelectedProcessIdChanged;
+
+    public ProcessControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
         
-        Statistics sortStatistic = appConfig.SortColumn;
         numberOfProcesses = appConfig.NumberOfProcesses;
-        allProcessesLock = new Lock();
+        allProcessesLock  = new Lock();
 
-        sortColumn = sortStatistic switch {
-            Statistics.Pid => Columns.Pid,
+        sortColumn = appConfig.SortColumn switch {
+            Statistics.Pid     => Columns.Pid,
             Statistics.Process => Columns.Process,
-            Statistics.User => Columns.User,
-            Statistics.Pri => Columns.Priority,
-            Statistics.Cpu => Columns.Cpu,
-            Statistics.AvgCpu => Columns.AvgCpu,
-            Statistics.MaxCpu => Columns.MaxCpu,
-            Statistics.Thrd => Columns.Threads,
-            Statistics.Gpu => Columns.Gpu,
-            Statistics.AvgGpu => Columns.AvgGpu,
-            Statistics.MaxGpu => Columns.MaxGpu,
-            Statistics.Mem => Columns.Memory,
-            Statistics.AvgMem => Columns.AvgMemory,
-            Statistics.MaxMem => Columns.MaxMemory,
-            Statistics.Disk => Columns.Disk,
+            Statistics.User    => Columns.User,
+            Statistics.Pri     => Columns.Priority,
+            Statistics.Cpu     => Columns.Cpu,
+            Statistics.AvgCpu  => Columns.AvgCpu,
+            Statistics.MaxCpu  => Columns.MaxCpu,
+            Statistics.Thrd    => Columns.Threads,
+            Statistics.Gpu     => Columns.Gpu,
+            Statistics.AvgGpu  => Columns.AvgGpu,
+            Statistics.MaxGpu  => Columns.MaxGpu,
+            Statistics.Mem     => Columns.Memory,
+            Statistics.AvgMem  => Columns.AvgMemory,
+            Statistics.MaxMem  => Columns.MaxMemory,
+            Statistics.Disk    => Columns.Disk,
             Statistics.AvgDisk => Columns.AvgDisk,
             Statistics.MaxDisk => Columns.MaxDisk,
-            Statistics.Power => Columns.Power,
-            Statistics.Path => Columns.CommandLine,
-            _ => Columns.Cpu
+            Statistics.Power   => Columns.Power,
+            Statistics.Path    => Columns.CommandLine,
+                             _ => Columns.Cpu
         };
 
         sortView = new ListView(terminal) {
-            Visible = mode == ControlMode.SortSelection,
-            TabStop = true,
+            Visible  = mode == ControlMode.SortSelection,
+            TabStop  = true,
             TabIndex = 1
         };
 
         sortView.ColumnHeaders.Add(new ListViewColumnHeader("SORT BY"));
 
         processView = new ListView(terminal) {
-            Visible = true,
-            TabStop = true,
+            Visible  = true,
+            TabStop  = true,
             TabIndex = 2
         };
 
@@ -253,16 +251,16 @@ public sealed partial class ProcessControl : Control
         ListView[] listViews = [sortView, processView];
 
         foreach (ListView listView in listViews) {
-            listView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-            listView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-            listView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-            listView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+            listView.BorderForegroundColour            = appConfig.Theme.ChartBorderForeground;
+            listView.BorderBackgroundColour            = appConfig.Theme.ChartBorderBackground;
+            listView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+            listView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
             listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
             listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-            listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-            listView.ForegroundColour = appConfig.Theme.ListViewForeground;
-            listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-            listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
+            listView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+            listView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+            listView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+            listView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
 
             foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
                 columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
@@ -274,10 +272,10 @@ public sealed partial class ProcessControl : Control
         
         processView.ShowCheckboxes = appConfig.MultiSelectProcesses;
 
-        sortView.ItemSelected += SortViewOnItemSelected;
-        processView.ItemSelected += ProcessViewOnItemSelected;
-        processView.ItemClicked += ProcessViewOnItemClicked;
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+        sortView.ItemSelected                   += SortViewOnItemSelected;
+        processView.ItemSelected                += ProcessViewOnItemSelected;
+        processView.ItemClicked                 += ProcessViewOnItemClicked;
 
         LoadSortItems();
         
@@ -286,9 +284,9 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnResize()
     {
-        sortView.X = X;
-        sortView.Y = Y;
-        sortView.Width = SortControlWidth;
+        sortView.X      = X;
+        sortView.Y      = Y;
+        sortView.Width  = SortControlWidth;
         sortView.Height = Height;
         sortView.ColumnHeaders[0].Width = SortControlWidth - 2;
 
@@ -296,45 +294,46 @@ public sealed partial class ProcessControl : Control
         int pWidth = Width;
 
         if (mode == ControlMode.SortSelection) {
-            pX = sortView.X + sortView.Width + ControlGutter;
+            pX     = sortView.X + sortView.Width + ControlGutter;
             pWidth = Width - (sortView.Width + ControlGutter);
         }
 
-        processView.X = pX;
-        processView.Y = Y;
+        processView.X     = pX;
+        processView.Y     = Y;
         processView.Width = pWidth;
         processView.Height = Height;
         
         int SetWidth(Columns column, int width, bool rightAligned = false)
         {
             int effectiveWidth = IsColumnVisible(column) ? width : 0;
-            processView.ColumnHeaders[(int)column].Width = effectiveWidth;
+            processView.ColumnHeaders[(int)column].Width        = effectiveWidth;
             processView.ColumnHeaders[(int)column].RightAligned = rightAligned;
             return effectiveWidth;
         }
 
         int total =
-            SetWidth(Columns.Process, ColumnProcessWidth) +
-            SetWidth(Columns.Pid, ColumnPidWidth) +
-            SetWidth(Columns.User, ColumnUserWidth) +
-            SetWidth(Columns.Priority, ColumnPriorityWidth, rightAligned: true) +
-            SetWidth(Columns.Cpu, ColumnCpuWidth, rightAligned: true) +
-            SetWidth(Columns.AvgCpu, ColumnAvgCpuWidth, rightAligned: true) +
-            SetWidth(Columns.MaxCpu, ColumnMaxCpuWidth, rightAligned: true) +
-            SetWidth(Columns.Threads, ColumnThreadsWidth, rightAligned: true) +
-            SetWidth(Columns.Gpu, ColumnGpuWidth, rightAligned: true) +
-            SetWidth(Columns.AvgGpu, ColumnAvgGpuWidth, rightAligned: true) +
-            SetWidth(Columns.MaxGpu, ColumnMaxGpuWidth, rightAligned: true) +
-            SetWidth(Columns.Memory, ColumnMemoryWidth, rightAligned: true) +
+            SetWidth(Columns.Process,   ColumnProcessWidth)                       +
+            SetWidth(Columns.Pid,       ColumnPidWidth)                           +
+            SetWidth(Columns.User,      ColumnUserWidth)                          +
+            SetWidth(Columns.Priority,  ColumnPriorityWidth,  rightAligned: true) +
+            SetWidth(Columns.Cpu,       ColumnCpuWidth,       rightAligned: true) +
+            SetWidth(Columns.AvgCpu,    ColumnAvgCpuWidth,    rightAligned: true) +
+            SetWidth(Columns.MaxCpu,    ColumnMaxCpuWidth,    rightAligned: true) +
+            SetWidth(Columns.Threads,   ColumnThreadsWidth,   rightAligned: true) +
+            SetWidth(Columns.Gpu,       ColumnGpuWidth,       rightAligned: true) +
+            SetWidth(Columns.AvgGpu,    ColumnAvgGpuWidth,    rightAligned: true) +
+            SetWidth(Columns.MaxGpu,    ColumnMaxGpuWidth,    rightAligned: true) +
+            SetWidth(Columns.Memory,    ColumnMemoryWidth,    rightAligned: true) +
             SetWidth(Columns.AvgMemory, ColumnAvgMemoryWidth, rightAligned: true) +
             SetWidth(Columns.MaxMemory, ColumnMaxMemoryWidth, rightAligned: true) +
-            SetWidth(Columns.Disk, ColumnDiskWidth, rightAligned: true) +
-            SetWidth(Columns.AvgDisk, ColumnAvgDiskWidth, rightAligned: true) +
-            SetWidth(Columns.MaxDisk, ColumnMaxDiskWidth, rightAligned: true) +
-            SetWidth(Columns.Power, ColumnPowerWidth);
+            SetWidth(Columns.Disk,      ColumnDiskWidth,      rightAligned: true) +
+            SetWidth(Columns.AvgDisk,   ColumnAvgDiskWidth,   rightAligned: true) +
+            SetWidth(Columns.MaxDisk,   ColumnMaxDiskWidth,   rightAligned: true) +
+            SetWidth(Columns.Power,     ColumnPowerWidth);
 
-        int processViewWidth =
-            processView.ShowCheckboxes ? processView.Width - ListView.CheckboxWidth - 2 : processView.Width - 2;
+        int processViewWidth = processView.ShowCheckboxes 
+            ? processView.Width - ListView.CheckboxWidth - 2 
+            : processView.Width - 2;
 
         int commandLineWidth = total + ColumnCommandlineWidth < processViewWidth
             ? processViewWidth - total
@@ -348,10 +347,10 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnUnload()
     {
-        sortView.ItemSelected -= SortViewOnItemSelected;
-        processView.ItemSelected -= ProcessViewOnItemSelected;
-        processView.ItemClicked -= ProcessViewOnItemClicked;
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+        sortView.ItemSelected                   -= SortViewOnItemSelected;
+        processView.ItemSelected                -= ProcessViewOnItemSelected;
+        processView.ItemClicked                 -= ProcessViewOnItemClicked;
 
         base.OnUnload();
     }
@@ -483,24 +482,24 @@ public sealed partial class ProcessControl : Control
     }
     
     private static Statistics ToStatistic(Columns column) => column switch {
-        Columns.Process => Statistics.Process,
-        Columns.Pid => Statistics.Pid,
-        Columns.User => Statistics.User,
-        Columns.Priority => Statistics.Pri,
-        Columns.Cpu => Statistics.Cpu,
-        Columns.AvgCpu => Statistics.AvgCpu,
-        Columns.MaxCpu => Statistics.MaxCpu,
-        Columns.Threads => Statistics.Thrd,
-        Columns.Gpu => Statistics.Gpu,
-        Columns.AvgGpu => Statistics.AvgGpu,
-        Columns.MaxGpu => Statistics.MaxGpu,
-        Columns.Memory => Statistics.Mem,
-        Columns.AvgMemory => Statistics.AvgMem,
-        Columns.MaxMemory => Statistics.MaxMem,
-        Columns.Disk => Statistics.Disk,
-        Columns.AvgDisk => Statistics.AvgDisk,
-        Columns.MaxDisk => Statistics.MaxDisk,
-        Columns.Power => Statistics.Power,
+        Columns.Process     => Statistics.Process,
+        Columns.Pid         => Statistics.Pid,
+        Columns.User        => Statistics.User,
+        Columns.Priority    => Statistics.Pri,
+        Columns.Cpu         => Statistics.Cpu,
+        Columns.AvgCpu      => Statistics.AvgCpu,
+        Columns.MaxCpu      => Statistics.MaxCpu,
+        Columns.Threads     => Statistics.Thrd,
+        Columns.Gpu         => Statistics.Gpu,
+        Columns.AvgGpu      => Statistics.AvgGpu,
+        Columns.MaxGpu      => Statistics.MaxGpu,
+        Columns.Memory      => Statistics.Mem,
+        Columns.AvgMemory   => Statistics.AvgMem,
+        Columns.MaxMemory   => Statistics.MaxMem,
+        Columns.Disk        => Statistics.Disk,
+        Columns.AvgDisk     => Statistics.AvgDisk,
+        Columns.MaxDisk     => Statistics.MaxDisk,
+        Columns.Power       => Statistics.Power,
         Columns.CommandLine => Statistics.Path,
         _ => default
     };
@@ -522,8 +521,7 @@ public sealed partial class ProcessControl : Control
         if (!decorate) {
             processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.HeaderBackground;
             processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.HeaderForeground;
-            
-            processView.ColumnHeaders[(int)sortColumn].Text = sortColumn.GetTitle();
+            processView.ColumnHeaders[(int)sortColumn].Text             = sortColumn.GetTitle();
         }
         else {
             processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.BackgroundHighlight;
@@ -573,26 +571,26 @@ public sealed partial class ProcessControl : Control
                     : filteredProcesses.OrderByDescending(key);
 
             List<ProcessEntry> sortedProcesses = (sortColumn switch {
-                Columns.Cpu => Sort(p => p.CpuTimePercent),
-                Columns.AvgCpu => Sort(p => p.CpuTimePercentAvg),
-                Columns.MaxCpu => Sort(p => p.CpuTimePercentMax),
-                Columns.Disk => Sort(p => p.DiskBytesPerSecond),
-                Columns.AvgDisk => Sort(p => p.DiskBytesPerSecondAvg),
-                Columns.MaxDisk => Sort(p => p.DiskBytesPerSecondMax),
-                Columns.Memory => Sort(p => p.UsedMemory),
-                Columns.AvgMemory => Sort(p => p.UsedMemoryAvg),
-                Columns.MaxMemory => Sort(p => p.UsedMemoryMax),
-                Columns.Pid => Sort(p => p.Pid),
-                Columns.Priority => Sort(p => p.BasePriority),
-                Columns.Process => Sort(p => p.FileDescription),
-                Columns.Threads => Sort(p => p.ThreadCount),
-                Columns.Gpu => Sort(p => p.GpuTimePercent),
-                Columns.AvgGpu => Sort(p => p.GpuTimePercentAvg),
-                Columns.MaxGpu => Sort(p => p.GpuTimePercentMax),
-                Columns.User => Sort(p => p.UserName),
-                Columns.Power => Sort(p => (int)p.PowerBucket),
+                Columns.Cpu         => Sort(p => p.CpuTimePercent),
+                Columns.AvgCpu      => Sort(p => p.CpuTimePercentAvg),
+                Columns.MaxCpu      => Sort(p => p.CpuTimePercentMax),
+                Columns.Disk        => Sort(p => p.DiskBytesPerSecond),
+                Columns.AvgDisk     => Sort(p => p.DiskBytesPerSecondAvg),
+                Columns.MaxDisk     => Sort(p => p.DiskBytesPerSecondMax),
+                Columns.Memory      => Sort(p => p.UsedMemory),
+                Columns.AvgMemory   => Sort(p => p.UsedMemoryAvg),
+                Columns.MaxMemory   => Sort(p => p.UsedMemoryMax),
+                Columns.Pid         => Sort(p => p.Pid),
+                Columns.Priority    => Sort(p => p.BasePriority),
+                Columns.Process     => Sort(p => p.FileDescription),
+                Columns.Threads     => Sort(p => p.ThreadCount),
+                Columns.Gpu         => Sort(p => p.GpuTimePercent),
+                Columns.AvgGpu      => Sort(p => p.GpuTimePercentAvg),
+                Columns.MaxGpu      => Sort(p => p.GpuTimePercentMax),
+                Columns.User        => Sort(p => p.UserName),
+                Columns.Power       => Sort(p => (int)p.PowerBucket),
                 Columns.CommandLine => Sort(p => p.CmdLine),
-                _ => filteredProcesses.OrderByDescending(p => p.CpuTimePercent)
+                                  _ => filteredProcesses.OrderByDescending(p => p.CpuTimePercent)
             }).ToList();
 
             if (numberOfProcesses > -1) {

@@ -11,36 +11,42 @@ namespace Task.Monitor.Gui.Controls.Cpu;
 
 public sealed class  CpuCoresControl : Control
 {
-    private const string Title = "CPU CORES";
+    private const string Title         = "CPU CORES";
     private const string MsgNoCoreData = "Per-core CPU data is not available on this OS";
 
-    private const int MinBarWidth = 6;
+    private const int MinBarWidth  = 6;
     private const int PercentWidth = 4;
     private const int ColumnGutter = 2;
 
-    private const double MidLoadThreshold = 0.5;
+    private const double MidLoadThreshold  = 0.5;
     private const double HighLoadThreshold = 0.85;
 
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly AnsiScreenBuffer frame = new();
-
+    private readonly ServiceController  serviceController;
+    private readonly AppConfig          appConfig;
+    
+    private readonly AnsiScreenBuffer   frame  = new();
     private readonly List<MetreControl> metres = [];
-    private string metreSignature = string.Empty;
 
-    private string[] coreNames = [];
-    private double[] coreValues = [];
+    private string metreSignature = string.Empty;
+    private string[] coreNames    = [];
+    private double[] coreValues   = [];
 
     private bool needsClear = true;
+    
+    internal readonly record struct CoreGrid(
+        int Columns,
+        int Rows,
+        int ColumnWidth,
+        int LabelWidth,
+        int BarWidth);
 
     public CpuCoresControl(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
     }
 
     protected override void OnLoad()
@@ -78,14 +84,14 @@ public sealed class  CpuCoresControl : Control
 
             if (snapshot.Cpu is { } cpu && cpu.CoreMetrics.Length > 0) {
                 if (coreValues.Length != cpu.CoreMetrics.Length) {
-                    coreNames = new string[cpu.CoreMetrics.Length];
+                    coreNames  = new string[cpu.CoreMetrics.Length];
                     coreValues = new double[cpu.CoreMetrics.Length];
                     needsClear = true;
                 }
 
                 for (int i = 0; i < cpu.CoreMetrics.Length; i++) {
                     CpuInfo.CpuCoreMetric core = cpu.CoreMetrics[i];
-                    coreNames[i] = string.IsNullOrWhiteSpace(core.Name) ? i.ToString() : core.Name;
+                    coreNames[i]  = string.IsNullOrWhiteSpace(core.Name) ? i.ToString() : core.Name;
                     coreValues[i] = Math.Clamp(core.Value, 0.0, 1.0);
                 }
             }
@@ -105,9 +111,9 @@ public sealed class  CpuCoresControl : Control
 
         DrawBorder();
 
-        int innerLeft = X + 1;
-        int innerTop = Y + 1;
-        int innerWidth = Width - 2;
+        int innerLeft   = X + 1;
+        int innerTop    = Y + 1;
+        int innerWidth  = Width - 2;
         int innerHeight = Height - 2;
 
         if (innerWidth <= 0 || innerHeight <= 0) {
@@ -170,10 +176,10 @@ public sealed class  CpuCoresControl : Control
 
     private void DrawCore(
         MetreControl metre, 
-        int coreIndex, 
-        int left, 
-        int top, 
-        CoreGrid grid)
+        int          coreIndex, 
+        int          left, 
+        int          top, 
+        CoreGrid     grid)
     {
         double value = coreValues[coreIndex];
         string label = $"C{coreNames[coreIndex]}";
@@ -186,9 +192,9 @@ public sealed class  CpuCoresControl : Control
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
 
-        metre.X = left + grid.LabelWidth + 1;
-        metre.Y = top;
-        metre.Width = grid.BarWidth;
+        metre.X          = left + grid.LabelWidth + 1;
+        metre.Y          = top;
+        metre.Width      = grid.BarWidth;
         metre.MetreStyle = appConfig.MetreStyle;
         metre.Series[0].Colour = LoadColour(value);
         metre.SetValue(0, value);
@@ -209,7 +215,7 @@ public sealed class  CpuCoresControl : Control
 
     private void EnsureMetres(CoreGrid grid)
     {
-        int required = Math.Min(coreValues.Length, grid.Columns * grid.Rows);
+        int required     = Math.Min(coreValues.Length, grid.Columns * grid.Rows);
         string signature = $"{required}:{grid.BarWidth}";
 
         if (signature == metreSignature && metres.Count == required) {
@@ -221,10 +227,10 @@ public sealed class  CpuCoresControl : Control
 
         for (int i = 0; i < required; i++) {
             MetreControl metre = new(Terminal) {
-                ShowLegend = false,
-                Rows = 1,
-                BackgroundColour = appConfig.Theme.MetreBackground,
-                ForegroundColour = appConfig.Theme.MetreForeground,
+                ShowLegend             = false,
+                Rows                   = 1,
+                BackgroundColour       = appConfig.Theme.MetreBackground,
+                ForegroundColour       = appConfig.Theme.MetreForeground,
                 BorderForegroundColour = appConfig.Theme.MetreBorderForeground,
                 BorderBackgroundColour = appConfig.Theme.MetreBorderBackground,
             };
@@ -240,36 +246,33 @@ public sealed class  CpuCoresControl : Control
             return new CoreGrid(0, 0, 0, 0, 0);
         }
 
-        int labelWidth = 1 + Math.Max(1, coreCount - 1).ToString().Length;
+        int labelWidth     = 1 + Math.Max(1, coreCount - 1).ToString().Length;
         int minColumnWidth = labelWidth + 1 + MinBarWidth + PercentWidth;
 
         if (innerWidth < minColumnWidth) {
             return new CoreGrid(0, 0, 0, 0, 0);
         }
 
-        int rows = Math.Min(innerHeight, coreCount);
-        int wanted = (coreCount + rows - 1) / rows;
-        int affordable = (innerWidth + ColumnGutter) / (minColumnWidth + ColumnGutter);
-        int columns = Math.Max(1, Math.Min(wanted, affordable));
-
+        int rows        = Math.Min(innerHeight, coreCount);
+        int wanted      = (coreCount + rows - 1) / rows;
+        int affordable  = (innerWidth + ColumnGutter) / (minColumnWidth + ColumnGutter);
+        int columns     = Math.Max(1, Math.Min(wanted, affordable));
         int columnWidth = (innerWidth - (columns - 1) * ColumnGutter) / columns;
-        int barWidth = columnWidth - labelWidth - 1 - PercentWidth;
+        int barWidth    = columnWidth - labelWidth - 1 - PercentWidth;
 
-        return new CoreGrid(columns, rows, columnWidth, labelWidth, barWidth);
+        return new CoreGrid(
+            columns, 
+            rows, 
+            columnWidth, 
+            labelWidth, 
+            barWidth);
     }
-
-    internal readonly record struct CoreGrid(
-        int Columns,
-        int Rows,
-        int ColumnWidth,
-        int LabelWidth,
-        int BarWidth);
-
+    
     private void DrawCentredMessage(
-        int left, 
-        int top, 
-        int width, 
-        int height, 
+        int    left, 
+        int    top, 
+        int    width, 
+        int    height, 
         string message)
     {
         string shown = message.Length > width ? message[..width] : message;
@@ -285,11 +288,11 @@ public sealed class  CpuCoresControl : Control
 
     private void DrawBorder()
     {
-        int innerWidth = Width - 2;
-        string titleLabel = $" {Title} ";
-        int titleLength = Math.Min(titleLabel.Length, innerWidth);
-        int leftDashes = (innerWidth - titleLength) / 2;
-        int rightDashes = innerWidth - titleLength - leftDashes;
+        string titleLabel  = $" {Title} ";
+        int    innerWidth  = Width - 2;
+        int    titleLength = Math.Min(titleLabel.Length, innerWidth);
+        int    leftDashes  = (innerWidth - titleLength) / 2;
+        int    rightDashes = innerWidth - titleLength - leftDashes;
 
         frame.Clear();
         frame.MoveTo(X, Y);

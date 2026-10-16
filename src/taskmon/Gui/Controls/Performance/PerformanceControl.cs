@@ -15,30 +15,30 @@ namespace Task.Monitor.Gui.Controls.Performance;
 public sealed class PerformanceControl : Control
 {
     private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
+    private readonly AppConfig         appConfig;
 
-    private readonly Dictionary<string, Chart> chartCache = new();
+    private readonly Dictionary<string, Chart>   chartCache  = new();
     private readonly Dictionary<string, Control> detailCache = new();
+    private readonly AnsiScreenBuffer            scrollFrame = new();
 
     private List<PerformancePanelControl> panelControls;
-    private PerformancePanelControl activeControl;
+    private PerformancePanelControl       activeControl;
+    
     private bool loaded;
 
-    private readonly AnsiScreenBuffer scrollFrame = new();
-    private int scrollOffset = 0;
-    private int panelColumnWidth = 0;
+    private int scrollOffset      = 0;
+    private int panelColumnWidth  = 0;
     private int visiblePanelCount = 0;
 
     private const int PanelHeight = 7;
 
     public PerformanceControl(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         panelControls = BuildPanels(snapshot: null);
         AttachPanels();
@@ -109,21 +109,20 @@ public sealed class PerformanceControl : Control
         }
 
         foreach (GpuDeviceMetrics device in devices) {
-            long luid = device.AdapterLuid;
-            GpuDevice? spec = snapshot?.Gpu?.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
-            string title = spec?.ToDisplayName() ?? $"GPU {device.Index}";
+            GpuDevice? spec  = snapshot?.Gpu?.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
+            string     title = spec?.ToDisplayName() ?? $"GPU {device.Index}";
 
             panels.Add(MakePanel(
-                $"gpu:{luid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
+                $"gpu:{device.AdapterLuid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
-                    GpuDeviceMetrics? match = s.Gpu?.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
+                    GpuDeviceMetrics? match = s.Gpu?.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
 
                     if (match == null) {
                         return;
                     }
 
                     panel.Line1 = string.Empty;
-                    panel.Line2 = AppendTemperature(match.ToGpuPercentage(), s.Thermal?.Metrics.GpuTemperature(luid));
+                    panel.Line2 = AppendTemperature(match.ToGpuPercentage(), s.Thermal?.Metrics.GpuTemperature(device.AdapterLuid));
                     panel.Line3 = match.ToGpuMemoryRatioFormattedBytes();
                     panel.Line4 = string.Empty;
                     panel.Chart.Add(match.GpuPercentTime);
@@ -154,22 +153,20 @@ public sealed class PerformanceControl : Control
         }
 
         foreach (DiskDeviceMetrics device in devices) {
-            int index = device.Index;
-            DiskDevice? spec = snapshot?.Disk?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == index);
-            string title = spec?.ToDisplayName() ?? $"Disk {index}";
+            DiskDevice? spec  = snapshot?.Disk?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
+            string      title = spec?.ToDisplayName() ?? $"Disk {device.Index}";
 
             panels.Add(MakePanel(
-                $"disk:{index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
+                $"disk:{device.Index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
-                    DiskDeviceMetrics? match = s.Disk?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == index);
+                    DiskDeviceMetrics? match = s.Disk?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
 
                     if (match == null) {
                         return;
                     }
 
                     panel.Line1 = string.Empty;
-                    panel.Line2 = AppendTemperature(
-                        match.ToDiskActiveTimePercentage(), s.Thermal?.Metrics.DiskTemperature(index));
+                    panel.Line2 = AppendTemperature(match.ToDiskActiveTimePercentage(), s.Thermal?.Metrics.DiskTemperature(device.Index));
                     panel.Line3 = match.ToDiskTransferRate();
                     panel.Line4 = string.Empty;
                     panel.Chart.Add(match.ToDiskActiveTimeRatio());
@@ -200,14 +197,13 @@ public sealed class PerformanceControl : Control
         }
 
         foreach (NetworkDeviceMetrics device in devices) {
-            ulong luid = device.InterfaceLuid;
-            NetworkDevice? spec = snapshot?.Network?.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
+            NetworkDevice? spec = snapshot?.Network?.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
             string title = spec?.ToDisplayName() ?? device.ToDisplayName();
 
             panels.Add(MakePanel(
-                $"net:{luid}", title, autoScaleChart: true, Chart.FormatYScaleCompact,
+                $"net:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleCompact,
                 (panel, s) => {
-                    NetworkDeviceMetrics? match = s.Network?.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
+                    NetworkDeviceMetrics? match = s.Network?.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
 
                     if (match == null) {
                         return;
@@ -223,16 +219,18 @@ public sealed class PerformanceControl : Control
     }
 
     private static string AppendTemperature(string line, double? celsius) =>
-        celsius is { } value ? $"{line} ({value.ToTemperatureText()})" : line;
+        celsius is { } value 
+            ? $"{line} ({value.ToTemperatureText()})" 
+            : line;
 
     private PerformancePanelControl MakePanel(
         string key,
         string title,
-        bool autoScaleChart,
+        bool   autoScaleChart,
         Func<double, string> chartFormatter,
         Action<PerformancePanelControl, SystemSnapshot> bind)
     {
-        Chart chart = GetOrCreateChart(key, autoScaleChart, chartFormatter);
+        Chart chart    = GetOrCreateChart(key, autoScaleChart, chartFormatter);
         Control detail = GetOrCreateDetail(key);
 
         PerformancePanelControl panel = new(
@@ -252,17 +250,17 @@ public sealed class PerformanceControl : Control
     private Chart GetOrCreateChart(string key, bool autoScale, Func<double, string> formatter)
     {
         if (chartCache.TryGetValue(key, out Chart? chart)) {
-            chart.AutoScale = autoScale;
+            chart.AutoScale                 = autoScale;
             chart.CustomYAxisScaleFormatter = formatter;
             return chart;
         }
 
         chart = new Chart(Terminal) {
-            Text = string.Empty,
-            LabelSeries = string.Empty,
-            ShowGrid = false,
+            Text           = string.Empty,
+            LabelSeries    = string.Empty,
+            ShowGrid       = false,
             ShowYAxisScale = false,
-            AutoScale = autoScale,
+            AutoScale      = autoScale,
             CustomYAxisScaleFormatter = formatter,
         };
 
@@ -303,7 +301,7 @@ public sealed class PerformanceControl : Control
 
         int separator = key.IndexOf(':');
         string prefix = separator < 0 ? key : key[..separator];
-        string? id = separator < 0 ? null : key[(separator + 1)..];
+        string? id    = separator < 0 ? null : key[(separator + 1)..];
 
         switch (prefix) {
             case "gpu": {
@@ -337,16 +335,16 @@ public sealed class PerformanceControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.BackgroundColour       = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour       = appConfig.Theme.Foreground;
         chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
         chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.ColourHigh             = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow              = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid              = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle             = appConfig.MetreStyle;
+        chart.ShowYAxisScale         = appConfig.ShowYAxisScale;
+        chart.YAxisColour            = appConfig.Theme.ChartYAxis;
     }
 
     private void ConfigureColours(Control control)
@@ -461,7 +459,7 @@ public sealed class PerformanceControl : Control
 
         foreach (PerformancePanelControl panel in panelControls) {
             ConfigureChart(panel.Chart);
-            panel.Visible = true;
+            panel.Visible    = true;
             panel.IsSelected = false;
             panel.Load();
         }
@@ -510,10 +508,7 @@ public sealed class PerformanceControl : Control
         return keys;
     }
 
-    internal static void AppendDeviceKeys(
-        List<string> keys,
-        string prefix,
-        IEnumerable<string>? deviceIds)
+    internal static void AppendDeviceKeys(List<string> keys, string prefix, IEnumerable<string>? deviceIds)
     {
         List<string> ids = deviceIds?.ToList() ?? new();
 
@@ -597,7 +592,7 @@ public sealed class PerformanceControl : Control
 
     private void LayoutPanelColumn()
     {
-        panelColumnWidth = Math.Min(42, (int)(Width * 0.3));
+        panelColumnWidth  = Math.Min(42, (int)(Width * 0.3));
         visiblePanelCount = Math.Max(1, Height / PanelHeight);
 
         int selectedIndex = Math.Max(0, panelControls.IndexOf(activeControl));
@@ -612,11 +607,11 @@ public sealed class PerformanceControl : Control
             PerformancePanelControl panelControl = panelControls[i];
             bool visible = i >= scrollOffset && i < scrollOffset + visiblePanelCount;
 
-            panelControl.Visible = visible;
+            panelControl.Visible       = visible;
             panelControl.Chart.Visible = visible;
-            panelControl.X = X;
-            panelControl.Width = panelColumnWidth;
-            panelControl.Height = PanelHeight;
+            panelControl.X             = X;
+            panelControl.Width         = panelColumnWidth;
+            panelControl.Height        = PanelHeight;
 
             if (visible) {
                 panelControl.Y = Y + (i - scrollOffset) * PanelHeight;
@@ -710,9 +705,9 @@ public sealed class PerformanceControl : Control
     private void SizeDetailControls()
     {
         foreach (Control detail in detailCache.Values) {
-            detail.X = X + panelColumnWidth;
-            detail.Y = Y;
-            detail.Width = Width - panelColumnWidth;
+            detail.X      = X + panelColumnWidth;
+            detail.Y      = Y;
+            detail.Width  = Width - panelColumnWidth;
             detail.Height = Height;
             detail.Resize();
         }

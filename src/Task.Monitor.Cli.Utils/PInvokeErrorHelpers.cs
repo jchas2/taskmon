@@ -35,7 +35,7 @@ public static class PInvokeErrorHelpers
     
     private static string GetFormattedErrorMessage(string message)
     {
-        int error = Marshal.GetLastPInvokeError();
+        int    error        = Marshal.GetLastPInvokeError();
         string errorMessage = $"PINVOKE ERROR ({error}): {Marshal.GetPInvokeErrorMessage(error)}";
 
         if (string.IsNullOrEmpty(message)) {

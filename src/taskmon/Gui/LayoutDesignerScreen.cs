@@ -17,53 +17,53 @@ namespace Task.Monitor.Gui;
 // A live WYSIWYG editor the SummaryLayout control.
 public sealed class LayoutDesignerScreen : Screen
 {
-    private const int BannerHeight = 1;
-    private const int FooterHeight = 1;
-    private const float RatioStep = 0.05f;
+    private const int   BannerHeight = 1;
+    private const int   FooterHeight = 1;
+    private const float RatioStep    = 0.05f;
 
     private static readonly PaneControlType[] assignableControlTypes = Enum.GetValues<PaneControlType>();
 
     // TODO: Dup of SetupScreen's toggleableColumns table. Need a CommonControl functions class.
     private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
     [
-        (Statistics.User, "User"),
-        (Statistics.Pri, "Priority"),
-        (Statistics.Cpu, "CPU %"),
+        (Statistics.User,   "User"),
+        (Statistics.Pri,    "Priority"),
+        (Statistics.Cpu,    "CPU %"),
         (Statistics.AvgCpu, "Average CPU %"),
         (Statistics.MaxCpu, "Max CPU %"),
-        (Statistics.Thrd, "Threads"),
-        (Statistics.Gpu, "GPU %"),
+        (Statistics.Thrd,   "Threads"),
+        (Statistics.Gpu,    "GPU %"),
         (Statistics.AvgGpu, "Average GPU %"),
         (Statistics.MaxGpu, "Max GPU %"),
-        (Statistics.Mem, "Memory"),
+        (Statistics.Mem,    "Memory"),
         (Statistics.AvgMem, "Average Memory"),
         (Statistics.MaxMem, "Max Memory"),
-        (Statistics.Disk, "Disk"),
-        (Statistics.AvgDisk, "Average Disk"),
-        (Statistics.MaxDisk, "Max Disk"),
-        (Statistics.Power, "Power"),
-        (Statistics.Path, "Path"),
+        (Statistics.Disk,   "Disk"),
+        (Statistics.AvgDisk,"Average Disk"),
+        (Statistics.MaxDisk,"Max Disk"),
+        (Statistics.Power,  "Power"),
+        (Statistics.Path,   "Path"),
     ];
 
-    private readonly RunContext runContext;
-    private readonly SummaryLayoutRenderer renderer = new();
-    private readonly Dictionary<int, Control> paneControls = new();
-    private readonly PickerBoxControl controlTypePicker;
-    private readonly PickerBoxControl columnPicker;
-    private readonly TextInputDialogControl saveDialog;
+    private readonly RunContext                 runContext;
+    private readonly SummaryLayoutRenderer      renderer           = new();
+    private readonly Dictionary<int, Control>   paneControls       = new();
+    private readonly PickerBoxControl           controlTypePicker;
+    private readonly PickerBoxControl           columnPicker;
+    private readonly TextInputDialogControl     saveDialog;
     private readonly Dictionary<Control, Color> highlightedBorders = new();
-    private SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+    private SummaryLayoutTree                   tree               = SummaryLayoutTree.CreateEmpty();
 
-    private int selectedNodeId;
+    private int     selectedNodeId;
     private string? layoutName;
-    private bool isLoaded;
+    private bool    isLoaded;
 
     public LayoutDesignerScreen(RunContext runContext) : base(runContext.Terminal)
     {
         this.runContext = runContext;
 
         controlTypePicker = new PickerBoxControl(runContext.Terminal) { Visible = false };
-        columnPicker = new PickerBoxControl(runContext.Terminal) { Visible = false, MultiSelect = true };
+        columnPicker      = new PickerBoxControl(runContext.Terminal) { Visible = false, MultiSelect = true };
 
         saveDialog = new TextInputDialogControl(runContext.Terminal) {
             Visible = false,
@@ -76,8 +76,9 @@ public sealed class LayoutDesignerScreen : Screen
 
     public void Open(SummaryLayoutTree newTree, string? existingName)
     {
-        tree = newTree;
+        tree       = newTree;
         layoutName = existingName;
+        
         RebuildPaneControls();
     }
 
@@ -356,8 +357,10 @@ public sealed class LayoutDesignerScreen : Screen
         }
 
         SummaryLayoutNode parent = tree.Nodes[pid];
-        int siblingId = parent.FirstId == selectedNodeId ? parent.SecondId : parent.FirstId;
+        
+        int siblingId       = parent.FirstId == selectedNodeId ? parent.SecondId : parent.FirstId;
         bool siblingWasLeaf = !tree.Nodes[siblingId].IsSplit;
+        
         paneControls.TryGetValue(siblingId, out Control? siblingControl);
 
         if (!tree.Remove(selectedNodeId)) {
@@ -398,6 +401,7 @@ public sealed class LayoutDesignerScreen : Screen
         }
 
         SummaryLayoutNode parent = tree.Nodes[pid];
+        
         float signedDelta = parent.FirstId == selectedNodeId ? delta : -delta;
 
         if (!tree.AdjustRatio(pid, signedDelta)) {
@@ -413,14 +417,14 @@ public sealed class LayoutDesignerScreen : Screen
         Control.RedrawEnabled = false;
 
         List<string> labels = assignableControlTypes.Select(ToDisplayLabel).ToList();
-        int currentIndex = Array.IndexOf(assignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
+        int currentIndex    = Array.IndexOf(assignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
 
-        controlTypePicker.Width = Math.Clamp(Width - 4, 24, 40);
-        controlTypePicker.Height = Math.Clamp(
-            PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
-        controlTypePicker.X = X + Math.Max(0, (Width - controlTypePicker.Width) / 2);
-        controlTypePicker.Y = Y + Math.Max(0, (Height - controlTypePicker.Height) / 2);
-        controlTypePicker.Title = "Assign control";
+        controlTypePicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        controlTypePicker.Height = Math.Clamp( PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
+        controlTypePicker.X      = X + Math.Max(0, (Width - controlTypePicker.Width) / 2);
+        controlTypePicker.Y      = Y + Math.Max(0, (Height - controlTypePicker.Height) / 2);
+        controlTypePicker.Title  = "Assign control";
+        
         controlTypePicker.SetItems(labels, initialSelectedIndex: Math.Max(0, currentIndex));
         controlTypePicker.Visible = true;
         controlTypePicker.ShowPickerBox();
@@ -438,7 +442,7 @@ public sealed class LayoutDesignerScreen : Screen
         int selectedIndex = controlTypePicker.SelectedIndex;
 
         controlTypePicker.Visible = false;
-        Control.RedrawEnabled = true;
+        Control.RedrawEnabled     = true;
 
         if (result == PickerBoxResult.Ok && selectedIndex >= 0 && selectedIndex < assignableControlTypes.Length) {
             ReassignSelectedPaneControlType(assignableControlTypes[selectedIndex]);
@@ -453,6 +457,7 @@ public sealed class LayoutDesignerScreen : Screen
     private void ReassignSelectedPaneControlType(PaneControlType newType)
     {
         SummaryLayoutNode pane = tree.Nodes[selectedNodeId];
+        
         pane.ControlType = newType;
 
         if (newType != PaneControlType.Process) {
@@ -480,12 +485,12 @@ public sealed class LayoutDesignerScreen : Screen
         List<string> labels = toggleableColumns.Select(c => c.Label).ToList();
         List<bool> initiallyChecked = toggleableColumns.Select(c => (current & c.Statistic) != 0).ToList();
 
-        columnPicker.Width = Math.Clamp(Width - 4, 24, 40);
-        columnPicker.Height = Math.Clamp(
-            PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
-        columnPicker.X = X + Math.Max(0, (Width - columnPicker.Width) / 2);
-        columnPicker.Y = Y + Math.Max(0, (Height - columnPicker.Height) / 2);
-        columnPicker.Title = "Columns";
+        columnPicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        columnPicker.Height = Math.Clamp(PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
+        columnPicker.X      = X + Math.Max(0, (Width - columnPicker.Width) / 2);
+        columnPicker.Y      = Y + Math.Max(0, (Height - columnPicker.Height) / 2);
+        columnPicker.Title  = "Columns";
+        
         columnPicker.SetItems(labels, initiallyChecked);
         columnPicker.Visible = true;
         columnPicker.ShowPickerBox();
@@ -499,10 +504,10 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        PickerBoxResult result = columnPicker.Result;
+        PickerBoxResult result   = columnPicker.Result;
         List<int> checkedIndices = columnPicker.CheckedIndices.ToList();
 
-        columnPicker.Visible = false;
+        columnPicker.Visible  = false;
         Control.RedrawEnabled = true;
 
         if (result == PickerBoxResult.Ok) {
@@ -529,8 +534,8 @@ public sealed class LayoutDesignerScreen : Screen
 
         saveDialog.Width = Math.Clamp(Width - 4, 30, 50);
         saveDialog.Height = TextInputDialogControl.PreferredHeight;
-        saveDialog.X = X + Math.Max(0, (Width - saveDialog.Width) / 2);
-        saveDialog.Y = Y + Math.Max(0, (Height - saveDialog.Height) / 2);
+        saveDialog.X      = X + Math.Max(0, (Width - saveDialog.Width) / 2);
+        saveDialog.Y      = Y + Math.Max(0, (Height - saveDialog.Height) / 2);
 
         saveDialog.SetText(layoutName != null && runContext.AppConfig.IsBuiltInLayout(layoutName)
             ? $"{layoutName} Copy"
@@ -551,7 +556,7 @@ public sealed class LayoutDesignerScreen : Screen
         TextInputDialogResult result = saveDialog.Result;
         string name = saveDialog.Text.Trim();
 
-        saveDialog.Visible = false;
+        saveDialog.Visible    = false;
         Control.RedrawEnabled = true;
 
         Draw();
@@ -593,7 +598,7 @@ public sealed class LayoutDesignerScreen : Screen
         ForegroundColour = runContext.AppConfig.Theme.Foreground;
 
         DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour = runContext.AppConfig.Theme.HeaderForeground;
+        DialogBorderColour     = runContext.AppConfig.Theme.HeaderForeground;
         DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
 
         ApplyPickerTheme(controlTypePicker);
@@ -602,12 +607,12 @@ public sealed class LayoutDesignerScreen : Screen
         ApplyPickerTheme(columnPicker);
         columnPicker.Load();
 
-        saveDialog.DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        saveDialog.DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
+        saveDialog.DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
+        saveDialog.DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
         saveDialog.DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
         saveDialog.DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
-        saveDialog.FieldBackgroundColour = runContext.AppConfig.Theme.Background;
-        saveDialog.FieldForegroundColour = runContext.AppConfig.Theme.Foreground;
+        saveDialog.FieldBackgroundColour        = runContext.AppConfig.Theme.Background;
+        saveDialog.FieldForegroundColour        = runContext.AppConfig.Theme.Foreground;
         saveDialog.Load();
 
         foreach (Control control in paneControls.Values) {
@@ -641,11 +646,11 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void ApplyPickerTheme(PickerBoxControl picker)
     {
-        picker.DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        picker.DialogBorderColour = runContext.AppConfig.Theme.HeaderForeground;
-        picker.DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
-        picker.ListBackgroundHighlightColour = runContext.AppConfig.Theme.BackgroundHighlight;
-        picker.ListForegroundHighlightColour = runContext.AppConfig.Theme.ForegroundHighlight;
+        picker.DialogBackgroundColour                = runContext.AppConfig.Theme.HeaderBackground;
+        picker.DialogBorderColour                    = runContext.AppConfig.Theme.HeaderForeground;
+        picker.DialogForegroundColour                = runContext.AppConfig.Theme.HeaderForeground;
+        picker.ListBackgroundHighlightColour         = runContext.AppConfig.Theme.BackgroundHighlight;
+        picker.ListForegroundHighlightColour         = runContext.AppConfig.Theme.ForegroundHighlight;
         picker.ListBackgroundHighlightInactiveColour = runContext.AppConfig.Theme.BackgroundHighlightInactive;
         picker.ListForegroundHighlightInactiveColour = runContext.AppConfig.Theme.ForegroundHighlightInactive;
     }

@@ -15,13 +15,15 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     private const int SpecsRowCount = 15;
 
     private readonly Lock @lock = new();
-    private readonly Chart sendChart;
-    private readonly Chart receiveChart;
-    private readonly ListView networkMetricsListView;
-    private readonly ListView networkSpecsListView;
+    
+    private readonly Chart     sendChart;
+    private readonly Chart     receiveChart;
+    private readonly ListView  networkMetricsListView;
+    private readonly ListView  networkSpecsListView;
     private readonly AppConfig appConfig;
     
     private NetworkInfo? networkInfo;
+    
     private ulong? scopedInterfaceLuid;
 
     public void SetScope(ulong? interfaceLuid) => scopedInterfaceLuid = interfaceLuid;
@@ -30,27 +32,27 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     {
         this.appConfig = appConfig;
 
-        sendChart = new Chart(terminal);
+        sendChart    = new Chart(terminal);
         receiveChart = new Chart(terminal);
 
         networkMetricsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = true,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
 
         networkSpecsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
     }
 
@@ -81,7 +83,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         }
 
         NetworkDeviceMetrics? device = networkInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
-        NetworkDevice? spec = networkInfo.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
+        NetworkDevice? spec          = networkInfo.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
 
         return (device, spec, device != null);
     }
@@ -107,7 +109,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
                 return;
             }
 
-            string sendText = device?.ToNetworkSendRate() ?? metrics.ToNetworkSendRate();
+            string sendText    = device?.ToNetworkSendRate() ?? metrics.ToNetworkSendRate();
             string receiveText = device?.ToNetworkReceiveRate() ?? metrics.ToNetworkReceiveRate();
 
             sendChart.Text = $"Send {sendText}";
@@ -120,9 +122,9 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             networkMetricsListView.Items[0].SubItems[1].Text = receiveText;
             networkMetricsListView.Draw();
 
-            string totalBytesSent = (device?.TotalBytesSent ?? metrics.TotalBytesSent).ToFormattedByteSize();
-            string totalBytesReceived = (device?.TotalBytesReceived ?? metrics.TotalBytesReceived).ToFormattedByteSize();
-            string totalPacketsSent = (device?.TotalPacketsSent ?? metrics.TotalPacketsSent).ToNetworkPacketCount();
+            string totalBytesSent       = (device?.TotalBytesSent ?? metrics.TotalBytesSent).ToFormattedByteSize();
+            string totalBytesReceived   = (device?.TotalBytesReceived ?? metrics.TotalBytesReceived).ToFormattedByteSize();
+            string totalPacketsSent     = (device?.TotalPacketsSent ?? metrics.TotalPacketsSent).ToNetworkPacketCount();
             string totalPacketsReceived = (device?.TotalPacketsReceived ?? metrics.TotalPacketsReceived).ToNetworkPacketCount();
 
             if (device != null) {
@@ -180,10 +182,21 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
 
         foreach (string label in new[] {
-            "Name:", "Friendly Name:", "Description:", "Connection Type:", "Physical Medium:",
-            "MAC Address:", "IPv4 Addresses:", "IPv6 Addresses:", "Transmit Link Speed:",
-            "Receive Link Speed:", "Operational Status:", "Total Bytes Sent:", "Total Bytes Received:",
-            "Total Packets Sent:", "Total Packets Received:" }) {
+            "Name:", 
+            "Friendly Name:", 
+            "Description:", 
+            "Connection Type:", 
+            "Physical Medium:",
+            "MAC Address:", 
+            "IPv4 Addresses:", 
+            "IPv6 Addresses:", 
+            "Transmit Link Speed:",
+            "Receive Link Speed:", 
+            "Operational Status:", 
+            "Total Bytes Sent:",
+            "Total Bytes Received:",
+            "Total Packets Sent:", 
+            "Total Packets Received:" }) {
 
             networkSpecsListView.Items.Add(new ListViewItem(new[] { label, NetworkDeviceParser.NotAvailable }));
         }
@@ -196,26 +209,26 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadChart(Chart chart)
     {
-        chart.AutoScale = true;
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.AutoScale                 = true;
+        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = PerformanceChartFormatters.FormatYScaleByteRate;
-        chart.LabelSeries = string.Empty;
-        chart.ShowYAxisScale = true;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.LabelSeries               = string.Empty;
+        chart.ShowYAxisScale            = true;
+        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
+        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle                = appConfig.MetreStyle;
+        chart.ShowGrid                  = true;
+        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
@@ -229,25 +242,26 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     {
         const int MetricsHeight = 4;
 
-        int yTop = Y;
+        int yTop        = Y;
         int specsHeight = SpecsRowCount + 3;
-        int bottomY = Y + Height - (MetricsHeight + specsHeight);
-
+        int bottomY     = Y + Height - (MetricsHeight + specsHeight);
         int chartsArea = Math.Max(0, bottomY - yTop);
-        int height = chartsArea / 2;
+        int height     = chartsArea / 2;
 
-        sendChart.X = X + 1;
-        sendChart.Y = yTop;
-        sendChart.Width = Width - 1;
+        sendChart.X      = X + 1;
+        sendChart.Y      = yTop;
+        sendChart.Width  = Width - 1;
         sendChart.Height = height;
+        
         sendChart.Resize();
 
         yTop += height;
 
-        receiveChart.X = X + 1;
-        receiveChart.Y = yTop;
-        receiveChart.Width = Width - 1;
+        receiveChart.X      = X + 1;
+        receiveChart.Y      = yTop;
+        receiveChart.Width  = Width - 1;
         receiveChart.Height = chartsArea - height;
+        
         receiveChart.Resize();
 
         networkMetricsListView.ColumnHeaders[0].Width = 18;
@@ -259,14 +273,14 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
                 : 50;
         }
 
-        networkMetricsListView.X = X + 1;
-        networkMetricsListView.Y = bottomY;
-        networkMetricsListView.Width = Width - 1;
+        networkMetricsListView.X      = X + 1;
+        networkMetricsListView.Y      = bottomY;
+        networkMetricsListView.Width  = Width - 1;
         networkMetricsListView.Height = MetricsHeight;
 
-        networkSpecsListView.X = X + 1;
-        networkSpecsListView.Y = bottomY + MetricsHeight;
-        networkSpecsListView.Width = Width - 1;
+        networkSpecsListView.X      = X + 1;
+        networkSpecsListView.Y      = bottomY + MetricsHeight;
+        networkSpecsListView.Width  = Width - 1;
         networkSpecsListView.Height = specsHeight;
     }
 

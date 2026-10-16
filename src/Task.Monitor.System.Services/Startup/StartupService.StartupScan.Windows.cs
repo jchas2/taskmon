@@ -11,19 +11,13 @@ namespace Task.Monitor.System.Services.Startup;
 public partial class StartupService
 {
 #if __WIN32__
-    private const string RunKeyPath =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunOnceKeyPath =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce";
-    private const string ApprovedRunPath =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
-    private const string ApprovedRun32Path =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32";
-    private const string ApprovedFolderPath =
-        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
+    private const string RunKeyPath         = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+    private const string RunOnceKeyPath     = @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce";
+    private const string ApprovedRunPath    = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+    private const string ApprovedRun32Path  = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32";
+    private const string ApprovedFolderPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
 
-    private readonly Dictionary<string, string?> publisherCache =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string?> publisherCache = new(StringComparer.OrdinalIgnoreCase);
 
     private partial StartupSpecs ScanStartup()
     {
@@ -98,12 +92,12 @@ public partial class StartupService
     }
 
     private void ScanRunKey(
-        StartupSpecs specs,
-        RegistryHive hive,
-        RegistryView view,
-        StartupEntryScope scope,
-        string keyPath,
-        string approvedPath,
+        StartupSpecs       specs,
+        RegistryHive       hive,
+        RegistryView       view,
+        StartupEntryScope  scope,
+        string             keyPath,
+        string             approvedPath,
         StartupEntrySource source)
     {
         using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
@@ -162,10 +156,10 @@ public partial class StartupService
     }
 
     private void ScanStartupFolder(
-        StartupSpecs specs,
+        StartupSpecs              specs,
         Environment.SpecialFolder folder,
-        StartupEntryScope scope,
-        RegistryKey? approvedKey)
+        StartupEntryScope         scope,
+        RegistryKey?              approvedKey)
     {
         string folderPath = Environment.GetFolderPath(folder);
 

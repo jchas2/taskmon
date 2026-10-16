@@ -6,6 +6,7 @@ namespace Task.Monitor.System.Services.Gpu;
 public static class GpuDeviceParser
 {
     public const string NotAvailable = "N/A";
+    
     private const uint DxgiAdapterFlagSoftware = 2;
 
     // An adapter reporting less dedicated VRAM than this is taken to be an integrated GPU carving a
@@ -94,9 +95,10 @@ public static class GpuDeviceParser
     // DXGI_ADAPTER_DESC1.AdapterLuid so the two compare equal.
     public static bool TryParseAdapterLuid(string instanceName, out long luid)
     {
-        luid = 0;
-
         const string luidToken = "luid_";
+        
+        luid = 0;
+        
         int tokenIndex = instanceName.IndexOf(luidToken, StringComparison.OrdinalIgnoreCase);
 
         if (tokenIndex < 0) {

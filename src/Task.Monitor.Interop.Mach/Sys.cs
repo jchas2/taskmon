@@ -4,7 +4,7 @@ using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.Interop.Mach;
 
-using size_t = System.IntPtr;
+using size_t = nint;
 
 public static unsafe class Sys
 {
@@ -31,9 +31,9 @@ public static unsafe class Sys
     }
     
     public const int VM_SWAPUSAGE = 5;
-    public const int PF_ROUTE = 17;      /* Protocol family for routing */
-    public const int AF_UNSPEC = 0;      /* Address family unspecified */
-    public const int RTM_IFINFO2 = 0x12; /* Interface info message type */
+    public const int PF_ROUTE     = 17;     /* Protocol family for routing */
+    public const int AF_UNSPEC    = 0;      /* Address family unspecified */
+    public const int RTM_IFINFO2  = 0x12;   /* Interface info message type */
     
     private enum Error
     {
@@ -85,17 +85,17 @@ public static unsafe class Sys
     [StructLayout(LayoutKind.Sequential)]
     public struct if_msghdr2
     {
-        public ushort ifm_msglen;       /* Message length */
-        public byte   ifm_version;
-        public byte   ifm_type;         /* RTM_IFINFO2 */
-        public int    ifm_addrs;        /* Address mask */
-        public int    ifm_flags;        /* Interface flags */
-        public ushort ifm_index;        /* Interface index */
-        public int    ifm_snd_len;
-        public int    ifm_snd_maxlen;
-        public int    ifm_snd_drops;
-        public int    ifm_timer;
-        public if_data64 ifm_data;      /* Interface statistics */
+        public ushort    ifm_msglen;       /* Message length */
+        public byte      ifm_version;
+        public byte      ifm_type;         /* RTM_IFINFO2 */
+        public int       ifm_addrs;        /* Address mask */
+        public int       ifm_flags;        /* Interface flags */
+        public ushort    ifm_index;        /* Interface index */
+        public int       ifm_snd_len;
+        public int       ifm_snd_maxlen;
+        public int       ifm_snd_drops;
+        public int       ifm_timer;
+        public if_data64 ifm_data;         /* Interface statistics */
     }
     
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
@@ -110,7 +110,8 @@ public static unsafe class Sys
 
     [DllImport(Libraries.LibC, EntryPoint = "sysctlbyname", SetLastError = true)]
     private static extern unsafe int SysctlByName(
-        [MarshalAs(UnmanagedType.LPStr)] string name,
+        [MarshalAs(UnmanagedType.LPStr)] 
+        string  name,
         void*   oldp,
         size_t* oldlenp,
         void*   newp,
@@ -118,14 +119,15 @@ public static unsafe class Sys
 
     public static unsafe string? SysctlByNameString(string name)
     {
-        size_t len = IntPtr.Zero;
+        size_t len = nint.Zero;
         
         if (SysctlByName(
-                name, 
-                null, 
-                &len, 
-                null, 
-                IntPtr.Zero) != 0) {
+            name, 
+            null, 
+            &len, 
+            null, 
+            nint.Zero) != 0) {
+
             Trace.WriteLine($"Failed SysctlByName() &len: {name}");
             return null;
         }
@@ -139,14 +141,15 @@ public static unsafe class Sys
         using HGlobalScope scope = HGlobalScope.Allocate(byteLen);
         byte* buffer = (byte*)scope.Value;
 
-        size_t outLen = (IntPtr)byteLen;
+        size_t outLen = (nint)byteLen;
 
         if (SysctlByName(
-                name, 
-                buffer, 
-                &outLen, 
-                null, 
-                IntPtr.Zero) != 0) {
+            name, 
+            buffer, 
+            &outLen, 
+            null, 
+            nint.Zero) != 0) {
+            
             Trace.WriteLine($"Failed SysctlByName() buffer: {name}");
             return null;
         }
@@ -163,11 +166,11 @@ public static unsafe class Sys
 
     public static unsafe bool SysctlByNameInt(string name, out int value)
     {
-        value = 0;
-        int result = 0;
-        size_t len = (IntPtr)sizeof(int);
+        value         = 0;
+        int    result = 0;
+        size_t len    = (nint)sizeof(int);
 
-        if (SysctlByName(name, &result, &len, null, IntPtr.Zero) != 0) {
+        if (SysctlByName(name, &result, &len, null, nint.Zero) != 0) {
             Trace.WriteLine($"Failed SysctlByName() &result: {name}");
             return false;
         }
@@ -178,11 +181,17 @@ public static unsafe class Sys
 
     public static unsafe bool SysctlByNameLong(string name, out long value)
     {
-        value = 0;
-        long result = 0;
-        size_t len = (IntPtr)sizeof(long);
+        value         = 0;
+        long   result = 0;
+        size_t len    = (nint)sizeof(long);
 
-        if (SysctlByName(name, &result, &len, null, IntPtr.Zero) != 0) {
+        if (SysctlByName(
+            name, 
+            &result, 
+            &len, 
+            null, 
+            nint.Zero) != 0) {
+
             Trace.WriteLine($"Failed SysctlByName() &result: {name}");
             return false;
         }
@@ -193,7 +202,7 @@ public static unsafe class Sys
 
     public static unsafe void FreeMemory(void* ptr)
     {
-        if ((IntPtr)ptr == IntPtr.Zero) {
+        if ((nint)ptr == nint.Zero) {
             return;
         }
 
@@ -212,14 +221,14 @@ public static unsafe class Sys
     }
     
     private static unsafe bool Sysctl(
-        int* name, 
-        int name_len, 
+        int*      name, 
+        int       name_len, 
         ref byte* value, 
-        ref int len)
+        ref int   len)
     {
         nint bytesLength = len;
-        int ret = -1;
-        bool autoSize = (value == null && len == 0);
+        int ret          = -1;
+        bool autoSize    = (value == null && len == 0);
 
         if (autoSize) {
             ret = Sysctl(
@@ -246,7 +255,7 @@ public static unsafe class Sys
         
         while (autoSize && ret != 0 && lastError == (int)Error.ENOMEM)
         {
-            Marshal.FreeHGlobal((IntPtr)value);
+            Marshal.FreeHGlobal((nint)value);
             value = null;
             
             if ((int)bytesLength == int.MaxValue) {
@@ -262,6 +271,7 @@ public static unsafe class Sys
             }
             
             value = (byte*)Marshal.AllocHGlobal(bytesLength);
+            
             ret = Sysctl(
                 name, 
                 name_len, 
@@ -271,7 +281,7 @@ public static unsafe class Sys
         
         if (ret != 0) {
             if (autoSize) {
-                Marshal.FreeHGlobal((IntPtr)value);
+                Marshal.FreeHGlobal((nint)value);
                 value = null;
             }
             

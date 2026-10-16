@@ -10,25 +10,25 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class PerformancePanelControl : Control
 {
-    private readonly Chart chart;
-    private readonly Control associatedControl;
+    private readonly Chart     chart;
+    private readonly Control   associatedControl;
     private readonly AppConfig appConfig;
 
     private AnsiScreenBuffer Frame { get; } = new();
 
     public PerformancePanelControl(
         ISystemTerminal terminal,
-        Chart chart,
-        Control associatedControl,
-        string key,
-        string title,
-        AppConfig appConfig) : base(terminal)
+        Chart           chart,
+        Control         associatedControl,
+        string          key,
+        string          title,
+        AppConfig       appConfig) : base(terminal)
     {
-        this.chart = chart;
+        this.chart             = chart;
         this.associatedControl = associatedControl;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
-        Key = key;
+        Key   = key;
         Title = title;
     }
 
@@ -140,10 +140,10 @@ public sealed class PerformancePanelControl : Control
 
     protected override void OnResize()
     {
-        chart.Width = 14;
+        chart.Width  = 14;
         chart.Height = 7;
-        chart.X = X + Width - chart.Width;
-        chart.Y = Y;
+        chart.X      = X + Width - chart.Width;
+        chart.Y      = Y;
         chart.Resize();
     }
 }

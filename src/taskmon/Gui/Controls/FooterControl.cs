@@ -10,21 +10,21 @@ namespace Task.Monitor.Gui.Controls;
 public class FooterControl : Control
 {
     private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly AnsiScreenBuffer frame = new();
+    private readonly AppConfig         appConfig;
+    private readonly AnsiScreenBuffer  frame = new();
+    private readonly Lock              @lock = new();
+    
     private SystemSnapshot? snapshot = null;
-    private readonly Lock @lock = new();
 
     private const char StatusGlyph = '●';
 
     public FooterControl(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
     }
 
     protected override void OnLoad()

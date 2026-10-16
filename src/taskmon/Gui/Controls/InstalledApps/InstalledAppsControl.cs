@@ -11,41 +11,40 @@ namespace Task.Monitor.Gui.Controls.InstalledApps;
 // Programs and Features / Settings > Apps reads - in one selectable, scrolling table.
 public sealed partial class InstalledAppsControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ListView installedAppsView;
-    private readonly ListView detailView;
-
-    private InstalledAppsInfo? installedApps;
-    private string lastSignature = string.Empty;
-
-    private const int NameColumnWidth = 30;
-    private const int VersionColumnWidth = 14;
-    private const int PublisherColumnWidth = 24;
-    private const int ScopeColumnWidth = 9;
+    private const int NameColumnWidth        = 30;
+    private const int VersionColumnWidth     = 14;
+    private const int PublisherColumnWidth   = 24;
+    private const int ScopeColumnWidth       = 9;
     private const int InstallDateColumnWidth = 12;
-    private const int SizeColumnWidth = 10;
+    private const int SizeColumnWidth        = 10;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 10; // border (2) + column headers (1) + 7 field rows
+    private const int DetailViewHeight       = 10; // border (2) + column headers (1) + 7 field rows
+    
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          installedAppsView;
+    private readonly ListView          detailView;
 
-    public InstalledAppsControl(
-        ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+    private InstalledAppsInfo? installedApps;
+    
+    private string lastSignature = string.Empty;
+
+
+    public InstalledAppsControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         installedAppsView = new ListView(terminal) {
-            EnableScroll = true,
-            EnableRowSelect = true,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            ShowBorder        = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
             EmptyListViewText = "Gathering installed applications…"
         };
 
@@ -59,13 +58,13 @@ public sealed partial class InstalledAppsControl : Control
             .Add(new ListViewColumnHeader("LOCATION"));
 
         detailView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = false,
-            Visible = true,
-            HeaderText = "DETAIL"
+            ShowBorder        = true,
+            TabStop           = false,
+            Visible           = true,
+            HeaderText        = "DETAIL"
         };
 
         detailView.ColumnHeaders
@@ -111,18 +110,22 @@ public sealed partial class InstalledAppsControl : Control
         }
 
         lastSignature = signature;
+        
         RebuildRows(info.Specs.Apps);
     }
 
     private static string BuildSignature(IReadOnlyList<InstalledApp> apps) =>
-        apps.Count + "|" + string.Join("|", apps.Select(app =>
+        apps.Count + "|" + 
+        string.Join("|", apps.Select(app =>
             $"{app.Name}:{app.Version}:{(int)app.Scope}"));
 
     private void RefreshDetailPane()
     {
         int index = installedAppsView.SelectedIndex;
-        IReadOnlyList<InstalledApp> apps = installedApps?.Specs.Apps ?? [];
-        InstalledApp? selected = index >= 0 && index < apps.Count ? apps[index] : null;
+        
+        IReadOnlyList<InstalledApp> apps     = installedApps?.Specs.Apps ?? [];
+        InstalledApp?               selected = index >= 0 && index < apps.Count ? apps[index] : null;
+        
         RebuildDetailRows(selected);
     }
 
@@ -159,14 +162,14 @@ public sealed partial class InstalledAppsControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        installedAppsView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        installedAppsView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        installedAppsView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        installedAppsView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        installedAppsView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        installedAppsView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-        installedAppsView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        installedAppsView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        installedAppsView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        installedAppsView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        installedAppsView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        installedAppsView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        installedAppsView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        installedAppsView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        installedAppsView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        installedAppsView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         installedAppsView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         installedAppsView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
@@ -175,8 +178,8 @@ public sealed partial class InstalledAppsControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
@@ -199,13 +202,18 @@ public sealed partial class InstalledAppsControl : Control
     {
         int installedAppsViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        installedAppsView.X = X;
-        installedAppsView.Y = Y;
-        installedAppsView.Width = Width;
+        installedAppsView.X      = X;
+        installedAppsView.Y      = Y;
+        installedAppsView.Width  = Width;
         installedAppsView.Height = installedAppsViewHeight;
 
-        int fixedWidth = NameColumnWidth + VersionColumnWidth + PublisherColumnWidth
-            + ScopeColumnWidth + InstallDateColumnWidth + SizeColumnWidth;
+        int fixedWidth = 
+            NameColumnWidth + 
+            VersionColumnWidth + 
+            PublisherColumnWidth + 
+            ScopeColumnWidth + 
+            InstallDateColumnWidth + 
+            SizeColumnWidth;
 
         installedAppsView.ColumnHeaders[0].Width = NameColumnWidth;
         installedAppsView.ColumnHeaders[1].Width = VersionColumnWidth;
@@ -215,9 +223,9 @@ public sealed partial class InstalledAppsControl : Control
         installedAppsView.ColumnHeaders[5].Width = SizeColumnWidth;
         installedAppsView.ColumnHeaders[6].Width = Math.Max(1, Width - fixedWidth - 3);
 
-        detailView.X = X;
-        detailView.Y = Y + installedAppsViewHeight;
-        detailView.Width = Width;
+        detailView.X      = X;
+        detailView.Y      = Y + installedAppsViewHeight;
+        detailView.Width  = Width;
         detailView.Height = DetailViewHeight;
 
         detailView.ColumnHeaders[0].Width = DetailFieldColumnWidth;

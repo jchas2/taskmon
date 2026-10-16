@@ -67,11 +67,11 @@ public static class DiskDeviceParser
 
     public static string DecodeMediaType(
         string busType,
-        bool isRemovable,
-        bool hasSeekPenalty,
-        bool incursSeekPenalty,
-        bool hasTrim,
-        bool trimEnabled)
+        bool   isRemovable,
+        bool   hasSeekPenalty,
+        bool   incursSeekPenalty,
+        bool   hasTrim,
+        bool   trimEnabled)
     {
         if (busType == "NVMe") {
             return "SSD";
@@ -101,7 +101,10 @@ public static class DiskDeviceParser
         }
 
         string text = Win32StringHelper.FromNullTerminatedAnsi(descriptor[(int)stringOffset..]).Trim();
-        return text.Length > 0 ? text : NotAvailable;
+        
+        return text.Length > 0 
+            ? text 
+            : NotAvailable;
     }
 }
 #endif

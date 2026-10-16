@@ -9,20 +9,18 @@ public sealed class MetreControlSeries
     {
         ArgumentNullException.ThrowIfNull(label, nameof(label));
 
-        Label = label;
+        Label  = label;
         Colour = colour;
     }
 
     public MetreControlSeries(
         string label,
-        Color colour,
-        double value)
-        : this(label, colour) => Value = value;
+        Color  colour,
+        double value) : this(label, colour) => Value = value;
 
     public Color Colour { get; set; } = ConsolePalette.White;
 
     public string Label { get; set; }
 
-    // Updates flow through MetreControl.SetValue / SetValues so mutations stay under the control's lock.
     public double Value { get; internal set; } = 0.0;
 }

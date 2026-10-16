@@ -105,7 +105,10 @@ public partial class GpuService
     private static string NormaliseDescription(string description)
     {
         string trimmed = description.Trim();
-        return trimmed.Length > 0 ? trimmed : GpuDeviceParser.NotAvailable;
+        
+        return trimmed.Length > 0 
+            ? trimmed 
+            : GpuDeviceParser.NotAvailable;
     }
 
     private static void UpdateFromRegistry(List<GpuDevice> devices)

@@ -10,13 +10,14 @@ public sealed unsafe partial class DeviceChangeNotifier
     private sealed class Registration
     {
         public required DeviceChangeNotifier Owner;
-        public DeviceCategory Category;
-        public nint Handle;
-        public GCHandle Self;
+        public DeviceCategory                Category;
+        public nint                          Handle;
+        public GCHandle                      Self;
     }
 
     private readonly List<Registration> registrations = new();
-    private readonly Lock @lock = new();
+    private readonly Lock               @lock         = new();
+
     private bool started;
 
     partial void OnStartPlatform()
@@ -97,7 +98,7 @@ public sealed unsafe partial class DeviceChangeNotifier
     private static uint NotificationCallback(
         nint notify,
         nint context,
-        int action,
+        int  action,
         nint eventData,
         uint eventDataSize)
     {

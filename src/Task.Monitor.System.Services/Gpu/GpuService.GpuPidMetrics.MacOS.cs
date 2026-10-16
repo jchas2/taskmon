@@ -9,12 +9,14 @@ public partial class GpuService
     private const double NanosecondsPerSecond = 1_000_000_000.0;
 
     private readonly Dictionary<int, long> previousGpuTime = new();
+    
     private long previousGpuTimestamp;
     private bool gpuPrimed;
 
-    private IntPtr gpuReportSubscription = IntPtr.Zero;
-    private IntPtr gpuReportChannels = IntPtr.Zero;
-    private IntPtr gpuReportPrevSample = IntPtr.Zero;
+    private nint gpuReportSubscription = nint.Zero;
+    private nint gpuReportChannels     = nint.Zero;
+    private nint gpuReportPrevSample   = nint.Zero;
+    
     private bool gpuReportInitFailed;
 
     private void OnStartGpuPidMetrics()
@@ -32,8 +34,9 @@ public partial class GpuService
     private void ResetGpuPidState()
     {
         previousGpuTime.Clear();
+        
         previousGpuTimestamp = 0;
-        gpuPrimed = false;
+        gpuPrimed            = false;
     }
 
     private void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
@@ -60,7 +63,7 @@ public partial class GpuService
 
         foreach ((int pid, long gpuTime) in current) {
             long previous = previousGpuTime.GetValueOrDefault(pid);
-            long delta = gpuTime > previous ? gpuTime - previous : 0;
+            long delta    = gpuTime > previous ? gpuTime - previous : 0;
 
             if (delta <= 0) {
                 continue;
@@ -86,19 +89,19 @@ public partial class GpuService
 
     private static Dictionary<int, long> GetProcessGpuTime()
     {
-        long typeIdCFArray = CoreFoundation.CFArrayGetTypeID();
+        long typeIdCFArray      = CoreFoundation.CFArrayGetTypeID();
         long typeIdCFDictionary = CoreFoundation.CFDictionaryGetTypeID();
 
-        Dictionary<int, long> gpuInfo = new();
-        IntPtr matching = IOKit.IOServiceMatching("IOAccelerator");
-        using IOObjectScope accelerator = new(IOKit.IOServiceGetMatchingService(0, matching));
+        Dictionary<int, long> gpuInfo     = new();
+        nint                  matching    = IOKit.IOServiceMatching("IOAccelerator");
+        using IOObjectScope   accelerator = new(IOKit.IOServiceGetMatchingService(0, matching));
 
         if (accelerator.IsNull) {
             Trace.WriteLine($"Failed to get IOAccelerator via IOServiceGetMatchingService in {nameof(GpuService)}.");
             return gpuInfo;
         }
 
-        IntPtr iteratorRef = IntPtr.Zero;
+        nint iteratorRef = nint.Zero;
 
         int result = IOKit.IORegistryEntryGetChildIterator(
             accelerator,
@@ -119,8 +122,8 @@ public partial class GpuService
 
             result = IOKit.IORegistryEntryCreateCFProperties(
                 child,
-                out IntPtr propertiesRef,
-                IntPtr.Zero,
+                out nint propertiesRef,
+                nint.Zero,
                 0);
 
             using CFScope properties = new(propertiesRef);
@@ -146,7 +149,7 @@ public partial class GpuService
                 continue;
             }
 
-            IntPtr appUsage = props["AppUsage"];
+            nint appUsage = props["AppUsage"];
 
             // AppUsage should be a CFArray of CFDictionary entries.
             if (CoreFoundation.CFGetTypeID(appUsage) != typeIdCFArray) {
@@ -157,7 +160,7 @@ public partial class GpuService
             long count = CoreFoundation.CFArrayGetCount(appUsage);
 
             for (long i = 0; i < count; i++) {
-                IntPtr element = CoreFoundation.CFArrayGetValueAtIndex(appUsage, i);
+                nint element = CoreFoundation.CFArrayGetValueAtIndex(appUsage, i);
 
                 if (CoreFoundation.CFGetTypeID(element) == typeIdCFDictionary) {
                     Dictionary<string, nint> elemDict = CoreFoundation.ToDictionary(element);
@@ -183,12 +186,18 @@ public partial class GpuService
             return false;
         }
 
-        if (gpuReportSubscription != IntPtr.Zero) {
+        if (gpuReportSubscription != nint.Zero) {
             return true;
         }
 
-        using CFScope group = new(CoreFoundation.CFStringCreate("GPU Stats"));
-        using CFScope channels = new(IOReport.IOReportCopyChannelsInGroup(group, IntPtr.Zero, 0, 0, 0));
+        using CFScope group    = new(CoreFoundation.CFStringCreate("GPU Stats"));
+
+        using CFScope channels = new(IOReport.IOReportCopyChannelsInGroup(
+            group, 
+            nint.Zero, 
+            0, 
+            0, 
+            0));
 
         if (channels.IsNull) {
             gpuReportInitFailed = true;
@@ -197,28 +206,28 @@ public partial class GpuService
 
         long count = CoreFoundation.CFDictionaryGetCount(channels);
 
-        // Owned by gpuReportChannels once subscribed, so released by hand rather than scoped.
-        IntPtr mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(IntPtr.Zero, count, channels);
+        // Owned by gpuReportChannels once subscribed, so released manually rather than scoped.
+        nint mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(nint.Zero, count, channels);
 
-        if (mutableChannels == IntPtr.Zero) {
+        if (mutableChannels == nint.Zero) {
             gpuReportInitFailed = true;
             return false;
         }
 
-        IntPtr subscription = IOReport.IOReportCreateSubscription(
-            IntPtr.Zero,
+        nint subscription = IOReport.IOReportCreateSubscription(
+            nint.Zero,
             mutableChannels,
             out _,
             0,
-            IntPtr.Zero);
+            nint.Zero);
 
-        if (subscription == IntPtr.Zero) {
+        if (subscription == nint.Zero) {
             CoreFoundation.CFRelease(mutableChannels);
             gpuReportInitFailed = true;
             return false;
         }
 
-        gpuReportChannels = mutableChannels;
+        gpuReportChannels     = mutableChannels;
         gpuReportSubscription = subscription;
         return true;
     }
@@ -229,14 +238,14 @@ public partial class GpuService
             return;
         }
 
-        IntPtr sample = IOReport.IOReportCreateSamples(gpuReportSubscription, gpuReportChannels, IntPtr.Zero);
+        nint sample = IOReport.IOReportCreateSamples(gpuReportSubscription, gpuReportChannels, nint.Zero);
 
-        if (sample == IntPtr.Zero) {
+        if (sample == nint.Zero) {
             return;
         }
 
-        if (gpuReportPrevSample != IntPtr.Zero) {
-            using CFScope delta = new(IOReport.IOReportCreateSamplesDelta(gpuReportPrevSample, sample, IntPtr.Zero));
+        if (gpuReportPrevSample != nint.Zero) {
+            using CFScope delta = new(IOReport.IOReportCreateSamplesDelta(gpuReportPrevSample, sample, nint.Zero));
 
             if (!delta.IsNull && TryGetGpuResidency(delta, out double active)) {
                 gpuInfo.Metrics.GpuPercentTime = Math.Clamp(active, 0.0, 1.0);
@@ -248,9 +257,10 @@ public partial class GpuService
         gpuReportPrevSample = sample;
     }
 
-    private static bool TryGetGpuResidency(IntPtr deltaSample, out double activeFraction)
+    private static bool TryGetGpuResidency(nint deltaSample, out double activeFraction)
     {
         activeFraction = 0.0;
+        
         Dictionary<string, nint> top = CoreFoundation.ToDictionary(deltaSample);
 
         if (!top.TryGetValue("IOReportChannels", out nint channelsArray)) {
@@ -260,7 +270,7 @@ public partial class GpuService
         long channelCount = CoreFoundation.CFArrayGetCount(channelsArray);
 
         for (long i = 0; i < channelCount; i++) {
-            IntPtr item = CoreFoundation.CFArrayGetValueAtIndex(channelsArray, i);
+            nint item = CoreFoundation.CFArrayGetValueAtIndex(channelsArray, i);
 
             if (CoreFoundation.GetString(IOReport.IOReportChannelGetGroup(item)) != "GPU Stats") {
                 continue;
@@ -274,8 +284,8 @@ public partial class GpuService
                 continue;
             }
 
-            int stateCount = IOReport.IOReportStateGetCount(item);
-            long totalTime = 0;
+            int stateCount  = IOReport.IOReportStateGetCount(item);
+            long totalTime  = 0;
             long activeTime = 0;
 
             for (int s = 0; s < stateCount; s++) {
@@ -300,19 +310,19 @@ public partial class GpuService
 
     private void ReleaseGpuReportState()
     {
-        if (gpuReportPrevSample != IntPtr.Zero) {
+        if (gpuReportPrevSample != nint.Zero) {
             CoreFoundation.CFRelease(gpuReportPrevSample);
-            gpuReportPrevSample = IntPtr.Zero;
+            gpuReportPrevSample = nint.Zero;
         }
 
-        if (gpuReportChannels != IntPtr.Zero) {
+        if (gpuReportChannels != nint.Zero) {
             CoreFoundation.CFRelease(gpuReportChannels);
-            gpuReportChannels = IntPtr.Zero;
+            gpuReportChannels = nint.Zero;
         }
 
         // The IOReportSubscriptionRef is private API and is not safely CFReleasable here; it is left
-        // to be reclaimed at process exit (one per service lifetime), matching known-good usage.
-        gpuReportSubscription = IntPtr.Zero;
+        // to be reclaimed at process exit (one per service lifetime).
+        gpuReportSubscription = nint.Zero;
         gpuReportInitFailed = false;
     }
 #endif

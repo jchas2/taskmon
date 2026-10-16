@@ -5,6 +5,7 @@ public sealed partial class StartupService : WorkerService
     private const int RescanEveryCycles = 20;
 
     private StartupSpecs startupSpecs = new();
+    
     private int cyclesSinceScan;
 
     protected override void OnStart() =>
@@ -13,7 +14,7 @@ public sealed partial class StartupService : WorkerService
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
-            startupSpecs = Scan();
+            startupSpecs    = Scan();
             cyclesSinceScan = 0;
         }
 

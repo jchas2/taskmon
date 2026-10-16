@@ -5,8 +5,8 @@ namespace Task.Monitor.System.Services.Gpu;
 
 public partial class GpuService
 {
-    private const string AppleVendor = "Apple";
-    private const string AppleGpuDescription = "Apple GPU";
+    private const string AppleVendor           = "Apple";
+    private const string AppleGpuDescription   = "Apple GPU";
     private const string IntegratedAdapterType = "Integrated";
 
     private void OnStartGpuSpecs(GpuSpecs specs)

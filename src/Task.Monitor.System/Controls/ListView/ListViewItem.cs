@@ -21,9 +21,8 @@ public class ListViewItem
 
     public ListViewItem(
         string text,
-        Color backgroundColor,
-        Color foregroundColor)
-        : this(text)
+        Color  backgroundColor,
+        Color  foregroundColor) : this(text)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;
@@ -41,9 +40,8 @@ public class ListViewItem
 
     public ListViewItem(
         string[] items,
-        Color backgroundColor,
-        Color foregroundColor)
-        : this(items)
+        Color    backgroundColor,
+        Color    foregroundColor) : this(items)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;
@@ -62,9 +60,8 @@ public class ListViewItem
 
     public ListViewItem(
         ListViewSubItem[] subItems,
-        Color backgroundColor,
-        Color foregroundColor)
-        : this(subItems)
+        Color             backgroundColor,
+        Color             foregroundColor) : this(subItems)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;

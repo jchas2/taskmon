@@ -67,7 +67,7 @@ public static class MemoryDeviceParser
         int cursor = 0;
 
         while (cursor + StructureHeaderLength <= table.Length) {
-            byte type = table[cursor];
+            byte type            = table[cursor];
             byte formattedLength = table[cursor + 1];
 
             // Avoid spinning forever on a corrupted table.
@@ -76,7 +76,7 @@ public static class MemoryDeviceParser
             }
 
             int stringTableStart = cursor + formattedLength;
-            int ptr = stringTableStart;
+            int ptr              = stringTableStart;
 
             // Each structure is terminated with a double null.
             while (ptr + 1 < table.Length && !(table[ptr] == 0 && table[ptr + 1] == 0)) {
@@ -88,7 +88,8 @@ public static class MemoryDeviceParser
             // Decode the Type 17 Memory Device structure.
             if (type == MemoryDeviceType && formattedLength >= MemoryDeviceMinimumLength) {
                 MemoryDevice device = Parse(table[cursor..end]);
-                device.Slot = devices.Count + 1;
+                device.Slot         = devices.Count + 1;
+                
                 devices.Add(device);
             }
 

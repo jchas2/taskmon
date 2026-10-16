@@ -14,12 +14,15 @@ namespace Task.Monitor.Configuration;
 
 public sealed class AppConfig
 {
-    private readonly IFileSystem fileSystem;
-    private Config iniConfig;
-    private Theme defaultTheme = new();
-    private SummaryControlLayout? defaultLayout;
-    private readonly List<Theme> allThemes = new();
+    private const string ConfigFile = $"{Constants.AppName}.ini";
+
+    private readonly IFileSystem                fileSystem;
+    private readonly List<Theme>                allThemes  = new();
     private readonly List<SummaryControlLayout> allLayouts = new();
+    
+    private Config                iniConfig;
+    private SummaryControlLayout? defaultLayout;
+    private Theme                 defaultTheme = new();
     
 #if __WIN32__
     private bool useIrixMode = false;
@@ -31,7 +34,6 @@ public sealed class AppConfig
     private ConfigSection? sortSection;
     private ConfigSection? statsSection;
     private ConfigSection? uxSection;
-    private const string ConfigFile = $"{Constants.AppName}.ini";
     
     public AppConfig(IFileSystem fileSystem)
     {
@@ -224,9 +226,16 @@ public sealed class AppConfig
     }
 
     public const Statistics DefaultVisibleColumns =
-        Statistics.Process | Statistics.Pid | Statistics.User | Statistics.Pri |
-        Statistics.Cpu | Statistics.Thrd | Statistics.Gpu | Statistics.Mem |
-        Statistics.Path | Statistics.Disk;
+        Statistics.Process | 
+        Statistics.Pid     | 
+        Statistics.User    | 
+        Statistics.Pri     |
+        Statistics.Cpu     | 
+        Statistics.Thrd    | 
+        Statistics.Gpu     | 
+        Statistics.Mem     |
+        Statistics.Path    | 
+        Statistics.Disk;
 
     public Statistics VisibleColumns
     {
@@ -351,7 +360,7 @@ public sealed class AppConfig
     private void LoadLayouts()
     {
         string? layoutPath = GetConfigSubdirectory(Constants.LayoutDirectory);
-        Assembly asm = Assembly.GetExecutingAssembly();
+        Assembly asm       = Assembly.GetExecutingAssembly();
 
         foreach (string name in asm.GetManifestResourceNames()) {
             if (!name.EndsWith(Constants.LayoutExtension)) {
@@ -359,6 +368,7 @@ public sealed class AppConfig
             }
 
             using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            
             string layoutText = reader.ReadToEnd();
             Trace.WriteLine($"Parsing asset {name}");
 
@@ -476,24 +486,24 @@ public sealed class AppConfig
             : new ConfigSection(Constants.Sections.UX);
 
         uxSection
-            .AddIfMissing(Constants.Keys.ConfirmTaskDelete, true.ToString())
-            .AddIfMissing(Constants.Keys.DefaultTheme, Constants.Sections.ThemeTaskmonDefault)
-            .AddIfMissing(Constants.Keys.DefaultSummaryLayout, Constants.Sections.LayoutAllCharts)
-            .AddIfMissing(Constants.Keys.HighlightDaemons, true.ToString())
-            .AddIfMissing(Constants.Keys.HighlightStatsColUpdate, true.ToString())
-            .AddIfMissing(Constants.Keys.MetreStyle, MetreControlStyle.Dots.ToString())
-            .AddIfMissing(Constants.Keys.MultiSelectProcesses, false.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreCpuNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreDiskNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreGpuNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreMemNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreGpuMemNumerically, true.ToString())
+            .AddIfMissing(Constants.Keys.ConfirmTaskDelete,           true.ToString())
+            .AddIfMissing(Constants.Keys.DefaultTheme,                Constants.Sections.ThemeTaskmonDefault)
+            .AddIfMissing(Constants.Keys.DefaultSummaryLayout,        Constants.Sections.LayoutAllCharts)
+            .AddIfMissing(Constants.Keys.HighlightDaemons,            true.ToString())
+            .AddIfMissing(Constants.Keys.HighlightStatsColUpdate,     true.ToString())
+            .AddIfMissing(Constants.Keys.MetreStyle,                  MetreControlStyle.Dots.ToString())
+            .AddIfMissing(Constants.Keys.MultiSelectProcesses,        false.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreCpuNumerically,     true.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreDiskNumerically,    true.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreGpuNumerically,     true.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreMemNumerically,     true.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreGpuMemNumerically,  true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreNetworkNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowSmallMetreGrid, false.ToString())
-            .AddIfMissing(Constants.Keys.ShowLargeMetreGrid, true.ToString())
-            .AddIfMissing(Constants.Keys.ShowYAxisScale, true.ToString())
-            .AddIfMissing(Constants.Keys.UseIrixCpuReporting, useIrixMode.ToString());
+            .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically,    true.ToString())
+            .AddIfMissing(Constants.Keys.ShowSmallMetreGrid,          false.ToString())
+            .AddIfMissing(Constants.Keys.ShowLargeMetreGrid,          true.ToString())
+            .AddIfMissing(Constants.Keys.ShowYAxisScale,              true.ToString())
+            .AddIfMissing(Constants.Keys.UseIrixCpuReporting,         useIrixMode.ToString());
 
         if (!iniConfig.ContainsSection(uxSection.Name)) {
             iniConfig.AddConfigSection(uxSection);
@@ -502,9 +512,8 @@ public sealed class AppConfig
 
     private void LoadThemes()
     {
-        string? themePath = GetConfigSubdirectory(Constants.ThemeDirectory);
-
-        Assembly asm = Assembly.GetExecutingAssembly();
+        string?  themePath = GetConfigSubdirectory(Constants.ThemeDirectory);
+        Assembly asm       = Assembly.GetExecutingAssembly();
         
         // Load default/shipped themes.
         foreach (string name in asm.GetManifestResourceNames()) {
@@ -513,6 +522,7 @@ public sealed class AppConfig
             }
 
             using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            
             string themeText = reader.ReadToEnd();
             Trace.WriteLine($"Parsing asset {name}");
 

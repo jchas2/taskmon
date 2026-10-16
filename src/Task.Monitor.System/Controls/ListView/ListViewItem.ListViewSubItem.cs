@@ -5,24 +5,24 @@ namespace Task.Monitor.System.Controls.ListView;
 
 public class ListViewSubItem
 {
-    private ListViewItem owner;
-    private string text;
+    private ListViewItem  owner;
     private SubItemStyle? style;
+    private string        text;
 
     public ListViewSubItem(ListViewItem owner, string text)
     {
         this.owner = owner;
-        this.text = text;
+        this.text  = text;
     }
 
     public ListViewSubItem(
         ListViewItem owner,
-        string text,
-        Color backgroundColor,
-        Color foregroundColor)
+        string      text,
+        Color       backgroundColor,
+        Color       foregroundColor)
     {
         this.owner = owner;
-        this.text = text;
+        this.text  = text;
         
         style = new SubItemStyle {
             BackgroundColour = backgroundColor,

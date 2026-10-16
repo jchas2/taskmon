@@ -17,7 +17,7 @@ public sealed class LibProc
     
     [DllImport(Libraries.LibProcDyLib, SetLastError = true)]
     public static extern unsafe int proc_pidpath(
-        int pid, 
+        int   pid, 
         byte* buffer, 
-        uint buffersize);
+        uint  buffersize);
 }

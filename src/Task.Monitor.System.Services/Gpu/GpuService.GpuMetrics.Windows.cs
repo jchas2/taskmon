@@ -12,18 +12,18 @@ public partial class GpuService
     private const string GpuEngineCounterPath = @"\GPU Engine(*)\Utilization Percentage";
     private const uint PDH_CSTATUS_NEW_DATA = 0x00000001;
 
-    private nint engineQuery = nint.Zero;
-    private nint engineCounter = nint.Zero;
-    private nint counterBuffer = nint.Zero;
+    private nint engineQuery       = nint.Zero;
+    private nint engineCounter     = nint.Zero;
+    private nint counterBuffer     = nint.Zero;
     private uint counterBufferSize = 0;
-    private bool counterPrimed = false;
+    private bool counterPrimed     = false;
 
     private readonly Dictionary<long, double> engineUtilisationByLuid = new();
 
     private unsafe void OnStartGpuPidMetrics()
     {
         uint pdhResult;
-        nint query = nint.Zero;
+        nint query   = nint.Zero;
         nint counter = nint.Zero;
 
         if ((pdhResult = Pdh.PdhOpenQuery(
@@ -54,7 +54,7 @@ public partial class GpuService
             return;
         }
 
-        engineQuery = query;
+        engineQuery   = query;
         engineCounter = counter;
         counterPrimed = false;
     }
@@ -63,13 +63,13 @@ public partial class GpuService
     {
         if (counterBuffer != nint.Zero) {
             Marshal.FreeHGlobal(counterBuffer);
-            counterBuffer = nint.Zero;
+            counterBuffer     = nint.Zero;
             counterBufferSize = 0;
         }
 
         if (engineQuery != nint.Zero) {
             Pdh.PdhCloseQuery(engineQuery);
-            engineQuery = nint.Zero;
+            engineQuery   = nint.Zero;
             engineCounter = nint.Zero;
         }
 
@@ -79,8 +79,8 @@ public partial class GpuService
     private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
     {
         uint pdhResult;
-
         gpuInfo.Metrics.GpuPercentTime = 0.0;
+
         engineUtilisationByLuid.Clear();
 
         if (engineQuery == nint.Zero) {
@@ -106,8 +106,9 @@ public partial class GpuService
         }
 
         Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)counterBuffer;
-        Dictionary<string, double> engineTotals = new();
-        Dictionary<int, double> processTotals = new();
+
+        Dictionary<string, double> engineTotals  = new();
+        Dictionary<int, double>    processTotals = new();
 
         for (uint i = 0; i < itemCount; i++) {
             Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
@@ -161,7 +162,7 @@ public partial class GpuService
 
         for (int attempt = 0; attempt < 3; attempt++) {
             uint bufferSize = counterBufferSize;
-            uint count = 0;
+            uint count      = 0;
 
             int result = Pdh.PdhGetFormattedCounterArrayW(
                 engineCounter,
@@ -194,11 +195,11 @@ public partial class GpuService
 
             if (counterBuffer != nint.Zero) {
                 Marshal.FreeHGlobal(counterBuffer);
-                counterBuffer = nint.Zero;
+                counterBuffer     = nint.Zero;
                 counterBufferSize = 0;
             }
 
-            counterBuffer = Marshal.AllocHGlobal((int)bufferSize);
+            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
             counterBufferSize = bufferSize;
         }
 
@@ -210,17 +211,17 @@ public partial class GpuService
 
     private unsafe bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
     {
-        nint factoryPtr = nint.Zero;
+        nint factoryPtr     = nint.Zero;
         long totalDedicated = 0;
-        long usedDedicated = 0;
-        long totalShared = 0;
-        long usedShared = 0;
-        bool queried = false;
+        long usedDedicated  = 0;
+        long totalShared    = 0;
+        long usedShared     = 0;
+        bool queried        = false;
 
         try
         {
             Guid factoryIid = Dxgi.IID_IDXGIFactory1;
-            int hr = Dxgi.CreateDXGIFactory1(ref factoryIid, out factoryPtr);
+            int  hr         = Dxgi.CreateDXGIFactory1(ref factoryIid, out factoryPtr);
 
             if (hr < 0) {
                 PInvokeErrorHelpers.TraceOnceOnHResult(
@@ -231,7 +232,7 @@ public partial class GpuService
                 return false;
             }
 
-            byte* buffer = stackalloc byte[D3DKmt.QueryStatisticsBufferSize];
+            byte* buffer      = stackalloc byte[D3DKmt.QueryStatisticsBufferSize];
             uint adapterIndex = 0;
 
             while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapter1Ptr) == Dxgi.S_OK)
@@ -263,13 +264,14 @@ public partial class GpuService
                     }
 
                     totalDedicated += (long)(ulong)desc.DedicatedVideoMemory;
-                    usedDedicated += dedicatedResident;
-                    totalShared += (long)(ulong)desc.SharedSystemMemory;
-                    usedShared += sharedResident;
+                    usedDedicated  += dedicatedResident;
+                    totalShared    += (long)(ulong)desc.SharedSystemMemory;
+                    usedShared     += sharedResident;
+                    
                     queried = true;
 
                     long deviceDedicated = (long)(ulong)desc.DedicatedVideoMemory;
-                    long deviceShared = (long)(ulong)desc.SharedSystemMemory;
+                    long deviceShared    = (long)(ulong)desc.SharedSystemMemory;
 
                     GpuDeviceMetrics metrics = new();
                     // Not inline declared to assist with debugging.
@@ -321,26 +323,24 @@ public partial class GpuService
             return false;
         }
 
-        gpuInfo.Metrics.TotalGpuMemory = dedicatedTotal;
-        gpuInfo.Metrics.AvailableGpuMemory = dedicatedTotal - usedDedicated;
-
-        gpuInfo.Metrics.TotalSharedGpuMemory = totalShared;
-        gpuInfo.Metrics.AvailableSharedGpuMemory = totalShared - usedShared;
-
-        gpuInfo.Metrics.TotalCombinedGpuMemory = dedicatedTotal + totalShared;
+        gpuInfo.Metrics.TotalGpuMemory             = dedicatedTotal;
+        gpuInfo.Metrics.AvailableGpuMemory         = dedicatedTotal - usedDedicated;
+        gpuInfo.Metrics.TotalSharedGpuMemory       = totalShared;
+        gpuInfo.Metrics.AvailableSharedGpuMemory   = totalShared - usedShared;
+        gpuInfo.Metrics.TotalCombinedGpuMemory     = dedicatedTotal + totalShared;
         gpuInfo.Metrics.AvailableCombinedGpuMemory = (dedicatedTotal + totalShared) - (usedDedicated + usedShared);
 
         return true;
     }
 
     private unsafe bool TryGetBytesResident(
-        byte* buffer,
-        long adapterLuid,
+        byte*    buffer,
+        long     adapterLuid,
         out long dedicatedBytesResident,
         out long sharedBytesResident)
     {
         dedicatedBytesResident = 0;
-        sharedBytesResident = 0;
+        sharedBytesResident    = 0;
 
         InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_ADAPTER, adapterLuid);
         int status = D3DKmt.D3DKMTQueryStatistics((nint)buffer);
@@ -450,9 +450,9 @@ public partial class GpuService
 
     private static unsafe int QuerySegmentStatistics(
         byte* buffer,
-        long adapterLuid,
-        int offset,
-        uint segmentId)
+        long  adapterLuid,
+        int   offset,
+        uint  segmentId)
     {
         InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_SEGMENT, adapterLuid);
         *(uint*)(buffer + offset) = segmentId;

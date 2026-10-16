@@ -14,10 +14,9 @@ public partial class StartupService
     private const string UserApplicationsFolder   = "Applications";
     private const string OpenAtLoginOrigin        = "Login Items (Open at Login)";
     private const string OpenAtLoginUnavailable   = "Open at Login needs Full Disk Access under sudo";
+    private const string AppleLabelPrefix         = "com.apple.";
 
     private const uint NobodyUid = unchecked((uint)-2);
-
-    private const string AppleLabelPrefix = "com.apple.";
 
     private readonly Dictionary<string, string?> publisherCache = new(StringComparer.Ordinal);
 
@@ -89,8 +88,8 @@ public partial class StartupService
     }
 
     private void ScanBackgroundItems(
-        StartupSpecs specs,
-        BackgroundItems background,
+        StartupSpecs     specs,
+        BackgroundItems  background,
         LaunchdOverrides userOverrides,
         LaunchdOverrides systemOverrides)
     {
@@ -115,10 +114,10 @@ public partial class StartupService
     }
 
     private void AddBackgroundLoginHelper(
-        StartupSpecs specs,
-        BackgroundItems background,
+        StartupSpecs         specs,
+        BackgroundItems      background,
         BackgroundItemRecord record,
-        LaunchdOverrides userOverrides)
+        LaunchdOverrides     userOverrides)
     {
         if (record.ResolvePath(background.FindParentPath(record)) is not { } helperPath) {
             return;
@@ -144,11 +143,11 @@ public partial class StartupService
     }
 
     private void AddBackgroundLaunchdJob(
-        StartupSpecs specs,
-        BackgroundItems background,
+        StartupSpecs         specs,
+        BackgroundItems      background,
         BackgroundItemRecord record,
-        LaunchdOverrides userOverrides,
-        LaunchdOverrides systemOverrides)
+        LaunchdOverrides     userOverrides,
+        LaunchdOverrides     systemOverrides)
     {
         string? parentPath = background.FindParentPath(record);
 
@@ -176,7 +175,7 @@ public partial class StartupService
             plistPath);
 
         entry.Publisher ??= background.FindDeveloperName(record);
-        entry.State = overrides.ResolveState(label, definition.Disabled, record.IsApproved);
+        entry.State       = overrides.ResolveState(label, definition.Disabled, record.IsApproved);
 
         specs.Entries.Add(entry);
     }
@@ -214,11 +213,11 @@ public partial class StartupService
         };
 
     private void ScanLaunchdFolder(
-        StartupSpecs specs,
-        string folderPath,
-        StartupEntrySource source,
-        StartupEntryScope scope,
-        LaunchdOverrides overrides,
+        StartupSpecs        specs,
+        string              folderPath,
+        StartupEntrySource  source,
+        StartupEntryScope   scope,
+        LaunchdOverrides    overrides,
         Func<string, bool?> getApproval)
     {
         foreach (string file in EnumerateFiles(folderPath, "*.plist")) {
@@ -262,10 +261,10 @@ public partial class StartupService
     }
 
     private void ScanLoginHelpers(
-        StartupSpecs specs,
-        string appPath,
+        StartupSpecs      specs,
+        string            appPath,
         StartupTargetUser user,
-        LaunchdOverrides userOverrides)
+        LaunchdOverrides  userOverrides)
     {
         string loginItemsPath = Path.Combine(
             appPath, 
@@ -294,11 +293,11 @@ public partial class StartupService
     }
 
     private void ScanBundledLaunchdJobs(
-        StartupSpecs specs,
-        string appPath,
+        StartupSpecs      specs,
+        string            appPath,
         StartupTargetUser user,
-        LaunchdOverrides userOverrides,
-        LaunchdOverrides systemOverrides)
+        LaunchdOverrides  userOverrides,
+        LaunchdOverrides  systemOverrides)
     {
         string libraryPath = Path.Combine(appPath, "Contents", "Library");
 
@@ -322,12 +321,12 @@ public partial class StartupService
     }
 
     private void ScanBundledLaunchdFolder(
-        StartupSpecs specs,
-        string appPath,
-        string folderPath,
+        StartupSpecs       specs,
+        string             appPath,
+        string             folderPath,
         StartupEntrySource source,
-        StartupEntryScope scope,
-        LaunchdOverrides overrides,
+        StartupEntryScope  scope,
+        LaunchdOverrides   overrides,
         Func<string, bool> isLoaded)
     {
         foreach (string file in EnumerateFiles(folderPath, "*.plist")) {
@@ -352,10 +351,10 @@ public partial class StartupService
 
     private StartupEntry CreateLaunchdEntry(
         LaunchdJobDefinition definition,
-        string label,
-        StartupEntrySource source,
-        StartupEntryScope scope,
-        string plistPath)
+        string               label,
+        StartupEntrySource   source,
+        StartupEntryScope    scope,
+        string               plistPath)
     {
         StartupEntry entry = new() {
             Name           = label,
@@ -431,6 +430,7 @@ public partial class StartupService
         }
     }
 
+    // TODO: Use IFileSystem abstraction.
     private static string[] EnumerateFiles(string folderPath, string pattern)
     {
         if (!Directory.Exists(folderPath)) {
@@ -475,8 +475,8 @@ public partial class StartupService
 
     private sealed class BackgroundItems
     {
-        private readonly Dictionary<string, BackgroundItemRecord> byIdentifier = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, bool> legacyApprovalByPath = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, BackgroundItemRecord> byIdentifier         = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, bool>                 legacyApprovalByPath = new(StringComparer.Ordinal);
 
         public List<BackgroundItemRecord> Records { get; } = new();
 

@@ -2,11 +2,11 @@
 
 public sealed class OutputWriter : IOutputWriter
 {
-    private readonly TextWriter writer;
+    private readonly TextWriter  writer;
 
     private static IOutputWriter errorWriter = new OutputWriter(Console.Error);
-    private static IOutputWriter outWriter = new OutputWriter(Console.Out);
-    private static Lock lockObject = new ();
+    private static IOutputWriter outWriter   = new OutputWriter(Console.Out);
+    private static Lock          lockObject  = new ();
     
     public OutputWriter(TextWriter writer) => 
         this.writer = writer;

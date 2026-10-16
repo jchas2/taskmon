@@ -6,41 +6,41 @@ public static class IOReport
 {
     [DllImport(Libraries.IOReport)]
     public static extern IntPtr IOReportCopyChannelsInGroup(
-        IntPtr group,
-        IntPtr subgroup,
+        nint  group,
+        nint  subgroup,
         ulong a,
         ulong b,
         ulong c);
 
     [DllImport(Libraries.IOReport)]
     public static extern IntPtr IOReportCreateSubscription(
-        IntPtr a,
-        IntPtr channels,
-        out IntPtr subbedChannels,
-        ulong d,
-        IntPtr e);
+        nint     a,
+        nint     channels,
+        out nint subbedChannels,
+        ulong    d,
+        nint     e);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportCreateSamples(IntPtr subscription, IntPtr channels, IntPtr unused);
+    public static extern nint IOReportCreateSamples(nint subscription, nint channels, nint unused);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportCreateSamplesDelta(IntPtr prev, IntPtr current, IntPtr unused);
+    public static extern nint IOReportCreateSamplesDelta(nint prev, nint current, nint unused);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportChannelGetGroup(IntPtr item);
+    public static extern nint IOReportChannelGetGroup(nint item);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportChannelGetSubGroup(IntPtr item);
+    public static extern nint IOReportChannelGetSubGroup(nint item);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportChannelGetChannelName(IntPtr item);
+    public static extern nint IOReportChannelGetChannelName(nint item);
 
     [DllImport(Libraries.IOReport)]
-    public static extern int IOReportStateGetCount(IntPtr item);
+    public static extern int IOReportStateGetCount(nint item);
 
     [DllImport(Libraries.IOReport)]
-    public static extern IntPtr IOReportStateGetNameForIndex(IntPtr item, int index);
+    public static extern nint IOReportStateGetNameForIndex(nint item, int index);
 
     [DllImport(Libraries.IOReport)]
-    public static extern long IOReportStateGetResidency(IntPtr item, int index);
+    public static extern long IOReportStateGetResidency(nint item, int index);
 }

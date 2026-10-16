@@ -29,9 +29,9 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
             yield break;
         }
 
-        IReadOnlyList<GpuDevice> gpus = getGpus();
-        HashSet<long> assigned = new();
-        int count = Nvml.DeviceCount();
+        IReadOnlyList<GpuDevice> gpus     = getGpus();
+        HashSet<long>            assigned = new();
+        int                      count    = Nvml.DeviceCount();
 
         for (int i = 0; i < count; i++) {
             if (!Nvml.TryGetHandle(i, out nint handle) || !Nvml.TryGetPowerWatts(handle, out double watts)) {
@@ -52,11 +52,11 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
             }
 
             yield return new PowerReading {
-                Component = PowerComponent.Gpu,
+                Component   = PowerComponent.Gpu,
                 ComponentId = id,
-                Rail = "GPU",
-                Watts = watts,
-                Source = PowerSource.Nvml
+                Rail        = "GPU",
+                Watts       = watts,
+                Source      = PowerSource.Nvml
             };
         }
     }

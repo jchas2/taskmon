@@ -10,9 +10,9 @@ public partial class ProcessInfoControl
 {
     public class ThreadListViewItem : ListViewItem
     {
-        private string? lastThreadState;
-        private string? lastReason;
-        private int lastPriority;
+        private string?  lastThreadState;
+        private string?  lastReason;
+        private int      lastPriority;
         private TimeSpan lastCpuKernelTime;
         private TimeSpan lastCpuUserTime;
         private TimeSpan lastCpuTotalTime;

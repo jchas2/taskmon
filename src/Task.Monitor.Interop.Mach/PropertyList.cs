@@ -4,21 +4,15 @@ using System.Xml.Linq;
 
 namespace Task.Monitor.Interop.Mach;
 
-// A keyed archive object reference (CF$UID): an index into an NSKeyedArchiver's $objects.
 public readonly record struct PropertyListUid(long Value);
 
-// Property lists (XML or binary bplist00) materialised as managed values via CoreFoundation:
-//   dict -> Dictionary<string, object?>, array -> List<object?>, string -> string,
-//   boolean -> bool, integer -> long, real -> double, data -> byte[].
-// Anything else (dates, non-string dictionary keys) is dropped as null.
 public static class PropertyList
 {
-    private const ulong kCFPropertyListImmutable = 0;
-    private const long kCFPropertyListXMLFormat_v1_0 = 100;
-    private const string UidKey = "CF$UID";
-    private const int MaxDepth = 32;
+    private const ulong  kCFPropertyListImmutable      = 0;
+    private const long   kCFPropertyListXMLFormat_v1_0 = 100;
+    private const string UidKey                        = "CF$UID";
+    private const int    MaxDepth                      = 32;
 
-    // Null when the file can't be read (e.g. a root-only LaunchDaemon) or isn't a property list.
     public static object? ReadFile(string path)
     {
         byte[] bytes;
@@ -36,9 +30,6 @@ public static class PropertyList
     public static object? Parse(ReadOnlySpan<byte> bytes) =>
         WithPropertyList(bytes, ToManaged);
 
-    // As ReadFile/Parse, but keeping NSKeyedArchiver object references as PropertyListUid. CF has
-    // no public accessor for those, so the list is re-encoded as XML, where CF writes each one as
-    // <dict><key>CF$UID</key><integer>n</integer></dict>, and that is read instead.
     public static object? ReadKeyedArchiveFile(string path)
     {
         byte[] bytes;
@@ -56,25 +47,25 @@ public static class PropertyList
     public static object? ParseKeyedArchive(ReadOnlySpan<byte> bytes) =>
         WithPropertyList(bytes, plist => {
             using CFScope xml = new(CoreFoundation.CFPropertyListCreateData(
-                IntPtr.Zero,
+                nint.Zero,
                 plist,
                 kCFPropertyListXMLFormat_v1_0,
                 0,
-                IntPtr.Zero));
+                nint.Zero));
 
             return xml.IsNull ? null : FromXml(ToBytes(xml));
         });
 
-    private static unsafe object? WithPropertyList(ReadOnlySpan<byte> bytes, Func<IntPtr, object?> convert)
+    private static unsafe object? WithPropertyList(ReadOnlySpan<byte> bytes, Func<nint, object?> convert)
     {
         if (bytes.IsEmpty) {
             return null;
         }
 
-        IntPtr dataRef;
+        nint dataRef;
 
         fixed (byte* ptr = bytes) {
-            dataRef = CoreFoundation.CFDataCreate(IntPtr.Zero, ptr, bytes.Length);
+            dataRef = CoreFoundation.CFDataCreate(nint.Zero, ptr, bytes.Length);
         }
 
         using CFScope data = new(dataRef);
@@ -84,21 +75,21 @@ public static class PropertyList
         }
 
         using CFScope plist = new(CoreFoundation.CFPropertyListCreateWithData(
-            IntPtr.Zero,
+            nint.Zero,
             data,
             kCFPropertyListImmutable,
-            IntPtr.Zero,
-            IntPtr.Zero));
+            nint.Zero,
+            nint.Zero));
 
         return plist.IsNull ? null : convert(plist);
     }
 
-    // Converts a borrowed CF property list object; the caller keeps ownership of it.
-    public static object? ToManaged(IntPtr cf) => ToManaged(cf, 0);
+    // Converts a borrowed CF property list object; the caller keeps ownership.
+    public static object? ToManaged(nint cf) => ToManaged(cf, 0);
 
-    private static object? ToManaged(IntPtr cf, int depth)
+    private static object? ToManaged(nint cf, int depth)
     {
-        if (cf == IntPtr.Zero || depth > MaxDepth) {
+        if (cf == nint.Zero || depth > MaxDepth) {
             return null;
         }
 
@@ -137,7 +128,7 @@ public static class PropertyList
         return null;
     }
 
-    private static unsafe Dictionary<string, object?> ToDictionary(IntPtr cfDict, int depth)
+    private static unsafe Dictionary<string, object?> ToDictionary(nint cfDict, int depth)
     {
         int count = (int)CoreFoundation.CFDictionaryGetCount(cfDict);
         Dictionary<string, object?> result = new(count, StringComparer.Ordinal);
@@ -146,10 +137,10 @@ public static class PropertyList
             return result;
         }
 
-        nint[] keys = new nint[count];
+        nint[] keys   = new nint[count];
         nint[] values = new nint[count];
 
-        fixed (nint* keysPtr = keys)
+        fixed (nint* keysPtr   = keys)
         fixed (nint* valuesPtr = values) {
             CoreFoundation.CFDictionaryGetKeysAndValues((nint*)cfDict, keysPtr, valuesPtr);
         }
@@ -169,9 +160,9 @@ public static class PropertyList
         return result;
     }
 
-    private static List<object?> ToList(IntPtr cfArray, int depth)
+    private static List<object?> ToList(nint cfArray, int depth)
     {
-        long count = CoreFoundation.CFArrayGetCount(cfArray);
+        long count           = CoreFoundation.CFArrayGetCount(cfArray);
         List<object?> result = new((int)count);
 
         for (long i = 0; i < count; i++) {
@@ -187,6 +178,7 @@ public static class PropertyList
 
         try {
             using XmlReader reader = XmlReader.Create(new MemoryStream(xml), settings);
+            
             XElement? value = XDocument.Load(reader).Root?.Elements().FirstOrDefault();
 
             return value is null ? null : FromXml(value, 0);
@@ -250,12 +242,12 @@ public static class PropertyList
         }
     }
 
-    private static unsafe byte[] ToBytes(IntPtr cfData)
+    private static unsafe byte[] ToBytes(nint cfData)
     {
-        long length = CoreFoundation.CFDataGetLength(cfData);
-        IntPtr bytes = CoreFoundation.CFDataGetBytePtr(cfData);
+        long length  = CoreFoundation.CFDataGetLength(cfData);
+        nint bytes   = CoreFoundation.CFDataGetBytePtr(cfData);
 
-        return length <= 0 || bytes == IntPtr.Zero
+        return length <= 0 || bytes == nint.Zero
             ? []
             : new ReadOnlySpan<byte>((void*)bytes, (int)length).ToArray();
     }

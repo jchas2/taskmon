@@ -28,8 +28,9 @@ public static class CoreFoundation
     [DllImport(Libraries.CoreFoundation)]
     public static extern IntPtr CFStringCreateWithCString(
         IntPtr allocator,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string cStr,
-        int encoding);
+        [MarshalAs(UnmanagedType.LPUTF8Str)] 
+        string cStr,
+        int    encoding);
 
     [DllImport(Libraries.CoreFoundation)]                                                                                                                         
     public static extern long CFDictionaryGetTypeID();
@@ -82,13 +83,11 @@ public static class CoreFoundation
     [DllImport(Libraries.CoreFoundation)]
     public static extern long CFStringGetMaximumSizeForEncoding(long length, int encoding);
 
-    // Reads XML and binary (bplist00) property lists alike. format and error are optional out
-    // pointers, passed as zero when not wanted.
     [DllImport(Libraries.CoreFoundation)]
     public static extern IntPtr CFPropertyListCreateWithData(
         IntPtr allocator,
         IntPtr data,
-        ulong options,
+        ulong  options,
         IntPtr format,
         IntPtr error);
 
@@ -96,24 +95,26 @@ public static class CoreFoundation
     public static extern IntPtr CFPropertyListCreateData(
         IntPtr allocator,
         IntPtr propertyList,
-        long format,
-        ulong options,
+        long   format,
+        ulong  options,
         IntPtr error);
 
     [DllImport(Libraries.CoreFoundation)]
     public static unsafe extern IntPtr CFURLCreateFromFileSystemRepresentation(
         IntPtr allocator,
-        byte* buffer,
-        long bufLen,
-        [MarshalAs(UnmanagedType.U1)] bool isDirectory);
+        byte*  buffer,
+        long   bufLen,
+        [MarshalAs(UnmanagedType.U1)] 
+        bool   isDirectory);
 
     [DllImport(Libraries.CoreFoundation)]
     [return: MarshalAs(UnmanagedType.U1)]
     public static unsafe extern bool CFURLGetFileSystemRepresentation(
         IntPtr url,
-        [MarshalAs(UnmanagedType.U1)] bool resolveAgainstBase,
-        byte* buffer,
-        long maxBufLen);
+        [MarshalAs(UnmanagedType.U1)] 
+        bool   resolveAgainstBase,
+        byte*  buffer,
+        long   maxBufLen);
     
     [DllImport(Libraries.CoreFoundation)]
     public static extern void CFRelease(IntPtr cf);
@@ -128,14 +129,14 @@ public static class CoreFoundation
     [return: MarshalAs(UnmanagedType.U1)]
     public static unsafe extern bool CFStringGetCString(
         IntPtr theString,
-        byte* buffer,
-        long bufferSize,
-        int encoding);
+        byte*  buffer,
+        long   bufferSize,
+        int    encoding);
 
     private const int kCFStringEncodingUTF8 = 0x08000100;
-    private const int kCFNumberSInt64Type = 4;
-    private const int kCFNumberDoubleType = 13;
-    private const int MaxPathBytes = 1024; // PATH_MAX
+    private const int kCFNumberSInt64Type  = 4;
+    private const int kCFNumberDoubleType  = 13;
+    private const int MaxPathBytes         = 1024; // PATH_MAX
     
     public static void CFNumberGetValue(IntPtr number, out long value)
     {
@@ -230,10 +231,10 @@ public static class CoreFoundation
             return result;
         }
 
-        Span<nint> keys = stackalloc nint[count];
+        Span<nint> keys   = stackalloc nint[count];
         Span<nint> values = stackalloc nint[count];
         
-        fixed (nint* keysPtr = keys)
+        fixed (nint* keysPtr   = keys)
         fixed (nint* valuesPtr = values) {
 
             CFDictionaryGetKeysAndValues(

@@ -11,7 +11,7 @@ public partial class DiskService
     private const int MaxPhysicalDrives = 64;
 
     private const uint DeviceQueryAccess = 0;
-    private const uint DeviceShareMode = FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE;
+    private const uint DeviceShareMode   = FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE;
 
     private unsafe void OnStartDiskSpecs(DiskSpecs specs)
     {
@@ -58,8 +58,8 @@ public partial class DiskService
                     ? DiskDeviceParser.Parse(descriptor)
                     : new DiskDevice();
 
-                device.Index = index;
-                device.Capacity = QueryCapacity(handle, devicePath);
+                device.Index     = index;
+                device.Capacity  = QueryCapacity(handle, devicePath);
                 device.MediaType = ResolveMediaType(handle, device);
 
                 specs.Devices.Add(device);
@@ -271,11 +271,11 @@ public partial class DiskService
 
     private static void AddVolume(DiskSpecs specs, string volumeName)
     {
-        DiskVolume volume = new();
-        volume.VolumeName = volumeName;
+        DiskVolume volume  = new();
+        volume.VolumeName  = volumeName;
         volume.MountPoints = QueryMountPoints(volumeName);
-        volume.DriveType = DiskDeviceParser.DecodeDriveType(FileApi.GetDriveTypeW(volumeName));
-        volume.IsReady = TryQueryVolumeInformation(volumeName, volume);
+        volume.DriveType   = DiskDeviceParser.DecodeDriveType(FileApi.GetDriveTypeW(volumeName));
+        volume.IsReady     = TryQueryVolumeInformation(volumeName, volume);
 
         QueryVolumeCapacity(volumeName, volume);
         AttachVolume(specs, volumeName, volume);
@@ -330,12 +330,12 @@ public partial class DiskService
 
     private static unsafe bool TryQueryVolumeInformation(string volumeName, DiskVolume volume)
     {
-        char* label = stackalloc char[Kernel32.MAX_PATH];
+        char* label      = stackalloc char[Kernel32.MAX_PATH];
         char* fileSystem = stackalloc char[Kernel32.MAX_PATH];
 
-        uint serialNumber = 0;
+        uint serialNumber           = 0;
         uint maximumComponentLength = 0;
-        uint fileSystemFlags = 0;
+        uint fileSystemFlags        = 0;
 
         if (!FileApi.GetVolumeInformationW(
             volumeName,
@@ -350,8 +350,8 @@ public partial class DiskService
             return false;
         }
 
-        volume.Label      = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(label, Kernel32.MAX_PATH));
-        volume.FileSystem = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(fileSystem, Kernel32.MAX_PATH));
+        volume.Label        = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(label, Kernel32.MAX_PATH));
+        volume.FileSystem   = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(fileSystem, Kernel32.MAX_PATH));
         volume.SerialNumber = serialNumber;
 
         return true;
@@ -360,8 +360,8 @@ public partial class DiskService
     private static unsafe void QueryVolumeCapacity(string volumeName, DiskVolume volume)
     {
         ulong freeBytesAvailable = 0;
-        ulong totalBytes = 0;
-        ulong totalFreeBytes = 0;
+        ulong totalBytes         = 0;
+        ulong totalFreeBytes     = 0;
 
         if (!FileApi.GetDiskFreeSpaceExW(
             volumeName,
@@ -469,8 +469,8 @@ public partial class DiskService
                 return false;
             }
 
-            int capacity = (buffer.Length - WinIoCtl.VolumeDiskExtentsArrayOffset) / WinIoCtl.DiskExtentSize;
-            int usable = (int)Math.Min(extentCount, (uint)capacity);
+            int capacity   = (buffer.Length - WinIoCtl.VolumeDiskExtentsArrayOffset) / WinIoCtl.DiskExtentSize;
+            int usable     = (int)Math.Min(extentCount, (uint)capacity);
             uint[] numbers = new uint[usable];
 
             for (int extent = 0; extent < usable; extent++) {

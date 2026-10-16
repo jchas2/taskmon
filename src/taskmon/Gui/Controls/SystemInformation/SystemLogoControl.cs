@@ -9,9 +9,13 @@ namespace Task.Monitor.Gui.Controls.SystemInformation;
 
 public sealed class SystemLogoControl : Control
 {
+    private const int Margin = 2;
+
+    private static readonly TimeSpan PulseInterval = TimeSpan.FromSeconds(1);
+
     private static readonly int logoWidth  = LogoArt.Lines.Max(line => line.Length);
     private static readonly int logoHeight = LogoArt.Lines.Length;
-
+    
 #if __WIN32__
     private static readonly int[] SplitIndex =
         { 21, 21, 21, 20, 20, 19, 18, 16, 17, 23, 16, 15, 15, 14, 14, 0 };
@@ -40,14 +44,11 @@ public sealed class SystemLogoControl : Control
         "BE46C8", "BE46C8", "BE46C8",
     };
 #endif
-
-    private static readonly TimeSpan PulseInterval = TimeSpan.FromSeconds(1);
-
-    private const int Margin = 2;
-
+    
     private readonly AnsiScreenBuffer frame = new();
 
     private SysThreading::Timer? pulseTimer;
+    
     private volatile bool pulseBold;
     private volatile bool loaded;
 
@@ -59,8 +60,8 @@ public sealed class SystemLogoControl : Control
 
     protected override void OnLoad()
     {
-        pulseBold = false;
-        loaded = true;
+        pulseBold  = false;
+        loaded     = true;
         pulseTimer = new SysThreading::Timer(OnPulseTick, null, PulseInterval, PulseInterval);
 
         base.OnLoad();

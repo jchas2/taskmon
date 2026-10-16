@@ -73,9 +73,9 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 
     private static GpuDevice? MatchGpu(
         IReadOnlyList<GpuDevice> gpus, 
-        uint vendorId, 
-        uint deviceId, 
-        Dictionary<long, int> assigned)
+        uint                     vendorId, 
+        uint                     deviceId, 
+        Dictionary<long, int>    assigned)
     {
         // Match on PCI ids; if several identical cards match, hand out each GpuDevice once.
         foreach (GpuDevice candidate in gpus) {

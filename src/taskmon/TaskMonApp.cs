@@ -110,7 +110,7 @@ public sealed class TaskMonApp(RunContext runContext)
 
         if (!string.IsNullOrEmpty(sortArg)) {
             if (Enum.TryParse(sortArg, out Statistics sortCol)) {
-                runContext.AppConfig.SortColumn = sortCol;
+                runContext.AppConfig.SortColumn      = sortCol;
                 runContext.AppConfig.VisibleColumns |= sortCol;
             }
             else {
@@ -166,7 +166,7 @@ public sealed class TaskMonApp(RunContext runContext)
 
             if (layout != null) {
                 runContext.AppConfig.DefaultLayout = layout;
-                runContext.AppConfig.SortColumn = sortCol;
+                runContext.AppConfig.SortColumn    = sortCol;
             }
             else {
                 OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: Layout {layoutName} not found");

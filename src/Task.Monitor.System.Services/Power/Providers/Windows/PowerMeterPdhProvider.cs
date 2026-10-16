@@ -19,7 +19,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
     public bool TryInitialise()
     {
-        nint newQuery = nint.Zero;
+        nint newQuery   = nint.Zero;
         nint newCounter = nint.Zero;
 
         if (Pdh.PdhOpenQuery(null, nint.Zero, &newQuery) != Pdh.ERROR_SUCCESS) {
@@ -31,7 +31,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
             return false;
         }
 
-        query = newQuery;
+        query   = newQuery;
         counter = newCounter;
 
         Pdh.PdhCollectQueryData(query);
@@ -49,9 +49,9 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         return [
             new PowerReading {
                 Component = PowerComponent.System,
-                Rail = "System",
-                Watts = watts,
-                Source = PowerSource.PowerMeter
+                Rail     = "System",
+                Watts    = watts,
+                Source   = PowerSource.PowerMeter
             }
         ];
     }
@@ -63,8 +63,9 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         }
 
         Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)buffer;
+        
         double summed = 0;
-        bool any = false;
+        bool   any    = false;
 
         for (uint i = 0; i < itemCount; i++) {
             Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
@@ -104,11 +105,15 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         itemCount = 0;
 
         for (int attempt = 0; attempt < 3; attempt++) {
-            uint size = bufferSize;
+            uint size  = bufferSize;
             uint count = 0;
 
             int result = Pdh.PdhGetFormattedCounterArrayW(
-                counter, Pdh.PDH_FMT_DOUBLE, &size, &count, buffer);
+                counter, 
+                Pdh.PDH_FMT_DOUBLE,
+                &size, 
+                &count,
+                buffer);
 
             if (result == (int)Pdh.ERROR_SUCCESS) {
                 itemCount = count;
@@ -140,7 +145,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
         if (query != nint.Zero) {
             Pdh.PdhCloseQuery(query);
-            query = nint.Zero;
+            query   = nint.Zero;
             counter = nint.Zero;
         }
     }

@@ -4,7 +4,7 @@ namespace Task.Monitor.Interop.Mach;
 
 public static class MachTask
 {
-    public const int KERN_SUCCESS = 0;
+    public const int KERN_SUCCESS   = 0;
     public const int TASK_DYLD_INFO = 17;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -39,17 +39,17 @@ public static class MachTask
 
     [DllImport(Libraries.LibSystemDyLib)]
     public static extern int task_info(
-        uint targetTask, 
-        int flavor, 
+        uint               targetTask, 
+        int                flavor, 
         ref task_dyld_info taskInfoOut, 
-        ref uint taskInfoCount);
+        ref uint           taskInfoCount);
 
     [DllImport(Libraries.LibSystemDyLib)]
     public static extern unsafe int mach_vm_read_overwrite(
-        uint targetTask, 
-        ulong address, 
-        ulong size, 
-        ulong data, 
+        uint   targetTask, 
+        ulong  address, 
+        ulong  size, 
+        ulong  data, 
         ulong* outSize);
 
     [DllImport(Libraries.LibSystemDyLib)]

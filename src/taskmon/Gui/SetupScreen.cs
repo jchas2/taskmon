@@ -14,151 +14,152 @@ namespace Task.Monitor.Gui;
 
 public class SetupScreen : Screen
 {
-    private readonly RunContext runContext;
-    private readonly ScreenApplication screenApp;
-    private readonly ListView headerView;
-    private readonly ListView menuView;
-    private readonly ListView generalView;
-    private readonly ListView columnsView;
-    private readonly ListView themeView;
-    private readonly ListView layoutView;
-    private readonly ListView metreView;
-    private readonly ListView delayView;
-    private readonly ListView numProcsView;
-    private readonly List<ListView> tabControls = [];
-    private Theme previewTheme;
-
-    private bool preferIndexedColours;
-    private bool returnToLayoutsTab;
-
     private const int ControlGutter = 1;
     private const int MenuViewWidth = 22;
     private const int CommandLength = 10;
 
     private const string NewLayoutRow = "+ New Layout";
 
+    private readonly RunContext        runContext;
+    private readonly ScreenApplication screenApp;
+    private readonly ListView          headerView;
+    private readonly ListView          menuView;
+    private readonly ListView          generalView;
+    private readonly ListView          columnsView;
+    private readonly ListView          themeView;
+    private readonly ListView          layoutView;
+    private readonly ListView          metreView;
+    private readonly ListView          delayView;
+    private readonly ListView          numProcsView;
+    private readonly List<ListView>    tabControls = [];
+    
+    private Theme previewTheme;
+
+    private bool preferIndexedColours;
+    private bool returnToLayoutsTab;
+    
     private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
     [
-        (Statistics.User, "User"),
-        (Statistics.Pri, "Priority"),
-        (Statistics.Cpu, "CPU %"),
-        (Statistics.AvgCpu, "Average CPU %"),
-        (Statistics.MaxCpu, "Max CPU %"),
-        (Statistics.Thrd, "Threads"),
-        (Statistics.Gpu, "GPU %"),
-        (Statistics.AvgGpu, "Average GPU %"),
-        (Statistics.MaxGpu, "Max GPU %"),
-        (Statistics.Mem, "Memory"),
-        (Statistics.AvgMem, "Average Memory"),
-        (Statistics.MaxMem, "Max Memory"),
-        (Statistics.Disk, "Disk"),
+        (Statistics.User,    "User"),
+        (Statistics.Pri,     "Priority"),
+        (Statistics.Cpu,     "CPU %"),
+        (Statistics.AvgCpu,  "Average CPU %"),
+        (Statistics.MaxCpu,  "Max CPU %"),
+        (Statistics.Thrd,    "Threads"),
+        (Statistics.Gpu,     "GPU %"),
+        (Statistics.AvgGpu,  "Average GPU %"),
+        (Statistics.MaxGpu,  "Max GPU %"),
+        (Statistics.Mem,     "Memory"),
+        (Statistics.AvgMem,  "Average Memory"),
+        (Statistics.MaxMem,  "Max Memory"),
+        (Statistics.Disk,    "Disk"),
         (Statistics.AvgDisk, "Average Disk"),
         (Statistics.MaxDisk, "Max Disk"),
-        (Statistics.Power, "Power"),
-        (Statistics.Path, "Path"),
+        (Statistics.Power,   "Power"),
+        (Statistics.Path,    "Path"),
     ];
 
     public SetupScreen(RunContext runContext, ScreenApplication screenApp) : base(runContext.Terminal)
     {
         this.runContext = runContext;
-        this.screenApp = screenApp;
+        this.screenApp  = screenApp;
 
         headerView = new(runContext.Terminal) {
-            Name = nameof(headerView),
-            TabIndex = 0,
-            TabStop = false,
+            Name  = nameof(headerView),
+            TabIndex          = 0,
+            TabStop           = false,
             ShowColumnHeaders = false,
-            EnableRowSelect = false,
-            EnableScroll = false,
+            EnableRowSelect   = false,
+            EnableScroll      = false,
         };
 
         headerView.ColumnHeaders.Add(new ListViewColumnHeader("SETUP"));
         
         menuView = new(runContext.Terminal) {
-            Name = nameof(menuView),
+            Name     = nameof(menuView),
             TabIndex = 1,
-            TabStop = true
+            TabStop  = true
         };
         
         menuView.ColumnHeaders.Add(new ListViewColumnHeader("CATEGORIES"));
 
         generalView = new(runContext.Terminal) {
-            Name = nameof(generalView),
-            EnableScroll = true,
-            ShowCheckboxes = true,
+            Name              = nameof(generalView),
+            EnableScroll      = true,
+            ShowCheckboxes    = true,
             ShowColumnHeaders = true,
-            TabIndex = 2,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 2,
+            TabStop           = true,
+            Visible           = false
         };
 
         generalView.ColumnHeaders.Add(new ListViewColumnHeader("General Settings"));
         generalView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
 
         columnsView = new(runContext.Terminal) {
-            Name = nameof(columnsView),
-            EnableScroll = true,
-            ShowCheckboxes = true,
+            Name              = nameof(columnsView),
+            EnableScroll      = true,
+            ShowCheckboxes    = true,
             ShowColumnHeaders = true,
-            TabIndex = 3,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 3,
+            TabStop           = true,
+            Visible           = false
         };
 
         columnsView.ColumnHeaders.Add(new ListViewColumnHeader("Visible Columns"));
         columnsView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
 
         themeView = new(runContext.Terminal) {
-            Name = nameof(themeView),
-            EnableScroll = true,
+            Name              = nameof(themeView),
+            EnableScroll      = true,
             ShowColumnHeaders = true,
-            TabIndex = 3,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 3,
+            TabStop           = true,
+            Visible           = false
         };
 
         themeView.ColumnHeaders.Add(new ListViewColumnHeader("Available themes"));
 
         layoutView = new(runContext.Terminal) {
-            Name = nameof(layoutView),
-            EnableScroll = true,
+            Name              = nameof(layoutView),
+            EnableScroll      = true,
             ShowColumnHeaders = true,
-            TabIndex = 3,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 3,
+            TabStop           = true,
+            Visible           = false
         };
 
         layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Summary layouts - ↵ create/edit, highlighted is used on F10 Done"));
         
         metreView = new(runContext.Terminal) {
-            Name = nameof(metreView),
-            EnableScroll = true,
+            Name              = nameof(metreView),
+            EnableScroll      = true,
             ShowColumnHeaders = true,
-            TabIndex = 4,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 4,
+            TabStop           = true,
+            Visible           = false
         };
 
         metreView.ColumnHeaders.Add(new ListViewColumnHeader("Metre Styles"));
         
         delayView = new(runContext.Terminal) {
-            Name = nameof(delayView),
-            EnableScroll = true,
+            Name              = nameof(delayView),
+            EnableScroll      = true,
             ShowColumnHeaders = true,
-            TabIndex = 5,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 5,
+            TabStop           = true,
+            Visible           = false
         };
 
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("Delay between updates, in milliseconds"));
         
         numProcsView = new(runContext.Terminal) {
-            Name = nameof(numProcsView),
-            EnableScroll = true,
+            Name              = nameof(numProcsView),
+            EnableScroll      = true,
             ShowColumnHeaders = true,
-            TabIndex = 6,
-            TabStop = true,
-            Visible = false
+            TabIndex          = 6,
+            TabStop           = true,
+            Visible           = false
         };
 
         numProcsView.ColumnHeaders.Add(new ListViewColumnHeader("Number of processes to display, -1 for all"));
@@ -336,8 +337,8 @@ public class SetupScreen : Screen
     
     private void LoadSectionConfigListView<T>(
         ListView listView,
-        List<T> values,
-        T value)
+        List<T>  values,
+        T        value)
     {
         int index = values.BinarySearch(value);
 
@@ -404,19 +405,19 @@ public class SetupScreen : Screen
 
         ListViewItem GetItemValueByKey(string key) => generalView.Items.Single(lvi => lvi.SubItems[1].Text == key);
 
-        runContext.AppConfig.ConfirmTaskDelete = GetItemValueByKey(Constants.Keys.ConfirmTaskDelete).Checked;
-        runContext.AppConfig.HighlightDaemons = GetItemValueByKey(Constants.Keys.HighlightDaemons).Checked;
+        runContext.AppConfig.ConfirmTaskDelete               = GetItemValueByKey(Constants.Keys.ConfirmTaskDelete).Checked;
+        runContext.AppConfig.HighlightDaemons                = GetItemValueByKey(Constants.Keys.HighlightDaemons).Checked;
         runContext.AppConfig.HighlightStatisticsColumnUpdate = GetItemValueByKey(Constants.Keys.HighlightStatsColUpdate).Checked;
-        runContext.AppConfig.MultiSelectProcesses = GetItemValueByKey(Constants.Keys.MultiSelectProcesses).Checked;
-        runContext.AppConfig.ShowMetreCpuNumerically = GetItemValueByKey(Constants.Keys.ShowMetreCpuNumerically).Checked;
-        runContext.AppConfig.ShowMetreGpuNumerically = GetItemValueByKey(Constants.Keys.ShowMetreGpuNumerically).Checked;
-        runContext.AppConfig.ShowMetreMemoryNumerically = GetItemValueByKey(Constants.Keys.ShowMetreMemNumerically).Checked;
-        runContext.AppConfig.ShowMetreGpuMemNumerically = GetItemValueByKey(Constants.Keys.ShowMetreGpuMemNumerically).Checked;
-        runContext.AppConfig.ShowMetreSwapNumerically = GetItemValueByKey(Constants.Keys.ShowMetreSwapNumerically).Checked;
-        runContext.AppConfig.ShowMetreDiskNumerically = GetItemValueByKey(Constants.Keys.ShowMetreDiskNumerically).Checked;
-        runContext.AppConfig.ShowMetreNetworkNumerically = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
-        runContext.AppConfig.ShowYAxisScale = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
-        runContext.AppConfig.UseIrixReporting = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
+        runContext.AppConfig.MultiSelectProcesses            = GetItemValueByKey(Constants.Keys.MultiSelectProcesses).Checked;
+        runContext.AppConfig.ShowMetreCpuNumerically         = GetItemValueByKey(Constants.Keys.ShowMetreCpuNumerically).Checked;
+        runContext.AppConfig.ShowMetreGpuNumerically         = GetItemValueByKey(Constants.Keys.ShowMetreGpuNumerically).Checked;
+        runContext.AppConfig.ShowMetreMemoryNumerically      = GetItemValueByKey(Constants.Keys.ShowMetreMemNumerically).Checked;
+        runContext.AppConfig.ShowMetreGpuMemNumerically      = GetItemValueByKey(Constants.Keys.ShowMetreGpuMemNumerically).Checked;
+        runContext.AppConfig.ShowMetreSwapNumerically        = GetItemValueByKey(Constants.Keys.ShowMetreSwapNumerically).Checked;
+        runContext.AppConfig.ShowMetreDiskNumerically        = GetItemValueByKey(Constants.Keys.ShowMetreDiskNumerically).Checked;
+        runContext.AppConfig.ShowMetreNetworkNumerically     = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
+        runContext.AppConfig.ShowYAxisScale                  = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
+        runContext.AppConfig.UseIrixReporting                = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 
         Statistics visibleColumns = Statistics.Process | Statistics.Pid;
 
@@ -500,7 +501,7 @@ public class SetupScreen : Screen
             return;
         }
         
-        ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
+        ListView activeControl  = tabControls.Single(ctrl => ctrl.Visible);
         Control? focusedControl = GetFocusedControl;
 
         switch (keyInfo.Key) {
@@ -587,7 +588,7 @@ public class SetupScreen : Screen
             [ -1, 5, 10, 20, 50, 100, 500, 1000 ],
             runContext.AppConfig.NumberOfProcesses);        
 
-        previewTheme = runContext.AppConfig.Theme;
+        previewTheme         = runContext.AppConfig.Theme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;
 
         if (returnToLayoutsTab) {
@@ -599,7 +600,7 @@ public class SetupScreen : Screen
             menuView.SetFocus();
         }
         
-        menuView.ItemClicked += MenuViewOnItemClicked;
+        menuView.ItemClicked  += MenuViewOnItemClicked;
         themeView.ItemClicked += ThemeViewOnItemClicked;
         
         base.OnLoad();
@@ -657,23 +658,23 @@ public class SetupScreen : Screen
 
     protected override void OnResize()
     {
-        headerView.X = X;
-        headerView.Y = Y + 2;
-        headerView.Width = Width;
+        headerView.X      = X;
+        headerView.Y      = Y + 2;
+        headerView.Width  = Width;
         headerView.Height = 3;
         headerView.ColumnHeaders[0].Width = Math.Max(0, Width - BorderInset);
 
-        menuView.X = X;
-        menuView.Y = headerView.Y + headerView.Height;
+        menuView.X      = X;
+        menuView.Y      = headerView.Y + headerView.Height;
         menuView.Height = Height - (headerView.Height + 4) - ControlGutter;
-        menuView.Width = MenuViewWidth;
+        menuView.Width  = MenuViewWidth;
         menuView.ColumnHeaders[0].Width = Math.Max(0, MenuViewWidth - BorderInset);
 
         foreach (ListView ctrl in tabControls) {
-            ctrl.X = menuView.X + menuView.Width + ControlGutter;
-            ctrl.Y = menuView.Y;
+            ctrl.X      = menuView.X + menuView.Width + ControlGutter;
+            ctrl.Y      = menuView.Y;
             ctrl.Height = menuView.Height;
-            ctrl.Width = Width - (menuView.Width + ControlGutter);
+            ctrl.Width  = Width - (menuView.Width + ControlGutter);
 
             int checkboxWidth = ctrl.ShowCheckboxes ? ListView.CheckboxWidth : 0;
             ctrl.ColumnHeaders[0].Width = Math.Max(0, ctrl.Width - checkboxWidth - BorderInset);
@@ -687,7 +688,7 @@ public class SetupScreen : Screen
 
     protected override void OnUnload()
     {
-        menuView.ItemClicked -= MenuViewOnItemClicked;
+        menuView.ItemClicked  -= MenuViewOnItemClicked;
         themeView.ItemClicked -= ThemeViewOnItemClicked;
 
         headerView.Items.Clear();
@@ -735,15 +736,15 @@ public class SetupScreen : Screen
 
     private void UpdateTheme(ListView ctrl)
     {
-        ctrl.BackgroundColour = previewTheme.ListViewBackground;
-        ctrl.ForegroundColour = previewTheme.ListViewForeground;
-        ctrl.BorderForegroundColour = previewTheme.ListViewBorderForeground;
-        ctrl.BorderBackgroundColour = previewTheme.ListViewBorderBackground;
-        ctrl.BackgroundHighlightColour = previewTheme.BackgroundHighlight;
-        ctrl.ForegroundHighlightColour = previewTheme.ForegroundHighlight;
+        ctrl.BackgroundColour                  = previewTheme.ListViewBackground;
+        ctrl.ForegroundColour                  = previewTheme.ListViewForeground;
+        ctrl.BorderForegroundColour            = previewTheme.ListViewBorderForeground;
+        ctrl.BorderBackgroundColour            = previewTheme.ListViewBorderBackground;
+        ctrl.BackgroundHighlightColour         = previewTheme.BackgroundHighlight;
+        ctrl.ForegroundHighlightColour         = previewTheme.ForegroundHighlight;
         ctrl.BackgroundHighlightInactiveColour = previewTheme.BackgroundHighlightInactive;
         ctrl.ForegroundHighlightInactiveColour = previewTheme.ForegroundHighlightInactive;
-        ctrl.HeaderBackgroundColour = previewTheme.HeaderBackground;
-        ctrl.HeaderForegroundColour = previewTheme.HeaderForeground;
+        ctrl.HeaderBackgroundColour            = previewTheme.HeaderBackground;
+        ctrl.HeaderForegroundColour            = previewTheme.HeaderForeground;
     }
 }

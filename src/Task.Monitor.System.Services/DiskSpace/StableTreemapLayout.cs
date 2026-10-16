@@ -10,9 +10,9 @@ public sealed class StableTreemapLayout
 
     private readonly double relativeChangeThreshold;
 
-    private IReadOnlyList<TreemapItem> previousItems = [];
-    private Rectangle previousBounds;
+    private IReadOnlyList<TreemapItem> previousItems  = [];
     private IReadOnlyList<TreemapCell> previousLayout = [];
+    private Rectangle                  previousBounds;
 
     public StableTreemapLayout(double relativeChangeThreshold = DefaultRelativeChangeThreshold) =>
         this.relativeChangeThreshold = relativeChangeThreshold;
@@ -21,7 +21,7 @@ public sealed class StableTreemapLayout
     {
         if (bounds != previousBounds || !IsStableRelativeToPrevious(items)) {
             previousLayout = SquarifiedTreemapLayout.Layout(items, bounds);
-            previousItems = items;
+            previousItems  = items;
             previousBounds = bounds;
         }
 
@@ -34,11 +34,11 @@ public sealed class StableTreemapLayout
             return false;
         }
 
-        List<TreemapItem> currentOrdered = [.. items.OrderByDescending(item => item.Weight)];
+        List<TreemapItem> currentOrdered  = [.. items.OrderByDescending(item => item.Weight)];
         List<TreemapItem> previousOrdered = [.. previousItems.OrderByDescending(item => item.Weight)];
 
         for (int i = 0; i < currentOrdered.Count; i++) {
-            TreemapItem current = currentOrdered[i];
+            TreemapItem current  = currentOrdered[i];
             TreemapItem previous = previousOrdered[i];
 
             if (current.Id != previous.Id) {

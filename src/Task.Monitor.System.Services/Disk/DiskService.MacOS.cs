@@ -6,7 +6,7 @@ namespace Task.Monitor.System.Services.Disk;
 public partial class DiskService
 {
     private const string BlockStorageDriverClass = "IOBlockStorageDriver";
-    private const string IOServicePlane = "IOService";
+    private const string IOServicePlane          = "IOService";
 
     private const uint IterateRecursively = 0x00000001;
     private const uint IterateParents     = 0x00000002;
@@ -26,14 +26,14 @@ public partial class DiskService
     }
 
     private static bool SearchNumberProperty(
-        uint entry, 
-        string key, 
-        uint options, 
+        uint     entry, 
+        string   key, 
+        uint     options, 
         out long value)
     {
         value = 0;
 
-        using CFScope cfKey = new(CoreFoundation.CFStringCreate(key));
+        using CFScope cfKey  = new(CoreFoundation.CFStringCreate(key));
         
         using CFScope number = new(IOKit.IORegistryEntrySearchCFProperty(
             entry, 

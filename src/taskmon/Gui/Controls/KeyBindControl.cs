@@ -8,13 +8,13 @@ namespace Task.Monitor.Gui.Controls;
 public static class KeyBindControl
 {
     public static int Draw(
-        string keyBinding,
-        string text,
-        int x,
-        int y,
-        int width,
-        Theme theme,
-        bool enabled,
+        string          keyBinding,
+        string          text,
+        int             x,
+        int             y,
+        int             width,
+        Theme           theme,
+        bool            enabled,
         ISystemTerminal terminal)
     {
         Console.ResetColor();

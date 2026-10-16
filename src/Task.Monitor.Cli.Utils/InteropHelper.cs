@@ -39,8 +39,6 @@ public static class InteropHelper
         }
     }
 
-    // Field reads at a byte offset into a native structure. Unaligned and little endian, as
-    // offset-based layouts (e.g. IP_ADAPTER_ADDRESSES, MIB_IF_ROW2) don't guarantee alignment.
     public static unsafe byte* ReadPointer(byte* structure, int offset) =>
         (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
 

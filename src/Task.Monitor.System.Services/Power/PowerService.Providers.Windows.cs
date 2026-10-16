@@ -10,7 +10,7 @@ public partial class PowerService
     private partial IEnumerable<IPowerProvider> CreateProviders()
     {
         IReadOnlyList<DiskDevice> Disks() => GetLatest<DiskInfo>()?.Specs.Devices ?? [];
-        IReadOnlyList<GpuDevice> Gpus() => GetLatest<GpuInfo>()?.Specs.Devices ?? [];
+        IReadOnlyList<GpuDevice>  Gpus()  => GetLatest<GpuInfo>()?.Specs.Devices ?? [];
 
         return [
             new NvmlPowerProvider(Gpus),        // Nvidia GPUs.

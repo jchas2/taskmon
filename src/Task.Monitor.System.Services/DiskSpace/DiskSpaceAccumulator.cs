@@ -4,27 +4,26 @@ public sealed class DiskSpaceAccumulator
 {
     public const int MaxTrackedFiles = 500;
 
+    private readonly Dictionary<string, long> rootLevelTotals           = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<DiskSpaceFileEntry> topFiles                  = new(MaxTrackedFiles + 1);
+    private readonly HashSet<string>          rootLevelFolders          = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string>          completedRootLevelFolders = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly string rootPath;
-    private long rootTotalBytes;
 
-    private readonly Dictionary<string, long> rootLevelTotals = new(StringComparer.OrdinalIgnoreCase);
-
-    private readonly List<DiskSpaceFileEntry> topFiles = new(MaxTrackedFiles + 1);
-
-    private readonly HashSet<string> rootLevelFolders = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> completedRootLevelFolders = new(StringComparer.OrdinalIgnoreCase);
     private string? currentRootLevelFolder;
 
-    private long filesScanned;
-    private long foldersScanned;
-    private long foldersSkipped;
-    private long totalBytesScanned;
+    private long  rootTotalBytes;
+    private long  filesScanned;
+    private long  foldersScanned;
+    private long  foldersSkipped;
+    private long  totalBytesScanned;
     private string currentPath;
 
     public DiskSpaceAccumulator(string rootPath)
     {
         this.rootPath = rootPath;
-        currentPath = rootPath;
+        currentPath   = rootPath;
     }
 
     public void RegisterDiscoveredFolder(string parentFolder, string path)
@@ -91,7 +90,7 @@ public sealed class DiskSpaceAccumulator
     {
         filesScanned++;
         totalBytesScanned += sizeBytes;
-        rootTotalBytes += sizeBytes;
+        rootTotalBytes    += sizeBytes;
 
         string? rootLevelFolder = RootLevelAncestorOf(parentFolder);
 
@@ -109,7 +108,7 @@ public sealed class DiskSpaceAccumulator
         if (insertAt < 0) {
             if (topFiles.Count < MaxTrackedFiles) {
                 topFiles.Add(new DiskSpaceFileEntry {
-                    FullPath = fullPath, 
+                    FullPath  = fullPath, 
                     SizeBytes = sizeBytes
                 });
             }
@@ -118,7 +117,7 @@ public sealed class DiskSpaceAccumulator
         }
 
         topFiles.Insert(insertAt, new DiskSpaceFileEntry {
-            FullPath = fullPath, 
+            FullPath  = fullPath, 
             SizeBytes = sizeBytes
         });
 
@@ -129,43 +128,46 @@ public sealed class DiskSpaceAccumulator
 
     public DiskSpaceSpecs Snapshot(DiskSpaceScanState state, long elapsedMilliseconds, string? errorMessage = null) =>
         new() {
-            RootPath = rootPath,
-            State = state,
-            ElapsedMilliseconds = elapsedMilliseconds,
-            FilesScanned = filesScanned,
-            FoldersScanned = foldersScanned,
-            FoldersSkipped = foldersSkipped,
-            TotalBytesScanned = totalBytesScanned,
-            CurrentPath = state == DiskSpaceScanState.Scanning ? currentPath : string.Empty,
-            RootLevelFoldersTotal = rootLevelFolders.Count,
+            RootPath                  = rootPath,
+            State                     = state,
+            ElapsedMilliseconds       = elapsedMilliseconds,
+            FilesScanned              = filesScanned,
+            FoldersScanned            = foldersScanned,
+            FoldersSkipped            = foldersSkipped,
+            TotalBytesScanned         = totalBytesScanned,
+            CurrentPath               = state == DiskSpaceScanState.Scanning ? currentPath : string.Empty,
+            RootLevelFoldersTotal     = rootLevelFolders.Count,
             RootLevelFoldersCompleted = completedRootLevelFolders.Count,
-            RootNode = BuildRootNode(),
-            TopFiles = [.. topFiles],
-            ErrorMessage = errorMessage
+            RootNode                  = BuildRootNode(),
+            TopFiles                  = [.. topFiles],
+            ErrorMessage              = errorMessage
         };
 
     private DiskSpaceFolderNode BuildRootNode()
     {
         List<DiskSpaceFolderNode> children = [.. rootLevelTotals
             .Select(pair => new DiskSpaceFolderNode {
-                Path = pair.Key,
-                Name = NameOf(pair.Key),
+                Path       = pair.Key,
+                Name       = NameOf(pair.Key),
                 TotalBytes = pair.Value
             })
             .OrderByDescending(node => node.TotalBytes)];
 
         return new DiskSpaceFolderNode {
-            Path = rootPath,
-            Name = NameOf(rootPath),
+            Path       = rootPath,
+            Name       = NameOf(rootPath),
             TotalBytes = rootTotalBytes,
-            Children = children
+            Children   = children
         };
     }
 
     private static string NameOf(string path)
     {
         string trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string name = Path.GetFileName(trimmed);
-        return string.IsNullOrEmpty(name) ? path : name;
+        string name    = Path.GetFileName(trimmed);
+        
+        return string.IsNullOrEmpty(name) 
+            ? path 
+            : name;
     }
 }

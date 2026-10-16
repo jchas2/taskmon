@@ -13,48 +13,50 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 {
-    private readonly Lock @lock = new();
-    private Chart memoryChart;
-    private Chart pageFileChart;
-    private MetreControl memoryMetre;
-    private ListView memoryMetricsListView;
-    private ListView memorySpecsListView;
+    private const int ChartWidth  = 14;
+    private const int ChartHeight = 7;
+
     private readonly AppConfig appConfig;
-    private MemoryInfo? memoryInfo;
+
+    private readonly Lock @lock = new();
+
+    private Chart        memoryChart;
+    private Chart        pageFileChart;
+    private MetreControl memoryMetre;
+    private ListView     memoryMetricsListView;
+    private ListView     memorySpecsListView;
+    
+    private MemoryInfo?  memoryInfo;
     
     public MemoryPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.appConfig = appConfig;
 
-        memoryChart = new Chart(terminal);
+        memoryChart   = new Chart(terminal);
         pageFileChart = new Chart(terminal);
-        
-        memoryMetre = new MetreControl(terminal);
+        memoryMetre   = new MetreControl(terminal);
 
         memoryMetricsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = true,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
 
         memorySpecsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
     }
-
-    private const int ChartWidth = 14;
-    private const int ChartHeight = 7;
-
+    
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
@@ -81,6 +83,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             }
 
             memoryChart.Text = $"Memory {memoryInfo.Metrics.ToMemoryPercentage()}";
+            
             memoryChart.Draw();
 
 #if __WIN32__
@@ -100,21 +103,24 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             memoryMetricsListView.Items[0].SubItems[1].Text = memoryInfo.Metrics.ToMemoryAvailableFormattedBytes();
             memoryMetricsListView.Items[0].SubItems[2].Text = memoryInfo.Metrics.ToPageFileMemoryRatioFormattedBytes();
             memoryMetricsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.ToPageFileMemoryAvailableFormattedBytes();
+            
             memoryMetricsListView.Draw();
 
-            uint stickMemory = 0;
-            int slotsUsed = 0;
-            ushort memorySpeed = 0;
+            uint stickMemory             = 0;
+            int slotsUsed                = 0;
+            ushort memorySpeed           = 0;
             ushort memoryConfiguredSpeed = 0;
+            
             string? memorySummary = null;
-            string? formFactor = null;
+            string? formFactor    = null;
                         
             for (int i = 0; i < memoryInfo.Specs.Devices.Count; i++) {
                 MemoryDevice memoryDevice = memoryInfo.Specs.Devices[i];
                     
                 if (memoryDevice.SizeInMegabytes > 0) {
-                    memorySpeed = memoryDevice.Speed;
+                    memorySpeed           = memoryDevice.Speed;
                     memoryConfiguredSpeed = memoryDevice.ConfiguredClockSpeed;
+                    
                     stickMemory += memoryDevice.SizeInMegabytes;
                     slotsUsed++;
                     
@@ -153,19 +159,19 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         OnLoadChart(memoryChart);
         OnLoadChart(pageFileChart);
         
-        memoryMetre.BackgroundColour = appConfig.Theme.MetreBackground;
-        memoryMetre.ForegroundColour = appConfig.Theme.MetreForeground;
+        memoryMetre.BackgroundColour       = appConfig.Theme.MetreBackground;
+        memoryMetre.ForegroundColour       = appConfig.Theme.MetreForeground;
         memoryMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
         memoryMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
-        memoryMetre.MetreStyle = appConfig.MetreStyle;
-        memoryMetre.Border = true;
-        memoryMetre.Text = string.Empty;
-        memoryMetre.ShowLegend = true;
+        memoryMetre.MetreStyle             = appConfig.MetreStyle;
+        memoryMetre.Border                 = true;
+        memoryMetre.Text                   = string.Empty;
+        memoryMetre.ShowLegend             = true;
 
-        memoryMetre.AddSeries("In Use", appConfig.Theme.PerformanceMemoryInUse);
+        memoryMetre.AddSeries("In Use",   appConfig.Theme.PerformanceMemoryInUse);
         memoryMetre.AddSeries("Modified", appConfig.Theme.PerformanceMemoryModified);
-        memoryMetre.AddSeries("Standby", appConfig.Theme.PerformanceMemoryStandby);
-        memoryMetre.AddSeries("Free", appConfig.Theme.PerformanceMemoryFree);
+        memoryMetre.AddSeries("Standby",  appConfig.Theme.PerformanceMemoryStandby);
+        memoryMetre.AddSeries("Free",     appConfig.Theme.PerformanceMemoryFree);
 
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("In Use"));
         memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Available"));
@@ -205,20 +211,20 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadChart(Chart chart)
     {
-        chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.AutoScale                 = false;
+        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
-        chart.LabelSeries = string.Empty;
-        chart.ShowYAxisScale = true;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.LabelSeries               = string.Empty;
+        chart.ShowYAxisScale            = true;
+        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
+        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle                = appConfig.MetreStyle;
+        chart.ShowGrid                  = true;
+        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
@@ -237,35 +243,37 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
-        const int SpecsHeight = 12;
+        const int SpecsHeight   = 12;
 
         memoryMetre.Rows = 3;
 
-        int yTop = Y;
+        int yTop        = Y;
         int metreHeight = memoryMetre.RequiredHeight;
-        int bottomY = Y + Height - (MetricsHeight + SpecsHeight);
-        int chartsArea = Math.Max(0, bottomY - yTop - metreHeight);
-        int height = chartsArea / 2;
+        int bottomY     = Y + Height - (MetricsHeight + SpecsHeight);
+        int chartsArea  = Math.Max(0, bottomY - yTop - metreHeight);
+        int height      = chartsArea / 2;
 
-        memoryChart.X = X + 1;
-        memoryChart.Y = yTop;
-        memoryChart.Width = Width - 1;
+        memoryChart.X      = X + 1;
+        memoryChart.Y      = yTop;
+        memoryChart.Width  = Width - 1;
         memoryChart.Height = height;
+        
         memoryChart.Resize();
 
         yTop += height;
 
-        pageFileChart.X = X + 1;
-        pageFileChart.Y = yTop;
-        pageFileChart.Width = Width - 1;
+        pageFileChart.X      = X + 1;
+        pageFileChart.Y      = yTop;
+        pageFileChart.Width  = Width - 1;
         pageFileChart.Height = chartsArea - height;
+        
         pageFileChart.Resize();
 
         yTop += chartsArea - height;
 
-        memoryMetre.X = X + 1;
-        memoryMetre.Y = yTop;
-        memoryMetre.Width = Width - 1;
+        memoryMetre.X      = X + 1;
+        memoryMetre.Y      = yTop;
+        memoryMetre.Width  = Width - 1;
         memoryMetre.Height = metreHeight;
 
         for (int i = 0; i < memoryMetricsListView.ColumnHeaders.Count(); i++) {
@@ -280,15 +288,15 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
                 : 40;
         }
 
-        memoryMetricsListView.X = X + 1;
-        memoryMetricsListView.Y = bottomY;
-        memoryMetricsListView.Width = Width - 1;
+        memoryMetricsListView.X      = X + 1;
+        memoryMetricsListView.Y      = bottomY;
+        memoryMetricsListView.Width  = Width - 1;
         memoryMetricsListView.Height = MetricsHeight;
 
-        memorySpecsListView.X = X + 1;
-        memorySpecsListView.Y = bottomY + MetricsHeight;
-        memorySpecsListView.Width = Width - 1;
-        memorySpecsListView.Height = SpecsHeight;
+        memorySpecsListView.X       = X + 1;
+        memorySpecsListView.Y       = bottomY + MetricsHeight;
+        memorySpecsListView.Width   = Width - 1;
+        memorySpecsListView.Height  = SpecsHeight;
     }
 
     protected override void OnUnload()

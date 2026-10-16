@@ -6,6 +6,7 @@ namespace Task.Monitor.System.Services.Gpu;
 public sealed partial class GpuService
 {
     private const string IOServicePlane = "IOService";
+    
     private const uint RegistryIterateRecursively = 0x00000001;
 
     private static bool TryReadIOAcceleratorMemory(out long allocMemory, out long inUseMemory)

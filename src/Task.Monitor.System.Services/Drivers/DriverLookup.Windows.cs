@@ -15,7 +15,7 @@ internal static class DriverLookup
         DriverInfo[] drivers = [];
 
         nint hSCM = WinService.OpenSCManager(
-            lpMachineName: null!, 
+            lpMachineName:  null!, 
             lpDatabaseName: null!, 
             WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT);
 
@@ -27,9 +27,9 @@ internal static class DriverLookup
             return drivers;
         }
 
-        uint bytesNeeded = 0;
+        uint bytesNeeded     = 0;
         uint driversReturned = 0;
-        uint resumeHandle = 0;
+        uint resumeHandle    = 0;
 
         WinService.EnumServicesStatusEx(
             hSCM,
@@ -52,7 +52,7 @@ internal static class DriverLookup
             return drivers;
         }
 
-        nint buffer = Marshal.AllocHGlobal((nint)bytesNeeded);
+        nint buffer  = Marshal.AllocHGlobal((nint)bytesNeeded);
         resumeHandle = 0;
 
         bool result = WinService.EnumServicesStatusEx(
@@ -78,8 +78,8 @@ internal static class DriverLookup
         }
 
         nint currentPtr = buffer;
-        int structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUS_PROCESS>();
-        drivers = new DriverInfo[driversReturned];
+        int structSize  = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUS_PROCESS>();
+        drivers         = new DriverInfo[driversReturned];
 
         for (int i = 0; i < driversReturned; i++) {
             WinService.ENUM_SERVICE_STATUS_PROCESS status =
@@ -88,10 +88,11 @@ internal static class DriverLookup
             DriverInfo driver = new() {
                 ServiceName = status.lpServiceName,
                 DisplayName = status.lpDisplayName,
-                Status = WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)status.dwCurrentState)
+                Status      = WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)status.dwCurrentState)
             };
 
             PopulateDriverConfig(hSCM, driver);
+
             drivers[i] = driver;
             currentPtr = nint.Add(currentPtr, structSize);
         }

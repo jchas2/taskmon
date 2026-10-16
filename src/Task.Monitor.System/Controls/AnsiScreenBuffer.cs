@@ -5,19 +5,17 @@ namespace Task.Monitor.System.Controls;
 
 public sealed class AnsiScreenBuffer
 {
-    private const char Escape = '';
-
-    private const string BoldOn = "[1m";
+    private const char   Escape  = '';
+    private const string BoldOn  = "[1m";
     private const string BoldOff = "[22m";
 
     private char[] buffer;
-    private int length;
+    private int   length;
     private Color foreground;
-
     private Color background;
-    private bool foregroundSet;
-    private bool backgroundSet;
-    private bool bold;
+    private bool  foregroundSet;
+    private bool  backgroundSet;
+    private bool  bold;
 
     public AnsiScreenBuffer(int capacity = 1024) =>
         buffer = new char[Math.Max(1, capacity)];
@@ -28,10 +26,10 @@ public sealed class AnsiScreenBuffer
 
     public void Clear()
     {
-        length = 0;
+        length        = 0;
         foregroundSet = false;
         backgroundSet = false;
-        bold = false;
+        bold          = false;
     }
 
     public void MoveTo(int left, int top)
@@ -170,9 +168,10 @@ public sealed class AnsiScreenBuffer
     public void ResetColour()
     {
         Append(AnsiConsoleStringExtensions.Reset);
+        
         foregroundSet = false;
         backgroundSet = false;
-        bold = false;
+        bold          = false;
     }
 
     public void SetBold(bool enabled)

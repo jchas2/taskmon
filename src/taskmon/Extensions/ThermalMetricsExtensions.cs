@@ -38,14 +38,14 @@ public static class ThermalMetricsExtensions
     private static bool IsPreferred(ThermalSensor candidate, ThermalSensor current)
     {
         int candidateSource = SourceRank(candidate.Source);
-        int currentSource = SourceRank(current.Source);
+        int currentSource   = SourceRank(current.Source);
 
         if (candidateSource != currentSource) {
             return candidateSource > currentSource;
         }
 
         int candidateName = NameRank(candidate.SensorName);
-        int currentName = NameRank(current.SensorName);
+        int currentName   = NameRank(current.SensorName);
 
         if (candidateName != currentName) {
             return candidateName > currentName;

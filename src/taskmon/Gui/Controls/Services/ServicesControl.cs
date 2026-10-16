@@ -10,39 +10,40 @@ namespace Task.Monitor.Gui.Controls.Services;
 
 public sealed partial class ServicesControl : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-    private readonly ListView servicesView;
-    private readonly ListView detailView;
-
-    private WindowsServicesInfo? services;
-    private string lastSignature = string.Empty;
-
-    private const int NameColumnWidth = 30;
-    private const int StatusColumnWidth = 16;
+    private const int NameColumnWidth        = 30;
+    private const int StatusColumnWidth      = 16;
     private const int StartupTypeColumnWidth = 26;
-    private const int LogOnAsColumnWidth = 20;
+    private const int LogOnAsColumnWidth     = 20;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight = 8; 
+    private const int DetailViewHeight       = 8; 
+
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          servicesView;
+    private readonly ListView          detailView;
+
+    private WindowsServicesInfo? services;
+    
+    private string lastSignature = string.Empty;
+
 
     public ServicesControl(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
-        : base(terminal)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig) : base(terminal)
     {
         this.serviceController = serviceController;
-        this.appConfig = appConfig;
+        this.appConfig         = appConfig;
 
         servicesView = new ListView(terminal) {
-            EnableScroll = true,
-            EnableRowSelect = true,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = true,
-            TabIndex = 2,
-            Visible = true,
+            ShowBorder        = true,
+            TabStop           = true,
+            TabIndex          = 2,
+            Visible           = true,
             EmptyListViewText = "Gathering Windows services…"
         };
 
@@ -54,13 +55,13 @@ public sealed partial class ServicesControl : Control
             .Add(new ListViewColumnHeader("DESCRIPTION"));
 
         detailView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
             ShowColumnHeaders = true,
-            ShowBorder = true,
-            TabStop = false,
-            Visible = true,
-            HeaderText = "DETAIL"
+            ShowBorder        = true,
+            TabStop           = false,
+            Visible           = true,
+            HeaderText        = "DETAIL"
         };
 
         detailView.ColumnHeaders
@@ -110,15 +111,19 @@ public sealed partial class ServicesControl : Control
     }
 
     private static string BuildSignature(IReadOnlyList<WindowsServiceInfo> entries) =>
-        entries.Count + "|" + string.Join("|", entries.Select(service =>
+        entries.Count + "|" + 
+        string.Join("|", entries.Select(service =>
             $"{service.ServiceName}:{(int)service.Status}:{(int)service.StartType}:{service.DelayedAutoStart}"));
 
     private void RefreshDetailPane()
     {
         int index = servicesView.SelectedIndex;
+        
         IReadOnlyList<WindowsServiceInfo> entries = services?.Specs.Services ?? [];
 
-        WindowsServiceInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
+        WindowsServiceInfo? selected = index >= 0 && index < entries.Count 
+            ? entries[index] 
+            : null;
 
         RebuildDetailRows(selected);
     }
@@ -156,14 +161,14 @@ public sealed partial class ServicesControl : Control
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
-        servicesView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        servicesView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        servicesView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        servicesView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        servicesView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        servicesView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-        servicesView.BackgroundHighlightColour = appConfig.Theme.BackgroundHighlight;
-        servicesView.ForegroundHighlightColour = appConfig.Theme.ForegroundHighlight;
+        servicesView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
+        servicesView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
+        servicesView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
+        servicesView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
+        servicesView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
+        servicesView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+        servicesView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
+        servicesView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
         servicesView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
         servicesView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
 
@@ -172,8 +177,8 @@ public sealed partial class ServicesControl : Control
             columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
         }
 
-        detailView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
         detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
         detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
@@ -196,9 +201,9 @@ public sealed partial class ServicesControl : Control
     {
         int servicesViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        servicesView.X = X;
-        servicesView.Y = Y;
-        servicesView.Width = Width;
+        servicesView.X      = X;
+        servicesView.Y      = Y;
+        servicesView.Width  = Width;
         servicesView.Height = servicesViewHeight;
 
         int fixedWidth = NameColumnWidth + StatusColumnWidth + StartupTypeColumnWidth + LogOnAsColumnWidth;
@@ -209,9 +214,9 @@ public sealed partial class ServicesControl : Control
         servicesView.ColumnHeaders[3].Width = LogOnAsColumnWidth;
         servicesView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
 
-        detailView.X = X;
-        detailView.Y = Y + servicesViewHeight;
-        detailView.Width = Width;
+        detailView.X      = X;
+        detailView.Y      = Y + servicesViewHeight;
+        detailView.Width  = Width;
         detailView.Height = DetailViewHeight;
 
         detailView.ColumnHeaders[0].Width = DetailFieldColumnWidth;

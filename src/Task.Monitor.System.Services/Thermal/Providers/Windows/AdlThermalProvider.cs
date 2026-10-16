@@ -31,8 +31,8 @@ internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus)
             yield break;
         }
 
-        IReadOnlyList<GpuDevice> gpus = getGpus();
-        HashSet<long> assigned = new();
+        IReadOnlyList<GpuDevice> gpus     = getGpus();
+        HashSet<long>            assigned = new();
 
         foreach (Adl.Adapter adapter in Adl.GetAdapters(context)) {
             if (!Adl.GetTemperatureCelsius(context, adapter.AdapterIndex, out double celsius)) {

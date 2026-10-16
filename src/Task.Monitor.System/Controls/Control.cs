@@ -15,9 +15,7 @@ public class Control
 
     // The container holding the List<T> for rendering. We don't expose it via a public api.
     private List<Control> controls = [];
-
-    private string? name = null;
-
+    private string? name           = null;
     private AnsiScreenBuffer frame = new();
 
     // Row glyphs are staged in a scratch buffer so a row costs one cursor move and one
@@ -25,6 +23,7 @@ public class Control
     private const int MaxStackAllocChars = 512;
 
     private static readonly object drawingLock = new();
+
     private static int drawingLocksAcquired = 0;
 
     private readonly ISystemTerminal terminal;
@@ -48,9 +47,9 @@ public class Control
     internal int ControlCount => controls.Count;
 
     protected void DrawHorizontalLine(
-        int y,
-        int x1,
-        int x2,
+        int   y,
+        int   x1,
+        int   x2,
         Color colour)
     {
         int width = x2 - x1 + 1;
@@ -79,9 +78,9 @@ public class Control
     }
     
     protected void DrawVerticalLine(
-        int x, 
-        int y1, 
-        int y2, 
+        int   x, 
+        int   y1, 
+        int   y2, 
         Color colour)
     {
         frame.Clear();
@@ -126,10 +125,10 @@ public class Control
     }
 
     protected void DrawRectangle(
-        int x, 
-        int y, 
-        int width,
-        int height,
+        int   x, 
+        int   y, 
+        int   width,
+        int   height,
         Color colour)
     {
         if (width < 1 || height < 1) {
@@ -155,10 +154,10 @@ public class Control
     }
 
     protected void DrawRectangleWithBevel(
-        int x, 
-        int y, 
-        int width,
-        int height,
+        int   x, 
+        int   y, 
+        int   width,
+        int   height,
         Color colour)
     {
         if (width < 1 || height < 1) return;
@@ -185,7 +184,8 @@ public class Control
             : new char[width];
 
         line.Fill('▄');
-        line[0] = '▗';
+        
+        line[0]         = '▗';
         line[width - 1] = '▖';
 
         frame.MoveTo(x, y);
@@ -208,7 +208,8 @@ public class Control
 
         if (height > 1) {
             line.Fill('▀');
-            line[0] = '▝';
+            
+            line[0]         = '▝';
             line[width - 1] = '▘';
 
             frame.MoveTo(x, bottom);
@@ -220,13 +221,6 @@ public class Control
         terminal.Write(frame.AsSpan());
     }    
     
-    // The single choke point every redraw funnels through - both top-down cascades from a parent's
-    // own OnDraw() and redraws triggered directly by a background thread's event handler (e.g. a
-    // service publishing a new snapshot). Locking here, rather than inside each OnDraw() override,
-    // means no call site can forget to synchronise: a parent calling child.Draw() from within its
-    // own already-locked OnDraw() just extends the same critical section (Monitor is reentrant for
-    // the thread that already holds it), while an unrelated thread's Draw() call blocks until the
-    // whole in-progress draw - however many nested calls deep - has finished.
     public void Draw()
     {
         if (!RedrawEnabled || !Visible) {
@@ -251,30 +245,12 @@ public class Control
    
     public ControlCollection Controls => controlCollection;
 
-    // Public rather than internal so a composite control in another assembly that renders through
-    // an internal, tree-detached delegate control (e.g. MenuControl's internal ListView, which is
-    // never added to any Controls collection and so never receives this from Screen.FocusInternal
-    // on its own) can mirror its own focus state onto that delegate from OnGotFocus/OnLostFocus.
     public bool Focused { get; set; } = false;
 
-    // True when this control, or something inside it, currently holds input focus. Differs from
-    // Focused for any composite whose OnGotFocus redirects focus further down (e.g.
-    // GetTargetControl()?.SetFocus()) - Focused on the composite itself flips back to false the
-    // instant that redirect happens (see Screen.FocusInternal's reentrant redirect handling).
-    // Leaf controls never redirect, so the default (Focused) is already correct for them;
-    // composites override this to point at whichever descendant the redirect actually lands on.
     public virtual bool HasFocus => Focused;
 
-    // The colour every bordered control's border switches to while it holds input focus, so
-    // arrow-key navigation always leaves an unambiguous visual cue behind. Static rather than
-    // per-instance because the cue is meant to look and mean the same thing everywhere; the app
-    // sets this once at startup from its theme.
     public static Color FocusSelectionColour { get; set; } = ConsolePalette.White;
 
-    // The colour a control draws its border in: FocusSelectionColour while it holds focus,
-    // BorderColour otherwise. Worked out when drawing rather than swapped into BorderColour on
-    // focus, so a screen re-applying its theme to a focused control (on every Load, or every Draw)
-    // can't wipe out the focus cue.
     public virtual Color DisplayBorderColour => Focused ? FocusSelectionColour : BorderColour;
 
     public virtual Color ForegroundColour { get; set; } = ConsolePalette.White;
@@ -346,9 +322,6 @@ public class Control
         this.controls.AddRange(controls);
     }
     
-    // Same rationale as Draw(): a key press can itself trigger writes to the terminal (e.g.
-    // ListView's RedrawItem() partial repaint), so it needs the same protection against an
-    // unrelated thread's Draw() landing mid-handling.
     public void KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         try {
@@ -522,7 +495,9 @@ public class Control
 
         // If the current control wasn't found in this container's children, 
         // it means we are just starting or coming from outside. Return the first/last child.
-        return lookForward ? orderedControls.FirstOrDefault() : orderedControls.LastOrDefault();
+        return lookForward 
+            ? orderedControls.FirstOrDefault() 
+            : orderedControls.LastOrDefault();
     }
     
     private Control? SelectNextControlRecursive(Control currentControl, bool lookForward)

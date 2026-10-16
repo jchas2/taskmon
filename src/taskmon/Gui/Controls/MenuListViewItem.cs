@@ -11,14 +11,13 @@ public class MenuListViewItem : ListViewItem
     
     public MenuListViewItem(
         Control associatedControl, 
-        string text,
-        Color backgroundColor,
-        Color foregroundColor)
-        : base(
-            text,
-            backgroundColor,
-            foregroundColor) => this.AssociatedControl = associatedControl;
+        string  text,
+        Color   backgroundColor,
+        Color   foregroundColor) : base(
+                                       text,
+                                       backgroundColor,
+                                       foregroundColor) => this.AssociatedControl = associatedControl;
     
     public Control AssociatedControl { get; }
-    public Action? LoadItems { get; init; }
+    public Action? LoadItems         { get; init; }
 }

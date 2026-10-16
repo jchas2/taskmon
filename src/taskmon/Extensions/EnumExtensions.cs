@@ -29,15 +29,17 @@ public static class EnumExtensions
     
     public static string GetProperty(this Enum value)
     {
-        FieldInfo fieldInfo = GetFieldInfo(value);
-        var attribute = GetCustomAttribute<ProcessControl.ColumnPropertyAttribute>(fieldInfo);
+        FieldInfo                              fieldInfo = GetFieldInfo(value);
+        ProcessControl.ColumnPropertyAttribute attribute = GetCustomAttribute<ProcessControl.ColumnPropertyAttribute>(fieldInfo);
+        
         return attribute.Property;
     }
 
     public static string GetTitle(this Enum value)
     {
-        FieldInfo fieldInfo = GetFieldInfo(value);
-        var attribute = GetCustomAttribute<ProcessControl.ColumnTitleAttribute>(fieldInfo);
+        FieldInfo                           fieldInfo = GetFieldInfo(value);
+        ProcessControl.ColumnTitleAttribute attribute = GetCustomAttribute<ProcessControl.ColumnTitleAttribute>(fieldInfo);
+        
         return attribute.Title;
     }
 }

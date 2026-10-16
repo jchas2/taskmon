@@ -21,10 +21,10 @@ public sealed partial class SystemInfoControl
         systemInfoView.Items.Clear();
 
         switch (selectedSection) {
-            case Section.Cpu:     AddCpuSection(systemInfoView, s); break;
-            case Section.Memory:  AddMemorySection(systemInfoView, s); break;
-            case Section.Gpu:     AddGpuSection(systemInfoView, s); break;
-            case Section.Disk:    AddDiskSection(systemInfoView, s); break;
+            case Section.Cpu:     AddCpuSection(systemInfoView, s);     break;
+            case Section.Memory:  AddMemorySection(systemInfoView, s);  break;
+            case Section.Gpu:     AddGpuSection(systemInfoView, s);     break;
+            case Section.Disk:    AddDiskSection(systemInfoView, s);    break;
             case Section.Network: AddNetworkSection(systemInfoView, s); break;
         }
     }
@@ -37,15 +37,15 @@ public sealed partial class SystemInfoControl
 
     private void AddSystemSection(ListView target, SystemSnapshot s)
     {
-        AddRow(target, "Machine Name:", Environment.MachineName.ToUpper());
-        AddRow(target, "Operating System:", SystemInfo.GetOsVersion());
-        AddRow(target, "Version:", Environment.OSVersion.Version.ToString());
+        AddRow(target, "Machine Name:",      Environment.MachineName.ToUpper());
+        AddRow(target, "Operating System:",  SystemInfo.GetOsVersion());
+        AddRow(target, "Version:",           Environment.OSVersion.Version.ToString());
         AddRow(target);
-        AddRow(target, "CPU:", s.Cpu?.Specs.CpuName ?? string.Empty);
+        AddRow(target, "CPU:",               s.Cpu?.Specs.CpuName ?? string.Empty);
         AddRow(target, "Logical Processors", s.Cpu?.Specs.CpuCores.ToString() ?? string.Empty);
-        AddRow(target, "Base Speed:", s.Cpu?.Specs.ToCpuFrequencyGhz() ?? string.Empty);
+        AddRow(target, "Base Speed:",        s.Cpu?.Specs.ToCpuFrequencyGhz() ?? string.Empty);
         AddRow(target);
-        AddRow(target, "Memory:", s.Memory?.Metrics.TotalPhysical.ToFormattedByteSize() ?? string.Empty);
+        AddRow(target, "Memory:",            s.Memory?.Metrics.TotalPhysical.ToFormattedByteSize() ?? string.Empty);
     }
 
     private void AddCpuSection(ListView target, SystemSnapshot s)
@@ -57,17 +57,17 @@ public sealed partial class SystemInfoControl
 
         CpuSpecs specs = cpu.Specs;
 
-        AddRow(target, "Processor:", OrNotAvailable(specs.CpuName));
+        AddRow(target, "Processor:",          OrNotAvailable(specs.CpuName));
         AddRow(target, "Logical Processors:", specs.CpuCores.ToString());
-        AddRow(target, "Base Frequency:", specs.ToCpuFrequencyGhz());
+        AddRow(target, "Base Frequency:",     specs.ToCpuFrequencyGhz());
 #if __APPLE__
-        AddRow(target, "Performance Cores:", $"{specs.CpuPerformanceCores} @ {specs.CpuPerformanceFrequency / 1000.0:0.00} GHz");
-        AddRow(target, "Efficiency Cores:", $"{specs.CpuEfficiencyCores} @ {specs.CpuEfficiencyFrequency / 1000.0:0.00} GHz");
+        AddRow(target, "Performance Cores:",  $"{specs.CpuPerformanceCores} @ {specs.CpuPerformanceFrequency / 1000.0:0.00} GHz");
+        AddRow(target, "Efficiency Cores:",   $"{specs.CpuEfficiencyCores} @ {specs.CpuEfficiencyFrequency / 1000.0:0.00} GHz");
 #endif
-        AddRow(target, "L1 Cache:", specs.ToCpuL1Cache());
-        AddRow(target, "L2 Cache:", specs.ToCpuL2Cache());
-        AddRow(target, "L3 Cache:", specs.ToCpuL3Cache());
-        AddRow(target, "Virtualization:", specs.ToCpuVirtualization());
+        AddRow(target, "L1 Cache:",           specs.ToCpuL1Cache());
+        AddRow(target, "L2 Cache:",           specs.ToCpuL2Cache());
+        AddRow(target, "L3 Cache:",           specs.ToCpuL3Cache());
+        AddRow(target, "Virtualization:",     specs.ToCpuVirtualization());
     }
 
     private void AddMemorySection(ListView target, SystemSnapshot s)
@@ -83,15 +83,15 @@ public sealed partial class SystemInfoControl
         foreach (MemoryDevice device in devices) {
             AddHeaderRow(target, $"SLOT {device.Slot}  {OrNotAvailable(device.DeviceLocator)}", indent: 2);
 
-            AddRow(target, "Capacity:", device.ToMemoryCapacity(), indent: 4);
-            AddRow(target, "Type:", OrNotAvailable(device.MemoryType), indent: 4);
-            AddRow(target, "Form Factor:", OrNotAvailable(device.FormFactor), indent: 4);
-            AddRow(target, "Speed:", $"{device.Speed} MT/s", indent: 4);
+            AddRow(target, "Capacity:",         device.ToMemoryCapacity(),             indent: 4);
+            AddRow(target, "Type:",             OrNotAvailable(device.MemoryType),     indent: 4);
+            AddRow(target, "Form Factor:",      OrNotAvailable(device.FormFactor),     indent: 4);
+            AddRow(target, "Speed:",            $"{device.Speed} MT/s",                indent: 4);
             AddRow(target, "Configured Speed:", $"{device.ConfiguredClockSpeed} MT/s", indent: 4);
-            AddRow(target, "Manufacturer:", OrNotAvailable(device.Manufacturer), indent: 4);
-            AddRow(target, "Part Number:", OrNotAvailable(device.PartNumber), indent: 4);
-            AddRow(target, "Serial Number:", OrNotAvailable(device.SerialNumber), indent: 4);
-            AddRow(target, "Bank Locator:", OrNotAvailable(device.BankLocator), indent: 4);
+            AddRow(target, "Manufacturer:",     OrNotAvailable(device.Manufacturer),   indent: 4);
+            AddRow(target, "Part Number:",      OrNotAvailable(device.PartNumber),     indent: 4);
+            AddRow(target, "Serial Number:",    OrNotAvailable(device.SerialNumber),   indent: 4);
+            AddRow(target, "Bank Locator:",     OrNotAvailable(device.BankLocator),    indent: 4);
         }
     }
 
@@ -103,21 +103,21 @@ public sealed partial class SystemInfoControl
         }
 
         List<GpuDevice> devices = gpu.Specs.Devices;
-        AddRow(target, "Installed Adapters:", devices.Count.ToString());
+        AddRow(target, "Installed Adapters:",     devices.Count.ToString());
         AddRow(target, "Total Dedicated Memory:", gpu.Specs.TotalGpuMemory.ToFormattedByteSize());
 
         foreach (GpuDevice device in devices) {
             AddHeaderRow(target, $"GPU {device.Index}  {OrNotAvailable(device.Description)}", indent: 2);
 
-            AddRow(target, "Vendor:", OrNotAvailable(device.Vendor), indent: 4);
-            AddRow(target, "Description:", OrNotAvailable(device.Description), indent: 4);
-            AddRow(target, "Adapter Type:", OrNotAvailable(device.AdapterType), indent: 4);
-            AddRow(target, "Dedicated Video Memory:", device.DedicatedVideoMemory.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Vendor:",                  OrNotAvailable(device.Vendor), indent: 4);
+            AddRow(target, "Description:",             OrNotAvailable(device.Description), indent: 4);
+            AddRow(target, "Adapter Type:",            OrNotAvailable(device.AdapterType), indent: 4);
+            AddRow(target, "Dedicated Video Memory:",  device.DedicatedVideoMemory.ToFormattedByteSize(), indent: 4);
             AddRow(target, "Dedicated System Memory:", device.DedicatedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Shared System Memory:", device.SharedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Vendor / Device ID:", $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}", indent: 4);
-            AddRow(target, "Driver Version:", OrNotAvailable(device.DriverVersion), indent: 4);
-            AddRow(target, "Driver Date:", OrNotAvailable(device.DriverDate), indent: 4);
+            AddRow(target, "Shared System Memory:",    device.SharedSystemMemory.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Vendor / Device ID:",      $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}", indent: 4);
+            AddRow(target, "Driver Version:",          OrNotAvailable(device.DriverVersion), indent: 4);
+            AddRow(target, "Driver Date:",             OrNotAvailable(device.DriverDate), indent: 4);
         }
     }
 
@@ -130,20 +130,20 @@ public sealed partial class SystemInfoControl
 
         DiskSpecs specs = disk.Specs;
         AddRow(target, "Installed Drives:", specs.Devices.Count.ToString());
-        AddRow(target, "Total Capacity:", specs.ToDiskTotalCapacity().ToFormattedByteSize());
+        AddRow(target, "Total Capacity:",   specs.ToDiskTotalCapacity().ToFormattedByteSize());
 
         foreach (DiskDevice device in specs.Devices) {
             string model = OrNotAvailable(device.Model);
             AddHeaderRow(target, $"DISK {device.Index}  {model}", indent: 2);
 
-            AddRow(target, "Model:", model, indent: 4);
-            AddRow(target, "Manufacturer:", OrNotAvailable(device.Manufacturer), indent: 4);
+            AddRow(target, "Model:",             model,                                   indent: 4);
+            AddRow(target, "Manufacturer:",      OrNotAvailable(device.Manufacturer),     indent: 4);
             AddRow(target, "Firmware Revision:", OrNotAvailable(device.FirmwareRevision), indent: 4);
-            AddRow(target, "Serial Number:", OrNotAvailable(device.SerialNumber), indent: 4);
-            AddRow(target, "Bus Type:", OrNotAvailable(device.BusType), indent: 4);
-            AddRow(target, "Media Type:", OrNotAvailable(device.MediaType), indent: 4);
-            AddRow(target, "Removable:", device.IsRemovable ? "Yes" : "No", indent: 4);
-            AddRow(target, "Capacity:", device.Capacity.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Serial Number:",     OrNotAvailable(device.SerialNumber),     indent: 4);
+            AddRow(target, "Bus Type:",          OrNotAvailable(device.BusType),          indent: 4);
+            AddRow(target, "Media Type:",        OrNotAvailable(device.MediaType),        indent: 4);
+            AddRow(target, "Removable:",         device.IsRemovable ? "Yes" : "No",       indent: 4);
+            AddRow(target, "Capacity:",          device.Capacity.ToFormattedByteSize(),   indent: 4);
 
             foreach (DiskVolume volume in device.Volumes) {
                 AddVolumeRow(target, volume, indent: 6);
@@ -172,16 +172,16 @@ public sealed partial class SystemInfoControl
         foreach (NetworkDevice device in devices) {
             AddHeaderRow(target, device.ToDisplayName().ToUpper(), indent: 2);
 
-            AddRow(target, "Name:", OrNotAvailable(device.Name), indent: 4);
-            AddRow(target, "Description:", OrNotAvailable(device.Description), indent: 4);
-            AddRow(target, "Connection Type:", OrNotAvailable(device.ConnectionType), indent: 4);
-            AddRow(target, "Physical Medium:", OrNotAvailable(device.PhysicalMedium), indent: 4);
-            AddRow(target, "MAC Address:", OrNotAvailable(device.MacAddress), indent: 4);
-            AddRow(target, "IPv4 Addresses:", device.IPv4Addresses.ToAddressList(), indent: 4);
-            AddRow(target, "IPv6 Addresses:", device.IPv6Addresses.ToAddressList(), indent: 4);
+            AddRow(target, "Name:",                OrNotAvailable(device.Name), indent: 4);
+            AddRow(target, "Description:",         OrNotAvailable(device.Description), indent: 4);
+            AddRow(target, "Connection Type:",     OrNotAvailable(device.ConnectionType), indent: 4);
+            AddRow(target, "Physical Medium:",     OrNotAvailable(device.PhysicalMedium), indent: 4);
+            AddRow(target, "MAC Address:",         OrNotAvailable(device.MacAddress), indent: 4);
+            AddRow(target, "IPv4 Addresses:",      device.IPv4Addresses.ToAddressList(), indent: 4);
+            AddRow(target, "IPv6 Addresses:",      device.IPv6Addresses.ToAddressList(), indent: 4);
             AddRow(target, "Transmit Link Speed:", device.TransmitLinkSpeed.ToLinkSpeed(), indent: 4);
-            AddRow(target, "Receive Link Speed:", device.ReceiveLinkSpeed.ToLinkSpeed(), indent: 4);
-            AddRow(target, "Operational Status:", OrNotAvailable(device.OperationalStatus), indent: 4);
+            AddRow(target, "Receive Link Speed:",  device.ReceiveLinkSpeed.ToLinkSpeed(), indent: 4);
+            AddRow(target, "Operational Status:",  OrNotAvailable(device.OperationalStatus), indent: 4);
         }
     }
 
@@ -215,13 +215,17 @@ public sealed partial class SystemInfoControl
         target.Items.Add(row);
     }
 
-    private void AddRow(ListView target, string label, string value, int indent = 0)
+    private void AddRow(
+        ListView target, 
+        string   label, 
+        string   value, 
+        int      indent = 0)
     {
         Color background = appConfig.Theme.Background;
 
         ListViewItem row = new(new[] {
             new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
-            new ListViewSubItem(null!, value, background, appConfig.Theme.PropertyValue)
+            new ListViewSubItem(null!, value,                               background, appConfig.Theme.PropertyValue)
         });
 
         target.Items.Add(row);

@@ -6,15 +6,15 @@ namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 internal sealed class AcpiThermalZoneProvider : IThermalProvider
 {
     private const string Namespace = @"root\WMI";
-    private const string Wql =
-        "SELECT InstanceName, CurrentTemperature, CriticalTripPoint FROM MSAcpi_ThermalZoneTemperature";
+    private const string Wql       = "SELECT InstanceName, CurrentTemperature, CriticalTripPoint FROM MSAcpi_ThermalZoneTemperature";
 
     // WMI calls are expensive, so a result is reused for a couple of seconds.
     private static readonly TimeSpan CacheWindow = TimeSpan.FromMilliseconds(2500);
 
-    private bool available;
-    private DateTime lastQueryUtc;
     private List<ThermalSensor> cached = new();
+
+    private bool     available;
+    private DateTime lastQueryUtc;
 
     public string Name => "ACPI Thermal Zones";
 

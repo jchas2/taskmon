@@ -14,14 +14,14 @@ public partial class GpuService
         long available = allocMemory - inUseMemory;
 
         GpuMetrics metrics = gpuInfo.Metrics;
-        metrics.TotalGpuMemory = allocMemory;
-        metrics.AvailableGpuMemory = available;
+        metrics.TotalGpuMemory             = allocMemory;
+        metrics.AvailableGpuMemory         = available;
 
         // Apple Silicon uses a single unified memory pool with no dedicated VRAM, so the shared and
         // combined figures mirror the one allocation pool.
-        metrics.TotalSharedGpuMemory = allocMemory;
-        metrics.AvailableSharedGpuMemory = available;
-        metrics.TotalCombinedGpuMemory = allocMemory;
+        metrics.TotalSharedGpuMemory       = allocMemory;
+        metrics.AvailableSharedGpuMemory   = available;
+        metrics.TotalCombinedGpuMemory     = allocMemory;
         metrics.AvailableCombinedGpuMemory = available;
 
         metrics.Devices.Add(new GpuDeviceMetrics {

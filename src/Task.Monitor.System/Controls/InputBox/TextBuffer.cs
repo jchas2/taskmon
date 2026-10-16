@@ -5,6 +5,7 @@ namespace Task.Monitor.System.Controls.InputBox;
 public class TextBuffer
 {
     private StringBuilder buffer = new();
+    
     private int cursorBufferPosition = 0;
     
     public int CursorBufferPosition => cursorBufferPosition;
@@ -19,8 +20,6 @@ public class TextBuffer
         cursorBufferPosition = 0;
     }
 
-    // Seeds the buffer with an initial value - e.g. a default path a caller wants the user to be
-    // able to accept or edit rather than type from scratch. Places the cursor at the end.
     public void SetText(string text)
     {
         buffer.Clear();

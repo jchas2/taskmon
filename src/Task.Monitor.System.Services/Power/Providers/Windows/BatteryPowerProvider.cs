@@ -14,9 +14,9 @@ internal sealed class BatteryPowerProvider : IPowerProvider
         if (PowerBase.SystemDischargeWatts() is { } watts) {
             yield return new PowerReading {
                 Component = PowerComponent.System,
-                Rail = "System (battery)",
-                Watts = watts,
-                Source = PowerSource.Battery
+                Rail      = "System (battery)",
+                Watts     = watts,
+                Source    = PowerSource.Battery
             };
         }
     }

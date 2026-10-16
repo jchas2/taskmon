@@ -17,17 +17,20 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 {
     private const int SpecsRowCount = 5;
 
+    private readonly AppConfig appConfig;
+
     private readonly Lock @lock = new();
-    private Chart gpuChart;
-    private Chart gpuDedicatedMemChart;
-    private Chart gpuMemChart;
+    
+    private Chart    gpuChart;
+    private Chart    gpuDedicatedMemChart;
+    private Chart    gpuMemChart;
     private ListView gpuMetricsListView;
     private ListView gpuSpecsListView;
-    private readonly AppConfig appConfig;
     private GpuInfo? gpuInfo;
+
     private double? temperature;
     private double? powerWatts;
-    private long? scopedAdapterLuid;
+    private long?   scopedAdapterLuid;
 
     public void SetScope(long? adapterLuid) => scopedAdapterLuid = adapterLuid;
 
@@ -35,28 +38,28 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
     {
         this.appConfig = appConfig;
 
-        gpuChart = new Chart(terminal);
+        gpuChart             = new Chart(terminal);
         gpuDedicatedMemChart = new Chart(terminal);
-        gpuMemChart = new Chart(terminal);
+        gpuMemChart          = new Chart(terminal);
         
         gpuMetricsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = true,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
 
         gpuSpecsListView = new ListView(terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowBorder = true,
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowBorder        = true,
             ShowColumnHeaders = false,
-            ShowCheckboxes = false,
-            Visible = true,
-            TabStop = false
+            ShowCheckboxes    = false,
+            Visible           = true,
+            TabStop           = false
         };
     }
 
@@ -81,12 +84,8 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             }
 
             gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
-            
-            gpuDedicatedMemChart.AddData(
-                device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
-            
-            gpuMemChart.AddData(
-                device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
+            gpuDedicatedMemChart.AddData(device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
+            gpuMemChart.AddData(device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
         }
     }
 
@@ -100,17 +99,15 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             return power.Metrics.GpuPower(luid);
         }
 
-        double total = 0;
-        bool any = false;
+        double? total = null;
 
         foreach (GpuDevice spec in snapshot.Gpu?.Specs.Devices ?? []) {
             if (power.Metrics.GpuPower(spec.AdapterLuid) is { } watts) {
-                total += watts;
-                any = true;
+                total = (total ?? 0) + watts;
             }
         }
 
-        return any ? total : null;
+        return total;
     }
 
     private (GpuDeviceMetrics? device, GpuDevice? spec, bool render) ResolveScope()
@@ -120,7 +117,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         }
 
         GpuDeviceMetrics? device = gpuInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
-        GpuDevice? spec = gpuInfo.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
+        GpuDevice?        spec   = gpuInfo.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
 
         return (device, spec, device != null);
     }
@@ -139,7 +136,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             }
 
             string utilLabel = deviceSpec?.ToDisplayName() ?? "GPU";
-            string utilText = device?.ToGpuPercentage() ?? gpuInfo.Metrics.ToGpuPercentage();
+            string utilText  = device?.ToGpuPercentage() ?? gpuInfo.Metrics.ToGpuPercentage();
 
             string dedicatedText = device != null
                 ? device.ToGpuMemoryPercentage()
@@ -152,6 +149,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuChart.Text = temperature is { } gpuTemp
                 ? $"{utilLabel} {utilText}   ·   {gpuTemp.ToTemperatureText()}"
                 : $"{utilLabel} {utilText}";
+            
             gpuChart.Draw();
 
             gpuDedicatedMemChart.Text = $"Dedicated GPU Memory {dedicatedText}";
@@ -161,12 +159,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuMemChart.Draw();
 
             gpuMetricsListView.Items[0].SubItems[0].Text = utilText;
-            gpuMetricsListView.Items[0].SubItems[1].Text = device?.ToGpuMemoryRatioFormattedBytes()
-                ?? gpuInfo.Metrics.ToGpuMemoryRatioFormattedBytes();
-            gpuMetricsListView.Items[0].SubItems[2].Text = device?.ToCombinedGpuMemoryRatioFormattedBytes()
-                ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatioFormattedBytes();
-            gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes()
-                ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
+            gpuMetricsListView.Items[0].SubItems[1].Text = device?.ToGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToGpuMemoryRatioFormattedBytes();
+            gpuMetricsListView.Items[0].SubItems[2].Text = device?.ToCombinedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatioFormattedBytes();
+            gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
             gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
             gpuMetricsListView.Draw();
 
@@ -223,26 +218,26 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     private void OnLoadChart(Chart chart)
     {
-        chart.AutoScale = false;
-        chart.BackgroundColour = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour = appConfig.Theme.Foreground;
+        chart.AutoScale                 = false;
+        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
+        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
-        chart.LabelSeries = string.Empty;
-        chart.ShowYAxisScale = true;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle = appConfig.MetreStyle;
-        chart.ShowGrid = true;
-        chart.YAxisColour = appConfig.Theme.ChartYAxis;
+        chart.LabelSeries               = string.Empty;
+        chart.ShowYAxisScale            = true;
+        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
+        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
+        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
+        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
+        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
+        chart.MetreStyle                = appConfig.MetreStyle;
+        chart.ShowGrid                  = true;
+        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
 
     private void OnLoadListView(ListView listView)
     {
-        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
+        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
+        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
         listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
         listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
 
@@ -256,34 +251,35 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
     {
         const int MetricsHeight = 4;
         
-        int yTop = Y;
-
+        int yTop        = Y;
         int specsHeight = SpecsRowCount + 3;
-        int bottomY = Y + Height - (MetricsHeight + specsHeight);
+        int bottomY     = Y + Height - (MetricsHeight + specsHeight);
+        int chartsArea  = Math.Max(0, bottomY - yTop);
+        int height      = chartsArea / 3;
 
-        int chartsArea = Math.Max(0, bottomY - yTop);
-        int height = chartsArea / 3;
-
-        gpuChart.X = X + 1;
-        gpuChart.Y = yTop;
-        gpuChart.Width = Width - 1;
+        gpuChart.X      = X + 1;
+        gpuChart.Y      = yTop;
+        gpuChart.Width  = Width - 1;
         gpuChart.Height = height;
+        
         gpuChart.Resize();
 
         yTop += height;
 
-        gpuDedicatedMemChart.X = X + 1;
-        gpuDedicatedMemChart.Y = yTop;
-        gpuDedicatedMemChart.Width = Width - 1;
+        gpuDedicatedMemChart.X      = X + 1;
+        gpuDedicatedMemChart.Y      = yTop;
+        gpuDedicatedMemChart.Width  = Width - 1;
         gpuDedicatedMemChart.Height = height;
+        
         gpuDedicatedMemChart.Resize();
 
         yTop += height;
 
-        gpuMemChart.X = X + 1;
-        gpuMemChart.Y = yTop;
-        gpuMemChart.Width = Width - 1;
+        gpuMemChart.X      = X + 1;
+        gpuMemChart.Y      = yTop;
+        gpuMemChart.Width  = Width - 1;
         gpuMemChart.Height = chartsArea - 2 * height;
+        
         gpuMemChart.Resize();
 
         gpuMetricsListView.ColumnHeaders[0].Width = 15;
@@ -298,13 +294,13 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
                 : 50;
         }
 
-        gpuMetricsListView.X = X + 1;
-        gpuMetricsListView.Y = bottomY;
-        gpuMetricsListView.Width = Width - 1;
+        gpuMetricsListView.X      = X + 1;
+        gpuMetricsListView.Y      = bottomY;
+        gpuMetricsListView.Width  = Width - 1;
         gpuMetricsListView.Height = MetricsHeight;
 
-        gpuSpecsListView.X = X + 1;
-        gpuSpecsListView.Y = bottomY + MetricsHeight;
+        gpuSpecsListView.X     = X + 1;
+        gpuSpecsListView.Y     = bottomY + MetricsHeight;
         gpuSpecsListView.Width = Width - 1;
 
         gpuSpecsListView.Height = specsHeight;

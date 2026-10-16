@@ -21,8 +21,8 @@ public sealed class LaunchdJobDefinition
         }
 
         List<string> programArguments = ReadStrings(job, "ProgramArguments");
-        string? program       = ReadString(job, "Program");
-        string? bundleProgram = ReadString(job, "BundleProgram");
+        string? program               = ReadString(job, "Program");
+        string? bundleProgram         = ReadString(job, "BundleProgram");
 
         if (program is null && bundleProgram is not null && bundleRoot is not null) {
             program = Path.Combine(bundleRoot, bundleProgram);

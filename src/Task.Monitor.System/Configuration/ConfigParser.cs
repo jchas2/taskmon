@@ -7,14 +7,15 @@ namespace Task.Monitor.System.Configuration;
 
 public class ConfigParser : IDisposable
 {
-    private const int EndOfFile = -1;
+    private const int EndOfFile         = -1;
     private const int InitialStringSize = 32;
-    private readonly TextReader reader;
+    
+    private readonly TextReader           reader;
     private readonly IList<ConfigSection> sections;
     
     public ConfigParser(string str)
     {
-        reader = new StringReader(str);
+        reader   = new StringReader(str);
         sections = new List<ConfigSection>();
     }
 
@@ -25,7 +26,8 @@ public class ConfigParser : IDisposable
         }
 
         string buffer = fileSys.ReadAllText(path);
-        reader = new StringReader(buffer);
+        
+        reader   = new StringReader(buffer);
         sections = new List<ConfigSection>();
     }
 
@@ -39,7 +41,7 @@ public class ConfigParser : IDisposable
 
     public void Parse()
     {
-        bool inComment = false;
+        bool           inComment = false;
         ConfigSection? section = null;
 
         while (true) {
@@ -97,7 +99,7 @@ public class ConfigParser : IDisposable
         
         while (true) {
             int character = reader.Read();
-            char ch = (char)character;
+            char ch       = (char)character;
             
             if (character == EndOfFile) {
                 throw new ConfigParseException($"End-of-file found reading section name {buffer} before closing ']'.");
@@ -136,6 +138,7 @@ public class ConfigParser : IDisposable
         
         while (true) {
             int character = reader.Read();
+            
             ch = (char)character;
             
             if (character == EndOfFile) {

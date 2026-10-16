@@ -13,14 +13,14 @@ public partial class DiskService
 
     private const uint   PDH_CSTATUS_NEW_DATA = 0x00000001;
 
-    private const double BytesPerMegabyte = 1024.0 * 1024.0;
+    private const double BytesPerMegabyte       = 1024.0 * 1024.0;
     private const double FileTimeTicksPerSecond = 10_000_000.0;
 
-    private nint diskQuery = nint.Zero;
-    private nint readBytesCounter = nint.Zero;
+    private nint diskQuery         = nint.Zero;
+    private nint readBytesCounter  = nint.Zero;
     private nint writeBytesCounter = nint.Zero;
-    private nint idleTimeCounter = nint.Zero;
-    private nint counterBuffer = nint.Zero;
+    private nint idleTimeCounter   = nint.Zero;
+    private nint counterBuffer     = nint.Zero;
     private uint counterBufferSize = 0;
 
     private readonly Dictionary<string, DiskInstanceState> instanceStates = new();
@@ -44,7 +44,7 @@ public partial class DiskService
 
     private readonly struct RawSample(long value, long timeStamp)
     {
-        public long Value { get; } = value;
+        public long Value     { get; } = value;
         public long TimeStamp { get; } = timeStamp;
     }
 
@@ -74,10 +74,10 @@ public partial class DiskService
             return;
         }
 
-        diskQuery = query;
-        readBytesCounter = readCounter;
+        diskQuery         = query;
+        readBytesCounter  = readCounter;
         writeBytesCounter = writeCounter;
-        idleTimeCounter = idleCounter;
+        idleTimeCounter   = idleCounter;
 
         instanceStates.Clear();
     }
@@ -177,6 +177,7 @@ public partial class DiskService
     private void PruneMissingInstances(Dictionary<string, RawSample> liveInstances)
     {
         const int MaxMisses = 3;
+
         List<string>? stale = null;
 
         foreach ((string instanceName, DiskInstanceState state) in instanceStates) {
@@ -213,11 +214,11 @@ public partial class DiskService
         long elapsedTicks = read.TimeStamp - state.PreviousTimeStamp;
 
         if (!state.Primed) {
-            state.PreviousReadBytes = read.Value;
+            state.PreviousReadBytes  = read.Value;
             state.PreviousWriteBytes = write.Value;
-            state.PreviousIdleTime = idleTime.Value;
-            state.PreviousTimeStamp = read.TimeStamp;
-            state.Primed = true;
+            state.PreviousIdleTime   = idleTime.Value;
+            state.PreviousTimeStamp  = read.TimeStamp;
+            state.Primed             = true;
 
             return;
         }
@@ -226,9 +227,10 @@ public partial class DiskService
             return;
         }
 
-        long readDelta = read.Value - state.PreviousReadBytes;
+        long readDelta  = read.Value - state.PreviousReadBytes;
         long writeDelta = write.Value - state.PreviousWriteBytes;
-        long idleDelta = idleTime.Value - state.PreviousIdleTime;
+        long idleDelta  = idleTime.Value - state.PreviousIdleTime;
+        
         double elapsedSeconds = elapsedTicks / FileTimeTicksPerSecond;
 
         if (readDelta > 0) {
@@ -251,19 +253,19 @@ public partial class DiskService
             ? Math.Clamp(100.0 * (1.0 - (idleDelta / (double)elapsedTicks)), 0.0, 100.0)
             : 0.0;
 
-        state.PreviousReadBytes = read.Value;
+        state.PreviousReadBytes  = read.Value;
         state.PreviousWriteBytes = write.Value;
-        state.PreviousIdleTime = idleTime.Value;
-        state.PreviousTimeStamp = read.TimeStamp;
+        state.PreviousIdleTime   = idleTime.Value;
+        state.PreviousTimeStamp  = read.TimeStamp;
     }
 
     private void BuildMetrics(DiskMetrics metrics)
     {
-        ulong summedBytesRead = 0;
-        ulong summedBytesWritten = 0;
-        double summedReadBytesPerSecond = 0.0;
+        ulong  summedBytesRead           = 0;
+        ulong  summedBytesWritten        = 0;
+        double summedReadBytesPerSecond  = 0.0;
         double summedWriteBytesPerSecond = 0.0;
-        double busiestDisk = 0.0;
+        double busiestDisk               = 0.0;
 
         foreach ((string instanceName, DiskInstanceState state) in instanceStates) {
             if (instanceName == Pdh.TotalInstanceName) {
@@ -278,21 +280,21 @@ public partial class DiskService
 
             DiskDeviceMetrics deviceMetrics = new();
             // Not inline declared to assist with debugging.
-            deviceMetrics.Index = index;
-            deviceMetrics.InstanceName = instanceName;
-            deviceMetrics.TotalBytesRead = state.TotalBytesRead;
-            deviceMetrics.TotalBytesWritten = state.TotalBytesWritten;
-            deviceMetrics.ReadBytesPerSecond = state.ReadBytesPerSecond;
-            deviceMetrics.WriteBytesPerSecond = state.WriteBytesPerSecond;
-            deviceMetrics.ReadMegabytesPerSecond = state.ReadBytesPerSecond / BytesPerMegabyte;
+            deviceMetrics.Index                   = index;
+            deviceMetrics.InstanceName            = instanceName;
+            deviceMetrics.TotalBytesRead          = state.TotalBytesRead;
+            deviceMetrics.TotalBytesWritten       = state.TotalBytesWritten;
+            deviceMetrics.ReadBytesPerSecond      = state.ReadBytesPerSecond;
+            deviceMetrics.WriteBytesPerSecond     = state.WriteBytesPerSecond;
+            deviceMetrics.ReadMegabytesPerSecond  = state.ReadBytesPerSecond / BytesPerMegabyte;
             deviceMetrics.WriteMegabytesPerSecond = state.WriteBytesPerSecond / BytesPerMegabyte;
-            deviceMetrics.PercentActiveTime = state.PercentActiveTime;
+            deviceMetrics.PercentActiveTime       = state.PercentActiveTime;
 
             metrics.Devices.Add(deviceMetrics);
 
-            summedBytesRead += state.TotalBytesRead;
-            summedBytesWritten += state.TotalBytesWritten;
-            summedReadBytesPerSecond += state.ReadBytesPerSecond;
+            summedBytesRead           += state.TotalBytesRead;
+            summedBytesWritten        += state.TotalBytesWritten;
+            summedReadBytesPerSecond  += state.ReadBytesPerSecond;
             summedWriteBytesPerSecond += state.WriteBytesPerSecond;
 
             // Busiest single disk rather than the sum.
@@ -304,24 +306,24 @@ public partial class DiskService
 
         // Prefer the Pdh _Total counter over the summed stats.
         if (instanceStates.TryGetValue(Pdh.TotalInstanceName, out DiskInstanceState? total)) {
-            metrics.TotalBytesRead = total.TotalBytesRead;
-            metrics.TotalBytesWritten = total.TotalBytesWritten;
-            metrics.ReadBytesPerSecond = total.ReadBytesPerSecond;
+            metrics.TotalBytesRead      = total.TotalBytesRead;
+            metrics.TotalBytesWritten   = total.TotalBytesWritten;
+            metrics.ReadBytesPerSecond  = total.ReadBytesPerSecond;
             metrics.WriteBytesPerSecond = total.WriteBytesPerSecond;
         }
         else {
-            metrics.TotalBytesRead = summedBytesRead;
-            metrics.TotalBytesWritten = summedBytesWritten;
-            metrics.ReadBytesPerSecond = summedReadBytesPerSecond;
+            metrics.TotalBytesRead      = summedBytesRead;
+            metrics.TotalBytesWritten   = summedBytesWritten;
+            metrics.ReadBytesPerSecond  = summedReadBytesPerSecond;
             metrics.WriteBytesPerSecond = summedWriteBytesPerSecond;
         }
 
-        metrics.ReadMegabytesPerSecond = metrics.ReadBytesPerSecond / BytesPerMegabyte;
+        metrics.ReadMegabytesPerSecond  = metrics.ReadBytesPerSecond / BytesPerMegabyte;
         metrics.WriteMegabytesPerSecond = metrics.WriteBytesPerSecond / BytesPerMegabyte;
     }
 
     private unsafe bool TryReadRawCounterArray(
-        nint counter,
+        nint   counter,
         string counterPath,
         Dictionary<string, RawSample> samples)
     {
@@ -332,7 +334,7 @@ public partial class DiskService
         int itemSize = Marshal.SizeOf<Pdh.PDH_RAW_COUNTER_ITEM>();
 
         for (uint item = 0; item < itemCount; item++) {
-            nint itemPointer = counterBuffer + (nint)(item * (uint)itemSize);
+            nint itemPointer             = counterBuffer + (nint)(item * (uint)itemSize);
             Pdh.PDH_RAW_COUNTER_ITEM raw = Marshal.PtrToStructure<Pdh.PDH_RAW_COUNTER_ITEM>(itemPointer);
 
             if (raw.RawValue.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
@@ -359,7 +361,7 @@ public partial class DiskService
 
         for (int attempt = 0; attempt < 3; attempt++) {
             uint bufferSize = counterBufferSize;
-            uint count = 0;
+            uint count      = 0;
 
             uint result = Pdh.PdhGetRawCounterArray(
                 counter,
@@ -391,11 +393,11 @@ public partial class DiskService
 
             if (counterBuffer != nint.Zero) {
                 Marshal.FreeHGlobal(counterBuffer);
-                counterBuffer = nint.Zero;
+                counterBuffer     = nint.Zero;
                 counterBufferSize = 0;
             }
 
-            counterBuffer = Marshal.AllocHGlobal((int)bufferSize);
+            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
             counterBufferSize = bufferSize;
         }
 
@@ -414,7 +416,9 @@ public partial class DiskService
             ? instanceName.AsSpan()
             : instanceName.AsSpan(0, separatorIndex);
 
-        return int.TryParse(indexSpan, out int index) ? index : -1;
+        return int.TryParse(indexSpan, out int index) 
+            ? index 
+            : -1;
     }
 #endif
 }

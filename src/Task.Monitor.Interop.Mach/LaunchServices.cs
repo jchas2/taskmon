@@ -2,9 +2,9 @@ using System.Runtime.InteropServices;
 
 namespace Task.Monitor.Interop.Mach;
 
-// LSSharedFileList (LaunchServices/LSSharedFileList.h, via the CoreServices umbrella). Deprecated
-// since 10.11 but still the only non-root API exposing the user's "Open at Login" items; verified
-// working on macOS 26. Should Apple remove it, the exports fail to bind and no items are returned.
+// LSSharedFileList (LaunchServices/LSSharedFileList.h).
+// Deprecated since 10.11 but still the only non-root API exposing the user's "Open at Login" items.
+// Should Apple remove it, the exports fail to bind and no items are returned.
 public static class LaunchServices
 {
     private const uint kLSSharedFileListNoUserInteraction = 1;
@@ -16,32 +16,30 @@ public static class LaunchServices
     public readonly record struct LoginItem(string Name, string? Path);
 
     [DllImport(Libraries.CoreServices)]
-    private static extern IntPtr LSSharedFileListCreate(IntPtr allocator, IntPtr listType, IntPtr listOptions);
+    private static extern nint LSSharedFileListCreate(nint allocator, nint listType, nint listOptions);
 
     [DllImport(Libraries.CoreServices)]
-    private static extern IntPtr LSSharedFileListCopySnapshot(IntPtr list, out uint seed);
+    private static extern nint LSSharedFileListCopySnapshot(nint list, out uint seed);
 
     [DllImport(Libraries.CoreServices)]
-    private static extern IntPtr LSSharedFileListItemCopyDisplayName(IntPtr item);
+    private static extern nint LSSharedFileListItemCopyDisplayName(nint item);
 
     [DllImport(Libraries.CoreServices)]
-    private static extern IntPtr LSSharedFileListItemCopyResolvedURL(IntPtr item, uint flags, IntPtr error);
+    private static extern nint LSSharedFileListItemCopyResolvedURL(nint item, uint flags, nint error);
 
-    // The current user's "Open at Login" items (System Settings > General > Login Items).
     public static List<LoginItem> GetSessionLoginItems()
     {
         List<LoginItem> items = new();
+        nint listType         = SessionLoginItems.Value;
 
-        IntPtr listType = SessionLoginItems.Value;
-
-        if (listType == IntPtr.Zero) {
+        if (listType == nint.Zero) {
             return items;
         }
 
-        IntPtr listRef;
+        nint listRef;
 
         try {
-            listRef = LSSharedFileListCreate(IntPtr.Zero, listType, IntPtr.Zero);
+            listRef = LSSharedFileListCreate(nint.Zero, listType, nint.Zero);
         }
         catch (EntryPointNotFoundException) {
             return items;
@@ -62,9 +60,12 @@ public static class LaunchServices
         long count = CoreFoundation.CFArrayGetCount(snapshot);
 
         for (long i = 0; i < count; i++) {
-            IntPtr item = CoreFoundation.CFArrayGetValueAtIndex(snapshot, i);
+            nint item    = CoreFoundation.CFArrayGetValueAtIndex(snapshot, i);
             string? path = CopyResolvedPath(item);
-            string? name = CopyDisplayName(item) ?? (path is null ? null : Path.GetFileNameWithoutExtension(path));
+            
+            string? name = CopyDisplayName(item) ?? (path is null 
+                ? null 
+                : Path.GetFileNameWithoutExtension(path));
 
             if (name is { Length: > 0 }) {
                 items.Add(new LoginItem(name, path));
@@ -74,20 +75,20 @@ public static class LaunchServices
         return items;
     }
 
-    private static string? CopyDisplayName(IntPtr item)
+    private static string? CopyDisplayName(nint item)
     {
         using CFScope name = new(LSSharedFileListItemCopyDisplayName(item));
 
         return CoreFoundation.GetString(name);
     }
 
-    private static string? CopyResolvedPath(IntPtr item)
+    private static string? CopyResolvedPath(nint item)
     {
         // Never prompt or mount: an item on an unmounted volume simply has no path.
         using CFScope url = new(LSSharedFileListItemCopyResolvedURL(
             item,
             kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes,
-            IntPtr.Zero));
+            nint.Zero));
 
         return CoreFoundation.GetPath(url);
     }

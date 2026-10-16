@@ -18,7 +18,8 @@ public static class Membership
             return null;
         }
 
-        // uuid_t is big endian, which is how Guid reads it with bigEndian: true.
-        return new Guid(new ReadOnlySpan<byte>(uuid, 16), bigEndian: true).ToString("D").ToUpperInvariant();
+        return new Guid(new ReadOnlySpan<byte>(uuid, 16), bigEndian: true)
+            .ToString("D")
+            .ToUpperInvariant();
     }
 }

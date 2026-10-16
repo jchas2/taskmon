@@ -18,5 +18,9 @@ public sealed class Pwd
     }
 
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_GetPwUidR", SetLastError = false)]
-    public static extern unsafe int GetPwUidR(uint uid, out Passwd pwd, byte* buf, int bufLen);
+    public static extern unsafe int GetPwUidR(
+        uint       uid, 
+        out Passwd pwd, 
+        byte*      buf, 
+        int        bufLen);
 }

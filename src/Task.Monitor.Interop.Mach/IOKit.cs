@@ -21,33 +21,33 @@ public static class IOKit
     
     [DllImport(Libraries.IOKit)]
     public static extern int IORegistryEntryCreateCFProperties(
-        uint entry, 
-        out IntPtr properties, 
-        IntPtr allocator, 
-        uint options);
+        uint     entry, 
+        out nint properties, 
+        nint     allocator, 
+        uint     options);
     
     [DllImport(Libraries.IOKit)]
     public static extern int IORegistryEntryGetChildIterator(
-        uint entry,
-        string plane,
-        ref IntPtr iterator);
+        uint     entry,
+        string   plane,
+        ref nint iterator);
 
     [DllImport(Libraries.IOKit)]
     public static extern int IORegistryEntryGetName(uint entry, byte[] name);
 
     [DllImport(Libraries.IOKit)]
     public static extern int IOServiceGetMatchingServices(
-        uint masterPort,
-        IntPtr matching,
-        out IntPtr iterator);
+        uint     masterPort,
+        nint     matching,
+        out nint iterator);
     
     [DllImport(Libraries.IOKit)]
     public static extern IntPtr IORegistryEntrySearchCFProperty(
-        uint entry,
+        uint   entry,
         string plane,
-        IntPtr key,
-        IntPtr allocator,
-        uint options);
+        nint   key,
+        nint   allocator,
+        uint   options);
 
     [DllImport(Libraries.IOKit)]
     public static extern IntPtr IOServiceMatching(string name);

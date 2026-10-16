@@ -10,7 +10,7 @@ public static class AssemblyVersionInfo
         const string NoVersion = "0.0.0.0";
 
         Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-        Version? version = assembly.GetName().Version;
+        Version? version  = assembly.GetName().Version;
         
         if (version == null) {
             Trace.WriteLine("Failed assembly.GetName().Version");

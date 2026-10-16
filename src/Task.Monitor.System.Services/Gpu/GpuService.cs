@@ -20,8 +20,8 @@ public sealed partial class GpuService : WorkerService
         }
 
         GpuInfo gpuInfo = new();
-        gpuInfo.Specs = gpuSpecs;
-        gpuInfo.Metrics.GpuCores = gpuSpecs.GpuCores;
+        gpuInfo.Specs                  = gpuSpecs;
+        gpuInfo.Metrics.GpuCores       = gpuSpecs.GpuCores;
         gpuInfo.Metrics.TotalGpuMemory = gpuSpecs.TotalGpuMemory;
         
         OnDoWorkGpuPidMetrics(gpuInfo);

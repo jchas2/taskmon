@@ -5,25 +5,25 @@ namespace Task.Monitor.Cli.Utils;
 
 public class FormattedTextWriterTraceListener : TextWriterTraceListener
 {
-    private readonly long maxBytes;
-    private readonly int maxFiles;
+    private readonly long   maxBytes;
+    private readonly int    maxFiles;
     private readonly string prefix;
     private readonly string extension;
     private readonly string directory;
-    private readonly Lock rollLock = new();
-    private long bytesWritten;
+    private readonly Lock   rollLock = new();
+    private long            bytesWritten;
 
     public FormattedTextWriterTraceListener(
         string fileName,
-        long maxBytes,
-        int maxFiles,
+        long   maxBytes,
+        int    maxFiles,
         string prefix,
         string extension)
         : base(fileName)
     {
-        this.maxBytes = maxBytes;
-        this.maxFiles = maxFiles;
-        this.prefix = prefix;
+        this.maxBytes  = maxBytes;
+        this.maxFiles  = maxFiles;
+        this.prefix    = prefix;
         this.extension = extension;
 
         directory = Path.GetDirectoryName(Path.GetFullPath(fileName)) ?? ".";
@@ -77,7 +77,7 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
 
     private static void PruneOldLogs(
         string directory,
-        int maxFiles,
+        int    maxFiles,
         string prefix,
         string extension)
     {
@@ -104,14 +104,25 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
         }
     }
 
-    public static void Initialise(string directory, long maxBytes, int maxFiles, string prefix = "debug", string extension = "log")
+    public static void Initialise(
+        string directory, 
+        long   maxBytes, 
+        int    maxFiles, 
+        string prefix    = "debug", 
+        string extension = "log")
     {
         if (!Directory.Exists(directory)) {
             throw new InvalidOperationException();
         }
         
         string fileName = Path.Combine(directory, UseNextFileName(prefix, extension));
-        FormattedTextWriterTraceListener traceListener = new(fileName, maxBytes, maxFiles, prefix, extension);
+        
+        FormattedTextWriterTraceListener traceListener = new(
+            fileName, 
+            maxBytes, 
+            maxFiles, 
+            prefix, 
+            extension);
 
         Trace.Listeners.Add(traceListener);
         Trace.AutoFlush = true;

@@ -7,10 +7,10 @@ namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
 internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
 {
-    private const int HeaderSize = 8;
+    private const int HeaderSize       = 8;
     private const int ProtocolDataSize = 40;
-    private const int LogSize = 512;
-    private const int BufferSize = HeaderSize + ProtocolDataSize + LogSize;
+    private const int LogSize          = 512;
+    private const int BufferSize       = HeaderSize + ProtocolDataSize + LogSize;
 
     public string Name => "NVMe SMART";
 
@@ -98,8 +98,8 @@ internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevi
             }
 
             byte* responseProto = buffer + HeaderSize;
-            uint dataOffset = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataOffsetOffset);
-            uint dataLength = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataLengthOffset);
+            uint dataOffset     = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataOffsetOffset);
+            uint dataLength     = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataLengthOffset);
 
             int logStart = HeaderSize + (int)dataOffset;
 

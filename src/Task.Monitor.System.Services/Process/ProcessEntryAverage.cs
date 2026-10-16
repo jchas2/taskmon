@@ -2,7 +2,7 @@ namespace Task.Monitor.System.Services.Process;
 
 public sealed class ProcessEntryAverage
 {
-    private long count;
+    private long   count;
     private double cpuTimePercentMean;
     private double gpuTimePercentMean;
     private double usedMemoryMean;
@@ -13,14 +13,14 @@ public sealed class ProcessEntryAverage
         // Use Welford's incremental mean for numerical stability over long runs.
         count++;
 
-        cpuTimePercentMean += (entry.CpuTimePercent - cpuTimePercentMean) / count;
-        gpuTimePercentMean += (entry.GpuTimePercent - gpuTimePercentMean) / count;
-        usedMemoryMean += ((double)entry.UsedMemory - usedMemoryMean) / count;
+        cpuTimePercentMean     += (entry.CpuTimePercent - cpuTimePercentMean) / count;
+        gpuTimePercentMean     += (entry.GpuTimePercent - gpuTimePercentMean) / count;
+        usedMemoryMean         += ((double)entry.UsedMemory - usedMemoryMean) / count;
         diskBytesPerSecondMean += (entry.DiskBytesPerSecond - diskBytesPerSecondMean) / count;
 
-        CpuTimePercentMax = Math.Max(CpuTimePercentMax, entry.CpuTimePercent);
-        GpuTimePercentMax = Math.Max(GpuTimePercentMax, entry.GpuTimePercent);
-        UsedMemoryMax = Math.Max(UsedMemoryMax, entry.UsedMemory);
+        CpuTimePercentMax     = Math.Max(CpuTimePercentMax, entry.CpuTimePercent);
+        GpuTimePercentMax     = Math.Max(GpuTimePercentMax, entry.GpuTimePercent);
+        UsedMemoryMax         = Math.Max(UsedMemoryMax, entry.UsedMemory);
         DiskBytesPerSecondMax = Math.Max(DiskBytesPerSecondMax, entry.DiskBytesPerSecond);
     }
 

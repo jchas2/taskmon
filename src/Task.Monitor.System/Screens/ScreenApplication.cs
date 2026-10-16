@@ -9,7 +9,7 @@ public class ScreenApplication
     public sealed class ScreenApplicationContext(ISystemTerminal terminal)
     {
         private Stack<Screen> screenStack = new();
-        private Lock @lock = new();
+        private Lock          @lock       = new();
 
         internal Screen? OwnerScreen
         {
@@ -40,19 +40,19 @@ public class ScreenApplication
 
         private void FitScreenToConsole(Screen screen)
         {
-            screen.X = 0;
-            screen.Y = 0;
-            screen.Width = terminal.WindowWidth;
+            screen.X      = 0;
+            screen.Y      = 0;
+            screen.Width  = terminal.WindowWidth;
             screen.Height = terminal.WindowHeight;
         }
         
         public void RunApplicationLoop()
         {
-            var consoleKey = ConsoleKey.None;
-            int screenWidth = terminal.WindowWidth;
-            int screenHeight = terminal.WindowHeight;
-            bool inResize = false;
-            bool running = true;
+            ConsoleKey consoleKey   = ConsoleKey.None;
+            int        screenWidth  = terminal.WindowWidth;
+            int        screenHeight = terminal.WindowHeight;
+            bool       inResize     = false;
+            bool       running      = true;
 
             // Main application loop.
             // Blocks the main thread and dispatches events to the loaded screen.
@@ -66,9 +66,11 @@ public class ScreenApplication
                         currScreen.Clear();
                         currScreen.Resize();
                         currScreen.Draw();
-                        screenWidth = terminal.WindowWidth;
+                        
+                        screenWidth  = terminal.WindowWidth;
                         screenHeight = terminal.WindowHeight;
-                        inResize = true;
+                        inResize     = true;
+                        
                         continue;
                     }
 
@@ -84,8 +86,10 @@ public class ScreenApplication
                     // Key Events.
                     if (terminal.KeyAvailable) {
                         ConsoleKeyInfo consoleKeyInfo = terminal.ReadKey();
+                        bool           handled        = false;
+                        
                         consoleKey = consoleKeyInfo.Key;
-                        bool handled = false;
+                        
                         currScreen.KeyPressed(consoleKeyInfo, ref handled);
 
                         if (!handled && consoleKey == ConsoleKey.Escape && screenStack.Count == 1) {
@@ -129,11 +133,12 @@ public class ScreenApplication
 
     private readonly Dictionary<Type, Screen> registeredScreens;
     private readonly ScreenApplicationContext applicationContext;
+    
     private int invocationCount = 0;
 
     public ScreenApplication(ISystemTerminal terminal)
     {
-        registeredScreens = new Dictionary<Type, Screen>();
+        registeredScreens  = new Dictionary<Type, Screen>();
         applicationContext = new ScreenApplicationContext(terminal);
     }
     
@@ -174,9 +179,6 @@ public class ScreenApplication
         applicationContext.OwnerScreen = screen;
     }
 
-    // Registered screens are singletons - a caller that needs to push per-visit state into one
-    // before showing it (e.g. LayoutDesignerScreen.Open(tree, name)) fetches that same instance
-    // through here rather than constructing a second, unregistered one.
     public T GetScreen<T>() where T : Screen
     {
         if (!registeredScreens.TryGetValue(typeof(T), out Screen? screen)) {

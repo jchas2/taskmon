@@ -1,7 +1,5 @@
 namespace Task.Monitor.Gui.Controls.SystemInformation;
 
-// Single source of truth for the ascii-art glyph text shared by AboutScreen's rotating logo and
-// SystemLogoControl's pulsing logo. Colour application is entirely up to each consumer.
 internal static class LogoArt
 {
 #if __APPLE__

@@ -37,7 +37,7 @@ public partial class DiskService
     private static DiskDevice? BuildDiskDevice(uint entry)
     {
         string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
-        int index = ParseDiskIndex(bsdName);
+        int index       = ParseDiskIndex(bsdName);
 
         if (index < 0) {
             return null;

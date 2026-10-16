@@ -34,9 +34,6 @@ public static partial class SystemInfo
 
     public static bool GetNetworkStats(ref NetworkStatistics networkStatistics) => GetNetworkStatsInternal(ref networkStatistics);
 
-    // The platform's product name and display version, for example "Windows 11 24H2" or "Tahoe
-    // 26.0". Exposed on its own so a caller that wants nothing but the host's identity does not
-    // have to gather the whole SystemStatistics struct to get at one string.
     public static string GetOsVersion() => GetOsVersionInternal();
 
     private static IPAddress? GetPreferredIpAddress()

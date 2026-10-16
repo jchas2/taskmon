@@ -6,12 +6,12 @@ namespace Task.Monitor.System.Controls.MessageBox;
 
 public sealed class MessageBox : Control
 {
-    private const int MinWidth = 40;
-    private const int MinHeight = 11;
+    private const int MinWidth     = 40;
+    private const int MinHeight    = 11;
     private const int MaxTextLines = 3;
-    private const int ButtonWidth = 10;
+    private const int ButtonWidth  = 10;
     private const int ButtonHeight = 1;
-    private const int ButtonGap = 6;
+    private const int ButtonGap    = 6;
 
     private bool okFocused = true;
     
@@ -26,12 +26,12 @@ public sealed class MessageBox : Control
     public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
     
     private void DrawButton(
-        int x,
-        int y,
-        int width,
-        int height,
+        int    x,
+        int    y,
+        int    width,
+        int    height,
         string text,
-        bool selected)
+        bool   selected)
     {
         DrawRectangle(
             x,
@@ -41,6 +41,7 @@ public sealed class MessageBox : Control
             DialogBackgroundColour);
         
         string centredText = text.CentreWithLength(width);
+        
         Terminal.BackgroundColor = DialogButtonBackgroundColour;
         Terminal.ForegroundColor = DialogButtonForegroundColour;
         
@@ -59,6 +60,7 @@ public sealed class MessageBox : Control
                     Terminal.ForegroundColor = ConsolePalette.Red;
                     Terminal.Write(ch);
                     Terminal.ForegroundColor = DialogButtonForegroundColour;
+                    
                     isHighlightChar = false;
                     continue;
                 }
@@ -84,9 +86,9 @@ public sealed class MessageBox : Control
         int y = Y;
 
         int dialogWidth = Width - 2;
-        string title = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen = Math.Min(title.Length, dialogWidth);
-        int leftDashes = (dialogWidth - titleLen) / 2;
+        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
+        int titleLen    = Math.Min(title.Length, dialogWidth);
+        int leftDashes  = (dialogWidth - titleLen) / 2;
         int rightDashes = dialogWidth - titleLen - leftDashes;
 
         Terminal.BackgroundColor = DialogBackgroundColour;

@@ -10,7 +10,10 @@ public static class AcpiThermalZone
         }
 
         double celsius = tenthKelvin / 10.0 - 273.15;
-        return celsius is > -40 and < 150 ? celsius : null;
+        
+        return celsius is > -40 and < 150 
+            ? celsius 
+            : null;
     }
 
     public static ThermalComponent ClassifyZone(string? instanceName)

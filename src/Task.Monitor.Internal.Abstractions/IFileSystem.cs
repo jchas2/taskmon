@@ -2,11 +2,11 @@
 
 public interface IFileSystem
 {
-    public bool TryCreateDirectory(string path);
-    public bool DirectoryExists(string? path);
-    public bool FileExists(string? path);
+    public bool   DirectoryExists(string? path);
+    public bool   FileExists(string? path);
     public long GetFileLength(string path);
-    string[] GetFiles(string path);
+    string[]      GetFiles(string path);
     public string ReadAllText(string path);
-    public void WriteAllText(string path, string? contents);
+    public bool   TryCreateDirectory(string path);
+    public void   WriteAllText(string path, string? contents);
 }

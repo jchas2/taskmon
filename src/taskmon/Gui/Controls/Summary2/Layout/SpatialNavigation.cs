@@ -7,16 +7,14 @@ public enum SpatialDirection { Left, Right, Up, Down }
 public static class SpatialNavigation
 {
     public static int? FindNearest(
-        IReadOnlyDictionary<int, Rectangle> paneBounds,
-        int fromId,
-        SpatialDirection direction)
+        IReadOnlyDictionary<int, Rectangle> paneBounds, int fromId, SpatialDirection direction)
     {
         if (!paneBounds.TryGetValue(fromId, out Rectangle from)) {
             return null;
         }
 
-        int? bestId = null;
-        long bestGap = long.MaxValue;
+        int? bestId      = null;
+        long bestGap     = long.MaxValue;
         long bestOverlap = -1;
 
         foreach ((int candidateId, Rectangle to) in paneBounds) {
@@ -29,23 +27,31 @@ public static class SpatialNavigation
 
             switch (direction) {
                 case SpatialDirection.Left:
-                    if (to.Right > from.Left) continue;
-                    gap = from.Left - to.Right;
+                    if (to.Right > from.Left) {
+                        continue;
+                    }
+                    gap     = from.Left - to.Right;
                     overlap = OverlapY(from, to);
                     break;
                 case SpatialDirection.Right:
-                    if (to.Left < from.Right) continue;
-                    gap = to.Left - from.Right;
+                    if (to.Left < from.Right) {
+                        continue;
+                    }
+                    gap     = to.Left - from.Right;
                     overlap = OverlapY(from, to);
                     break;
                 case SpatialDirection.Up:
-                    if (to.Bottom > from.Top) continue;
-                    gap = from.Top - to.Bottom;
+                    if (to.Bottom > from.Top) {
+                        continue;
+                    }
+                    gap     = from.Top - to.Bottom;
                     overlap = OverlapX(from, to);
                     break;
                 default:
-                    if (to.Top < from.Bottom) continue;
-                    gap = to.Top - from.Bottom;
+                    if (to.Top < from.Bottom) {
+                        continue;
+                    }
+                    gap     = to.Top - from.Bottom;
                     overlap = OverlapX(from, to);
                     break;
             }
@@ -55,9 +61,9 @@ public static class SpatialNavigation
             }
 
             if (gap < bestGap || (gap == bestGap && overlap > bestOverlap)) {
-                bestGap = gap;
+                bestGap     = gap;
                 bestOverlap = overlap;
-                bestId = candidateId;
+                bestId      = candidateId;
             }
         }
 

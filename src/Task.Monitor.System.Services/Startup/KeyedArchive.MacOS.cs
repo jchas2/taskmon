@@ -8,11 +8,12 @@ public static class KeyedArchive
 {
     public const string ClassKey = "$class";
 
-    private const string Archiver = "NSKeyedArchiver";
-    private const string NullObject = "$null";
     private const int MaxDepth = 32;
 
     private static readonly DateTime ReferenceDate = new(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private const string Archiver   = "NSKeyedArchiver";
+    private const string NullObject = "$null";
 
     public static Dictionary<string, object?>? Decode(object? archive)
     {
@@ -24,8 +25,8 @@ public static class KeyedArchive
             return null;
         }
 
-        Decoder decoder = new(objects);
-        Dictionary<string, object?> result = new(StringComparer.Ordinal);
+        Decoder                     decoder = new(objects);
+        Dictionary<string, object?> result  = new(StringComparer.Ordinal);
 
         foreach ((string key, object? value) in top) {
             result[key] = decoder.Resolve(value, 0);
@@ -148,7 +149,7 @@ public static class KeyedArchive
         private string? ResolveUrl(IReadOnlyDictionary<string, object?> fields, int depth)
         {
             string? relative = Resolve(fields.GetValueOrDefault("NS.relative"), depth + 1) as string;
-            string? baseUrl = Resolve(fields.GetValueOrDefault("NS.base"), depth + 1) as string;
+            string? baseUrl  = Resolve(fields.GetValueOrDefault("NS.base"), depth + 1) as string;
 
             if (relative is null || baseUrl is null) {
                 return relative;

@@ -10,10 +10,10 @@ namespace Task.Monitor;
 
 class Program
 {
-    internal const int ExitSuccess = 0;
-    internal const int ExitFailure = 1;
-    private const int UnhandledExceptionExitCode = 2;
-    private const int DebugWait = 3000;
+    internal const int ExitSuccess                = 0;
+    internal const int ExitFailure                = 1;
+    private const int  UnhandledExceptionExitCode = 2;
+    private const int  DebugWait                  = 3000;
     
     private static void RestoreConsole()
     {
@@ -63,9 +63,9 @@ class Program
         }
 
         ServiceController serviceController = new();
-        SystemTerminal terminal = new();
-        FileSystem fileSystem = new();
-        AppConfig appConfig = new(fileSystem);
+        FileSystem fileSystem               = new();
+        SystemTerminal terminal             = new();
+        AppConfig appConfig                 = new(fileSystem);
 
         try {
             RunContext runContext = new(

@@ -8,15 +8,16 @@ namespace Task.Monitor.System.Services.Network;
 
 public partial class NetworkService
 {
-    private const double BytesPerMegabyte = 1024.0 * 1024.0;
-    private const int SpecsRefreshCycles = 10;
+    private const double BytesPerMegabyte   = 1024.0 * 1024.0;
+    private const int    SpecsRefreshCycles = 10;
 
     // Keyed by BSD interface index (if_msghdr2.ifm_index), which also matches the index exposed by
     // the BCL NetworkInterface used for specs.
     private readonly Dictionary<uint, NetworkInstanceState> instanceStates = new();
+    
     private long previousTimestamp;
     private bool primed;
-    private int cyclesSinceSpecsRefresh;
+    private int  cyclesSinceSpecsRefresh;
     private bool sawUnknownAdapter;
 
     private sealed class NetworkInstanceState
@@ -38,7 +39,7 @@ public partial class NetworkService
     }
 
     private readonly struct InterfaceSample(
-        uint interfaceIndex,
+        uint  interfaceIndex,
         ulong bytesSent,
         ulong bytesReceived,
         ulong packetsSent,
@@ -54,10 +55,11 @@ public partial class NetworkService
     private void OnStopNetworkMetrics()
     {
         instanceStates.Clear();
-        previousTimestamp = 0;
-        primed = false;
+        
+        previousTimestamp       = 0;
+        primed                  = false;
         cyclesSinceSpecsRefresh = 0;
-        sawUnknownAdapter = false;
+        sawUnknownAdapter       = false;
     }
 
     private void OnDoWorkNetworkSample()
@@ -68,7 +70,7 @@ public partial class NetworkService
             return;
         }
 
-        long timestamp = Stopwatch.GetTimestamp();
+        long timestamp    = Stopwatch.GetTimestamp();
         long elapsedTicks = timestamp - previousTimestamp;
 
         if (!primed) {
@@ -77,7 +79,7 @@ public partial class NetworkService
             }
 
             previousTimestamp = timestamp;
-            primed = true;
+            primed            = true;
             return;
         }
 
@@ -97,10 +99,10 @@ public partial class NetworkService
     private void PrimeInstanceState(uint interfaceIndex, InterfaceSample sample)
     {
         NetworkInstanceState state = new();
-        state.InterfaceIndex = interfaceIndex;
-        state.PreviousBytesSent = sample.BytesSent;
-        state.PreviousBytesReceived = sample.BytesReceived;
-        state.PreviousPacketsSent = sample.PacketsSent;
+        state.InterfaceIndex          = interfaceIndex;
+        state.PreviousBytesSent       = sample.BytesSent;
+        state.PreviousBytesReceived   = sample.BytesReceived;
+        state.PreviousPacketsSent     = sample.PacketsSent;
         state.PreviousPacketsReceived = sample.PacketsReceived;
 
         instanceStates[interfaceIndex] = state;
@@ -115,16 +117,28 @@ public partial class NetworkService
         }
 
         state.SendBytesPerSecond = AccumulateDelta(
-            sample.BytesSent, ref state.PreviousBytesSent, ref state.TotalBytesSent, elapsedSeconds);
+            sample.BytesSent, 
+            ref state.PreviousBytesSent, 
+            ref state.TotalBytesSent, 
+            elapsedSeconds);
 
         state.ReceiveBytesPerSecond = AccumulateDelta(
-            sample.BytesReceived, ref state.PreviousBytesReceived, ref state.TotalBytesReceived, elapsedSeconds);
+            sample.BytesReceived, 
+            ref state.PreviousBytesReceived, 
+            ref state.TotalBytesReceived, 
+            elapsedSeconds);
 
         state.SendPacketsPerSecond = AccumulateDelta(
-            sample.PacketsSent, ref state.PreviousPacketsSent, ref state.TotalPacketsSent, elapsedSeconds);
+            sample.PacketsSent, 
+            ref state.PreviousPacketsSent, 
+            ref state.TotalPacketsSent, 
+            elapsedSeconds);
 
         state.ReceivePacketsPerSecond = AccumulateDelta(
-            sample.PacketsReceived, ref state.PreviousPacketsReceived, ref state.TotalPacketsReceived, elapsedSeconds);
+            sample.PacketsReceived, 
+            ref state.PreviousPacketsReceived, 
+            ref state.TotalPacketsReceived, 
+            elapsedSeconds);
     }
 
     private static double AccumulateDelta(ulong current, ref ulong previous, ref ulong total, double elapsedSeconds)
@@ -134,7 +148,7 @@ public partial class NetworkService
         if (current > previous) {
             ulong delta = current - previous;
             total += delta;
-            rate = delta / elapsedSeconds;
+            rate  = delta / elapsedSeconds;
         }
 
         previous = current;
@@ -155,7 +169,7 @@ public partial class NetworkService
         ];
 
         byte* buffer = null;
-        int length = 0;
+        int length   = 0;
 
         bool read = Sys.Sysctl(name, ref buffer, ref length);
         using HGlobalScope scope = new((nint)buffer);
@@ -164,8 +178,8 @@ public partial class NetworkService
             return false;
         }
 
-        byte* current = buffer;
-        byte* end = buffer + length;
+        byte* current  = buffer;
+        byte* end      = buffer + length;
         int headerSize = Marshal.SizeOf<Sys.if_msghdr2>();
 
         while (current < end) {

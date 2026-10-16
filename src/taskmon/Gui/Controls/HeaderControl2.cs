@@ -14,30 +14,30 @@ namespace Task.Monitor.Gui.Controls;
 
 public sealed class HeaderControl2 : Control
 {
-    private readonly ServiceController serviceController;
-    private readonly AppConfig appConfig;
-
-    private readonly string machineName = Environment.MachineName.ToUpper();
-    private readonly string osVersion = SystemInfo.GetOsVersion();
-
-    private CpuInfo? cpuInfo;
-    private ProcessInfo? processInfo;
-    private string privateIPv4Address = string.Empty;
-
-#if __APPLE__
-    // Only the Apple header reports gpu cores, so the field is only kept where it is drawn.
-    private GpuInfo? gpuInfo;
-#endif
+    public const int HeaderRows = 5;
 
     private static readonly ProcessMetrics EmptyProcessMetrics = new();
-    private readonly AnsiScreenBuffer frame = new();
 
-    public const int HeaderRows = 5;
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly AnsiScreenBuffer  frame = new();
+
+    private readonly string machineName = Environment.MachineName.ToUpper();
+    private readonly string osVersion   = SystemInfo.GetOsVersion();
+
+    private CpuInfo?     cpuInfo;
+    private ProcessInfo? processInfo;
+#if __APPLE__
+    // Only the Apple header reports gpu cores.
+    private GpuInfo?     gpuInfo;
+#endif
+    
+    private string privateIPv4Address = string.Empty;
 
     public HeaderControl2(
         ServiceController serviceController,
-        ISystemTerminal terminal,
-        AppConfig appConfig)
+        ISystemTerminal   terminal,
+        AppConfig         appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
@@ -49,10 +49,10 @@ public sealed class HeaderControl2 : Control
     private void OnDrawInternal()
     {
         const string MachineLabel = "Machine: ";
-        const string OSLabel = " OS: ";
-        const string IpLabel = " Ip: ";
-        const string CpuLabel = "Cpu: ";
-        const string TasksLabel = " Tasks: ";
+        const string OSLabel      = " OS: ";
+        const string IpLabel      = " Ip: ";
+        const string CpuLabel     = "Cpu: ";
+        const string TasksLabel   = " Tasks: ";
         const string ThreadsLabel = " Threads: ";
         const string RunningLabel = " running";
 
@@ -79,9 +79,9 @@ public sealed class HeaderControl2 : Control
             return;
         }
 
-        Color lbColor = appConfig.Theme.Foreground;
-        Color fgColour = appConfig.Theme.RangeLowBackground;
-        Color bgColour = appConfig.Theme.Background;
+        Color lbColor      = appConfig.Theme.Foreground;
+        Color fgColour     = appConfig.Theme.RangeLowBackground;
+        Color bgColour     = appConfig.Theme.Background;
         Color borderColour = appConfig.Theme.ControlBorder;
 
         frame.Clear();
@@ -97,12 +97,12 @@ public sealed class HeaderControl2 : Control
         BeginRow(Y + 2, borderColour, bgColour);
         int remaining = innerWidth;
 
-        AppendSegment(MachineLabel, lbColor, bgColour, ref remaining);
-        AppendSegment(machineName, fgColour, bgColour, ref remaining);
-        AppendSegment(OSLabel, lbColor, bgColour, ref remaining);
-        AppendSegment(osVersion, fgColour, bgColour, ref remaining);
-        AppendSegment(IpLabel, lbColor, bgColour, ref remaining);
-        AppendSegment(ipAddress, fgColour, bgColour, ref remaining);
+        AppendSegment(MachineLabel, lbColor,  bgColour, ref remaining);
+        AppendSegment(machineName,  fgColour, bgColour, ref remaining);
+        AppendSegment(OSLabel,      lbColor,  bgColour, ref remaining);
+        AppendSegment(osVersion,    fgColour, bgColour, ref remaining);
+        AppendSegment(IpLabel,      lbColor,  bgColour, ref remaining);
+        AppendSegment(ipAddress,    fgColour, bgColour, ref remaining);
 
         string themeText = $"{appConfig.Theme.Name} ";
 
@@ -156,20 +156,20 @@ public sealed class HeaderControl2 : Control
         ProcessMetrics processMetrics = processInfo?.Metrics ?? EmptyProcessMetrics;
 
         string processCount = processMetrics.ProcessCount.ToString();
-        string threadCount = processMetrics.ThreadCount.ToString();
+        string threadCount  = processMetrics.ThreadCount.ToString();
         string runningCount = processMetrics.RunningCount.ToString();
 
         BeginRow(Y + 3, borderColour, bgColour);
         remaining = innerWidth;
 
-        AppendSegment(CpuLabel, lbColor, bgColour, ref remaining);
-        AppendSegment(cpuInfoText, fgColour, bgColour, ref remaining);
-        AppendSegment(TasksLabel, lbColor, bgColour, ref remaining);
-        AppendSegment(processCount, fgColour, bgColour, ref remaining);
-        AppendSegment(ThreadsLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(CpuLabel,           lbColor,  bgColour, ref remaining);
+        AppendSegment(cpuInfoText,        fgColour, bgColour, ref remaining);
+        AppendSegment(TasksLabel,         lbColor,  bgColour, ref remaining);
+        AppendSegment(processCount,       fgColour, bgColour, ref remaining);
+        AppendSegment(ThreadsLabel,       lbColor,  bgColour, ref remaining);
         AppendSegment(threadCount + ", ", fgColour, bgColour, ref remaining);
-        AppendSegment(runningCount, fgColour, bgColour, ref remaining);
-        AppendSegment(RunningLabel, lbColor, bgColour, ref remaining);
+        AppendSegment(runningCount,       fgColour, bgColour, ref remaining);
+        AppendSegment(RunningLabel,       lbColor,  bgColour, ref remaining);
 
         EndRow(remaining, borderColour, bgColour);
 
@@ -197,7 +197,11 @@ public sealed class HeaderControl2 : Control
         frame.Append('│');
     }
 
-    private void AppendSegment(string text, Color fgColour, Color bgColour, ref int remaining)
+    private void AppendSegment(
+        string  text, 
+        Color   fgColour, 
+        Color   bgColour, 
+        ref int remaining)
     {
         int length = Math.Min(text.Length, remaining);
 

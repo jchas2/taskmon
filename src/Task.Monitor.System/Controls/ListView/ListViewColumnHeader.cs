@@ -12,9 +12,8 @@ public class ListViewColumnHeader
 
     public ListViewColumnHeader(
         string text,
-        Color backgroundColor,
-        Color foregroundColor)
-        : this(text)
+        Color  backgroundColor,
+        Color  foregroundColor) : this(text)
     {
         BackgroundColour = backgroundColor;
         ForegroundColour = foregroundColor;

@@ -12,12 +12,13 @@ public partial class ProcessControl
 {
     public class ProcessListViewItem : ListViewItem
     {
-        private int lastThreadCount;
-        private long lastBasePriority;
-        private long lastUsedMemory;
+        private int    lastThreadCount;
+        private long   lastBasePriority;
+        private long   lastUsedMemory;
         private double lastDiskBytesPerSecond;
         private double lastCpu;
         private double lastGpu;
+        
         private static string currThreadUser = string.Empty;
 
         private static string[] metre = [
@@ -29,17 +30,16 @@ public partial class ProcessControl
         ];
                                         
         
-        public ProcessListViewItem(
-            ProcessEntry processEntry,
-            ulong totalPhysicalMemory,
-            AppConfig appConfig) 
+        public ProcessListViewItem(ProcessEntry processEntry, ulong totalPhysicalMemory, AppConfig appConfig) 
             : base(processEntry.FileDescription)
         {
-            AppConfig = appConfig;
-            Pid = processEntry.Pid;
+            AppConfig      = appConfig;
+            Pid            = processEntry.Pid;
+            currThreadUser = Environment.UserName;
+            
             AddSubItems(processEntry);
             FormatSubItems(processEntry, totalPhysicalMemory);
-            currThreadUser = Environment.UserName;
+            
         }
 
         public int Pid { get; private set; }
@@ -183,22 +183,22 @@ public partial class ProcessControl
             }
 
             if (!processEntry.IsDaemon && AppConfig.HighlightDaemons) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandNormalUserSpace;
+                SubItems[(int)Columns.Process].ForegroundColor     = AppConfig.Theme.ColumnCommandNormalUserSpace;
                 SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandNormalUserSpace;
             }
 
             if (processEntry.IsLowPriority) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandLowPriority;
+                SubItems[(int)Columns.Process].ForegroundColor     = AppConfig.Theme.ColumnCommandLowPriority;
                 SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandLowPriority;
             }
 
             if (mbps >= 100.0) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandIoBound;
+                SubItems[(int)Columns.Process].ForegroundColor     = AppConfig.Theme.ColumnCommandIoBound;
                 SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandIoBound;
             }
 
             if (cpuHighCoreUsage) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.ColumnCommandHighCpu;
+                SubItems[(int)Columns.Process].ForegroundColor     = AppConfig.Theme.ColumnCommandHighCpu;
                 SubItems[(int)Columns.CommandLine].ForegroundColor = AppConfig.Theme.ColumnCommandHighCpu;
             }
 
@@ -216,11 +216,11 @@ public partial class ProcessControl
                 SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeHighBackground;
             }
             
-            lastCpu = processEntry.CpuTimePercent;
-            lastBasePriority = processEntry.BasePriority;
-            lastThreadCount = processEntry.ThreadCount;
-            lastGpu = processEntry.GpuTimePercent;
-            lastUsedMemory = processEntry.UsedMemory;
+            lastCpu                = processEntry.CpuTimePercent;
+            lastBasePriority       = processEntry.BasePriority;
+            lastThreadCount        = processEntry.ThreadCount;
+            lastGpu                = processEntry.GpuTimePercent;
+            lastUsedMemory         = processEntry.UsedMemory;
             lastDiskBytesPerSecond = processEntry.DiskBytesPerSecond;
         }
         
@@ -228,24 +228,24 @@ public partial class ProcessControl
         {
             Debug.Assert(processEntry.Pid == Pid);
 
-            SubItems[(int)Columns.Process].Text = processEntry.FileDescription;
-            SubItems[(int)Columns.Pid].Text = processEntry.Pid.ToString();
-            SubItems[(int)Columns.User].Text = processEntry.UserName;
-            SubItems[(int)Columns.Priority].Text = processEntry.BasePriority.ToString();
-            SubItems[(int)Columns.Cpu].Text = processEntry.CpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.AvgCpu].Text = processEntry.CpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.MaxCpu].Text = processEntry.CpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.Threads].Text = processEntry.ThreadCount.ToString();
-            SubItems[(int)Columns.Gpu].Text = processEntry.GpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.AvgGpu].Text = processEntry.GpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.MaxGpu].Text = processEntry.GpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
-            SubItems[(int)Columns.Memory].Text = processEntry.UsedMemory.ToFormattedByteSize();
+            SubItems[(int)Columns.Process].Text   = processEntry.FileDescription;
+            SubItems[(int)Columns.Pid].Text       = processEntry.Pid.ToString();
+            SubItems[(int)Columns.User].Text      = processEntry.UserName;
+            SubItems[(int)Columns.Priority].Text  = processEntry.BasePriority.ToString();
+            SubItems[(int)Columns.Cpu].Text       = processEntry.CpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.AvgCpu].Text    = processEntry.CpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.MaxCpu].Text    = processEntry.CpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.Threads].Text   = processEntry.ThreadCount.ToString();
+            SubItems[(int)Columns.Gpu].Text       = processEntry.GpuTimePercent.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.AvgGpu].Text    = processEntry.GpuTimePercentAvg.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.MaxGpu].Text    = processEntry.GpuTimePercentMax.ToString("00.00%", CultureInfo.InvariantCulture);
+            SubItems[(int)Columns.Memory].Text    = processEntry.UsedMemory.ToFormattedByteSize();
             SubItems[(int)Columns.AvgMemory].Text = processEntry.UsedMemoryAvg.ToFormattedByteSize();
             SubItems[(int)Columns.MaxMemory].Text = processEntry.UsedMemoryMax.ToFormattedByteSize();
-            SubItems[(int)Columns.Disk].Text = processEntry.DiskBytesPerSecond.ToFormattedMbpsFromBytes();
-            SubItems[(int)Columns.AvgDisk].Text = processEntry.DiskBytesPerSecondAvg.ToFormattedMbpsFromBytes();
-            SubItems[(int)Columns.MaxDisk].Text = processEntry.DiskBytesPerSecondMax.ToFormattedMbpsFromBytes();
-            SubItems[(int)Columns.Power].Text = FormatPowerBucket(processEntry.PowerBucket);
+            SubItems[(int)Columns.Disk].Text      = processEntry.DiskBytesPerSecond.ToFormattedMbpsFromBytes();
+            SubItems[(int)Columns.AvgDisk].Text   = processEntry.DiskBytesPerSecondAvg.ToFormattedMbpsFromBytes();
+            SubItems[(int)Columns.MaxDisk].Text   = processEntry.DiskBytesPerSecondMax.ToFormattedMbpsFromBytes();
+            SubItems[(int)Columns.Power].Text     = FormatPowerBucket(processEntry.PowerBucket);
 
             FormatSubItems(processEntry, totalPhysicalMemory);
         }

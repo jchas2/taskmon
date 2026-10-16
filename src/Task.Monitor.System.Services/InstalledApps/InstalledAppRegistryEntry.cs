@@ -12,8 +12,8 @@ public static class InstalledAppRegistryEntry
         string? installLocation,
         string? uninstallString,
         string? quietUninstallString,
-        int? estimatedSizeKb,
-        int? systemComponent,
+        int?    estimatedSizeKb,
+        int?    systemComponent,
         string? parentKeyName,
         string? releaseType,
         InstalledAppScope scope,
@@ -36,15 +36,15 @@ public static class InstalledAppRegistryEntry
         }
 
         return new InstalledApp {
-            Name = displayName,
-            Version = NullIfEmpty(displayVersion),
-            Publisher = NullIfEmpty(publisher),
-            InstallDate = ParseInstallDate(installDate),
-            InstallLocation = NullIfEmpty(installLocation),
-            EstimatedSizeKb = estimatedSizeKb,
+            Name             = displayName,
+            Version          = NullIfEmpty(displayVersion),
+            Publisher        = NullIfEmpty(publisher),
+            InstallDate      = ParseInstallDate(installDate),
+            InstallLocation  = NullIfEmpty(installLocation),
+            EstimatedSizeKb  = estimatedSizeKb,
             UninstallCommand = NullIfEmpty(quietUninstallString) ?? NullIfEmpty(uninstallString),
-            Scope = scope,
-            Origin = origin
+            Scope            = scope,
+            Origin           = origin
         };
     }
 

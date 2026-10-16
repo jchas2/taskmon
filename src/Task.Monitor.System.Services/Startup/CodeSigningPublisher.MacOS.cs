@@ -5,7 +5,7 @@ namespace Task.Monitor.System.Services.Startup;
 
 public static partial class CodeSigningPublisher
 {
-    private const string ApplePublisher = "Apple Inc.";
+    private const string ApplePublisher    = "Apple Inc.";
     private const string AppStorePublisher = "Mac App Store";
 
     public static string? Parse(string? subjectSummary)
@@ -26,10 +26,13 @@ public static partial class CodeSigningPublisher
 
         // "<certificate type>: <name> (<team id>)"
         int separator = summary.IndexOf(": ", StringComparison.Ordinal);
-        string name = separator >= 0 ? summary[(separator + 2)..] : summary;
+        string name   = separator >= 0 ? summary[(separator + 2)..] : summary;
+        
         name = TeamIdSuffix().Replace(name, string.Empty).Trim();
 
-        return name.Length > 0 ? name : null;
+        return name.Length > 0 
+            ? name 
+            : null;
     }
 
     [GeneratedRegex(@"\s*\([A-Z0-9]{10}\)$")]

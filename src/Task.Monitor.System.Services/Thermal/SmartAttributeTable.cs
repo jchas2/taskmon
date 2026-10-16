@@ -4,8 +4,8 @@ namespace Task.Monitor.System.Services.Thermal;
 public static class SmartAttributeTable
 {
     private const int FirstAttributeOffset = 2;
-    private const int AttributeEntrySize = 12;
-    private const int AttributeCount = 30;
+    private const int AttributeEntrySize   = 12;
+    private const int AttributeCount       = 30;
 
     private const byte TemperatureCelsiusId = 194;  // 0xC2
     private const byte AirflowTemperatureId = 190;  // 0xBE

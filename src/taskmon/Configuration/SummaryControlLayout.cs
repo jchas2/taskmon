@@ -6,9 +6,9 @@ namespace Task.Monitor.Configuration;
 
 public sealed class SummaryControlLayout
 {
-    private const string LayoutTypeTree = "tree";
-    private const char FieldSeparator = ',';
-    private const char ColumnSeparator = '+';
+    private const string LayoutTypeTree  = "tree";
+    private const char   FieldSeparator  = ',';
+    private const char   ColumnSeparator = '+';
 
     private ConfigSection? layoutSection;
 
@@ -64,25 +64,19 @@ public sealed class SummaryControlLayout
 
         if (parts.Length >= 5 && parts[0] == "split") {
             return new SummaryLayoutNode {
-                Id = id,
-                IsSplit = true,
-                Orientation = Enum.TryParse(parts[1], ignoreCase: true, out Orientation orientation)
-                    ? orientation
-                    : Orientation.Row,
-                Ratio = float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float ratio)
-                    ? ratio
-                    : 0.5f,
-                FirstId = int.TryParse(parts[3], out int firstId) ? firstId : 0,
-                SecondId = int.TryParse(parts[4], out int secondId) ? secondId : 0,
+                Id          = id,
+                IsSplit     = true,
+                Orientation = Enum.TryParse(parts[1], ignoreCase: true, out Orientation orientation) ? orientation : Orientation.Row,
+                Ratio       = float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float ratio) ? ratio : 0.5f,
+                FirstId     = int.TryParse(parts[3], out int firstId) ? firstId : 0,
+                SecondId    = int.TryParse(parts[4], out int secondId) ? secondId : 0,
             };
         }
 
         if (parts.Length >= 2 && parts[0] == "pane") {
             return new SummaryLayoutNode {
-                Id = id,
-                ControlType = Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType)
-                    ? controlType
-                    : PaneControlType.Empty,
+                Id             = id,
+                ControlType    = Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
                 ProcessColumns = parts.Length >= 3 ? ParseColumns(parts[2]) : null,
             };
         }
@@ -111,8 +105,8 @@ public sealed class SummaryControlLayout
     {
         ConfigSection section = new(name);
 
-        section.Add(Constants.Keys.LayoutType, LayoutTypeTree);
-        section.Add(Constants.Keys.SummaryRoot, tree.RootId.ToString(CultureInfo.InvariantCulture));
+        section.Add(Constants.Keys.LayoutType,   LayoutTypeTree);
+        section.Add(Constants.Keys.SummaryRoot,  tree.RootId.ToString(CultureInfo.InvariantCulture));
         section.Add(Constants.Keys.SummaryNodes, string.Join(FieldSeparator, tree.Nodes.Keys));
 
         foreach ((int id, SummaryLayoutNode node) in tree.Nodes) {

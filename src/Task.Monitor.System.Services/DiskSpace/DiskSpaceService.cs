@@ -10,9 +10,9 @@ public sealed class DiskSpaceService : WorkerService
 
     private readonly object startLock = new();
 
-    private volatile DiskSpaceSpecs specs = new();
+    private volatile DiskSpaceSpecs  specs = new();
     private CancellationTokenSource? scanCts;
-    private WorkerTask? scanTask;
+    private WorkerTask?              scanTask;
 
     protected override void OnStart() => Publish(new DiskSpaceInfo { Specs = specs });
 
@@ -28,8 +28,8 @@ public sealed class DiskSpaceService : WorkerService
             }
 
             DiskSpaceAccumulator accumulator = new(rootPath);
-            scanCts = new CancellationTokenSource();
-            CancellationToken token = scanCts.Token;
+            scanCts                          = new CancellationTokenSource();
+            CancellationToken token          = scanCts.Token;
 
             UpdateSpecs(accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0));
             scanTask = WorkerTask.Run(() => RunScan(rootPath, accumulator, token));
@@ -40,7 +40,7 @@ public sealed class DiskSpaceService : WorkerService
 
     private void RunScan(string rootPath, DiskSpaceAccumulator accumulator, CancellationToken cancellationToken)
     {
-        Stopwatch elapsed = Stopwatch.StartNew();
+        Stopwatch elapsed  = Stopwatch.StartNew();
         Stopwatch throttle = Stopwatch.StartNew();
 
         try {

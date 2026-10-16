@@ -9,29 +9,28 @@ namespace Task.Monitor.System.Screens;
 public partial class Screen : Control
 {
     private readonly MessageBox messageBox;
-    private readonly InputBox inputBox;
+    private readonly InputBox   inputBox;
     
     private Control? focusedControl;
     
-    Action? onMessageBoxResult;
     Action<string, InputBoxResult>? onInputBoxResult;
+    Action?                         onMessageBoxResult;
 
-    private const int MessageBoxWidth = 48;
+    private const int MessageBoxWidth  = 48;
     private const int MessageBoxHeight = 11;
-    
-    private const int InputBoxWidth = 48;
+    private const int InputBoxWidth    = 48;
 
     public Screen(ISystemTerminal systemTerminal) : base(systemTerminal)
     {
         messageBox = new MessageBox(systemTerminal) {
-            Width = MessageBoxWidth,
-            Height = MessageBoxHeight,
+            Width   = MessageBoxWidth,
+            Height  = MessageBoxHeight,
             Visible = false
         };
 
         inputBox = new InputBox(systemTerminal) {
-            Width = MessageBoxWidth,
-            Height = 1,
+            Width   = MessageBoxWidth,
+            Height  = 1,
             Visible = false
         };
     }
@@ -40,7 +39,7 @@ public partial class Screen : Control
     {
         get => base.BackgroundColour;
         set {
-            base.BackgroundColour = value;
+            base.BackgroundColour     = value;
             inputBox.BackgroundColour = value;
         }
     }
@@ -74,16 +73,8 @@ public partial class Screen : Control
             return;
         }
 
-        // Captured locally rather than read back off the field: a composite's own OnGotFocus can
-        // re-enter this method to redirect focus further down to one of its children (see
-        // Control.GotFocus), which reassigns the field before this call unwinds.
         Control? previous = focusedControl;
 
-        // A control's own OnDraw can recompute item colours (e.g. ProcessControl's per-tick
-        // delta highlighting) in more than one step before painting, wrapped in this same lock
-        // so a redraw always sees the finished state. The Draw() calls below run from key-press
-        // handling rather than that data-tick path, so without acquiring it here they could land
-        // mid-recompute on another thread and paint the transient, not-yet-highlighted colour.
         try {
             DrawingLockAcquire();
 
@@ -94,6 +85,7 @@ public partial class Screen : Control
             }
 
             focusedControl = control;
+            
             control.Focused = true;
             control.GotFocus();
             control.Draw();
@@ -107,7 +99,7 @@ public partial class Screen : Control
     {
         get => base.ForegroundColour;
         set {
-            base.ForegroundColour = value;
+            base.ForegroundColour     = value;
             inputBox.ForegroundColour = value;
         }
     }
@@ -167,7 +159,7 @@ public partial class Screen : Control
         }
 
         Control.RedrawEnabled = true;
-        inputBox.Visible = false;
+        inputBox.Visible      = false;
 
         onInputBoxResult?.Invoke(inputBox.Text, inputBox.Result);
 
@@ -183,7 +175,7 @@ public partial class Screen : Control
         }
 
         Control.RedrawEnabled = true;
-        messageBox.Visible = false;
+        messageBox.Visible    = false;
 
         if (messageBox.Result == MessageBoxResult.Ok) {
             onMessageBoxResult?.Invoke();
@@ -224,39 +216,39 @@ public partial class Screen : Control
     }
 
     public void ShowInputBox(
-        int x, 
-        int y,
-        int width,
+        int    x, 
+        int    y,
+        int    width,
         string title, 
         Action<string, InputBoxResult> onInputResult)
     {
         Control.RedrawEnabled = false;
-        onInputBoxResult = onInputResult;
+        onInputBoxResult      = onInputResult;
 
         inputBox.Visible = true;
-        inputBox.X = x;
-        inputBox.Y = y;
-        inputBox.Width = width;
-        inputBox.Title = title;
+        inputBox.X       = x;
+        inputBox.Y       = y;
+        inputBox.Width   = width;
+        inputBox.Title   = title;
         
         inputBox.ShowInputBox();
     }
 
     public void ShowMessageBox(
-        string title,
-        string text,
+        string            title,
+        string            text,
         MessageBoxButtons buttons,
-        Action action,
-        int width = MessageBoxWidth)
+        Action            action,
+        int               width    = MessageBoxWidth)
     {
-        RedrawEnabled = false;
+        RedrawEnabled      = false;
         onMessageBoxResult = action;
 
         messageBox.Visible = true;
         messageBox.Buttons = buttons;
-        messageBox.Text = text;
-        messageBox.Title = title;
-        messageBox.Width = width;
+        messageBox.Text    = text;
+        messageBox.Title   = title;
+        messageBox.Width   = width;
         
         messageBox.ShowMessageBox();
     }

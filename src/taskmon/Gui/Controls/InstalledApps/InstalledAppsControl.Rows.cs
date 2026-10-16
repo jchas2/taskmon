@@ -18,13 +18,13 @@ public sealed partial class InstalledAppsControl
 
         foreach (InstalledApp app in apps) {
             ListViewItem row = new(new[] {
-                new ListViewSubItem(null!, Cell(app.Name), background, foreground),
-                new ListViewSubItem(null!, Cell(app.Version), background, foreground),
-                new ListViewSubItem(null!, Cell(app.Publisher), background, foreground),
-                new ListViewSubItem(null!, DescribeScope(app.Scope), background, foreground),
+                new ListViewSubItem(null!, Cell(app.Name),                       background, foreground),
+                new ListViewSubItem(null!, Cell(app.Version),                    background, foreground),
+                new ListViewSubItem(null!, Cell(app.Publisher),                  background, foreground),
+                new ListViewSubItem(null!, DescribeScope(app.Scope),             background, foreground),
                 new ListViewSubItem(null!, DescribeInstallDate(app.InstallDate), background, foreground),
-                new ListViewSubItem(null!, DescribeSize(app.EstimatedSizeKb), background, foreground),
-                new ListViewSubItem(null!, Cell(app.InstallLocation), background, foreground)
+                new ListViewSubItem(null!, DescribeSize(app.EstimatedSizeKb),    background, foreground),
+                new ListViewSubItem(null!, Cell(app.InstallLocation),            background, foreground)
             });
 
             installedAppsView.Items.Add(row);
@@ -45,24 +45,32 @@ public sealed partial class InstalledAppsControl
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
 
-        detailView.Items.Add(new ListViewItem(["Name", Cell(app.Name)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Version", Cell(app.Version)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher", Cell(app.Publisher)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Scope", DescribeScope(app.Scope)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Name",      Cell(app.Name)],                       background, foreground));
+        detailView.Items.Add(new ListViewItem(["Version",   Cell(app.Version)],                    background, foreground));
+        detailView.Items.Add(new ListViewItem(["Publisher", Cell(app.Publisher)],                  background, foreground));
+        detailView.Items.Add(new ListViewItem(["Scope",     DescribeScope(app.Scope)],             background, foreground));
         detailView.Items.Add(new ListViewItem(["Installed", DescribeInstallDate(app.InstallDate)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Size", DescribeSize(app.EstimatedSizeKb)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Location", Cell(app.InstallLocation)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Size",      DescribeSize(app.EstimatedSizeKb)],    background, foreground));
+        detailView.Items.Add(new ListViewItem(["Location",  Cell(app.InstallLocation)],            background, foreground));
     }
 
     private static string Cell(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
+        string.IsNullOrWhiteSpace(value) 
+            ? NotAvailable 
+            : value;
 
     private static string DescribeScope(InstalledAppScope scope) =>
-        scope == InstalledAppScope.Machine ? "Machine" : "User";
+        scope == InstalledAppScope.Machine 
+            ? "Machine" 
+            : "User";
 
     private static string DescribeInstallDate(DateTime? installDate) =>
-        installDate is { } date ? date.ToString("yyyy-MM-dd") : NotAvailable;
+        installDate is { } date 
+            ? date.ToString("yyyy-MM-dd") 
+            : NotAvailable;
 
     private static string DescribeSize(long? estimatedSizeKb) =>
-        estimatedSizeKb is { } sizeKb ? (sizeKb * 1024L).ToFormattedByteSize() : NotAvailable;
+        estimatedSizeKb is { } sizeKb 
+            ? (sizeKb * 1024L).ToFormattedByteSize() 
+            : NotAvailable;
 }

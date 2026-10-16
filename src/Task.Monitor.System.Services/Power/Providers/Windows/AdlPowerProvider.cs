@@ -31,8 +31,8 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
             yield break;
         }
 
-        IReadOnlyList<GpuDevice> gpus = getGpus();
-        HashSet<long> assigned = new();
+        IReadOnlyList<GpuDevice> gpus     = getGpus();
+        HashSet<long>            assigned = new();
 
         foreach (Adl.Adapter adapter in Adl.GetAdapters(context)) {
             if (!Adl.GetPowerWatts(context, adapter.AdapterIndex, out double watts)) {
@@ -43,11 +43,11 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
                 candidate.DeviceId == adapter.DeviceId && assigned.Add(candidate.AdapterLuid));
 
             yield return new PowerReading {
-                Component = PowerComponent.Gpu,
+                Component   = PowerComponent.Gpu,
                 ComponentId = gpu?.AdapterLuid.ToString() ?? $"adl{adapter.AdapterIndex}",
-                Rail = "GPU",
-                Watts = watts,
-                Source = PowerSource.Adl
+                Rail        = "GPU",
+                Watts       = watts,
+                Source      = PowerSource.Adl
             };
         }
     }

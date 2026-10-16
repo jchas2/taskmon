@@ -14,8 +14,9 @@ public sealed partial class ProcessService : WorkerService
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         ProcessInfo processInfo = new();
-        processInfo.Specs = processSpecs;
-        processSpecs.IrixMode = IrixMode;
+        processInfo.Specs       = processSpecs;
+        
+        processSpecs.IrixMode   = IrixMode;
 
         OnDoWorkProcessMetrics(processInfo.Metrics, processSpecs);
         Publish(processInfo);
