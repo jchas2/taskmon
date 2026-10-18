@@ -12,8 +12,8 @@ public sealed class SummaryControl2 : Control
     private readonly SummaryLayoutRenderer    renderer     = new();
     private readonly Dictionary<int, Control> paneControls = new();
 
-    private readonly ServiceController     serviceController;
-    private readonly AppConfig             appConfig;
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
 
     private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
     
@@ -145,8 +145,7 @@ public sealed class SummaryControl2 : Control
             BuildPanes();
         }
 
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         foreach (Control control in paneControls.Values) {
             SummaryPaneTheme.Apply(control, appConfig);

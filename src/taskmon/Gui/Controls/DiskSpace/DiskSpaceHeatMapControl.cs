@@ -179,6 +179,7 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
 
         string footerLabel = $" {BorderHint} ";
+        
         int footerLabelLen    = Math.Min(footerLabel.Length, innerWidth);
         int footerLeftDashes  = (innerWidth - footerLabelLen) / 2;
         int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;

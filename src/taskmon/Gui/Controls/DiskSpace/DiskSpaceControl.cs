@@ -314,49 +314,17 @@ public sealed partial class DiskSpaceControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.ThemeDefaults(scanPathInputBox, appConfig.Theme);
+        CommonControl.ThemeDefaults(heatMap, appConfig.Theme);
+        CommonControl.Theme(progressMetre, appConfig.Theme);
+        CommonControl.Theme(filesView, appConfig.Theme);
+        CommonControl.Theme(driveInputBox, appConfig.Theme);
 
-        heatMap.BackgroundColour = appConfig.Theme.Background;
-        heatMap.ForegroundColour = appConfig.Theme.Foreground;
-
-        progressMetre.BackgroundColour       = appConfig.Theme.MetreBackground;
-        progressMetre.ForegroundColour       = appConfig.Theme.MetreForeground;
-        progressMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
-        progressMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
-        progressMetre.MetreStyle             = appConfig.MetreStyle;
-        
+        progressMetre.MetreStyle = appConfig.MetreStyle;
         rootFoldersSeries = progressMetre.AddSeries("Root Folders", appConfig.Theme.RangeLowBackground);
-
-        filesView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-        filesView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-        filesView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-        filesView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-        filesView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-        filesView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-        filesView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        filesView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        filesView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        filesView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-
-        foreach (ListViewColumnHeader columnHeader in filesView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
-        driveInputBox.DialogBackgroundColour                = appConfig.Theme.HeaderBackground;
-        driveInputBox.DialogBorderColour                    = appConfig.Theme.HeaderForeground;
-        driveInputBox.DialogButtonBackgroundColour          = appConfig.Theme.BackgroundHighlight;
-        driveInputBox.DialogButtonForegroundColour          = appConfig.Theme.ForegroundHighlight;
-        driveInputBox.DialogForegroundColour                = appConfig.Theme.HeaderForeground;
-        driveInputBox.ListBackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        driveInputBox.ListForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        driveInputBox.ListBackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        driveInputBox.ListForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+        
         driveInputBox.Load();
-
-        scanPathInputBox.BackgroundColour = appConfig.Theme.HeaderBackground;
-        scanPathInputBox.ForegroundColour = appConfig.Theme.HeaderForeground;
         scanPathInputBox.Load();
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;

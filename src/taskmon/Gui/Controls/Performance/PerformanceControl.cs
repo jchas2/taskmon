@@ -335,16 +335,10 @@ public sealed class PerformanceControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour       = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour       = appConfig.Theme.Foreground;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh             = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow              = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid              = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle             = appConfig.MetreStyle;
-        chart.ShowYAxisScale         = appConfig.ShowYAxisScale;
-        chart.YAxisColour            = appConfig.Theme.ChartYAxis;
+        CommonControl.Theme(chart, appConfig.Theme);
+        
+        chart.MetreStyle     = appConfig.MetreStyle;
+        chart.ShowYAxisScale = appConfig.ShowYAxisScale;
     }
 
     private void ConfigureColours(Control control)
@@ -449,12 +443,10 @@ public sealed class PerformanceControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = appConfig.Theme.Background;
-            ctrl.ForegroundColour = appConfig.Theme.Foreground;
+            CommonControl.ThemeDefaults(ctrl, appConfig.Theme);
         }
 
         foreach (PerformancePanelControl panel in panelControls) {
@@ -468,9 +460,9 @@ public sealed class PerformanceControl : Control
             detail.Load();
         }
 
-        loaded = true;
-
+        loaded        = true;
         activeControl = panelControls[0];
+        
         activeControl.IsSelected = true;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;

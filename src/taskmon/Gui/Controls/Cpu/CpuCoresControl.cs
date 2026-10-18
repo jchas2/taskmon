@@ -51,9 +51,7 @@ public sealed class  CpuCoresControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
-
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         base.OnLoad();
@@ -209,8 +207,8 @@ public sealed class  CpuCoresControl : Control
 
     private Color LoadColour(double value) => value switch {
         >= HighLoadThreshold => appConfig.Theme.RangeHighBackground,
-        >= MidLoadThreshold => appConfig.Theme.RangeMidBackground,
-        _ => appConfig.Theme.RangeLowBackground
+        >= MidLoadThreshold  => appConfig.Theme.RangeMidBackground,
+                           _ => appConfig.Theme.RangeLowBackground
     };
 
     private void EnsureMetres(CoreGrid grid)
@@ -229,12 +227,9 @@ public sealed class  CpuCoresControl : Control
             MetreControl metre = new(Terminal) {
                 ShowLegend             = false,
                 Rows                   = 1,
-                BackgroundColour       = appConfig.Theme.MetreBackground,
-                ForegroundColour       = appConfig.Theme.MetreForeground,
-                BorderForegroundColour = appConfig.Theme.MetreBorderForeground,
-                BorderBackgroundColour = appConfig.Theme.MetreBorderBackground,
             };
-
+            
+            CommonControl.Theme(metre, appConfig.Theme);
             metre.AddSeries(string.Empty, appConfig.Theme.RangeLowBackground);
             metres.Add(metre);
         }

@@ -176,8 +176,7 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
         
         ListView[] listViews = [
             menuView, 
@@ -187,16 +186,7 @@ public partial class ProcessInfoControl : Control
             handlesView];
 
         foreach (var listView in listViews) {
-            listView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-            listView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-            listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-            listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-            listView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-            listView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-            listView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-            listView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-            listView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-            listView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
+            CommonControl.Theme(listView, appConfig.Theme);
         }
 
         menuView.Items.Add(
@@ -242,6 +232,7 @@ public partial class ProcessInfoControl : Control
         if (AutoRefresh) {
             cancellationTokenSource = new CancellationTokenSource();
             workerTask              = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
+            
             Trace.WriteLine($"ProcessInfoControl worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
         }
         
@@ -250,17 +241,17 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnResize()
     {
-        menuView.X = X;
-        menuView.Y = Y;
+        menuView.X      = X;
+        menuView.Y      = Y;
         menuView.Height = Height;
-        menuView.Width = MenuViewWidth;
+        menuView.Width  = MenuViewWidth;
         menuView.ColumnHeaders[0].Width = MenuViewWidth - 2;
 
         tabControls.ForEach(ctrl => {
-            ctrl.X = menuView.X + menuView.Width;
-            ctrl.Y = menuView.Y;
+            ctrl.X      = menuView.X + menuView.Width;
+            ctrl.Y      = menuView.Y;
             ctrl.Height = menuView.Height;
-            ctrl.Width = Width - menuView.Width;
+            ctrl.Width  = Width - menuView.Width;
         });
 
         processInfoView.ColumnHeaders[(int)InfoColumns.Key].Width   = ColumnInfoKeyWidth;

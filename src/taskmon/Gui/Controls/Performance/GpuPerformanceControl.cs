@@ -51,6 +51,13 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        gpuMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("Utilization"))
+            .Add(new ListViewColumnHeader("Dedicated GPU Memory"))
+            .Add(new ListViewColumnHeader("GPU Memory"))
+            .Add(new ListViewColumnHeader("Shared GPU Memory"))
+            .Add(new ListViewColumnHeader("Power Draw"));
 
         gpuSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -61,6 +68,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        gpuSpecsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""));
     }
 
     public void Sample(SystemSnapshot snapshot)
@@ -180,73 +191,36 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(gpuMetricsListView, appConfig.Theme);
+        CommonControl.Theme(gpuSpecsListView, appConfig.Theme);
         
         OnLoadChart(gpuChart);
         OnLoadChart(gpuDedicatedMemChart);
         OnLoadChart(gpuMemChart);
-
-        gpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Utilization"));
-        gpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Dedicated GPU Memory"));
-        gpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("GPU Memory"));
-        gpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Shared GPU Memory"));
-        gpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Power Draw"));
-
+        
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         
-        OnLoadListView(gpuMetricsListView);
-        
-        gpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        gpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-
-        gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        gpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Vendor:",         GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Description:",    GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Adapter Type:",   GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
-        
-        OnLoadListView(gpuSpecsListView);
-        
-        gpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        gpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
+        CommonControl.Theme(chart, appConfig.Theme);
+        
         chart.AutoScale                 = false;
-        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries               = string.Empty;
         chart.ShowYAxisScale            = true;
-        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle                = appConfig.MetreStyle;
         chart.ShowGrid                  = true;
-        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
-
-    private void OnLoadListView(ListView listView)
-    {
-        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-    }
-
+    
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
@@ -308,10 +282,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnUnload()
     {
-        gpuMetricsListView.ColumnHeaders.Clear();
         gpuMetricsListView.Items.Clear();
-
-        gpuSpecsListView.ColumnHeaders.Clear();
         gpuSpecsListView.Items.Clear();
     }
 }

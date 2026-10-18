@@ -158,36 +158,9 @@ public sealed partial class ServicesControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
-
-        servicesView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-        servicesView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-        servicesView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-        servicesView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-        servicesView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-        servicesView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-        servicesView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        servicesView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        servicesView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        servicesView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-
-        foreach (ListViewColumnHeader columnHeader in servicesView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
-        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(servicesView, appConfig.Theme);
+        CommonControl.Theme(detailView, appConfig.Theme);        
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 

@@ -267,18 +267,16 @@ public sealed class MainScreen2 : Screen
     {
         Terminal.CursorVisible = false;
 
-        BackgroundColour = runContext.AppConfig.Theme.Background;
-        ForegroundColour = runContext.AppConfig.Theme.Foreground;
-
         DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
         DialogBorderColour           = runContext.AppConfig.Theme.HeaderForeground;
         DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
         DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
         DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
-        
+
+        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
+
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = BackgroundColour;
-            ctrl.ForegroundColour = ForegroundColour;
+            CommonControl.ThemeDefaults(ctrl, runContext.AppConfig.Theme);
         }
 
         menuControl.MenuItems = new() {

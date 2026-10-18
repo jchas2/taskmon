@@ -39,8 +39,8 @@ public sealed partial class SystemInfoControl : Control
     private Section selectedSection     = Section.Cpu;
 
 
-    public SystemInfoControl(
-        ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
+    public SystemInfoControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) 
+        : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
@@ -201,8 +201,7 @@ public sealed partial class SystemInfoControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         navMenu.MenuItems = new() {
             new MenuListViewItem(systemInfoView, "CPU")     { LoadItems = () => SelectSection(Section.Cpu)     },
@@ -212,23 +211,10 @@ public sealed partial class SystemInfoControl : Control
             new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
         };
 
-        systemInfoView.BackgroundColour                  = appConfig.Theme.Background;
-        systemInfoView.ForegroundColour                  = appConfig.Theme.Foreground;
-        systemInfoView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-        systemInfoView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-        systemInfoView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-        systemInfoView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-        systemInfoView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        systemInfoView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        systemInfoView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        systemInfoView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
+        CommonControl.Theme(systemInfoView, appConfig.Theme);
+        CommonControl.Theme(systemSummaryView, appConfig.Theme);
 
         logoControl.BackgroundColour = appConfig.Theme.Background;
-
-        systemSummaryView.BackgroundColour       = appConfig.Theme.Background;
-        systemSummaryView.ForegroundColour       = appConfig.Theme.Foreground;
-        systemSummaryView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        systemSummaryView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
         navMenu.MenuItemClicked                 += OnNavItemClicked;

@@ -7,17 +7,17 @@ namespace Task.Monitor.Interop.Mach;
 public static class ObjCRuntime
 {
     [DllImport(Libraries.ObjC)]
-    public static extern IntPtr objc_getClass([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+    public static extern nint objc_getClass([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 
     [DllImport(Libraries.ObjC)]
-    public static extern IntPtr sel_registerName([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+    public static extern nint sel_registerName([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 
     [DllImport(Libraries.ObjC, EntryPoint = "objc_msgSend")]
-    public static extern long objc_msgSend_Int64_IntPtr(IntPtr receiver, IntPtr selector, IntPtr argument);
+    public static extern long objc_msgSend_Int64_IntPtr(nint receiver, nint selector, nint argument);
 
     [DllImport(Libraries.ObjC)]
-    public static extern IntPtr objc_autoreleasePoolPush();
+    public static extern nint objc_autoreleasePoolPush();
 
     [DllImport(Libraries.ObjC)]
-    public static extern void objc_autoreleasePoolPop(IntPtr pool);
+    public static extern void objc_autoreleasePoolPop(nint pool);
 }

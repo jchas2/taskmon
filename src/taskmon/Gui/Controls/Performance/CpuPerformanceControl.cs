@@ -15,6 +15,9 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 {
+    private const int ChartWidth  = 14;
+    private const int ChartHeight = 7;
+
     private readonly List<Chart> coreCharts;
     private readonly AppConfig   appConfig;
     
@@ -50,7 +53,13 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
-
+        
+        cpuMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("Utilization"))
+            .Add(new ListViewColumnHeader("Speed"))
+            .Add(new ListViewColumnHeader("Processes"))
+            .Add(new ListViewColumnHeader("Threads"));
+        
         cpuSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
             EnableRowSelect   = false,
@@ -60,10 +69,11 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        cpuSpecsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""));
     }
-
-    private const int ChartWidth  = 14;
-    private const int ChartHeight = 7;
 
     public void Sample(SystemSnapshot snapshot)
     {
@@ -136,8 +146,10 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(cpuMetre, appConfig.Theme);
+        CommonControl.Theme(cpuMetricsListView, appConfig.Theme);
+        CommonControl.Theme(cpuSpecsListView, appConfig.Theme);
         
         foreach (Chart chart in coreCharts) {
             OnLoadChart(chart);
@@ -147,34 +159,18 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuChart.ShowGrid = true;
         cpuChart.ShowYAxisScale = true;
 
-        cpuMetre.BackgroundColour       = appConfig.Theme.MetreBackground;
-        cpuMetre.ForegroundColour       = appConfig.Theme.MetreForeground;
-        cpuMetre.BorderForegroundColour = appConfig.Theme.MetreBorderForeground;
-        cpuMetre.BorderBackgroundColour = appConfig.Theme.MetreBorderBackground;
-        cpuMetre.MetreStyle             = appConfig.MetreStyle;
-        cpuMetre.Border                 = true;
-        cpuMetre.Text                   = string.Empty;
-        cpuMetre.ShowLegend             = true;
-        cpuMetre.Rows                   = 3;
-
+        cpuMetre.MetreStyle = appConfig.MetreStyle;
+        cpuMetre.Border     = true;
+        cpuMetre.Text       = string.Empty;
+        cpuMetre.ShowLegend = true;
+        cpuMetre.Rows       = 3;
+        
         cpuMetre.AddSeries("Kernel", appConfig.Theme.PerformanceCpuKernel);
         cpuMetre.AddSeries("User",   appConfig.Theme.PerformanceCpuUser);
-
-        cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Utilization"));
-        cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Speed"));
-        cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Processes"));
-        cpuMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Threads"));
-
+        
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
-        OnLoadListView(cpuMetricsListView);
         
-        cpuMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        cpuMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        
-        cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        cpuSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Name:",                string.Empty }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Base speed:",          "0 GHz"      }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Sockets:",             "0"          }));
@@ -183,44 +179,20 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L1 cache:",            "0 KB"       }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L2 cache:",            "0 KB"       }));
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",            "0 KB"       }));
-        
-        OnLoadListView(cpuSpecsListView);
-        
-        cpuSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        cpuSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
-        chart.AutoScale = false;
-        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour          = appConfig.Theme.Foreground;
+        chart.AutoScale                 = false;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries               = string.Empty;
         chart.ShowYAxisScale            = false;
-        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle                = appConfig.MetreStyle;
         chart.ShowGrid                  = false;
-        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
+
+        CommonControl.ThemeDefaults(chart, appConfig.Theme);
     }
-
-    private void OnLoadListView(ListView listView)
-    {
-        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-    }
-
+    
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
@@ -298,10 +270,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     {
         cpuMetre.ClearSeries();
 
-        cpuMetricsListView.ColumnHeaders.Clear();
         cpuMetricsListView.Items.Clear();
-        
-        cpuSpecsListView.ColumnHeaders.Clear();
         cpuSpecsListView.Items.Clear();
     }
 }

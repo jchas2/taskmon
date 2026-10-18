@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
@@ -115,7 +116,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         paneControls[pane.Id] = control;
         Controls.Add(control);
-        ApplyTheme(control);
+        SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
         if (isLoaded) {
             control.Load();
@@ -135,8 +136,8 @@ public sealed class LayoutDesignerScreen : Screen
         Controls.Remove(control);
     }
 
-    private void ApplyTheme(Control control) =>
-        SummaryPaneTheme.Apply(control, runContext.AppConfig);
+    // private void ApplyTheme(Control control) =>
+    //     SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
     private int ContentY => Y + BannerHeight;
 
@@ -593,30 +594,22 @@ public sealed class LayoutDesignerScreen : Screen
     protected override void OnLoad()
     {
         Terminal.CursorVisible = false;
-
-        BackgroundColour = runContext.AppConfig.Theme.Background;
-        ForegroundColour = runContext.AppConfig.Theme.Foreground;
-
+        
         DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
         DialogBorderColour     = runContext.AppConfig.Theme.HeaderForeground;
         DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
-
-        ApplyPickerTheme(controlTypePicker);
+        
+        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
+        CommonControl.Theme(controlTypePicker, runContext.AppConfig.Theme);
+        CommonControl.Theme(columnPicker, runContext.AppConfig.Theme);
+        CommonControl.Theme(saveDialog, runContext.AppConfig.Theme);
+        
         controlTypePicker.Load();
-
-        ApplyPickerTheme(columnPicker);
         columnPicker.Load();
-
-        saveDialog.DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
-        saveDialog.DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
-        saveDialog.DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
-        saveDialog.DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
-        saveDialog.FieldBackgroundColour        = runContext.AppConfig.Theme.Background;
-        saveDialog.FieldForegroundColour        = runContext.AppConfig.Theme.Foreground;
         saveDialog.Load();
 
         foreach (Control control in paneControls.Values) {
-            ApplyTheme(control);
+            SummaryPaneTheme.Apply(control, runContext.AppConfig);
         }
 
         isLoaded = true;
@@ -643,18 +636,7 @@ public sealed class LayoutDesignerScreen : Screen
             Control.DrawingLockRelease();
         }
     }
-
-    private void ApplyPickerTheme(PickerBoxControl picker)
-    {
-        picker.DialogBackgroundColour                = runContext.AppConfig.Theme.HeaderBackground;
-        picker.DialogBorderColour                    = runContext.AppConfig.Theme.HeaderForeground;
-        picker.DialogForegroundColour                = runContext.AppConfig.Theme.HeaderForeground;
-        picker.ListBackgroundHighlightColour         = runContext.AppConfig.Theme.BackgroundHighlight;
-        picker.ListForegroundHighlightColour         = runContext.AppConfig.Theme.ForegroundHighlight;
-        picker.ListBackgroundHighlightInactiveColour = runContext.AppConfig.Theme.BackgroundHighlightInactive;
-        picker.ListForegroundHighlightInactiveColour = runContext.AppConfig.Theme.ForegroundHighlightInactive;
-    }
-
+    
     protected override void OnUnload()
     {
         runContext.ServiceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;

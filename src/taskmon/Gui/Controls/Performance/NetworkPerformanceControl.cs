@@ -44,6 +44,10 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        networkMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("Send"))
+            .Add(new ListViewColumnHeader("Receive"));
 
         networkSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -54,6 +58,10 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        networkSpecsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""));
     }
 
     public void Sample(SystemSnapshot snapshot)
@@ -161,25 +169,15 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(networkMetricsListView, appConfig.Theme);
+        CommonControl.Theme(networkSpecsListView, appConfig.Theme);
 
         OnLoadChart(sendChart);
         OnLoadChart(receiveChart);
-
-        networkMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Send"));
-        networkMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Receive"));
-
+        
         ListViewItem networkMetricsItem = new(new[] { "0.0 B/s", "0.0 B/s" });
         networkMetricsListView.Items.Add(networkMetricsItem);
-        
-        OnLoadListView(networkMetricsListView);
-        
-        networkMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        networkMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-
-        networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        networkSpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
 
         foreach (string label in new[] {
             "Name:", 
@@ -200,44 +198,20 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
             networkSpecsListView.Items.Add(new ListViewItem(new[] { label, NetworkDeviceParser.NotAvailable }));
         }
-
-        OnLoadListView(networkSpecsListView);
-        
-        networkSpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        networkSpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
+        CommonControl.Theme(chart, appConfig.Theme);
+        
         chart.AutoScale                 = true;
-        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = PerformanceChartFormatters.FormatYScaleByteRate;
         chart.LabelSeries               = string.Empty;
         chart.ShowYAxisScale            = true;
-        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle                = appConfig.MetreStyle;
         chart.ShowGrid                  = true;
-        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
-
-    private void OnLoadListView(ListView listView)
-    {
-        listView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-    }
-
+    
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
@@ -286,10 +260,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnUnload()
     {
-        networkMetricsListView.ColumnHeaders.Clear();
         networkMetricsListView.Items.Clear();
-
-        networkSpecsListView.ColumnHeaders.Clear();
         networkSpecsListView.Items.Clear();
     }
 }

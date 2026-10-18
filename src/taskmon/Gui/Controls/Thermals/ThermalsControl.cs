@@ -39,8 +39,8 @@ public sealed class ThermalsControl : Control
         ThermalComponent Component, 
         string           ComponentId);
 
-    public ThermalsControl(
-        ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
+    public ThermalsControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) 
+        : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
@@ -166,15 +166,8 @@ public sealed class ThermalsControl : Control
 
     private void ConfigureChart(Chart chart)
     {
-        chart.BackgroundColour       = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour       = appConfig.Theme.Foreground;
-        chart.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh             = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow              = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid              = appConfig.Theme.RangeMidBackground;
-        chart.MetreStyle             = appConfig.MetreStyle;
-        chart.YAxisColour            = appConfig.Theme.ChartYAxis;
+        CommonControl.Theme(chart, appConfig.Theme);
+        chart.MetreStyle = appConfig.MetreStyle;
     }
 
     protected override void OnDraw() => OnDrawInternal();
@@ -344,8 +337,7 @@ public sealed class ThermalsControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         foreach (Chart chart in chartCache.Values) {
             ConfigureChart(chart);

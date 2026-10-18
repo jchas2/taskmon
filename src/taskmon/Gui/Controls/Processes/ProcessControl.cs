@@ -245,28 +245,9 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
-
-        ListView[] listViews = [sortView, processView];
-
-        foreach (ListView listView in listViews) {
-            listView.BorderForegroundColour            = appConfig.Theme.ChartBorderForeground;
-            listView.BorderBackgroundColour            = appConfig.Theme.ChartBorderBackground;
-            listView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-            listView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-            listView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-            listView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-            listView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-            listView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-            listView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-            listView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-
-            foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-                columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-                columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-            }
-        }
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(sortView, appConfig.Theme);
+        CommonControl.Theme(processView, appConfig.Theme);
         
         UpdateColumnHeaderSort(decorate: true);
         

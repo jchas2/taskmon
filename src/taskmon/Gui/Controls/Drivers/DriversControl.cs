@@ -153,37 +153,10 @@ public sealed partial class DriversControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
-
-        driversView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-        driversView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-        driversView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-        driversView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-        driversView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-        driversView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-        driversView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        driversView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        driversView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        driversView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-
-        foreach (ListViewColumnHeader columnHeader in driversView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
-        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(driversView, appConfig.Theme);
+        CommonControl.Theme(detailView,  appConfig.Theme);
+        
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         base.OnLoad();

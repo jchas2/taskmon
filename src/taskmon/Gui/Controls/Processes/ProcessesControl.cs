@@ -91,12 +91,10 @@ public sealed class ProcessesControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = appConfig.Theme.Background;
-            ctrl.ForegroundColour = appConfig.Theme.Foreground;
+            CommonControl.ThemeDefaults(ctrl, appConfig.Theme);
         }
 
         processControl.NumberOfProcesses = -1;

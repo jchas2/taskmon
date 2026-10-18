@@ -561,8 +561,7 @@ public class SetupScreen : Screen
     {
         Terminal.CursorVisible = false;
 
-        BackgroundColour = runContext.AppConfig.Theme.Background;
-        ForegroundColour = runContext.AppConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
         
         foreach (Control control in Controls) {
             control.Load();
@@ -718,33 +717,17 @@ public class SetupScreen : Screen
 
     private void UpdateTheme()
     {
-        BackgroundColour = previewTheme.Background;
-        ForegroundColour = previewTheme.Foreground;
+        CommonControl.ThemeDefaults(this, previewTheme);
 
         foreach (Control ctrl in Controls) {
-            ctrl.BackgroundColour = previewTheme.Background;
-            ctrl.ForegroundColour = previewTheme.Foreground;
+            CommonControl.ThemeDefaults(ctrl, previewTheme);
         }
 
-        UpdateTheme(headerView);
-        UpdateTheme(menuView);
-
+        CommonControl.Theme(headerView, previewTheme);
+        CommonControl.Theme(menuView, previewTheme);
+        
         foreach (ListView ctrl in tabControls) {
-            UpdateTheme(ctrl);
+            CommonControl.Theme(ctrl, previewTheme);
         }
-    }
-
-    private void UpdateTheme(ListView ctrl)
-    {
-        ctrl.BackgroundColour                  = previewTheme.ListViewBackground;
-        ctrl.ForegroundColour                  = previewTheme.ListViewForeground;
-        ctrl.BorderForegroundColour            = previewTheme.ListViewBorderForeground;
-        ctrl.BorderBackgroundColour            = previewTheme.ListViewBorderBackground;
-        ctrl.BackgroundHighlightColour         = previewTheme.BackgroundHighlight;
-        ctrl.ForegroundHighlightColour         = previewTheme.ForegroundHighlight;
-        ctrl.BackgroundHighlightInactiveColour = previewTheme.BackgroundHighlightInactive;
-        ctrl.ForegroundHighlightInactiveColour = previewTheme.ForegroundHighlightInactive;
-        ctrl.HeaderBackgroundColour            = previewTheme.HeaderBackground;
-        ctrl.HeaderForegroundColour            = previewTheme.HeaderForeground;
     }
 }

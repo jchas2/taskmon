@@ -46,6 +46,16 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             TabStop           = false
         };
 
+        memoryMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("In Use"))
+            .Add(new ListViewColumnHeader("Available"))
+#if __WIN32__
+            .Add(new ListViewColumnHeader("Committed"))
+#elif __APPLE__
+            .Add(new ListViewColumnHeader("Swap File"))
+#endif
+            .Add(new ListViewColumnHeader("Available"));
+        
         memorySpecsListView = new ListView(terminal) {
             EnableScroll      = false,
             EnableRowSelect   = false,
@@ -55,6 +65,10 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             Visible           = true,
             TabStop           = false
         };
+        
+        memorySpecsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader(""))
+            .Add(new ListViewColumnHeader(""));
     }
     
     public void Sample(SystemSnapshot snapshot)
@@ -153,8 +167,9 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(memoryMetricsListView, appConfig.Theme);
+        CommonControl.Theme(memorySpecsListView, appConfig.Theme);
         
         OnLoadChart(memoryChart);
         OnLoadChart(pageFileChart);
@@ -172,27 +187,10 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetre.AddSeries("Modified", appConfig.Theme.PerformanceMemoryModified);
         memoryMetre.AddSeries("Standby",  appConfig.Theme.PerformanceMemoryStandby);
         memoryMetre.AddSeries("Free",     appConfig.Theme.PerformanceMemoryFree);
-
-        memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("In Use"));
-        memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Available"));
-#if __WIN32__
-        memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Committed"));
-#elif __APPLE__
-        memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Swap File"));
-#endif
-        memoryMetricsListView.ColumnHeaders.Add(new ListViewColumnHeader("Available"));
         
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         
-        OnLoadListView(memoryMetricsListView);
-        
-        memoryMetricsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        memoryMetricsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
-
-        memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-        memorySpecsListView.ColumnHeaders.Add(new ListViewColumnHeader(""));
-
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Memory:",            string.Empty }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Speed:",             "0 GHz"      }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Configured speed:",  "0 GHz"      }));
@@ -202,44 +200,20 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Modified:",          "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
-        
-        OnLoadListView(memorySpecsListView);
-        
-        memorySpecsListView.BorderForegroundColour = appConfig.Theme.ChartBorderForeground;
-        memorySpecsListView.BorderBackgroundColour = appConfig.Theme.ChartBorderBackground;
     }
 
     private void OnLoadChart(Chart chart)
     {
+        CommonControl.Theme(chart, appConfig.Theme);
+        
         chart.AutoScale                 = false;
-        chart.BackgroundColour          = appConfig.Theme.ChartBackground;
-        chart.ForegroundColour          = appConfig.Theme.Foreground;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries               = string.Empty;
         chart.ShowYAxisScale            = true;
-        chart.BorderForegroundColour    = appConfig.Theme.ChartBorderForeground;
-        chart.BorderBackgroundColour    = appConfig.Theme.ChartBorderBackground;
-        chart.ColourHigh                = appConfig.Theme.RangeHighBackground;
-        chart.ColourLow                 = appConfig.Theme.RangeLowBackground;
-        chart.ColourMid                 = appConfig.Theme.RangeMidBackground;
         chart.MetreStyle                = appConfig.MetreStyle;
         chart.ShowGrid                  = true;
-        chart.YAxisColour               = appConfig.Theme.ChartYAxis;
     }
-
-    private void OnLoadListView(ListView listView)
-    {
-        listView.BackgroundColour = appConfig.Theme.ListViewBackground;
-        listView.ForegroundColour = appConfig.Theme.ListViewForeground;
-        listView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        listView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in listView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-    }
-
+    
     protected override void OnResize()
     {
         const int MetricsHeight = 4;
@@ -303,10 +277,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
     {
         memoryMetre.ClearSeries();
         
-        memoryMetricsListView.ColumnHeaders.Clear();
         memoryMetricsListView.Items.Clear();
-
-        memorySpecsListView.ColumnHeaders.Clear();
         memorySpecsListView.Items.Clear();
     }
 }

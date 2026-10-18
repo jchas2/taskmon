@@ -159,37 +159,10 @@ public sealed partial class InstalledAppsControl : Control
 
     protected override void OnLoad()
     {
-        BackgroundColour = appConfig.Theme.Background;
-        ForegroundColour = appConfig.Theme.Foreground;
-
-        installedAppsView.BackgroundColour                  = appConfig.Theme.ListViewBackground;
-        installedAppsView.ForegroundColour                  = appConfig.Theme.ListViewForeground;
-        installedAppsView.BorderForegroundColour            = appConfig.Theme.ListViewBorderForeground;
-        installedAppsView.BorderBackgroundColour            = appConfig.Theme.ListViewBorderBackground;
-        installedAppsView.HeaderBackgroundColour            = appConfig.Theme.HeaderBackground;
-        installedAppsView.HeaderForegroundColour            = appConfig.Theme.HeaderForeground;
-        installedAppsView.BackgroundHighlightColour         = appConfig.Theme.BackgroundHighlight;
-        installedAppsView.ForegroundHighlightColour         = appConfig.Theme.ForegroundHighlight;
-        installedAppsView.BackgroundHighlightInactiveColour = appConfig.Theme.BackgroundHighlightInactive;
-        installedAppsView.ForegroundHighlightInactiveColour = appConfig.Theme.ForegroundHighlightInactive;
-
-        foreach (ListViewColumnHeader columnHeader in installedAppsView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
-        detailView.BackgroundColour       = appConfig.Theme.ListViewBackground;
-        detailView.ForegroundColour       = appConfig.Theme.ListViewForeground;
-        detailView.BorderForegroundColour = appConfig.Theme.ListViewBorderForeground;
-        detailView.BorderBackgroundColour = appConfig.Theme.ListViewBorderBackground;
-        detailView.HeaderBackgroundColour = appConfig.Theme.HeaderBackground;
-        detailView.HeaderForegroundColour = appConfig.Theme.HeaderForeground;
-
-        foreach (ListViewColumnHeader columnHeader in detailView.ColumnHeaders) {
-            columnHeader.BackgroundColour = appConfig.Theme.HeaderBackground;
-            columnHeader.ForegroundColour = appConfig.Theme.HeaderForeground;
-        }
-
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(installedAppsView, appConfig.Theme);
+        CommonControl.Theme(detailView, appConfig.Theme);
+        
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         base.OnLoad();
