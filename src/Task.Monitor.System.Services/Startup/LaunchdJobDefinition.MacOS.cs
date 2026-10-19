@@ -4,15 +4,22 @@ namespace Task.Monitor.System.Services.Startup;
 // Parses a launchd job property list.
 public sealed class LaunchdJobDefinition
 {
-    public string? Label          { get; private set; }
-    public string? ExecutablePath { get; private set; }
     public string? Arguments      { get; private set; }
     public string  Command        { get; private set; } = string.Empty;
-    public bool    RunAtLoad      { get; private set; }
-    public bool    KeepAlive      { get; private set; }
+
     public bool?   Disabled       { get; private set; }
 
-    public bool StartsAtLoad => RunAtLoad || KeepAlive;
+    public string? ExecutablePath { get; private set; }
+
+    private static bool IsKeptAliveFromLoad(object? keepAlive) => keepAlive switch {
+        bool alive                                    => alive,
+        IReadOnlyDictionary<string, object?> criteria => criteria.ContainsKey("SuccessfulExit"),
+        _                                             => false
+    };
+
+    public bool    KeepAlive      { get; private set; }
+
+    public string? Label          { get; private set; }
 
     public static LaunchdJobDefinition? Parse(object? plist, string? bundleRoot = null)
     {
@@ -51,11 +58,10 @@ public sealed class LaunchdJobDefinition
         return definition;
     }
 
-    private static bool IsKeptAliveFromLoad(object? keepAlive) => keepAlive switch {
-        bool alive                                    => alive,
-        IReadOnlyDictionary<string, object?> criteria => criteria.ContainsKey("SuccessfulExit"),
-        _                                             => false
-    };
+    private static string Quote(string argument) =>
+        argument.Length == 0 || argument.Any(char.IsWhiteSpace)
+            ? $"\"{argument}\""
+            : argument;
 
     private static string? ReadString(IReadOnlyDictionary<string, object?> job, string key) =>
         job.GetValueOrDefault(key) is string { Length: > 0 } value 
@@ -67,9 +73,8 @@ public sealed class LaunchdJobDefinition
             ? values.OfType<string>().ToList()
             : [];
 
-    private static string Quote(string argument) =>
-        argument.Length == 0 || argument.Any(char.IsWhiteSpace)
-            ? $"\"{argument}\""
-            : argument;
+    public bool    RunAtLoad      { get; private set; }
+
+    public bool StartsAtLoad => RunAtLoad || KeepAlive;
 }
 #endif

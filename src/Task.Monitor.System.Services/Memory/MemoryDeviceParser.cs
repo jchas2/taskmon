@@ -59,6 +59,51 @@ public static class MemoryDeviceParser
             : (uint)(size & 0x7FFF) / 1024; // Kilobytes.
     }
 
+    private static string GetString(ReadOnlySpan<byte> structure, byte stringIndex)
+    {
+        const string NotAvailable = "N/A";
+
+        if (stringIndex == 0) {
+            return NotAvailable;
+        }
+
+        ReadOnlySpan<byte> strings = structure[structure[1]..];
+
+        for (byte current = 1; !strings.IsEmpty && strings[0] != 0; current++) {
+            int terminator = strings.IndexOf((byte)0);
+            
+            if (terminator < 0) {
+                break;
+            }
+
+            if (current == stringIndex) {
+                return Encoding.Latin1.GetString(strings[..terminator]).Trim();
+            }
+
+            strings = strings[(terminator + 1)..];
+        }
+
+        return NotAvailable;
+    }
+
+    public static MemoryDevice Parse(ReadOnlySpan<byte> structure)
+    {
+        MemoryDevice device = new();
+        // Not inline declared to assist with debugging.
+        device.SizeInMegabytes      = DecodeSize(structure);
+        device.MemoryType           = DecodeMemoryType(structure[MemoryTypeOffset]);
+        device.FormFactor           = DecodeFormFactor(structure[FormFactorOffset]);
+        device.Speed                = BinaryPrimitives.ReadUInt16LittleEndian(structure[SpeedOffset..]);
+        device.ConfiguredClockSpeed = BinaryPrimitives.ReadUInt16LittleEndian(structure[ConfiguredClockSpeedOffset..]);
+        device.DeviceLocator        = GetString(structure, structure[DeviceLocatorOffset]);
+        device.BankLocator          = GetString(structure, structure[BankLocatorOffset]);
+        device.Manufacturer         = GetString(structure, structure[ManufacturerOffset]);
+        device.SerialNumber         = GetString(structure, structure[SerialNumberOffset]);
+        device.PartNumber           = GetString(structure, structure[PartNumberOffset]);
+        
+        return device;
+    }
+
     // Walks a SMBIOS structure table - the raw firmware table past its 8 byte header - and
     // decodes every Type 17 (Memory Device) structure, numbering them as slots in table order.
     public static List<MemoryDevice> ParseTable(ReadOnlySpan<byte> table)
@@ -97,50 +142,5 @@ public static class MemoryDeviceParser
         }
 
         return devices;
-    }
-
-    public static MemoryDevice Parse(ReadOnlySpan<byte> structure)
-    {
-        MemoryDevice device = new();
-        // Not inline declared to assist with debugging.
-        device.SizeInMegabytes      = DecodeSize(structure);
-        device.MemoryType           = DecodeMemoryType(structure[MemoryTypeOffset]);
-        device.FormFactor           = DecodeFormFactor(structure[FormFactorOffset]);
-        device.Speed                = BinaryPrimitives.ReadUInt16LittleEndian(structure[SpeedOffset..]);
-        device.ConfiguredClockSpeed = BinaryPrimitives.ReadUInt16LittleEndian(structure[ConfiguredClockSpeedOffset..]);
-        device.DeviceLocator        = GetString(structure, structure[DeviceLocatorOffset]);
-        device.BankLocator          = GetString(structure, structure[BankLocatorOffset]);
-        device.Manufacturer         = GetString(structure, structure[ManufacturerOffset]);
-        device.SerialNumber         = GetString(structure, structure[SerialNumberOffset]);
-        device.PartNumber           = GetString(structure, structure[PartNumberOffset]);
-        
-        return device;
-    }
-
-    private static string GetString(ReadOnlySpan<byte> structure, byte stringIndex)
-    {
-        const string NotAvailable = "N/A";
-
-        if (stringIndex == 0) {
-            return NotAvailable;
-        }
-
-        ReadOnlySpan<byte> strings = structure[structure[1]..];
-
-        for (byte current = 1; !strings.IsEmpty && strings[0] != 0; current++) {
-            int terminator = strings.IndexOf((byte)0);
-            
-            if (terminator < 0) {
-                break;
-            }
-
-            if (current == stringIndex) {
-                return Encoding.Latin1.GetString(strings[..terminator]).Trim();
-            }
-
-            strings = strings[(terminator + 1)..];
-        }
-
-        return NotAvailable;
     }
 }

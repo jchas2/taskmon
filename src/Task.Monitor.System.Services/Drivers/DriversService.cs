@@ -8,9 +8,6 @@ public sealed partial class DriversService : WorkerService
     
     private int cyclesSinceScan;
 
-    protected override void OnStart() =>
-        driversSpecs = ScanDrivers();
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
@@ -20,6 +17,9 @@ public sealed partial class DriversService : WorkerService
 
         Publish(new DriversInfo { Specs = driversSpecs });
     }
+
+    protected override void OnStart() =>
+        driversSpecs = ScanDrivers();
 
     private partial DriversSpecs ScanDrivers();
 

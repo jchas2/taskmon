@@ -8,13 +8,15 @@ public sealed class ScheduledTaskDefinition
 {
     private static readonly XNamespace Ns = "http://schemas.microsoft.com/windows/2004/02/mit/task";
 
-    public string? Author             { get; private set; }
-    public string? ExecutablePath     { get; private set; }
     public string? Arguments          { get; private set; }
 
-    public string? LogonTriggerUserId { get; private set; }
+    public string? Author             { get; private set; }
+    public string? ExecutablePath     { get; private set; }
+
     public bool HasBootTrigger        { get; private set; }
     public bool HasLogonTrigger       { get; private set; }
+
+    public string? LogonTriggerUserId { get; private set; }
 
     public static ScheduledTaskDefinition? Parse(string xml)
     {

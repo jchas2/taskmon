@@ -52,14 +52,18 @@ public partial class NetworkService
         public ulong PacketsReceived { get; } = packetsReceived;
     }
 
-    private void OnStopNetworkMetrics()
+    private static double AccumulateDelta(ulong current, ref ulong previous, ref ulong total, double elapsedSeconds)
     {
-        instanceStates.Clear();
-        
-        previousTimestamp       = 0;
-        primed                  = false;
-        cyclesSinceSpecsRefresh = 0;
-        sawUnknownAdapter       = false;
+        double rate = 0.0;
+
+        if (current > previous) {
+            ulong delta = current - previous;
+            total += delta;
+            rate  = delta / elapsedSeconds;
+        }
+
+        previous = current;
+        return rate;
     }
 
     private void OnDoWorkNetworkSample()
@@ -96,6 +100,16 @@ public partial class NetworkService
         previousTimestamp = timestamp;
     }
 
+    private void OnStopNetworkMetrics()
+    {
+        instanceStates.Clear();
+        
+        previousTimestamp       = 0;
+        primed                  = false;
+        cyclesSinceSpecsRefresh = 0;
+        sawUnknownAdapter       = false;
+    }
+
     private void PrimeInstanceState(uint interfaceIndex, InterfaceSample sample)
     {
         NetworkInstanceState state = new();
@@ -106,53 +120,6 @@ public partial class NetworkService
         state.PreviousPacketsReceived = sample.PacketsReceived;
 
         instanceStates[interfaceIndex] = state;
-    }
-
-    private void UpdateInstanceState(uint interfaceIndex, InterfaceSample sample, double elapsedSeconds)
-    {
-        if (!instanceStates.TryGetValue(interfaceIndex, out NetworkInstanceState? state)) {
-            PrimeInstanceState(interfaceIndex, sample);
-            sawUnknownAdapter = true;
-            return;
-        }
-
-        state.SendBytesPerSecond = AccumulateDelta(
-            sample.BytesSent, 
-            ref state.PreviousBytesSent, 
-            ref state.TotalBytesSent, 
-            elapsedSeconds);
-
-        state.ReceiveBytesPerSecond = AccumulateDelta(
-            sample.BytesReceived, 
-            ref state.PreviousBytesReceived, 
-            ref state.TotalBytesReceived, 
-            elapsedSeconds);
-
-        state.SendPacketsPerSecond = AccumulateDelta(
-            sample.PacketsSent, 
-            ref state.PreviousPacketsSent, 
-            ref state.TotalPacketsSent, 
-            elapsedSeconds);
-
-        state.ReceivePacketsPerSecond = AccumulateDelta(
-            sample.PacketsReceived, 
-            ref state.PreviousPacketsReceived, 
-            ref state.TotalPacketsReceived, 
-            elapsedSeconds);
-    }
-
-    private static double AccumulateDelta(ulong current, ref ulong previous, ref ulong total, double elapsedSeconds)
-    {
-        double rate = 0.0;
-
-        if (current > previous) {
-            ulong delta = current - previous;
-            total += delta;
-            rate  = delta / elapsedSeconds;
-        }
-
-        previous = current;
-        return rate;
     }
 
     // Walks the NET_RT_IFLIST2 route messages (same source as `netstat -ib`) and records the
@@ -210,6 +177,39 @@ public partial class NetworkService
         }
 
         return samples.Count > 0;
+    }
+
+    private void UpdateInstanceState(uint interfaceIndex, InterfaceSample sample, double elapsedSeconds)
+    {
+        if (!instanceStates.TryGetValue(interfaceIndex, out NetworkInstanceState? state)) {
+            PrimeInstanceState(interfaceIndex, sample);
+            sawUnknownAdapter = true;
+            return;
+        }
+
+        state.SendBytesPerSecond = AccumulateDelta(
+            sample.BytesSent, 
+            ref state.PreviousBytesSent, 
+            ref state.TotalBytesSent, 
+            elapsedSeconds);
+
+        state.ReceiveBytesPerSecond = AccumulateDelta(
+            sample.BytesReceived, 
+            ref state.PreviousBytesReceived, 
+            ref state.TotalBytesReceived, 
+            elapsedSeconds);
+
+        state.SendPacketsPerSecond = AccumulateDelta(
+            sample.PacketsSent, 
+            ref state.PreviousPacketsSent, 
+            ref state.TotalPacketsSent, 
+            elapsedSeconds);
+
+        state.ReceivePacketsPerSecond = AccumulateDelta(
+            sample.PacketsReceived, 
+            ref state.PreviousPacketsReceived, 
+            ref state.TotalPacketsReceived, 
+            elapsedSeconds);
     }
 }
 #endif

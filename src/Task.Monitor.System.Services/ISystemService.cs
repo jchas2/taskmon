@@ -2,8 +2,10 @@
 
 public interface ISystemService
 {
-    public ServiceStatus Status { get; }
     public void Start();
+
+    public ServiceStatus Status { get; }
+
     public void Stop();
     
 }

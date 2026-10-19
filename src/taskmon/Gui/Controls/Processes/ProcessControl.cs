@@ -111,11 +111,41 @@ public sealed partial class ProcessControl : Control
             .Add(processView);
     }
 
+    public List<int> CheckedProcesses
+    {
+        get {
+            try {
+                Control.DrawingLockAcquire();
+
+                int GetItemPid(ListViewItem item)
+                {
+                    ListViewSubItem selectedSubItem = item.SubItems[(int)Columns.Pid];
+
+                    if (int.TryParse(selectedSubItem.Text, out int pid)) {
+                        return pid;
+                    }
+
+                    return InvalidSelectedItemIndex;
+                }
+
+                List<int> checkedProcesses = processView.ShowCheckboxes
+                    ? processView.Items
+                        .Where(item => item.Checked)
+                        .Select(item => GetItemPid(item))
+                        .ToList()
+                    : [];
+
+                return checkedProcesses;
+            }
+            finally {
+                Control.DrawingLockRelease();
+            }
+        }
+    }
+
     public string FilterText { private get; set; } = string.Empty;
 
     public string FooterText { get; set; } = DefaultFooterText;
-
-    public bool IsSortSelectionActive => mode == ControlMode.SortSelection;
 
     private ListView? GetTargetControl()
     {
@@ -127,15 +157,17 @@ public sealed partial class ProcessControl : Control
 
         return targetControl;
     }
-    
-    public string HeaderText { get; set; } = string.Empty;
 
-    public Statistics? VisibleColumnsOverride { get; set; }
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
+    public string HeaderText { get; set; } = string.Empty;
 
     // Process and Pid are always shown.
     private bool IsColumnVisible(Columns column) =>
         column is Columns.Process or Columns.Pid ||
         ((VisibleColumnsOverride ?? appConfig.VisibleColumns) & ToStatistic(column)) != 0;
+
+    public bool IsSortSelectionActive => mode == ControlMode.SortSelection;
 
     private void LoadSortItems()
     {
@@ -167,15 +199,7 @@ public sealed partial class ProcessControl : Control
         RaiseSelectedProcessIdChangedIfNeeded();
     }
 
-    private void RaiseSelectedProcessIdChangedIfNeeded()
-    {
-        int currentProcessId = SelectedProcessId;
-
-        if (currentProcessId != lastKnownProcessId) {
-            lastKnownProcessId = currentProcessId;
-            SelectedProcessIdChanged?.Invoke(this, currentProcessId);
-        }
-    }
+    protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)    
     {
@@ -238,10 +262,6 @@ public sealed partial class ProcessControl : Control
         Control? targetControl = GetTargetControl();
         targetControl?.KeyPressed(keyInfo, ref handled);
     }
-
-    protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
-
-    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     protected override void OnLoad()
     {
@@ -326,16 +346,6 @@ public sealed partial class ProcessControl : Control
         base.OnResize();
     }
 
-    protected override void OnUnload()
-    {
-        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
-        sortView.ItemSelected                   -= SortViewOnItemSelected;
-        processView.ItemSelected                -= ProcessViewOnItemSelected;
-        processView.ItemClicked                 -= ProcessViewOnItemClicked;
-
-        base.OnUnload();
-    }
-
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
         if (freezeUpdates) {
@@ -357,41 +367,29 @@ public sealed partial class ProcessControl : Control
         Draw();
     }
 
-    private void ProcessViewOnItemSelected(object? sender, ListViewItemEventArgs e) =>
-        ProcessItemSelected?.Invoke(sender, e);
+    protected override void OnUnload()
+    {
+        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+        sortView.ItemSelected                   -= SortViewOnItemSelected;
+        processView.ItemSelected                -= ProcessViewOnItemSelected;
+        processView.ItemClicked                 -= ProcessViewOnItemClicked;
+
+        base.OnUnload();
+    }
 
     private void ProcessViewOnItemClicked(object? sender, ListViewItemEventArgs e) =>
         RaiseSelectedProcessIdChangedIfNeeded();
 
-    public List<int> CheckedProcesses
+    private void ProcessViewOnItemSelected(object? sender, ListViewItemEventArgs e) =>
+        ProcessItemSelected?.Invoke(sender, e);
+
+    private void RaiseSelectedProcessIdChangedIfNeeded()
     {
-        get {
-            try {
-                Control.DrawingLockAcquire();
+        int currentProcessId = SelectedProcessId;
 
-                int GetItemPid(ListViewItem item)
-                {
-                    ListViewSubItem selectedSubItem = item.SubItems[(int)Columns.Pid];
-
-                    if (int.TryParse(selectedSubItem.Text, out int pid)) {
-                        return pid;
-                    }
-
-                    return InvalidSelectedItemIndex;
-                }
-
-                List<int> checkedProcesses = processView.ShowCheckboxes
-                    ? processView.Items
-                        .Where(item => item.Checked)
-                        .Select(item => GetItemPid(item))
-                        .ToList()
-                    : [];
-
-                return checkedProcesses;
-            }
-            finally {
-                Control.DrawingLockRelease();
-            }
+        if (currentProcessId != lastKnownProcessId) {
+            lastKnownProcessId = currentProcessId;
+            SelectedProcessIdChanged?.Invoke(this, currentProcessId);
         }
     }
 
@@ -623,4 +621,6 @@ public sealed partial class ProcessControl : Control
             }
         }
     }
+
+    public Statistics? VisibleColumnsOverride { get; set; }
 }

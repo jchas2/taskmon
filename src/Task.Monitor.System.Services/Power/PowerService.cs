@@ -10,30 +10,6 @@ public sealed partial class PowerService : WorkerService
     
     private int cyclesSinceProbe;
 
-    protected override void OnStart() => BuildProviders();
-
-    protected override void OnDoWork(CancellationToken cancellationToken)
-    {
-        if (ConsumeRefreshRequest() || ++cyclesSinceProbe >= ReprobeEveryCycles) {
-            BuildProviders();
-        }
-
-        List<PowerReading> readings = new();
-
-        foreach (IPowerProvider provider in providers) {
-            try {
-                readings.AddRange(provider.Read());
-            }
-            catch (Exception ex) {
-                ExceptionHelper.LogException(ex);
-            }
-        }
-
-        Publish(new PowerInfo { Metrics = new PowerMetrics { Readings = readings } });
-    }
-
-    protected override void OnStop() => DisposeProviders();
-
     private void BuildProviders()
     {
         DisposeProviders();
@@ -55,6 +31,8 @@ public sealed partial class PowerService : WorkerService
         }
     }
 
+    private partial IEnumerable<IPowerProvider> CreateProviders();
+
     private void DisposeProviders()
     {
         foreach (IPowerProvider provider in providers) {
@@ -63,6 +41,30 @@ public sealed partial class PowerService : WorkerService
 
         providers.Clear();
     }
+
+    protected override void OnDoWork(CancellationToken cancellationToken)
+    {
+        if (ConsumeRefreshRequest() || ++cyclesSinceProbe >= ReprobeEveryCycles) {
+            BuildProviders();
+        }
+
+        List<PowerReading> readings = new();
+
+        foreach (IPowerProvider provider in providers) {
+            try {
+                readings.AddRange(provider.Read());
+            }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex);
+            }
+        }
+
+        Publish(new PowerInfo { Metrics = new PowerMetrics { Readings = readings } });
+    }
+
+    protected override void OnStart() => BuildProviders();
+
+    protected override void OnStop() => DisposeProviders();
 
     private static void TryDispose(IPowerProvider provider)
     {
@@ -73,8 +75,6 @@ public sealed partial class PowerService : WorkerService
             ExceptionHelper.LogException(ex);
         }
     }
-
-    private partial IEnumerable<IPowerProvider> CreateProviders();
 
 #if !__WIN32__
     private partial IEnumerable<IPowerProvider> CreateProviders() => [];

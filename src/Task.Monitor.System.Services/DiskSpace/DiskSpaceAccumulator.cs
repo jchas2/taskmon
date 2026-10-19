@@ -26,11 +26,37 @@ public sealed class DiskSpaceAccumulator
         currentPath   = rootPath;
     }
 
-    public void RegisterDiscoveredFolder(string parentFolder, string path)
+    public void AddFile(string parentFolder, string fullPath, long sizeBytes)
     {
-        if (string.Equals(parentFolder, rootPath, StringComparison.OrdinalIgnoreCase)) {
-            rootLevelFolders.Add(path);
+        filesScanned++;
+        totalBytesScanned += sizeBytes;
+        rootTotalBytes    += sizeBytes;
+
+        string? rootLevelFolder = RootLevelAncestorOf(parentFolder);
+
+        if (rootLevelFolder is not null) {
+            rootLevelTotals[rootLevelFolder] = rootLevelTotals.GetValueOrDefault(rootLevelFolder) + sizeBytes;
         }
+
+        TrackTopFile(fullPath, sizeBytes);
+    }
+
+    private DiskSpaceFolderNode BuildRootNode()
+    {
+        List<DiskSpaceFolderNode> children = [.. rootLevelTotals
+            .Select(pair => new DiskSpaceFolderNode {
+                Path       = pair.Key,
+                Name       = NameOf(pair.Key),
+                TotalBytes = pair.Value
+            })
+            .OrderByDescending(node => node.TotalBytes)];
+
+        return new DiskSpaceFolderNode {
+            Path       = rootPath,
+            Name       = NameOf(rootPath),
+            TotalBytes = rootTotalBytes,
+            Children   = children
+        };
     }
 
     public void EnterFolder(string path)
@@ -61,7 +87,22 @@ public sealed class DiskSpaceAccumulator
         }
     }
 
-    public void SkipFolder() => foldersSkipped++;
+    private static string NameOf(string path)
+    {
+        string trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string name    = Path.GetFileName(trimmed);
+        
+        return string.IsNullOrEmpty(name) 
+            ? path 
+            : name;
+    }
+
+    public void RegisterDiscoveredFolder(string parentFolder, string path)
+    {
+        if (string.Equals(parentFolder, rootPath, StringComparison.OrdinalIgnoreCase)) {
+            rootLevelFolders.Add(path);
+        }
+    }
 
     private string? RootLevelAncestorOf(string path)
     {
@@ -86,20 +127,24 @@ public sealed class DiskSpaceAccumulator
         }
     }
 
-    public void AddFile(string parentFolder, string fullPath, long sizeBytes)
-    {
-        filesScanned++;
-        totalBytesScanned += sizeBytes;
-        rootTotalBytes    += sizeBytes;
+    public void SkipFolder() => foldersSkipped++;
 
-        string? rootLevelFolder = RootLevelAncestorOf(parentFolder);
-
-        if (rootLevelFolder is not null) {
-            rootLevelTotals[rootLevelFolder] = rootLevelTotals.GetValueOrDefault(rootLevelFolder) + sizeBytes;
-        }
-
-        TrackTopFile(fullPath, sizeBytes);
-    }
+    public DiskSpaceSpecs Snapshot(DiskSpaceScanState state, long elapsedMilliseconds, string? errorMessage = null) =>
+        new() {
+            RootPath                  = rootPath,
+            State                     = state,
+            ElapsedMilliseconds       = elapsedMilliseconds,
+            FilesScanned              = filesScanned,
+            FoldersScanned            = foldersScanned,
+            FoldersSkipped            = foldersSkipped,
+            TotalBytesScanned         = totalBytesScanned,
+            CurrentPath               = state == DiskSpaceScanState.Scanning ? currentPath : string.Empty,
+            RootLevelFoldersTotal     = rootLevelFolders.Count,
+            RootLevelFoldersCompleted = completedRootLevelFolders.Count,
+            RootNode                  = BuildRootNode(),
+            TopFiles                  = [.. topFiles],
+            ErrorMessage              = errorMessage
+        };
 
     private void TrackTopFile(string fullPath, long sizeBytes)
     {
@@ -124,50 +169,5 @@ public sealed class DiskSpaceAccumulator
         if (topFiles.Count > MaxTrackedFiles) {
             topFiles.RemoveAt(topFiles.Count - 1);
         }
-    }
-
-    public DiskSpaceSpecs Snapshot(DiskSpaceScanState state, long elapsedMilliseconds, string? errorMessage = null) =>
-        new() {
-            RootPath                  = rootPath,
-            State                     = state,
-            ElapsedMilliseconds       = elapsedMilliseconds,
-            FilesScanned              = filesScanned,
-            FoldersScanned            = foldersScanned,
-            FoldersSkipped            = foldersSkipped,
-            TotalBytesScanned         = totalBytesScanned,
-            CurrentPath               = state == DiskSpaceScanState.Scanning ? currentPath : string.Empty,
-            RootLevelFoldersTotal     = rootLevelFolders.Count,
-            RootLevelFoldersCompleted = completedRootLevelFolders.Count,
-            RootNode                  = BuildRootNode(),
-            TopFiles                  = [.. topFiles],
-            ErrorMessage              = errorMessage
-        };
-
-    private DiskSpaceFolderNode BuildRootNode()
-    {
-        List<DiskSpaceFolderNode> children = [.. rootLevelTotals
-            .Select(pair => new DiskSpaceFolderNode {
-                Path       = pair.Key,
-                Name       = NameOf(pair.Key),
-                TotalBytes = pair.Value
-            })
-            .OrderByDescending(node => node.TotalBytes)];
-
-        return new DiskSpaceFolderNode {
-            Path       = rootPath,
-            Name       = NameOf(rootPath),
-            TotalBytes = rootTotalBytes,
-            Children   = children
-        };
-    }
-
-    private static string NameOf(string path)
-    {
-        string trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string name    = Path.GetFileName(trimmed);
-        
-        return string.IsNullOrEmpty(name) 
-            ? path 
-            : name;
     }
 }

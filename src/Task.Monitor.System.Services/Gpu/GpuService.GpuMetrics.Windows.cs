@@ -20,194 +20,28 @@ public partial class GpuService
 
     private readonly Dictionary<long, double> engineUtilisationByLuid = new();
 
-    private unsafe void OnStartGpuPidMetrics()
-    {
-        uint pdhResult;
-        nint query   = nint.Zero;
-        nint counter = nint.Zero;
-
-        if ((pdhResult = Pdh.PdhOpenQuery(
-            null,
-            nint.Zero,
-            &query)) != Pdh.ERROR_SUCCESS) {
-
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhOpenQuery),
-                $"Failed {nameof(OnStartGpuPidMetrics)}",
-                pdhResult);
-
-            return;
-        }
-
-        if ((pdhResult = Pdh.PdhAddEnglishCounter(
-            query,
-            GpuEngineCounterPath,
-            nint.Zero,
-            &counter)) != Pdh.ERROR_SUCCESS) {
-
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                GpuEngineCounterPath,
-                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
-                pdhResult);
-
-            Pdh.PdhCloseQuery(query);
-            return;
-        }
-
-        engineQuery   = query;
-        engineCounter = counter;
-        counterPrimed = false;
-    }
-
-    private void OnStopGpuPidMetrics()
-    {
-        if (counterBuffer != nint.Zero) {
-            Marshal.FreeHGlobal(counterBuffer);
-            counterBuffer     = nint.Zero;
-            counterBufferSize = 0;
-        }
-
-        if (engineQuery != nint.Zero) {
-            Pdh.PdhCloseQuery(engineQuery);
-            engineQuery   = nint.Zero;
-            engineCounter = nint.Zero;
-        }
-
-        counterPrimed = false;
-    }
-
-    private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
-    {
-        uint pdhResult;
-        gpuInfo.Metrics.GpuPercentTime = 0.0;
-
-        engineUtilisationByLuid.Clear();
-
-        if (engineQuery == nint.Zero) {
-            return;
-        }
-
-        if ((pdhResult = Pdh.PdhCollectQueryData(engineQuery)) != Pdh.ERROR_SUCCESS) {
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhCollectQueryData),
-                $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
-                pdhResult);
-
-            return;
-        }
-
-        if (!counterPrimed) {
-            counterPrimed = true;
-            return;
-        }
-
-        if (!TryGetEngineCounterArray(out uint itemCount)) {
-            return;
-        }
-
-        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)counterBuffer;
-
-        Dictionary<string, double> engineTotals  = new();
-        Dictionary<int, double>    processTotals = new();
-
-        for (uint i = 0; i < itemCount; i++) {
-            Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
-
-            if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
-                item.CStatus != PDH_CSTATUS_NEW_DATA) {
-                continue;
-            }
-
-            string? instanceName = Marshal.PtrToStringUni(item.szName);
-
-            if (string.IsNullOrEmpty(instanceName)) {
-                continue;
-            }
-
-            string? engineKey = GpuDeviceParser.ParseEngineFromInstance(instanceName);
-
-            if (engineKey == null) {
-                continue;
-            }
-
-            engineTotals[engineKey] = engineTotals.GetValueOrDefault(engineKey) + item.doubleValue;
-            int pid = GpuDeviceParser.ParsePidFromInstance(instanceName);
-
-            if (pid >= 0 && item.doubleValue > 0.0) {
-                processTotals[pid] = Math.Max(processTotals.GetValueOrDefault(pid), item.doubleValue);
-            }
-        }
-
-        double busiestEngine = 0.0;
-
-        foreach ((string engineKey, double engineTotal) in engineTotals) {
-            busiestEngine = Math.Max(busiestEngine, engineTotal);
-
-            if (GpuDeviceParser.TryParseAdapterLuid(engineKey, out long luid)) {
-                engineUtilisationByLuid[luid] =
-                    Math.Max(engineUtilisationByLuid.GetValueOrDefault(luid), engineTotal);
-            }
-        }
-
-        gpuInfo.Metrics.GpuPercentTime = Math.Clamp(busiestEngine / 100.0, 0.0, 1.0);
-
-        foreach ((int pid, double percent) in processTotals) {
-            gpuInfo.Metrics.ProcessPercentTime[pid] = Math.Clamp(percent / 100.0, 0.0, 1.0);
-        }
-    }
-
-    private unsafe bool TryGetEngineCounterArray(out uint itemCount)
-    {
-        itemCount = 0;
-
-        for (int attempt = 0; attempt < 3; attempt++) {
-            uint bufferSize = counterBufferSize;
-            uint count      = 0;
-
-            int result = Pdh.PdhGetFormattedCounterArrayW(
-                engineCounter,
-                Pdh.PDH_FMT_DOUBLE,
-                &bufferSize,
-                &count,
-                counterBuffer);
-
-            if (result == (int)Pdh.ERROR_SUCCESS) {
-                itemCount = count;
-                return true;
-            }
-
-            if (result != Pdh.PDH_MORE_DATA) {
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
-                    $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
-                    (uint)result);
-
-                return false;
-            }
-
-            if (bufferSize <= counterBufferSize) {
-                TraceEx.WriteLineOnce(
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} failed to calculate {nameof(bufferSize)}");
-
-                return false;
-            }
-
-            if (counterBuffer != nint.Zero) {
-                Marshal.FreeHGlobal(counterBuffer);
-                counterBuffer     = nint.Zero;
-                counterBufferSize = 0;
-            }
-
-            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
-            counterBufferSize = bufferSize;
-        }
-
-        return false;
-    }
-
     private const uint MaxAdapterSegments = 64;
     private int segmentIdOffset = -1;
+
+    private static unsafe void InitQueryStatistics(byte* buffer, uint type, long adapterLuid)
+    {
+        new Span<byte>(buffer, D3DKmt.QueryStatisticsBufferSize).Clear();
+
+        *(uint*)(buffer + D3DKmt.OffsetType) = type;
+        *(long*)(buffer + D3DKmt.OffsetAdapterLuid) = adapterLuid;
+    }
+
+    private static unsafe bool IsSegmentIdOffset(byte* buffer, long adapterLuid, int offset) =>
+        QuerySegmentStatistics(
+            buffer, 
+            adapterLuid, 
+            offset, 
+            D3DKmt.InvalidSegmentId) != D3DKmt.STATUS_SUCCESS &&
+        QuerySegmentStatistics(
+            buffer, 
+            adapterLuid, 
+            offset, 
+            0) == D3DKmt.STATUS_SUCCESS;
 
     private unsafe bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
     {
@@ -333,6 +167,190 @@ public partial class GpuService
         return true;
     }
 
+    private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
+    {
+        uint pdhResult;
+        gpuInfo.Metrics.GpuPercentTime = 0.0;
+
+        engineUtilisationByLuid.Clear();
+
+        if (engineQuery == nint.Zero) {
+            return;
+        }
+
+        if ((pdhResult = Pdh.PdhCollectQueryData(engineQuery)) != Pdh.ERROR_SUCCESS) {
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhCollectQueryData),
+                $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
+                pdhResult);
+
+            return;
+        }
+
+        if (!counterPrimed) {
+            counterPrimed = true;
+            return;
+        }
+
+        if (!TryGetEngineCounterArray(out uint itemCount)) {
+            return;
+        }
+
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)counterBuffer;
+
+        Dictionary<string, double> engineTotals  = new();
+        Dictionary<int, double>    processTotals = new();
+
+        for (uint i = 0; i < itemCount; i++) {
+            Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
+
+            if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
+                item.CStatus != PDH_CSTATUS_NEW_DATA) {
+                continue;
+            }
+
+            string? instanceName = Marshal.PtrToStringUni(item.szName);
+
+            if (string.IsNullOrEmpty(instanceName)) {
+                continue;
+            }
+
+            string? engineKey = GpuDeviceParser.ParseEngineFromInstance(instanceName);
+
+            if (engineKey == null) {
+                continue;
+            }
+
+            engineTotals[engineKey] = engineTotals.GetValueOrDefault(engineKey) + item.doubleValue;
+            int pid = GpuDeviceParser.ParsePidFromInstance(instanceName);
+
+            if (pid >= 0 && item.doubleValue > 0.0) {
+                processTotals[pid] = Math.Max(processTotals.GetValueOrDefault(pid), item.doubleValue);
+            }
+        }
+
+        double busiestEngine = 0.0;
+
+        foreach ((string engineKey, double engineTotal) in engineTotals) {
+            busiestEngine = Math.Max(busiestEngine, engineTotal);
+
+            if (GpuDeviceParser.TryParseAdapterLuid(engineKey, out long luid)) {
+                engineUtilisationByLuid[luid] =
+                    Math.Max(engineUtilisationByLuid.GetValueOrDefault(luid), engineTotal);
+            }
+        }
+
+        gpuInfo.Metrics.GpuPercentTime = Math.Clamp(busiestEngine / 100.0, 0.0, 1.0);
+
+        foreach ((int pid, double percent) in processTotals) {
+            gpuInfo.Metrics.ProcessPercentTime[pid] = Math.Clamp(percent / 100.0, 0.0, 1.0);
+        }
+    }
+
+    private unsafe void OnStartGpuPidMetrics()
+    {
+        uint pdhResult;
+        nint query   = nint.Zero;
+        nint counter = nint.Zero;
+
+        if ((pdhResult = Pdh.PdhOpenQuery(
+            null,
+            nint.Zero,
+            &query)) != Pdh.ERROR_SUCCESS) {
+
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                nameof(Pdh.PdhOpenQuery),
+                $"Failed {nameof(OnStartGpuPidMetrics)}",
+                pdhResult);
+
+            return;
+        }
+
+        if ((pdhResult = Pdh.PdhAddEnglishCounter(
+            query,
+            GpuEngineCounterPath,
+            nint.Zero,
+            &counter)) != Pdh.ERROR_SUCCESS) {
+
+            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                GpuEngineCounterPath,
+                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
+                pdhResult);
+
+            Pdh.PdhCloseQuery(query);
+            return;
+        }
+
+        engineQuery   = query;
+        engineCounter = counter;
+        counterPrimed = false;
+    }
+
+    private void OnStopGpuPidMetrics()
+    {
+        if (counterBuffer != nint.Zero) {
+            Marshal.FreeHGlobal(counterBuffer);
+            counterBuffer     = nint.Zero;
+            counterBufferSize = 0;
+        }
+
+        if (engineQuery != nint.Zero) {
+            Pdh.PdhCloseQuery(engineQuery);
+            engineQuery   = nint.Zero;
+            engineCounter = nint.Zero;
+        }
+
+        counterPrimed = false;
+    }
+
+    private static unsafe int QuerySegmentStatistics(
+        byte* buffer,
+        long  adapterLuid,
+        int   offset,
+        uint  segmentId)
+    {
+        InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_SEGMENT, adapterLuid);
+        *(uint*)(buffer + offset) = segmentId;
+
+        return D3DKmt.D3DKMTQueryStatistics((nint)buffer);
+    }
+
+    private unsafe int ResolveSegmentIdOffset(byte* buffer, long adapterLuid)
+    {
+        if (segmentIdOffset > 0) {
+            return segmentIdOffset;
+        }
+
+        int expected = D3DKmt.OffsetResult + D3DKmt.DefaultResultSize;
+
+        if (IsSegmentIdOffset(buffer, adapterLuid, expected)) {
+            segmentIdOffset = expected;
+            return expected;
+        }
+
+        for (int offset = D3DKmt.OffsetResult;
+             offset <= D3DKmt.QueryStatisticsBufferSize - sizeof(ulong);
+             offset += sizeof(uint)) {
+
+            if (!IsSegmentIdOffset(buffer, adapterLuid, offset)) {
+                continue;
+            }
+
+            TraceEx.WriteLineOnce(
+                nameof(ResolveSegmentIdOffset),
+                $"D3DKMT_QUERYSTATISTICS SegmentId resolved to offset {offset}, expected {expected}");
+
+            segmentIdOffset = offset;
+            return offset;
+        }
+
+        TraceEx.WriteLineOnce(
+            nameof(ResolveSegmentIdOffset),
+            "Failed to locate the D3DKMT_QUERYSTATISTICS SegmentId offset");
+
+        return -1;
+    }
+
     private unsafe bool TryGetBytesResident(
         byte*    buffer,
         long     adapterLuid,
@@ -392,72 +410,54 @@ public partial class GpuService
         return true;
     }
 
-    private unsafe int ResolveSegmentIdOffset(byte* buffer, long adapterLuid)
+    private unsafe bool TryGetEngineCounterArray(out uint itemCount)
     {
-        if (segmentIdOffset > 0) {
-            return segmentIdOffset;
-        }
+        itemCount = 0;
 
-        int expected = D3DKmt.OffsetResult + D3DKmt.DefaultResultSize;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            uint bufferSize = counterBufferSize;
+            uint count      = 0;
 
-        if (IsSegmentIdOffset(buffer, adapterLuid, expected)) {
-            segmentIdOffset = expected;
-            return expected;
-        }
+            int result = Pdh.PdhGetFormattedCounterArrayW(
+                engineCounter,
+                Pdh.PDH_FMT_DOUBLE,
+                &bufferSize,
+                &count,
+                counterBuffer);
 
-        for (int offset = D3DKmt.OffsetResult;
-             offset <= D3DKmt.QueryStatisticsBufferSize - sizeof(ulong);
-             offset += sizeof(uint)) {
-
-            if (!IsSegmentIdOffset(buffer, adapterLuid, offset)) {
-                continue;
+            if (result == (int)Pdh.ERROR_SUCCESS) {
+                itemCount = count;
+                return true;
             }
 
-            TraceEx.WriteLineOnce(
-                nameof(ResolveSegmentIdOffset),
-                $"D3DKMT_QUERYSTATISTICS SegmentId resolved to offset {offset}, expected {expected}");
+            if (result != Pdh.PDH_MORE_DATA) {
+                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
+                    $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
+                    (uint)result);
 
-            segmentIdOffset = offset;
-            return offset;
+                return false;
+            }
+
+            if (bufferSize <= counterBufferSize) {
+                TraceEx.WriteLineOnce(
+                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
+                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} failed to calculate {nameof(bufferSize)}");
+
+                return false;
+            }
+
+            if (counterBuffer != nint.Zero) {
+                Marshal.FreeHGlobal(counterBuffer);
+                counterBuffer     = nint.Zero;
+                counterBufferSize = 0;
+            }
+
+            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
+            counterBufferSize = bufferSize;
         }
 
-        TraceEx.WriteLineOnce(
-            nameof(ResolveSegmentIdOffset),
-            "Failed to locate the D3DKMT_QUERYSTATISTICS SegmentId offset");
-
-        return -1;
-    }
-
-    private static unsafe bool IsSegmentIdOffset(byte* buffer, long adapterLuid, int offset) =>
-        QuerySegmentStatistics(
-            buffer, 
-            adapterLuid, 
-            offset, 
-            D3DKmt.InvalidSegmentId) != D3DKmt.STATUS_SUCCESS &&
-        QuerySegmentStatistics(
-            buffer, 
-            adapterLuid, 
-            offset, 
-            0) == D3DKmt.STATUS_SUCCESS;
-
-    private static unsafe void InitQueryStatistics(byte* buffer, uint type, long adapterLuid)
-    {
-        new Span<byte>(buffer, D3DKmt.QueryStatisticsBufferSize).Clear();
-
-        *(uint*)(buffer + D3DKmt.OffsetType) = type;
-        *(long*)(buffer + D3DKmt.OffsetAdapterLuid) = adapterLuid;
-    }
-
-    private static unsafe int QuerySegmentStatistics(
-        byte* buffer,
-        long  adapterLuid,
-        int   offset,
-        uint  segmentId)
-    {
-        InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_SEGMENT, adapterLuid);
-        *(uint*)(buffer + offset) = segmentId;
-
-        return D3DKmt.D3DKMTQueryStatistics((nint)buffer);
+        return false;
     }
 #endif
 }

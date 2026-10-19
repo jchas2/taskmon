@@ -12,9 +12,9 @@ internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevi
     private const int LogSize          = 512;
     private const int BufferSize       = HeaderSize + ProtocolDataSize + LogSize;
 
-    public string Name => "NVMe SMART";
+    public void Dispose() { }
 
-    public bool TryInitialise() => true;
+    public string Name => "NVMe SMART";
 
     public IEnumerable<ThermalSensor> Read()
     {
@@ -122,6 +122,6 @@ internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevi
         }
     }
 
-    public void Dispose() { }
+    public bool TryInitialise() => true;
 }
 #endif

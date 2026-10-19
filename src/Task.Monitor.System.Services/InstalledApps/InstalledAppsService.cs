@@ -8,9 +8,6 @@ public sealed partial class InstalledAppsService : WorkerService
     
     private int cyclesSinceScan;
 
-    protected override void OnStart() =>
-        installedAppsSpecs = ScanInstalledApps();
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
@@ -20,6 +17,9 @@ public sealed partial class InstalledAppsService : WorkerService
 
         Publish(new InstalledAppsInfo { Specs = installedAppsSpecs });
     }
+
+    protected override void OnStart() =>
+        installedAppsSpecs = ScanInstalledApps();
 
     private partial InstalledAppsSpecs ScanInstalledApps();
 

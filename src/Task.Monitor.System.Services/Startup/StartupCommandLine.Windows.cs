@@ -3,6 +3,16 @@ namespace Task.Monitor.System.Services.Startup;
 
 public static class StartupCommandLine
 {
+    private static bool LooksLikeExistingFile(string path)
+    {
+        try {
+            return File.Exists(path) || File.Exists(path + ".exe");
+        }
+        catch {
+            return false;
+        }
+    }
+
     public static (string Path, string Arguments) Split(string? command)
     {
         string expanded = Environment.ExpandEnvironmentVariables(command?.Trim() ?? string.Empty);
@@ -43,16 +53,6 @@ public static class StartupCommandLine
         return firstSpace < 0
             ? (expanded, string.Empty)
             : (expanded[..firstSpace], expanded[(firstSpace + 1)..].TrimStart());
-    }
-
-    private static bool LooksLikeExistingFile(string path)
-    {
-        try {
-            return File.Exists(path) || File.Exists(path + ".exe");
-        }
-        catch {
-            return false;
-        }
     }
 }
 #endif

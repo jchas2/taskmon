@@ -29,87 +29,6 @@ public partial class DiskService
 
     private readonly Dictionary<string, DiskDeviceState> diskStates = new();
 
-    private void OnStartDiskMetrics() => diskStates.Clear();
-
-    private void OnStopDiskMetrics() => diskStates.Clear();
-
-    private void OnDoWorkDiskMetrics(DiskInfo diskInfo)
-    {
-        UpdateDiskStates();
-        BuildDiskMetrics(diskInfo.Metrics);
-    }
-
-    private void UpdateDiskStates()
-    {
-        int result = IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out IntPtr iteratorRef);
-        using IOObjectScope iterator = new(iteratorRef);
-
-        if (result != 0 || iterator.IsNull) {
-            return;
-        }
-
-        HashSet<string> live = new();
-        uint entryRef;
-
-        while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
-            using IOObjectScope entry = new(entryRef);
-            ReadDriverStatistics(entry, live);
-        }
-
-        PruneMissingDisks(live);
-    }
-
-    private void ReadDriverStatistics(uint entry, HashSet<string> live)
-    {
-        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
-        int index = ParseDiskIndex(bsdName);
-
-        if (index < 0 || bsdName == null) {
-            return;
-        }
-
-        int result = IOKit.IORegistryEntryCreateCFProperties(entry, out IntPtr propertiesRef, IntPtr.Zero, 0);
-        using CFScope properties = new(propertiesRef);
-
-        if (result != 0 || properties.IsNull) {
-            return;
-        }
-
-        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
-
-        if (!props.TryGetValue("Statistics", out nint statsRef)) {
-            return;
-        }
-
-        // Values below are borrowed from 'properties', which the scope keeps alive.
-        Dictionary<string, nint> stats = CoreFoundation.ToDictionary(statsRef);
-
-        long readBytes  = ReadStat(stats, "Bytes (Read)");
-        long writeBytes = ReadStat(stats, "Bytes (Write)");
-        long readTime   = ReadStat(stats, "Total Time (Read)");
-        long writeTime  = ReadStat(stats, "Total Time (Write)");
-
-        live.Add(bsdName);
-        
-        ApplyDiskSample(
-            bsdName, 
-            index, 
-            readBytes, 
-            writeBytes, 
-            readTime, 
-            writeTime);
-    }
-
-    private static long ReadStat(Dictionary<string, nint> stats, string key)
-    {
-        if (stats.TryGetValue(key, out nint number)) {
-            CoreFoundation.CFNumberGetValue(number, out long value);
-            return value;
-        }
-
-        return 0;
-    }
-
     private void ApplyDiskSample(
         string bsdName,
         int    index,
@@ -177,46 +96,6 @@ public partial class DiskService
             now);
     }
 
-    private static void RebaseDisk(
-        DiskDeviceState state,
-        long readBytes,
-        long writeBytes,
-        long readTime,
-        long writeTime,
-        long now)
-    {
-        state.PrevReadBytes      = readBytes;
-        state.PrevWriteBytes     = writeBytes;
-        state.PrevReadTimeNanos  = readTime;
-        state.PrevWriteTimeNanos = writeTime;
-        state.PrevTimestamp      = now;
-    }
-
-    private void PruneMissingDisks(HashSet<string> live)
-    {
-        const int MaxMisses = 3;
-        List<string>? stale = null;
-
-        foreach ((string name, DiskDeviceState state) in diskStates) {
-            if (live.Contains(name)) {
-                state.ConsecutiveMisses = 0;
-                continue;
-            }
-
-            if (++state.ConsecutiveMisses >= MaxMisses) {
-                (stale ??= new()).Add(name);
-            }
-        }
-
-        if (stale == null) {
-            return;
-        }
-
-        foreach (string name in stale) {
-            diskStates.Remove(name);
-        }
-    }
-
     private void BuildDiskMetrics(DiskMetrics metrics)
     {
         ulong  totalRead = 0;
@@ -257,6 +136,127 @@ public partial class DiskService
         metrics.ReadMegabytesPerSecond  = totalReadPerSec / BytesPerMegabyte;
         metrics.WriteMegabytesPerSecond = totalWritePerSec / BytesPerMegabyte;
         metrics.PercentActiveTime       = busiest;
+    }
+
+    private void OnDoWorkDiskMetrics(DiskInfo diskInfo)
+    {
+        UpdateDiskStates();
+        BuildDiskMetrics(diskInfo.Metrics);
+    }
+
+    private void OnStartDiskMetrics() => diskStates.Clear();
+
+    private void OnStopDiskMetrics() => diskStates.Clear();
+
+    private void PruneMissingDisks(HashSet<string> live)
+    {
+        const int MaxMisses = 3;
+        List<string>? stale = null;
+
+        foreach ((string name, DiskDeviceState state) in diskStates) {
+            if (live.Contains(name)) {
+                state.ConsecutiveMisses = 0;
+                continue;
+            }
+
+            if (++state.ConsecutiveMisses >= MaxMisses) {
+                (stale ??= new()).Add(name);
+            }
+        }
+
+        if (stale == null) {
+            return;
+        }
+
+        foreach (string name in stale) {
+            diskStates.Remove(name);
+        }
+    }
+
+    private void ReadDriverStatistics(uint entry, HashSet<string> live)
+    {
+        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
+        int index = ParseDiskIndex(bsdName);
+
+        if (index < 0 || bsdName == null) {
+            return;
+        }
+
+        int result = IOKit.IORegistryEntryCreateCFProperties(entry, out IntPtr propertiesRef, IntPtr.Zero, 0);
+        using CFScope properties = new(propertiesRef);
+
+        if (result != 0 || properties.IsNull) {
+            return;
+        }
+
+        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+
+        if (!props.TryGetValue("Statistics", out nint statsRef)) {
+            return;
+        }
+
+        // Values below are borrowed from 'properties', which the scope keeps alive.
+        Dictionary<string, nint> stats = CoreFoundation.ToDictionary(statsRef);
+
+        long readBytes  = ReadStat(stats, "Bytes (Read)");
+        long writeBytes = ReadStat(stats, "Bytes (Write)");
+        long readTime   = ReadStat(stats, "Total Time (Read)");
+        long writeTime  = ReadStat(stats, "Total Time (Write)");
+
+        live.Add(bsdName);
+        
+        ApplyDiskSample(
+            bsdName, 
+            index, 
+            readBytes, 
+            writeBytes, 
+            readTime, 
+            writeTime);
+    }
+
+    private static long ReadStat(Dictionary<string, nint> stats, string key)
+    {
+        if (stats.TryGetValue(key, out nint number)) {
+            CoreFoundation.CFNumberGetValue(number, out long value);
+            return value;
+        }
+
+        return 0;
+    }
+
+    private static void RebaseDisk(
+        DiskDeviceState state,
+        long readBytes,
+        long writeBytes,
+        long readTime,
+        long writeTime,
+        long now)
+    {
+        state.PrevReadBytes      = readBytes;
+        state.PrevWriteBytes     = writeBytes;
+        state.PrevReadTimeNanos  = readTime;
+        state.PrevWriteTimeNanos = writeTime;
+        state.PrevTimestamp      = now;
+    }
+
+    private void UpdateDiskStates()
+    {
+        int result = IOKit.IOServiceGetMatchingServices(0, IOKit.IOServiceMatching(BlockStorageDriverClass), out IntPtr iteratorRef);
+        using IOObjectScope iterator = new(iteratorRef);
+
+        if (result != 0 || iterator.IsNull) {
+            return;
+        }
+
+        HashSet<string> live = new();
+        uint entryRef;
+
+        while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
+            using IOObjectScope entry = new(entryRef);
+            ReadDriverStatistics(entry, live);
+        }
+
+        PruneMissingDisks(live);
     }
 }
 #endif

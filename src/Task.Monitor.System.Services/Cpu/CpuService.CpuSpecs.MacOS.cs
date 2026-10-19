@@ -7,108 +7,6 @@ namespace Task.Monitor.System.Services.Cpu;
 
 public partial class CpuService
 {
-    private void OnStartCpuSpecs(ref CpuSpecs specs)
-    {
-        specs.CpuCores   = (ulong)Environment.ProcessorCount;
-        specs.CpuSockets = 1;
-        specs.CpuName    = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
-        
-        specs.CpuVirtualizationFirmwareEnabled = false; // Windows only.
-
-        PopulatePerfLevelCores(ref specs);
-        PopulateCpuFrequency(ref specs);
-        PopulateCpuCaches(ref specs);
-    }
-
-    private static void PopulateCpuCaches(ref CpuSpecs specs)
-    {
-        if (Sys.SysctlByNameLong("hw.l1dcachesize", out long l1) && l1 > 0) {
-            specs.CpuL1CacheBytes = (ulong)l1;
-        }
-
-        if (Sys.SysctlByNameLong("hw.l2cachesize", out long l2) && l2 > 0) {
-            specs.CpuL2CacheBytes = (ulong)l2;
-        }
-
-        // Level 3 is usually 0 on Apple silicon.
-        if (Sys.SysctlByNameLong("hw.l3cachesize", out long l3) && l3 > 0) {
-            specs.CpuL3CacheBytes = (ulong)l3;
-        }
-    }
-
-    private static void PopulatePerfLevelCores(ref CpuSpecs specs)
-    {
-        specs.CpuPerformanceCores = 0;
-        specs.CpuEfficiencyCores  = 0;
-        specs.CpuSuperCores       = 0;
-
-        if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
-            if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
-                specs.CpuPerformanceCores = (ulong)pCount;
-            }
-
-            if (Sys.SysctlByNameInt("hw.perflevel1.logicalcpu", out int eCount)) {
-                specs.CpuEfficiencyCores = (ulong)eCount;
-            }
-
-            return;
-        }
-
-        for (int i = 0; i < nperflevels; i++) {
-            string? name = Sys.SysctlByNameString($"hw.perflevel{i}.name");
-
-            if (string.IsNullOrEmpty(name) ||
-                !Sys.SysctlByNameInt($"hw.perflevel{i}.logicalcpu", out int count)) {
-                continue;
-            }
-
-            if (name.StartsWith("Super", StringComparison.Ordinal)) {
-                specs.CpuSuperCores += (ulong)count;
-            }
-            else if (name.StartsWith("Efficiency", StringComparison.Ordinal)) {
-                specs.CpuEfficiencyCores += (ulong)count;
-            }
-            else {
-                specs.CpuPerformanceCores += (ulong)count;
-            }
-        }
-    }
-
-    private static void PopulateCpuFrequency(ref CpuSpecs specs)
-    {
-        using IOObjectScope pmgr = new(FindPmgrEntry());
-
-        if (pmgr.IsNull) {
-            return;
-        }
-
-        int result = IOKit.IORegistryEntryCreateCFProperties(pmgr, out IntPtr propertiesRef, IntPtr.Zero, 0);
-        using CFScope properties = new(propertiesRef);
-
-        if (result != 0 || properties.IsNull) {
-            return;
-        }
-
-        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
-
-        specs.CpuPerformanceFrequency = MaxDvfsFrequencyMhz(props, "voltage-states5-sram");
-        specs.CpuEfficiencyFrequency  = MaxDvfsFrequencyMhz(props, "voltage-states1-sram");
-
-        if (specs.CpuEfficiencyFrequency == 0) {
-            specs.CpuEfficiencyFrequency = MaxDvfsFrequencyMhz(props, "voltage-states9-sram");
-        }
-
-        specs.CpuSuperFrequency = MaxDvfsFrequencyMhz(props, "voltage-states22-sram");
-
-        if (specs.CpuSuperFrequency == 0) {
-            specs.CpuSuperFrequency = MaxDvfsFrequencyMhz(props, "voltage-states23-sram");
-        }
-
-        specs.CpuFrequency = Math.Max(
-            specs.CpuPerformanceFrequency,
-            Math.Max(specs.CpuEfficiencyFrequency, specs.CpuSuperFrequency));
-    }
-
     private static uint FindPmgrEntry()
     {
         nint matching = IOKit.IOServiceMatching("AppleARMIODevice");
@@ -182,6 +80,108 @@ public partial class CpuService
         }
 
         return maxMhz;
+    }
+
+    private void OnStartCpuSpecs(ref CpuSpecs specs)
+    {
+        specs.CpuCores   = (ulong)Environment.ProcessorCount;
+        specs.CpuSockets = 1;
+        specs.CpuName    = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+        
+        specs.CpuVirtualizationFirmwareEnabled = false; // Windows only.
+
+        PopulatePerfLevelCores(ref specs);
+        PopulateCpuFrequency(ref specs);
+        PopulateCpuCaches(ref specs);
+    }
+
+    private static void PopulateCpuCaches(ref CpuSpecs specs)
+    {
+        if (Sys.SysctlByNameLong("hw.l1dcachesize", out long l1) && l1 > 0) {
+            specs.CpuL1CacheBytes = (ulong)l1;
+        }
+
+        if (Sys.SysctlByNameLong("hw.l2cachesize", out long l2) && l2 > 0) {
+            specs.CpuL2CacheBytes = (ulong)l2;
+        }
+
+        // Level 3 is usually 0 on Apple silicon.
+        if (Sys.SysctlByNameLong("hw.l3cachesize", out long l3) && l3 > 0) {
+            specs.CpuL3CacheBytes = (ulong)l3;
+        }
+    }
+
+    private static void PopulateCpuFrequency(ref CpuSpecs specs)
+    {
+        using IOObjectScope pmgr = new(FindPmgrEntry());
+
+        if (pmgr.IsNull) {
+            return;
+        }
+
+        int result = IOKit.IORegistryEntryCreateCFProperties(pmgr, out IntPtr propertiesRef, IntPtr.Zero, 0);
+        using CFScope properties = new(propertiesRef);
+
+        if (result != 0 || properties.IsNull) {
+            return;
+        }
+
+        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+
+        specs.CpuPerformanceFrequency = MaxDvfsFrequencyMhz(props, "voltage-states5-sram");
+        specs.CpuEfficiencyFrequency  = MaxDvfsFrequencyMhz(props, "voltage-states1-sram");
+
+        if (specs.CpuEfficiencyFrequency == 0) {
+            specs.CpuEfficiencyFrequency = MaxDvfsFrequencyMhz(props, "voltage-states9-sram");
+        }
+
+        specs.CpuSuperFrequency = MaxDvfsFrequencyMhz(props, "voltage-states22-sram");
+
+        if (specs.CpuSuperFrequency == 0) {
+            specs.CpuSuperFrequency = MaxDvfsFrequencyMhz(props, "voltage-states23-sram");
+        }
+
+        specs.CpuFrequency = Math.Max(
+            specs.CpuPerformanceFrequency,
+            Math.Max(specs.CpuEfficiencyFrequency, specs.CpuSuperFrequency));
+    }
+
+    private static void PopulatePerfLevelCores(ref CpuSpecs specs)
+    {
+        specs.CpuPerformanceCores = 0;
+        specs.CpuEfficiencyCores  = 0;
+        specs.CpuSuperCores       = 0;
+
+        if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
+            if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
+                specs.CpuPerformanceCores = (ulong)pCount;
+            }
+
+            if (Sys.SysctlByNameInt("hw.perflevel1.logicalcpu", out int eCount)) {
+                specs.CpuEfficiencyCores = (ulong)eCount;
+            }
+
+            return;
+        }
+
+        for (int i = 0; i < nperflevels; i++) {
+            string? name = Sys.SysctlByNameString($"hw.perflevel{i}.name");
+
+            if (string.IsNullOrEmpty(name) ||
+                !Sys.SysctlByNameInt($"hw.perflevel{i}.logicalcpu", out int count)) {
+                continue;
+            }
+
+            if (name.StartsWith("Super", StringComparison.Ordinal)) {
+                specs.CpuSuperCores += (ulong)count;
+            }
+            else if (name.StartsWith("Efficiency", StringComparison.Ordinal)) {
+                specs.CpuEfficiencyCores += (ulong)count;
+            }
+            else {
+                specs.CpuPerformanceCores += (ulong)count;
+            }
+        }
     }
 }
 #endif

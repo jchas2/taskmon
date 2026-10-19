@@ -24,53 +24,6 @@ public partial class CpuService
     nint hQuery   = 0; 
     nint hCounter = 0;
 
-    private unsafe void OnStartCpuCore()
-    {
-        const string ProcessorTimeCounterPath = @"\Processor(*)\% Processor Time";
-
-        fixed (nint* phQuery = &hQuery, phCounter = &hCounter) {
-            if ((pdhResult = Pdh.PdhOpenQuery(
-                null,
-                nint.Zero,
-                phQuery)) != Pdh.ERROR_SUCCESS) {
-
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    nameof(Pdh.PdhOpenQuery),
-                    $"Failed {nameof(CpuService)}",
-                    pdhResult);
-
-                serviceStatus = ServiceStatus.Errored;
-                return;
-            }
-
-            if ((pdhResult = Pdh.PdhAddEnglishCounter(
-                *phQuery,
-                ProcessorTimeCounterPath,
-                nint.Zero,
-                phCounter)) != Pdh.ERROR_SUCCESS) {
-
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    ProcessorTimeCounterPath,
-                    $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
-                    pdhResult);
-
-                Pdh.PdhCloseQuery(*phQuery);
-                serviceStatus = ServiceStatus.Errored;
-                return;
-            }
-            
-            if ((pdhResult = Pdh.PdhCollectQueryData(*phQuery)) != Pdh.ERROR_SUCCESS) {
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    nameof(Pdh.PdhCollectQueryData), 
-                    $"Failed {nameof(CpuService)}", 
-                    pdhResult);
-
-                Pdh.PdhCloseQuery(*phQuery);
-                serviceStatus = ServiceStatus.Errored;
-            }
-        }
-    }
-    
     private unsafe void OnDoWorkCpuCore(CpuInfo cpuInfo)
     {
         fixed (nint* phQuery = &hQuery, phCounter = &hCounter) {
@@ -146,13 +99,6 @@ public partial class CpuService
         }
     }
 
-    private unsafe void OnStopCpuCore()
-    {
-        fixed (nint* phQuery = &hQuery) {
-            Pdh.PdhCloseQuery(*phQuery);
-        }
-    }
-
     private unsafe void OnDoWorkCpuMetrics(CpuInfo cpuInfo)
     {
         MinWinBase.FILETIME lpIdleFileTime;
@@ -204,6 +150,60 @@ public partial class CpuService
         cpuInfo.Metrics.CpuTotalTime         = cpuInfo.Metrics.CpuPercentKernelTime + cpuInfo.Metrics.CpuPercentUserTime;
 
         Rebase(now);
+    }
+
+    private unsafe void OnStartCpuCore()
+    {
+        const string ProcessorTimeCounterPath = @"\Processor(*)\% Processor Time";
+
+        fixed (nint* phQuery = &hQuery, phCounter = &hCounter) {
+            if ((pdhResult = Pdh.PdhOpenQuery(
+                null,
+                nint.Zero,
+                phQuery)) != Pdh.ERROR_SUCCESS) {
+
+                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                    nameof(Pdh.PdhOpenQuery),
+                    $"Failed {nameof(CpuService)}",
+                    pdhResult);
+
+                serviceStatus = ServiceStatus.Errored;
+                return;
+            }
+
+            if ((pdhResult = Pdh.PdhAddEnglishCounter(
+                *phQuery,
+                ProcessorTimeCounterPath,
+                nint.Zero,
+                phCounter)) != Pdh.ERROR_SUCCESS) {
+
+                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                    ProcessorTimeCounterPath,
+                    $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
+                    pdhResult);
+
+                Pdh.PdhCloseQuery(*phQuery);
+                serviceStatus = ServiceStatus.Errored;
+                return;
+            }
+            
+            if ((pdhResult = Pdh.PdhCollectQueryData(*phQuery)) != Pdh.ERROR_SUCCESS) {
+                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                    nameof(Pdh.PdhCollectQueryData), 
+                    $"Failed {nameof(CpuService)}", 
+                    pdhResult);
+
+                Pdh.PdhCloseQuery(*phQuery);
+                serviceStatus = ServiceStatus.Errored;
+            }
+        }
+    }
+
+    private unsafe void OnStopCpuCore()
+    {
+        fixed (nint* phQuery = &hQuery) {
+            Pdh.PdhCloseQuery(*phQuery);
+        }
     }
 
     private void Rebase(long now)

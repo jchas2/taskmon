@@ -30,6 +30,75 @@ public static class SquarifiedTreemapLayout
         return results;
     }
 
+    private static Rectangle LayoutRow(
+        List<TreemapItem> items,
+        double[]          areas,
+        int               start,
+        int               end,
+        double            rowArea,
+        Rectangle         remaining,
+        List<TreemapCell> results)
+    {
+        double sideLength     = Math.Min(remaining.Width, remaining.Height);
+        double thicknessExact = rowArea / sideLength;
+        bool   vertical       = remaining.Width >= remaining.Height;
+        int    thickness      = Math.Max(1, (int)Math.Round(thicknessExact));
+        
+        thickness = Math.Min(thickness, vertical 
+            ? remaining.Width 
+            : remaining.Height);
+
+        int stripLength = vertical 
+            ? remaining.Height 
+            : remaining.Width;
+
+        double offset = 0;
+        int previousBoundary = 0;
+
+        for (int i = start; i < end; i++) {
+            offset += areas[i] / thicknessExact;
+
+            int itemsRemainingAfter = end - 1 - i;
+            
+            int boundary = i == end - 1
+                ? stripLength
+                : Math.Min((int)Math.Round(offset), stripLength - itemsRemainingAfter);
+            
+            int length = Math.Max(1, boundary - previousBoundary);
+
+            Rectangle cellBounds = vertical
+                ? new Rectangle(
+                    remaining.X, 
+                    remaining.Y + previousBoundary, 
+                    thickness, 
+                    length)
+                : new Rectangle(
+                    remaining.X + previousBoundary, 
+                    remaining.Y, 
+                    length, 
+                    thickness);
+
+            results.Add(new TreemapCell {
+                Id = items[i].Id, 
+                Bounds = cellBounds
+            });
+            
+            previousBoundary = boundary;
+        }
+
+        return vertical
+            ? new Rectangle(
+                remaining.X + thickness, 
+                remaining.Y, 
+                remaining.Width - thickness, 
+                remaining.Height)
+            : new Rectangle(
+                remaining.X, 
+                remaining.Y + thickness, 
+                remaining.Width, 
+                remaining.Height - thickness);
+    }
+
     private static void SquarifyAreas(
         List<TreemapItem> items, 
         double[]          areas, 
@@ -105,74 +174,5 @@ public static class SquarifiedTreemapLayout
         return Math.Max(
             sideSquared * maxArea / rowAreaSquared,
             rowAreaSquared / (sideSquared * minArea));
-    }
-
-    private static Rectangle LayoutRow(
-        List<TreemapItem> items,
-        double[]          areas,
-        int               start,
-        int               end,
-        double            rowArea,
-        Rectangle         remaining,
-        List<TreemapCell> results)
-    {
-        double sideLength     = Math.Min(remaining.Width, remaining.Height);
-        double thicknessExact = rowArea / sideLength;
-        bool   vertical       = remaining.Width >= remaining.Height;
-        int    thickness      = Math.Max(1, (int)Math.Round(thicknessExact));
-        
-        thickness = Math.Min(thickness, vertical 
-            ? remaining.Width 
-            : remaining.Height);
-
-        int stripLength = vertical 
-            ? remaining.Height 
-            : remaining.Width;
-
-        double offset = 0;
-        int previousBoundary = 0;
-
-        for (int i = start; i < end; i++) {
-            offset += areas[i] / thicknessExact;
-
-            int itemsRemainingAfter = end - 1 - i;
-            
-            int boundary = i == end - 1
-                ? stripLength
-                : Math.Min((int)Math.Round(offset), stripLength - itemsRemainingAfter);
-            
-            int length = Math.Max(1, boundary - previousBoundary);
-
-            Rectangle cellBounds = vertical
-                ? new Rectangle(
-                    remaining.X, 
-                    remaining.Y + previousBoundary, 
-                    thickness, 
-                    length)
-                : new Rectangle(
-                    remaining.X + previousBoundary, 
-                    remaining.Y, 
-                    length, 
-                    thickness);
-
-            results.Add(new TreemapCell {
-                Id = items[i].Id, 
-                Bounds = cellBounds
-            });
-            
-            previousBoundary = boundary;
-        }
-
-        return vertical
-            ? new Rectangle(
-                remaining.X + thickness, 
-                remaining.Y, 
-                remaining.Width - thickness, 
-                remaining.Height)
-            : new Rectangle(
-                remaining.X, 
-                remaining.Y + thickness, 
-                remaining.Width, 
-                remaining.Height - thickness);
     }
 }

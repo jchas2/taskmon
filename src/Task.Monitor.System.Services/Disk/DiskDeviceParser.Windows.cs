@@ -44,27 +44,6 @@ public static class DiskDeviceParser
         _                         => NotAvailable,
     };
 
-    // Decodes the fixed header of a STORAGE_DEVICE_DESCRIPTOR.
-    public static DiskDevice Parse(ReadOnlySpan<byte> descriptor)
-    {
-        DiskDevice device = new();
-
-        if (descriptor.Length < WinIoCtl.StorageDeviceDescriptorMinimumLength) {
-            return device;
-        }
-
-        // Not inline declared to assist with debugging.
-        device.IsRemovable      = descriptor[WinIoCtl.StorageDeviceDescriptorRemovableMediaOffset] != 0;
-        device.Manufacturer     = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorVendorIdOffset);
-        device.Model            = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorProductIdOffset);
-        device.FirmwareRevision = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorProductRevisionOffset);
-        device.SerialNumber     = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorSerialNumberOffset);
-        device.BusType          = DecodeBusType(
-            BinaryPrimitives.ReadUInt32LittleEndian(descriptor[WinIoCtl.StorageDeviceDescriptorBusTypeOffset..]));
-
-        return device;
-    }
-
     public static string DecodeMediaType(
         string busType,
         bool   isRemovable,
@@ -105,6 +84,27 @@ public static class DiskDeviceParser
         return text.Length > 0 
             ? text 
             : NotAvailable;
+    }
+
+    // Decodes the fixed header of a STORAGE_DEVICE_DESCRIPTOR.
+    public static DiskDevice Parse(ReadOnlySpan<byte> descriptor)
+    {
+        DiskDevice device = new();
+
+        if (descriptor.Length < WinIoCtl.StorageDeviceDescriptorMinimumLength) {
+            return device;
+        }
+
+        // Not inline declared to assist with debugging.
+        device.IsRemovable      = descriptor[WinIoCtl.StorageDeviceDescriptorRemovableMediaOffset] != 0;
+        device.Manufacturer     = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorVendorIdOffset);
+        device.Model            = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorProductIdOffset);
+        device.FirmwareRevision = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorProductRevisionOffset);
+        device.SerialNumber     = GetString(descriptor, WinIoCtl.StorageDeviceDescriptorSerialNumberOffset);
+        device.BusType          = DecodeBusType(
+            BinaryPrimitives.ReadUInt32LittleEndian(descriptor[WinIoCtl.StorageDeviceDescriptorBusTypeOffset..]));
+
+        return device;
     }
 }
 #endif

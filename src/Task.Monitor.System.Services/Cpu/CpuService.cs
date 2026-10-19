@@ -3,12 +3,6 @@
 public sealed partial class CpuService : WorkerService
 {
     private CpuSpecs cpuSpecs = new();
-      
-    protected override void OnStart()
-    {   
-        OnStartCpuSpecs(ref cpuSpecs);
-        OnStartCpuCore();
-    }
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
@@ -19,7 +13,13 @@ public sealed partial class CpuService : WorkerService
         OnDoWorkCpuMetrics(cpuInfo);
         Publish(cpuInfo);
     }
-    
+
+    protected override void OnStart()
+    {   
+        OnStartCpuSpecs(ref cpuSpecs);
+        OnStartCpuCore();
+    }
+
     protected override void OnStop()
     {
         OnStopCpuCore();

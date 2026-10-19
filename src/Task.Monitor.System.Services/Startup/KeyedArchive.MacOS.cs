@@ -15,26 +15,6 @@ public static class KeyedArchive
     private const string Archiver   = "NSKeyedArchiver";
     private const string NullObject = "$null";
 
-    public static Dictionary<string, object?>? Decode(object? archive)
-    {
-        if (archive is not IReadOnlyDictionary<string, object?> root ||
-            root.GetValueOrDefault("$archiver") is not Archiver ||
-            root.GetValueOrDefault("$objects") is not List<object?> objects ||
-            root.GetValueOrDefault("$top") is not IReadOnlyDictionary<string, object?> top) {
-
-            return null;
-        }
-
-        Decoder                     decoder = new(objects);
-        Dictionary<string, object?> result  = new(StringComparer.Ordinal);
-
-        foreach ((string key, object? value) in top) {
-            result[key] = decoder.Resolve(value, 0);
-        }
-
-        return result;
-    }
-
     private sealed class Decoder(List<object?> objects)
     {
         private readonly HashSet<long> resolved = new();
@@ -67,6 +47,25 @@ public static class KeyedArchive
             finally {
                 resolved.Remove(uid.Value);
             }
+        }
+
+        private Dictionary<string, object?> ResolveDictionary(IReadOnlyDictionary<string, object?> fields, int depth)
+        {
+            Dictionary<string, object?> result = new(StringComparer.Ordinal);
+
+            if (fields.GetValueOrDefault("NS.keys") is not List<object?> keys ||
+                fields.GetValueOrDefault("NS.objects") is not List<object?> values) {
+
+                return result;
+            }
+
+            for (int i = 0; i < Math.Min(keys.Count, values.Count); i++) {
+                if (Resolve(keys[i], depth + 1) is string key) {
+                    result[key] = Resolve(values[i], depth + 1);
+                }
+            }
+
+            return result;
         }
 
         private object? ResolveObject(IReadOnlyDictionary<string, object?> fields, int depth)
@@ -127,25 +126,6 @@ public static class KeyedArchive
             return result;
         }
 
-        private Dictionary<string, object?> ResolveDictionary(IReadOnlyDictionary<string, object?> fields, int depth)
-        {
-            Dictionary<string, object?> result = new(StringComparer.Ordinal);
-
-            if (fields.GetValueOrDefault("NS.keys") is not List<object?> keys ||
-                fields.GetValueOrDefault("NS.objects") is not List<object?> values) {
-
-                return result;
-            }
-
-            for (int i = 0; i < Math.Min(keys.Count, values.Count); i++) {
-                if (Resolve(keys[i], depth + 1) is string key) {
-                    result[key] = Resolve(values[i], depth + 1);
-                }
-            }
-
-            return result;
-        }
-
         private string? ResolveUrl(IReadOnlyDictionary<string, object?> fields, int depth)
         {
             string? relative = Resolve(fields.GetValueOrDefault("NS.relative"), depth + 1) as string;
@@ -160,6 +140,26 @@ public static class KeyedArchive
                 ? combined.AbsoluteUri
                 : relative;
         }
+    }
+
+    public static Dictionary<string, object?>? Decode(object? archive)
+    {
+        if (archive is not IReadOnlyDictionary<string, object?> root ||
+            root.GetValueOrDefault("$archiver") is not Archiver ||
+            root.GetValueOrDefault("$objects") is not List<object?> objects ||
+            root.GetValueOrDefault("$top") is not IReadOnlyDictionary<string, object?> top) {
+
+            return null;
+        }
+
+        Decoder                     decoder = new(objects);
+        Dictionary<string, object?> result  = new(StringComparer.Ordinal);
+
+        foreach ((string key, object? value) in top) {
+            result[key] = decoder.Resolve(value, 0);
+        }
+
+        return result;
     }
 }
 #endif

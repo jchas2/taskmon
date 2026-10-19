@@ -17,17 +17,6 @@ public sealed class StableTreemapLayout
     public StableTreemapLayout(double relativeChangeThreshold = DefaultRelativeChangeThreshold) =>
         this.relativeChangeThreshold = relativeChangeThreshold;
 
-    public IReadOnlyList<TreemapCell> Layout(IReadOnlyList<TreemapItem> items, Rectangle bounds)
-    {
-        if (bounds != previousBounds || !IsStableRelativeToPrevious(items)) {
-            previousLayout = SquarifiedTreemapLayout.Layout(items, bounds);
-            previousItems  = items;
-            previousBounds = bounds;
-        }
-
-        return previousLayout;
-    }
-
     private bool IsStableRelativeToPrevious(IReadOnlyList<TreemapItem> items)
     {
         if (items.Count != previousItems.Count) {
@@ -53,5 +42,16 @@ public sealed class StableTreemapLayout
         }
 
         return true;
+    }
+
+    public IReadOnlyList<TreemapCell> Layout(IReadOnlyList<TreemapItem> items, Rectangle bounds)
+    {
+        if (bounds != previousBounds || !IsStableRelativeToPrevious(items)) {
+            previousLayout = SquarifiedTreemapLayout.Layout(items, bounds);
+            previousItems  = items;
+            previousBounds = bounds;
+        }
+
+        return previousLayout;
     }
 }

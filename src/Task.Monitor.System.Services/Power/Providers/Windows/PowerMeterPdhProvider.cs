@@ -15,29 +15,34 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
     private nint buffer;
     private uint bufferSize;
 
+    public void Dispose()
+    {
+        if (buffer != nint.Zero) {
+            Marshal.FreeHGlobal(buffer);
+            buffer = nint.Zero;
+            bufferSize = 0;
+        }
+
+        if (query != nint.Zero) {
+            Pdh.PdhCloseQuery(query);
+            query   = nint.Zero;
+            counter = nint.Zero;
+        }
+    }
+
     public string Name => "ACPI Power Meter";
 
-    public bool TryInitialise()
+    // The counter is documented as milliwatts, but be forgiving: a value that only makes sense as
+    // watts is taken as watts.
+    private static double? Normalise(double raw)
     {
-        nint newQuery   = nint.Zero;
-        nint newCounter = nint.Zero;
+        double asMilliwatts = raw / 1000.0;
 
-        if (Pdh.PdhOpenQuery(null, nint.Zero, &newQuery) != Pdh.ERROR_SUCCESS) {
-            return false;
+        if (asMilliwatts is > 0.5 and < 1000) {
+            return asMilliwatts;
         }
 
-        if (Pdh.PdhAddEnglishCounter(newQuery, CounterPath, nint.Zero, &newCounter) != Pdh.ERROR_SUCCESS) {
-            Pdh.PdhCloseQuery(newQuery);
-            return false;
-        }
-
-        query   = newQuery;
-        counter = newCounter;
-
-        Pdh.PdhCollectQueryData(query);
-
-        // Keep the provider only if the machine actually has a power meter instance.
-        return ReadWatts() is not null;
+        return raw is > 0.5 and < 1000 ? raw : null;
     }
 
     public IEnumerable<PowerReading> Read()
@@ -87,17 +92,27 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         return any ? Normalise(summed) : null;
     }
 
-    // The counter is documented as milliwatts, but be forgiving: a value that only makes sense as
-    // watts is taken as watts.
-    private static double? Normalise(double raw)
+    public bool TryInitialise()
     {
-        double asMilliwatts = raw / 1000.0;
+        nint newQuery   = nint.Zero;
+        nint newCounter = nint.Zero;
 
-        if (asMilliwatts is > 0.5 and < 1000) {
-            return asMilliwatts;
+        if (Pdh.PdhOpenQuery(null, nint.Zero, &newQuery) != Pdh.ERROR_SUCCESS) {
+            return false;
         }
 
-        return raw is > 0.5 and < 1000 ? raw : null;
+        if (Pdh.PdhAddEnglishCounter(newQuery, CounterPath, nint.Zero, &newCounter) != Pdh.ERROR_SUCCESS) {
+            Pdh.PdhCloseQuery(newQuery);
+            return false;
+        }
+
+        query   = newQuery;
+        counter = newCounter;
+
+        Pdh.PdhCollectQueryData(query);
+
+        // Keep the provider only if the machine actually has a power meter instance.
+        return ReadWatts() is not null;
     }
 
     private bool TryReadArray(out uint itemCount)
@@ -133,21 +148,6 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         }
 
         return false;
-    }
-
-    public void Dispose()
-    {
-        if (buffer != nint.Zero) {
-            Marshal.FreeHGlobal(buffer);
-            buffer = nint.Zero;
-            bufferSize = 0;
-        }
-
-        if (query != nint.Zero) {
-            Pdh.PdhCloseQuery(query);
-            query   = nint.Zero;
-            counter = nint.Zero;
-        }
     }
 }
 #endif

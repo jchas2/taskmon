@@ -16,22 +16,6 @@ public partial class NetworkService
         IpHlpApi.GAA_FLAG_SKIP_MULTICAST |
         IpHlpApi.GAA_FLAG_SKIP_DNS_SERVER;
 
-    private NetworkSpecs? OnStartNetworkSpecs()
-    {
-        List<NetworkDevice>? devices = EnumerateAdapters();
-
-        if (devices == null) {
-            return null;
-        }
-
-        ApplyPhysicalMediums(devices);
-
-        NetworkSpecs specs = new();
-        specs.Devices = devices;
-
-        return specs;
-    }
-
     private static void ApplyPhysicalMediums(List<NetworkDevice> devices)
     {
         Dictionary<ulong, uint> mediums = new();
@@ -97,6 +81,22 @@ public partial class NetworkService
                 Marshal.FreeHGlobal(buffer);
             }
         }
+    }
+
+    private NetworkSpecs? OnStartNetworkSpecs()
+    {
+        List<NetworkDevice>? devices = EnumerateAdapters();
+
+        if (devices == null) {
+            return null;
+        }
+
+        ApplyPhysicalMediums(devices);
+
+        NetworkSpecs specs = new();
+        specs.Devices = devices;
+
+        return specs;
     }
 
     private static unsafe List<NetworkDevice> ReadAdapters(byte* buffer)

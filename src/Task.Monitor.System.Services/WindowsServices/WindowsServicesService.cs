@@ -8,9 +8,6 @@ public sealed partial class WindowsServicesService : WorkerService
     
     private int cyclesSinceScan;
 
-    protected override void OnStart() =>
-        servicesSpecs = ScanServices();
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
@@ -20,6 +17,9 @@ public sealed partial class WindowsServicesService : WorkerService
 
         Publish(new WindowsServicesInfo { Specs = servicesSpecs });
     }
+
+    protected override void OnStart() =>
+        servicesSpecs = ScanServices();
 
     private partial WindowsServicesSpecs ScanServices();
 

@@ -5,7 +5,7 @@ namespace Task.Monitor.System.Services;
 public sealed partial class DeviceChangeNotifier : IDisposable
 {
     public event Action<DeviceCategory>? DeviceChanged;
-    public void Start() => OnStartPlatform();
+
     public void Dispose() => OnStopPlatform();
     partial void OnStartPlatform();
     partial void OnStopPlatform();
@@ -18,4 +18,6 @@ public sealed partial class DeviceChangeNotifier : IDisposable
             ExceptionHelper.LogException(ex);
         }
     }
+
+    public void Start() => OnStartPlatform();
 }

@@ -20,6 +20,33 @@ public sealed unsafe partial class DeviceChangeNotifier
 
     private bool started;
 
+    [UnmanagedCallersOnly]
+    private static uint NotificationCallback(
+        nint notify,
+        nint context,
+        int  action,
+        nint eventData,
+        uint eventDataSize)
+    {
+        const uint ErrorSuccess = 0;
+
+        if (action != CfgMgr32.CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL &&
+            action != CfgMgr32.CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL) {
+            return ErrorSuccess;
+        }
+
+        try {
+            if (context != nint.Zero && GCHandle.FromIntPtr(context).Target is Registration registration) {
+                registration.Owner.RaiseDeviceChanged(registration.Category);
+            }
+        }
+        catch (Exception ex) {
+            TraceEx.WriteLineOnce(nameof(NotificationCallback), ex.ToString());
+        }
+
+        return ErrorSuccess;
+    }
+
     partial void OnStartPlatform()
     {
         lock (@lock) {
@@ -92,33 +119,6 @@ public sealed unsafe partial class DeviceChangeNotifier
 
         registration.Handle = handle;
         registrations.Add(registration);
-    }
-
-    [UnmanagedCallersOnly]
-    private static uint NotificationCallback(
-        nint notify,
-        nint context,
-        int  action,
-        nint eventData,
-        uint eventDataSize)
-    {
-        const uint ErrorSuccess = 0;
-
-        if (action != CfgMgr32.CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL &&
-            action != CfgMgr32.CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL) {
-            return ErrorSuccess;
-        }
-
-        try {
-            if (context != nint.Zero && GCHandle.FromIntPtr(context).Target is Registration registration) {
-                registration.Owner.RaiseDeviceChanged(registration.Category);
-            }
-        }
-        catch (Exception ex) {
-            TraceEx.WriteLineOnce(nameof(NotificationCallback), ex.ToString());
-        }
-
-        return ErrorSuccess;
     }
 }
 #endif

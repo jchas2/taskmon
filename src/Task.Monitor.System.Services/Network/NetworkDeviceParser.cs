@@ -11,6 +11,12 @@ public static class NetworkDeviceParser
     // A disconnected adapter reports either zero or the all ones sentinel for link speed.
     private const ulong UnknownLinkSpeed = ulong.MaxValue;
 
+    public static bool CountsTowardAggregate(uint ifType, bool isActive) =>
+        isActive &&
+        ifType != NetIoApi.IF_TYPE_TUNNEL &&
+        ifType != NetIoApi.IF_TYPE_PROP_VIRTUAL &&
+        ifType != NetIoApi.IF_TYPE_PPP;
+
     public static string DecodeConnectionType(uint ifType) => ifType switch
     {
         NetIoApi.IF_TYPE_ETHERNET_CSMACD    => "Ethernet",
@@ -26,6 +32,21 @@ public static class NetworkDeviceParser
         NetIoApi.IF_TYPE_WWANPP             => "Mobile Broadband (GSM)",
         NetIoApi.IF_TYPE_WWANPP2            => "Mobile Broadband (CDMA)",
         NetIoApi.IF_TYPE_OTHER              => "Other",
+        _                                   => NotAvailable,
+    };
+
+    public static ulong DecodeLinkSpeed(ulong linkSpeed) =>
+        linkSpeed == UnknownLinkSpeed ? 0 : linkSpeed;
+
+    public static string DecodeOperationalStatus(uint operStatus) => operStatus switch
+    {
+        NetIoApi.IfOperStatusUp             => "Up",
+        NetIoApi.IfOperStatusDown           => "Down",
+        NetIoApi.IfOperStatusTesting        => "Testing",
+        NetIoApi.IfOperStatusDormant        => "Dormant",
+        NetIoApi.IfOperStatusNotPresent     => "Not Present",
+        NetIoApi.IfOperStatusLowerLayerDown => "Lower Layer Down",
+        NetIoApi.IfOperStatusUnknown        => "Unknown",
         _                                   => NotAvailable,
     };
 
@@ -53,31 +74,15 @@ public static class NetworkDeviceParser
         _                                       => NotAvailable,
     };
 
-    public static string DecodeOperationalStatus(uint operStatus) => operStatus switch
-    {
-        NetIoApi.IfOperStatusUp             => "Up",
-        NetIoApi.IfOperStatusDown           => "Down",
-        NetIoApi.IfOperStatusTesting        => "Testing",
-        NetIoApi.IfOperStatusDormant        => "Dormant",
-        NetIoApi.IfOperStatusNotPresent     => "Not Present",
-        NetIoApi.IfOperStatusLowerLayerDown => "Lower Layer Down",
-        NetIoApi.IfOperStatusUnknown        => "Unknown",
-        _                                   => NotAvailable,
-    };
+    public static string FormatIPv4Address(ReadOnlySpan<byte> addressBytes) =>
+        addressBytes.Length != WS2Def.SockAddrIn4DataLength
+            ? string.Empty
+            : new IPAddress(addressBytes).ToString();
 
-    public static bool IsActiveAdapter(uint ifType, uint operStatus, int addressCount) =>
-        operStatus == NetIoApi.IfOperStatusUp &&
-        ifType != NetIoApi.IF_TYPE_SOFTWARE_LOOPBACK &&
-        addressCount > 0;
-
-    public static bool CountsTowardAggregate(uint ifType, bool isActive) =>
-        isActive &&
-        ifType != NetIoApi.IF_TYPE_TUNNEL &&
-        ifType != NetIoApi.IF_TYPE_PROP_VIRTUAL &&
-        ifType != NetIoApi.IF_TYPE_PPP;
-
-    public static ulong DecodeLinkSpeed(ulong linkSpeed) =>
-        linkSpeed == UnknownLinkSpeed ? 0 : linkSpeed;
+    public static string FormatIPv6Address(ReadOnlySpan<byte> addressBytes, uint scopeId) =>
+        addressBytes.Length != WS2Def.SockAddrIn6DataLength
+            ? string.Empty
+            : new IPAddress(addressBytes, scopeId).ToString();
 
     public static string FormatMacAddress(ReadOnlySpan<byte> physicalAddress)
     {
@@ -97,13 +102,8 @@ public static class NetworkDeviceParser
         return builder.ToString();
     }
 
-    public static string FormatIPv4Address(ReadOnlySpan<byte> addressBytes) =>
-        addressBytes.Length != WS2Def.SockAddrIn4DataLength
-            ? string.Empty
-            : new IPAddress(addressBytes).ToString();
-
-    public static string FormatIPv6Address(ReadOnlySpan<byte> addressBytes, uint scopeId) =>
-        addressBytes.Length != WS2Def.SockAddrIn6DataLength
-            ? string.Empty
-            : new IPAddress(addressBytes, scopeId).ToString();
+    public static bool IsActiveAdapter(uint ifType, uint operStatus, int addressCount) =>
+        operStatus == NetIoApi.IfOperStatusUp &&
+        ifType != NetIoApi.IF_TYPE_SOFTWARE_LOOPBACK &&
+        addressCount > 0;
 }

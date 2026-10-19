@@ -5,9 +5,9 @@ namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
 internal sealed class BatteryPowerProvider : IPowerProvider
 {
-    public string Name => "Battery";
+    public void Dispose() { }
 
-    public bool TryInitialise() => true;
+    public string Name => "Battery";
 
     public IEnumerable<PowerReading> Read()
     {
@@ -21,6 +21,6 @@ internal sealed class BatteryPowerProvider : IPowerProvider
         }
     }
 
-    public void Dispose() { }
+    public bool TryInitialise() => true;
 }
 #endif

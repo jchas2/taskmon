@@ -14,28 +14,41 @@ public sealed partial class BackgroundItemsDatabase
     private BackgroundItemsDatabase(IReadOnlyDictionary<string, List<BackgroundItemRecord>> recordsByUser) =>
         this.recordsByUser = recordsByUser;
 
-    public IReadOnlyList<BackgroundItemRecord> RecordsFor(string? userUuid) =>
-        userUuid is not null && recordsByUser.TryGetValue(userUuid, out List<BackgroundItemRecord>? records)
-            ? records
-            : [];
+    [GeneratedRegex(@"^BackgroundItems-v(\d{1,6})\.btm$")]
+    private static partial Regex DatabaseVersion();
 
-    public static BackgroundItemsDatabase? Read()
+    private static Dictionary<string, object?>? FindItemsByUser(Dictionary<string, object?> top)
     {
-        string? path = FindNewestDatabase();
+        IEnumerable<object?> candidates = top.TryGetValue("store", out object? store)
+            ? [store]
+            : top.Values;
 
-        if (path is null) {
+        return candidates
+            .OfType<Dictionary<string, object?>>()
+            .Select(candidate => candidate.GetValueOrDefault("itemsByUserIdentifier") as Dictionary<string, object?>)
+            .FirstOrDefault(items => items is not null);
+    }
+
+    private static string? FindNewestDatabase()
+    {
+        string[] files;
+
+        try {
+            files = Directory.GetFiles(DirectoryPath, "BackgroundItems-v*.btm");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            // Can still fail as root without full disk access.
+            TraceEx.WriteLineOnce($"{nameof(BackgroundItemsDatabase)} {DirectoryPath}", ex.Message);
             return null;
         }
 
-        BackgroundItemsDatabase? database = Parse(PropertyList.ReadKeyedArchiveFile(path));
-
-        TraceEx.WriteLineOnce(
-            $"{nameof(BackgroundItemsDatabase)} {path}",
-            database is null
-                ? $"{path} is not in a recognised format; falling back to per-session APIs"
-                : $"Read {path}");
-
-        return database;
+        // BackgroundItems-v<N>.btm; the highest N is the live one.
+        return files
+            .Select(file => (File: file, Match: DatabaseVersion().Match(Path.GetFileName(file))))
+            .Where(candidate => candidate.Match.Success)
+            .OrderByDescending(candidate => int.Parse(candidate.Match.Groups[1].Value))
+            .Select(candidate => candidate.File)
+            .FirstOrDefault();
     }
 
     // archive: the output of PropertyList.ParseKeyedArchive.
@@ -68,18 +81,6 @@ public sealed partial class BackgroundItemsDatabase
         return new BackgroundItemsDatabase(recordsByUser);
     }
 
-    private static Dictionary<string, object?>? FindItemsByUser(Dictionary<string, object?> top)
-    {
-        IEnumerable<object?> candidates = top.TryGetValue("store", out object? store)
-            ? [store]
-            : top.Values;
-
-        return candidates
-            .OfType<Dictionary<string, object?>>()
-            .Select(candidate => candidate.GetValueOrDefault("itemsByUserIdentifier") as Dictionary<string, object?>)
-            .FirstOrDefault(items => items is not null);
-    }
-
     private static BackgroundItemRecord? ParseRecord(object? item)
     {
         if (item is not Dictionary<string, object?> fields ||
@@ -102,29 +103,28 @@ public sealed partial class BackgroundItemsDatabase
         };
     }
 
-    private static string? FindNewestDatabase()
+    public static BackgroundItemsDatabase? Read()
     {
-        string[] files;
+        string? path = FindNewestDatabase();
 
-        try {
-            files = Directory.GetFiles(DirectoryPath, "BackgroundItems-v*.btm");
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
-            // Can still fail as root without full disk access.
-            TraceEx.WriteLineOnce($"{nameof(BackgroundItemsDatabase)} {DirectoryPath}", ex.Message);
+        if (path is null) {
             return null;
         }
 
-        // BackgroundItems-v<N>.btm; the highest N is the live one.
-        return files
-            .Select(file => (File: file, Match: DatabaseVersion().Match(Path.GetFileName(file))))
-            .Where(candidate => candidate.Match.Success)
-            .OrderByDescending(candidate => int.Parse(candidate.Match.Groups[1].Value))
-            .Select(candidate => candidate.File)
-            .FirstOrDefault();
+        BackgroundItemsDatabase? database = Parse(PropertyList.ReadKeyedArchiveFile(path));
+
+        TraceEx.WriteLineOnce(
+            $"{nameof(BackgroundItemsDatabase)} {path}",
+            database is null
+                ? $"{path} is not in a recognised format; falling back to per-session APIs"
+                : $"Read {path}");
+
+        return database;
     }
 
-    [GeneratedRegex(@"^BackgroundItems-v(\d{1,6})\.btm$")]
-    private static partial Regex DatabaseVersion();
+    public IReadOnlyList<BackgroundItemRecord> RecordsFor(string? userUuid) =>
+        userUuid is not null && recordsByUser.TryGetValue(userUuid, out List<BackgroundItemRecord>? records)
+            ? records
+            : [];
 }
 #endif

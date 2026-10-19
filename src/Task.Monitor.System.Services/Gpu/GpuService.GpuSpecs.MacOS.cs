@@ -9,28 +9,6 @@ public partial class GpuService
     private const string AppleGpuDescription   = "Apple GPU";
     private const string IntegratedAdapterType = "Integrated";
 
-    private void OnStartGpuSpecs(GpuSpecs specs)
-    {
-        long totalMemory = TryReadIOAcceleratorMemory(out long allocMemory, out _)
-            ? allocMemory
-            : 0;
-
-        specs.GpuCores = GetGpuCoreCount();
-        specs.TotalGpuMemory = totalMemory;
-
-        specs.Devices.Clear();
-        specs.Devices.Add(new GpuDevice {
-            Index                = 0,
-            Vendor               = AppleVendor,
-            // A precise model string ("Apple M1 Pro") would require Metal (MTLDevice.name); the
-            // IORegistry "model" property is typed inconsistently across SoCs, so a safe label is used.
-            Description          = AppleGpuDescription,
-            AdapterType          = IntegratedAdapterType,
-            DedicatedVideoMemory = 0,
-            SharedSystemMemory   = totalMemory
-        });
-    }
-
     private static int GetGpuCoreCount()
     {
         IntPtr matching = IOKit.IOServiceMatching("AGXAccelerator");
@@ -56,6 +34,28 @@ public partial class GpuService
         }
 
         return cores;
+    }
+
+    private void OnStartGpuSpecs(GpuSpecs specs)
+    {
+        long totalMemory = TryReadIOAcceleratorMemory(out long allocMemory, out _)
+            ? allocMemory
+            : 0;
+
+        specs.GpuCores = GetGpuCoreCount();
+        specs.TotalGpuMemory = totalMemory;
+
+        specs.Devices.Clear();
+        specs.Devices.Add(new GpuDevice {
+            Index                = 0,
+            Vendor               = AppleVendor,
+            // A precise model string ("Apple M1 Pro") would require Metal (MTLDevice.name); the
+            // IORegistry "model" property is typed inconsistently across SoCs, so a safe label is used.
+            Description          = AppleGpuDescription,
+            AdapterType          = IntegratedAdapterType,
+            DedicatedVideoMemory = 0,
+            SharedSystemMemory   = totalMemory
+        });
     }
 }
 #endif

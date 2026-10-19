@@ -12,23 +12,23 @@ public partial class ProcessService
     private static MachTime.mach_timebase_info_data_t cachedTimebase;
     private static bool timebaseInitialized;
 
-    private static List<ProcessSample> GetProcessSamples()
+    private static unsafe TimeSpan CalculateSystemTime(ulong systemTime)
     {
-        int[] pids = GetPids();
-        List<ProcessSample> samples = new(pids.Length);
+        if (!timebaseInitialized) {
+            MachTime.mach_timebase_info_data_t timeBase = default;
 
-        for (int i = 0; i < pids.Length; i++) {
-            ProcessSample? sample = CreateProcessSample(pids[i]);
-
-            if (sample != null) {
-                samples.Add(sample);
+            if (MachTime.mach_timebase_info(&timeBase) != 0 || timeBase.denom == 0) {
+                timeBase.numer = 1;
+                timeBase.denom = 1;
             }
+
+            cachedTimebase = timeBase;
+            timebaseInitialized = true;
         }
 
-        return samples;
+        return new TimeSpan(
+            (long)(systemTime / NanosecondsTo100NanosecondsFactor * cachedTimebase.numer / cachedTimebase.denom));
     }
-
-    public static ProcessSample? GetProcessSample(int pid) => CreateProcessSample(pid);
 
     private static unsafe ProcessSample? CreateProcessSample(int pid)
     {
@@ -113,6 +113,24 @@ public partial class ProcessService
         return buffer;
     }
 
+    public static ProcessSample? GetProcessSample(int pid) => CreateProcessSample(pid);
+
+    private static List<ProcessSample> GetProcessSamples()
+    {
+        int[] pids = GetPids();
+        List<ProcessSample> samples = new(pids.Length);
+
+        for (int i = 0; i < pids.Length; i++) {
+            ProcessSample? sample = CreateProcessSample(pids[i]);
+
+            if (sample != null) {
+                samples.Add(sample);
+            }
+        }
+
+        return samples;
+    }
+
     private static unsafe string GetProcessUserName(ref ProcInfo.proc_taskallinfo procTaskInfo)
     {
         uint uid = procTaskInfo.pbsd.pbi_uid;
@@ -147,24 +165,6 @@ public partial class ProcessService
         }
 
         return Encoding.UTF8.GetString(buffer, byteCount);
-    }
-
-    private static unsafe TimeSpan CalculateSystemTime(ulong systemTime)
-    {
-        if (!timebaseInitialized) {
-            MachTime.mach_timebase_info_data_t timeBase = default;
-
-            if (MachTime.mach_timebase_info(&timeBase) != 0 || timeBase.denom == 0) {
-                timeBase.numer = 1;
-                timeBase.denom = 1;
-            }
-
-            cachedTimebase = timeBase;
-            timebaseInitialized = true;
-        }
-
-        return new TimeSpan(
-            (long)(systemTime / NanosecondsTo100NanosecondsFactor * cachedTimebase.numer / cachedTimebase.denom));
     }
 #endif
 }

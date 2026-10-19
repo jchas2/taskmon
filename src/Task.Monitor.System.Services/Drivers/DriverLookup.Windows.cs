@@ -102,6 +102,36 @@ internal static class DriverLookup
         return drivers;
     }
 
+    private static void PopulateDelayedAutoStart(nint hService, DriverInfo driver)
+    {
+        if (driver.StartType != WindowsServiceStartType.AutomaticStart) {
+            return;
+        }
+
+        int size = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
+        nint buffer = Marshal.AllocHGlobal(size);
+
+        try {
+            if (!WinService.QueryServiceConfig2(
+                hService, 
+                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
+                buffer, 
+                (uint)size, 
+                out _)) {
+
+                return;
+            }
+
+            WinService.SERVICE_DELAYED_AUTO_START_INFO info =
+                Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer);
+
+            driver.DelayedAutoStart = info.fDelayedAutostart;
+        }
+        finally {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
     private static void PopulateDriverConfig(nint hSCM, DriverInfo driver)
     {
         nint hService = WinService.OpenService(hSCM, driver.ServiceName, WinService.SERVICE_QUERY_CONFIG);
@@ -156,36 +186,6 @@ internal static class DriverLookup
             driver.ImagePath = string.IsNullOrEmpty(config.lpBinaryPathName) 
                 ? null 
                 : config.lpBinaryPathName;
-        }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
-    }
-
-    private static void PopulateDelayedAutoStart(nint hService, DriverInfo driver)
-    {
-        if (driver.StartType != WindowsServiceStartType.AutomaticStart) {
-            return;
-        }
-
-        int size = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
-        nint buffer = Marshal.AllocHGlobal(size);
-
-        try {
-            if (!WinService.QueryServiceConfig2(
-                hService, 
-                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
-                buffer, 
-                (uint)size, 
-                out _)) {
-
-                return;
-            }
-
-            WinService.SERVICE_DELAYED_AUTO_START_INFO info =
-                Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer);
-
-            driver.DelayedAutoStart = info.fDelayedAutostart;
         }
         finally {
             Marshal.FreeHGlobal(buffer);

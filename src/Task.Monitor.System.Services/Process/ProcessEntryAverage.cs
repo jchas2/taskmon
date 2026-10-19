@@ -25,12 +25,18 @@ public sealed class ProcessEntryAverage
     }
 
     public double CpuTimePercent => cpuTimePercentMean;
-    public double GpuTimePercent => gpuTimePercentMean;
-    public long UsedMemory => (long)usedMemoryMean;
-    public double DiskBytesPerSecond => diskBytesPerSecondMean;
 
     public double CpuTimePercentMax { get; private set; }
-    public double GpuTimePercentMax { get; private set; }
-    public long UsedMemoryMax { get; private set; }
+
+    public double DiskBytesPerSecond => diskBytesPerSecondMean;
+
     public double DiskBytesPerSecondMax { get; private set; }
+
+    public double GpuTimePercent => gpuTimePercentMean;
+
+    public double GpuTimePercentMax { get; private set; }
+
+    public long UsedMemory => (long)usedMemoryMean;
+
+    public long UsedMemoryMax { get; private set; }
 }

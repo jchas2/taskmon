@@ -16,16 +16,35 @@ public partial class CpuService
     private long aggIdleDelta;
     private long aggNiceDelta;
 
-    private void OnStartCpuCore() => ResetCpuState();
-
-    private void OnStopCpuCore() => ResetCpuState();
-
-    private void ResetCpuState()
+    private static uint[]? CaptureCpuTicks(out int cpuCount)
     {
-        previousCoreTicks = Array.Empty<uint>();
-        coreCount         = 0;
-        cpuPrimed         = false;
-        aggUserDelta      = aggSystemDelta = aggIdleDelta = aggNiceDelta = 0;
+        cpuCount = 0;
+
+        int result = MachHost.host_processor_info(
+            MachHost.mach_host_self(),
+            MachHost.PROCESSOR_CPU_LOAD_INFO,
+            out uint numCpus,
+            out IntPtr cpuInfo,
+            out uint numCpuInfo);
+
+        if (result != 0 || cpuInfo == IntPtr.Zero || numCpus == 0) {
+            return null;
+        }
+
+        try {
+            uint[] ticks = new uint[numCpuInfo];
+
+            for (int i = 0; i < numCpuInfo; i++) {
+                ticks[i] = unchecked((uint)Marshal.ReadInt32(cpuInfo, i * sizeof(int)));
+            }
+
+            cpuCount = (int)numCpus;
+            return ticks;
+        }
+        finally {
+            IntPtr size = new((int)numCpuInfo * sizeof(int));
+            MachHost.vm_deallocate(MachHost.mach_task_self(), cpuInfo, size);
+        }
     }
 
     private void OnDoWorkCpuCore(CpuInfo cpuInfo)
@@ -100,38 +119,19 @@ public partial class CpuService
             cpuInfo.Metrics.CpuPercentKernelTime + cpuInfo.Metrics.CpuPercentUserTime;
     }
 
+    private void OnStartCpuCore() => ResetCpuState();
+
+    private void OnStopCpuCore() => ResetCpuState();
+
+    private void ResetCpuState()
+    {
+        previousCoreTicks = Array.Empty<uint>();
+        coreCount         = 0;
+        cpuPrimed         = false;
+        aggUserDelta      = aggSystemDelta = aggIdleDelta = aggNiceDelta = 0;
+    }
+
     private static long TickDelta(uint current, uint previous) =>
         current >= previous ? current - previous : 0;
-
-    private static uint[]? CaptureCpuTicks(out int cpuCount)
-    {
-        cpuCount = 0;
-
-        int result = MachHost.host_processor_info(
-            MachHost.mach_host_self(),
-            MachHost.PROCESSOR_CPU_LOAD_INFO,
-            out uint numCpus,
-            out IntPtr cpuInfo,
-            out uint numCpuInfo);
-
-        if (result != 0 || cpuInfo == IntPtr.Zero || numCpus == 0) {
-            return null;
-        }
-
-        try {
-            uint[] ticks = new uint[numCpuInfo];
-
-            for (int i = 0; i < numCpuInfo; i++) {
-                ticks[i] = unchecked((uint)Marshal.ReadInt32(cpuInfo, i * sizeof(int)));
-            }
-
-            cpuCount = (int)numCpus;
-            return ticks;
-        }
-        finally {
-            IntPtr size = new((int)numCpuInfo * sizeof(int));
-            MachHost.vm_deallocate(MachHost.mach_task_self(), cpuInfo, size);
-        }
-    }
 }
 #endif

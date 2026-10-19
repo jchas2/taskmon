@@ -4,12 +4,6 @@ public sealed partial class GpuService : WorkerService
 {
     private GpuSpecs gpuSpecs = new();
 
-    protected override void OnStart()
-    {
-        OnStartGpuSpecs(gpuSpecs);
-        OnStartGpuPidMetrics();
-    }
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         // Caters for swappable GPUs.
@@ -27,6 +21,12 @@ public sealed partial class GpuService : WorkerService
         OnDoWorkGpuPidMetrics(gpuInfo);
         OnDoWorkGpuMemoryMetrics(gpuInfo);
         Publish(gpuInfo);
+    }
+
+    protected override void OnStart()
+    {
+        OnStartGpuSpecs(gpuSpecs);
+        OnStartGpuPidMetrics();
     }
 
     protected override void OnStop()

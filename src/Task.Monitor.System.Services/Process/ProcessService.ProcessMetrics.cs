@@ -14,6 +14,89 @@ public partial class ProcessService
     
     private int generation;
 
+    private static void ApplyAverages(ProcessEntry entry, ProcessEntryAverage average)
+    {
+        average.Add(entry);
+
+        entry.CpuTimePercentAvg     = average.CpuTimePercent;
+        entry.GpuTimePercentAvg     = average.GpuTimePercent;
+        entry.UsedMemoryAvg         = average.UsedMemory;
+        entry.DiskBytesPerSecondAvg = average.DiskBytesPerSecond;
+
+        entry.CpuTimePercentMax     = average.CpuTimePercentMax;
+        entry.GpuTimePercentMax     = average.GpuTimePercentMax;
+        entry.UsedMemoryMax         = average.UsedMemoryMax;
+        entry.DiskBytesPerSecondMax = average.DiskBytesPerSecondMax;
+    }
+
+    private static void ApplyRates(
+        ProcessEntry       entry,
+        ProcessSampleState state,
+        ProcessSample      sample,
+        long               now,
+        ProcessSpecs       specs)
+    {
+        if (!state.Primed) {
+            Rebase(state, sample, now);
+            state.Primed = true;
+            return;
+        }
+
+        double elapsedSeconds = ProcessEntryCalculator.ElapsedSeconds(state.TimestampTicks, now);
+
+        if (elapsedSeconds <= 0.0) {
+            return;
+        }
+
+        double totalSystemTime = ProcessEntryCalculator.TotalSystemTime(
+            elapsedSeconds,
+            specs.LogicalProcessorCount);
+
+        int irixFactor = ProcessEntryCalculator.IrixFactor(
+            specs.IrixMode,
+            specs.LogicalProcessorCount);
+
+        entry.CpuKernelTimePercent = ProcessEntryCalculator.CpuPercent(
+            sample.KernelTime - state.KernelTime,
+            totalSystemTime,
+            irixFactor);
+
+        entry.CpuUserTimePercent = ProcessEntryCalculator.CpuPercent(
+            sample.UserTime - state.UserTime,
+            totalSystemTime,
+            irixFactor);
+
+        entry.CpuTimePercent = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
+
+        ulong readDelta  = ProcessEntryCalculator.Delta(sample.DiskReadBytes, state.DiskReadBytes);
+        ulong writeDelta = ProcessEntryCalculator.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
+
+        entry.DiskBytesPerSecond = ProcessEntryCalculator.BytesPerSecond(
+            readDelta + writeDelta,
+            elapsedSeconds);
+
+        Rebase(state, sample, now);
+    }
+
+    private static ProcessEntry BuildEntry(ProcessSample sample) =>
+        new() {
+            Pid             = sample.Pid,
+            ParentPid       = sample.ParentPid,
+            ThreadCount     = sample.ThreadCount,
+            HandleCount     = sample.HandleCount,
+            BasePriority    = sample.BasePriority,
+            IsDaemon        = sample.IsDaemon,
+            IsLowPriority   = sample.IsLowPriority,
+            IsRunningAsRoot = sample.IsRunningAsRoot,
+            ProcessName     = sample.ProcessName,
+            FileDescription = sample.FileDescription,
+            UserName        = sample.UserName,
+            CmdLine         = sample.CmdLine,
+            UsedMemory      = sample.UsedMemory,
+            DiskReadBytes   = sample.DiskReadBytes,
+            DiskWriteBytes  = sample.DiskWriteBytes
+        };
+
     // Platform-neutral metrics core: turns a per-platform list of ProcessSample into ProcessEntry
     // rows, applying rates, averages and power classification. The only platform-specific input is
     // how the samples (and the optional GPU-percent map) are gathered.
@@ -73,96 +156,11 @@ public partial class ProcessService
         PruneStaleStates();
     }
 
-    private static ProcessEntry BuildEntry(ProcessSample sample) =>
-        new() {
-            Pid             = sample.Pid,
-            ParentPid       = sample.ParentPid,
-            ThreadCount     = sample.ThreadCount,
-            HandleCount     = sample.HandleCount,
-            BasePriority    = sample.BasePriority,
-            IsDaemon        = sample.IsDaemon,
-            IsLowPriority   = sample.IsLowPriority,
-            IsRunningAsRoot = sample.IsRunningAsRoot,
-            ProcessName     = sample.ProcessName,
-            FileDescription = sample.FileDescription,
-            UserName        = sample.UserName,
-            CmdLine         = sample.CmdLine,
-            UsedMemory      = sample.UsedMemory,
-            DiskReadBytes   = sample.DiskReadBytes,
-            DiskWriteBytes  = sample.DiskWriteBytes
-        };
-
-    private static void ApplyRates(
-        ProcessEntry       entry,
-        ProcessSampleState state,
-        ProcessSample      sample,
-        long               now,
-        ProcessSpecs       specs)
+    private void OnStopProcessMetrics()
     {
-        if (!state.Primed) {
-            Rebase(state, sample, now);
-            state.Primed = true;
-            return;
-        }
-
-        double elapsedSeconds = ProcessEntryCalculator.ElapsedSeconds(state.TimestampTicks, now);
-
-        if (elapsedSeconds <= 0.0) {
-            return;
-        }
-
-        double totalSystemTime = ProcessEntryCalculator.TotalSystemTime(
-            elapsedSeconds,
-            specs.LogicalProcessorCount);
-
-        int irixFactor = ProcessEntryCalculator.IrixFactor(
-            specs.IrixMode,
-            specs.LogicalProcessorCount);
-
-        entry.CpuKernelTimePercent = ProcessEntryCalculator.CpuPercent(
-            sample.KernelTime - state.KernelTime,
-            totalSystemTime,
-            irixFactor);
-
-        entry.CpuUserTimePercent = ProcessEntryCalculator.CpuPercent(
-            sample.UserTime - state.UserTime,
-            totalSystemTime,
-            irixFactor);
-
-        entry.CpuTimePercent = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
-
-        ulong readDelta  = ProcessEntryCalculator.Delta(sample.DiskReadBytes, state.DiskReadBytes);
-        ulong writeDelta = ProcessEntryCalculator.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
-
-        entry.DiskBytesPerSecond = ProcessEntryCalculator.BytesPerSecond(
-            readDelta + writeDelta,
-            elapsedSeconds);
-
-        Rebase(state, sample, now);
-    }
-
-    private static void Rebase(ProcessSampleState state, ProcessSample sample, long now)
-    {
-        state.KernelTime     = sample.KernelTime;
-        state.UserTime       = sample.UserTime;
-        state.DiskReadBytes  = sample.DiskReadBytes;
-        state.DiskWriteBytes = sample.DiskWriteBytes;
-        state.TimestampTicks = now;
-    }
-
-    private static void ApplyAverages(ProcessEntry entry, ProcessEntryAverage average)
-    {
-        average.Add(entry);
-
-        entry.CpuTimePercentAvg     = average.CpuTimePercent;
-        entry.GpuTimePercentAvg     = average.GpuTimePercent;
-        entry.UsedMemoryAvg         = average.UsedMemory;
-        entry.DiskBytesPerSecondAvg = average.DiskBytesPerSecond;
-
-        entry.CpuTimePercentMax     = average.CpuTimePercentMax;
-        entry.GpuTimePercentMax     = average.GpuTimePercentMax;
-        entry.UsedMemoryMax         = average.UsedMemoryMax;
-        entry.DiskBytesPerSecondMax = average.DiskBytesPerSecondMax;
+        sampleStates.Clear();
+        stalePids.Clear();
+        generation = 0;
     }
 
     private void PruneStaleStates()
@@ -184,10 +182,12 @@ public partial class ProcessService
         }
     }
 
-    private void OnStopProcessMetrics()
+    private static void Rebase(ProcessSampleState state, ProcessSample sample, long now)
     {
-        sampleStates.Clear();
-        stalePids.Clear();
-        generation = 0;
+        state.KernelTime     = sample.KernelTime;
+        state.UserTime       = sample.UserTime;
+        state.DiskReadBytes  = sample.DiskReadBytes;
+        state.DiskWriteBytes = sample.DiskWriteBytes;
+        state.TimestampTicks = now;
     }
 }

@@ -2,6 +2,19 @@ namespace Task.Monitor.System.Services.Thermal;
 
 public static class AcpiThermalZone
 {
+    public static ThermalComponent ClassifyZone(string? instanceName)
+    {
+        if (string.IsNullOrEmpty(instanceName)) {
+            return ThermalComponent.Other;
+        }
+
+        string upper = instanceName.ToUpperInvariant();
+
+        return upper.Contains("CPU") || upper.Contains("PROC")
+            ? ThermalComponent.Cpu
+            : ThermalComponent.Other;
+    }
+
     public static double? TenthKelvinToCelsius(double tenthKelvin)
     {
         // Temperatures in that class are reported in tenths of a Kelvin.
@@ -14,19 +27,6 @@ public static class AcpiThermalZone
         return celsius is > -40 and < 150 
             ? celsius 
             : null;
-    }
-
-    public static ThermalComponent ClassifyZone(string? instanceName)
-    {
-        if (string.IsNullOrEmpty(instanceName)) {
-            return ThermalComponent.Other;
-        }
-
-        string upper = instanceName.ToUpperInvariant();
-
-        return upper.Contains("CPU") || upper.Contains("PROC")
-            ? ThermalComponent.Cpu
-            : ThermalComponent.Other;
     }
 
     public static string ZoneLabel(string? instanceName)

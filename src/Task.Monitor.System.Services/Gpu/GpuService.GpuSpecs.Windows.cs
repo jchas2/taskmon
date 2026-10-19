@@ -15,12 +15,26 @@ public partial class GpuService
     private const string DisplayClassRegPath =
         @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
 
-    private void OnStartGpuSpecs(GpuSpecs specs)
+    private static GpuDevice BuildDevice(int index, Dxgi.DXGI_ADAPTER_DESC1 desc)
     {
-        EnumerateAdapters(specs);
-        UpdateFromRegistry(specs.Devices);
+        long dedicatedVideo = (long)(ulong)desc.DedicatedVideoMemory;
 
-        specs.TotalGpuMemory = specs.Devices.Sum(device => device.DedicatedVideoMemory);
+        GpuDevice device = new();
+        // Not inline declared to assist with debugging.
+        device.Index                 = index;
+        device.AdapterLuid           = desc.AdapterLuid;
+        device.Description           = NormaliseDescription(desc.GetDescription());
+        device.VendorId              = desc.VendorId;
+        device.DeviceId              = desc.DeviceId;
+        device.SubSysId              = desc.SubSysId;
+        device.Revision              = desc.Revision;
+        device.Vendor                = GpuDeviceParser.DecodeVendor(desc.VendorId);
+        device.AdapterType           = GpuDeviceParser.DecodeAdapterType(desc.Flags, desc.VendorId, dedicatedVideo);
+        device.DedicatedVideoMemory  = dedicatedVideo;
+        device.DedicatedSystemMemory = (long)(ulong)desc.DedicatedSystemMemory;
+        device.SharedSystemMemory    = (long)(ulong)desc.SharedSystemMemory;
+
+        return device;
     }
 
     private static void EnumerateAdapters(GpuSpecs specs)
@@ -80,28 +94,6 @@ public partial class GpuService
         }
     }
 
-    private static GpuDevice BuildDevice(int index, Dxgi.DXGI_ADAPTER_DESC1 desc)
-    {
-        long dedicatedVideo = (long)(ulong)desc.DedicatedVideoMemory;
-
-        GpuDevice device = new();
-        // Not inline declared to assist with debugging.
-        device.Index                 = index;
-        device.AdapterLuid           = desc.AdapterLuid;
-        device.Description           = NormaliseDescription(desc.GetDescription());
-        device.VendorId              = desc.VendorId;
-        device.DeviceId              = desc.DeviceId;
-        device.SubSysId              = desc.SubSysId;
-        device.Revision              = desc.Revision;
-        device.Vendor                = GpuDeviceParser.DecodeVendor(desc.VendorId);
-        device.AdapterType           = GpuDeviceParser.DecodeAdapterType(desc.Flags, desc.VendorId, dedicatedVideo);
-        device.DedicatedVideoMemory  = dedicatedVideo;
-        device.DedicatedSystemMemory = (long)(ulong)desc.DedicatedSystemMemory;
-        device.SharedSystemMemory    = (long)(ulong)desc.SharedSystemMemory;
-
-        return device;
-    }
-
     private static string NormaliseDescription(string description)
     {
         string trimmed = description.Trim();
@@ -109,6 +101,14 @@ public partial class GpuService
         return trimmed.Length > 0 
             ? trimmed 
             : GpuDeviceParser.NotAvailable;
+    }
+
+    private void OnStartGpuSpecs(GpuSpecs specs)
+    {
+        EnumerateAdapters(specs);
+        UpdateFromRegistry(specs.Devices);
+
+        specs.TotalGpuMemory = specs.Devices.Sum(device => device.DedicatedVideoMemory);
     }
 
     private static void UpdateFromRegistry(List<GpuDevice> devices)

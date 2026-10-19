@@ -14,29 +14,13 @@ public sealed class DiskSpaceService : WorkerService
     private CancellationTokenSource? scanCts;
     private WorkerTask?              scanTask;
 
-    protected override void OnStart() => Publish(new DiskSpaceInfo { Specs = specs });
+    public void CancelScan() => scanCts?.Cancel();
 
     protected override void OnDoWork(CancellationToken cancellationToken) { }
 
+    protected override void OnStart() => Publish(new DiskSpaceInfo { Specs = specs });
+
     protected override void OnStop() => CancelScan();
-
-    public void StartScan(string rootPath)
-    {
-        lock (startLock) {
-            if (specs.State == DiskSpaceScanState.Scanning) {
-                return;
-            }
-
-            DiskSpaceAccumulator accumulator = new(rootPath);
-            scanCts                          = new CancellationTokenSource();
-            CancellationToken token          = scanCts.Token;
-
-            UpdateSpecs(accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0));
-            scanTask = WorkerTask.Run(() => RunScan(rootPath, accumulator, token));
-        }
-    }
-
-    public void CancelScan() => scanCts?.Cancel();
 
     private void RunScan(string rootPath, DiskSpaceAccumulator accumulator, CancellationToken cancellationToken)
     {
@@ -67,6 +51,22 @@ public sealed class DiskSpaceService : WorkerService
         catch (Exception ex) {
             ExceptionHelper.LogException(ex);
             UpdateSpecs(accumulator.Snapshot(DiskSpaceScanState.Faulted, elapsed.ElapsedMilliseconds, ex.Message));
+        }
+    }
+
+    public void StartScan(string rootPath)
+    {
+        lock (startLock) {
+            if (specs.State == DiskSpaceScanState.Scanning) {
+                return;
+            }
+
+            DiskSpaceAccumulator accumulator = new(rootPath);
+            scanCts                          = new CancellationTokenSource();
+            CancellationToken token          = scanCts.Token;
+
+            UpdateSpecs(accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0));
+            scanTask = WorkerTask.Run(() => RunScan(rootPath, accumulator, token));
         }
     }
 

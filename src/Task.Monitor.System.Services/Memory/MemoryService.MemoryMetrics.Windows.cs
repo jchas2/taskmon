@@ -8,48 +8,6 @@ namespace Task.Monitor.System.Services.Memory;
 public partial class MemoryService
 {
 #if __WIN32__
-    private unsafe void OnDoWorkMemoryMetrics(MemoryInfo memoryInfo)
-    {
-        SysInfoApi.MEMORYSTATUSEX memoryStatus = new();
-        
-        if (!SysInfoApi.GlobalMemoryStatusEx(&memoryStatus)) {
-            PInvokeErrorHelpers.AssertOnLastError(nameof(SysInfoApi.GlobalMemoryStatusEx));
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(SysInfoApi.GlobalMemoryStatusEx), 
-                $"Failed {nameof(OnDoWorkMemoryMetrics)}");
-            
-            memoryInfo.Metrics.AvailablePageFile      = 0;
-            memoryInfo.Metrics.AvailablePhysical      = 0;
-            memoryInfo.Metrics.AvailableVirtual       = 0;
-            memoryInfo.Metrics.TotalPageFile          = 0;
-            memoryInfo.Metrics.TotalPhysical          = 0;
-            memoryInfo.Metrics.TotalVirtual           = 0;
-            memoryInfo.Metrics.AvailablePageFileRatio = 0.0;
-            memoryInfo.Metrics.AvailablePhysicalRatio = 0.0;
-            memoryInfo.Metrics.AvailableVirtualRatio  = 0.0;
-            return;
-        }
-
-        memoryInfo.Metrics.AvailablePageFile = memoryStatus.ullAvailPageFile;
-        memoryInfo.Metrics.AvailablePhysical = memoryStatus.ullAvailPhys;
-        memoryInfo.Metrics.AvailableVirtual  = memoryStatus.ullAvailVirtual;
-        memoryInfo.Metrics.TotalPageFile     = memoryStatus.ullTotalPageFile;
-        memoryInfo.Metrics.TotalPhysical     = memoryStatus.ullTotalPhys;
-        memoryInfo.Metrics.TotalVirtual      = memoryStatus.ullTotalVirtual;
-
-        memoryInfo.Metrics.AvailablePageFileRatio = memoryStatus.ullAvailPageFile > 0
-            ? 1.0 - memoryStatus.ullAvailPageFile / (double)memoryStatus.ullTotalPageFile
-            : 0.0;
-        
-        memoryInfo.Metrics.AvailablePhysicalRatio = memoryStatus.ullTotalPhys > 0
-            ? 1.0 - memoryStatus.ullAvailPhys / (double)memoryStatus.ullTotalPhys
-            : 0.0;
-        
-        memoryInfo.Metrics.AvailableVirtualRatio = memoryStatus.ullTotalVirtual > 0
-            ? 1.0 - memoryStatus.ullAvailVirtual / (double)memoryStatus.ullTotalVirtual
-            : 0.0;
-    }
-
     private unsafe void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
         if (!QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION memListInfo, out int status)) {
@@ -99,7 +57,49 @@ public partial class MemoryService
             memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / (double)totalBytes;
         }
     }
-    
+
+    private unsafe void OnDoWorkMemoryMetrics(MemoryInfo memoryInfo)
+    {
+        SysInfoApi.MEMORYSTATUSEX memoryStatus = new();
+        
+        if (!SysInfoApi.GlobalMemoryStatusEx(&memoryStatus)) {
+            PInvokeErrorHelpers.AssertOnLastError(nameof(SysInfoApi.GlobalMemoryStatusEx));
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(SysInfoApi.GlobalMemoryStatusEx), 
+                $"Failed {nameof(OnDoWorkMemoryMetrics)}");
+            
+            memoryInfo.Metrics.AvailablePageFile      = 0;
+            memoryInfo.Metrics.AvailablePhysical      = 0;
+            memoryInfo.Metrics.AvailableVirtual       = 0;
+            memoryInfo.Metrics.TotalPageFile          = 0;
+            memoryInfo.Metrics.TotalPhysical          = 0;
+            memoryInfo.Metrics.TotalVirtual           = 0;
+            memoryInfo.Metrics.AvailablePageFileRatio = 0.0;
+            memoryInfo.Metrics.AvailablePhysicalRatio = 0.0;
+            memoryInfo.Metrics.AvailableVirtualRatio  = 0.0;
+            return;
+        }
+
+        memoryInfo.Metrics.AvailablePageFile = memoryStatus.ullAvailPageFile;
+        memoryInfo.Metrics.AvailablePhysical = memoryStatus.ullAvailPhys;
+        memoryInfo.Metrics.AvailableVirtual  = memoryStatus.ullAvailVirtual;
+        memoryInfo.Metrics.TotalPageFile     = memoryStatus.ullTotalPageFile;
+        memoryInfo.Metrics.TotalPhysical     = memoryStatus.ullTotalPhys;
+        memoryInfo.Metrics.TotalVirtual      = memoryStatus.ullTotalVirtual;
+
+        memoryInfo.Metrics.AvailablePageFileRatio = memoryStatus.ullAvailPageFile > 0
+            ? 1.0 - memoryStatus.ullAvailPageFile / (double)memoryStatus.ullTotalPageFile
+            : 0.0;
+        
+        memoryInfo.Metrics.AvailablePhysicalRatio = memoryStatus.ullTotalPhys > 0
+            ? 1.0 - memoryStatus.ullAvailPhys / (double)memoryStatus.ullTotalPhys
+            : 0.0;
+        
+        memoryInfo.Metrics.AvailableVirtualRatio = memoryStatus.ullTotalVirtual > 0
+            ? 1.0 - memoryStatus.ullAvailVirtual / (double)memoryStatus.ullTotalVirtual
+            : 0.0;
+    }
+
     private static unsafe bool QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION info, out int status)
     {
         info = new();

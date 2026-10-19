@@ -9,21 +9,15 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
 {
     private nint context;
 
-    public string Name => "ADL power";
-
-    public bool TryInitialise()
+    public void Dispose()
     {
-        context = nint.Zero;
-
-        try {
-            Adl.TryCreate(out context);
-        }
-        catch (DllNotFoundException) {
+        if (context != nint.Zero) {
+            Adl.Destroy(context);
             context = nint.Zero;
         }
-
-        return context != nint.Zero;
     }
+
+    public string Name => "ADL power";
 
     public IEnumerable<PowerReading> Read()
     {
@@ -52,12 +46,18 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
         }
     }
 
-    public void Dispose()
+    public bool TryInitialise()
     {
-        if (context != nint.Zero) {
-            Adl.Destroy(context);
+        context = nint.Zero;
+
+        try {
+            Adl.TryCreate(out context);
+        }
+        catch (DllNotFoundException) {
             context = nint.Zero;
         }
+
+        return context != nint.Zero;
     }
 }
 #endif

@@ -2,6 +2,13 @@ namespace Task.Monitor.System.Services.DiskSpace;
 
 public static class ScanRootProvider
 {
+    private static IEnumerable<DriveCandidate> EnumerateRealDrives()
+    {
+        foreach (DriveInfo drive in DriveInfo.GetDrives()) {
+            yield return new DriveCandidate(drive.RootDirectory.FullName, TryGetIsReady(drive), drive.DriveType);
+        }
+    }
+
     public static IReadOnlyList<string> GetCandidates() => GetCandidates(EnumerateRealDrives());
 
     internal static IReadOnlyList<string> GetCandidates(IEnumerable<DriveCandidate> drives)
@@ -13,23 +20,6 @@ public static class ScanRootProvider
             .Select(drive => drive.RootPath)
             .OrderBy(path => !string.Equals(path, systemRoot, StringComparison.OrdinalIgnoreCase))
             .ThenBy(path => path, StringComparer.OrdinalIgnoreCase)];
-    }
-
-    private static IEnumerable<DriveCandidate> EnumerateRealDrives()
-    {
-        foreach (DriveInfo drive in DriveInfo.GetDrives()) {
-            yield return new DriveCandidate(drive.RootDirectory.FullName, TryGetIsReady(drive), drive.DriveType);
-        }
-    }
-
-    private static bool TryGetIsReady(DriveInfo drive)
-    {
-        try {
-            return drive.IsReady;
-        }
-        catch (IOException) {
-            return false;
-        }
     }
 
     private static bool IsScannable(DriveCandidate drive)
@@ -46,5 +36,15 @@ public static class ScanRootProvider
             is DriveType.Fixed 
             or DriveType.Removable 
             or DriveType.Network;
+    }
+
+    private static bool TryGetIsReady(DriveInfo drive)
+    {
+        try {
+            return drive.IsReady;
+        }
+        catch (IOException) {
+            return false;
+        }
     }
 }

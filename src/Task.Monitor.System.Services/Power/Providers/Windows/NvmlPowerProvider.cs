@@ -9,19 +9,15 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
 {
     private bool initialised;
 
-    public string Name => "NVML";
-
-    public bool TryInitialise()
+    public void Dispose()
     {
-        try {
-            initialised = Nvml.Initialize();
-        }
-        catch (DllNotFoundException) {
+        if (initialised) {
+            Nvml.Shutdown();
             initialised = false;
         }
-
-        return initialised;
     }
+
+    public string Name => "NVML";
 
     public IEnumerable<PowerReading> Read()
     {
@@ -61,12 +57,16 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
         }
     }
 
-    public void Dispose()
+    public bool TryInitialise()
     {
-        if (initialised) {
-            Nvml.Shutdown();
+        try {
+            initialised = Nvml.Initialize();
+        }
+        catch (DllNotFoundException) {
             initialised = false;
         }
+
+        return initialised;
     }
 }
 #endif

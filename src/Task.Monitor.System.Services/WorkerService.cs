@@ -22,6 +22,16 @@ public class WorkerService : ISystemService
 
     protected volatile ServiceStatus serviceStatus = ServiceStatus.None;
 
+    protected bool ConsumeRefreshRequest()
+    {
+        if (!refreshRequested) {
+            return false;
+        }
+
+        refreshRequested = false;
+        return true;
+    }
+
     internal ServiceController? Controller { get; set; }
 
     public int Delay
@@ -43,7 +53,17 @@ public class WorkerService : ISystemService
         OnStop();
     }
 
+    protected T? GetLatest<T>() where T : class =>
+        Controller?.GetLatestInfo<T>();
+
     protected virtual void OnDoWork(CancellationToken cancellationToken) { }
+
+    protected virtual void OnStart() { }
+
+    protected virtual void OnStop() { }
+
+    protected void Publish<T>(T info) where T : class =>
+        Controller?.Store(typeof(T), info);
 
     public void RequestImmediateRefresh()
     {
@@ -51,28 +71,6 @@ public class WorkerService : ISystemService
         wakeSignal.Set();
     }
 
-    protected bool ConsumeRefreshRequest()
-    {
-        if (!refreshRequested) {
-            return false;
-        }
-
-        refreshRequested = false;
-        return true;
-    }
-
-    protected void Publish<T>(T info) where T : class =>
-        Controller?.Store(typeof(T), info);
-
-    protected T? GetLatest<T>() where T : class =>
-        Controller?.GetLatestInfo<T>();
-
-    protected virtual void OnStart() { }
-
-    protected virtual void OnStop() { }
-    
-    public ServiceStatus Status => serviceStatus;
-    
     public virtual void Start()
     {
         serviceStatus           = ServiceStatus.Starting;
@@ -90,6 +88,8 @@ public class WorkerService : ISystemService
         });
         serviceStatus = ServiceStatus.Running;
     }
+
+    public ServiceStatus Status => serviceStatus;
 
     public virtual void Stop()
     {

@@ -8,9 +8,6 @@ public sealed partial class StartupService : WorkerService
     
     private int cyclesSinceScan;
 
-    protected override void OnStart() =>
-        startupSpecs = Scan();
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
@@ -20,6 +17,9 @@ public sealed partial class StartupService : WorkerService
 
         Publish(new StartupInfo { Specs = startupSpecs });
     }
+
+    protected override void OnStart() =>
+        startupSpecs = Scan();
 
     private StartupSpecs Scan()
     {

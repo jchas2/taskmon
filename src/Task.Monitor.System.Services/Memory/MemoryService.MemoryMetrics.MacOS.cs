@@ -12,6 +12,31 @@ public partial class MemoryService
     private ulong totalPhysical;
     private long  pageSize;
 
+    private void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
+    {
+        if (totalPhysical == 0 || pageSize == 0) {
+            return;
+        }
+
+        ulong page          = (ulong)pageSize;
+
+        ulong freeBytes     = vmStats.free_count * page;
+        ulong standbyBytes  = vmStats.inactive_count * page;
+        ulong modifiedBytes = vmStats.compressor_page_count * page;
+        ulong accounted     = freeBytes + standbyBytes + modifiedBytes;
+        ulong inUseBytes    = totalPhysical > accounted ? totalPhysical - accounted : 0;
+
+        memoryInfo.Metrics.FreeBytes          = freeBytes;
+        memoryInfo.Metrics.StandbyBytes       = standbyBytes;
+        memoryInfo.Metrics.ModifiedBytes      = modifiedBytes;
+        memoryInfo.Metrics.InUseBytes         = inUseBytes;
+
+        memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / totalPhysical;
+        memoryInfo.Metrics.StandbyBytesRatio  = (double)standbyBytes / totalPhysical;
+        memoryInfo.Metrics.ModifiedBytesRatio = (double)modifiedBytes / totalPhysical;
+        memoryInfo.Metrics.InUseBytesRatio    = (double)inUseBytes / totalPhysical;
+    }
+
     private void OnDoWorkMemoryMetrics(MemoryInfo memoryInfo)
     {
         if (!TryReadVmStatistics(out vmStats)) {
@@ -51,48 +76,6 @@ public partial class MemoryService
         memoryInfo.Metrics.AvailableVirtualRatio = 0.0;
     }
 
-    private void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
-    {
-        if (totalPhysical == 0 || pageSize == 0) {
-            return;
-        }
-
-        ulong page          = (ulong)pageSize;
-
-        ulong freeBytes     = vmStats.free_count * page;
-        ulong standbyBytes  = vmStats.inactive_count * page;
-        ulong modifiedBytes = vmStats.compressor_page_count * page;
-        ulong accounted     = freeBytes + standbyBytes + modifiedBytes;
-        ulong inUseBytes    = totalPhysical > accounted ? totalPhysical - accounted : 0;
-
-        memoryInfo.Metrics.FreeBytes          = freeBytes;
-        memoryInfo.Metrics.StandbyBytes       = standbyBytes;
-        memoryInfo.Metrics.ModifiedBytes      = modifiedBytes;
-        memoryInfo.Metrics.InUseBytes         = inUseBytes;
-
-        memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / totalPhysical;
-        memoryInfo.Metrics.StandbyBytesRatio  = (double)standbyBytes / totalPhysical;
-        memoryInfo.Metrics.ModifiedBytesRatio = (double)modifiedBytes / totalPhysical;
-        memoryInfo.Metrics.InUseBytesRatio    = (double)inUseBytes / totalPhysical;
-    }
-
-    private static bool TryReadVmStatistics(out MachHost.VmStatistics64 info)
-    {
-        info = default;
-
-        nint host  = MachHost.host_self();
-        int  count = Marshal.SizeOf<MachHost.VmStatistics64>() / sizeof(int);
-        
-        using HGlobalScope buffer = HGlobalScope.Allocate(Marshal.SizeOf<MachHost.VmStatistics64>());
-
-        if (MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count) != 0) {
-            return false;
-        }
-
-        info = Marshal.PtrToStructure<MachHost.VmStatistics64>(buffer);
-        return true;
-    }
-
     private static unsafe void ReadSwapUsage(MemoryInfo memoryInfo)
     {
         ReadOnlySpan<int> name = [(int)Sys.Selectors.CTL_VM, Sys.VM_SWAPUSAGE];
@@ -111,6 +94,23 @@ public partial class MemoryService
         
         memoryInfo.Metrics.TotalPageFile     = xsw->total;
         memoryInfo.Metrics.AvailablePageFile = xsw->avail;
+    }
+
+    private static bool TryReadVmStatistics(out MachHost.VmStatistics64 info)
+    {
+        info = default;
+
+        nint host  = MachHost.host_self();
+        int  count = Marshal.SizeOf<MachHost.VmStatistics64>() / sizeof(int);
+        
+        using HGlobalScope buffer = HGlobalScope.Allocate(Marshal.SizeOf<MachHost.VmStatistics64>());
+
+        if (MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count) != 0) {
+            return false;
+        }
+
+        info = Marshal.PtrToStructure<MachHost.VmStatistics64>(buffer);
+        return true;
     }
 }
 #endif

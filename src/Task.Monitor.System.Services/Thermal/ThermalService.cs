@@ -10,7 +10,37 @@ public sealed partial class ThermalService : WorkerService
     
     private int cyclesSinceProbe;
 
-    protected override void OnStart() => BuildProviders();
+    private void BuildProviders()
+    {
+        DisposeProviders();
+        cyclesSinceProbe = 0;
+
+        foreach (IThermalProvider provider in CreateProviders()) {
+            try {
+                if (provider.TryInitialise()) {
+                    providers.Add(provider);
+                }
+                else {
+                    provider.Dispose();
+                }
+            }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex);
+                TryDispose(provider);
+            }
+        }
+    }
+
+    private partial IEnumerable<IThermalProvider> CreateProviders();
+
+    private void DisposeProviders()
+    {
+        foreach (IThermalProvider provider in providers) {
+            TryDispose(provider);
+        }
+
+        providers.Clear();
+    }
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
@@ -36,37 +66,9 @@ public sealed partial class ThermalService : WorkerService
         });
     }
 
+    protected override void OnStart() => BuildProviders();
+
     protected override void OnStop() => DisposeProviders();
-
-    private void BuildProviders()
-    {
-        DisposeProviders();
-        cyclesSinceProbe = 0;
-
-        foreach (IThermalProvider provider in CreateProviders()) {
-            try {
-                if (provider.TryInitialise()) {
-                    providers.Add(provider);
-                }
-                else {
-                    provider.Dispose();
-                }
-            }
-            catch (Exception ex) {
-                ExceptionHelper.LogException(ex);
-                TryDispose(provider);
-            }
-        }
-    }
-
-    private void DisposeProviders()
-    {
-        foreach (IThermalProvider provider in providers) {
-            TryDispose(provider);
-        }
-
-        providers.Clear();
-    }
 
     private static void TryDispose(IThermalProvider provider)
     {
@@ -77,8 +79,6 @@ public sealed partial class ThermalService : WorkerService
             ExceptionHelper.LogException(ex);
         }
     }
-
-    private partial IEnumerable<IThermalProvider> CreateProviders();
 
 #if !__WIN32__
     private partial IEnumerable<IThermalProvider> CreateProviders() => [];

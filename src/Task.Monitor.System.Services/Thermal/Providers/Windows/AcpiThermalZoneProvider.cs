@@ -16,19 +16,9 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
     private bool     available;
     private DateTime lastQueryUtc;
 
+    public void Dispose() { }
+
     public string Name => "ACPI Thermal Zones";
-
-    public bool TryInitialise()
-    {
-        try {
-            available = Wbem.Query(Namespace, Wql, "InstanceName").Count > 0;
-        }
-        catch {
-            available = false;
-        }
-
-        return available;
-    }
 
     public IEnumerable<ThermalSensor> Read()
     {
@@ -86,6 +76,16 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
         _ => 0
     };
 
-    public void Dispose() { }
+    public bool TryInitialise()
+    {
+        try {
+            available = Wbem.Query(Namespace, Wql, "InstanceName").Count > 0;
+        }
+        catch {
+            available = false;
+        }
+
+        return available;
+    }
 }
 #endif

@@ -4,12 +4,6 @@ public sealed partial class DiskService : WorkerService
 {
     private DiskSpecs diskSpecs = new();
 
-    protected override void OnStart()
-    {
-        OnStartDiskSpecs(diskSpecs);
-        OnStartDiskMetrics();
-    }
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         // Caters for new drives inserted or ejected.
@@ -24,6 +18,12 @@ public sealed partial class DiskService : WorkerService
 
         OnDoWorkDiskMetrics(diskInfo);
         Publish(diskInfo);
+    }
+
+    protected override void OnStart()
+    {
+        OnStartDiskSpecs(diskSpecs);
+        OnStartDiskMetrics();
     }
 
     protected override void OnStop()

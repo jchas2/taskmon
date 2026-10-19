@@ -6,33 +6,6 @@ namespace Task.Monitor.System.Services.Network;
 
 public partial class NetworkService
 {
-    private NetworkSpecs? OnStartNetworkSpecs()
-    {
-        NetworkSpecs specs = new();
-
-        try {
-            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces()) {
-                try {
-                    NetworkDevice? device = BuildNetworkDevice(nic);
-
-                    if (device != null) {
-                        specs.Devices.Add(device);
-                    }
-                }
-                catch (NetworkInformationException) {
-                    // A single adapter failing to report shouldn't drop the whole list.
-                }
-                catch (PlatformNotSupportedException) {
-                }
-            }
-        }
-        catch (NetworkInformationException) {
-            return null;
-        }
-
-        return specs;
-    }
-
     private static NetworkDevice? BuildNetworkDevice(NetworkInterface nic)
     {
         uint index = GetInterfaceIndex(nic);
@@ -93,6 +66,19 @@ public partial class NetworkService
         return device;
     }
 
+    private static string DecodeConnectionType(NetworkInterfaceType type) => type switch
+    {
+        NetworkInterfaceType.Ethernet         => "Ethernet",
+        NetworkInterfaceType.GigabitEthernet  => "Ethernet",
+        NetworkInterfaceType.FastEthernetT    => "Ethernet",
+        NetworkInterfaceType.FastEthernetFx   => "Ethernet",
+        NetworkInterfaceType.Wireless80211    => "Wi-Fi",
+        NetworkInterfaceType.Loopback         => "Loopback",
+        NetworkInterfaceType.Tunnel           => "Tunnel",
+        NetworkInterfaceType.Ppp              => "PPP",
+        _                                     => NetworkDeviceParser.NotAvailable,
+    };
+
     private static uint GetInterfaceIndex(NetworkInterface nic)
     {
         try {
@@ -113,35 +99,6 @@ public partial class NetworkService
     }
 
     private static ulong NormaliseSpeed(long speed) => speed > 0 ? (ulong)speed : 0;
-
-    private static string DecodeConnectionType(NetworkInterfaceType type) => type switch
-    {
-        NetworkInterfaceType.Ethernet         => "Ethernet",
-        NetworkInterfaceType.GigabitEthernet  => "Ethernet",
-        NetworkInterfaceType.FastEthernetT    => "Ethernet",
-        NetworkInterfaceType.FastEthernetFx   => "Ethernet",
-        NetworkInterfaceType.Wireless80211    => "Wi-Fi",
-        NetworkInterfaceType.Loopback         => "Loopback",
-        NetworkInterfaceType.Tunnel           => "Tunnel",
-        NetworkInterfaceType.Ppp              => "PPP",
-        _                                     => NetworkDeviceParser.NotAvailable,
-    };
-
-    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
-    {
-        if (sawUnknownAdapter) {
-            sawUnknownAdapter = false;
-            cyclesSinceSpecsRefresh = 0;
-            return true;
-        }
-
-        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
-            return false;
-        }
-
-        cyclesSinceSpecsRefresh = 0;
-        return true;
-    }
 
     private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
     {
@@ -191,6 +148,49 @@ public partial class NetworkService
         metrics.Devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
         metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
         metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
+    }
+
+    private NetworkSpecs? OnStartNetworkSpecs()
+    {
+        NetworkSpecs specs = new();
+
+        try {
+            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces()) {
+                try {
+                    NetworkDevice? device = BuildNetworkDevice(nic);
+
+                    if (device != null) {
+                        specs.Devices.Add(device);
+                    }
+                }
+                catch (NetworkInformationException) {
+                    // A single adapter failing to report shouldn't drop the whole list.
+                }
+                catch (PlatformNotSupportedException) {
+                }
+            }
+        }
+        catch (NetworkInformationException) {
+            return null;
+        }
+
+        return specs;
+    }
+
+    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
+    {
+        if (sawUnknownAdapter) {
+            sawUnknownAdapter = false;
+            cyclesSinceSpecsRefresh = 0;
+            return true;
+        }
+
+        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
+            return false;
+        }
+
+        cyclesSinceSpecsRefresh = 0;
+        return true;
     }
 }
 #endif

@@ -10,6 +10,8 @@ public sealed class LaunchdOverrides
     private LaunchdOverrides(IReadOnlyDictionary<string, bool> disabledByLabel) =>
         this.disabledByLabel = disabledByLabel;
 
+    public bool Contains(string? label) => label is not null && disabledByLabel.ContainsKey(label);
+
     public static LaunchdOverrides Parse(object? plist)
     {
         if (plist is not IReadOnlyDictionary<string, object?> overrides) {
@@ -26,8 +28,6 @@ public sealed class LaunchdOverrides
 
         return new LaunchdOverrides(disabledByLabel);
     }
-
-    public bool Contains(string? label) => label is not null && disabledByLabel.ContainsKey(label);
 
     public StartupEntryState ResolveState(string? label, bool? plistDisabled, bool? approved = null)
     {

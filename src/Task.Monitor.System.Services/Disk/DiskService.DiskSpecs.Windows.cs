@@ -13,22 +13,61 @@ public partial class DiskService
     private const uint DeviceQueryAccess = 0;
     private const uint DeviceShareMode   = FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE;
 
-    private unsafe void OnStartDiskSpecs(DiskSpecs specs)
+    private static void AddVolume(DiskSpecs specs, string volumeName)
     {
-        uint previousErrorMode = 0;
-        
-        bool errorModeChanged = ErrHandlingApi.SetThreadErrorMode(
-            ErrHandlingApi.SEM_FAILCRITICALERRORS,
-            &previousErrorMode);
+        DiskVolume volume  = new();
+        volume.VolumeName  = volumeName;
+        volume.MountPoints = QueryMountPoints(volumeName);
+        volume.DriveType   = DiskDeviceParser.DecodeDriveType(FileApi.GetDriveTypeW(volumeName));
+        volume.IsReady     = TryQueryVolumeInformation(volumeName, volume);
+
+        QueryVolumeCapacity(volumeName, volume);
+        AttachVolume(specs, volumeName, volume);
+    }
+
+    private static void AttachVolume(DiskSpecs specs, string volumeName, DiskVolume volume)
+    {
+        string devicePath = volumeName.TrimEnd('\\');
+
+        nint handle = FileApi.CreateFileW(
+            devicePath,
+            DeviceQueryAccess,
+            DeviceShareMode,
+            nint.Zero,
+            FileApi.OPEN_EXISTING,
+            0,
+            nint.Zero);
+
+        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
+            specs.UnattachedVolumes.Add(volume);
+            return;
+        }
 
         try {
-            EnumeratePhysicalDrives(specs);
-            EnumerateVolumes(specs);
+            if (!TryQueryDiskExtents(handle, out uint[] diskNumbers)) {
+                specs.UnattachedVolumes.Add(volume);
+                return;
+            }
+
+            bool attached = false;
+
+            foreach (uint diskNumber in diskNumbers) {
+                DiskDevice? device = specs.Devices.FirstOrDefault(disk => disk.Index == (int)diskNumber);
+
+                if (device == null) {
+                    continue;
+                }
+
+                device.Volumes.Add(volume);
+                attached = true;
+            }
+
+            if (!attached) {
+                specs.UnattachedVolumes.Add(volume);
+            }
         }
         finally {
-            if (errorModeChanged) {
-                ErrHandlingApi.SetThreadErrorMode(previousErrorMode, null);
-            }
+            Kernel32.CloseHandle(handle);
         }
     }
 
@@ -68,6 +107,91 @@ public partial class DiskService
                 Kernel32.CloseHandle(handle);
             }
         }
+    }
+
+    private static unsafe void EnumerateVolumes(DiskSpecs specs)
+    {
+        char* volumeNameBuffer = stackalloc char[Kernel32.MAX_PATH];
+        nint findHandle = FileApi.FindFirstVolumeW(volumeNameBuffer, Kernel32.MAX_PATH);
+
+        if (findHandle == Kernel32.INVALID_HANDLE_VALUE) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(FileApi.FindFirstVolumeW),
+                $"Failed {nameof(EnumerateVolumes)}");
+
+            return;
+        }
+
+        try {
+            do {
+                AddVolume(
+                    specs,
+                    Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(volumeNameBuffer, Kernel32.MAX_PATH)));
+            }
+            while (FileApi.FindNextVolumeW(findHandle, volumeNameBuffer, Kernel32.MAX_PATH));
+
+            int error = Marshal.GetLastPInvokeError();
+
+            if (error != FileApi.ERROR_NO_MORE_FILES) {
+                PInvokeErrorHelpers.TraceOnceOnLastError(
+                    nameof(FileApi.FindNextVolumeW),
+                    $"Failed {nameof(EnumerateVolumes)}");
+            }
+        }
+        finally {
+            FileApi.FindVolumeClose(findHandle);
+        }
+    }
+
+    private unsafe void OnStartDiskSpecs(DiskSpecs specs)
+    {
+        uint previousErrorMode = 0;
+        
+        bool errorModeChanged = ErrHandlingApi.SetThreadErrorMode(
+            ErrHandlingApi.SEM_FAILCRITICALERRORS,
+            &previousErrorMode);
+
+        try {
+            EnumeratePhysicalDrives(specs);
+            EnumerateVolumes(specs);
+        }
+        finally {
+            if (errorModeChanged) {
+                ErrHandlingApi.SetThreadErrorMode(previousErrorMode, null);
+            }
+        }
+    }
+
+    private static unsafe long QueryCapacity(nint handle, string devicePath)
+    {
+        byte* buffer = stackalloc byte[WinIoCtl.DiskGeometryExBufferSize];
+        new Span<byte>(buffer, WinIoCtl.DiskGeometryExBufferSize).Clear();
+
+        uint returned = 0;
+
+        // IOCTL_DISK_GET_DRIVE_GEOMETRY_EX does not require elevated handle.
+        if (!IoApiSet.DeviceIoControl(
+            handle,
+            WinIoCtl.IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+            null,
+            0,
+            buffer,
+            WinIoCtl.DiskGeometryExBufferSize,
+            &returned,
+            nint.Zero)) {
+
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                $"{nameof(WinIoCtl.IOCTL_DISK_GET_DRIVE_GEOMETRY_EX)} {devicePath}",
+                $"Failed {nameof(QueryCapacity)} for {devicePath}");
+
+            return 0;
+        }
+
+        if (returned < WinIoCtl.DiskGeometryExDiskSizeOffset + sizeof(long)) {
+            return 0;
+        }
+
+        return *(long*)(buffer + WinIoCtl.DiskGeometryExDiskSizeOffset);
     }
 
     private static unsafe byte[]? QueryDeviceDescriptor(nint handle, string devicePath)
@@ -131,156 +255,6 @@ public partial class DiskService
         return descriptor;
     }
 
-    private static string ResolveMediaType(nint handle, DiskDevice device)
-    {
-        bool hasSeekPenalty = TryQuerySeekPenalty(handle, out bool incursSeekPenalty);
-        bool hasTrim = TryQueryTrim(handle, out bool trimEnabled);
-
-        return DiskDeviceParser.DecodeMediaType(
-            device.BusType,
-            device.IsRemovable,
-            hasSeekPenalty,
-            incursSeekPenalty,
-            hasTrim,
-            trimEnabled);
-    }
-
-    private static unsafe bool TryQuerySeekPenalty(nint handle, out bool incursSeekPenalty)
-    {
-        incursSeekPenalty = false;
-
-        WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
-            PropertyId = WinIoCtl.StorageDeviceSeekPenaltyProperty,
-            QueryType  = WinIoCtl.PropertyStandardQuery,
-        };
-
-        WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR descriptor = new();
-        uint returned = 0;
-
-        if (!IoApiSet.DeviceIoControl(
-            handle,
-            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-            &query,
-            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
-            &descriptor,
-            (uint)sizeof(WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR),
-            &returned,
-            nint.Zero)) {
-
-            return false;
-        }
-
-        incursSeekPenalty = descriptor.IncursSeekPenalty != 0;
-        return true;
-    }
-
-    private static unsafe bool TryQueryTrim(nint handle, out bool trimEnabled)
-    {
-        trimEnabled = false;
-
-        WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
-            PropertyId = WinIoCtl.StorageDeviceTrimProperty,
-            QueryType  = WinIoCtl.PropertyStandardQuery,
-        };
-
-        WinIoCtl.DEVICE_TRIM_DESCRIPTOR descriptor = new();
-        uint returned = 0;
-
-        if (!IoApiSet.DeviceIoControl(
-            handle,
-            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-            &query,
-            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
-            &descriptor,
-            (uint)sizeof(WinIoCtl.DEVICE_TRIM_DESCRIPTOR),
-            &returned,
-            nint.Zero)) {
-
-            return false;
-        }
-
-        trimEnabled = descriptor.TrimEnabled != 0;
-        return true;
-    }
-
-    private static unsafe long QueryCapacity(nint handle, string devicePath)
-    {
-        byte* buffer = stackalloc byte[WinIoCtl.DiskGeometryExBufferSize];
-        new Span<byte>(buffer, WinIoCtl.DiskGeometryExBufferSize).Clear();
-
-        uint returned = 0;
-
-        // IOCTL_DISK_GET_DRIVE_GEOMETRY_EX does not require elevated handle.
-        if (!IoApiSet.DeviceIoControl(
-            handle,
-            WinIoCtl.IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
-            null,
-            0,
-            buffer,
-            WinIoCtl.DiskGeometryExBufferSize,
-            &returned,
-            nint.Zero)) {
-
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                $"{nameof(WinIoCtl.IOCTL_DISK_GET_DRIVE_GEOMETRY_EX)} {devicePath}",
-                $"Failed {nameof(QueryCapacity)} for {devicePath}");
-
-            return 0;
-        }
-
-        if (returned < WinIoCtl.DiskGeometryExDiskSizeOffset + sizeof(long)) {
-            return 0;
-        }
-
-        return *(long*)(buffer + WinIoCtl.DiskGeometryExDiskSizeOffset);
-    }
-
-    private static unsafe void EnumerateVolumes(DiskSpecs specs)
-    {
-        char* volumeNameBuffer = stackalloc char[Kernel32.MAX_PATH];
-        nint findHandle = FileApi.FindFirstVolumeW(volumeNameBuffer, Kernel32.MAX_PATH);
-
-        if (findHandle == Kernel32.INVALID_HANDLE_VALUE) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(FileApi.FindFirstVolumeW),
-                $"Failed {nameof(EnumerateVolumes)}");
-
-            return;
-        }
-
-        try {
-            do {
-                AddVolume(
-                    specs,
-                    Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(volumeNameBuffer, Kernel32.MAX_PATH)));
-            }
-            while (FileApi.FindNextVolumeW(findHandle, volumeNameBuffer, Kernel32.MAX_PATH));
-
-            int error = Marshal.GetLastPInvokeError();
-
-            if (error != FileApi.ERROR_NO_MORE_FILES) {
-                PInvokeErrorHelpers.TraceOnceOnLastError(
-                    nameof(FileApi.FindNextVolumeW),
-                    $"Failed {nameof(EnumerateVolumes)}");
-            }
-        }
-        finally {
-            FileApi.FindVolumeClose(findHandle);
-        }
-    }
-
-    private static void AddVolume(DiskSpecs specs, string volumeName)
-    {
-        DiskVolume volume  = new();
-        volume.VolumeName  = volumeName;
-        volume.MountPoints = QueryMountPoints(volumeName);
-        volume.DriveType   = DiskDeviceParser.DecodeDriveType(FileApi.GetDriveTypeW(volumeName));
-        volume.IsReady     = TryQueryVolumeInformation(volumeName, volume);
-
-        QueryVolumeCapacity(volumeName, volume);
-        AttachVolume(specs, volumeName, volume);
-    }
-
     private static unsafe string[] QueryMountPoints(string volumeName)
     {
         char* names = stackalloc char[Kernel32.MAX_PATH];
@@ -328,35 +302,6 @@ public partial class DiskService
         return Win32StringHelper.ParseMultiSz(buffer.AsSpan(0, (int)Math.Min(length, (uint)buffer.Length)));
     }
 
-    private static unsafe bool TryQueryVolumeInformation(string volumeName, DiskVolume volume)
-    {
-        char* label      = stackalloc char[Kernel32.MAX_PATH];
-        char* fileSystem = stackalloc char[Kernel32.MAX_PATH];
-
-        uint serialNumber           = 0;
-        uint maximumComponentLength = 0;
-        uint fileSystemFlags        = 0;
-
-        if (!FileApi.GetVolumeInformationW(
-            volumeName,
-            label,
-            Kernel32.MAX_PATH,
-            &serialNumber,
-            &maximumComponentLength,
-            &fileSystemFlags,
-            fileSystem,
-            Kernel32.MAX_PATH)) {
-
-            return false;
-        }
-
-        volume.Label        = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(label, Kernel32.MAX_PATH));
-        volume.FileSystem   = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(fileSystem, Kernel32.MAX_PATH));
-        volume.SerialNumber = serialNumber;
-
-        return true;
-    }
-
     private static unsafe void QueryVolumeCapacity(string volumeName, DiskVolume volume)
     {
         ulong freeBytesAvailable = 0;
@@ -380,50 +325,18 @@ public partial class DiskService
             : 0.0;
     }
 
-    private static void AttachVolume(DiskSpecs specs, string volumeName, DiskVolume volume)
+    private static string ResolveMediaType(nint handle, DiskDevice device)
     {
-        string devicePath = volumeName.TrimEnd('\\');
+        bool hasSeekPenalty = TryQuerySeekPenalty(handle, out bool incursSeekPenalty);
+        bool hasTrim = TryQueryTrim(handle, out bool trimEnabled);
 
-        nint handle = FileApi.CreateFileW(
-            devicePath,
-            DeviceQueryAccess,
-            DeviceShareMode,
-            nint.Zero,
-            FileApi.OPEN_EXISTING,
-            0,
-            nint.Zero);
-
-        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
-            specs.UnattachedVolumes.Add(volume);
-            return;
-        }
-
-        try {
-            if (!TryQueryDiskExtents(handle, out uint[] diskNumbers)) {
-                specs.UnattachedVolumes.Add(volume);
-                return;
-            }
-
-            bool attached = false;
-
-            foreach (uint diskNumber in diskNumbers) {
-                DiskDevice? device = specs.Devices.FirstOrDefault(disk => disk.Index == (int)diskNumber);
-
-                if (device == null) {
-                    continue;
-                }
-
-                device.Volumes.Add(volume);
-                attached = true;
-            }
-
-            if (!attached) {
-                specs.UnattachedVolumes.Add(volume);
-            }
-        }
-        finally {
-            Kernel32.CloseHandle(handle);
-        }
+        return DiskDeviceParser.DecodeMediaType(
+            device.BusType,
+            device.IsRemovable,
+            hasSeekPenalty,
+            incursSeekPenalty,
+            hasTrim,
+            trimEnabled);
     }
 
     private static unsafe bool TryQueryDiskExtents(nint handle, out uint[] diskNumbers)
@@ -486,6 +399,93 @@ public partial class DiskService
         }
 
         return false;
+    }
+
+    private static unsafe bool TryQuerySeekPenalty(nint handle, out bool incursSeekPenalty)
+    {
+        incursSeekPenalty = false;
+
+        WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
+            PropertyId = WinIoCtl.StorageDeviceSeekPenaltyProperty,
+            QueryType  = WinIoCtl.PropertyStandardQuery,
+        };
+
+        WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR descriptor = new();
+        uint returned = 0;
+
+        if (!IoApiSet.DeviceIoControl(
+            handle,
+            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
+            &query,
+            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
+            &descriptor,
+            (uint)sizeof(WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR),
+            &returned,
+            nint.Zero)) {
+
+            return false;
+        }
+
+        incursSeekPenalty = descriptor.IncursSeekPenalty != 0;
+        return true;
+    }
+
+    private static unsafe bool TryQueryTrim(nint handle, out bool trimEnabled)
+    {
+        trimEnabled = false;
+
+        WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
+            PropertyId = WinIoCtl.StorageDeviceTrimProperty,
+            QueryType  = WinIoCtl.PropertyStandardQuery,
+        };
+
+        WinIoCtl.DEVICE_TRIM_DESCRIPTOR descriptor = new();
+        uint returned = 0;
+
+        if (!IoApiSet.DeviceIoControl(
+            handle,
+            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
+            &query,
+            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
+            &descriptor,
+            (uint)sizeof(WinIoCtl.DEVICE_TRIM_DESCRIPTOR),
+            &returned,
+            nint.Zero)) {
+
+            return false;
+        }
+
+        trimEnabled = descriptor.TrimEnabled != 0;
+        return true;
+    }
+
+    private static unsafe bool TryQueryVolumeInformation(string volumeName, DiskVolume volume)
+    {
+        char* label      = stackalloc char[Kernel32.MAX_PATH];
+        char* fileSystem = stackalloc char[Kernel32.MAX_PATH];
+
+        uint serialNumber           = 0;
+        uint maximumComponentLength = 0;
+        uint fileSystemFlags        = 0;
+
+        if (!FileApi.GetVolumeInformationW(
+            volumeName,
+            label,
+            Kernel32.MAX_PATH,
+            &serialNumber,
+            &maximumComponentLength,
+            &fileSystemFlags,
+            fileSystem,
+            Kernel32.MAX_PATH)) {
+
+            return false;
+        }
+
+        volume.Label        = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(label, Kernel32.MAX_PATH));
+        volume.FileSystem   = Win32StringHelper.FromNullTerminated(new ReadOnlySpan<char>(fileSystem, Kernel32.MAX_PATH));
+        volume.SerialNumber = serialNumber;
+
+        return true;
     }
 #endif
 }

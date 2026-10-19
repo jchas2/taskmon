@@ -4,9 +4,6 @@ public sealed partial class MemoryService : WorkerService
 {
     private MemorySpecs memorySpecs = new();
 
-    protected override void OnStart() =>
-        OnStartMemorySpecs(memorySpecs);
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         MemoryInfo memoryInfo = new();
@@ -16,6 +13,9 @@ public sealed partial class MemoryService : WorkerService
         OnDoWorkMemoryCompressionMetrics(memoryInfo);
         Publish(memoryInfo);
     }
+
+    protected override void OnStart() =>
+        OnStartMemorySpecs(memorySpecs);
 
     protected override void OnStop() { }
 }

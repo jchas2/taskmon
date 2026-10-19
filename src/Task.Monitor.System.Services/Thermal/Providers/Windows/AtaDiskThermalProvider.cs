@@ -19,9 +19,12 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
 
     private bool accessDenied;
 
-    public string Name => "ATA SMART";
+    public void Dispose() { }
 
-    public bool TryInitialise() => true;
+    private static bool IsAtaBus(string busType) =>
+        busType is "SATA" or "ATA" or "ATAPI";
+
+    public string Name => "ATA SMART";
 
     public IEnumerable<ThermalSensor> Read()
     {
@@ -52,9 +55,6 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
             }
         }
     }
-
-    private static bool IsAtaBus(string busType) =>
-        busType is "SATA" or "ATA" or "ATAPI";
 
     private double? ReadSmartTemperature(int physicalDriveIndex)
     {
@@ -122,6 +122,6 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
         }
     }
 
-    public void Dispose() { }
+    public bool TryInitialise() => true;
 }
 #endif

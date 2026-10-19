@@ -9,22 +9,43 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 {
     private bool initialised;
 
-    public string Name => "NVAPI";
-
-    public bool TryInitialise()
+    public void Dispose()
     {
+        if (!initialised) {
+            return;
+        }
+
         try {
-            initialised = NvApi.Initialize();
+            NvApi.Unload();
         }
         catch (DllNotFoundException) {
-            initialised = false;
-        }
-        catch (EntryPointNotFoundException) {
-            initialised = false;
+            // Driver dropped.
         }
 
-        return initialised;
+        initialised = false;
     }
+
+    private static GpuDevice? MatchGpu(
+        IReadOnlyList<GpuDevice> gpus, 
+        uint                     vendorId, 
+        uint                     deviceId, 
+        Dictionary<long, int>    assigned)
+    {
+        // Match on PCI ids; if several identical cards match, hand out each GpuDevice once.
+        foreach (GpuDevice candidate in gpus) {
+            if (candidate.VendorId == vendorId && 
+                candidate.DeviceId == deviceId && 
+                !assigned.ContainsKey(candidate.AdapterLuid)) {
+
+                assigned[candidate.AdapterLuid] = 1;
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    public string Name => "NVAPI";
 
     public IEnumerable<ThermalSensor> Read()
     {
@@ -71,26 +92,6 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
         }
     }
 
-    private static GpuDevice? MatchGpu(
-        IReadOnlyList<GpuDevice> gpus, 
-        uint                     vendorId, 
-        uint                     deviceId, 
-        Dictionary<long, int>    assigned)
-    {
-        // Match on PCI ids; if several identical cards match, hand out each GpuDevice once.
-        foreach (GpuDevice candidate in gpus) {
-            if (candidate.VendorId == vendorId && 
-                candidate.DeviceId == deviceId && 
-                !assigned.ContainsKey(candidate.AdapterLuid)) {
-
-                assigned[candidate.AdapterLuid] = 1;
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
     private static string TargetName(int target) => target switch {
         NvApi.TargetGpu         => "GPU",
         NvApi.TargetMemory      => "Memory",
@@ -99,20 +100,19 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
                               _ => "Sensor"
     };
 
-    public void Dispose()
+    public bool TryInitialise()
     {
-        if (!initialised) {
-            return;
-        }
-
         try {
-            NvApi.Unload();
+            initialised = NvApi.Initialize();
         }
         catch (DllNotFoundException) {
-            // Driver dropped.
+            initialised = false;
+        }
+        catch (EntryPointNotFoundException) {
+            initialised = false;
         }
 
-        initialised = false;
+        return initialised;
     }
 }
 #endif

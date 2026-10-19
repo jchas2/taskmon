@@ -18,44 +18,6 @@ internal static class WindowsServiceLookup
     private static bool refreshRequested;
     private static bool attempted;
 
-    internal static int RebuildCount { get; private set; }
-
-    internal static int MappedServiceCount
-    {
-        get {
-            lock (criticalSection) {
-                return serviceMap.Count;
-            }
-        }
-    }
-
-    internal static void RefreshIfDue()
-    {
-        lock (criticalSection) {
-            if (!attempted) {
-                return;
-            }
-
-            if (!WindowsServiceRefreshPolicy.ShouldRefresh(ref cyclesSinceRefresh, refreshRequested)) {
-                return;
-            }
-
-            refreshRequested = false;
-            RebuildServiceMap();
-        }
-    }
-
-    internal static void RequestRefreshIfStale(ICollection<int> livePids)
-    {
-        lock (criticalSection) {
-            if (!attempted || refreshRequested) {
-                return;
-            }
-
-            refreshRequested = WindowsServiceRefreshPolicy.HasStalePid(serviceMap.Keys, livePids);
-        }
-    }
-
     public static bool GetService(int pid, out WindowsServiceInfo? service)
     {
         lock (criticalSection) {
@@ -80,64 +42,6 @@ internal static class WindowsServiceLookup
         }
 
         return key?.GetValue("ImagePath")?.ToString() ?? null;
-    }
-
-    private static void RebuildServiceMap()
-    {
-        attempted = true;
-        Dictionary<int, WindowsServiceInfo>? rebuilt = TryBuildServiceMap();
-
-        if (rebuilt == null) {
-            return;
-        }
-
-        serviceMap = rebuilt;
-        RebuildCount++;
-    }
-
-    private static Dictionary<int, WindowsServiceInfo>? TryBuildServiceMap()
-    {
-        nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
-
-        if (hSCM == nint.Zero) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinService.SC_MANAGER_CONNECT));
-            return null;
-        }
-
-        WindowsServiceInfo[] services = GetServices();
-
-        if (services.Length == 0) {
-            WinService.CloseServiceHandle(hSCM);
-            return null;
-        }
-
-        Dictionary<int, WindowsServiceInfo> map = new();
-
-        for (int i = 0; i < services.Length; i++) {
-            WindowsServiceInfo service = services[i];
-
-            nint hService = WinService.OpenService(
-                hSCM,
-                service.ServiceName,
-                WinService.SERVICE_QUERY_STATUS);
-
-            if (hService == nint.Zero) {
-                PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
-                continue;
-            }
-
-            int pid = GetServiceProcessId(hService);
-            WinService.CloseServiceHandle(hService);
-
-            if (pid == 0) {
-                continue;
-            }
-
-            map[pid] = service;
-        }
-
-        WinService.CloseServiceHandle(hSCM);
-        return map;
     }
 
     private static unsafe int GetServiceProcessId(nint hService)
@@ -262,6 +166,85 @@ internal static class WindowsServiceLookup
         return services;
     }
 
+    public static bool IsService(int pid) => GetService(pid, out WindowsServiceInfo? _);
+
+    internal static int MappedServiceCount
+    {
+        get {
+            lock (criticalSection) {
+                return serviceMap.Count;
+            }
+        }
+    }
+
+    private static void PopulateDelayedAutoStart(nint hService, WindowsServiceInfo service)
+    {
+        if (service.StartType != WindowsServiceStartType.AutomaticStart) {
+            return;
+        }
+
+        int size    = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
+        nint buffer = Marshal.AllocHGlobal(size);
+
+        try {
+            if (!WinService.QueryServiceConfig2(
+                hService, 
+                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
+                buffer, 
+                (uint)size, 
+                out _)) {
+                
+                return;
+            }
+
+            WinService.SERVICE_DELAYED_AUTO_START_INFO info =
+                Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer);
+
+            service.DelayedAutoStart = info.fDelayedAutostart;
+        }
+        finally {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    private static void PopulateDescription(nint hService, WindowsServiceInfo service)
+    {
+        WinService.QueryServiceConfig2(
+            hService, 
+            WinService.SERVICE_CONFIG_DESCRIPTION, 
+            nint.Zero, 
+            0, 
+            out uint bytesNeeded);
+
+        if (bytesNeeded == 0) {
+            return;
+        }
+
+        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
+
+        try {
+            if (!WinService.QueryServiceConfig2(
+                hService, 
+                WinService.SERVICE_CONFIG_DESCRIPTION, 
+                buffer, 
+                bytesNeeded, 
+                out _)) {
+                
+                return;
+            }
+
+            WinService.SERVICE_DESCRIPTIONW description =
+                Marshal.PtrToStructure<WinService.SERVICE_DESCRIPTIONW>(buffer);
+
+            service.Description = string.IsNullOrEmpty(description.lpDescription) 
+                ? null 
+                : description.lpDescription;
+        }
+        finally {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
     private static void PopulateServiceConfig(nint hSCM, WindowsServiceInfo service)
     {
         nint hService = WinService.OpenService(hSCM, service.ServiceName, WinService.SERVICE_QUERY_CONFIG);
@@ -321,75 +304,92 @@ internal static class WindowsServiceLookup
         }
     }
 
-    private static void PopulateDescription(nint hService, WindowsServiceInfo service)
-    {
-        WinService.QueryServiceConfig2(
-            hService, 
-            WinService.SERVICE_CONFIG_DESCRIPTION, 
-            nint.Zero, 
-            0, 
-            out uint bytesNeeded);
+    internal static int RebuildCount { get; private set; }
 
-        if (bytesNeeded == 0) {
+    private static void RebuildServiceMap()
+    {
+        attempted = true;
+        Dictionary<int, WindowsServiceInfo>? rebuilt = TryBuildServiceMap();
+
+        if (rebuilt == null) {
             return;
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
-
-        try {
-            if (!WinService.QueryServiceConfig2(
-                hService, 
-                WinService.SERVICE_CONFIG_DESCRIPTION, 
-                buffer, 
-                bytesNeeded, 
-                out _)) {
-                
-                return;
-            }
-
-            WinService.SERVICE_DESCRIPTIONW description =
-                Marshal.PtrToStructure<WinService.SERVICE_DESCRIPTIONW>(buffer);
-
-            service.Description = string.IsNullOrEmpty(description.lpDescription) 
-                ? null 
-                : description.lpDescription;
-        }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+        serviceMap = rebuilt;
+        RebuildCount++;
     }
 
-    private static void PopulateDelayedAutoStart(nint hService, WindowsServiceInfo service)
+    internal static void RefreshIfDue()
     {
-        if (service.StartType != WindowsServiceStartType.AutomaticStart) {
-            return;
-        }
-
-        int size    = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
-        nint buffer = Marshal.AllocHGlobal(size);
-
-        try {
-            if (!WinService.QueryServiceConfig2(
-                hService, 
-                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO, 
-                buffer, 
-                (uint)size, 
-                out _)) {
-                
+        lock (criticalSection) {
+            if (!attempted) {
                 return;
             }
 
-            WinService.SERVICE_DELAYED_AUTO_START_INFO info =
-                Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer);
+            if (!WindowsServiceRefreshPolicy.ShouldRefresh(ref cyclesSinceRefresh, refreshRequested)) {
+                return;
+            }
 
-            service.DelayedAutoStart = info.fDelayedAutostart;
-        }
-        finally {
-            Marshal.FreeHGlobal(buffer);
+            refreshRequested = false;
+            RebuildServiceMap();
         }
     }
 
-    public static bool IsService(int pid) => GetService(pid, out WindowsServiceInfo? _);
+    internal static void RequestRefreshIfStale(ICollection<int> livePids)
+    {
+        lock (criticalSection) {
+            if (!attempted || refreshRequested) {
+                return;
+            }
+
+            refreshRequested = WindowsServiceRefreshPolicy.HasStalePid(serviceMap.Keys, livePids);
+        }
+    }
+
+    private static Dictionary<int, WindowsServiceInfo>? TryBuildServiceMap()
+    {
+        nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
+
+        if (hSCM == nint.Zero) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinService.SC_MANAGER_CONNECT));
+            return null;
+        }
+
+        WindowsServiceInfo[] services = GetServices();
+
+        if (services.Length == 0) {
+            WinService.CloseServiceHandle(hSCM);
+            return null;
+        }
+
+        Dictionary<int, WindowsServiceInfo> map = new();
+
+        for (int i = 0; i < services.Length; i++) {
+            WindowsServiceInfo service = services[i];
+
+            nint hService = WinService.OpenService(
+                hSCM,
+                service.ServiceName,
+                WinService.SERVICE_QUERY_STATUS);
+
+            if (hService == nint.Zero) {
+                PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
+                continue;
+            }
+
+            int pid = GetServiceProcessId(hService);
+            WinService.CloseServiceHandle(hService);
+
+            if (pid == 0) {
+                continue;
+            }
+
+            map[pid] = service;
+        }
+
+        WinService.CloseServiceHandle(hSCM);
+        return map;
+    }
 #endif
 }
 

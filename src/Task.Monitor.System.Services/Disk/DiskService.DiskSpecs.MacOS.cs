@@ -5,10 +5,26 @@ namespace Task.Monitor.System.Services.Disk;
 
 public partial class DiskService
 {
-    private void OnStartDiskSpecs(DiskSpecs specs)
+    private static DiskDevice? BuildDiskDevice(uint entry)
     {
-        EnumerateDiskDevices(specs);
-        EnumerateVolumes(specs);
+        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
+        int index       = ParseDiskIndex(bsdName);
+
+        if (index < 0) {
+            return null;
+        }
+
+        DiskDevice device = new();
+        device.Index = index;
+
+        if (SearchNumberProperty(entry, "Size", IterateRecursively, out long size)) {
+            device.Capacity = size;
+        }
+
+        ReadDeviceCharacteristics(entry, device);
+        ReadProtocolCharacteristics(entry, device);
+
+        return device;
     }
 
     private static void EnumerateDiskDevices(DiskSpecs specs)
@@ -34,26 +50,40 @@ public partial class DiskService
         specs.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
     }
 
-    private static DiskDevice? BuildDiskDevice(uint entry)
+    private static void EnumerateVolumes(DiskSpecs specs)
     {
-        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
-        int index       = ParseDiskIndex(bsdName);
+        // TODO: Interop replace. 
+        foreach (DriveInfo drive in DriveInfo.GetDrives()) {
+            try {
+                if (!drive.IsReady || drive.TotalSize <= 0) {
+                    continue;
+                }
 
-        if (index < 0) {
-            return null;
+                DiskVolume volume = new();
+                volume.VolumeName         = drive.Name;
+                volume.MountPoints        = [drive.Name];
+                volume.Label              = string.IsNullOrEmpty(drive.VolumeLabel) ? drive.Name : drive.VolumeLabel;
+                volume.FileSystem         = drive.DriveFormat;
+                volume.DriveType          = drive.DriveType.ToString();
+                volume.IsReady            = true;
+                volume.FormattedCapacity  = drive.TotalSize;
+                volume.AvailableFreeSpace = drive.AvailableFreeSpace;
+                volume.UsedRatio          = drive.TotalSize > 0
+                    ? 1.0 - drive.AvailableFreeSpace / (double)drive.TotalSize
+                    : 0.0;
+
+                specs.UnattachedVolumes.Add(volume);
+            }
+            catch {
+                // Some special mounts throw on property access; skip them.
+            }
         }
+    }
 
-        DiskDevice device = new();
-        device.Index = index;
-
-        if (SearchNumberProperty(entry, "Size", IterateRecursively, out long size)) {
-            device.Capacity = size;
-        }
-
-        ReadDeviceCharacteristics(entry, device);
-        ReadProtocolCharacteristics(entry, device);
-
-        return device;
+    private void OnStartDiskSpecs(DiskSpecs specs)
+    {
+        EnumerateDiskDevices(specs);
+        EnumerateVolumes(specs);
     }
 
     private static void ReadDeviceCharacteristics(uint entry, DiskDevice device)
@@ -116,36 +146,6 @@ public partial class DiskService
 
         string? text = CoreFoundation.GetString(value)?.Trim();
         return string.IsNullOrEmpty(text) ? null : text;
-    }
-
-    private static void EnumerateVolumes(DiskSpecs specs)
-    {
-        // TODO: Interop replace. 
-        foreach (DriveInfo drive in DriveInfo.GetDrives()) {
-            try {
-                if (!drive.IsReady || drive.TotalSize <= 0) {
-                    continue;
-                }
-
-                DiskVolume volume = new();
-                volume.VolumeName         = drive.Name;
-                volume.MountPoints        = [drive.Name];
-                volume.Label              = string.IsNullOrEmpty(drive.VolumeLabel) ? drive.Name : drive.VolumeLabel;
-                volume.FileSystem         = drive.DriveFormat;
-                volume.DriveType          = drive.DriveType.ToString();
-                volume.IsReady            = true;
-                volume.FormattedCapacity  = drive.TotalSize;
-                volume.AvailableFreeSpace = drive.AvailableFreeSpace;
-                volume.UsedRatio          = drive.TotalSize > 0
-                    ? 1.0 - drive.AvailableFreeSpace / (double)drive.TotalSize
-                    : 0.0;
-
-                specs.UnattachedVolumes.Add(volume);
-            }
-            catch {
-                // Some special mounts throw on property access; skip them.
-            }
-        }
     }
 }
 #endif

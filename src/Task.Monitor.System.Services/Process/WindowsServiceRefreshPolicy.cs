@@ -4,6 +4,17 @@ internal static class WindowsServiceRefreshPolicy
 {
     public const int RefreshCycles = 10;
 
+    public static bool HasStalePid(IEnumerable<int> mappedPids, ICollection<int> livePids)
+    {
+        foreach (int pid in mappedPids) {
+            if (!livePids.Contains(pid)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static bool ShouldRefresh(ref int cyclesSinceRefresh, bool refreshRequested)
     {
         if (refreshRequested) {
@@ -17,16 +28,5 @@ internal static class WindowsServiceRefreshPolicy
 
         cyclesSinceRefresh = 0;
         return true;
-    }
-
-    public static bool HasStalePid(IEnumerable<int> mappedPids, ICollection<int> livePids)
-    {
-        foreach (int pid in mappedPids) {
-            if (!livePids.Contains(pid)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

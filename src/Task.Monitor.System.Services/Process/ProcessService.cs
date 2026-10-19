@@ -6,11 +6,6 @@ public sealed partial class ProcessService : WorkerService
 
     public bool IrixMode { get; set; }
 
-    protected override void OnStart()
-    {
-        OnStartProcessSpecs(processSpecs);
-    }
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         ProcessInfo processInfo = new();
@@ -20,6 +15,11 @@ public sealed partial class ProcessService : WorkerService
 
         OnDoWorkProcessMetrics(processInfo.Metrics, processSpecs);
         Publish(processInfo);
+    }
+
+    protected override void OnStart()
+    {
+        OnStartProcessSpecs(processSpecs);
     }
 
     protected override void OnStop() => OnStopProcessMetrics();

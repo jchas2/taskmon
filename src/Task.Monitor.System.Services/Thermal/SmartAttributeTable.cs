@@ -10,15 +10,6 @@ public static class SmartAttributeTable
     private const byte TemperatureCelsiusId = 194;  // 0xC2
     private const byte AirflowTemperatureId = 190;  // 0xBE
 
-    public static double? TemperatureCelsius(ReadOnlySpan<byte> attributeTable)
-    {
-        if (Plausible(RawLowByte(attributeTable, TemperatureCelsiusId)) is { } primary) {
-            return primary;
-        }
-
-        return Plausible(RawLowByte(attributeTable, AirflowTemperatureId));
-    }
-
     private static double? Plausible(int? rawLowByte) =>
         rawLowByte is > 0 and < 120 
             ? rawLowByte 
@@ -39,5 +30,14 @@ public static class SmartAttributeTable
         }
 
         return null;
+    }
+
+    public static double? TemperatureCelsius(ReadOnlySpan<byte> attributeTable)
+    {
+        if (Plausible(RawLowByte(attributeTable, TemperatureCelsiusId)) is { } primary) {
+            return primary;
+        }
+
+        return Plausible(RawLowByte(attributeTable, AirflowTemperatureId));
     }
 }

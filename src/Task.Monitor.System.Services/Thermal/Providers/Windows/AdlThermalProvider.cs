@@ -8,22 +8,16 @@ namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IThermalProvider
 {
     private nint context;
-    
-    public string Name => "ADL";
 
-    public bool TryInitialise()
+    public void Dispose()
     {
-        context = nint.Zero;
-
-        try {
-            Adl.TryCreate(out context);
-        }
-        catch (DllNotFoundException) {
+        if (context != nint.Zero) {
+            Adl.Destroy(context);
             context = nint.Zero;
         }
-
-        return context != nint.Zero;
     }
+
+    public string Name => "ADL";
 
     public IEnumerable<ThermalSensor> Read()
     {
@@ -52,12 +46,18 @@ internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus)
         }
     }
 
-    public void Dispose()
+    public bool TryInitialise()
     {
-        if (context != nint.Zero) {
-            Adl.Destroy(context);
+        context = nint.Zero;
+
+        try {
+            Adl.TryCreate(out context);
+        }
+        catch (DllNotFoundException) {
             context = nint.Zero;
         }
+
+        return context != nint.Zero;
     }
 }
 #endif

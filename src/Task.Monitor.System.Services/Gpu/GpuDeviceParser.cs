@@ -13,21 +13,6 @@ public static class GpuDeviceParser
     // slice of system memory rather than a discrete card (not available through DXGI).
     private const long IntegratedVramThreshold = 512L * 1024 * 1024;
 
-    public static string DecodeVendor(uint vendorId) => vendorId switch
-    {
-        0x10DE => "NVIDIA",
-        0x1002 => "AMD",
-        0x1022 => "AMD",
-        0x8086 => "Intel",
-        0x1414 => "Microsoft",
-        0x15AD => "VMware",
-        0x1AF4 => "Red Hat",
-        0x80EE => "VirtualBox",
-        0x1234 => "QEMU",
-        0x1D0F => "Amazon",
-        _      => NotAvailable,
-    };
-
     public static string DecodeAdapterType(uint dxgiFlags, uint vendorId, long dedicatedVideoMemory)
     {
         if ((dxgiFlags & DxgiAdapterFlagSoftware) != 0) {
@@ -43,11 +28,43 @@ public static class GpuDeviceParser
             : "Integrated";
     }
 
+    public static string DecodeVendor(uint vendorId) => vendorId switch
+    {
+        0x10DE => "NVIDIA",
+        0x1002 => "AMD",
+        0x1022 => "AMD",
+        0x8086 => "Intel",
+        0x1414 => "Microsoft",
+        0x15AD => "VMware",
+        0x1AF4 => "Red Hat",
+        0x80EE => "VirtualBox",
+        0x1234 => "QEMU",
+        0x1D0F => "Amazon",
+        _      => NotAvailable,
+    };
+
     private static bool IsVirtualVendor(uint vendorId) => vendorId switch
     {
         0x1414 or 0x15AD or 0x1AF4 or 0x80EE or 0x1234 or 0x1D0F => true,
         _ => false,
     };
+
+    public static string? ParseEngineFromInstance(string instanceName)
+    {
+        const string pidPrefix = "pid_";
+
+        if (!instanceName.StartsWith(pidPrefix, StringComparison.OrdinalIgnoreCase)) {
+            return null;
+        }
+
+        int separatorIndex = instanceName.IndexOf('_', pidPrefix.Length);
+
+        if (separatorIndex == -1 || separatorIndex + 1 >= instanceName.Length) {
+            return null;
+        }
+
+        return instanceName[(separatorIndex + 1)..];
+    }
 
     // Format example: pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D
     public static int ParsePidFromInstance(string instanceName)
@@ -71,23 +88,6 @@ public static class GpuDeviceParser
         return int.TryParse(pidSpan, out int pid)
             ? pid
             : -1;
-    }
-
-    public static string? ParseEngineFromInstance(string instanceName)
-    {
-        const string pidPrefix = "pid_";
-
-        if (!instanceName.StartsWith(pidPrefix, StringComparison.OrdinalIgnoreCase)) {
-            return null;
-        }
-
-        int separatorIndex = instanceName.IndexOf('_', pidPrefix.Length);
-
-        if (separatorIndex == -1 || separatorIndex + 1 >= instanceName.Length) {
-            return null;
-        }
-
-        return instanceName[(separatorIndex + 1)..];
     }
 
     // The luid_0x{HighPart}_0x{LowPart} token carried by a \GPU Engine(*) or \GPU Adapter

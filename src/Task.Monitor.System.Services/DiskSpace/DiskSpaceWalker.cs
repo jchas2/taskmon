@@ -2,29 +2,6 @@ namespace Task.Monitor.System.Services.DiskSpace;
 
 public static class DiskSpaceWalker
 {
-    public static void Walk(
-        string               rootPath,
-        DiskSpaceAccumulator accumulator,
-        CancellationToken    cancellationToken,
-        Action?              onFolderVisited = null)
-    {
-        Stack<string> pending = new();
-        pending.Push(rootPath);
-
-        while (pending.Count > 0) {
-            cancellationToken.ThrowIfCancellationRequested();
-            string directory = pending.Pop();
-            
-            VisitDirectory(
-                directory, 
-                accumulator, 
-                pending, 
-                cancellationToken);
-            
-            onFolderVisited?.Invoke();
-        }
-    }
-
     private static void VisitDirectory(
         string               directory,
         DiskSpaceAccumulator accumulator,
@@ -90,6 +67,29 @@ public static class DiskSpaceWalker
             accumulator.AddFile(directory, entry.FullName, ((FileInfo)entry).Length);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) {
+        }
+    }
+
+    public static void Walk(
+        string               rootPath,
+        DiskSpaceAccumulator accumulator,
+        CancellationToken    cancellationToken,
+        Action?              onFolderVisited = null)
+    {
+        Stack<string> pending = new();
+        pending.Push(rootPath);
+
+        while (pending.Count > 0) {
+            cancellationToken.ThrowIfCancellationRequested();
+            string directory = pending.Pop();
+            
+            VisitDirectory(
+                directory, 
+                accumulator, 
+                pending, 
+                cancellationToken);
+            
+            onFolderVisited?.Invoke();
         }
     }
 }

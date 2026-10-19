@@ -9,9 +9,9 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
 {
     private readonly Dictionary<int, double?> cache = new();
 
-    public string Name => "NVMe rated power";
+    public void Dispose() { }
 
-    public bool TryInitialise() => true;
+    public string Name => "NVMe rated power";
 
     public IEnumerable<PowerReading> Read()
     {
@@ -47,6 +47,6 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
             : null;
     }
 
-    public void Dispose() { }
+    public bool TryInitialise() => true;
 }
 #endif

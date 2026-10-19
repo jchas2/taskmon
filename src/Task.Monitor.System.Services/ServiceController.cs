@@ -42,18 +42,16 @@ public sealed class ServiceController : WorkerService
         return this;
     }
 
-    public T GetService<T>() where T : ISystemService =>
-        (T)allServices.Single(srv => srv.GetType() == typeof(T));
-
-    public void SetSamplingDelay(int delayInMilliseconds)
+    private ServiceHealth[] BuildServiceHealth()
     {
-        Delay = delayInMilliseconds;
+        var health = new ServiceHealth[allServices.Count];
 
-        foreach (ISystemService systemService in allServices) {
-            if (systemService is WorkerService workerService) {
-                workerService.Delay = delayInMilliseconds;
-            }
+        for (int i = 0; i < allServices.Count; i++) {
+            ISystemService service = allServices[i];
+            health[i] = new ServiceHealth(ShortName(service.GetType().Name), service.Status);
         }
+
+        return health;
     }
 
     private SystemSnapshot BuildSnapshot() =>
@@ -76,44 +74,13 @@ public sealed class ServiceController : WorkerService
             Services        = BuildServiceHealth()
         };
 
-    private ServiceHealth[] BuildServiceHealth()
-    {
-        var health = new ServiceHealth[allServices.Count];
-
-        for (int i = 0; i < allServices.Count; i++) {
-            ISystemService service = allServices[i];
-            health[i] = new ServiceHealth(ShortName(service.GetType().Name), service.Status);
-        }
-
-        return health;
-    }
-
-    private static string ShortName(string typeName) =>
-        typeName.EndsWith("Service", global::System.StringComparison.Ordinal)
-            ? typeName[..^"Service".Length]
-            : typeName;
-
     internal T? GetLatestInfo<T>() where T : class =>
         systemMetrics.TryGetValue(typeof(T), out object? sample)
             ? sample as T
             : null;
 
-    protected override void OnDoWork(CancellationToken cancellationToken)
-    {
-        if (systemMetrics.IsEmpty) {
-            return;
-        }
-
-        try {
-            SystemSnapshot snapshot = BuildSnapshot();
-            SystemSnapshotUpdated?.Invoke(this, new SystemSnapshotEventArgs(snapshot));
-        }
-        catch (Exception ex) {
-            ExceptionHelper.LogException(ex);
-        }
-    }
-
-    internal void Store(Type infoType, object info) => systemMetrics[infoType] = info;
+    public T GetService<T>() where T : ISystemService =>
+        (T)allServices.Single(srv => srv.GetType() == typeof(T));
 
     private void OnDeviceChanged(DeviceCategory category)
     {
@@ -132,6 +99,21 @@ public sealed class ServiceController : WorkerService
         }
     }
 
+    protected override void OnDoWork(CancellationToken cancellationToken)
+    {
+        if (systemMetrics.IsEmpty) {
+            return;
+        }
+
+        try {
+            SystemSnapshot snapshot = BuildSnapshot();
+            SystemSnapshotUpdated?.Invoke(this, new SystemSnapshotEventArgs(snapshot));
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex);
+        }
+    }
+
     private void RequestImmediateRefresh<T>() where T : ISystemService
     {
         foreach (ISystemService systemService in allServices) {
@@ -140,6 +122,22 @@ public sealed class ServiceController : WorkerService
             }
         }
     }
+
+    public void SetSamplingDelay(int delayInMilliseconds)
+    {
+        Delay = delayInMilliseconds;
+
+        foreach (ISystemService systemService in allServices) {
+            if (systemService is WorkerService workerService) {
+                workerService.Delay = delayInMilliseconds;
+            }
+        }
+    }
+
+    private static string ShortName(string typeName) =>
+        typeName.EndsWith("Service", global::System.StringComparison.Ordinal)
+            ? typeName[..^"Service".Length]
+            : typeName;
 
     public override void Start()
     {
@@ -166,4 +164,6 @@ public sealed class ServiceController : WorkerService
             Trace.WriteLine($"{systemService.GetType()} stopped, status: {systemService.Status}");
         }
     }
+
+    internal void Store(Type infoType, object info) => systemMetrics[infoType] = info;
 }

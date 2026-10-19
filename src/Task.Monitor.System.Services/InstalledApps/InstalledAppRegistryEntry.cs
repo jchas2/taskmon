@@ -4,6 +4,15 @@ namespace Task.Monitor.System.Services.InstalledApps;
 
 public static class InstalledAppRegistryEntry
 {
+    private static bool IsUpdateReleaseType(string? releaseType) => releaseType 
+        is "Update" 
+        or "Security Update" 
+        or "Hotfix" 
+        or "ServicePack";
+
+    private static string? NullIfEmpty(string? value) =>
+        string.IsNullOrEmpty(value) ? null : value;
+
     public static InstalledApp? Parse(
         string? displayName,
         string? displayVersion,
@@ -47,15 +56,6 @@ public static class InstalledAppRegistryEntry
             Origin           = origin
         };
     }
-
-    private static bool IsUpdateReleaseType(string? releaseType) => releaseType 
-        is "Update" 
-        or "Security Update" 
-        or "Hotfix" 
-        or "ServicePack";
-
-    private static string? NullIfEmpty(string? value) =>
-        string.IsNullOrEmpty(value) ? null : value;
 
     private static DateTime? ParseInstallDate(string? installDate) =>
         !string.IsNullOrEmpty(installDate) &&

@@ -59,98 +59,6 @@ public partial class NetworkService
         public ulong PacketsReceived { get; }
     }
 
-    private void OnStopNetworkMetrics()
-    {
-        instanceStates.Clear();
-
-        previousTimestamp       = 0;
-        primed                  = false;
-        cyclesSinceSpecsRefresh = 0;
-        sawUnknownAdapter       = false;
-    }
-
-    private void OnDoWorkNetworkSample()
-    {
-        Dictionary<ulong, InterfaceSample> samples = new();
-
-        if (!TryReadInterfaceTable(samples)) {
-            return;
-        }
-
-        long timestamp = Stopwatch.GetTimestamp();
-        long elapsedTicks = timestamp - previousTimestamp;
-
-        if (!primed) {
-            foreach ((ulong luid, InterfaceSample sample) in samples) {
-                PrimeInstanceState(luid, sample);
-            }
-
-            previousTimestamp = timestamp;
-            primed = true;
-            return;
-        }
-
-        if (elapsedTicks <= 0) {
-            return;
-        }
-
-        double elapsedSeconds = elapsedTicks / (double)Stopwatch.Frequency;
-
-        foreach ((ulong luid, InterfaceSample sample) in samples) {
-            UpdateInstanceState(luid, sample, elapsedSeconds);
-        }
-
-        previousTimestamp = timestamp;
-    }
-
-    private void PrimeInstanceState(ulong interfaceLuid, InterfaceSample sample)
-    {
-        NetworkInstanceState state = new();
-        state.InterfaceIndex          = sample.InterfaceIndex;
-        state.PreviousBytesSent       = sample.BytesSent;
-        state.PreviousBytesReceived   = sample.BytesReceived;
-        state.PreviousPacketsSent     = sample.PacketsSent;
-        state.PreviousPacketsReceived = sample.PacketsReceived;
-        state.Primed                  = true;
-
-        instanceStates[interfaceLuid] = state;
-    }
-
-    private void UpdateInstanceState(ulong interfaceLuid, InterfaceSample sample, double elapsedSeconds)
-    {
-        if (!instanceStates.TryGetValue(interfaceLuid, out NetworkInstanceState? state)) {
-            PrimeInstanceState(interfaceLuid, sample);
-            sawUnknownAdapter = true;
-            return;
-        }
-
-        state.InterfaceIndex = sample.InterfaceIndex;
-
-        state.SendBytesPerSecond = AccumulateDelta(
-            sample.BytesSent, 
-            ref state.PreviousBytesSent, 
-            ref state.TotalBytesSent, 
-            elapsedSeconds);
-
-        state.ReceiveBytesPerSecond = AccumulateDelta(
-            sample.BytesReceived, 
-            ref state.PreviousBytesReceived, 
-            ref state.TotalBytesReceived, 
-            elapsedSeconds);
-
-        state.SendPacketsPerSecond = AccumulateDelta(
-            sample.PacketsSent, 
-            ref state.PreviousPacketsSent, 
-            ref state.TotalPacketsSent, 
-            elapsedSeconds);
-
-        state.ReceivePacketsPerSecond = AccumulateDelta(
-            sample.PacketsReceived, 
-            ref state.PreviousPacketsReceived, 
-            ref state.TotalPacketsReceived, 
-            elapsedSeconds);
-    }
-
     private static double AccumulateDelta(
         ulong     current,
         ref ulong previous,
@@ -167,22 +75,6 @@ public partial class NetworkService
 
         previous = current;
         return rate;
-    }
-
-    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
-    {
-        if (sawUnknownAdapter) {
-            sawUnknownAdapter       = false;
-            cyclesSinceSpecsRefresh = 0;
-            return true;
-        }
-
-        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
-            return false;
-        }
-
-        cyclesSinceSpecsRefresh = 0;
-        return true;
     }
 
     private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
@@ -234,6 +126,79 @@ public partial class NetworkService
 
         metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
         metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
+    }
+
+    private void OnDoWorkNetworkSample()
+    {
+        Dictionary<ulong, InterfaceSample> samples = new();
+
+        if (!TryReadInterfaceTable(samples)) {
+            return;
+        }
+
+        long timestamp = Stopwatch.GetTimestamp();
+        long elapsedTicks = timestamp - previousTimestamp;
+
+        if (!primed) {
+            foreach ((ulong luid, InterfaceSample sample) in samples) {
+                PrimeInstanceState(luid, sample);
+            }
+
+            previousTimestamp = timestamp;
+            primed = true;
+            return;
+        }
+
+        if (elapsedTicks <= 0) {
+            return;
+        }
+
+        double elapsedSeconds = elapsedTicks / (double)Stopwatch.Frequency;
+
+        foreach ((ulong luid, InterfaceSample sample) in samples) {
+            UpdateInstanceState(luid, sample, elapsedSeconds);
+        }
+
+        previousTimestamp = timestamp;
+    }
+
+    private void OnStopNetworkMetrics()
+    {
+        instanceStates.Clear();
+
+        previousTimestamp       = 0;
+        primed                  = false;
+        cyclesSinceSpecsRefresh = 0;
+        sawUnknownAdapter       = false;
+    }
+
+    private void PrimeInstanceState(ulong interfaceLuid, InterfaceSample sample)
+    {
+        NetworkInstanceState state = new();
+        state.InterfaceIndex          = sample.InterfaceIndex;
+        state.PreviousBytesSent       = sample.BytesSent;
+        state.PreviousBytesReceived   = sample.BytesReceived;
+        state.PreviousPacketsSent     = sample.PacketsSent;
+        state.PreviousPacketsReceived = sample.PacketsReceived;
+        state.Primed                  = true;
+
+        instanceStates[interfaceLuid] = state;
+    }
+
+    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
+    {
+        if (sawUnknownAdapter) {
+            sawUnknownAdapter       = false;
+            cyclesSinceSpecsRefresh = 0;
+            return true;
+        }
+
+        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
+            return false;
+        }
+
+        cyclesSinceSpecsRefresh = 0;
+        return true;
     }
 
     private static unsafe bool TryReadInterfaceTable(Dictionary<ulong, InterfaceSample> samples)
@@ -308,6 +273,41 @@ public partial class NetworkService
         finally {
             IpHlpApi.FreeMibTable(table);
         }
+    }
+
+    private void UpdateInstanceState(ulong interfaceLuid, InterfaceSample sample, double elapsedSeconds)
+    {
+        if (!instanceStates.TryGetValue(interfaceLuid, out NetworkInstanceState? state)) {
+            PrimeInstanceState(interfaceLuid, sample);
+            sawUnknownAdapter = true;
+            return;
+        }
+
+        state.InterfaceIndex = sample.InterfaceIndex;
+
+        state.SendBytesPerSecond = AccumulateDelta(
+            sample.BytesSent, 
+            ref state.PreviousBytesSent, 
+            ref state.TotalBytesSent, 
+            elapsedSeconds);
+
+        state.ReceiveBytesPerSecond = AccumulateDelta(
+            sample.BytesReceived, 
+            ref state.PreviousBytesReceived, 
+            ref state.TotalBytesReceived, 
+            elapsedSeconds);
+
+        state.SendPacketsPerSecond = AccumulateDelta(
+            sample.PacketsSent, 
+            ref state.PreviousPacketsSent, 
+            ref state.TotalPacketsSent, 
+            elapsedSeconds);
+
+        state.ReceivePacketsPerSecond = AccumulateDelta(
+            sample.PacketsReceived, 
+            ref state.PreviousPacketsReceived, 
+            ref state.TotalPacketsReceived, 
+            elapsedSeconds);
     }
 #endif
 }

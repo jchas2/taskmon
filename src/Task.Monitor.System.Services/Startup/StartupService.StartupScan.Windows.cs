@@ -19,17 +19,121 @@ public partial class StartupService
 
     private readonly Dictionary<string, string?> publisherCache = new(StringComparer.OrdinalIgnoreCase);
 
-    private partial StartupSpecs ScanStartup()
+    private const string BuiltInWindowsTaskFolderPrefix = @"\Microsoft\Windows\";
+
+    private void PopulateFromShortcut(StartupEntry entry, string shortcutPath)
     {
-        publisherCache.Clear();
+        if (ShellLink.Resolve(shortcutPath) is not { } target) {
+            entry.Command = shortcutPath;
+            return;
+        }
 
-        StartupSpecs specs = new();
+        entry.ExecutablePath = target.Path;
+        entry.Arguments      = target.Arguments.Length > 0 ? target.Arguments : null;
+        entry.Command        = target.Arguments.Length > 0
+            ? $"\"{target.Path}\" {target.Arguments}"
+            : target.Path;
+        entry.Publisher      = ResolvePublisher(target.Path);
+    }
 
-        ScanRunKeys(specs);
-        ScanStartupFolders(specs);
-        ScanScheduledTasks(specs);
+    private void PopulateTarget(StartupEntry entry, string rawCommand)
+    {
+        (string path, string arguments) = StartupCommandLine.Split(rawCommand);
 
-        return specs;
+        if (path.Length == 0) {
+            return;
+        }
+
+        entry.ExecutablePath = path;
+        entry.Arguments      = arguments.Length > 0 ? arguments : null;
+        entry.Publisher      = ResolvePublisher(path);
+    }
+
+    private static (StartupEntryState State, DateTime? DisabledOnUtc) ReadApprovedState(
+        RegistryKey? approvedKey, 
+        string valueName)
+    {
+        return approvedKey?.GetValue(valueName) is byte[] blob
+            ? StartupApprovedState.Parse(blob)
+            : (StartupEntryState.Enabled, null);
+    }
+
+    private string? ResolvePublisher(string executablePath)
+    {
+        if (publisherCache.TryGetValue(executablePath, out string? cached)) {
+            return cached;
+        }
+
+        string? publisher = WinVer.GetCompanyName(executablePath);
+        publisherCache[executablePath] = publisher;
+
+        return publisher;
+    }
+
+    private static StartupEntryScope ResolveScheduledTaskScope(ScheduledTaskDefinition definition)
+    {
+        if (definition.HasBootTrigger) {
+            return StartupEntryScope.Machine;
+        }
+
+        string? userId = definition.LogonTriggerUserId;
+
+        if (userId is null) {
+            return StartupEntryScope.Machine;
+        }
+
+        string bareUserId = userId.Contains('\\') ? userId[(userId.LastIndexOf('\\') + 1)..] : userId;
+
+        return string.Equals(bareUserId, Environment.UserName, StringComparison.OrdinalIgnoreCase)
+            ? StartupEntryScope.User
+            : StartupEntryScope.Machine;
+    }
+
+    private void ScanRunKey(
+        StartupSpecs       specs,
+        RegistryHive       hive,
+        RegistryView       view,
+        StartupEntryScope  scope,
+        string             keyPath,
+        string             approvedPath,
+        StartupEntrySource source)
+    {
+        using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
+        using RegistryKey? runKey = baseKey.OpenSubKey(keyPath);
+
+        if (runKey is null) {
+            return;
+        }
+
+        using RegistryKey? approvedKey = baseKey.OpenSubKey(approvedPath);
+
+        string origin = $"{Win32StringHelper.HiveShortName(hive)}\\{keyPath}";
+
+        foreach (string valueName in runKey.GetValueNames()) {
+            if (string.IsNullOrEmpty(valueName)) {
+                continue; // the (Default) value is not a startup entry
+            }
+
+            string rawCommand = runKey.GetValue(
+                valueName, null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string ?? string.Empty;
+
+            if (rawCommand.Length == 0) {
+                continue;
+            }
+
+            StartupEntry entry = new() {
+                Name    = valueName,
+                Command = Environment.ExpandEnvironmentVariables(rawCommand),
+                Source  = source,
+                Scope   = scope,
+                Origin  = origin
+            };
+
+            (entry.State, entry.DisabledOnUtc) = ReadApprovedState(approvedKey, valueName);
+            PopulateTarget(entry, rawCommand);
+
+            specs.Entries.Add(entry);
+        }
     }
 
     private void ScanRunKeys(StartupSpecs specs)
@@ -91,68 +195,54 @@ public partial class StartupService
             StartupEntrySource.RunOnceKey);
     }
 
-    private void ScanRunKey(
-        StartupSpecs       specs,
-        RegistryHive       hive,
-        RegistryView       view,
-        StartupEntryScope  scope,
-        string             keyPath,
-        string             approvedPath,
-        StartupEntrySource source)
+    private void ScanScheduledTasks(StartupSpecs specs)
     {
-        using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
-        using RegistryKey? runKey = baseKey.OpenSubKey(keyPath);
-
-        if (runKey is null) {
-            return;
-        }
-
-        using RegistryKey? approvedKey = baseKey.OpenSubKey(approvedPath);
-
-        string origin = $"{Win32StringHelper.HiveShortName(hive)}\\{keyPath}";
-
-        foreach (string valueName in runKey.GetValueNames()) {
-            if (string.IsNullOrEmpty(valueName)) {
-                continue; // the (Default) value is not a startup entry
+        foreach (ScheduledTasks.TaskRecord record in ScheduledTasks.EnumerateTasks()) {
+            if (record.FolderPath.StartsWith(BuiltInWindowsTaskFolderPrefix, StringComparison.OrdinalIgnoreCase)) {
+                continue;
             }
 
-            string rawCommand = runKey.GetValue(
-                valueName, null, RegistryValueOptions.DoNotExpandEnvironmentNames) as string ?? string.Empty;
+            ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(record.Xml);
 
-            if (rawCommand.Length == 0) {
+            if (definition is null || !(definition.HasLogonTrigger || definition.HasBootTrigger)) {
                 continue;
             }
 
             StartupEntry entry = new() {
-                Name    = valueName,
-                Command = Environment.ExpandEnvironmentVariables(rawCommand),
-                Source  = source,
-                Scope   = scope,
-                Origin  = origin
+                Name   = record.Name,
+                Source = StartupEntrySource.ScheduledTask,
+                Scope  = ResolveScheduledTaskScope(definition),
+                Origin = record.FolderPath,
+                State  = record.Enabled ? StartupEntryState.Enabled : StartupEntryState.Disabled
             };
 
-            (entry.State, entry.DisabledOnUtc) = ReadApprovedState(approvedKey, valueName);
-            PopulateTarget(entry, rawCommand);
+            if (definition.ExecutablePath is { Length: > 0 } executablePath) {
+                entry.ExecutablePath = executablePath;
+                entry.Arguments      = definition.Arguments;
+                entry.Command        = definition.Arguments is { Length: > 0 }
+                    ? $"\"{executablePath}\" {definition.Arguments}"
+                    : executablePath;
+                entry.Publisher      = ResolvePublisher(executablePath) ?? definition.Author;
+            }
+            else {
+                entry.Publisher = definition.Author;
+            }
 
             specs.Entries.Add(entry);
         }
     }
 
-    private void ScanStartupFolders(StartupSpecs specs)
+    private partial StartupSpecs ScanStartup()
     {
-        using RegistryKey approvedBase = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-        using RegistryKey? approvedKey = approvedBase.OpenSubKey(ApprovedFolderPath);
+        publisherCache.Clear();
 
-        ScanStartupFolder(
-            specs, 
-            Environment.SpecialFolder.CommonStartup, 
-            StartupEntryScope.Machine, 
-            approvedKey);
-        
-        ScanStartupFolder(specs, 
-            Environment.SpecialFolder.Startup, 
-            StartupEntryScope.User, 
-            approvedKey);
+        StartupSpecs specs = new();
+
+        ScanRunKeys(specs);
+        ScanStartupFolders(specs);
+        ScanScheduledTasks(specs);
+
+        return specs;
     }
 
     private void ScanStartupFolder(
@@ -205,111 +295,21 @@ public partial class StartupService
         }
     }
 
-    private void PopulateFromShortcut(StartupEntry entry, string shortcutPath)
+    private void ScanStartupFolders(StartupSpecs specs)
     {
-        if (ShellLink.Resolve(shortcutPath) is not { } target) {
-            entry.Command = shortcutPath;
-            return;
-        }
+        using RegistryKey approvedBase = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+        using RegistryKey? approvedKey = approvedBase.OpenSubKey(ApprovedFolderPath);
 
-        entry.ExecutablePath = target.Path;
-        entry.Arguments      = target.Arguments.Length > 0 ? target.Arguments : null;
-        entry.Command        = target.Arguments.Length > 0
-            ? $"\"{target.Path}\" {target.Arguments}"
-            : target.Path;
-        entry.Publisher      = ResolvePublisher(target.Path);
-    }
-
-    private const string BuiltInWindowsTaskFolderPrefix = @"\Microsoft\Windows\";
-
-    private void ScanScheduledTasks(StartupSpecs specs)
-    {
-        foreach (ScheduledTasks.TaskRecord record in ScheduledTasks.EnumerateTasks()) {
-            if (record.FolderPath.StartsWith(BuiltInWindowsTaskFolderPrefix, StringComparison.OrdinalIgnoreCase)) {
-                continue;
-            }
-
-            ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(record.Xml);
-
-            if (definition is null || !(definition.HasLogonTrigger || definition.HasBootTrigger)) {
-                continue;
-            }
-
-            StartupEntry entry = new() {
-                Name   = record.Name,
-                Source = StartupEntrySource.ScheduledTask,
-                Scope  = ResolveScheduledTaskScope(definition),
-                Origin = record.FolderPath,
-                State  = record.Enabled ? StartupEntryState.Enabled : StartupEntryState.Disabled
-            };
-
-            if (definition.ExecutablePath is { Length: > 0 } executablePath) {
-                entry.ExecutablePath = executablePath;
-                entry.Arguments      = definition.Arguments;
-                entry.Command        = definition.Arguments is { Length: > 0 }
-                    ? $"\"{executablePath}\" {definition.Arguments}"
-                    : executablePath;
-                entry.Publisher      = ResolvePublisher(executablePath) ?? definition.Author;
-            }
-            else {
-                entry.Publisher = definition.Author;
-            }
-
-            specs.Entries.Add(entry);
-        }
-    }
-
-    private static StartupEntryScope ResolveScheduledTaskScope(ScheduledTaskDefinition definition)
-    {
-        if (definition.HasBootTrigger) {
-            return StartupEntryScope.Machine;
-        }
-
-        string? userId = definition.LogonTriggerUserId;
-
-        if (userId is null) {
-            return StartupEntryScope.Machine;
-        }
-
-        string bareUserId = userId.Contains('\\') ? userId[(userId.LastIndexOf('\\') + 1)..] : userId;
-
-        return string.Equals(bareUserId, Environment.UserName, StringComparison.OrdinalIgnoreCase)
-            ? StartupEntryScope.User
-            : StartupEntryScope.Machine;
-    }
-
-    private static (StartupEntryState State, DateTime? DisabledOnUtc) ReadApprovedState(
-        RegistryKey? approvedKey, 
-        string valueName)
-    {
-        return approvedKey?.GetValue(valueName) is byte[] blob
-            ? StartupApprovedState.Parse(blob)
-            : (StartupEntryState.Enabled, null);
-    }
-
-    private void PopulateTarget(StartupEntry entry, string rawCommand)
-    {
-        (string path, string arguments) = StartupCommandLine.Split(rawCommand);
-
-        if (path.Length == 0) {
-            return;
-        }
-
-        entry.ExecutablePath = path;
-        entry.Arguments      = arguments.Length > 0 ? arguments : null;
-        entry.Publisher      = ResolvePublisher(path);
-    }
-
-    private string? ResolvePublisher(string executablePath)
-    {
-        if (publisherCache.TryGetValue(executablePath, out string? cached)) {
-            return cached;
-        }
-
-        string? publisher = WinVer.GetCompanyName(executablePath);
-        publisherCache[executablePath] = publisher;
-
-        return publisher;
+        ScanStartupFolder(
+            specs, 
+            Environment.SpecialFolder.CommonStartup, 
+            StartupEntryScope.Machine, 
+            approvedKey);
+        
+        ScanStartupFolder(specs, 
+            Environment.SpecialFolder.Startup, 
+            StartupEntryScope.User, 
+            approvedKey);
     }
 #endif
 }
