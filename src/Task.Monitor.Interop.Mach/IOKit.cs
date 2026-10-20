@@ -8,6 +8,9 @@ public static class IOKit
     public static extern uint IOIteratorNext(IntPtr iterator);
 
     [DllImport(Libraries.IOKit)]
+    public static extern uint IOObjectGetUserRetainCount(uint obj);
+
+    [DllImport(Libraries.IOKit)]
     public static extern int IOObjectRelease(uint obj);
 
     [DllImport(Libraries.IOKit)]
@@ -16,9 +19,6 @@ public static class IOKit
     [DllImport(Libraries.IOKit)]
     public static extern int IOObjectRetain(uint obj);
 
-    [DllImport(Libraries.IOKit)]
-    public static extern uint IOObjectGetUserRetainCount(uint obj);
-    
     [DllImport(Libraries.IOKit)]
     public static extern int IORegistryEntryCreateCFProperties(
         uint     entry, 
@@ -36,12 +36,6 @@ public static class IOKit
     public static extern int IORegistryEntryGetName(uint entry, byte[] name);
 
     [DllImport(Libraries.IOKit)]
-    public static extern int IOServiceGetMatchingServices(
-        uint     masterPort,
-        nint     matching,
-        out nint iterator);
-    
-    [DllImport(Libraries.IOKit)]
     public static extern IntPtr IORegistryEntrySearchCFProperty(
         uint   entry,
         string plane,
@@ -50,8 +44,14 @@ public static class IOKit
         uint   options);
 
     [DllImport(Libraries.IOKit)]
-    public static extern IntPtr IOServiceMatching(string name);
+    public static extern uint IOServiceGetMatchingService(uint masterPort, IntPtr matching);
 
     [DllImport(Libraries.IOKit)]
-    public static extern uint IOServiceGetMatchingService(uint masterPort, IntPtr matching);
+    public static extern int IOServiceGetMatchingServices(
+        uint     masterPort,
+        nint     matching,
+        out nint iterator);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern IntPtr IOServiceMatching(string name);
 }

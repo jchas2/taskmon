@@ -125,6 +125,32 @@ public partial class ProcessInfoControl : Control
 
     public bool AutoRefresh { get; set; } = true;
 
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
+    internal bool IsDetailActiveForTests => processInfoView.Visible;
+
+    public void LoadProcess(int pid)
+    {
+        if (pid == SelectedProcessId) {
+            return;
+        }
+
+        processInfoView.Items.Clear();
+        modulesView.Items.Clear();
+        
+        SelectedProcessId = pid;
+        modulesLoaded     = false;
+
+        TryLoadProcessInfo();
+        TryUpdateListViewThreadItems();
+
+        if (modulesView.Visible) {
+            TryUpdateListViewModuleItems();
+        }
+
+        Draw();
+    }
+
     private void MenuViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
         var menuListViewItem = e.Item as MenuListViewItem;
@@ -144,8 +170,6 @@ public partial class ProcessInfoControl : Control
     }
 
     protected override void OnGotFocus() => menuView.SetFocus();
-
-    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -299,29 +323,7 @@ public partial class ProcessInfoControl : Control
         base.OnUnload();
     }
 
-    public int SelectedProcessId { get; set; } = -1;
-
-    public void LoadProcess(int pid)
-    {
-        if (pid == SelectedProcessId) {
-            return;
-        }
-
-        processInfoView.Items.Clear();
-        modulesView.Items.Clear();
-        
-        SelectedProcessId = pid;
-        modulesLoaded     = false;
-
-        TryLoadProcessInfo();
-        TryUpdateListViewThreadItems();
-
-        if (modulesView.Visible) {
-            TryUpdateListViewModuleItems();
-        }
-
-        Draw();
-    }
+    internal string ProcessTitle => processInfoView.HeaderText;
 
     public void ResetToDetailPane()
     {
@@ -331,12 +333,10 @@ public partial class ProcessInfoControl : Control
 
     internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
 
-    internal bool IsDetailActiveForTests => processInfoView.Visible;
+    public int SelectedProcessId { get; set; } = -1;
 
     internal void SelectMenuItemForTests(int index) =>
         MenuViewOnItemClicked(this, new ListViewItemEventArgs(menuView.Items[index]));
-
-    internal string ProcessTitle => processInfoView.HeaderText;
 
     private void SetActiveControl(Control activeControl)
     {

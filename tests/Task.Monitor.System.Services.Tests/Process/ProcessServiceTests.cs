@@ -8,12 +8,32 @@ public sealed class ProcessServiceTests
     private const int MinimumDelay = 500;
 
     [Fact]
-    public void Should_Run_ProcessSystemService()
+    public void Should_Not_Grow_Its_Retained_State_Across_Cycles()
     {
-        ProcessService service = new();
-        service.Start();
-        Thread.Sleep((int)(service.Delay * 1.5));
-        service.Stop();
+        // The per pid state map is swept every cycle. If the sweep regressed, the map would keep a
+        // state for every process that has ever been seen, and a recycled pid would inherit the
+        // previous process's mean and max.
+        ServiceController controller = new() { Delay = MinimumDelay };
+        SystemSnapshot? latest = null;
+
+        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
+        controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
+        controller.Start();
+
+        Thread.Sleep(MinimumDelay * 3);
+        int early = latest?.Processes?.Metrics.ProcessCount ?? 0;
+
+        Thread.Sleep(MinimumDelay * 6);
+        int late = latest?.Processes?.Metrics.ProcessCount ?? 0;
+
+        controller.Stop();
+
+        Assert.True(early > 0);
+        Assert.True(late > 0);
+
+        // The published entry count tracks the live process list, so it must not drift upward with
+        // the number of cycles run.
+        Assert.True(Math.Abs(late - early) < early / 2);
     }
 
     [Fact]
@@ -77,31 +97,11 @@ public sealed class ProcessServiceTests
     }
 
     [Fact]
-    public void Should_Not_Grow_Its_Retained_State_Across_Cycles()
+    public void Should_Run_ProcessSystemService()
     {
-        // The per pid state map is swept every cycle. If the sweep regressed, the map would keep a
-        // state for every process that has ever been seen, and a recycled pid would inherit the
-        // previous process's mean and max.
-        ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
-
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
-        controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
-        controller.Start();
-
-        Thread.Sleep(MinimumDelay * 3);
-        int early = latest?.Processes?.Metrics.ProcessCount ?? 0;
-
-        Thread.Sleep(MinimumDelay * 6);
-        int late = latest?.Processes?.Metrics.ProcessCount ?? 0;
-
-        controller.Stop();
-
-        Assert.True(early > 0);
-        Assert.True(late > 0);
-
-        // The published entry count tracks the live process list, so it must not drift upward with
-        // the number of cycles run.
-        Assert.True(Math.Abs(late - early) < early / 2);
+        ProcessService service = new();
+        service.Start();
+        Thread.Sleep((int)(service.Delay * 1.5));
+        service.Stop();
     }
 }

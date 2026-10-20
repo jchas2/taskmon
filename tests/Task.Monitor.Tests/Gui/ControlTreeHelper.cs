@@ -6,6 +6,13 @@ namespace Task.Monitor.Tests.Gui;
 
 internal static class ControlTreeHelper
 {
+    private static IEnumerable<Control> ControlsIn(object? value) => value switch {
+        Control control => [control],
+        IDictionary dictionary => dictionary.Values.OfType<Control>(),
+        IEnumerable sequence and not string => sequence.OfType<Control>(),
+        _ => []
+    };
+
     // Finds every T under host. Child controls reach a host either through its Controls tree or
     // held privately in fields (single controls, lists of tabs or per-core charts, per-key caches),
     // so both are searched.
@@ -42,11 +49,4 @@ internal static class ControlTreeHelper
             }
         }
     }
-
-    private static IEnumerable<Control> ControlsIn(object? value) => value switch {
-        Control control => [control],
-        IDictionary dictionary => dictionary.Values.OfType<Control>(),
-        IEnumerable sequence and not string => sequence.OfType<Control>(),
-        _ => []
-    };
 }

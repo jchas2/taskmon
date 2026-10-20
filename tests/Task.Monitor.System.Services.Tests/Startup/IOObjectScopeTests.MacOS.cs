@@ -5,6 +5,29 @@ namespace Task.Monitor.System.Services.Tests.Startup;
 
 public sealed class IOObjectScopeTests
 {
+    [Fact]
+    public void Converts_To_Both_Handle_Types()
+    {
+        using IOObjectScope scope = new(GetPlatformExpert());
+
+        uint asUint = scope;
+        nint asNint = scope;
+
+        Assert.False(scope.IsNull);
+        Assert.Equal(scope.Value, asUint);
+        Assert.Equal((nint)scope.Value, asNint);
+    }
+
+    [Fact]
+    public void Disposing_A_Null_Scope_Does_Nothing()
+    {
+        using IOObjectScope fromUint = new(0u);
+        using IOObjectScope fromNint = new(nint.Zero);
+
+        Assert.True(fromUint.IsNull);
+        Assert.True(fromNint.IsNull);
+    }
+
     // Present on every Mac: the root of the device tree.
     private static uint GetPlatformExpert() =>
         IOKit.IOServiceGetMatchingService(0, IOKit.IOServiceMatching("IOPlatformExpertDevice"));
@@ -28,29 +51,6 @@ public sealed class IOObjectScopeTests
         finally {
             IOKit.IOObjectRelease(service);
         }
-    }
-
-    [Fact]
-    public void Disposing_A_Null_Scope_Does_Nothing()
-    {
-        using IOObjectScope fromUint = new(0u);
-        using IOObjectScope fromNint = new(nint.Zero);
-
-        Assert.True(fromUint.IsNull);
-        Assert.True(fromNint.IsNull);
-    }
-
-    [Fact]
-    public void Converts_To_Both_Handle_Types()
-    {
-        using IOObjectScope scope = new(GetPlatformExpert());
-
-        uint asUint = scope;
-        nint asNint = scope;
-
-        Assert.False(scope.IsNull);
-        Assert.Equal(scope.Value, asUint);
-        Assert.Equal((nint)scope.Value, asNint);
     }
 }
 #endif

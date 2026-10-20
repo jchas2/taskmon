@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using Task.Monitor.System;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
+using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
 namespace Task.Monitor;
@@ -14,12 +14,6 @@ class Program
     internal const int ExitFailure                = 1;
     private const int  UnhandledExceptionExitCode = 2;
     private const int  DebugWait                  = 3000;
-    
-    private static void RestoreConsole()
-    {
-        Console.CursorVisible = true;
-        ConsoleEx.RestoreScreenBuffer();
-    }
 
     private static int Main(string[] args)
     {
@@ -83,5 +77,11 @@ class Program
         }
         
         return ExitSuccess;
+    }
+
+    private static void RestoreConsole()
+    {
+        Console.CursorVisible = true;
+        ConsoleEx.RestoreScreenBuffer();
     }
 }

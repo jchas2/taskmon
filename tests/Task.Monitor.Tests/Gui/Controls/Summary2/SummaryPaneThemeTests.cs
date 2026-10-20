@@ -36,6 +36,20 @@ public sealed class SummaryPaneThemeTests
     }
 
     [Fact]
+    public void Chart_Pane_Takes_The_Chart_Colours()
+    {
+        Chart chart = new(runContext.Terminal);
+
+        SummaryPaneTheme.Apply(chart, runContext.AppConfig);
+
+        Assert.Equal(ChartBackground.ToArgb(), chart.BackgroundColour.ToArgb());
+        Assert.Equal(Foreground.ToArgb(), chart.ForegroundColour.ToArgb());
+        Assert.Equal(ChartBorderForeground.ToArgb(), chart.BorderForegroundColour.ToArgb());
+        Assert.Equal(ChartBorderBackground.ToArgb(), chart.BorderBackgroundColour.ToArgb());
+        Assert.Equal(ChartYAxis.ToArgb(), chart.YAxisColour.ToArgb());
+    }
+
+    [Fact]
     public void CpuCores_Pane_Border_Takes_The_Chart_Border_Colour()
     {
         CpuCoresControl control = new(runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
@@ -55,19 +69,5 @@ public sealed class SummaryPaneThemeTests
         SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
         Assert.Equal(ChartBorderForeground.ToArgb(), control.BorderColour.ToArgb());
-    }
-
-    [Fact]
-    public void Chart_Pane_Takes_The_Chart_Colours()
-    {
-        Chart chart = new(runContext.Terminal);
-
-        SummaryPaneTheme.Apply(chart, runContext.AppConfig);
-
-        Assert.Equal(ChartBackground.ToArgb(), chart.BackgroundColour.ToArgb());
-        Assert.Equal(Foreground.ToArgb(), chart.ForegroundColour.ToArgb());
-        Assert.Equal(ChartBorderForeground.ToArgb(), chart.BorderForegroundColour.ToArgb());
-        Assert.Equal(ChartBorderBackground.ToArgb(), chart.BorderBackgroundColour.ToArgb());
-        Assert.Equal(ChartYAxis.ToArgb(), chart.YAxisColour.ToArgb());
     }
 }

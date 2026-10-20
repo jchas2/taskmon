@@ -22,6 +22,13 @@ public sealed class HeaderControl2Tests
         runContext = runContextHelper.GetRunContext();
     }
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
     private HeaderControl2 CreateControl(int width)
     {
         HeaderControl2 ctrl = new(
@@ -38,35 +45,6 @@ public sealed class HeaderControl2Tests
         ctrl.Resize();
         return ctrl;
     }
-
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
-    // Replays the cursor moves in the bordered frame to rebuild each screen row (0-based) as plain
-    // text, with the colour codes stripped.
-    private static Dictionary<int, string> FrameRows(string output)
-    {
-        Dictionary<int, string> rows = new();
-        MatchCollection moves = CursorMove.Matches(output);
-
-        for (int i = 0; i < moves.Count; i++) {
-            int row = int.Parse(moves[i].Groups[1].Value) - 1;
-            int start = moves[i].Index + moves[i].Length;
-            int end = i + 1 < moves.Count ? moves[i + 1].Index : output.Length;
-
-            rows[row] = Sgr.Replace(output[start..end], string.Empty);
-        }
-
-        return rows;
-    }
-
-    [Fact]
-    public void Header_Is_Five_Rows_High() =>
-        Assert.Equal(5, HeaderControl2.HeaderRows);
 
     [Fact]
     public void Draws_The_Banner_Above_A_Bordered_Box()
@@ -96,6 +74,28 @@ public sealed class HeaderControl2Tests
         ctrl.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
     }
+
+    // Replays the cursor moves in the bordered frame to rebuild each screen row (0-based) as plain
+    // text, with the colour codes stripped.
+    private static Dictionary<int, string> FrameRows(string output)
+    {
+        Dictionary<int, string> rows = new();
+        MatchCollection moves = CursorMove.Matches(output);
+
+        for (int i = 0; i < moves.Count; i++) {
+            int row = int.Parse(moves[i].Groups[1].Value) - 1;
+            int start = moves[i].Index + moves[i].Length;
+            int end = i + 1 < moves.Count ? moves[i + 1].Index : output.Length;
+
+            rows[row] = Sgr.Replace(output[start..end], string.Empty);
+        }
+
+        return rows;
+    }
+
+    [Fact]
+    public void Header_Is_Five_Rows_High() =>
+        Assert.Equal(5, HeaderControl2.HeaderRows);
 
     [Fact]
     public void Right_Aligns_The_Theme_Name_Inside_The_Border()

@@ -36,7 +36,33 @@ public sealed class ChartColourTests
         Assert.NotEqual(runContext.AppConfig.Theme.Foreground, runContext.AppConfig.Theme.ChartBorderForeground);
     }
 
-    private ISystemTerminal Terminal => new ForwardingTerminal(runContext.Terminal);
+    private static void AssertChartsUseChartColours(Control host)
+    {
+        List<Chart> charts = ControlTreeHelper.FindAll<Chart>(host);
+
+        Assert.NotEmpty(charts);
+        Assert.All(charts, chart => {
+            Assert.Equal(ChartBackground, chart.BackgroundColour);
+            Assert.Equal(ChartBorderForeground, chart.BorderForegroundColour);
+            Assert.Equal(ChartBorderBackground, chart.BorderBackgroundColour);
+        });
+
+        host.Unload();
+    }
+
+    private static T Loaded<T>(T control) where T : Control
+    {
+        control.Width = 160;
+        control.Height = 48;
+        control.Load();
+        control.Resize();
+        return control;
+    }
+
+    [Fact]
+    public void PerformanceControl_Charts_Use_The_Chart_Colours() =>
+        AssertChartsUseChartColours(Loaded(
+            new PerformanceControl(runContext.ServiceController, Terminal, runContext.AppConfig)));
 
     public static TheoryData<string> PerformancePanels => new() {
         nameof(CpuPerformanceControl),
@@ -63,14 +89,11 @@ public sealed class ChartColourTests
     }
 
     [Fact]
-    public void PerformanceControl_Charts_Use_The_Chart_Colours() =>
-        AssertChartsUseChartColours(Loaded(
-            new PerformanceControl(runContext.ServiceController, Terminal, runContext.AppConfig)));
-
-    [Fact]
     public void SummaryControl2_Charts_Use_The_Chart_Colours() =>
         AssertChartsUseChartColours(Loaded(
             new SummaryControl2(runContext.ServiceController, Terminal, runContext.AppConfig)));
+
+    private ISystemTerminal Terminal => new ForwardingTerminal(runContext.Terminal);
 
     [Fact]
     public void ThermalsControl_Charts_Use_The_Chart_Colours()
@@ -96,28 +119,5 @@ public sealed class ChartColourTests
         });
 
         AssertChartsUseChartColours(control);
-    }
-
-    private static T Loaded<T>(T control) where T : Control
-    {
-        control.Width = 160;
-        control.Height = 48;
-        control.Load();
-        control.Resize();
-        return control;
-    }
-
-    private static void AssertChartsUseChartColours(Control host)
-    {
-        List<Chart> charts = ControlTreeHelper.FindAll<Chart>(host);
-
-        Assert.NotEmpty(charts);
-        Assert.All(charts, chart => {
-            Assert.Equal(ChartBackground, chart.BackgroundColour);
-            Assert.Equal(ChartBorderForeground, chart.BorderForegroundColour);
-            Assert.Equal(ChartBorderBackground, chart.BorderBackgroundColour);
-        });
-
-        host.Unload();
     }
 }

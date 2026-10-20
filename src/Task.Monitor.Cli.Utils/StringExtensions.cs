@@ -4,44 +4,30 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class StringExtensions
 {
-    public static int TerminalWidth(this string text) => TerminalWidth(text.AsSpan());
-
-    public static int TerminalWidth(this ReadOnlySpan<char> text)
+    public static string CentreWithLength(this string str, int length)
     {
-        int width = 0;
-
-        foreach (Rune rune in text.EnumerateRunes()) {
-            width += IsWideRune(rune.Value) ? 2 : 1;
+        if (str.Length >= length) {
+            return str.Substring(0, length);
         }
-
-        return width;
-    }
-
-    // The number of UTF-16 chars, from the start of text, that fit within maxWidth terminal columns
-    // without splitting a rune. actualWidth is the columns those chars occupy (always <= maxWidth).
-    public static int TruncateToTerminalWidth(this string text, int maxWidth, out int actualWidth) =>
-        TruncateToTerminalWidth(text.AsSpan(), maxWidth, out actualWidth);
-
-    public static int TruncateToTerminalWidth(this ReadOnlySpan<char> text, int maxWidth, out int actualWidth)
-    {
-        int width      = 0;
-        int charLength = 0;
-
-        foreach (Rune rune in text.EnumerateRunes()) {
-            int runeWidth = IsWideRune(rune.Value) ? 2 : 1;
-
-            if (width + runeWidth > maxWidth) {
-                break;
-            }
-
-            width      += runeWidth;
-            charLength += rune.Utf16SequenceLength;
-        }
-
-        actualWidth = width;
-        return charLength;
-    }
     
+        int padding  = length - str.Length;
+        int padLeft  = padding / 2;
+        int padRight = padding - padLeft;
+    
+        return string.Create(length, (str, padLeft, padRight), static (span, state) =>
+        {
+            span.Slice(0, state.padLeft)
+                .Fill(' ');
+        
+            state.str
+                .AsSpan()
+                .CopyTo(span.Slice(state.padLeft));
+        
+            span.Slice(state.padLeft + state.str.Length, state.padRight)
+                .Fill(' ');
+        });
+    }    
+
     // Generally Covers what shows up in real-world strings like file version-resource metadata.
     private static bool IsWideRune(int codePoint) =>
         (codePoint >= 0x1100  && codePoint <= 0x115F)  ||  // Hangul Jamo
@@ -79,28 +65,42 @@ public static class StringExtensions
                 .Fill(state.c);
         });
     }
-    
-    public static string CentreWithLength(this string str, int length)
+
+    public static int TerminalWidth(this string text) => TerminalWidth(text.AsSpan());
+
+    public static int TerminalWidth(this ReadOnlySpan<char> text)
     {
-        if (str.Length >= length) {
-            return str.Substring(0, length);
+        int width = 0;
+
+        foreach (Rune rune in text.EnumerateRunes()) {
+            width += IsWideRune(rune.Value) ? 2 : 1;
         }
-    
-        int padding  = length - str.Length;
-        int padLeft  = padding / 2;
-        int padRight = padding - padLeft;
-    
-        return string.Create(length, (str, padLeft, padRight), static (span, state) =>
-        {
-            span.Slice(0, state.padLeft)
-                .Fill(' ');
-        
-            state.str
-                .AsSpan()
-                .CopyTo(span.Slice(state.padLeft));
-        
-            span.Slice(state.padLeft + state.str.Length, state.padRight)
-                .Fill(' ');
-        });
-    }    
+
+        return width;
+    }
+
+    // The number of UTF-16 chars, from the start of text, that fit within maxWidth terminal columns
+    // without splitting a rune. actualWidth is the columns those chars occupy (always <= maxWidth).
+    public static int TruncateToTerminalWidth(this string text, int maxWidth, out int actualWidth) =>
+        TruncateToTerminalWidth(text.AsSpan(), maxWidth, out actualWidth);
+
+    public static int TruncateToTerminalWidth(this ReadOnlySpan<char> text, int maxWidth, out int actualWidth)
+    {
+        int width      = 0;
+        int charLength = 0;
+
+        foreach (Rune rune in text.EnumerateRunes()) {
+            int runeWidth = IsWideRune(rune.Value) ? 2 : 1;
+
+            if (width + runeWidth > maxWidth) {
+                break;
+            }
+
+            width      += runeWidth;
+            charLength += rune.Utf16SequenceLength;
+        }
+
+        actualWidth = width;
+        return charLength;
+    }
 }

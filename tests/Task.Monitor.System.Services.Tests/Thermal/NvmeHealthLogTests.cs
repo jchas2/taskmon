@@ -18,22 +18,6 @@ public sealed class NvmeHealthLogTests
     }
 
     [Fact]
-    public void Reads_The_Composite_Temperature()
-    {
-        // 313 K = 39.85 C
-        double? celsius = NvmeHealthLog.CompositeCelsius(Page(313));
-
-        Assert.NotNull(celsius);
-        Assert.Equal(39.85, celsius!.Value, precision: 2);
-    }
-
-    [Fact]
-    public void Treats_A_Zero_Composite_As_Absent()
-    {
-        Assert.Null(NvmeHealthLog.CompositeCelsius(Page(0)));
-    }
-
-    [Fact]
     public void Reads_Only_The_Implemented_Sensors()
     {
         IReadOnlyList<(int Index, double Celsius)> sensors =
@@ -47,6 +31,16 @@ public sealed class NvmeHealthLogTests
     }
 
     [Fact]
+    public void Reads_The_Composite_Temperature()
+    {
+        // 313 K = 39.85 C
+        double? celsius = NvmeHealthLog.CompositeCelsius(Page(313));
+
+        Assert.NotNull(celsius);
+        Assert.Equal(39.85, celsius!.Value, precision: 2);
+    }
+
+    [Fact]
     public void Rejects_An_Implausible_Reading()
     {
         Assert.Null(NvmeHealthLog.CompositeCelsius(Page(60000)));
@@ -57,5 +51,11 @@ public sealed class NvmeHealthLogTests
     {
         Assert.Null(NvmeHealthLog.CompositeCelsius(new byte[1]));
         Assert.Empty(NvmeHealthLog.Sensors(new byte[10]));
+    }
+
+    [Fact]
+    public void Treats_A_Zero_Composite_As_Absent()
+    {
+        Assert.Null(NvmeHealthLog.CompositeCelsius(Page(0)));
     }
 }

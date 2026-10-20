@@ -30,6 +30,8 @@ public partial class SystemTerminal : ISystemTerminal
         }
     }
 
+    public void Clear() => Console.Clear();
+
     public int CursorLeft
     {
         // See SetCursorPosition comments.
@@ -62,10 +64,6 @@ public partial class SystemTerminal : ISystemTerminal
 
     public bool KeyAvailable => Console.KeyAvailable;
 
-    public TextWriter StdError => Console.Error;
-    public TextReader StdIn => Console.In;
-    public TextWriter StdOut => Console.Out;
-    public void Clear() => Console.Clear();
     public ConsoleKeyInfo ReadKey() => Console.ReadKey(intercept: true);
 
     public void SetCursorPosition(int left, int top)
@@ -85,8 +83,14 @@ public partial class SystemTerminal : ISystemTerminal
         Console.Out.Write($"\u001b[{top + 1};{left + 1}H");
     }
 
-    public int WindowWidth => Console.WindowWidth;
+    public TextWriter StdError => Console.Error;
+    public TextReader StdIn => Console.In;
+    public TextWriter StdOut => Console.Out;
+
     public int WindowHeight => Console.WindowHeight;
+
+    public int WindowWidth => Console.WindowWidth;
+
     public void Write(char ch) => Console.Out.Write(ch);
 
     public void Write(char ch, int count)

@@ -37,6 +37,15 @@ public sealed class ConfigSection
 
     public bool Contains(string key) => keys.ContainsKey(key);
 
+    public bool GetBool(string key) => GetBool(key, false);
+
+    public bool GetBool(string key, bool defaultValue) => TryParse(key, bool.Parse, defaultValue);
+
+    public Color GetColour(string key) => GetColour(key, ConsolePalette.Black);
+
+    public Color GetColour(string key, Color defaultValue) =>
+        ConsolePalette.FromHex(GetString(key, string.Empty), defaultValue);
+
     public T GetEnum<T>(string key, T defaultValue) where T : struct, Enum
     {
         if (keys.TryGetValue(key, out string? value) && 
@@ -48,6 +57,12 @@ public sealed class ConfigSection
         return defaultValue;
     }
 
+    public float GetFloat(string key, float defaultValue) => TryParse(key, float.Parse, defaultValue);
+
+    public int GetInt(string key) => GetInt(key, 0);
+
+    public int GetInt(string key, int defaultValue) => TryParse(key, int.Parse, defaultValue);
+
     public string GetString(string key) => GetString(key, string.Empty);
 
     public string GetString(string key, string defaultValue)
@@ -58,21 +73,6 @@ public sealed class ConfigSection
 
         return keys[key];
     }
-
-    public Color GetColour(string key) => GetColour(key, ConsolePalette.Black);
-
-    public Color GetColour(string key, Color defaultValue) =>
-        ConsolePalette.FromHex(GetString(key, string.Empty), defaultValue);
-
-    public float GetFloat(string key, float defaultValue) => TryParse(key, float.Parse, defaultValue);
-
-    public int GetInt(string key) => GetInt(key, 0);
-
-    public int GetInt(string key, int defaultValue) => TryParse(key, int.Parse, defaultValue);
-
-    public bool GetBool(string key) => GetBool(key, false);
-
-    public bool GetBool(string key, bool defaultValue) => TryParse(key, bool.Parse, defaultValue);
 
     public string Name
     {

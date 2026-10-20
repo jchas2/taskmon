@@ -9,7 +9,13 @@ public static partial class SystemInfo
     public static bool GetCpuHighCoreUsage(double processUsagePercent) => GetCpuHighCoreUsageInternal(processUsagePercent); 
 
     public static bool GetCpuTimes(ref SystemTimes systemTimes) => GetCpuTimesInternal(ref systemTimes);
-    
+
+    public static bool GetGpuCores(ref SystemStatistics systemStatistics) => GetGpuCoresInternal(ref systemStatistics);
+
+    public static bool GetGpuMemory(ref SystemStatistics systemStatistics) => GetGpuMemoryInternal(ref systemStatistics);
+
+    public static bool GetGpuUsage(ref SystemStatistics systemStatistics) => GetGpuUsageInternal(ref systemStatistics);
+
     private static IEnumerable<IPAddress> GetIpAddresses(NetworkInterfaceType networkInterfaceType)
     {
         List<NetworkInterface> activeNics = NetworkInterface
@@ -25,12 +31,6 @@ public static partial class SystemInfo
             }
         }
     }
-
-    public static bool GetGpuMemory(ref SystemStatistics systemStatistics) => GetGpuMemoryInternal(ref systemStatistics);
-
-    public static bool GetGpuUsage(ref SystemStatistics systemStatistics) => GetGpuUsageInternal(ref systemStatistics);
-
-    public static bool GetGpuCores(ref SystemStatistics systemStatistics) => GetGpuCoresInternal(ref systemStatistics);
 
     public static bool GetNetworkStats(ref NetworkStatistics networkStatistics) => GetNetworkStatsInternal(ref networkStatistics);
 
@@ -52,8 +52,6 @@ public static partial class SystemInfo
 
         return null;
     }
-
-    public static bool GetSystemMemory(ref SystemStatistics systemStatistics) => GetSystemMemoryInternal(ref systemStatistics);
 
     public static bool GetSystemInfo(ref SystemStatistics systemStatistics)
     {
@@ -78,6 +76,8 @@ public static partial class SystemInfo
         
         return result;
     }
-    
+
+    public static bool GetSystemMemory(ref SystemStatistics systemStatistics) => GetSystemMemoryInternal(ref systemStatistics);
+
     public static bool IsRunningAsRoot() => IsRunningAsRootInternal();
 }

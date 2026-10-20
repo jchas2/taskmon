@@ -37,6 +37,39 @@ public sealed class SystemInfoControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
+    // Checks every label/value row; blank spacer rows and device sub-header rows are skipped.
+    private static void AssertPropertyColours(
+        ListViewItemCollection items,
+        Color background,
+        Color keyColour,
+        Color valueColour)
+    {
+        List<ListViewItem> rows = items
+            .Where(item => item.SubItems[1].Text.Length > 0)
+            .ToList();
+
+        Assert.NotEmpty(rows);
+
+        foreach (ListViewItem row in rows) {
+            Assert.Equal(keyColour.ToArgb(), row.SubItems[0].ForegroundColor.ToArgb());
+            Assert.Equal(valueColour.ToArgb(), row.SubItems[1].ForegroundColor.ToArgb());
+            Assert.Equal(background.ToArgb(), row.SubItems[0].BackgroundColor.ToArgb());
+            Assert.Equal(background.ToArgb(), row.SubItems[1].BackgroundColor.ToArgb());
+        }
+    }
+
+    private void AssertSectionContains(SystemInfoControl ctrl, int navIndex, params string[] fragments)
+    {
+        ctrl.SelectSectionForTests(navIndex);
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        foreach (string fragment in fragments) {
+            Assert.Contains(fragment, output);
+        }
+    }
+
     private static SystemSnapshot BuildSnapshot() =>
         new() {
             Cpu = new CpuInfo {
@@ -137,6 +170,22 @@ public sealed class SystemInfoControlTests
             },
         };
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
+    [Fact]
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        SystemInfoControl ctrl = new(
+            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
+
+        Assert.NotNull(ctrl);
+    }
+
     private SystemInfoControl CreateControl(int width = 120, int height = 240)
     {
         SystemInfoControl ctrl = new(
@@ -175,34 +224,17 @@ public sealed class SystemInfoControlTests
         return ctrl;
     }
 
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
     [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        SystemInfoControl ctrl = new(
-            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
-
-        Assert.NotNull(ctrl);
-    }
-
-    [Fact]
-    public void Nav_Shows_All_Five_Section_Labels_Regardless_Of_Selection()
+    public void Draws_Key_And_Value_Pairs_For_Each_Subsystem()
     {
         SystemInfoControl ctrl = CreateControl();
         ctrl.Sample(BuildSnapshot());
-        ctrl.Draw();
 
-        string output = CapturedOutput();
-
-        foreach (string label in new[] { "CPU", "MEMORY", "GPU", "DISK", "NETWORK" }) {
-            Assert.Contains(label, output);
-        }
+        AssertSectionContains(ctrl, Cpu, "Processor:", "AMD Ryzen 9 7950X");
+        AssertSectionContains(ctrl, Memory, "Part Number:", "F5-6000J3038F16G");
+        AssertSectionContains(ctrl, Gpu, "Driver Version:", "560.94");
+        AssertSectionContains(ctrl, Disk, "Model:", "Samsung SSD 990 PRO 2TB", "UNATTACHED VOLUMES");
+        AssertSectionContains(ctrl, Network, "MAC Address:", "192.168.1.20, 192.168.1.21", "2.5 Gbps");
 
         ctrl.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
@@ -220,81 +252,6 @@ public sealed class SystemInfoControlTests
         Assert.Contains(Environment.MachineName.ToUpper(), output);
 
         ctrl.Unload();
-    }
-
-    [Fact]
-    public void System_Summary_Stays_Pinned_Regardless_Of_Selected_Section()
-    {
-        SystemInfoControl ctrl = CreateControl();
-        ctrl.Sample(BuildSnapshot());
-
-        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
-            runContextHelper.terminal.Invocations.Clear();
-
-            ctrl.SelectSectionForTests(navIndex);
-            ctrl.Draw();
-
-            Assert.Contains(Environment.MachineName.ToUpper(), CapturedOutput());
-        }
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Selecting_A_Section_Shows_Only_That_Sections_Content()
-    {
-        SystemInfoControl ctrl = CreateControl();
-        ctrl.Sample(BuildSnapshot());
-
-        ctrl.SelectSectionForTests(Cpu);
-        ctrl.Draw();
-        string cpuOutput = CapturedOutput();
-
-        Assert.Contains("Processor:", cpuOutput);
-        Assert.Contains("AMD Ryzen 9 7950X", cpuOutput);
-        Assert.DoesNotContain("MAC Address:", cpuOutput);
-        Assert.DoesNotContain("Part Number:", cpuOutput);
-
-        runContextHelper.terminal.Invocations.Clear();
-
-        ctrl.SelectSectionForTests(Network);
-        ctrl.Draw();
-        string networkOutput = CapturedOutput();
-
-        Assert.Contains("MAC Address:", networkOutput);
-        Assert.Contains("AA-BB-CC-DD-EE-01", networkOutput);
-        Assert.DoesNotContain("Processor:", networkOutput);
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
-    public void Draws_Key_And_Value_Pairs_For_Each_Subsystem()
-    {
-        SystemInfoControl ctrl = CreateControl();
-        ctrl.Sample(BuildSnapshot());
-
-        AssertSectionContains(ctrl, Cpu, "Processor:", "AMD Ryzen 9 7950X");
-        AssertSectionContains(ctrl, Memory, "Part Number:", "F5-6000J3038F16G");
-        AssertSectionContains(ctrl, Gpu, "Driver Version:", "560.94");
-        AssertSectionContains(ctrl, Disk, "Model:", "Samsung SSD 990 PRO 2TB", "UNATTACHED VOLUMES");
-        AssertSectionContains(ctrl, Network, "MAC Address:", "192.168.1.20, 192.168.1.21", "2.5 Gbps");
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    private void AssertSectionContains(SystemInfoControl ctrl, int navIndex, params string[] fragments)
-    {
-        ctrl.SelectSectionForTests(navIndex);
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        foreach (string fragment in fragments) {
-            Assert.Contains(fragment, output);
-        }
     }
 
     [Fact]
@@ -329,43 +286,33 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
-    public void Rebuilds_The_Rows_When_The_Device_Count_Changes()
+    public void Labels_And_Values_Take_The_Theme_Property_Colours_In_Every_Section()
     {
+        // Distinct from control/listview foreground, so a cell that fell back to the list view's
+        // own colours would fail.
+        Color background = ColorTranslator.FromHtml("#101010");
+        Color keyColour = ColorTranslator.FromHtml("#a1a1a1");
+        Color valueColour = ColorTranslator.FromHtml("#b2b2b2");
+
+        ConfigSection themeSection = new("Property Colours Theme");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.Foreground, "#ffffff");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewForeground, "#ffffff");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewBackground, "#101010");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyKey, "#a1a1a1");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyValue, "#b2b2b2");
+        runContext.AppConfig.Theme.Update(themeSection);
+
         SystemInfoControl ctrl = CreateControl();
-        ctrl.SelectSectionForTests(Disk);
-
-        SystemSnapshot oneDisk = BuildSnapshot() with {
-            Disk = new DiskInfo {
-                Specs = new DiskSpecs {
-                    Devices = [ new DiskDevice { Index = 0, Model = "Samsung SSD 990 PRO 2TB" } ],
-                },
-            },
-        };
-
-        ctrl.Sample(oneDisk);
-        ctrl.Draw();
-        runContextHelper.terminal.Invocations.Clear();
-
-        ctrl.Sample(BuildSnapshot());
-        ctrl.Draw();
-
-        Assert.Contains("WD Elements 25A3", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    // ---- Nav / content focus routing ---------------------------------------------------------
-
-    [Fact]
-    public void RightArrow_On_The_Nav_Moves_Focus_Into_The_Content_Pane()
-    {
-        SystemInfoControl ctrl = CreateFocusableControl();
         ctrl.Sample(BuildSnapshot());
 
-        bool handled = false;
-        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
+        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+            ctrl.SelectSectionForTests(navIndex);
+            ctrl.Draw();
 
-        Assert.True(handled);
+            AssertPropertyColours(ctrl.SectionItemsForTests, background, keyColour, valueColour);
+        }
+
+        AssertPropertyColours(ctrl.SummaryItemsForTests, background, keyColour, valueColour);
 
         ctrl.Unload();
     }
@@ -404,6 +351,49 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
+    public void Nav_Shows_All_Five_Section_Labels_Regardless_Of_Selection()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        foreach (string label in new[] { "CPU", "MEMORY", "GPU", "DISK", "NETWORK" }) {
+            Assert.Contains(label, output);
+        }
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Rebuilds_The_Rows_When_The_Device_Count_Changes()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.SelectSectionForTests(Disk);
+
+        SystemSnapshot oneDisk = BuildSnapshot() with {
+            Disk = new DiskInfo {
+                Specs = new DiskSpecs {
+                    Devices = [ new DiskDevice { Index = 0, Model = "Samsung SSD 990 PRO 2TB" } ],
+                },
+            },
+        };
+
+        ctrl.Sample(oneDisk);
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Sample(BuildSnapshot());
+        ctrl.Draw();
+
+        Assert.Contains("WD Elements 25A3", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void RightArrow_On_The_Content_Pane_Is_Left_Unhandled()
     {
         // Nothing further right of the content pane.
@@ -423,55 +413,63 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
-    public void Labels_And_Values_Take_The_Theme_Property_Colours_In_Every_Section()
+    public void RightArrow_On_The_Nav_Moves_Focus_Into_The_Content_Pane()
     {
-        // Distinct from control/listview foreground, so a cell that fell back to the list view's
-        // own colours would fail.
-        Color background = ColorTranslator.FromHtml("#101010");
-        Color keyColour = ColorTranslator.FromHtml("#a1a1a1");
-        Color valueColour = ColorTranslator.FromHtml("#b2b2b2");
-
-        ConfigSection themeSection = new("Property Colours Theme");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.Foreground, "#ffffff");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewForeground, "#ffffff");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ListViewBackground, "#101010");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyKey, "#a1a1a1");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.PropertyValue, "#b2b2b2");
-        runContext.AppConfig.Theme.Update(themeSection);
-
-        SystemInfoControl ctrl = CreateControl();
+        SystemInfoControl ctrl = CreateFocusableControl();
         ctrl.Sample(BuildSnapshot());
 
-        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
-            ctrl.SelectSectionForTests(navIndex);
-            ctrl.Draw();
+        bool handled = false;
+        ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
 
-            AssertPropertyColours(ctrl.SectionItemsForTests, background, keyColour, valueColour);
-        }
-
-        AssertPropertyColours(ctrl.SummaryItemsForTests, background, keyColour, valueColour);
+        Assert.True(handled);
 
         ctrl.Unload();
     }
 
-    // Checks every label/value row; blank spacer rows and device sub-header rows are skipped.
-    private static void AssertPropertyColours(
-        ListViewItemCollection items,
-        Color background,
-        Color keyColour,
-        Color valueColour)
+    [Fact]
+    public void Selecting_A_Section_Shows_Only_That_Sections_Content()
     {
-        List<ListViewItem> rows = items
-            .Where(item => item.SubItems[1].Text.Length > 0)
-            .ToList();
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
 
-        Assert.NotEmpty(rows);
+        ctrl.SelectSectionForTests(Cpu);
+        ctrl.Draw();
+        string cpuOutput = CapturedOutput();
 
-        foreach (ListViewItem row in rows) {
-            Assert.Equal(keyColour.ToArgb(), row.SubItems[0].ForegroundColor.ToArgb());
-            Assert.Equal(valueColour.ToArgb(), row.SubItems[1].ForegroundColor.ToArgb());
-            Assert.Equal(background.ToArgb(), row.SubItems[0].BackgroundColor.ToArgb());
-            Assert.Equal(background.ToArgb(), row.SubItems[1].BackgroundColor.ToArgb());
+        Assert.Contains("Processor:", cpuOutput);
+        Assert.Contains("AMD Ryzen 9 7950X", cpuOutput);
+        Assert.DoesNotContain("MAC Address:", cpuOutput);
+        Assert.DoesNotContain("Part Number:", cpuOutput);
+
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.SelectSectionForTests(Network);
+        ctrl.Draw();
+        string networkOutput = CapturedOutput();
+
+        Assert.Contains("MAC Address:", networkOutput);
+        Assert.Contains("AA-BB-CC-DD-EE-01", networkOutput);
+        Assert.DoesNotContain("Processor:", networkOutput);
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void System_Summary_Stays_Pinned_Regardless_Of_Selected_Section()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+
+        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+            runContextHelper.terminal.Invocations.Clear();
+
+            ctrl.SelectSectionForTests(navIndex);
+            ctrl.Draw();
+
+            Assert.Contains(Environment.MachineName.ToUpper(), CapturedOutput());
         }
+
+        ctrl.Unload();
     }
 }

@@ -41,15 +41,15 @@ public static unsafe class SysInfoApi
     }
 
     [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern void GetSystemInfo(SYSTEM_INFO* lpSystemInfo);
-
-    [DllImport(Libraries.Kernel32, SetLastError = true)]
-    public static extern bool GlobalMemoryStatusEx(MEMORYSTATUSEX* lpBuffer);
-
-    [DllImport(Libraries.Kernel32, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetLogicalProcessorInformationEx(
         WinNt.LOGICAL_PROCESSOR_RELATIONSHIP relationshipType,
         byte* buffer,
         uint* returnedLength);
+
+    [DllImport(Libraries.Kernel32, SetLastError = true)]
+    public static extern void GetSystemInfo(SYSTEM_INFO* lpSystemInfo);
+
+    [DllImport(Libraries.Kernel32, SetLastError = true)]
+    public static extern bool GlobalMemoryStatusEx(MEMORYSTATUSEX* lpBuffer);
 }

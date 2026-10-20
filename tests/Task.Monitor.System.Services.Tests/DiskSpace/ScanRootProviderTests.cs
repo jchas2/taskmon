@@ -5,20 +5,6 @@ namespace Task.Monitor.System.Services.Tests.DiskSpace;
 public sealed class ScanRootProviderTests
 {
     [Fact]
-    public void GetCandidates_Includes_Fixed_Removable_And_Network_Drives_On_Windows()
-    {
-        DriveCandidate[] drives = [
-            new("C:\\", IsReady: true, DriveType.Fixed),
-            new("D:\\", IsReady: true, DriveType.Removable),
-            new("E:\\", IsReady: true, DriveType.Network)
-        ];
-
-        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates(drives);
-
-        Assert.Equal(["C:\\", "D:\\", "E:\\"], candidates);
-    }
-
-    [Fact]
     public void GetCandidates_Excludes_CdRom_And_Ram_And_Unknown_Drives()
     {
         DriveCandidate[] drives = [
@@ -48,20 +34,6 @@ public sealed class ScanRootProviderTests
     }
 
     [Fact]
-    public void GetCandidates_Includes_The_Root_Volume_And_Volumes_Mounts_On_MacOS()
-    {
-        DriveCandidate[] drives = [
-            new("/", IsReady: true, DriveType.Fixed),
-            new("/Volumes/Backup", IsReady: true, DriveType.Fixed),
-            new("/Volumes/External SSD", IsReady: true, DriveType.Removable)
-        ];
-
-        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates(drives);
-
-        Assert.Equal(["/", "/Volumes/Backup", "/Volumes/External SSD"], candidates);
-    }
-
-    [Fact]
     public void GetCandidates_Excludes_Unix_Pseudo_Filesystem_Mounts_Outside_Volumes()
     {
         DriveCandidate[] drives = [
@@ -73,6 +45,34 @@ public sealed class ScanRootProviderTests
         IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates(drives);
 
         Assert.Equal(["/"], candidates);
+    }
+
+    [Fact]
+    public void GetCandidates_Includes_Fixed_Removable_And_Network_Drives_On_Windows()
+    {
+        DriveCandidate[] drives = [
+            new("C:\\", IsReady: true, DriveType.Fixed),
+            new("D:\\", IsReady: true, DriveType.Removable),
+            new("E:\\", IsReady: true, DriveType.Network)
+        ];
+
+        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates(drives);
+
+        Assert.Equal(["C:\\", "D:\\", "E:\\"], candidates);
+    }
+
+    [Fact]
+    public void GetCandidates_Includes_The_Root_Volume_And_Volumes_Mounts_On_MacOS()
+    {
+        DriveCandidate[] drives = [
+            new("/", IsReady: true, DriveType.Fixed),
+            new("/Volumes/Backup", IsReady: true, DriveType.Fixed),
+            new("/Volumes/External SSD", IsReady: true, DriveType.Removable)
+        ];
+
+        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates(drives);
+
+        Assert.Equal(["/", "/Volumes/Backup", "/Volumes/External SSD"], candidates);
     }
 
     [Fact]

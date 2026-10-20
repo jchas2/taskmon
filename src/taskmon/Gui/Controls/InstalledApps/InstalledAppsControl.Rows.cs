@@ -9,6 +9,46 @@ public sealed partial class InstalledAppsControl
 {
     private const string NotAvailable = "N/A";
 
+    private static string Cell(string? value) =>
+        string.IsNullOrWhiteSpace(value) 
+            ? NotAvailable 
+            : value;
+
+    private static string DescribeInstallDate(DateTime? installDate) =>
+        installDate is { } date 
+            ? date.ToString("yyyy-MM-dd") 
+            : NotAvailable;
+
+    private static string DescribeScope(InstalledAppScope scope) =>
+        scope == InstalledAppScope.Machine 
+            ? "Machine" 
+            : "User";
+
+    private static string DescribeSize(long? estimatedSizeKb) =>
+        estimatedSizeKb is { } sizeKb 
+            ? (sizeKb * 1024L).ToFormattedByteSize() 
+            : NotAvailable;
+
+    private void RebuildDetailRows(InstalledApp? app)
+    {
+        detailView.Items.Clear();
+
+        if (app is null) {
+            return;
+        }
+
+        Color background = appConfig.Theme.ListViewBackground;
+        Color foreground = appConfig.Theme.ListViewForeground;
+
+        detailView.Items.Add(new ListViewItem(["Name",      Cell(app.Name)],                       background, foreground));
+        detailView.Items.Add(new ListViewItem(["Version",   Cell(app.Version)],                    background, foreground));
+        detailView.Items.Add(new ListViewItem(["Publisher", Cell(app.Publisher)],                  background, foreground));
+        detailView.Items.Add(new ListViewItem(["Scope",     DescribeScope(app.Scope)],             background, foreground));
+        detailView.Items.Add(new ListViewItem(["Installed", DescribeInstallDate(app.InstallDate)], background, foreground));
+        detailView.Items.Add(new ListViewItem(["Size",      DescribeSize(app.EstimatedSizeKb)],    background, foreground));
+        detailView.Items.Add(new ListViewItem(["Location",  Cell(app.InstallLocation)],            background, foreground));
+    }
+
     private void RebuildRows(IReadOnlyList<InstalledApp> apps)
     {
         installedAppsView.Items.Clear();
@@ -33,44 +73,4 @@ public sealed partial class InstalledAppsControl
         installedAppsView.FooterText =
             $"{apps.Count} installed     r Refresh     ↑ ↓ PgUp PgDn Scroll";
     }
-
-    private void RebuildDetailRows(InstalledApp? app)
-    {
-        detailView.Items.Clear();
-
-        if (app is null) {
-            return;
-        }
-
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
-
-        detailView.Items.Add(new ListViewItem(["Name",      Cell(app.Name)],                       background, foreground));
-        detailView.Items.Add(new ListViewItem(["Version",   Cell(app.Version)],                    background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher", Cell(app.Publisher)],                  background, foreground));
-        detailView.Items.Add(new ListViewItem(["Scope",     DescribeScope(app.Scope)],             background, foreground));
-        detailView.Items.Add(new ListViewItem(["Installed", DescribeInstallDate(app.InstallDate)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Size",      DescribeSize(app.EstimatedSizeKb)],    background, foreground));
-        detailView.Items.Add(new ListViewItem(["Location",  Cell(app.InstallLocation)],            background, foreground));
-    }
-
-    private static string Cell(string? value) =>
-        string.IsNullOrWhiteSpace(value) 
-            ? NotAvailable 
-            : value;
-
-    private static string DescribeScope(InstalledAppScope scope) =>
-        scope == InstalledAppScope.Machine 
-            ? "Machine" 
-            : "User";
-
-    private static string DescribeInstallDate(DateTime? installDate) =>
-        installDate is { } date 
-            ? date.ToString("yyyy-MM-dd") 
-            : NotAvailable;
-
-    private static string DescribeSize(long? estimatedSizeKb) =>
-        estimatedSizeKb is { } sizeKb 
-            ? (sizeKb * 1024L).ToFormattedByteSize() 
-            : NotAvailable;
 }

@@ -8,15 +8,6 @@ namespace Task.Monitor.System.Tests.Process;
 public partial class ProcessUtilsTests
 {
     [SkippableFact]
-    [SupportedOSPlatform("windows")]
-    public void Should_End_Windows_Task()
-    {
-        using FileCleanupHelper cleanupHelper = new();
-        string fileName = cleanupHelper.GetTempFile(".bat");
-        Should_End_Task(fileName);
-    }
-
-    [SkippableFact]
     [SupportedOSPlatform("macos")]
     public void Should_End_MacOS_Task()
     {
@@ -42,7 +33,16 @@ public partial class ProcessUtilsTests
         bool terminated = ProcessUtils.EndTask(process.Id, timeOutMilliseconds: 500);
         Assert.True(terminated);
     } 
-    
+
+    [SkippableFact]
+    [SupportedOSPlatform("windows")]
+    public void Should_End_Windows_Task()
+    {
+        using FileCleanupHelper cleanupHelper = new();
+        string fileName = cleanupHelper.GetTempFile(".bat");
+        Should_End_Task(fileName);
+    }
+
     [Fact]
     public void Should_Get_Process_By_Pid()
     {

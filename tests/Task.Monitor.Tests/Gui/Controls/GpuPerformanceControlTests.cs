@@ -66,6 +66,42 @@ public sealed class GpuPerformanceControlTests
     }
 
     [Fact]
+    public void Scoped_To_An_Adapter_Draws_Its_Power_Draw()
+    {
+        GpuPerformanceControl ctrl = new(
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.SetScope(111);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Sample(new SystemSnapshot {
+            Gpu = BuildGpuInfoWithDevices(),
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [
+                        new PowerReading {
+                            Component = PowerComponent.Gpu, ComponentId = "111", Rail = "GPU",
+                            Watts = 123.4, Source = PowerSource.Nvml
+                        }
+                    ]
+                }
+            }
+        });
+        ctrl.Draw();
+
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("Power Draw"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("123.4 W"))), Times.AtLeastOnce);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Scoped_To_An_Adapter_Draws_Its_Specs_Rows()
     {
         GpuPerformanceControl ctrl = new(
@@ -100,41 +136,5 @@ public sealed class GpuPerformanceControlTests
 
         ctrl.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
-    public void Scoped_To_An_Adapter_Draws_Its_Power_Draw()
-    {
-        GpuPerformanceControl ctrl = new(
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        ctrl.SetScope(111);
-        ctrl.Load();
-        ctrl.Resize();
-        ctrl.Sample(new SystemSnapshot {
-            Gpu = BuildGpuInfoWithDevices(),
-            Power = new PowerInfo {
-                Metrics = new PowerMetrics {
-                    Readings = [
-                        new PowerReading {
-                            Component = PowerComponent.Gpu, ComponentId = "111", Rail = "GPU",
-                            Watts = 123.4, Source = PowerSource.Nvml
-                        }
-                    ]
-                }
-            }
-        });
-        ctrl.Draw();
-
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("Power Draw"))), Times.AtLeastOnce);
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("123.4 W"))), Times.AtLeastOnce);
-
-        ctrl.Unload();
     }
 }

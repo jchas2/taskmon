@@ -19,6 +19,7 @@ usage() {
     echo "  --restore               Restore NuGet packages."
     echo "  --build                 Build the solution."
     echo "  --test                  Run tests."
+    echo "  --style                 Check code style (dotnet format style and member ordering)."
     echo "  --publish               Publish the project."
     echo "  --deploy                Publish the project with 'Release' configuration (overrides --config)."
     echo "  -h, --help              Display this help message."
@@ -49,6 +50,9 @@ while [[ "$#" -gt 0 ]]; do
         --test)
             test=true
             ;;
+        --style)
+            style=true
+            ;;
         --publish)
             publish=true
             ;;
@@ -77,6 +81,7 @@ fi
 # The `dirname` command is used to get the directory of the script.
 ScriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+RepoRoot="$( cd "$ScriptDir/.." &> /dev/null && pwd )"
 SolutionPath="$ScriptDir/../src/taskmon.sln"
 ProjectPath="$ScriptDir/../src/taskmon/taskmon.csproj"
 
@@ -85,6 +90,28 @@ function publish_project() {
     local rid=$2
     echo "🛠️ Publishing project with configuration: $config, runtime: $rid"
     dotnet publish "$ProjectPath" -c "$config" -r "$rid" --self-contained -p:PublishAot=true
+}
+
+# Runs every check before failing, so one run reports all style problems. See docs/CODING_STYLE.md.
+function check_style() {
+    local failed=false
+
+    echo "Checking code style (dotnet format style)..."
+    if ! dotnet format style "$SolutionPath" --verify-no-changes --severity warn; then
+        failed=true
+    fi
+
+    echo "Checking member ordering (eng/tools/reorder-members.cs)..."
+    if ! (cd "$RepoRoot" && dotnet run eng/tools/reorder-members.cs -- --check src tests eng/tools); then
+        failed=true
+    fi
+
+    if [[ "$failed" == true ]]; then
+        echo "Style check failed. See docs/CODING_STYLE.md."
+        exit 1
+    fi
+
+    echo "Style check passed."
 }
 
 if [[ "$clean" == true ]]; then
@@ -106,6 +133,10 @@ fi
 if [[ "$test" == true ]]; then
     echo "Running tests..."
     dotnet test "$SolutionPath"
+fi
+
+if [[ "$style" == true ]]; then
+    check_style
 fi
 
 if [[ "$publish" == true ]]; then

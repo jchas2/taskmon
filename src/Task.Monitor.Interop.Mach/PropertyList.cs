@@ -13,163 +13,14 @@ public static class PropertyList
     private const string UidKey                        = "CF$UID";
     private const int    MaxDepth                      = 32;
 
-    public static object? ReadFile(string path)
+    private static byte[]? FromBase64(string text)
     {
-        byte[] bytes;
-
         try {
-            bytes = File.ReadAllBytes(path);
+            return Convert.FromBase64String(string.Concat(text.Where(c => !char.IsWhiteSpace(c))));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+        catch (FormatException) {
             return null;
         }
-
-        return Parse(bytes);
-    }
-
-    public static object? Parse(ReadOnlySpan<byte> bytes) =>
-        WithPropertyList(bytes, ToManaged);
-
-    public static object? ReadKeyedArchiveFile(string path)
-    {
-        byte[] bytes;
-
-        try {
-            bytes = File.ReadAllBytes(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
-            return null;
-        }
-
-        return ParseKeyedArchive(bytes);
-    }
-
-    public static object? ParseKeyedArchive(ReadOnlySpan<byte> bytes) =>
-        WithPropertyList(bytes, plist => {
-            using CFScope xml = new(CoreFoundation.CFPropertyListCreateData(
-                nint.Zero,
-                plist,
-                kCFPropertyListXMLFormat_v1_0,
-                0,
-                nint.Zero));
-
-            return xml.IsNull ? null : FromXml(ToBytes(xml));
-        });
-
-    private static unsafe object? WithPropertyList(ReadOnlySpan<byte> bytes, Func<nint, object?> convert)
-    {
-        if (bytes.IsEmpty) {
-            return null;
-        }
-
-        nint dataRef;
-
-        fixed (byte* ptr = bytes) {
-            dataRef = CoreFoundation.CFDataCreate(nint.Zero, ptr, bytes.Length);
-        }
-
-        using CFScope data = new(dataRef);
-
-        if (data.IsNull) {
-            return null;
-        }
-
-        using CFScope plist = new(CoreFoundation.CFPropertyListCreateWithData(
-            nint.Zero,
-            data,
-            kCFPropertyListImmutable,
-            nint.Zero,
-            nint.Zero));
-
-        return plist.IsNull ? null : convert(plist);
-    }
-
-    // Converts a borrowed CF property list object; the caller keeps ownership.
-    public static object? ToManaged(nint cf) => ToManaged(cf, 0);
-
-    private static object? ToManaged(nint cf, int depth)
-    {
-        if (cf == nint.Zero || depth > MaxDepth) {
-            return null;
-        }
-
-        long typeId = CoreFoundation.CFGetTypeID(cf);
-
-        if (typeId == CoreFoundation.CFStringGetTypeID()) {
-            return CoreFoundation.GetString(cf);
-        }
-
-        if (typeId == CoreFoundation.CFBooleanGetTypeID()) {
-            return CoreFoundation.CFBooleanGetValue(cf);
-        }
-
-        if (typeId == CoreFoundation.CFNumberGetTypeID()) {
-            if (CoreFoundation.CFNumberIsFloatType(cf)) {
-                CoreFoundation.CFNumberGetValue(cf, out double real);
-                return real;
-            }
-
-            CoreFoundation.CFNumberGetValue(cf, out long integer);
-            return integer;
-        }
-
-        if (typeId == CoreFoundation.CFDictionaryGetTypeID()) {
-            return ToDictionary(cf, depth);
-        }
-
-        if (typeId == CoreFoundation.CFArrayGetTypeID()) {
-            return ToList(cf, depth);
-        }
-
-        if (typeId == CoreFoundation.CFDataGetTypeID()) {
-            return ToBytes(cf);
-        }
-
-        return null;
-    }
-
-    private static unsafe Dictionary<string, object?> ToDictionary(nint cfDict, int depth)
-    {
-        int count = (int)CoreFoundation.CFDictionaryGetCount(cfDict);
-        Dictionary<string, object?> result = new(count, StringComparer.Ordinal);
-
-        if (count == 0) {
-            return result;
-        }
-
-        nint[] keys   = new nint[count];
-        nint[] values = new nint[count];
-
-        fixed (nint* keysPtr   = keys)
-        fixed (nint* valuesPtr = values) {
-            CoreFoundation.CFDictionaryGetKeysAndValues((nint*)cfDict, keysPtr, valuesPtr);
-        }
-
-        for (int i = 0; i < count; i++) {
-            if (CoreFoundation.CFGetTypeID(keys[i]) != CoreFoundation.CFStringGetTypeID()) {
-                continue;
-            }
-
-            string? key = CoreFoundation.GetString(keys[i]);
-
-            if (key != null) {
-                result[key] = ToManaged(values[i], depth + 1);
-            }
-        }
-
-        return result;
-    }
-
-    private static List<object?> ToList(nint cfArray, int depth)
-    {
-        long count           = CoreFoundation.CFArrayGetCount(cfArray);
-        List<object?> result = new((int)count);
-
-        for (long i = 0; i < count; i++) {
-            result.Add(ToManaged(CoreFoundation.CFArrayGetValueAtIndex(cfArray, i), depth + 1));
-        }
-
-        return result;
     }
 
     private static object? FromXml(byte[] xml)
@@ -232,14 +83,47 @@ public static class PropertyList
         return result;
     }
 
-    private static byte[]? FromBase64(string text)
+    public static object? Parse(ReadOnlySpan<byte> bytes) =>
+        WithPropertyList(bytes, ToManaged);
+
+    public static object? ParseKeyedArchive(ReadOnlySpan<byte> bytes) =>
+        WithPropertyList(bytes, plist => {
+            using CFScope xml = new(CoreFoundation.CFPropertyListCreateData(
+                nint.Zero,
+                plist,
+                kCFPropertyListXMLFormat_v1_0,
+                0,
+                nint.Zero));
+
+            return xml.IsNull ? null : FromXml(ToBytes(xml));
+        });
+
+    public static object? ReadFile(string path)
     {
+        byte[] bytes;
+
         try {
-            return Convert.FromBase64String(string.Concat(text.Where(c => !char.IsWhiteSpace(c))));
+            bytes = File.ReadAllBytes(path);
         }
-        catch (FormatException) {
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
             return null;
         }
+
+        return Parse(bytes);
+    }
+
+    public static object? ReadKeyedArchiveFile(string path)
+    {
+        byte[] bytes;
+
+        try {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            return null;
+        }
+
+        return ParseKeyedArchive(bytes);
     }
 
     private static unsafe byte[] ToBytes(nint cfData)
@@ -250,5 +134,121 @@ public static class PropertyList
         return length <= 0 || bytes == nint.Zero
             ? []
             : new ReadOnlySpan<byte>((void*)bytes, (int)length).ToArray();
+    }
+
+    private static unsafe Dictionary<string, object?> ToDictionary(nint cfDict, int depth)
+    {
+        int count = (int)CoreFoundation.CFDictionaryGetCount(cfDict);
+        Dictionary<string, object?> result = new(count, StringComparer.Ordinal);
+
+        if (count == 0) {
+            return result;
+        }
+
+        nint[] keys   = new nint[count];
+        nint[] values = new nint[count];
+
+        fixed (nint* keysPtr   = keys)
+        fixed (nint* valuesPtr = values) {
+            CoreFoundation.CFDictionaryGetKeysAndValues((nint*)cfDict, keysPtr, valuesPtr);
+        }
+
+        for (int i = 0; i < count; i++) {
+            if (CoreFoundation.CFGetTypeID(keys[i]) != CoreFoundation.CFStringGetTypeID()) {
+                continue;
+            }
+
+            string? key = CoreFoundation.GetString(keys[i]);
+
+            if (key != null) {
+                result[key] = ToManaged(values[i], depth + 1);
+            }
+        }
+
+        return result;
+    }
+
+    private static List<object?> ToList(nint cfArray, int depth)
+    {
+        long count           = CoreFoundation.CFArrayGetCount(cfArray);
+        List<object?> result = new((int)count);
+
+        for (long i = 0; i < count; i++) {
+            result.Add(ToManaged(CoreFoundation.CFArrayGetValueAtIndex(cfArray, i), depth + 1));
+        }
+
+        return result;
+    }
+
+    // Converts a borrowed CF property list object; the caller keeps ownership.
+    public static object? ToManaged(nint cf) => ToManaged(cf, 0);
+
+    private static object? ToManaged(nint cf, int depth)
+    {
+        if (cf == nint.Zero || depth > MaxDepth) {
+            return null;
+        }
+
+        long typeId = CoreFoundation.CFGetTypeID(cf);
+
+        if (typeId == CoreFoundation.CFStringGetTypeID()) {
+            return CoreFoundation.GetString(cf);
+        }
+
+        if (typeId == CoreFoundation.CFBooleanGetTypeID()) {
+            return CoreFoundation.CFBooleanGetValue(cf);
+        }
+
+        if (typeId == CoreFoundation.CFNumberGetTypeID()) {
+            if (CoreFoundation.CFNumberIsFloatType(cf)) {
+                CoreFoundation.CFNumberGetValue(cf, out double real);
+                return real;
+            }
+
+            CoreFoundation.CFNumberGetValue(cf, out long integer);
+            return integer;
+        }
+
+        if (typeId == CoreFoundation.CFDictionaryGetTypeID()) {
+            return ToDictionary(cf, depth);
+        }
+
+        if (typeId == CoreFoundation.CFArrayGetTypeID()) {
+            return ToList(cf, depth);
+        }
+
+        if (typeId == CoreFoundation.CFDataGetTypeID()) {
+            return ToBytes(cf);
+        }
+
+        return null;
+    }
+
+    private static unsafe object? WithPropertyList(ReadOnlySpan<byte> bytes, Func<nint, object?> convert)
+    {
+        if (bytes.IsEmpty) {
+            return null;
+        }
+
+        nint dataRef;
+
+        fixed (byte* ptr = bytes) {
+            dataRef = CoreFoundation.CFDataCreate(nint.Zero, ptr, bytes.Length);
+        }
+
+        using CFScope data = new(dataRef);
+
+        if (data.IsNull) {
+            return null;
+        }
+
+        using CFScope plist = new(CoreFoundation.CFPropertyListCreateWithData(
+            nint.Zero,
+            data,
+            kCFPropertyListImmutable,
+            nint.Zero,
+            nint.Zero));
+
+        return plist.IsNull ? null : convert(plist);
     }
 }

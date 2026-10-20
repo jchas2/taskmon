@@ -106,6 +106,8 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
     public InputBoxResult Result { get; private set; } = InputBoxResult.Enter;
 
+    public void SetText(string text) => textBuffer.SetText(text);
+
     public void ShowInputBox()
     {
         OnResize();
@@ -114,7 +116,7 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
 
     public string Text => textBuffer.Text;
 
-    public void SetText(string text) => textBuffer.SetText(text);
+    public string Title { get; set; } = string.Empty;
 
     public override bool Visible
     {
@@ -124,6 +126,4 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
             base.Visible           = value;
         }
     }
-
-    public string Title { get; set; } = string.Empty;
 }

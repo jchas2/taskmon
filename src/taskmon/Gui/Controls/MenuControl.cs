@@ -36,11 +36,9 @@ public sealed class MenuControl : Control
 
     public List<MenuListViewItem>? MenuItems { get; set; }
 
-    protected override void OnGotFocus() => menuControl.Focused = true;
-
-    protected override void OnLostFocus() => menuControl.Focused = false;
-
     protected override void OnDraw() => menuControl.Draw();
+
+    protected override void OnGotFocus() => menuControl.Focused = true;
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) =>
         menuControl.KeyPressed(keyInfo, ref handled);
@@ -60,6 +58,8 @@ public sealed class MenuControl : Control
 
         base.OnLoad();
     }
+
+    protected override void OnLostFocus() => menuControl.Focused = false;
 
     private void OnMenuItemClicked(object? sender, ListViewItemEventArgs e)
     {

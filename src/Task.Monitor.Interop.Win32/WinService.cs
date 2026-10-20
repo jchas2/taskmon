@@ -139,15 +139,6 @@ public static class WinService
         string lpServiceName,
         int    dwDesiredAccess);
 
-    [DllImport(Libraries.Advapi32, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern unsafe bool QueryServiceStatusEx(
-        nint  hService,
-        int   InfoLevel,
-        nint  lpBuffer,
-        uint  cbBufSize,
-        uint* pcbBytesNeeded);
-
     [DllImport(Libraries.Advapi32, EntryPoint = "QueryServiceConfigW", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool QueryServiceConfig(
@@ -164,4 +155,13 @@ public static class WinService
         nint lpBuffer,
         uint cbBufSize,
         out uint pcbBytesNeeded);
+
+    [DllImport(Libraries.Advapi32, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern unsafe bool QueryServiceStatusEx(
+        nint  hService,
+        int   InfoLevel,
+        nint  lpBuffer,
+        uint  cbBufSize,
+        uint* pcbBytesNeeded);
 }

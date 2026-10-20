@@ -242,13 +242,13 @@ public sealed class MetreControl : Control
         set => borderBackgroundColour = value;
     }
 
-    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
-
     public override Color BorderColour
     {
         get => BorderForegroundColour;
         set => BorderForegroundColour = value;
     }
+
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
     public void ClearSeries()
     {
@@ -397,8 +397,6 @@ public sealed class MetreControl : Control
         }
     }
 
-    private void SetBorderColour() => frame.SetColour(DisplayBorderColour, BorderBackgroundColour);
-
     public IReadOnlyList<MetreControlSeries> Series
     {
         get {
@@ -416,6 +414,8 @@ public sealed class MetreControl : Control
             }
         }
     }
+
+    private void SetBorderColour() => frame.SetColour(DisplayBorderColour, BorderBackgroundColour);
 
     public void SetValue(int index, double value)
     {

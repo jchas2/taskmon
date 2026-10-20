@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;

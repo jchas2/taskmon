@@ -6,31 +6,6 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class Win32StringHelper
 {
-    // Parse array of strings from one buffer separated by NULL and a double NULL to terminate.
-    public static string[] ParseMultiSz(ReadOnlySpan<char> buffer)
-    {
-        List<string> values = new();
-
-        while (!buffer.IsEmpty)
-        {
-            int terminator = buffer.IndexOf('\0');
-
-            if (terminator < 0) {
-                values.Add(buffer.ToString());
-                break;
-            }
-
-            if (terminator == 0) {
-                break;
-            }
-
-            values.Add(buffer[..terminator].ToString());
-            buffer = buffer[(terminator + 1)..];
-        }
-
-        return values.ToArray();
-    }
-
     // String from a fixed size wide char buffer, terminated on the first \0 or the end of the buffer.
     public static string FromNullTerminated(ReadOnlySpan<char> buffer)
     {
@@ -60,4 +35,29 @@ public static class Win32StringHelper
         RegistryHive.CurrentUser  => "HKCU",
                                 _ => hive.ToString()
     };
+
+    // Parse array of strings from one buffer separated by NULL and a double NULL to terminate.
+    public static string[] ParseMultiSz(ReadOnlySpan<char> buffer)
+    {
+        List<string> values = new();
+
+        while (!buffer.IsEmpty)
+        {
+            int terminator = buffer.IndexOf('\0');
+
+            if (terminator < 0) {
+                values.Add(buffer.ToString());
+                break;
+            }
+
+            if (terminator == 0) {
+                break;
+            }
+
+            values.Add(buffer[..terminator].ToString());
+            buffer = buffer[(terminator + 1)..];
+        }
+
+        return values.ToArray();
+    }
 }

@@ -4,14 +4,11 @@ namespace Task.Monitor.Extensions;
 
 public static class PowerMetricsExtensions
 {
-    public static double? GpuPower(this PowerMetrics metrics, long adapterLuid) =>
-        Match(metrics, PowerComponent.Gpu, adapterLuid.ToString())?.Watts;
-
     public static PowerReading? DiskPower(this PowerMetrics metrics, int diskIndex) =>
         Match(metrics, PowerComponent.Disk, diskIndex.ToString());
 
-    public static double? SystemPower(this PowerMetrics metrics) =>
-        Match(metrics, PowerComponent.System, componentId: null)?.Watts;
+    public static double? GpuPower(this PowerMetrics metrics, long adapterLuid) =>
+        Match(metrics, PowerComponent.Gpu, adapterLuid.ToString())?.Watts;
 
     private static PowerReading? Match(PowerMetrics metrics, PowerComponent component, string? componentId)
     {
@@ -29,6 +26,9 @@ public static class PowerMetricsExtensions
 
         return null;
     }
+
+    public static double? SystemPower(this PowerMetrics metrics) =>
+        Match(metrics, PowerComponent.System, componentId: null)?.Watts;
 
     public static string ToWattText(this double watts) => $"{watts:0.0} W";
 

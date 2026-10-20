@@ -31,8 +31,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
     private string  powerText = "N/A";
 
-    public void SetScope(int? diskIndex) => scopedDiskIndex = diskIndex;
-
     public DiskPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.appConfig = appConfig;
@@ -69,58 +67,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         diskSpecsListView.ColumnHeaders
             .Add(new ListViewColumnHeader(""))
             .Add(new ListViewColumnHeader(""));
-    }
-
-    public void Sample(SystemSnapshot snapshot)
-    {
-        lock (@lock) {
-            if (snapshot.Disk == null) {
-                return;
-            }
-
-            diskInfo    = snapshot.Disk;
-            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(ThermalComponent.Disk, scopedDiskIndex?.ToString());
-            powerText   = ResolvePowerText(snapshot);
-
-            (DiskDeviceMetrics? device, _, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            activeTimeChart.AddData(
-                device?.ToDiskActiveTimeRatio() ?? diskInfo.Metrics.ToDiskActiveTimeRatio());
-            
-            transferRateChart.AddData(
-                device?.ToDiskTransferBytesPerSecond() ?? diskInfo.Metrics.ToDiskTransferBytesPerSecond());
-        }
-    }
-
-    private string ResolvePowerText(SystemSnapshot snapshot)
-    {
-        if (scopedDiskIndex is not { } index || snapshot.Power is not { } power) {
-            return "N/A";
-        }
-
-        if (power.Metrics.DiskPower(index) is not { } reading) {
-            return "N/A";
-        }
-
-        return reading.IsRated
-            ? $"{reading.Watts:0.0} W (rated)"
-            : reading.Watts.ToWattText();
-    }
-
-    private (DiskDeviceMetrics? device, DiskDevice? spec, bool render) ResolveScope()
-    {
-        if (scopedDiskIndex is not { } index) {
-            return (null, null, true);
-        }
-
-        DiskDeviceMetrics? device = diskInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == index);
-        DiskDevice?        spec   = diskInfo.Specs.Devices.FirstOrDefault(candidate => candidate.Index == index);
-
-        return (device, spec, device != null);
     }
 
     protected override void OnDraw()
@@ -181,12 +127,6 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
 
             diskSpecsListView.Draw();
         }
-    }
-
-    private void SetSpecsRow(int index, string label, string value)
-    {
-        diskSpecsListView.Items[index].SubItems[0].Text = label;
-        diskSpecsListView.Items[index].SubItems[1].Text = value;
     }
 
     protected override void OnLoad()
@@ -275,5 +215,65 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     {
         diskMetricsListView.Items.Clear();
         diskSpecsListView.Items.Clear();
+    }
+
+    private string ResolvePowerText(SystemSnapshot snapshot)
+    {
+        if (scopedDiskIndex is not { } index || snapshot.Power is not { } power) {
+            return "N/A";
+        }
+
+        if (power.Metrics.DiskPower(index) is not { } reading) {
+            return "N/A";
+        }
+
+        return reading.IsRated
+            ? $"{reading.Watts:0.0} W (rated)"
+            : reading.Watts.ToWattText();
+    }
+
+    private (DiskDeviceMetrics? device, DiskDevice? spec, bool render) ResolveScope()
+    {
+        if (scopedDiskIndex is not { } index) {
+            return (null, null, true);
+        }
+
+        DiskDeviceMetrics? device = diskInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == index);
+        DiskDevice?        spec   = diskInfo.Specs.Devices.FirstOrDefault(candidate => candidate.Index == index);
+
+        return (device, spec, device != null);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        lock (@lock) {
+            if (snapshot.Disk == null) {
+                return;
+            }
+
+            diskInfo    = snapshot.Disk;
+            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(ThermalComponent.Disk, scopedDiskIndex?.ToString());
+            powerText   = ResolvePowerText(snapshot);
+
+            (DiskDeviceMetrics? device, _, bool render) = ResolveScope();
+
+            if (!render) {
+                return;
+            }
+
+            activeTimeChart.AddData(
+                device?.ToDiskActiveTimeRatio() ?? diskInfo.Metrics.ToDiskActiveTimeRatio());
+            
+            transferRateChart.AddData(
+                device?.ToDiskTransferBytesPerSecond() ?? diskInfo.Metrics.ToDiskTransferBytesPerSecond());
+        }
+    }
+
+    public void SetScope(int? diskIndex) => scopedDiskIndex = diskIndex;
+
+    private void SetSpecsRow(int index, string label, string value)
+    {
+        diskSpecsListView.Items[index].SubItems[0].Text = label;
+        diskSpecsListView.Items[index].SubItems[1].Text = value;
     }
 }

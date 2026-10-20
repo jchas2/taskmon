@@ -5,9 +5,29 @@ namespace Task.Monitor.System.Services.Tests.Startup;
 
 public sealed class CFScopeTests
 {
+    [Fact]
+    public void Converts_Implicitly_To_The_Reference()
+    {
+        using CFScope scope = new(CreateString());
+
+        nint value = scope;
+
+        Assert.Equal(scope.Value, value);
+        Assert.False(scope.IsNull);
+        Assert.StartsWith("cfscope-test-", CoreFoundation.GetString(scope));
+    }
+
     // A CFString long and unusual enough not to be one of CF's shared constant strings, whose
     // retain counts are meaningless.
     private static nint CreateString() => CoreFoundation.CFStringCreate($"cfscope-test-{Guid.NewGuid():N}");
+
+    [Fact]
+    public void Disposing_A_Null_Scope_Does_Nothing()
+    {
+        using CFScope scope = new(nint.Zero);
+
+        Assert.True(scope.IsNull);
+    }
 
     [Fact]
     public void Releases_Its_Reference_Exactly_Once()
@@ -27,26 +47,6 @@ public sealed class CFScopeTests
         finally {
             CoreFoundation.CFRelease(value);
         }
-    }
-
-    [Fact]
-    public void Disposing_A_Null_Scope_Does_Nothing()
-    {
-        using CFScope scope = new(nint.Zero);
-
-        Assert.True(scope.IsNull);
-    }
-
-    [Fact]
-    public void Converts_Implicitly_To_The_Reference()
-    {
-        using CFScope scope = new(CreateString());
-
-        nint value = scope;
-
-        Assert.Equal(scope.Value, value);
-        Assert.False(scope.IsNull);
-        Assert.StartsWith("cfscope-test-", CoreFoundation.GetString(scope));
     }
 }
 #endif

@@ -36,20 +36,19 @@ public static class Pdh
         public PDH_RAW_COUNTER RawValue;
     }
 
-    [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
-    public static extern unsafe uint PdhOpenQuery(
-        [MarshalAs(UnmanagedType.LPWStr)]
-        string? szDataSource, 
-        nint    dwUserData, 
-        nint*   phQuery);
-    
+    public static bool IsTotalInstance(string? instanceName) =>
+        string.Equals(instanceName, TotalInstanceName, StringComparison.OrdinalIgnoreCase);
+
     [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
     public static extern unsafe uint PdhAddEnglishCounter(
         nint   hQuery, 
         string szFullCounterPath, 
         nint   dwUserData, 
         nint*  phCounter);
-    
+
+    [DllImport(Libraries.Pdh)]
+    public static extern uint PdhCloseQuery(nint hQuery);
+
     [DllImport(Libraries.Pdh)]
     public static extern uint PdhCollectQueryData(nint hQuery);
     
@@ -67,10 +66,11 @@ public static class Pdh
         uint* lpdwBufferSize, 
         uint* lpdwItemCount, 
         nint  ItemBuffer);
-    
-    [DllImport(Libraries.Pdh)]
-    public static extern uint PdhCloseQuery(nint hQuery);
-    
-    public static bool IsTotalInstance(string? instanceName) =>
-        string.Equals(instanceName, TotalInstanceName, StringComparison.OrdinalIgnoreCase);
+
+    [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
+    public static extern unsafe uint PdhOpenQuery(
+        [MarshalAs(UnmanagedType.LPWStr)]
+        string? szDataSource, 
+        nint    dwUserData, 
+        nint*   phQuery);
 }

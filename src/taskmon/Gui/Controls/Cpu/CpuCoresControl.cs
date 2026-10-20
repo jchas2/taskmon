@@ -49,57 +49,152 @@ public sealed class  CpuCoresControl : Control
         this.appConfig         = appConfig;
     }
 
-    protected override void OnLoad()
+    internal static CoreGrid CalculateGrid(int coreCount, int innerWidth, int innerHeight)
     {
-        CommonControl.ThemeDefaults(this, appConfig.Theme);
-        serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+        if (coreCount <= 0 || innerWidth <= 0 || innerHeight <= 0) {
+            return new CoreGrid(0, 0, 0, 0, 0);
+        }
 
-        base.OnLoad();
+        int labelWidth     = 1 + Math.Max(1, coreCount - 1).ToString().Length;
+        int minColumnWidth = labelWidth + 1 + MinBarWidth + PercentWidth;
+
+        if (innerWidth < minColumnWidth) {
+            return new CoreGrid(0, 0, 0, 0, 0);
+        }
+
+        int rows        = Math.Min(innerHeight, coreCount);
+        int wanted      = (coreCount + rows - 1) / rows;
+        int affordable  = (innerWidth + ColumnGutter) / (minColumnWidth + ColumnGutter);
+        int columns     = Math.Max(1, Math.Min(wanted, affordable));
+        int columnWidth = (innerWidth - (columns - 1) * ColumnGutter) / columns;
+        int barWidth    = columnWidth - labelWidth - 1 - PercentWidth;
+
+        return new CoreGrid(
+            columns, 
+            rows, 
+            columnWidth, 
+            labelWidth, 
+            barWidth);
     }
 
-    protected override void OnUnload()
+    private void DrawBorder()
     {
-        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+        string titleLabel  = $" {Title} ";
+        int    innerWidth  = Width - 2;
+        int    titleLength = Math.Min(titleLabel.Length, innerWidth);
+        int    leftDashes  = (innerWidth - titleLength) / 2;
+        int    rightDashes = innerWidth - titleLength - leftDashes;
 
+        frame.Clear();
+        frame.MoveTo(X, Y);
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
+        frame.Append('╭');
+        frame.Append('─', leftDashes);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(titleLabel.AsSpan(0, titleLength));
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
+        frame.Append('─', rightDashes);
+        frame.Append('╮');
+
+        for (int row = 1; row < Height - 1; row++) {
+            frame.MoveTo(X, Y + row);
+            frame.SetColour(DisplayBorderColour, BackgroundColour);
+            frame.Append('│');
+
+            frame.MoveTo(X + Width - 1, Y + row);
+            frame.Append('│');
+        }
+
+        frame.MoveTo(X, Y + Height - 1);
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
+        frame.Append('╰');
+        frame.Append('─', innerWidth);
+        frame.Append('╯');
+
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+
+    private void DrawCentredMessage(
+        int    left, 
+        int    top, 
+        int    width, 
+        int    height, 
+        string message)
+    {
+        string shown = message.Length > width ? message[..width] : message;
+        int messageLeft = left + (width - shown.Length) / 2;
+
+        frame.Clear();
+        frame.MoveTo(messageLeft, top + height / 2);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(shown);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+
+    private void DrawCore(
+        MetreControl metre, 
+        int          coreIndex, 
+        int          left, 
+        int          top, 
+        CoreGrid     grid)
+    {
+        double value = coreValues[coreIndex];
+        string label = $"C{coreNames[coreIndex]}";
+
+        frame.Clear();
+        frame.MoveTo(left, top);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(label.Length > grid.LabelWidth ? label[..grid.LabelWidth] : label.PadRight(grid.LabelWidth));
+        frame.Append(' ');
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+
+        metre.X          = left + grid.LabelWidth + 1;
+        metre.Y          = top;
+        metre.Width      = grid.BarWidth;
+        metre.MetreStyle = appConfig.MetreStyle;
+        metre.Series[0].Colour = LoadColour(value);
+        metre.SetValue(0, value);
+
+        frame.Clear();
+        frame.MoveTo(metre.X + grid.BarWidth, top);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append($"{value * 100:0}%".PadLeft(PercentWidth));
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+    }
+
+    private void EnsureMetres(CoreGrid grid)
+    {
+        int required     = Math.Min(coreValues.Length, grid.Columns * grid.Rows);
+        string signature = $"{required}:{grid.BarWidth}";
+
+        if (signature == metreSignature && metres.Count == required) {
+            return;
+        }
+
+        metreSignature = signature;
         metres.Clear();
-        metreSignature = string.Empty;
 
-        base.OnUnload();
-    }
-
-    protected override void OnResize()
-    {
-        needsClear = true;
-        base.OnResize();
-    }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) => Sample(e.Snapshot);
-
-    public void Sample(SystemSnapshot snapshot)
-    {
-        try {
-            DrawingLockAcquire();
-
-            if (snapshot.Cpu is { } cpu && cpu.CoreMetrics.Length > 0) {
-                if (coreValues.Length != cpu.CoreMetrics.Length) {
-                    coreNames  = new string[cpu.CoreMetrics.Length];
-                    coreValues = new double[cpu.CoreMetrics.Length];
-                    needsClear = true;
-                }
-
-                for (int i = 0; i < cpu.CoreMetrics.Length; i++) {
-                    CpuInfo.CpuCoreMetric core = cpu.CoreMetrics[i];
-                    coreNames[i]  = string.IsNullOrWhiteSpace(core.Name) ? i.ToString() : core.Name;
-                    coreValues[i] = Math.Clamp(core.Value, 0.0, 1.0);
-                }
-            }
+        for (int i = 0; i < required; i++) {
+            MetreControl metre = new(Terminal) {
+                ShowLegend             = false,
+                Rows                   = 1,
+            };
+            
+            CommonControl.Theme(metre, appConfig.Theme);
+            metre.AddSeries(string.Empty, appConfig.Theme.RangeLowBackground);
+            metres.Add(metre);
         }
-        finally {
-            DrawingLockRelease();
-        }
-
-        Draw();
     }
+
+    private Color LoadColour(double value) => value switch {
+        >= HighLoadThreshold => appConfig.Theme.RangeHighBackground,
+        >= MidLoadThreshold  => appConfig.Theme.RangeMidBackground,
+                           _ => appConfig.Theme.RangeLowBackground
+    };
 
     protected override void OnDraw()
     {
@@ -172,150 +267,55 @@ public sealed class  CpuCoresControl : Control
         }
     }
 
-    private void DrawCore(
-        MetreControl metre, 
-        int          coreIndex, 
-        int          left, 
-        int          top, 
-        CoreGrid     grid)
+    protected override void OnLoad()
     {
-        double value = coreValues[coreIndex];
-        string label = $"C{coreNames[coreIndex]}";
+        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
-        frame.Clear();
-        frame.MoveTo(left, top);
-        frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append(label.Length > grid.LabelWidth ? label[..grid.LabelWidth] : label.PadRight(grid.LabelWidth));
-        frame.Append(' ');
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
-
-        metre.X          = left + grid.LabelWidth + 1;
-        metre.Y          = top;
-        metre.Width      = grid.BarWidth;
-        metre.MetreStyle = appConfig.MetreStyle;
-        metre.Series[0].Colour = LoadColour(value);
-        metre.SetValue(0, value);
-
-        frame.Clear();
-        frame.MoveTo(metre.X + grid.BarWidth, top);
-        frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append($"{value * 100:0}%".PadLeft(PercentWidth));
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
+        base.OnLoad();
     }
 
-    private Color LoadColour(double value) => value switch {
-        >= HighLoadThreshold => appConfig.Theme.RangeHighBackground,
-        >= MidLoadThreshold  => appConfig.Theme.RangeMidBackground,
-                           _ => appConfig.Theme.RangeLowBackground
-    };
-
-    private void EnsureMetres(CoreGrid grid)
+    protected override void OnResize()
     {
-        int required     = Math.Min(coreValues.Length, grid.Columns * grid.Rows);
-        string signature = $"{required}:{grid.BarWidth}";
+        needsClear = true;
+        base.OnResize();
+    }
 
-        if (signature == metreSignature && metres.Count == required) {
-            return;
-        }
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) => Sample(e.Snapshot);
 
-        metreSignature = signature;
+    protected override void OnUnload()
+    {
+        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+
         metres.Clear();
+        metreSignature = string.Empty;
 
-        for (int i = 0; i < required; i++) {
-            MetreControl metre = new(Terminal) {
-                ShowLegend             = false,
-                Rows                   = 1,
-            };
-            
-            CommonControl.Theme(metre, appConfig.Theme);
-            metre.AddSeries(string.Empty, appConfig.Theme.RangeLowBackground);
-            metres.Add(metre);
-        }
+        base.OnUnload();
     }
 
-    internal static CoreGrid CalculateGrid(int coreCount, int innerWidth, int innerHeight)
+    public void Sample(SystemSnapshot snapshot)
     {
-        if (coreCount <= 0 || innerWidth <= 0 || innerHeight <= 0) {
-            return new CoreGrid(0, 0, 0, 0, 0);
+        try {
+            DrawingLockAcquire();
+
+            if (snapshot.Cpu is { } cpu && cpu.CoreMetrics.Length > 0) {
+                if (coreValues.Length != cpu.CoreMetrics.Length) {
+                    coreNames  = new string[cpu.CoreMetrics.Length];
+                    coreValues = new double[cpu.CoreMetrics.Length];
+                    needsClear = true;
+                }
+
+                for (int i = 0; i < cpu.CoreMetrics.Length; i++) {
+                    CpuInfo.CpuCoreMetric core = cpu.CoreMetrics[i];
+                    coreNames[i]  = string.IsNullOrWhiteSpace(core.Name) ? i.ToString() : core.Name;
+                    coreValues[i] = Math.Clamp(core.Value, 0.0, 1.0);
+                }
+            }
+        }
+        finally {
+            DrawingLockRelease();
         }
 
-        int labelWidth     = 1 + Math.Max(1, coreCount - 1).ToString().Length;
-        int minColumnWidth = labelWidth + 1 + MinBarWidth + PercentWidth;
-
-        if (innerWidth < minColumnWidth) {
-            return new CoreGrid(0, 0, 0, 0, 0);
-        }
-
-        int rows        = Math.Min(innerHeight, coreCount);
-        int wanted      = (coreCount + rows - 1) / rows;
-        int affordable  = (innerWidth + ColumnGutter) / (minColumnWidth + ColumnGutter);
-        int columns     = Math.Max(1, Math.Min(wanted, affordable));
-        int columnWidth = (innerWidth - (columns - 1) * ColumnGutter) / columns;
-        int barWidth    = columnWidth - labelWidth - 1 - PercentWidth;
-
-        return new CoreGrid(
-            columns, 
-            rows, 
-            columnWidth, 
-            labelWidth, 
-            barWidth);
-    }
-    
-    private void DrawCentredMessage(
-        int    left, 
-        int    top, 
-        int    width, 
-        int    height, 
-        string message)
-    {
-        string shown = message.Length > width ? message[..width] : message;
-        int messageLeft = left + (width - shown.Length) / 2;
-
-        frame.Clear();
-        frame.MoveTo(messageLeft, top + height / 2);
-        frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append(shown);
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
-    }
-
-    private void DrawBorder()
-    {
-        string titleLabel  = $" {Title} ";
-        int    innerWidth  = Width - 2;
-        int    titleLength = Math.Min(titleLabel.Length, innerWidth);
-        int    leftDashes  = (innerWidth - titleLength) / 2;
-        int    rightDashes = innerWidth - titleLength - leftDashes;
-
-        frame.Clear();
-        frame.MoveTo(X, Y);
-        frame.SetColour(DisplayBorderColour, BackgroundColour);
-        frame.Append('╭');
-        frame.Append('─', leftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append(titleLabel.AsSpan(0, titleLength));
-        frame.SetColour(DisplayBorderColour, BackgroundColour);
-        frame.Append('─', rightDashes);
-        frame.Append('╮');
-
-        for (int row = 1; row < Height - 1; row++) {
-            frame.MoveTo(X, Y + row);
-            frame.SetColour(DisplayBorderColour, BackgroundColour);
-            frame.Append('│');
-
-            frame.MoveTo(X + Width - 1, Y + row);
-            frame.Append('│');
-        }
-
-        frame.MoveTo(X, Y + Height - 1);
-        frame.SetColour(DisplayBorderColour, BackgroundColour);
-        frame.Append('╰');
-        frame.Append('─', innerWidth);
-        frame.Append('╯');
-
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
+        Draw();
     }
 }

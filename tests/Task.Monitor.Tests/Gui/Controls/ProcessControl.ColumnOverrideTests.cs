@@ -22,17 +22,6 @@ public sealed class ProcessControlColumnOverrideTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
-    // itself, from inside its real worker loop.
-    private static void RaiseSnapshotUpdated(ServiceController serviceController, SystemSnapshot snapshot)
-    {
-        FieldInfo? field = typeof(ServiceController).GetField(
-            "SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
-        handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
-    }
-
     private static SystemSnapshot BuildSnapshot() =>
         new() {
             Processes = new ProcessInfo {
@@ -48,6 +37,13 @@ public sealed class ProcessControlColumnOverrideTests
                 },
             },
         };
+
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
 
     private ProcessControl CreateControl(Statistics? visibleColumnsOverride)
     {
@@ -66,12 +62,34 @@ public sealed class ProcessControlColumnOverrideTests
         return ctrl;
     }
 
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
+    [Fact]
+    public void Null_Override_Falls_Back_To_The_AppConfig_Wide_Setting()
+    {
+        runContext.AppConfig.VisibleColumns = Statistics.Mem;
+
+        ProcessControl ctrl = CreateControl(visibleColumnsOverride: null);
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot());
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("MEM", output);
+        Assert.DoesNotContain("CPU%", output);
+
+        ctrl.Unload();
+    }
+
+    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
+    // itself, from inside its real worker loop.
+    private static void RaiseSnapshotUpdated(ServiceController serviceController, SystemSnapshot snapshot)
+    {
+        FieldInfo? field = typeof(ServiceController).GetField(
+            "SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
+        handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
+    }
 
     [Fact]
     public void Shows_Only_The_Overrides_Own_Columns_Not_The_AppConfig_Wide_Setting()
@@ -115,23 +133,5 @@ public sealed class ProcessControlColumnOverrideTests
 
         Assert.Contains("MEM", memOnlyOutput);
         Assert.DoesNotContain("CPU%", memOnlyOutput);
-    }
-
-    [Fact]
-    public void Null_Override_Falls_Back_To_The_AppConfig_Wide_Setting()
-    {
-        runContext.AppConfig.VisibleColumns = Statistics.Mem;
-
-        ProcessControl ctrl = CreateControl(visibleColumnsOverride: null);
-
-        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot());
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        Assert.Contains("MEM", output);
-        Assert.DoesNotContain("CPU%", output);
-
-        ctrl.Unload();
     }
 }

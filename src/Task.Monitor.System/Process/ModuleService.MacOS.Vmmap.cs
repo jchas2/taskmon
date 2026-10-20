@@ -9,6 +9,12 @@ public partial class ModuleService
     private const string VmmapPath = "/usr/bin/vmmap";
     private const int VmmapTimeoutMs = 3000;
 
+    private static string? ExtractTrailingPath(string line)
+    {
+        int index = line.IndexOf(" /", StringComparison.Ordinal);
+        return index < 0 ? null : line[(index + 1)..].Trim();
+    }
+
     // Initial path for process modules as the call to task_for_pid can't open SIP-protected / hardened apps.
     // Shell out to Apple's vmmap, which is signed with com.apple.system-task-ports.
     private static bool GetModulesFromVmmap(int pid, List<ModuleInfo> moduleInfos)
@@ -67,12 +73,6 @@ public partial class ModuleService
             ExceptionHelper.LogException(ex, $"An Exception occurred processing {VmmapPath}");
             return false;
         }
-    }
-
-    private static string? ExtractTrailingPath(string line)
-    {
-        int index = line.IndexOf(" /", StringComparison.Ordinal);
-        return index < 0 ? null : line[(index + 1)..].Trim();
     }
 #endif
 }

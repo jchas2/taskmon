@@ -11,15 +11,6 @@ public static class CodeSigning
     private static readonly Lazy<nint> CertificatesKey = new(() =>
         DyLib.ReadExportedPointer(Libraries.Security, "kSecCodeInfoCertificates"));
 
-    [DllImport(Libraries.Security)]
-    private static extern int SecStaticCodeCreateWithPath(nint path, uint flags, out nint staticCode);
-
-    [DllImport(Libraries.Security)]
-    private static extern int SecCodeCopySigningInformation(nint code, uint flags, out nint information);
-
-    [DllImport(Libraries.Security)]
-    private static extern nint SecCertificateCopySubjectSummary(nint certificate);
-
     public static string? GetSigningCertificateSummary(string path)
     {
         nint certificatesKey = CertificatesKey.Value;
@@ -60,4 +51,13 @@ public static class CodeSigning
 
         return CoreFoundation.GetString(summary);
     }
+
+    [DllImport(Libraries.Security)]
+    private static extern nint SecCertificateCopySubjectSummary(nint certificate);
+
+    [DllImport(Libraries.Security)]
+    private static extern int SecCodeCopySigningInformation(nint code, uint flags, out nint information);
+
+    [DllImport(Libraries.Security)]
+    private static extern int SecStaticCodeCreateWithPath(nint path, uint flags, out nint staticCode);
 }

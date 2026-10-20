@@ -22,61 +22,70 @@ public sealed class TextInputDialog : Control
 
     public TextInputDialog(ISystemTerminal terminal) : base(terminal) { }
 
+    public Func<char, bool>? CharacterFilter { get; set; }
+
     public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogButtonBackgroundColour { get; set; } = ConsolePalette.DarkGray;
     public Color DialogButtonForegroundColour { get; set; } = ConsolePalette.Black;
     public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
-    public Color FieldBackgroundColour { get; set; } = ConsolePalette.Black;
-    public Color FieldForegroundColour { get; set; } = ConsolePalette.White;
 
-    public string Title { get; set; } = string.Empty;
-
-    public int MaxLength { get; set; } = 64;
-
-    public Func<char, bool>? CharacterFilter { get; set; }
-
-    public TextInputDialogResult Result { get; private set; } = TextInputDialogResult.None;
-
-    public string Text => text.Text;
-
-    public override bool Visible
+    private void DrawButton(int x, int y, string label, bool selected)
     {
-        get => base.Visible;
-        set {
-            Terminal.CursorVisible = value;
-            base.Visible = value;
+        string centredText = label.CentreWithLength(ButtonWidth);
+        Terminal.BackgroundColor = DialogButtonBackgroundColour;
+        Terminal.ForegroundColor = DialogButtonForegroundColour;
+        Terminal.SetCursorPosition(x, y);
+
+        bool isHighlightChar = true;
+
+        foreach (char ch in centredText) {
+            if (char.IsWhiteSpace(ch)) {
+                Terminal.Write(ch);
+                continue;
+            }
+
+            if (isHighlightChar && selected) {
+                Terminal.ForegroundColor = ConsolePalette.Red;
+                Terminal.Write(ch);
+                Terminal.ForegroundColor = DialogButtonForegroundColour;
+                isHighlightChar = false;
+                continue;
+            }
+
+            Terminal.Write(ch);
         }
     }
 
-    public void SetText(string value)
+    private void DrawButtons()
     {
-        text.SetText(value);
+        int buttonX = X + (Width / 2 - (ButtonWidth + ButtonGap + ButtonWidth) / 2);
+        int buttonY = Y + ButtonRow;
+
+        DrawButton(buttonX, buttonY, "OK", selected: okFocused);
+        DrawButton(buttonX + ButtonWidth + ButtonGap, buttonY, "Cancel", selected: !okFocused);
+    }
+
+    private void DrawField()
+    {
+        int caret = text.CursorBufferPosition;
+
+        if (caret < viewStart) {
+            viewStart = caret;
+        }
+        else if (caret - viewStart >= FieldWidth) {
+            viewStart = caret - FieldWidth + 1;
+        }
+
+        string current = text.Text;
         
-        Result    = TextInputDialogResult.None;
-        okFocused = true;
-        viewStart = 0;
-    }
+        string visible = viewStart < current.Length
+            ? current.Substring(viewStart, Math.Min(FieldWidth, current.Length - viewStart))
+            : string.Empty;
 
-    public void ShowTextInputDialog()
-    {
-        OnResize();
-        OnDraw();
-    }
-
-    private int FieldX => X + 2;
-    private int FieldWidth => Math.Max(1, Width - 4);
-
-    protected override void OnDraw()
-    {
-        if (Width < MinWidth || Height < PreferredHeight) {
-            return;
-        }
-
-        DrawFrame();
-        DrawField();
-        DrawButtons();
-        DrawHelp();
-        PositionCaret();
+        Terminal.SetCursorPosition(FieldX, Y + FieldRow);
+        Terminal.BackgroundColor = FieldBackgroundColour;
+        Terminal.ForegroundColor = FieldForegroundColour;
+        Terminal.Write(visible.PadRight(FieldWidth));
     }
 
     private void DrawFrame()
@@ -111,65 +120,6 @@ public sealed class TextInputDialog : Control
         Terminal.Write('╯');
     }
 
-    private void DrawField()
-    {
-        int caret = text.CursorBufferPosition;
-
-        if (caret < viewStart) {
-            viewStart = caret;
-        }
-        else if (caret - viewStart >= FieldWidth) {
-            viewStart = caret - FieldWidth + 1;
-        }
-
-        string current = text.Text;
-        
-        string visible = viewStart < current.Length
-            ? current.Substring(viewStart, Math.Min(FieldWidth, current.Length - viewStart))
-            : string.Empty;
-
-        Terminal.SetCursorPosition(FieldX, Y + FieldRow);
-        Terminal.BackgroundColor = FieldBackgroundColour;
-        Terminal.ForegroundColor = FieldForegroundColour;
-        Terminal.Write(visible.PadRight(FieldWidth));
-    }
-
-    private void DrawButtons()
-    {
-        int buttonX = X + (Width / 2 - (ButtonWidth + ButtonGap + ButtonWidth) / 2);
-        int buttonY = Y + ButtonRow;
-
-        DrawButton(buttonX, buttonY, "OK", selected: okFocused);
-        DrawButton(buttonX + ButtonWidth + ButtonGap, buttonY, "Cancel", selected: !okFocused);
-    }
-
-    private void DrawButton(int x, int y, string label, bool selected)
-    {
-        string centredText = label.CentreWithLength(ButtonWidth);
-        Terminal.BackgroundColor = DialogButtonBackgroundColour;
-        Terminal.ForegroundColor = DialogButtonForegroundColour;
-        Terminal.SetCursorPosition(x, y);
-
-        bool isHighlightChar = true;
-
-        foreach (char ch in centredText) {
-            if (char.IsWhiteSpace(ch)) {
-                Terminal.Write(ch);
-                continue;
-            }
-
-            if (isHighlightChar && selected) {
-                Terminal.ForegroundColor = ConsolePalette.Red;
-                Terminal.Write(ch);
-                Terminal.ForegroundColor = DialogButtonForegroundColour;
-                isHighlightChar = false;
-                continue;
-            }
-
-            Terminal.Write(ch);
-        }
-    }
-
     private void DrawHelp()
     {
         const string help = "Tab select button   ↵ confirm   Esc cancel";
@@ -180,8 +130,27 @@ public sealed class TextInputDialog : Control
         Terminal.Write(help.CentreWithLength(Width - 2));
     }
 
-    private void PositionCaret() =>
-        Terminal.SetCursorPosition(FieldX + text.CursorBufferPosition - viewStart, Y + FieldRow);
+    public Color FieldBackgroundColour { get; set; } = ConsolePalette.Black;
+    public Color FieldForegroundColour { get; set; } = ConsolePalette.White;
+
+    private int FieldWidth => Math.Max(1, Width - 4);
+
+    private int FieldX => X + 2;
+
+    public int MaxLength { get; set; } = 64;
+
+    protected override void OnDraw()
+    {
+        if (Width < MinWidth || Height < PreferredHeight) {
+            return;
+        }
+
+        DrawFrame();
+        DrawField();
+        DrawButtons();
+        DrawHelp();
+        PositionCaret();
+    }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -242,5 +211,38 @@ public sealed class TextInputDialog : Control
 
         DrawField();
         PositionCaret();
+    }
+
+    private void PositionCaret() =>
+        Terminal.SetCursorPosition(FieldX + text.CursorBufferPosition - viewStart, Y + FieldRow);
+
+    public TextInputDialogResult Result { get; private set; } = TextInputDialogResult.None;
+
+    public void SetText(string value)
+    {
+        text.SetText(value);
+        
+        Result    = TextInputDialogResult.None;
+        okFocused = true;
+        viewStart = 0;
+    }
+
+    public void ShowTextInputDialog()
+    {
+        OnResize();
+        OnDraw();
+    }
+
+    public string Text => text.Text;
+
+    public string Title { get; set; } = string.Empty;
+
+    public override bool Visible
+    {
+        get => base.Visible;
+        set {
+            Terminal.CursorVisible = value;
+            base.Visible = value;
+        }
     }
 }

@@ -31,23 +31,7 @@ public static unsafe class NvApi
     public const int TargetPowerSupply = 4;
     public const int TargetBoard       = 8;
 
-    [DllImport(Nvapi, EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
-    private static extern nint nvapi_QueryInterface(uint offset);
-
-    public static bool Initialize()
-    {
-        nint fn = nvapi_QueryInterface(OffsetInitialize);
-        return fn != nint.Zero && ((delegate* unmanaged[Cdecl]<int>)fn)() == 0;
-    }
-
-    public static void Unload()
-    {
-        nint fn = nvapi_QueryInterface(OffsetUnload);
-
-        if (fn != nint.Zero) {
-            ((delegate* unmanaged[Cdecl]<int>)fn)();
-        }
-    }
+    public readonly record struct ThermalReading(int Target, double Celsius);
 
     public static int EnumPhysicalGpus(Span<nint> handles)
     {
@@ -67,8 +51,6 @@ public static unsafe class NvApi
 
         return count;
     }
-
-    public readonly record struct ThermalReading(int Target, double Celsius);
 
     public static IReadOnlyList<ThermalReading> GetThermalSettings(nint gpuHandle)
     {
@@ -105,6 +87,15 @@ public static unsafe class NvApi
         return readings;
     }
 
+    public static bool Initialize()
+    {
+        nint fn = nvapi_QueryInterface(OffsetInitialize);
+        return fn != nint.Zero && ((delegate* unmanaged[Cdecl]<int>)fn)() == 0;
+    }
+
+    [DllImport(Nvapi, EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
+    private static extern nint nvapi_QueryInterface(uint offset);
+
     public static bool TryGetPciIds(nint gpuHandle, out uint vendorId, out uint deviceId)
     {
         vendorId = 0;
@@ -137,5 +128,14 @@ public static unsafe class NvApi
         deviceId = (pDeviceId >> 16) & 0xFFFF;
 
         return true;
+    }
+
+    public static void Unload()
+    {
+        nint fn = nvapi_QueryInterface(OffsetUnload);
+
+        if (fn != nint.Zero) {
+            ((delegate* unmanaged[Cdecl]<int>)fn)();
+        }
     }
 }

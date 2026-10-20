@@ -16,6 +16,13 @@ public sealed class DiskSpaceServiceTests : IDisposable
         File.WriteAllBytes(Path.Combine(root, "b.bin"), new byte[50]);
     }
 
+    [Fact]
+    public void CancelScan_Without_An_Active_Scan_Does_Not_Throw()
+    {
+        DiskSpaceService service = new();
+        service.CancelScan();
+    }
+
     public void Dispose()
     {
         try {
@@ -23,15 +30,6 @@ public sealed class DiskSpaceServiceTests : IDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
         }
-    }
-
-    [Fact]
-    public void Should_Run_DiskSpaceService()
-    {
-        DiskSpaceService service = new();
-        service.Start();
-        Thread.Sleep((int)(service.Delay * 1.5));
-        service.Stop();
     }
 
     [Fact]
@@ -50,6 +48,15 @@ public sealed class DiskSpaceServiceTests : IDisposable
         Assert.NotNull(latest);
         Assert.NotNull(latest!.DiskSpace);
         Assert.Equal(DiskSpaceScanState.Idle, latest.DiskSpace!.Specs.State);
+    }
+
+    [Fact]
+    public void Should_Run_DiskSpaceService()
+    {
+        DiskSpaceService service = new();
+        service.Start();
+        Thread.Sleep((int)(service.Delay * 1.5));
+        service.Stop();
     }
 
     [Fact]
@@ -79,12 +86,5 @@ public sealed class DiskSpaceServiceTests : IDisposable
         Assert.Equal(DiskSpaceScanState.Completed, specs!.State);
         Assert.Equal(150, specs.TotalBytesScanned);
         Assert.Equal(2, specs.FilesScanned);
-    }
-
-    [Fact]
-    public void CancelScan_Without_An_Active_Scan_Does_Not_Throw()
-    {
-        DiskSpaceService service = new();
-        service.CancelScan();
     }
 }

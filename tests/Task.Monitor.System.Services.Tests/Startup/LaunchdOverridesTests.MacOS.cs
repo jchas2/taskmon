@@ -12,36 +12,24 @@ public sealed class LaunchdOverridesTests
     });
 
     [Fact]
+    public void An_Override_Of_False_Is_Enabled_Even_When_The_Job_Says_Disabled()
+    {
+        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.enabled", plistDisabled: true));
+    }
+
+    [Fact]
     public void An_Override_Of_True_Is_Disabled()
     {
         Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.disabled", null));
     }
 
     [Fact]
-    public void An_Override_Of_False_Is_Enabled_Even_When_The_Job_Says_Disabled()
+    public void An_Unreadable_Database_Is_Empty()
     {
-        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.enabled", plistDisabled: true));
-    }
+        LaunchdOverrides overrides = LaunchdOverrides.Parse(null);
 
-    [Theory]
-    [InlineData(true, StartupEntryState.Disabled)]
-    [InlineData(false, StartupEntryState.Enabled)]
-    public void Falls_Back_To_The_Jobs_Disabled_Key(bool plistDisabled, StartupEntryState expected)
-    {
-        Assert.Equal(expected, Overrides.ResolveState("com.example.other", plistDisabled));
-    }
-
-    [Fact]
-    public void Defaults_To_Enabled()
-    {
-        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.other", null));
-        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState(null, null));
-    }
-
-    [Fact]
-    public void Not_Approved_Is_Disabled_Even_When_Launchd_Would_Run_It()
-    {
-        Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.enabled", false, approved: false));
+        Assert.False(overrides.Contains("com.example.disabled"));
+        Assert.Equal(StartupEntryState.Enabled, overrides.ResolveState("com.example.disabled", null));
     }
 
     [Fact]
@@ -49,13 +37,6 @@ public sealed class LaunchdOverridesTests
     {
         Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.disabled", null, approved: true));
         Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.other", null, approved: true));
-    }
-
-    [Fact]
-    public void Unknown_Approval_Leaves_It_To_Launchd()
-    {
-        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.other", null, approved: null));
-        Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.other", true, approved: null));
     }
 
     [Fact]
@@ -69,12 +50,31 @@ public sealed class LaunchdOverridesTests
     }
 
     [Fact]
-    public void An_Unreadable_Database_Is_Empty()
+    public void Defaults_To_Enabled()
     {
-        LaunchdOverrides overrides = LaunchdOverrides.Parse(null);
+        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.other", null));
+        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState(null, null));
+    }
 
-        Assert.False(overrides.Contains("com.example.disabled"));
-        Assert.Equal(StartupEntryState.Enabled, overrides.ResolveState("com.example.disabled", null));
+    [Theory]
+    [InlineData(true, StartupEntryState.Disabled)]
+    [InlineData(false, StartupEntryState.Enabled)]
+    public void Falls_Back_To_The_Jobs_Disabled_Key(bool plistDisabled, StartupEntryState expected)
+    {
+        Assert.Equal(expected, Overrides.ResolveState("com.example.other", plistDisabled));
+    }
+
+    [Fact]
+    public void Not_Approved_Is_Disabled_Even_When_Launchd_Would_Run_It()
+    {
+        Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.enabled", false, approved: false));
+    }
+
+    [Fact]
+    public void Unknown_Approval_Leaves_It_To_Launchd()
+    {
+        Assert.Equal(StartupEntryState.Enabled, Overrides.ResolveState("com.example.other", null, approved: null));
+        Assert.Equal(StartupEntryState.Disabled, Overrides.ResolveState("com.example.other", true, approved: null));
     }
 }
 #endif

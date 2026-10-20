@@ -45,17 +45,13 @@ public sealed class ProcessesControl : Control
         Controls.Add(processControl).Add(processInfoControl);
     }
 
-    internal ProcessControl ProcessControl => processControl;
-
-    internal ProcessInfoControl ProcessInfoControl => processInfoControl;
-
-    protected override void OnGotFocus() => processControl.SetFocus();
-
     protected override void OnDraw()
     {
         processControl.Draw();
         processInfoControl.Draw();
     }
+
+    protected override void OnGotFocus() => processControl.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -103,15 +99,6 @@ public sealed class ProcessesControl : Control
         base.OnLoad();
     }
 
-    private void OnSelectedProcessIdChanged(object? sender, int pid)
-    {
-        if (processInfoControl.HasFocus) {
-            return;
-        }
-
-        processInfoControl.LoadProcess(pid);
-    }
-
     protected override void OnResize()
     {
         if (Width < MinWidth || Height < MinHeight) {
@@ -133,9 +120,22 @@ public sealed class ProcessesControl : Control
         base.OnResize();
     }
 
+    private void OnSelectedProcessIdChanged(object? sender, int pid)
+    {
+        if (processInfoControl.HasFocus) {
+            return;
+        }
+
+        processInfoControl.LoadProcess(pid);
+    }
+
     protected override void OnUnload()
     {
         processControl.SelectedProcessIdChanged -= OnSelectedProcessIdChanged;
         base.OnUnload();
     }
+
+    internal ProcessControl ProcessControl => processControl;
+
+    internal ProcessInfoControl ProcessInfoControl => processInfoControl;
 }

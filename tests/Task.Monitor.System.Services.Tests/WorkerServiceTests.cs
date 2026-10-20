@@ -18,43 +18,18 @@ public sealed class WorkerServiceTests
             CycleRan.Set();
         }
 
-        public bool WaitForCycle(int millisecondsTimeout)
-        {
-            bool ran = CycleRan.Wait(millisecondsTimeout);
-            CycleRan.Reset();
-            return ran;
-        }
-
         public bool[] Snapshot()
         {
             lock (RefreshFlagPerCycle) {
                 return RefreshFlagPerCycle.ToArray();
             }
         }
-    }
 
-    [Fact]
-    public void RequestImmediateRefresh_Wakes_The_Worker_Well_Before_The_Delay()
-    {
-        SpyWorkerService service = new();
-
-        // Clamped up to the 500ms minimum, so a natural next cycle is 500ms away.
-        service.Delay = 100;
-        service.Start();
-
-        try {
-            Assert.True(service.WaitForCycle(1000), "the first cycle should run immediately");
-
-            service.RequestImmediateRefresh();
-
-            Assert.True(
-                service.WaitForCycle(250),
-                "RequestImmediateRefresh should end the wait long before the 500ms delay");
-
-            Assert.Contains(true, service.Snapshot());
-        }
-        finally {
-            service.Stop();
+        public bool WaitForCycle(int millisecondsTimeout)
+        {
+            bool ran = CycleRan.Wait(millisecondsTimeout);
+            CycleRan.Reset();
+            return ran;
         }
     }
 
@@ -78,6 +53,31 @@ public sealed class WorkerServiceTests
 
             Assert.True(firstTrue >= 0, "the refresh should have been observed once");
             Assert.DoesNotContain(true, flags[(firstTrue + 1)..]);
+        }
+        finally {
+            service.Stop();
+        }
+    }
+
+    [Fact]
+    public void RequestImmediateRefresh_Wakes_The_Worker_Well_Before_The_Delay()
+    {
+        SpyWorkerService service = new();
+
+        // Clamped up to the 500ms minimum, so a natural next cycle is 500ms away.
+        service.Delay = 100;
+        service.Start();
+
+        try {
+            Assert.True(service.WaitForCycle(1000), "the first cycle should run immediately");
+
+            service.RequestImmediateRefresh();
+
+            Assert.True(
+                service.WaitForCycle(250),
+                "RequestImmediateRefresh should end the wait long before the 500ms delay");
+
+            Assert.Contains(true, service.Snapshot());
         }
         finally {
             service.Stop();

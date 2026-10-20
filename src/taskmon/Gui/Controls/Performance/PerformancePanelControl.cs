@@ -14,8 +14,6 @@ public sealed class PerformancePanelControl : Control
     private readonly Control   associatedControl;
     private readonly AppConfig appConfig;
 
-    private AnsiScreenBuffer Frame { get; } = new();
-
     public PerformancePanelControl(
         ISystemTerminal terminal,
         Chart           chart,
@@ -32,13 +30,17 @@ public sealed class PerformancePanelControl : Control
         Title = title;
     }
 
-    public string Key { get; }
-
-    public string Title { get; set; }
-
     public Control AssociatedControl => associatedControl;
 
+    public Action<SystemSnapshot>? Bind { get; set; }
+
     public Chart Chart => chart;
+
+    private AnsiScreenBuffer Frame { get; } = new();
+
+    public bool IsSelected { get; set; } = false;
+
+    public string Key { get; }
 
     public string Line1 { get; set; } = string.Empty;
 
@@ -47,12 +49,6 @@ public sealed class PerformancePanelControl : Control
     public string Line3 { get; set; } = string.Empty;
 
     public string Line4 { get; set; } = string.Empty;
-
-    public bool IsSelected { get; set; } = false;
-
-    public Action<SystemSnapshot>? Bind { get; set; }
-
-    public void Update(SystemSnapshot snapshot) => Bind?.Invoke(snapshot);
 
     protected override void OnDraw()
     {
@@ -146,4 +142,8 @@ public sealed class PerformancePanelControl : Control
         chart.Y      = Y;
         chart.Resize();
     }
+
+    public string Title { get; set; }
+
+    public void Update(SystemSnapshot snapshot) => Bind?.Invoke(snapshot);
 }

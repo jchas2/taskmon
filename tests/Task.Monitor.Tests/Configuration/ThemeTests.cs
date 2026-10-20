@@ -10,92 +10,124 @@ namespace Task.Monitor.Tests.Configuration;
 
 public sealed class ThemeTests
 {
-    private static string ThemeIni => @"
-[Test Theme]
-colour-mode=truecolour
-
-control.background=#0f1610
-control.background.highlight.focused=#1d4125
-control.background.highlight.inactive=#1e1e1e
-control.foreground=#717f24
-control.foreground.highlight.focused=#73fa91
-control.foreground.highlight.inactive=#222222
-control.border=#212121
-control.border.focused=#363636
-
-chart.background=#3a3a3a
-chart.borderforeground=#334455
-chart.borderbackground=#3b3b3b
-chart.yaxis=#667788
-chart.title=#1f1f1f
-chart.grid=#202020
-chart.range.high.background=#b082d1
-chart.range.low.background=#10b981
-chart.range.mid.background=#ffd085
-chart.range.high.foreground=#000000
-chart.range.low.foreground=#000000
-chart.range.mid.foreground=#000000
-
-metre.background=#3c3c3c
-metre.foreground=#3f3f3f
-metre.borderforeground=#3d3d3d
-metre.borderbackground=#3e3e3e
-
-listview.borderforeground=#232323
-listview.borderbackground=#393939
-listview.background=#242424
-listview.foreground=#252525
-listview.header.background=#121d18
-listview.header.foreground=#717f24
-
-performance.panel.background=#262626
-performance.panel.foreground=#272727
-performance.panel.titlebar.background=#282828
-performance.panel.titlebar.foreground=#292929
-performance.cpu.kernel=#2a2a2a
-performance.cpu.user=#2b2b2b
-performance.memory.inuse=#2c2c2c
-performance.memory.modified=#2d2d2d
-performance.memory.standby=#2e2e2e
-performance.memory.free=#2f2f2f
-
-property.key=#414141
-property.value=#424242
-
-process.list.normaluserspace=#327f77
-process.list.lowpriority=#10b981
-process.list.highcpu=#b082d1
-process.list.iobound=#dff0e6
-process.list.script=#dff0e6
-process.list.user.currentnonroot=#b082d1
-process.list.user.othernonroot=#b082d1
-process.list.user.system=#73fa91
-process.list.user.root=#73fa91
-process.list.deltahighlight=#bda25c
-
-heatmap.size.small=#303030
-heatmap.size.mid=#313131
-heatmap.size.large=#323232
-heatmap.state.scanning=#333333
-heatmap.state.completed=#343434
-heatmap.state.faulted=#353535
-
-app.error=#a6423f
-
-menubar.foreground=#717f24
-menubar.background=#121d18
-
-command.foreground=#717f24
-command.background=#121d18
-";
-    
     // A persisted colour value must be hex (#RRGGBB / #AARRGGBB) or the transparent token.
     private static readonly Regex HexOrTransparent =
         new("^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$", RegexOptions.Compiled);
 
+    private void AssertThemeColours(Theme theme)
+    {
+        Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
+        Assert.Equal(ColorTranslator.FromHtml("#1d4125"), theme.BackgroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#1e1e1e"), theme.BackgroundHighlightInactive);
+        Assert.Equal(ColorTranslator.FromHtml("#3a3a3a"), theme.ChartBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3b3b3b"), theme.ChartBorderBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#667788"), theme.ChartYAxis);
+        Assert.Equal(ColorTranslator.FromHtml("#1f1f1f"), theme.ChartTitle);
+        Assert.Equal(ColorTranslator.FromHtml("#202020"), theme.ChartGrid);
+        Assert.Equal(ColorTranslator.FromHtml("#212121"), theme.ControlBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#363636"), theme.FocusSelectionColour);
+        Assert.Equal(ColorTranslator.FromHtml("#327f77"), theme.ColumnCommandNormalUserSpace);
+        Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.ColumnCommandLowPriority);
+        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnCommandHighCpu);
+        Assert.Equal(ColorTranslator.FromHtml("#dff0e6"), theme.ColumnCommandIoBound);
+        Assert.Equal(ColorTranslator.FromHtml("#dff0e6"), theme.ColumnCommandScript);
+        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnUserCurrentNonRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnUserOtherNonRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ColumnUserSystem);
+        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ColumnUserRoot);
+        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.CommandBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.CommandForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#bda25c"), theme.DeltaHighlightColour);
+        Assert.Equal(ColorTranslator.FromHtml("#a6423f"), theme.Error);
+        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.Foreground);
+        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ForegroundHighlight);
+        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.ForegroundHighlightInactive);
+        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.HeaderBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.HeaderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#303030"), theme.HeatmapSizeSmall);
+        Assert.Equal(ColorTranslator.FromHtml("#313131"), theme.HeatmapSizeMid);
+        Assert.Equal(ColorTranslator.FromHtml("#323232"), theme.HeatmapSizeLarge);
+        Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
+        Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
+        Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
+        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#252525"), theme.ListViewForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3c3c3c"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#3f3f3f"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3d3d3d"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#3e3e3e"), theme.MetreBorderBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.MenubarBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.MenubarForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#262626"), theme.PerformancePanelBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#272727"), theme.PerformancePanelForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#282828"), theme.PerformancePanelTitlebarBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#292929"), theme.PerformancePanelTitlebarForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#2a2a2a"), theme.PerformanceCpuKernel);
+        Assert.Equal(ColorTranslator.FromHtml("#2b2b2b"), theme.PerformanceCpuUser);
+        Assert.Equal(ColorTranslator.FromHtml("#2c2c2c"), theme.PerformanceMemoryInUse);
+        Assert.Equal(ColorTranslator.FromHtml("#2d2d2d"), theme.PerformanceMemoryModified);
+        Assert.Equal(ColorTranslator.FromHtml("#2e2e2e"), theme.PerformanceMemoryStandby);
+        Assert.Equal(ColorTranslator.FromHtml("#2f2f2f"), theme.PerformanceMemoryFree);
+        Assert.Equal(ColorTranslator.FromHtml("#414141"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#424242"), theme.PropertyValue);
+        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.RangeHighBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.RangeLowBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#ffd085"), theme.RangeMidBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeHighForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeLowForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeMidForeground);
+    }
+
     [Fact]
-    public void Theme_Canary_Test() =>
-        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
+    public void ChartBackground_Falls_Back_To_Background_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBackground);
+    }
+
+    [Fact]
+    public void ChartBackground_Falls_Back_To_Transparent_Background_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "transparent");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ConsolePalette.Transparent, theme.ChartBackground);
+    }
+
+    [Fact]
+    public void ChartBackground_Overrides_Background_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.ChartBackground, "#654321");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.ChartBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.Background);
+    }
+
+    [Fact]
+    public void ChartBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ChartBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBorderBackground);
+    }
 
     [Fact]
     public void Constructor_Initialises_Successfully()
@@ -105,6 +137,146 @@ command.background=#121d18
         Theme theme = new(parser.Sections[0]);
         
         AssertThemeColours(theme);
+    }
+
+    [Fact]
+    public void ListViewBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ListViewBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ListViewBorderBackground);
+    }
+
+    [Fact]
+    public void Metre_Colours_Do_Not_Fall_Back_To_Chart_Colours()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.ChartBackground, "#111111");
+        section.Add(Constants.Keys.ChartBorderForeground, "#222222");
+        section.Add(Constants.Keys.ChartBorderBackground, "#333333");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Metre_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Metre_Colours_Override_Control_Colours_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.MetreBackground, "#654321");
+        section.Add(Constants.Keys.MetreForeground, "#123abc");
+        section.Add(Constants.Keys.MetreBorderForeground, "#fedcba");
+        section.Add(Constants.Keys.MetreBorderBackground, "#0a0b0c");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.MetreBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.MetreForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.MetreBorderForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#0a0b0c"), theme.MetreBorderBackground);
+    }
+
+    [Fact]
+    public void Normalize_Converts_Legacy_Names_To_Hex()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "black");
+        section.Add(Constants.Keys.Foreground, "White");
+        section.Add(Constants.Keys.MenubarBackground, "DarkBlue");
+
+        new Theme(section).Normalize();
+
+        Assert.Equal("#000000", section.GetString(Constants.Keys.Background));
+        Assert.Equal("#FFFFFF", section.GetString(Constants.Keys.Foreground));
+        Assert.Equal("#000080", section.GetString(Constants.Keys.MenubarBackground));
+    }
+
+    [Fact]
+    public void Normalize_Does_Not_Add_Missing_Keys()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "black");
+
+        new Theme(section).Normalize();
+
+        Assert.False(section.Contains(Constants.Keys.Foreground));
+    }
+
+    [Fact]
+    public void Normalize_Is_Idempotent_For_Hex_Values()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+
+        new Theme(section).Normalize();
+
+        Assert.Equal("#123456", section.GetString(Constants.Keys.Background));
+    }
+
+    [Fact]
+    public void Normalize_Preserves_Transparent_Token()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "transparent");
+
+        new Theme(section).Normalize();
+
+        Assert.Equal("transparent", section.GetString(Constants.Keys.Background));
+    }
+
+    [Fact]
+    public void Property_Colours_Fall_Back_To_Control_Foreground_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background, "#123456");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyValue);
+    }
+
+    [Fact]
+    public void Property_Colours_Override_Control_Foreground_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.PropertyKey, "#123abc");
+        section.Add(Constants.Keys.PropertyValue, "#fedcba");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.PropertyKey);
+        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.PropertyValue);
     }
 
     [Fact]
@@ -320,261 +492,6 @@ command.background=#121d18
         Assert.Equal(ColorTranslator.FromHtml("#1b1b1b"), theme.RangeMidForeground);
     }
 
-    private void AssertThemeColours(Theme theme)
-    {
-        Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
-        Assert.Equal(ColorTranslator.FromHtml("#1d4125"), theme.BackgroundHighlight);
-        Assert.Equal(ColorTranslator.FromHtml("#1e1e1e"), theme.BackgroundHighlightInactive);
-        Assert.Equal(ColorTranslator.FromHtml("#3a3a3a"), theme.ChartBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#334455"), theme.ChartBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#3b3b3b"), theme.ChartBorderBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#667788"), theme.ChartYAxis);
-        Assert.Equal(ColorTranslator.FromHtml("#1f1f1f"), theme.ChartTitle);
-        Assert.Equal(ColorTranslator.FromHtml("#202020"), theme.ChartGrid);
-        Assert.Equal(ColorTranslator.FromHtml("#212121"), theme.ControlBorder);
-        Assert.Equal(ColorTranslator.FromHtml("#363636"), theme.FocusSelectionColour);
-        Assert.Equal(ColorTranslator.FromHtml("#327f77"), theme.ColumnCommandNormalUserSpace);
-        Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.ColumnCommandLowPriority);
-        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnCommandHighCpu);
-        Assert.Equal(ColorTranslator.FromHtml("#dff0e6"), theme.ColumnCommandIoBound);
-        Assert.Equal(ColorTranslator.FromHtml("#dff0e6"), theme.ColumnCommandScript);
-        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnUserCurrentNonRoot);
-        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.ColumnUserOtherNonRoot);
-        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ColumnUserSystem);
-        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ColumnUserRoot);
-        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.CommandBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.CommandForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#bda25c"), theme.DeltaHighlightColour);
-        Assert.Equal(ColorTranslator.FromHtml("#a6423f"), theme.Error);
-        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.Foreground);
-        Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ForegroundHighlight);
-        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.ForegroundHighlightInactive);
-        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.HeaderBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.HeaderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#303030"), theme.HeatmapSizeSmall);
-        Assert.Equal(ColorTranslator.FromHtml("#313131"), theme.HeatmapSizeMid);
-        Assert.Equal(ColorTranslator.FromHtml("#323232"), theme.HeatmapSizeLarge);
-        Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
-        Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
-        Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
-        Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#252525"), theme.ListViewForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#3c3c3c"), theme.MetreBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#3f3f3f"), theme.MetreForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#3d3d3d"), theme.MetreBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#3e3e3e"), theme.MetreBorderBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.MenubarBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.MenubarForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#262626"), theme.PerformancePanelBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#272727"), theme.PerformancePanelForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#282828"), theme.PerformancePanelTitlebarBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#292929"), theme.PerformancePanelTitlebarForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#2a2a2a"), theme.PerformanceCpuKernel);
-        Assert.Equal(ColorTranslator.FromHtml("#2b2b2b"), theme.PerformanceCpuUser);
-        Assert.Equal(ColorTranslator.FromHtml("#2c2c2c"), theme.PerformanceMemoryInUse);
-        Assert.Equal(ColorTranslator.FromHtml("#2d2d2d"), theme.PerformanceMemoryModified);
-        Assert.Equal(ColorTranslator.FromHtml("#2e2e2e"), theme.PerformanceMemoryStandby);
-        Assert.Equal(ColorTranslator.FromHtml("#2f2f2f"), theme.PerformanceMemoryFree);
-        Assert.Equal(ColorTranslator.FromHtml("#414141"), theme.PropertyKey);
-        Assert.Equal(ColorTranslator.FromHtml("#424242"), theme.PropertyValue);
-        Assert.Equal(ColorTranslator.FromHtml("#b082d1"), theme.RangeHighBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#10b981"), theme.RangeLowBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#ffd085"), theme.RangeMidBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeHighForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeLowForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#000000"), theme.RangeMidForeground);
-    }
-    
-    [Fact]
-    public void Normalize_Converts_Legacy_Names_To_Hex()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "black");
-        section.Add(Constants.Keys.Foreground, "White");
-        section.Add(Constants.Keys.MenubarBackground, "DarkBlue");
-
-        new Theme(section).Normalize();
-
-        Assert.Equal("#000000", section.GetString(Constants.Keys.Background));
-        Assert.Equal("#FFFFFF", section.GetString(Constants.Keys.Foreground));
-        Assert.Equal("#000080", section.GetString(Constants.Keys.MenubarBackground));
-    }
-
-    [Fact]
-    public void Normalize_Preserves_Transparent_Token()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "transparent");
-
-        new Theme(section).Normalize();
-
-        Assert.Equal("transparent", section.GetString(Constants.Keys.Background));
-    }
-
-    [Fact]
-    public void Normalize_Is_Idempotent_For_Hex_Values()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-
-        new Theme(section).Normalize();
-
-        Assert.Equal("#123456", section.GetString(Constants.Keys.Background));
-    }
-
-    [Fact]
-    public void Normalize_Does_Not_Add_Missing_Keys()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "black");
-
-        new Theme(section).Normalize();
-
-        Assert.False(section.Contains(Constants.Keys.Foreground));
-    }
-
-    [Fact]
-    public void ChartBackground_Falls_Back_To_Background_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBackground);
-    }
-
-    [Fact]
-    public void ChartBackground_Falls_Back_To_Transparent_Background_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "transparent");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ConsolePalette.Transparent, theme.ChartBackground);
-    }
-
-    [Fact]
-    public void ChartBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ChartBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBorderBackground);
-    }
-
-    [Fact]
-    public void ListViewBorder_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ListViewBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ListViewBorderBackground);
-    }
-
-    [Fact]
-    public void ChartBackground_Overrides_Background_When_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.ChartBackground, "#654321");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.ChartBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.Background);
-    }
-
-    [Fact]
-    public void Metre_Colours_Fall_Back_To_Control_Colours_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
-    }
-
-    [Fact]
-    public void Metre_Colours_Do_Not_Fall_Back_To_Chart_Colours()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-        section.Add(Constants.Keys.ChartBackground, "#111111");
-        section.Add(Constants.Keys.ChartBorderForeground, "#222222");
-        section.Add(Constants.Keys.ChartBorderBackground, "#333333");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.MetreBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.MetreBorderBackground);
-    }
-
-    [Fact]
-    public void Metre_Colours_Override_Control_Colours_When_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-        section.Add(Constants.Keys.MetreBackground, "#654321");
-        section.Add(Constants.Keys.MetreForeground, "#123abc");
-        section.Add(Constants.Keys.MetreBorderForeground, "#fedcba");
-        section.Add(Constants.Keys.MetreBorderBackground, "#0a0b0c");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#654321"), theme.MetreBackground);
-        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.MetreForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.MetreBorderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#0a0b0c"), theme.MetreBorderBackground);
-    }
-
-    [Fact]
-    public void Property_Colours_Fall_Back_To_Control_Foreground_When_Not_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Background, "#123456");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyKey);
-        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.PropertyValue);
-    }
-
-    [Fact]
-    public void Property_Colours_Override_Control_Foreground_When_Set()
-    {
-        ConfigSection section = new("theme-test");
-        section.Add(Constants.Keys.Foreground, "#abcdef");
-        section.Add(Constants.Keys.PropertyKey, "#123abc");
-        section.Add(Constants.Keys.PropertyValue, "#fedcba");
-
-        Theme theme = new(section);
-
-        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.PropertyKey);
-        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.PropertyValue);
-    }
-
     [Fact]
     public void Shipped_Themes_Define_Property_Colours()
     {
@@ -595,4 +512,87 @@ command.background=#121d18
             Assert.True(section.Contains(Constants.Keys.PropertyValue), $"{name} is missing {Constants.Keys.PropertyValue}");
         }
     }
+
+    private static string ThemeIni => @"
+[Test Theme]
+colour-mode=truecolour
+
+control.background=#0f1610
+control.background.highlight.focused=#1d4125
+control.background.highlight.inactive=#1e1e1e
+control.foreground=#717f24
+control.foreground.highlight.focused=#73fa91
+control.foreground.highlight.inactive=#222222
+control.border=#212121
+control.border.focused=#363636
+
+chart.background=#3a3a3a
+chart.borderforeground=#334455
+chart.borderbackground=#3b3b3b
+chart.yaxis=#667788
+chart.title=#1f1f1f
+chart.grid=#202020
+chart.range.high.background=#b082d1
+chart.range.low.background=#10b981
+chart.range.mid.background=#ffd085
+chart.range.high.foreground=#000000
+chart.range.low.foreground=#000000
+chart.range.mid.foreground=#000000
+
+metre.background=#3c3c3c
+metre.foreground=#3f3f3f
+metre.borderforeground=#3d3d3d
+metre.borderbackground=#3e3e3e
+
+listview.borderforeground=#232323
+listview.borderbackground=#393939
+listview.background=#242424
+listview.foreground=#252525
+listview.header.background=#121d18
+listview.header.foreground=#717f24
+
+performance.panel.background=#262626
+performance.panel.foreground=#272727
+performance.panel.titlebar.background=#282828
+performance.panel.titlebar.foreground=#292929
+performance.cpu.kernel=#2a2a2a
+performance.cpu.user=#2b2b2b
+performance.memory.inuse=#2c2c2c
+performance.memory.modified=#2d2d2d
+performance.memory.standby=#2e2e2e
+performance.memory.free=#2f2f2f
+
+property.key=#414141
+property.value=#424242
+
+process.list.normaluserspace=#327f77
+process.list.lowpriority=#10b981
+process.list.highcpu=#b082d1
+process.list.iobound=#dff0e6
+process.list.script=#dff0e6
+process.list.user.currentnonroot=#b082d1
+process.list.user.othernonroot=#b082d1
+process.list.user.system=#73fa91
+process.list.user.root=#73fa91
+process.list.deltahighlight=#bda25c
+
+heatmap.size.small=#303030
+heatmap.size.mid=#313131
+heatmap.size.large=#323232
+heatmap.state.scanning=#333333
+heatmap.state.completed=#343434
+heatmap.state.faulted=#353535
+
+app.error=#a6423f
+
+menubar.foreground=#717f24
+menubar.background=#121d18
+
+command.foreground=#717f24
+command.background=#121d18
+";
+
+    [Fact]
+    public void Theme_Canary_Test() =>
+        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
 }

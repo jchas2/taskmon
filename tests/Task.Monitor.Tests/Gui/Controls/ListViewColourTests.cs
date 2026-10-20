@@ -65,7 +65,49 @@ public sealed class ListViewColourTests
         Assert.NotEqual(runContext.AppConfig.Theme.Foreground, runContext.AppConfig.Theme.ListViewForeground);
     }
 
-    private ISystemTerminal Terminal => new ForwardingTerminal(runContext.Terminal);
+    // Pop-up dialogs (DriveInputBox, PickerBox) own a private list drawn on the dialog's own
+    // colours, not a themed pane, so their lists are left out.
+    private static void AssertListViewsUseListViewColours(Control host, bool chartBordered = false)
+    {
+        (Color borderForeground, Color borderBackground) = chartBordered
+            ? (ChartBorderForeground, ChartBorderBackground)
+            : (ListViewBorderForeground, ListViewBorderBackground);
+
+        List<ListView> listViews = ThemedListViews(host);
+
+        Assert.NotEmpty(listViews);
+        Assert.All(listViews, listView => {
+            Assert.Equal(ListViewBackground, listView.BackgroundColour);
+            Assert.Equal(ListViewForeground, listView.ForegroundColour);
+            Assert.Equal(borderForeground, listView.BorderForegroundColour);
+            Assert.Equal(borderBackground, listView.BorderBackgroundColour);
+        });
+    }
+
+    // Foregrounds legitimately vary per cell (key colours, disabled / high-CPU highlights), but no
+    // cell should fall back to the control background.
+    private static List<ListViewItem> AssertRowsUseListViewBackground(Control host)
+    {
+        List<ListViewItem> rows = ThemedListViews(host)
+            .SelectMany(listView => listView.Items.Cast<ListViewItem>())
+            .ToList();
+
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row => Assert.All(row.SubItems.Cast<ListViewSubItem>(),
+            subItem => Assert.Equal(ListViewBackground, subItem.BackgroundColor)));
+
+        return rows;
+    }
+
+    [Fact]
+    public void HelpScreen_Rows_Use_The_ListView_Background()
+    {
+        HelpScreen screen = Loaded(new HelpScreen(runContext));
+
+        AssertRowsUseListViewBackground(screen);
+
+        screen.Unload();
+    }
 
     public static TheoryData<string> Hosts => new() {
         nameof(CpuPerformanceControl),
@@ -124,37 +166,13 @@ public sealed class ListViewColourTests
         host.Unload();
     }
 
-    [Fact]
-    public void StartupControl_Rows_Use_The_ListView_Colours()
+    private static T Loaded<T>(T control) where T : Control
     {
-        StartupControl control = Loaded(
-            new StartupControl(runContext.ServiceController, Terminal, runContext.AppConfig));
-
-        control.Sample(new SystemSnapshot {
-            Startup = new StartupInfo {
-                Specs = new StartupSpecs {
-                    Entries = [
-                        new StartupEntry {
-                            Name = "OneDrive",
-                            Source = StartupTestSources.Primary,
-                            Scope = StartupEntryScope.User,
-                            State = StartupEntryState.Enabled,
-                            Command = "OneDrive.exe"
-                        }
-                    ]
-                }
-            }
-        });
-
-        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
-
-        // NAME cell of the main table and the "Name" field row of the detail pane.
-        Assert.Contains(rows, row => row.SubItems[0].Text == "OneDrive"
-            && row.SubItems[0].ForegroundColor == ListViewForeground);
-        Assert.Contains(rows, row => row.SubItems[0].Text == "Name"
-            && row.SubItems[0].ForegroundColor == ListViewForeground);
-
-        control.Unload();
+        control.Width = 160;
+        control.Height = 48;
+        control.Load();
+        control.Resize();
+        return control;
     }
 
     [Fact]
@@ -189,42 +207,39 @@ public sealed class ListViewColourTests
     }
 
     [Fact]
-    public void HelpScreen_Rows_Use_The_ListView_Background()
+    public void StartupControl_Rows_Use_The_ListView_Colours()
     {
-        HelpScreen screen = Loaded(new HelpScreen(runContext));
+        StartupControl control = Loaded(
+            new StartupControl(runContext.ServiceController, Terminal, runContext.AppConfig));
 
-        AssertRowsUseListViewBackground(screen);
-
-        screen.Unload();
-    }
-
-    private static T Loaded<T>(T control) where T : Control
-    {
-        control.Width = 160;
-        control.Height = 48;
-        control.Load();
-        control.Resize();
-        return control;
-    }
-
-    // Pop-up dialogs (DriveInputBox, PickerBox) own a private list drawn on the dialog's own
-    // colours, not a themed pane, so their lists are left out.
-    private static void AssertListViewsUseListViewColours(Control host, bool chartBordered = false)
-    {
-        (Color borderForeground, Color borderBackground) = chartBordered
-            ? (ChartBorderForeground, ChartBorderBackground)
-            : (ListViewBorderForeground, ListViewBorderBackground);
-
-        List<ListView> listViews = ThemedListViews(host);
-
-        Assert.NotEmpty(listViews);
-        Assert.All(listViews, listView => {
-            Assert.Equal(ListViewBackground, listView.BackgroundColour);
-            Assert.Equal(ListViewForeground, listView.ForegroundColour);
-            Assert.Equal(borderForeground, listView.BorderForegroundColour);
-            Assert.Equal(borderBackground, listView.BorderBackgroundColour);
+        control.Sample(new SystemSnapshot {
+            Startup = new StartupInfo {
+                Specs = new StartupSpecs {
+                    Entries = [
+                        new StartupEntry {
+                            Name = "OneDrive",
+                            Source = StartupTestSources.Primary,
+                            Scope = StartupEntryScope.User,
+                            State = StartupEntryState.Enabled,
+                            Command = "OneDrive.exe"
+                        }
+                    ]
+                }
+            }
         });
+
+        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
+
+        // NAME cell of the main table and the "Name" field row of the detail pane.
+        Assert.Contains(rows, row => row.SubItems[0].Text == "OneDrive"
+            && row.SubItems[0].ForegroundColor == ListViewForeground);
+        Assert.Contains(rows, row => row.SubItems[0].Text == "Name"
+            && row.SubItems[0].ForegroundColor == ListViewForeground);
+
+        control.Unload();
     }
+
+    private ISystemTerminal Terminal => new ForwardingTerminal(runContext.Terminal);
 
     private static List<ListView> ThemedListViews(Control host)
     {
@@ -234,20 +249,5 @@ public sealed class ListViewColourTests
             .ToHashSet(ReferenceEqualityComparer.Instance as IEqualityComparer<ListView>);
 
         return ControlTreeHelper.FindAll<ListView>(host).Where(listView => !dialogLists.Contains(listView)).ToList();
-    }
-
-    // Foregrounds legitimately vary per cell (key colours, disabled / high-CPU highlights), but no
-    // cell should fall back to the control background.
-    private static List<ListViewItem> AssertRowsUseListViewBackground(Control host)
-    {
-        List<ListViewItem> rows = ThemedListViews(host)
-            .SelectMany(listView => listView.Items.Cast<ListViewItem>())
-            .ToList();
-
-        Assert.NotEmpty(rows);
-        Assert.All(rows, row => Assert.All(row.SubItems.Cast<ListViewSubItem>(),
-            subItem => Assert.Equal(ListViewBackground, subItem.BackgroundColor)));
-
-        return rows;
     }
 }

@@ -68,14 +68,6 @@ public sealed class ProcInfo
         public proc_taskinfo   ptinfo;
     }
 
-    [DllImport(Libraries.LibProc, SetLastError = true)]
-    public static extern unsafe int proc_pidinfo(
-        int               pid,
-        int               flavor,
-        ulong             arg,
-        proc_taskallinfo* buffer,
-        int               bufferSize);
-
     [StructLayout(LayoutKind.Sequential)]
     public struct proc_regioninfo
     {
@@ -114,6 +106,14 @@ public sealed class ProcInfo
         public fixed byte      prp_vnode_info[VnodeInfoSize];
         public fixed byte      prp_vip_path[MAXPATHLEN];
     }
+
+    [DllImport(Libraries.LibProc, SetLastError = true)]
+    public static extern unsafe int proc_pidinfo(
+        int               pid,
+        int               flavor,
+        ulong             arg,
+        proc_taskallinfo* buffer,
+        int               bufferSize);
 
     [DllImport(Libraries.LibProc, SetLastError = true)]
     public static extern unsafe int proc_pidinfo(

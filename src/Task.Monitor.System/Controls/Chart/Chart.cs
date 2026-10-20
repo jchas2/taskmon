@@ -27,15 +27,10 @@ public sealed class Chart : Control
     
     private readonly object dataLock        = new();
     private readonly AnsiScreenBuffer frame = new();
-    
-    public Chart(ISystemTerminal terminal) : base(terminal) { }
 
-    public void AddData(double value)
-    {
-        lock (dataLock) {
-            AddInternal(value);
-        }
-    }
+    private Color? borderBackgroundColour;
+
+    public Chart(ISystemTerminal terminal) : base(terminal) { }
 
     public void Add(double value)
     {
@@ -43,16 +38,10 @@ public sealed class Chart : Control
         Draw();
     }
 
-    public void ClearData()
+    public void AddData(double value)
     {
         lock (dataLock) {
-            dataHead  = 0;
-            dataCount = 0;
-            dataMax   = 0.0;
-
-            if (data.Length > 0) {
-                Array.Clear(data);
-            }
+            AddInternal(value);
         }
     }
 
@@ -88,20 +77,31 @@ public sealed class Chart : Control
 
     public bool AutoScale { get; set; } = true;
 
-    private Color? borderBackgroundColour;
-
     public Color BorderBackgroundColour
     {
         get => borderBackgroundColour ?? BackgroundColour;
         set => borderBackgroundColour = value;
     }
 
-    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
-
     public override Color BorderColour
     {
         get => BorderForegroundColour;
         set => BorderForegroundColour = value;
+    }
+
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
+
+    public void ClearData()
+    {
+        lock (dataLock) {
+            dataHead  = 0;
+            dataCount = 0;
+            dataMax   = 0.0;
+
+            if (data.Length > 0) {
+                Array.Clear(data);
+            }
+        }
     }
 
     public Color ColourHigh { get; set; } = ConsolePalette.Red;
@@ -116,10 +116,13 @@ public sealed class Chart : Control
 
     private int DataCapacity => Math.Max(0, Width - 2 - ScaleWidth);
 
-    public static string FormatYScalePercentage(double value)
+    private string FormatScaleValue(double value, double maxVal)
     {
-        int pct = (int)Math.Round(value * 100.0);
-        return $"{pct}%";
+        if (CustomYAxisScaleFormatter == null) {
+            return FormatYScaleCompact(value);
+        }
+        
+        return CustomYAxisScaleFormatter(value);
     }
 
     public static string FormatYScaleCompact(double value)
@@ -146,20 +149,19 @@ public sealed class Chart : Control
 
         return $"{value:0.##}";
     }
-    
-    private string FormatScaleValue(double value, double maxVal)
+
+    public static string FormatYScalePercentage(double value)
     {
-        if (CustomYAxisScaleFormatter == null) {
-            return FormatYScaleCompact(value);
-        }
-        
-        return CustomYAxisScaleFormatter(value);
+        int pct = (int)Math.Round(value * 100.0);
+        return $"{pct}%";
     }
-    
+
     private bool IsYAxisScaleVisible => ShowYAxisScale && (Height - 2) > 6;
 
     public string LabelSeries { get; set; } = string.Empty;
-    
+
+    public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
+
     protected override void OnDraw()
     {
         double[] samples;
@@ -317,9 +319,7 @@ public sealed class Chart : Control
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
     }
-    
-    public MetreControlStyle MetreStyle { get; set; } = MetreControlStyle.Dots;
-    
+
     protected override void OnResize()
     {
         lock (dataLock) {

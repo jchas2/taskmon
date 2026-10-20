@@ -5,7 +5,7 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class TraceEx
 {
-    private static readonly ConcurrentDictionary<string, DateTime> allKeys = new();
+    private static readonly ConcurrentDictionary<string, DateTime> AllKeys = new();
     
     private static TimeSpan suppressionWindow = TimeSpan.FromMinutes(10);
 
@@ -13,7 +13,7 @@ public static class TraceEx
     {
         DateTime now = DateTime.UtcNow;
         
-        allKeys.AddOrUpdate(
+        AllKeys.AddOrUpdate(
             key,
             addValueFactory: k => {
                 Trace.WriteLine($"Key: {key}: {message}");

@@ -5,9 +5,6 @@ namespace Task.Monitor.Interop.Mach;
 // membership.h: the uid to directory services GeneratedUID mapping.
 public static class Membership
 {
-    [DllImport(Libraries.LibSystemDyLib)]
-    private static extern unsafe int mbr_uid_to_uuid(uint uid, byte* uu);
-
     // The user's GeneratedUID, e.g. root is FFFFEEEE-DDDD-CCCC-BBBB-AAAA00000000. Null when the
     // uid has no directory services record.
     public static unsafe string? GetUserUuid(uint uid)
@@ -22,4 +19,7 @@ public static class Membership
             .ToString("D")
             .ToUpperInvariant();
     }
+
+    [DllImport(Libraries.LibSystemDyLib)]
+    private static extern unsafe int mbr_uid_to_uuid(uint uid, byte* uu);
 }

@@ -7,12 +7,6 @@ public static unsafe class Nvme
     private const int HeaderSize = 8;            // PropertyId + QueryType
     private const int ProtocolDataSize = 40;     // STORAGE_PROTOCOL_SPECIFIC_DATA
 
-    public static bool TryQueryLogPage(int physicalDriveIndex, uint logPageId, Span<byte> output) =>
-        TryQuery(physicalDriveIndex, WinIoCtl.NVMeDataTypeLogPage, logPageId, output);
-
-    public static bool TryQueryIdentify(int physicalDriveIndex, uint cns, Span<byte> output) =>
-        TryQuery(physicalDriveIndex, WinIoCtl.NVMeDataTypeIdentify, cns, output);
-
     private static bool TryQuery(int physicalDriveIndex, uint dataType, uint requestValue, Span<byte> output)
     {
         if (output.Length == 0) {
@@ -79,4 +73,10 @@ public static unsafe class Nvme
             return true;
         }
     }
+
+    public static bool TryQueryIdentify(int physicalDriveIndex, uint cns, Span<byte> output) =>
+        TryQuery(physicalDriveIndex, WinIoCtl.NVMeDataTypeIdentify, cns, output);
+
+    public static bool TryQueryLogPage(int physicalDriveIndex, uint logPageId, Span<byte> output) =>
+        TryQuery(physicalDriveIndex, WinIoCtl.NVMeDataTypeLogPage, logPageId, output);
 }

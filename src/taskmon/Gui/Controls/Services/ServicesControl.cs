@@ -72,17 +72,22 @@ public sealed partial class ServicesControl : Control
         Controls.Add(detailView);
     }
 
-    public void Sample(SystemSnapshot snapshot)
+    private static string BuildSignature(IReadOnlyList<WindowsServiceInfo> entries) =>
+        entries.Count + "|" + 
+        string.Join("|", entries.Select(service =>
+            $"{service.ServiceName}:{(int)service.Status}:{(int)service.StartType}:{service.DelayedAutoStart}"));
+
+    private void EnsureRows(WindowsServicesInfo info)
     {
-        if (snapshot.WindowsServices is null) {
+        string signature = BuildSignature(info.Specs.Services);
+
+        if (signature == lastSignature) {
             return;
         }
 
-        services = snapshot.WindowsServices;
-        Draw();
+        lastSignature = signature;
+        RebuildRows(info.Specs.Services);
     }
-
-    protected override void OnGotFocus() => servicesView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
@@ -98,35 +103,7 @@ public sealed partial class ServicesControl : Control
         detailView.Draw();
     }
 
-    private void EnsureRows(WindowsServicesInfo info)
-    {
-        string signature = BuildSignature(info.Specs.Services);
-
-        if (signature == lastSignature) {
-            return;
-        }
-
-        lastSignature = signature;
-        RebuildRows(info.Specs.Services);
-    }
-
-    private static string BuildSignature(IReadOnlyList<WindowsServiceInfo> entries) =>
-        entries.Count + "|" + 
-        string.Join("|", entries.Select(service =>
-            $"{service.ServiceName}:{(int)service.Status}:{(int)service.StartType}:{service.DelayedAutoStart}"));
-
-    private void RefreshDetailPane()
-    {
-        int index = servicesView.SelectedIndex;
-        
-        IReadOnlyList<WindowsServiceInfo> entries = services?.Specs.Services ?? [];
-
-        WindowsServiceInfo? selected = index >= 0 && index < entries.Count 
-            ? entries[index] 
-            : null;
-
-        RebuildDetailRows(selected);
-    }
+    protected override void OnGotFocus() => servicesView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -146,16 +123,6 @@ public sealed partial class ServicesControl : Control
         }
     }
 
-    private void TryRequestRefresh()
-    {
-        try {
-            serviceController.GetService<WindowsServicesService>().RequestImmediateRefresh();
-        }
-        catch (InvalidOperationException) {
-            // No services service registered (e.g. under test) - nothing to refresh.
-        }
-    }
-
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
@@ -166,9 +133,6 @@ public sealed partial class ServicesControl : Control
 
         base.OnLoad();
     }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
 
     protected override void OnResize()
     {
@@ -198,6 +162,9 @@ public sealed partial class ServicesControl : Control
         base.OnResize();
     }
 
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
@@ -206,5 +173,38 @@ public sealed partial class ServicesControl : Control
         lastSignature = string.Empty;
 
         base.OnUnload();
+    }
+
+    private void RefreshDetailPane()
+    {
+        int index = servicesView.SelectedIndex;
+        
+        IReadOnlyList<WindowsServiceInfo> entries = services?.Specs.Services ?? [];
+
+        WindowsServiceInfo? selected = index >= 0 && index < entries.Count 
+            ? entries[index] 
+            : null;
+
+        RebuildDetailRows(selected);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        if (snapshot.WindowsServices is null) {
+            return;
+        }
+
+        services = snapshot.WindowsServices;
+        Draw();
+    }
+
+    private void TryRequestRefresh()
+    {
+        try {
+            serviceController.GetService<WindowsServicesService>().RequestImmediateRefresh();
+        }
+        catch (InvalidOperationException) {
+            // No services service registered (e.g. under test) - nothing to refresh.
+        }
     }
 }

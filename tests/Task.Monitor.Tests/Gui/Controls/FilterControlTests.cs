@@ -17,7 +17,11 @@ public sealed class FilterControlTests
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
     }
-    
+
+    [Fact]
+    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
+        Assert.Throws<ArgumentNullException>(() => new FilterControl(null!, runContext.AppConfig));
+
     [Fact]
     public void Constructor_With_Valid_Args_Initialises_Successfully()
     {
@@ -25,10 +29,6 @@ public sealed class FilterControlTests
 
         Assert.NotNull(ctrl);
     }
-
-    [Fact]
-    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => new FilterControl(null!, runContext.AppConfig));
 
     [Fact]
     public void Should_Draw_Control()

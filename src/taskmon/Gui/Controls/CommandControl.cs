@@ -1,6 +1,6 @@
 ﻿using Task.Monitor.Cli.Utils;
-using Task.Monitor.Gui.Commands;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Commands;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 

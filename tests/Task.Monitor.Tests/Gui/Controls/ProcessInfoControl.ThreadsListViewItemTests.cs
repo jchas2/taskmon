@@ -1,11 +1,10 @@
+using System.Drawing;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Process;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class ThreadsListViewItemTests
@@ -15,7 +14,95 @@ public sealed class ThreadsListViewItemTests
                                                                                                                                                                                              
     public ThreadsListViewItemTests() =>                                                                                                                                                    
         appConfig = new AppConfig(fileSystem.Object);                                                                                                                                      
-                                                                                                                                                                                             
+
+    [Fact]                                                                                                                                                                                 
+    public void Constructor_Creates_Correct_Number_Of_SubItems()                                                                                                                           
+    {                                                                                                                                                                                      
+        ThreadInfo threadInfo = new() {                                                                                                                                                    
+            ThreadId = 12345,                                                                                                                                                              
+            ThreadState = "Running",                                                                                                                                                       
+            Reason = "Test",                                                                                                                                                               
+            Priority = 8,                                                                                                                                                                  
+            StartAddress = 0x1000000,                                                                                                                                                      
+            CpuKernelTime = TimeSpan.Zero,                                                                                                                                                 
+            CpuUserTime = TimeSpan.Zero,                                                                                                                                                   
+            CpuTotalTime = TimeSpan.Zero                                                                                                                                                   
+        };                                                                                                                                                                                 
+                                                                                                                                                                                         
+        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
+                                                                                                                                                                                         
+        Assert.Equal((int)ProcessInfoControl.ThreadColumns.Count, item.SubItems.Count());                                                                                                    
+    }                                                                                                                                                                                      
+
+    [Theory]                                                                                                                                                                               
+    [InlineData(0x0)]                                                                                                                                                                      
+    [InlineData(0x1000)]                                                                                                                                                                   
+    [InlineData(0x7FFF12345678)]                                                                                                                                                           
+    public void Constructor_Formats_StartAddress_As_Hexadecimal(long startAddress)                                                                                                         
+    {                                                                                                                                                                                      
+        ThreadInfo threadInfo = new() {                                                                                                                                                    
+            ThreadId = 1234,                                                                                                                                                               
+            ThreadState = "Running",                                                                                                                                                       
+            Reason = "Test",                                                                                                                                                               
+            Priority = 8,                                                                                                                                                                  
+            StartAddress = startAddress,                                                                                                                                                   
+            CpuKernelTime = TimeSpan.Zero,                                                                                                                                                 
+            CpuUserTime = TimeSpan.Zero,                                                                                                                                                   
+            CpuTotalTime = TimeSpan.Zero                                                                                                                                                   
+        };                                                                                                                                                                                 
+                                                                                                                                                                                         
+        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
+                                                                                                                                                                                         
+        string addressText = item.SubItems[(int)ProcessInfoControl.ThreadColumns.StartAddress].Text;                                                                                       
+        Assert.StartsWith("0x", addressText);                                                                                                                                              
+        Assert.Equal(18, addressText.Length); // "0x" + 16 hex digits                                                                                                                      
+    }                                                                                                                                                                                      
+
+    [Fact]                                                                                                                                                                                 
+    public void Constructor_Sets_Background_Color_For_All_SubItems()                                                                                                                       
+    {                                                                                                                                                                                      
+        ThreadInfo threadInfo = new() {                                                                                                                                                    
+            ThreadId = 12345,                                                                                                                                                              
+            ThreadState = "Running",                                                                                                                                                       
+            Reason = "Test",                                                                                                                                                               
+            Priority = 8,                                                                                                                                                                  
+            StartAddress = 0x1000000,                                                                                                                                                      
+            CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 32),                                                                                                                                                 
+            CpuUserTime = new TimeSpan(hours: 0, minutes: 3, seconds: 12),                                                                                                               
+            CpuTotalTime = new TimeSpan(hours: 0, minutes: 5, seconds: 44),                                                                                                                                                   
+        };                                                                                                                                                                                 
+                                                                                                                                                                                         
+        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
+                                                                                                                                                                                         
+        for (int i = 0; i < (int)ProcessInfoControl.ThreadColumns.Count; i++) {                                                                                                            
+            Assert.Equal(                                                                                                                                                                  
+                appConfig.Theme.Background,                                                                                                                                         
+                item.SubItems[i].BackgroundColor);                                                                                                                                         
+        }                                                                                                                                                                                  
+    }                                                                                                                                                                                      
+
+    [Theory]                                                                                                                                                                               
+    [MemberData(nameof(ThreadColourData))]                                                                                                                                                   
+    public void Constructor_Sets_Foreground_Color_Changed_For_All_SubItems(
+        int column, 
+        Color foregroundColour)                                                                                                                       
+    {                                                                                                                                                                                      
+        ThreadInfo threadInfo = new() {                                                                                                                                                    
+            ThreadId = 12345,                                                                                                                                                              
+            ThreadState = "Running",                                                                                                                                                       
+            Reason = "Test",                                                                                                                                                               
+            Priority = 8,                                                                                                                                                                  
+            StartAddress = 0x1000000,                                                                                                                                                      
+            CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 32),                                                                                                                                                 
+            CpuUserTime = new TimeSpan(hours: 0, minutes: 3, seconds: 12),                                                                                                               
+            CpuTotalTime = new TimeSpan(hours: 0, minutes: 5, seconds: 44),                                                                                                                                                   
+        };                                                                                                                                                                                 
+                                                                                                                                                                                         
+        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
+                                       
+        Assert.Equal(foregroundColour, item.SubItems[column].ForegroundColor);                                                                                                                                         
+    }                                                                                                                                                                                      
+
     [Fact]                                                                                                                                                                                 
     public void Constructor_With_Valid_Args_Initialises_SubItems_Successfully()                                                                                                            
     {                                                                                                                                                                                      
@@ -44,30 +131,7 @@ public sealed class ThreadsListViewItemTests
         Assert.Equal(TimeSpan.FromSeconds(581).ToString(), item.SubItems[(int)ProcessInfoControl.ThreadColumns.CpuUserTime].Text);                                                         
         Assert.Equal(TimeSpan.FromSeconds(708).ToString(), item.SubItems[(int)ProcessInfoControl.ThreadColumns.CpuTotalTime].Text);                                                        
     }                                                                                                                                                                                      
-    
-    [Fact]                                                                                                                                                                                 
-    public void Constructor_Sets_Background_Color_For_All_SubItems()                                                                                                                       
-    {                                                                                                                                                                                      
-        ThreadInfo threadInfo = new() {                                                                                                                                                    
-            ThreadId = 12345,                                                                                                                                                              
-            ThreadState = "Running",                                                                                                                                                       
-            Reason = "Test",                                                                                                                                                               
-            Priority = 8,                                                                                                                                                                  
-            StartAddress = 0x1000000,                                                                                                                                                      
-            CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 32),                                                                                                                                                 
-            CpuUserTime = new TimeSpan(hours: 0, minutes: 3, seconds: 12),                                                                                                               
-            CpuTotalTime = new TimeSpan(hours: 0, minutes: 5, seconds: 44),                                                                                                                                                   
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
-        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
-                                                                                                                                                                                         
-        for (int i = 0; i < (int)ProcessInfoControl.ThreadColumns.Count; i++) {                                                                                                            
-            Assert.Equal(                                                                                                                                                                  
-                appConfig.Theme.Background,                                                                                                                                         
-                item.SubItems[i].BackgroundColor);                                                                                                                                         
-        }                                                                                                                                                                                  
-    }                                                                                                                                                                                      
-                                                                                                                                                                                             
+
     public static TheoryData<int, Color> ThreadColourData()                                                                                                                              
         => new() {                                                                                                                                                                         
             { (int)ProcessInfoControl.ThreadColumns.State, ConsolePalette.Yellow },
@@ -78,48 +142,7 @@ public sealed class ThreadsListViewItemTests
             { (int)ProcessInfoControl.ThreadColumns.CpuTotalTime, ConsolePalette.Yellow },
             { (int)ProcessInfoControl.ThreadColumns.Id, ConsolePalette.White }                                                                                                                     
         };                                                                                                                                                                                 
-                                                                                                                                                                                         
-    [Theory]                                                                                                                                                                               
-    [MemberData(nameof(ThreadColourData))]                                                                                                                                                   
-    public void Constructor_Sets_Foreground_Color_Changed_For_All_SubItems(
-        int column, 
-        Color foregroundColour)                                                                                                                       
-    {                                                                                                                                                                                      
-        ThreadInfo threadInfo = new() {                                                                                                                                                    
-            ThreadId = 12345,                                                                                                                                                              
-            ThreadState = "Running",                                                                                                                                                       
-            Reason = "Test",                                                                                                                                                               
-            Priority = 8,                                                                                                                                                                  
-            StartAddress = 0x1000000,                                                                                                                                                      
-            CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 32),                                                                                                                                                 
-            CpuUserTime = new TimeSpan(hours: 0, minutes: 3, seconds: 12),                                                                                                               
-            CpuTotalTime = new TimeSpan(hours: 0, minutes: 5, seconds: 44),                                                                                                                                                   
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
-        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
-                                       
-        Assert.Equal(foregroundColour, item.SubItems[column].ForegroundColor);                                                                                                                                         
-    }                                                                                                                                                                                      
-                                                                                                                                                                                             
-    [Fact]                                                                                                                                                                                 
-    public void Constructor_Creates_Correct_Number_Of_SubItems()                                                                                                                           
-    {                                                                                                                                                                                      
-        ThreadInfo threadInfo = new() {                                                                                                                                                    
-            ThreadId = 12345,                                                                                                                                                              
-            ThreadState = "Running",                                                                                                                                                       
-            Reason = "Test",                                                                                                                                                               
-            Priority = 8,                                                                                                                                                                  
-            StartAddress = 0x1000000,                                                                                                                                                      
-            CpuKernelTime = TimeSpan.Zero,                                                                                                                                                 
-            CpuUserTime = TimeSpan.Zero,                                                                                                                                                   
-            CpuTotalTime = TimeSpan.Zero                                                                                                                                                   
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
-        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
-                                                                                                                                                                                         
-        Assert.Equal((int)ProcessInfoControl.ThreadColumns.Count, item.SubItems.Count());                                                                                                    
-    }                                                                                                                                                                                      
-                                                                                                                                                                                             
+
     [Fact]                                                                                                                                                                                 
     public void UpdateItem_Updates_Text_Values()                                                                                                                                           
     {                                                                                                                                                                                      
@@ -155,29 +178,5 @@ public sealed class ThreadsListViewItemTests
         Assert.Equal(TimeSpan.FromSeconds(15).ToString(), item.SubItems[(int)ProcessInfoControl.ThreadColumns.CpuKernelTime].Text);                                                        
         Assert.Equal(TimeSpan.FromSeconds(25).ToString(), item.SubItems[(int)ProcessInfoControl.ThreadColumns.CpuUserTime].Text);                                                          
         Assert.Equal(TimeSpan.FromSeconds(40).ToString(), item.SubItems[(int)ProcessInfoControl.ThreadColumns.CpuTotalTime].Text);                                                         
-    }                                                                                                                                                                                      
-                                                                                                                                                                                             
-    [Theory]                                                                                                                                                                               
-    [InlineData(0x0)]                                                                                                                                                                      
-    [InlineData(0x1000)]                                                                                                                                                                   
-    [InlineData(0x7FFF12345678)]                                                                                                                                                           
-    public void Constructor_Formats_StartAddress_As_Hexadecimal(long startAddress)                                                                                                         
-    {                                                                                                                                                                                      
-        ThreadInfo threadInfo = new() {                                                                                                                                                    
-            ThreadId = 1234,                                                                                                                                                               
-            ThreadState = "Running",                                                                                                                                                       
-            Reason = "Test",                                                                                                                                                               
-            Priority = 8,                                                                                                                                                                  
-            StartAddress = startAddress,                                                                                                                                                   
-            CpuKernelTime = TimeSpan.Zero,                                                                                                                                                 
-            CpuUserTime = TimeSpan.Zero,                                                                                                                                                   
-            CpuTotalTime = TimeSpan.Zero                                                                                                                                                   
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
-        ProcessInfoControl.ThreadListViewItem item = new(threadInfo, appConfig);                                                                                                           
-                                                                                                                                                                                         
-        string addressText = item.SubItems[(int)ProcessInfoControl.ThreadColumns.StartAddress].Text;                                                                                       
-        Assert.StartsWith("0x", addressText);                                                                                                                                              
-        Assert.Equal(18, addressText.Length); // "0x" + 16 hex digits                                                                                                                      
     }                                                                                                                                                                                      
 }

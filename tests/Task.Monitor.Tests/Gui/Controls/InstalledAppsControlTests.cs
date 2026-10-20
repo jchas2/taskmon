@@ -20,9 +20,6 @@ public sealed class InstalledAppsControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static SystemSnapshot SnapshotWith(params InstalledApp[] apps) =>
-        new() { InstalledApps = new InstalledAppsInfo { Specs = new InstalledAppsSpecs { Apps = [.. apps] } } };
-
     private static InstalledApp App(
         string name,
         string? version = "1.0.0",
@@ -41,21 +38,6 @@ public sealed class InstalledAppsControlTests
             InstallLocation = installLocation
         };
 
-    private InstalledAppsControl CreateControl(int width = 160, int height = 40)
-    {
-        InstalledAppsControl ctrl = new(
-            runContext.ServiceController,
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = width,
-            Height = height
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        return ctrl;
-    }
-
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -72,42 +54,19 @@ public sealed class InstalledAppsControlTests
         Assert.NotNull(ctrl);
     }
 
-    [Fact]
-    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
+    private InstalledAppsControl CreateControl(int width = 160, int height = 40)
     {
-        InstalledAppsControl ctrl = CreateControl();
-        ctrl.Draw();
+        InstalledAppsControl ctrl = new(
+            runContext.ServiceController,
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = width,
+            Height = height
+        };
 
-        Assert.Contains("Gathering installed applications", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Draws_The_Column_Headers_And_A_Row_Per_App()
-    {
-        InstalledAppsControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(
-            App("Git", version: "2.44.0", publisher: "Git for Windows",
-                installDate: new DateTime(2026, 1, 15), estimatedSizeKb: 51200,
-                installLocation: @"C:\Program Files\Git"),
-            App("MyTool", version: "0.9", scope: InstalledAppScope.User)));
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        foreach (string fragment in new[] {
-            "NAME", "VERSION", "PUBLISHER", "SCOPE", "INSTALLED", "SIZE", "LOCATION",
-            "Git", "2.44.0", "Git for Windows", "Machine", "2026-01-15", "50.0 MB",
-            @"C:\Program Files\Git",
-            "MyTool", "0.9", "User"
-        }) {
-            Assert.Contains(fragment, output);
-        }
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+        ctrl.Load();
+        ctrl.Resize();
+        return ctrl;
     }
 
     [Fact]
@@ -140,33 +99,52 @@ public sealed class InstalledAppsControlTests
     }
 
     [Fact]
-    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    public void Draws_The_Column_Headers_And_A_Row_Per_App()
     {
         InstalledAppsControl ctrl = CreateControl();
 
         ctrl.Sample(SnapshotWith(
-            App("Git", publisher: "Git for Windows"),
-            App("MyTool", publisher: "Acme", scope: InstalledAppScope.User)));
+            App("Git", version: "2.44.0", publisher: "Git for Windows",
+                installDate: new DateTime(2026, 1, 15), estimatedSizeKb: 51200,
+                installLocation: @"C:\Program Files\Git"),
+            App("MyTool", version: "0.9", scope: InstalledAppScope.User)));
         ctrl.Draw();
-        runContextHelper.terminal.Invocations.Clear();
 
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        string output = CapturedOutput();
 
-        Assert.Contains("Acme", CapturedOutput());
+        foreach (string fragment in new[] {
+            "NAME", "VERSION", "PUBLISHER", "SCOPE", "INSTALLED", "SIZE", "LOCATION",
+            "Git", "2.44.0", "Git for Windows", "Machine", "2026-01-15", "50.0 MB",
+            @"C:\Program Files\Git",
+            "MyTool", "0.9", "User"
+        }) {
+            Assert.Contains(fragment, output);
+        }
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.Contains("Gathering installed applications", CapturedOutput());
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Shows_The_Total_Count_In_The_Footer()
+    public void Ignores_A_Snapshot_With_No_InstalledApps_Info()
     {
         InstalledAppsControl ctrl = CreateControl();
 
-        ctrl.Sample(SnapshotWith(App("A"), App("B"), App("C")));
+        ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("3 installed", CapturedOutput());
+        Assert.Contains("Gathering installed applications", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -189,14 +167,36 @@ public sealed class InstalledAppsControlTests
     }
 
     [Fact]
-    public void Ignores_A_Snapshot_With_No_InstalledApps_Info()
+    public void Shows_The_Total_Count_In_The_Footer()
     {
         InstalledAppsControl ctrl = CreateControl();
 
-        ctrl.Sample(new SystemSnapshot());
+        ctrl.Sample(SnapshotWith(App("A"), App("B"), App("C")));
         ctrl.Draw();
 
-        Assert.Contains("Gathering installed applications", CapturedOutput());
+        Assert.Contains("3 installed", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    private static SystemSnapshot SnapshotWith(params InstalledApp[] apps) =>
+        new() { InstalledApps = new InstalledAppsInfo { Specs = new InstalledAppsSpecs { Apps = [.. apps] } } };
+
+    [Fact]
+    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            App("Git", publisher: "Git for Windows"),
+            App("MyTool", publisher: "Acme", scope: InstalledAppScope.User)));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.Contains("Acme", CapturedOutput());
 
         ctrl.Unload();
     }

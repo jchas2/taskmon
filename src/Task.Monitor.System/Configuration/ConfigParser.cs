@@ -92,42 +92,6 @@ public class ConfigParser : IDisposable
             }
         }
     }
-    
-    private void ParseSection(ref ConfigSection section)
-    {
-        StringBuilder buffer = new(InitialStringSize);
-        
-        while (true) {
-            int character = reader.Read();
-            char ch       = (char)character;
-            
-            if (character == EndOfFile) {
-                throw new ConfigParseException($"End-of-file found reading section name {buffer} before closing ']'.");
-            }
-
-            if (ch == ']') {
-                break;
-            }
-
-            if (char.IsWhiteSpace(ch)) {
-                buffer.Append(ch);
-                continue;
-            }
-
-            if (char.IsLetterOrDigit(ch) || ch == '-') {
-                buffer.Append(ch);
-                continue;
-            }
-
-            throw new ConfigParseException($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
-        }
-
-        if (buffer.Length == 0) {
-            throw new ConfigParseException("Section name cannot be empty.");
-        }
-        
-        section.Name = buffer.ToString();
-    }
 
     private void ParseKey(ref ConfigSection section, char initChar)
     {
@@ -174,6 +138,42 @@ public class ConfigParser : IDisposable
         if (false == section.Contains(key)) {
             section.Add(key, val);
         }
+    }
+
+    private void ParseSection(ref ConfigSection section)
+    {
+        StringBuilder buffer = new(InitialStringSize);
+        
+        while (true) {
+            int character = reader.Read();
+            char ch       = (char)character;
+            
+            if (character == EndOfFile) {
+                throw new ConfigParseException($"End-of-file found reading section name {buffer} before closing ']'.");
+            }
+
+            if (ch == ']') {
+                break;
+            }
+
+            if (char.IsWhiteSpace(ch)) {
+                buffer.Append(ch);
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(ch) || ch == '-') {
+                buffer.Append(ch);
+                continue;
+            }
+
+            throw new ConfigParseException($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
+        }
+
+        if (buffer.Length == 0) {
+            throw new ConfigParseException("Section name cannot be empty.");
+        }
+        
+        section.Name = buffer.ToString();
     }
 
     private void ParseValue(ref StringBuilder valueBuffer)

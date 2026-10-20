@@ -16,6 +16,18 @@ public class ListViewItemCollectionTests
         };
 
     [Fact]
+    public void Should_AddRange_Items()
+    {
+        ListViewControl listview = new(terminalMock.Object);
+        listview.Items.AddRange(GetListViewItemData().ToArray());
+        
+        Assert.True(listview.Items.Count == 3);
+        Assert.True(listview.Items[0].Text == "Item 1");
+        Assert.True(listview.Items[1].Text == "Item 2");
+        Assert.True(listview.Items[2].Text == "Item 3");
+    }
+
+    [Fact]
     public void Should_Add_Items()
     {
         ListViewControl listview = new(terminalMock.Object);
@@ -23,18 +35,6 @@ public class ListViewItemCollectionTests
         foreach (ListViewItem item in GetListViewItemData()) {
             listview.Items.Add(item);
         }
-        
-        Assert.True(listview.Items.Count == 3);
-        Assert.True(listview.Items[0].Text == "Item 1");
-        Assert.True(listview.Items[1].Text == "Item 2");
-        Assert.True(listview.Items[2].Text == "Item 3");
-    }
-    
-    [Fact]
-    public void Should_AddRange_Items()
-    {
-        ListViewControl listview = new(terminalMock.Object);
-        listview.Items.AddRange(GetListViewItemData().ToArray());
         
         Assert.True(listview.Items.Count == 3);
         Assert.True(listview.Items[0].Text == "Item 1");

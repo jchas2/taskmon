@@ -20,6 +20,18 @@ public sealed class BackgroundItemsDatabaseTests
         Assert.Equal(["com.example.daemon"], database.RecordsFor(BackgroundItemsFixture.SystemUuid).Select(r => r.Name));
     }
 
+    [Theory]
+    [InlineData(0xBL, true)]
+    [InlineData(0xAL, false)]
+    [InlineData(0x3L, true)]
+    [InlineData(0x1L, false)]
+    public void Is_Approved_Only_When_Enabled_And_Allowed(long disposition, bool expected)
+    {
+        BackgroundItemRecord record = new() { Disposition = (BackgroundItemDisposition)disposition };
+
+        Assert.Equal(expected, record.IsApproved);
+    }
+
     [Fact]
     public void Looks_Up_Users_Case_Insensitively_And_Returns_Nothing_For_Others()
     {
@@ -45,6 +57,17 @@ public sealed class BackgroundItemsDatabaseTests
     }
 
     [Fact]
+    public void Reads_A_Legacy_Daemon()
+    {
+        BackgroundItemRecord daemon = Database().RecordsFor(BackgroundItemsFixture.SystemUuid)[0];
+
+        Assert.True(daemon.Is(BackgroundItemType.Daemon));
+        Assert.True(daemon.IsLegacy);
+        Assert.False(daemon.Is(BackgroundItemType.Agent));
+        Assert.Equal("/Library/LaunchDaemons/com.example.daemon.plist", daemon.ResolvePath(null));
+    }
+
+    [Fact]
     public void Resolves_A_Login_Item_Against_Its_Parent_App()
     {
         BackgroundItemRecord helper = Database().RecordsFor(BackgroundItemsFixture.UserUuid)[1];
@@ -59,17 +82,6 @@ public sealed class BackgroundItemsDatabaseTests
     }
 
     [Fact]
-    public void Reads_A_Legacy_Daemon()
-    {
-        BackgroundItemRecord daemon = Database().RecordsFor(BackgroundItemsFixture.SystemUuid)[0];
-
-        Assert.True(daemon.Is(BackgroundItemType.Daemon));
-        Assert.True(daemon.IsLegacy);
-        Assert.False(daemon.Is(BackgroundItemType.Agent));
-        Assert.Equal("/Library/LaunchDaemons/com.example.daemon.plist", daemon.ResolvePath(null));
-    }
-
-    [Fact]
     public void Returns_Null_For_An_Archive_Without_Items_By_User()
     {
         Dictionary<string, object?> archive = new() {
@@ -80,18 +92,6 @@ public sealed class BackgroundItemsDatabaseTests
 
         Assert.Null(BackgroundItemsDatabase.Parse(archive));
         Assert.Null(BackgroundItemsDatabase.Parse(null));
-    }
-
-    [Theory]
-    [InlineData(0xBL, true)]
-    [InlineData(0xAL, false)]
-    [InlineData(0x3L, true)]
-    [InlineData(0x1L, false)]
-    public void Is_Approved_Only_When_Enabled_And_Allowed(long disposition, bool expected)
-    {
-        BackgroundItemRecord record = new() { Disposition = (BackgroundItemDisposition)disposition };
-
-        Assert.Equal(expected, record.IsApproved);
     }
 }
 #endif

@@ -7,11 +7,11 @@ public sealed class DriverPathResolverTests
     private const string WindowsDir = @"C:\Windows";
 
     [Fact]
-    public void Expand_Returns_Null_For_A_Null_Or_Empty_Path()
+    public void Expand_Leaves_An_Already_Rooted_Path_Unchanged()
     {
-        Assert.Null(DriverPathResolver.Expand(null, WindowsDir));
-        Assert.Null(DriverPathResolver.Expand(string.Empty, WindowsDir));
-        Assert.Null(DriverPathResolver.Expand("   ", WindowsDir));
+        string? result = DriverPathResolver.Expand(@"D:\Custom\xyz.sys", WindowsDir);
+
+        Assert.Equal(@"D:\Custom\xyz.sys", result);
     }
 
     [Fact]
@@ -23,19 +23,19 @@ public sealed class DriverPathResolverTests
     }
 
     [Fact]
+    public void Expand_Returns_Null_For_A_Null_Or_Empty_Path()
+    {
+        Assert.Null(DriverPathResolver.Expand(null, WindowsDir));
+        Assert.Null(DriverPathResolver.Expand(string.Empty, WindowsDir));
+        Assert.Null(DriverPathResolver.Expand("   ", WindowsDir));
+    }
+
+    [Fact]
     public void Expand_Strips_The_NT_Device_Path_Prefix()
     {
         string? result = DriverPathResolver.Expand(@"\??\C:\Windows\System32\drivers\xyz.sys", WindowsDir);
 
         Assert.Equal(@"C:\Windows\System32\drivers\xyz.sys", result);
-    }
-
-    [Fact]
-    public void Expand_Leaves_An_Already_Rooted_Path_Unchanged()
-    {
-        string? result = DriverPathResolver.Expand(@"D:\Custom\xyz.sys", WindowsDir);
-
-        Assert.Equal(@"D:\Custom\xyz.sys", result);
     }
 
     [Fact]

@@ -46,16 +46,83 @@ public sealed class ThermalsControl : Control
         this.appConfig         = appConfig;
     }
 
-    public void Sample(SystemSnapshot snapshot)
-    {
-        this.snapshot = snapshot;
+    private string BuildTitle(ThermalComponent component, string componentId) => component switch {
+        ThermalComponent.Cpu     => "CPU",
+        ThermalComponent.Gpu     => GpuLabel(componentId),
+        ThermalComponent.Disk    => DiskLabel(componentId),
+        ThermalComponent.Battery => "Battery",
+        ThermalComponent.Chipset => "Chipset",
+        ThermalComponent.Ambient => "Ambient",
+        _ => "System"
+    };
 
-        if (snapshot.Thermal is { } thermal) {
-            EnsureRows(thermal.Metrics);
-            FeedCharts(thermal.Metrics);
+    private void ConfigureChart(Chart chart)
+    {
+        CommonControl.Theme(chart, appConfig.Theme);
+        chart.MetreStyle = appConfig.MetreStyle;
+    }
+
+    private string DiskLabel(string componentId)
+    {
+        if (int.TryParse(componentId, out int index) &&
+            snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
+
+            return $"Disk {index} · {disk.Model}";
         }
 
-        Draw();
+        return $"Disk {componentId}";
+    }
+
+    private void DrawEmptyState()
+    {
+        string[] lines = [
+            "No thermal sensors detected.",
+            "GPU and NVMe drive temperatures appear here when available.",
+            "Accurate CPU temperature needs a signed kernel helper driver.",
+        ];
+
+        for (int i = 0; i < lines.Length; i++) {
+            string line = lines[i];
+            int x = X + Math.Max(0, (Width - line.Length) / 2);
+            int y = Y + Height / 2 - lines.Length / 2 + i;
+
+            frame.Clear();
+            frame.MoveTo(x, y);
+            frame.SetColour(appConfig.Theme.Foreground, BackgroundColour);
+            frame.Append(line);
+            
+            Terminal.Write(frame.AsSpan());
+        }
+    }
+
+    private void DrawGlyph(int x, int y, char glyph)
+    {
+        frame.Clear();
+        frame.MoveTo(x, y);
+        frame.SetColour(appConfig.Theme.ChartBorderForeground, BackgroundColour);
+        frame.Append(glyph);
+        frame.ResetColour();
+        
+        Terminal.Write(frame.AsSpan());
+    }
+
+    private void DrawScrollBar(int visibleCharts)
+    {
+        int x = X + Width - 1;
+
+        DrawVerticalLine(
+            x, 
+            Y, 
+            Y + Height, 
+            appConfig.Theme.ChartBorderForeground);
+
+        if (scrollOffset > 0) {
+            DrawGlyph(x, Y, '▲');
+        }
+
+        if (scrollOffset + visibleCharts < rows.Count) {
+            DrawGlyph(x, Y + Height - 1, '▼');
+        }
     }
 
     private void EnsureRows(ThermalMetrics metrics)
@@ -87,38 +154,6 @@ public sealed class ThermalsControl : Control
         
         scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, rows.Count - 1));
         needsFullClear = true;
-    }
-
-    private string BuildTitle(ThermalComponent component, string componentId) => component switch {
-        ThermalComponent.Cpu     => "CPU",
-        ThermalComponent.Gpu     => GpuLabel(componentId),
-        ThermalComponent.Disk    => DiskLabel(componentId),
-        ThermalComponent.Battery => "Battery",
-        ThermalComponent.Chipset => "Chipset",
-        ThermalComponent.Ambient => "Ambient",
-        _ => "System"
-    };
-
-    private string GpuLabel(string componentId)
-    {
-        if (long.TryParse(componentId, out long luid) &&
-            snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
-
-            return $"GPU · {gpu.Description}";
-        }
-
-        return "GPU";
-    }
-
-    private string DiskLabel(string componentId)
-    {
-        if (int.TryParse(componentId, out int index) &&
-            snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
-
-            return $"Disk {index} · {disk.Model}";
-        }
-
-        return $"Disk {componentId}";
     }
 
     private void FeedCharts(ThermalMetrics metrics)
@@ -155,19 +190,15 @@ public sealed class ThermalsControl : Control
         return chart;
     }
 
-    private void PruneChartCache()
+    private string GpuLabel(string componentId)
     {
-        HashSet<string> live = rows.Select(row => row.Key).ToHashSet();
+        if (long.TryParse(componentId, out long luid) &&
+            snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
 
-        foreach (string stale in chartCache.Keys.Where(key => !live.Contains(key)).ToList()) {
-            chartCache.Remove(stale);
+            return $"GPU · {gpu.Description}";
         }
-    }
 
-    private void ConfigureChart(Chart chart)
-    {
-        CommonControl.Theme(chart, appConfig.Theme);
-        chart.MetreStyle = appConfig.MetreStyle;
+        return "GPU";
     }
 
     protected override void OnDraw() => OnDrawInternal();
@@ -254,58 +285,6 @@ public sealed class ThermalsControl : Control
         lastDrawnChartCount = drawn;
     }
 
-    private void DrawEmptyState()
-    {
-        string[] lines = [
-            "No thermal sensors detected.",
-            "GPU and NVMe drive temperatures appear here when available.",
-            "Accurate CPU temperature needs a signed kernel helper driver.",
-        ];
-
-        for (int i = 0; i < lines.Length; i++) {
-            string line = lines[i];
-            int x = X + Math.Max(0, (Width - line.Length) / 2);
-            int y = Y + Height / 2 - lines.Length / 2 + i;
-
-            frame.Clear();
-            frame.MoveTo(x, y);
-            frame.SetColour(appConfig.Theme.Foreground, BackgroundColour);
-            frame.Append(line);
-            
-            Terminal.Write(frame.AsSpan());
-        }
-    }
-
-    private void DrawScrollBar(int visibleCharts)
-    {
-        int x = X + Width - 1;
-
-        DrawVerticalLine(
-            x, 
-            Y, 
-            Y + Height, 
-            appConfig.Theme.ChartBorderForeground);
-
-        if (scrollOffset > 0) {
-            DrawGlyph(x, Y, '▲');
-        }
-
-        if (scrollOffset + visibleCharts < rows.Count) {
-            DrawGlyph(x, Y + Height - 1, '▼');
-        }
-    }
-
-    private void DrawGlyph(int x, int y, char glyph)
-    {
-        frame.Clear();
-        frame.MoveTo(x, y);
-        frame.SetColour(appConfig.Theme.ChartBorderForeground, BackgroundColour);
-        frame.Append(glyph);
-        frame.ResetColour();
-        
-        Terminal.Write(frame.AsSpan());
-    }
-
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         int visibleCharts = Math.Max(1, Height / ChartHeight);
@@ -347,9 +326,6 @@ public sealed class ThermalsControl : Control
         base.OnLoad();
     }
 
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
-
     protected override void OnResize()
     {
         foreach (Chart chart in chartCache.Values) {
@@ -365,6 +341,9 @@ public sealed class ThermalsControl : Control
         base.OnResize();
     }
 
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
@@ -377,5 +356,26 @@ public sealed class ThermalsControl : Control
         scrollBarShown      = false;
 
         base.OnUnload();
+    }
+
+    private void PruneChartCache()
+    {
+        HashSet<string> live = rows.Select(row => row.Key).ToHashSet();
+
+        foreach (string stale in chartCache.Keys.Where(key => !live.Contains(key)).ToList()) {
+            chartCache.Remove(stale);
+        }
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        this.snapshot = snapshot;
+
+        if (snapshot.Thermal is { } thermal) {
+            EnsureRows(thermal.Metrics);
+            FeedCharts(thermal.Metrics);
+        }
+
+        Draw();
     }
 }

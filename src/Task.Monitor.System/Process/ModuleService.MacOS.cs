@@ -8,6 +8,76 @@ namespace Task.Monitor.System.Process;
 public partial class ModuleService
 {
 #if __APPLE__
+    private static bool GetCurrentProcessModules(List<ModuleInfo> moduleInfos)
+    {
+        HashSet<string> seen = new(StringComparer.Ordinal);
+        uint count = DyLib._dyld_image_count();
+
+        for (uint i = 0; i < count; i++) {
+            IntPtr namePtr = DyLib._dyld_get_image_name(i);
+
+            if (namePtr == IntPtr.Zero) {
+                continue;
+            }
+
+            string path = Marshal.PtrToStringUTF8(namePtr) ?? string.Empty;
+
+            if (path.Length > 0 && seen.Add(path)) {
+                moduleInfos.Add(new ModuleInfo {
+                    FileName = path,
+                    ModuleName = Path.GetFileName(path)
+                });
+            }
+        }
+
+        return moduleInfos.Count > 0;
+    }
+
+    private static unsafe bool GetMappedFileModules(int pid, List<ModuleInfo> moduleInfos)
+    {
+        // Walk the process mapped VM regions via proc_pidinfo, reporting each region's backing
+        // file path. Match on name or VM_MEMORY_DYLIB tag.
+        HashSet<string> seen = new(StringComparer.Ordinal);
+
+        int size = sizeof(ProcInfo.proc_regionwithpathinfo);
+        ulong address = 0;
+
+        while (true) {
+            ProcInfo.proc_regionwithpathinfo info;
+            
+            int result = ProcInfo.proc_pidinfo(
+                pid, 
+                ProcInfo.PROC_PIDREGIONPATHINFO, 
+                address, 
+                &info, 
+                size);
+
+            if (result <= 0) {
+                break;
+            }
+
+            string path = Marshal.PtrToStringUTF8((IntPtr)info.prp_vip_path) ?? string.Empty;
+
+            if (path.Length > 0 && IsLoadedImage(path, info.prp_prinfo.pri_user_tag) && seen.Add(path)) {
+                moduleInfos.Add(new ModuleInfo {
+                    FileName = path,
+                    ModuleName = Path.GetFileName(path)
+                });
+            }
+
+            ulong next = info.prp_prinfo.pri_address + info.prp_prinfo.pri_size;
+
+            // Stop if the walk fails to advance (or wraps) to avoid an infinite loop.
+            if (next <= address) {
+                break;
+            }
+
+            address = next;
+        }
+
+        return moduleInfos.Count > 0;
+    }
+
     private bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
     {
         moduleInfos = new List<ModuleInfo>();
@@ -24,6 +94,48 @@ public partial class ModuleService
         return GetModulesFromVmmap (process.Id, moduleInfos)
             || TryGetDyldModules(process.Id, moduleInfos)
             || GetMappedFileModules(process.Id, moduleInfos);
+    }
+
+    private static bool IsLoadedImage(string path, uint userTag) =>
+        path.EndsWith(".dylib", StringComparison.Ordinal) ||
+        userTag == ProcInfo.VM_MEMORY_DYLIB;
+
+    private static unsafe bool ReadTaskMemory(uint task, ulong address, void* buffer, ulong size)
+    {
+        ulong outSize;
+        
+        int result = MachTask.mach_vm_read_overwrite(
+            task, 
+            address, 
+            size, 
+            (ulong)buffer, 
+            &outSize);
+        
+        return result == MachTask.KERN_SUCCESS && outSize == size;
+    }
+
+    // Reads a NUL-terminated UTF-8 path from the target, bounded to the current
+    // page so the read can't run off into an unmapped page.
+    private static unsafe string ReadTaskString(uint task, ulong address)
+    {
+        int pageSize = Environment.SystemPageSize;
+        ulong toPageEnd = (ulong)pageSize - (address & (ulong)(pageSize - 1));
+        int length = (int)Math.Min((ulong)ProcInfo.MAXPATHLEN, toPageEnd);
+
+        Span<byte> buffer = stackalloc byte[ProcInfo.MAXPATHLEN];
+        Span<byte> slice = buffer[..length];
+
+        fixed (byte* p = slice) {
+            if (!ReadTaskMemory(task, address, p, (ulong)length)) {
+                return string.Empty;
+            }
+        }
+
+        int nul = slice.IndexOf((byte)0);
+        
+        return Encoding.UTF8.GetString(nul < 0 
+            ? slice 
+            : slice[..nul]);
     }
 
     private static unsafe bool TryGetDyldModules(int pid, List<ModuleInfo> moduleInfos)
@@ -95,117 +207,5 @@ public partial class ModuleService
             MachTask.mach_port_deallocate(MachTask.task_self_trap(), task);
         }
     }
-
-    private static unsafe bool ReadTaskMemory(uint task, ulong address, void* buffer, ulong size)
-    {
-        ulong outSize;
-        
-        int result = MachTask.mach_vm_read_overwrite(
-            task, 
-            address, 
-            size, 
-            (ulong)buffer, 
-            &outSize);
-        
-        return result == MachTask.KERN_SUCCESS && outSize == size;
-    }
-
-    // Reads a NUL-terminated UTF-8 path from the target, bounded to the current
-    // page so the read can't run off into an unmapped page.
-    private static unsafe string ReadTaskString(uint task, ulong address)
-    {
-        int pageSize = Environment.SystemPageSize;
-        ulong toPageEnd = (ulong)pageSize - (address & (ulong)(pageSize - 1));
-        int length = (int)Math.Min((ulong)ProcInfo.MAXPATHLEN, toPageEnd);
-
-        Span<byte> buffer = stackalloc byte[ProcInfo.MAXPATHLEN];
-        Span<byte> slice = buffer[..length];
-
-        fixed (byte* p = slice) {
-            if (!ReadTaskMemory(task, address, p, (ulong)length)) {
-                return string.Empty;
-            }
-        }
-
-        int nul = slice.IndexOf((byte)0);
-        
-        return Encoding.UTF8.GetString(nul < 0 
-            ? slice 
-            : slice[..nul]);
-    }
-
-    private static bool GetCurrentProcessModules(List<ModuleInfo> moduleInfos)
-    {
-        HashSet<string> seen = new(StringComparer.Ordinal);
-        uint count = DyLib._dyld_image_count();
-
-        for (uint i = 0; i < count; i++) {
-            IntPtr namePtr = DyLib._dyld_get_image_name(i);
-
-            if (namePtr == IntPtr.Zero) {
-                continue;
-            }
-
-            string path = Marshal.PtrToStringUTF8(namePtr) ?? string.Empty;
-
-            if (path.Length > 0 && seen.Add(path)) {
-                moduleInfos.Add(new ModuleInfo {
-                    FileName = path,
-                    ModuleName = Path.GetFileName(path)
-                });
-            }
-        }
-
-        return moduleInfos.Count > 0;
-    }
-
-    private static unsafe bool GetMappedFileModules(int pid, List<ModuleInfo> moduleInfos)
-    {
-        // Walk the process mapped VM regions via proc_pidinfo, reporting each region's backing
-        // file path. Match on name or VM_MEMORY_DYLIB tag.
-        HashSet<string> seen = new(StringComparer.Ordinal);
-
-        int size = sizeof(ProcInfo.proc_regionwithpathinfo);
-        ulong address = 0;
-
-        while (true) {
-            ProcInfo.proc_regionwithpathinfo info;
-            
-            int result = ProcInfo.proc_pidinfo(
-                pid, 
-                ProcInfo.PROC_PIDREGIONPATHINFO, 
-                address, 
-                &info, 
-                size);
-
-            if (result <= 0) {
-                break;
-            }
-
-            string path = Marshal.PtrToStringUTF8((IntPtr)info.prp_vip_path) ?? string.Empty;
-
-            if (path.Length > 0 && IsLoadedImage(path, info.prp_prinfo.pri_user_tag) && seen.Add(path)) {
-                moduleInfos.Add(new ModuleInfo {
-                    FileName = path,
-                    ModuleName = Path.GetFileName(path)
-                });
-            }
-
-            ulong next = info.prp_prinfo.pri_address + info.prp_prinfo.pri_size;
-
-            // Stop if the walk fails to advance (or wraps) to avoid an infinite loop.
-            if (next <= address) {
-                break;
-            }
-
-            address = next;
-        }
-
-        return moduleInfos.Count > 0;
-    }
-
-    private static bool IsLoadedImage(string path, uint userTag) =>
-        path.EndsWith(".dylib", StringComparison.Ordinal) ||
-        userTag == ProcInfo.VM_MEMORY_DYLIB;
 #endif
 }

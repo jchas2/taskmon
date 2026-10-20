@@ -31,6 +31,43 @@ public sealed class PropertyListTests
 
     public static TheoryData<string> Formats => new() { "xml", "binary" };
 
+    [Fact]
+    public void ParseKeyedArchive_Keeps_Object_References()
+    {
+        Dictionary<string, object?> archive = Assert.IsType<Dictionary<string, object?>>(
+            PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
+
+        Assert.Equal("NSKeyedArchiver", archive["$archiver"]);
+        Dictionary<string, object?> top = Assert.IsType<Dictionary<string, object?>>(archive["$top"]);
+        Assert.IsType<PropertyListUid>(top["store"]);
+    }
+
+    [Theory]
+    [MemberData(nameof(Formats))]
+    public void ParseKeyedArchive_Reads_A_Plain_Property_List_Too(string format)
+    {
+        byte[] bytes = format == "xml"
+            ? Encoding.UTF8.GetBytes(XmlJob)
+            : Convert.FromBase64String(BinaryJob);
+
+        Dictionary<string, object?> job = Assert.IsType<Dictionary<string, object?>>(PropertyList.ParseKeyedArchive(bytes));
+
+        Assert.Equal("com.example.agent", job["Label"]);
+        Assert.Equal(30L, job["ThrottleInterval"]);
+        Assert.Equal(1.5, job["Nice"]);
+        Assert.Equal(new byte[] { 1, 2, 3 }, job["Blob"]);
+        Assert.Equal(false, Assert.IsType<Dictionary<string, object?>>(job["KeepAlive"])["SuccessfulExit"]);
+    }
+
+    [Fact]
+    public void Parse_Drops_Object_References_It_Cannot_Read()
+    {
+        Dictionary<string, object?> archive = Assert.IsType<Dictionary<string, object?>>(
+            PropertyList.Parse(BackgroundItemsFixture.Bytes));
+
+        Assert.Null(Assert.IsType<Dictionary<string, object?>>(archive["$top"])["store"]);
+    }
+
     [Theory]
     [MemberData(nameof(Formats))]
     public void Parse_Materialises_Every_Value_Type(string format)
@@ -53,52 +90,15 @@ public sealed class PropertyListTests
     }
 
     [Fact]
-    public void ParseKeyedArchive_Keeps_Object_References()
+    public void Parse_Returns_Null_For_No_Bytes()
     {
-        Dictionary<string, object?> archive = Assert.IsType<Dictionary<string, object?>>(
-            PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
-
-        Assert.Equal("NSKeyedArchiver", archive["$archiver"]);
-        Dictionary<string, object?> top = Assert.IsType<Dictionary<string, object?>>(archive["$top"]);
-        Assert.IsType<PropertyListUid>(top["store"]);
-    }
-
-    [Fact]
-    public void Parse_Drops_Object_References_It_Cannot_Read()
-    {
-        Dictionary<string, object?> archive = Assert.IsType<Dictionary<string, object?>>(
-            PropertyList.Parse(BackgroundItemsFixture.Bytes));
-
-        Assert.Null(Assert.IsType<Dictionary<string, object?>>(archive["$top"])["store"]);
-    }
-
-    [Theory]
-    [MemberData(nameof(Formats))]
-    public void ParseKeyedArchive_Reads_A_Plain_Property_List_Too(string format)
-    {
-        byte[] bytes = format == "xml"
-            ? Encoding.UTF8.GetBytes(XmlJob)
-            : Convert.FromBase64String(BinaryJob);
-
-        Dictionary<string, object?> job = Assert.IsType<Dictionary<string, object?>>(PropertyList.ParseKeyedArchive(bytes));
-
-        Assert.Equal("com.example.agent", job["Label"]);
-        Assert.Equal(30L, job["ThrottleInterval"]);
-        Assert.Equal(1.5, job["Nice"]);
-        Assert.Equal(new byte[] { 1, 2, 3 }, job["Blob"]);
-        Assert.Equal(false, Assert.IsType<Dictionary<string, object?>>(job["KeepAlive"])["SuccessfulExit"]);
+        Assert.Null(PropertyList.Parse(ReadOnlySpan<byte>.Empty));
     }
 
     [Fact]
     public void Parse_Returns_Null_For_Something_That_Is_Not_A_Property_List()
     {
         Assert.Null(PropertyList.Parse(Encoding.UTF8.GetBytes("not a plist <dict>")));
-    }
-
-    [Fact]
-    public void Parse_Returns_Null_For_No_Bytes()
-    {
-        Assert.Null(PropertyList.Parse(ReadOnlySpan<byte>.Empty));
     }
 
     [Fact]

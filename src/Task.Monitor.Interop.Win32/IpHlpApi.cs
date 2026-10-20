@@ -15,6 +15,9 @@ public static class IpHlpApi
     public const uint GAA_FLAG_INCLUDE_PREFIX     = 0x0010;
     public const uint GAA_FLAG_SKIP_FRIENDLY_NAME = 0x0020;
 
+    [DllImport(Libraries.IpHlpApi)]
+    public static extern void FreeMibTable(nint memory);
+
     [DllImport(Libraries.IpHlpApi, SetLastError = true)]
     public static extern unsafe uint GetAdaptersAddresses(
         uint  family,
@@ -25,7 +28,4 @@ public static class IpHlpApi
 
     [DllImport(Libraries.IpHlpApi)]
     public static extern unsafe uint GetIfTable2(nint* table);
-
-    [DllImport(Libraries.IpHlpApi)]
-    public static extern void FreeMibTable(nint memory);
 }

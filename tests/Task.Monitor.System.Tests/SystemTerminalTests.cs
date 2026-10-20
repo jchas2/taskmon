@@ -7,12 +7,14 @@ public sealed class SystemTerminalTests
 {
     [SkippableFact]
     [SupportedOSPlatform("macos")]
-    public void Should_Set_Streams()
+    public void Should_Encode_Ansi_Colour_Codes()
     {
         var terminal = new SystemTerminal();
-        Assert.True(terminal.StdError != null);
-        Assert.True(terminal.StdOut != null);
-        Assert.True(terminal.StdIn != null);
+
+        // Initially just test no error is thrown.
+        terminal.WriteLine("This should be Red".ToRed());
+        terminal.WriteLine("This should be Green".ToGreen());
+        terminal.WriteLine("This should be Blue".ToBlue());
     }
 
     [SkippableFact]
@@ -33,14 +35,12 @@ public sealed class SystemTerminalTests
 
     [SkippableFact]
     [SupportedOSPlatform("macos")]
-    public void Should_Encode_Ansi_Colour_Codes()
+    public void Should_Set_Streams()
     {
         var terminal = new SystemTerminal();
-
-        // Initially just test no error is thrown.
-        terminal.WriteLine("This should be Red".ToRed());
-        terminal.WriteLine("This should be Green".ToGreen());
-        terminal.WriteLine("This should be Blue".ToBlue());
+        Assert.True(terminal.StdError != null);
+        Assert.True(terminal.StdOut != null);
+        Assert.True(terminal.StdIn != null);
     }
     
     // TODO: Writing test for the various Write@ functions will require setting the TextWriter on the Console.

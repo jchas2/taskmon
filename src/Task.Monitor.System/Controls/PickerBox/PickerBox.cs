@@ -1,7 +1,7 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
-using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 using ListViewColumnHeader = Task.Monitor.System.Controls.ListView.ListViewColumnHeader;
+using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 using ListViewItem = Task.Monitor.System.Controls.ListView.ListViewItem;
 
 namespace Task.Monitor.System.Controls.PickerBox;
@@ -13,8 +13,6 @@ public sealed class PickerBox : Control
     private const int ChromeHeight = 4;
 
     private readonly ListViewControl list;
-
-    public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
 
     public PickerBox(ISystemTerminal terminal) : base(terminal)
     {
@@ -29,114 +27,34 @@ public sealed class PickerBox : Control
         list.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty));
     }
 
-    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
-    public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
-    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
-
-    public Color ListBackgroundHighlightColour
-    {
-        get => list.BackgroundHighlightColour;
-        set => list.BackgroundHighlightColour = value;
-    }
-
-    public Color ListBackgroundHighlightInactiveColour
-    {
-        get => list.BackgroundHighlightInactiveColour;
-        set => list.BackgroundHighlightInactiveColour = value;
-    }
-
-    public Color ListForegroundHighlightColour
-    {
-        get => list.ForegroundHighlightColour;
-        set => list.ForegroundHighlightColour = value;
-    }
-
-    public Color ListForegroundHighlightInactiveColour
-    {
-        get => list.ForegroundHighlightInactiveColour;
-        set => list.ForegroundHighlightInactiveColour = value;
-    }
-
-    public string Title { get; set; } = string.Empty;
-
-    public bool MultiSelect { get; set; }
-
-    public PickerBoxResult Result { get; private set; } = PickerBoxResult.None;
-
-    public int SelectedIndex => list.SelectedIndex;
-
     public IEnumerable<int> CheckedIndices =>
         list.Items
             .Select((item, index) => (item, index))
             .Where(pair => pair.item.Checked)
             .Select(pair => pair.index);
 
-    public void SetItems(
-        IReadOnlyList<string> labels,
-        IReadOnlyList<bool>? initiallyChecked = null,
-        int initialSelectedIndex = 0)
+    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
+    public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
+    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
+
+    private void DrawFooter()
     {
-        list.ShowCheckboxes = MultiSelect;
-        list.Items.Clear();
+        int dialogWidth = Width - 2;
+        int y = list.Y + list.Height;
 
-        for (int i = 0; i < labels.Count; i++) {
-            ListViewItem item = new(labels[i]) {
-                Checked = MultiSelect && initiallyChecked != null && i < initiallyChecked.Count && initiallyChecked[i]
-            };
+        string help = MultiSelect
+            ? "↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel"
+            : "↑ ↓ browse   ↵ select   Esc cancel";
 
-            list.Items.Add(item);
-        }
+        Terminal.BackgroundColor = DialogBackgroundColour;
+        Terminal.ForegroundColor = DialogForegroundColour;
+        Terminal.SetCursorPosition(X, y);
+        Terminal.Write($"│{help.CentreWithLength(dialogWidth)}│");
 
-        if (list.Items.Count > 0) {
-            list.SelectedIndex = Math.Clamp(initialSelectedIndex, 0, list.Items.Count - 1);
-        }
-
-        Result = PickerBoxResult.None;
-    }
-
-    public void ShowPickerBox()
-    {
-        OnResize();
-        OnDraw();
-    }
-
-    protected override void OnResize()
-    {
-        list.X      = X + 1;
-        list.Y      = Y + 2;
-        list.Width  = Math.Max(0, Width - 2);
-        list.Height = Math.Max(1, Height - ChromeHeight);
-
-        int checkboxWidth = MultiSelect ? ListViewControl.CheckboxWidth : 0;
-        list.ColumnHeaders[0].Width = Math.Max(0, list.Width - checkboxWidth);
-        list.Resize();
-
-        base.OnResize();
-    }
-
-    protected override void OnDraw()
-    {
-        if (Width < MinWidth || Height < MinHeight) {
-            return;
-        }
-
-        DrawFrame();
-        DrawList();
-        DrawFooter();
-    }
-
-    private void DrawList()
-    {
-        bool redrawEnabled = Control.RedrawEnabled;
-        
-        Control.RedrawEnabled = true;
-
-        try {
-            list.Draw();
-        }
-        finally {
-            Control.RedrawEnabled = redrawEnabled;
-        }
+        Terminal.SetCursorPosition(X, ++y);
+        Terminal.Write('╰');
+        Terminal.Write('─', dialogWidth);
+        Terminal.Write('╯');
     }
 
     private void DrawFrame()
@@ -170,24 +88,57 @@ public sealed class PickerBox : Control
         }
     }
 
-    private void DrawFooter()
+    private void DrawList()
     {
-        int dialogWidth = Width - 2;
-        int y = list.Y + list.Height;
+        bool redrawEnabled = Control.RedrawEnabled;
+        
+        Control.RedrawEnabled = true;
 
-        string help = MultiSelect
-            ? "↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel"
-            : "↑ ↓ browse   ↵ select   Esc cancel";
+        try {
+            list.Draw();
+        }
+        finally {
+            Control.RedrawEnabled = redrawEnabled;
+        }
+    }
 
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, y);
-        Terminal.Write($"│{help.CentreWithLength(dialogWidth)}│");
+    public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
 
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write('╰');
-        Terminal.Write('─', dialogWidth);
-        Terminal.Write('╯');
+    public Color ListBackgroundHighlightColour
+    {
+        get => list.BackgroundHighlightColour;
+        set => list.BackgroundHighlightColour = value;
+    }
+
+    public Color ListBackgroundHighlightInactiveColour
+    {
+        get => list.BackgroundHighlightInactiveColour;
+        set => list.BackgroundHighlightInactiveColour = value;
+    }
+
+    public Color ListForegroundHighlightColour
+    {
+        get => list.ForegroundHighlightColour;
+        set => list.ForegroundHighlightColour = value;
+    }
+
+    public Color ListForegroundHighlightInactiveColour
+    {
+        get => list.ForegroundHighlightInactiveColour;
+        set => list.ForegroundHighlightInactiveColour = value;
+    }
+
+    public bool MultiSelect { get; set; }
+
+    protected override void OnDraw()
+    {
+        if (Width < MinWidth || Height < MinHeight) {
+            return;
+        }
+
+        DrawFrame();
+        DrawList();
+        DrawFooter();
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -209,4 +160,53 @@ public sealed class PickerBox : Control
                 break;
         }
     }
+
+    protected override void OnResize()
+    {
+        list.X      = X + 1;
+        list.Y      = Y + 2;
+        list.Width  = Math.Max(0, Width - 2);
+        list.Height = Math.Max(1, Height - ChromeHeight);
+
+        int checkboxWidth = MultiSelect ? ListViewControl.CheckboxWidth : 0;
+        list.ColumnHeaders[0].Width = Math.Max(0, list.Width - checkboxWidth);
+        list.Resize();
+
+        base.OnResize();
+    }
+
+    public PickerBoxResult Result { get; private set; } = PickerBoxResult.None;
+
+    public int SelectedIndex => list.SelectedIndex;
+
+    public void SetItems(
+        IReadOnlyList<string> labels,
+        IReadOnlyList<bool>? initiallyChecked = null,
+        int initialSelectedIndex = 0)
+    {
+        list.ShowCheckboxes = MultiSelect;
+        list.Items.Clear();
+
+        for (int i = 0; i < labels.Count; i++) {
+            ListViewItem item = new(labels[i]) {
+                Checked = MultiSelect && initiallyChecked != null && i < initiallyChecked.Count && initiallyChecked[i]
+            };
+
+            list.Items.Add(item);
+        }
+
+        if (list.Items.Count > 0) {
+            list.SelectedIndex = Math.Clamp(initialSelectedIndex, 0, list.Items.Count - 1);
+        }
+
+        Result = PickerBoxResult.None;
+    }
+
+    public void ShowPickerBox()
+    {
+        OnResize();
+        OnDraw();
+    }
+
+    public string Title { get; set; } = string.Empty;
 }

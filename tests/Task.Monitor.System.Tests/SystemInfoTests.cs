@@ -18,15 +18,6 @@ public sealed class SystemInfoTests
     }
 
     [Fact]
-    public void Should_Get_Is_Running_As_Root()
-    {
-        // Just invoke the function call for now. Need to determine an alternate way to 
-        // verify if we are running under sudo in MacOS. Windows has a number of alternatives.
-        var result = SystemInfo.IsRunningAsRoot();
-        Assert.True(true);
-    }
-
-    [Fact]
     public void Should_Get_Gpu_Memory()
     {
         SystemStatistics systemStatistics = new();
@@ -48,7 +39,16 @@ public sealed class SystemInfoTests
         testOutputHelper.WriteLine($"GpuPercentTime={systemStatistics.GpuPercentTime:P1} result={result}");
         Assert.InRange(systemStatistics.GpuPercentTime, 0.0, 1.0);
     }
-    
+
+    [Fact]
+    public void Should_Get_Is_Running_As_Root()
+    {
+        // Just invoke the function call for now. Need to determine an alternate way to 
+        // verify if we are running under sudo in MacOS. Windows has a number of alternatives.
+        var result = SystemInfo.IsRunningAsRoot();
+        Assert.True(true);
+    }
+
     [Fact]
     public void Should_Get_System_Statistics()
     {

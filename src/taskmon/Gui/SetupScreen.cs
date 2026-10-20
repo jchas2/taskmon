@@ -38,7 +38,7 @@ public class SetupScreen : Screen
     private bool preferIndexedColours;
     private bool returnToLayoutsTab;
     
-    private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
+    private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
     [
         (Statistics.User,    "User"),
         (Statistics.Pri,     "Priority"),
@@ -58,6 +58,8 @@ public class SetupScreen : Screen
         (Statistics.Power,   "Power"),
         (Statistics.Path,    "Path"),
     ];
+
+    private const int BorderInset = 2;
 
     public SetupScreen(RunContext runContext, ScreenApplication screenApp) : base(runContext.Terminal)
     {
@@ -188,6 +190,16 @@ public class SetupScreen : Screen
         previewTheme = runContext.AppConfig.Theme;
     }
 
+    private void LoadColumnsSection()
+    {
+        Statistics visibleColumns = runContext.AppConfig.VisibleColumns;
+
+        foreach ((Statistics statistic, string label) in ToggleableColumns) {
+            columnsView.Items.Add(new ListViewItem([label, statistic.ToString()]));
+            columnsView.Items[^1].Checked = (visibleColumns & statistic) != 0;
+        }
+    }
+
     private void LoadGeneralSection()
     {
         void AddGeneralItem(string text, string key, bool value)
@@ -279,15 +291,12 @@ public class SetupScreen : Screen
             Constants.Keys.UseIrixCpuReporting,
             runContext.AppConfig.UseIrixReporting);
     }
-    
-    private void LoadColumnsSection()
-    {
-        Statistics visibleColumns = runContext.AppConfig.VisibleColumns;
 
-        foreach ((Statistics statistic, string label) in toggleableColumns) {
-            columnsView.Items.Add(new ListViewItem([label, statistic.ToString()]));
-            columnsView.Items[^1].Checked = (visibleColumns & statistic) != 0;
-        }
+    private void LoadHeaderView()
+    {
+        headerView.Items.AddRange(
+            new ListViewItem("Changes are saved to the following config file:"),
+            new ListViewItem(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty));
     }
 
     private void LoadMenuItems()
@@ -328,13 +337,6 @@ public class SetupScreen : Screen
                 "PROCESSES"));
     }
 
-    private void LoadHeaderView()
-    {
-        headerView.Items.AddRange(
-            new ListViewItem("Changes are saved to the following config file:"),
-            new ListViewItem(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty));
-    }
-    
     private void LoadSectionConfigListView<T>(
         ListView listView,
         List<T>  values,
@@ -604,56 +606,6 @@ public class SetupScreen : Screen
         
         base.OnLoad();
     }
-    
-    protected override void OnShown()
-    {
-        if (!returnToLayoutsTab) {
-            return;
-        }
-
-        returnToLayoutsTab = false;
-        layoutView.SetFocus();
-    }
-
-    private void SelectMenuItemFor(ListView tab)
-    {
-        for (int i = 0; i < menuView.Items.Count; i++) {
-            if (menuView.Items[i] is MenuListViewItem item && item.AssociatedControl == tab) {
-                menuView.SelectedIndex = i;
-                return;
-            }
-        }
-    }
-
-    private void OpenLayoutDesigner(string? layoutName)
-    {
-        SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(
-            l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
-
-        LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();
-        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateEmpty(), layout?.Name);
-
-        returnToLayoutsTab = true;
-        screenApp.ShowScreen<LayoutDesignerScreen>();
-    }
-
-    private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
-    {
-        Theme theme = runContext.AppConfig.Themes
-            .Where(t => t.Name.Equals(e.Item.Text, StringComparison.CurrentCultureIgnoreCase))
-            .First();
-        
-        previewTheme = theme;
-        
-        ConsolePalette.PreferIndexedColours = 
-            TerminalCapabilities.ResolvePreferIndexed(previewTheme.ColourMode, Environment.GetEnvironmentVariable);
-
-        UpdateTheme();
-        Clear();
-        Draw();
-    }
-
-    private const int BorderInset = 2;
 
     protected override void OnResize()
     {
@@ -685,6 +637,16 @@ public class SetupScreen : Screen
         base.OnResize();
     }
 
+    protected override void OnShown()
+    {
+        if (!returnToLayoutsTab) {
+            return;
+        }
+
+        returnToLayoutsTab = false;
+        layoutView.SetFocus();
+    }
+
     protected override void OnUnload()
     {
         menuView.ItemClicked  -= MenuViewOnItemClicked;
@@ -703,6 +665,18 @@ public class SetupScreen : Screen
         base.OnUnload();
     }
 
+    private void OpenLayoutDesigner(string? layoutName)
+    {
+        SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(
+            l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
+
+        LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();
+        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateEmpty(), layout?.Name);
+
+        returnToLayoutsTab = true;
+        screenApp.ShowScreen<LayoutDesignerScreen>();
+    }
+
     private bool SaveConfig()
     {
         MapControlsToConfig();
@@ -713,6 +687,32 @@ public class SetupScreen : Screen
         }
 
         return result;
+    }
+
+    private void SelectMenuItemFor(ListView tab)
+    {
+        for (int i = 0; i < menuView.Items.Count; i++) {
+            if (menuView.Items[i] is MenuListViewItem item && item.AssociatedControl == tab) {
+                menuView.SelectedIndex = i;
+                return;
+            }
+        }
+    }
+
+    private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
+    {
+        Theme theme = runContext.AppConfig.Themes
+            .Where(t => t.Name.Equals(e.Item.Text, StringComparison.CurrentCultureIgnoreCase))
+            .First();
+        
+        previewTheme = theme;
+        
+        ConsolePalette.PreferIndexedColours = 
+            TerminalCapabilities.ResolvePreferIndexed(previewTheme.ColourMode, Environment.GetEnvironmentVariable);
+
+        UpdateTheme();
+        Clear();
+        Draw();
     }
 
     private void UpdateTheme()

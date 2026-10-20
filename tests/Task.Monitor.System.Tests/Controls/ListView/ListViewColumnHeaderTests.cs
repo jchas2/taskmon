@@ -1,29 +1,26 @@
-﻿using Task.Monitor.System.Controls.ListView;
-
-using System.Drawing;
+﻿using System.Drawing;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.System.Controls.ListView;
 namespace Task.Monitor.System.Tests.Controls.ListView;
 
 public sealed class ListViewColumnHeaderTests
 {
-    [Fact]
-    public void Constructor_With_Text_Initialises_Correctly()
-    {
-        string headerText = "Test Header";
-        ListViewColumnHeader header = new(headerText);
-        
-        Assert.Equal(headerText, header.Text);
-        Assert.Null(header.BackgroundColour);
-        Assert.Null(header.ForegroundColour);
-        Assert.False(header.RightAligned);
-    }
-
     [Fact]
     public void Constructor_Accepts_Empty_Text()
     {
         ListViewColumnHeader header = new(string.Empty);
         Assert.True(header.Text == string.Empty);
     }
+
+    [Fact]
+    public void Constructor_With_All_Parameters_Accepts_Empty_Text()
+    {
+        Color bgColor = ConsolePalette.Blue;
+        Color fgColor = ConsolePalette.Yellow;
+
+        ListViewColumnHeader header = new(string.Empty, bgColor, fgColor);
+        Assert.True(header.Text == String.Empty);
+    }    
 
     [Fact]
     public void Constructor_With_All_Parameters_Initialises_Correctly()
@@ -38,14 +35,16 @@ public sealed class ListViewColumnHeaderTests
         Assert.True(fgColor == header.ForegroundColour);
         Assert.False(header.RightAligned);
     }
-    
-    [Fact]
-    public void Constructor_With_All_Parameters_Accepts_Empty_Text()
-    {
-        Color bgColor = ConsolePalette.Blue;
-        Color fgColor = ConsolePalette.Yellow;
 
-        ListViewColumnHeader header = new(string.Empty, bgColor, fgColor);
-        Assert.True(header.Text == String.Empty);
-    }    
+    [Fact]
+    public void Constructor_With_Text_Initialises_Correctly()
+    {
+        string headerText = "Test Header";
+        ListViewColumnHeader header = new(headerText);
+        
+        Assert.Equal(headerText, header.Text);
+        Assert.Null(header.BackgroundColour);
+        Assert.Null(header.ForegroundColour);
+        Assert.False(header.RightAligned);
+    }
 }

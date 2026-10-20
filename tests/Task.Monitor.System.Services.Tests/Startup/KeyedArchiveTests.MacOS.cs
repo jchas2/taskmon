@@ -13,63 +13,6 @@ public sealed class KeyedArchiveTests
         ["$objects"]  = objects.ToList()
     };
 
-    private static Dictionary<string, object?> Class(string name) =>
-        new() { ["$classname"] = name, ["$classes"] = new List<object?> { name, "NSObject" } };
-
-    private static Dictionary<string, object?> Object(long classUid, params (string Key, object? Value)[] fields)
-    {
-        Dictionary<string, object?> result = fields.ToDictionary(field => field.Key, field => field.Value);
-        result["$class"] = new PropertyListUid(classUid);
-        return result;
-    }
-
-    [Fact]
-    public void Decodes_The_Foundation_Archive_Fixture()
-    {
-        Dictionary<string, object?>? top = KeyedArchive.Decode(PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
-
-        Assert.NotNull(top);
-        Dictionary<string, object?> store = Assert.IsType<Dictionary<string, object?>>(top["store"]);
-        Assert.Equal("Storage", store[KeyedArchive.ClassKey]);
-
-        Dictionary<string, object?> itemsByUser = Assert.IsType<Dictionary<string, object?>>(store["itemsByUserIdentifier"]);
-        List<object?> userItems = Assert.IsType<List<object?>>(itemsByUser[BackgroundItemsFixture.UserUuid]);
-        Dictionary<string, object?> example = Assert.IsType<Dictionary<string, object?>>(userItems[0]);
-
-        Assert.Equal("ItemRecord", example[KeyedArchive.ClassKey]);
-        Assert.Equal("Example", example["name"]);
-        Assert.Equal(2L, example["type"]);
-        Assert.Equal("file:///Applications/Example%20App.app/", example["url"]);
-        Assert.Equal("8A3D9EFD-3AAA-42FE-930A-17E385C436C5", example["uuid"]);
-    }
-
-    [Fact]
-    public void Resolves_A_Relative_Url_Against_Its_Base()
-    {
-        Dictionary<string, object?>? top = KeyedArchive.Decode(PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
-
-        List<object?> userItems = (List<object?>)((Dictionary<string, object?>)((Dictionary<string, object?>)top!["store"]!)
-            ["itemsByUserIdentifier"]!)[BackgroundItemsFixture.UserUuid]!;
-
-        Dictionary<string, object?> based = Assert.IsType<Dictionary<string, object?>>(userItems[2]);
-        Assert.Equal(
-            "file:///Applications/Example%20App.app/Contents/Library/LaunchAgents/com.example.agent.plist",
-            based["url"]);
-    }
-
-    [Fact]
-    public void Decodes_Null_References_As_Null()
-    {
-        Dictionary<string, object?>? top = KeyedArchive.Decode(Archive(
-            "$null",
-            Object(2, ("value", new PropertyListUid(0))),
-            Class("Thing")));
-
-        Dictionary<string, object?> root = Assert.IsType<Dictionary<string, object?>>(top!["root"]);
-        Assert.True(root.ContainsKey("value"));
-        Assert.Null(root["value"]);
-    }
-
     [Fact]
     public void Breaks_A_Reference_Cycle()
     {
@@ -80,6 +23,20 @@ public sealed class KeyedArchiveTests
 
         Dictionary<string, object?> root = Assert.IsType<Dictionary<string, object?>>(top!["root"]);
         Assert.Null(root["self"]);
+    }
+
+    private static Dictionary<string, object?> Class(string name) =>
+        new() { ["$classname"] = name, ["$classes"] = new List<object?> { name, "NSObject" } };
+
+    [Fact]
+    public void Decodes_An_NSDate_From_The_2001_Reference_Date()
+    {
+        Dictionary<string, object?>? top = KeyedArchive.Decode(Archive(
+            "$null",
+            Object(2, ("NS.time", 86400.0)),
+            Class("NSDate")));
+
+        Assert.Equal(new DateTime(2001, 1, 2, 0, 0, 0, DateTimeKind.Utc), top!["root"]);
     }
 
     [Fact]
@@ -111,14 +68,57 @@ public sealed class KeyedArchiveTests
     }
 
     [Fact]
-    public void Decodes_An_NSDate_From_The_2001_Reference_Date()
+    public void Decodes_Null_References_As_Null()
     {
         Dictionary<string, object?>? top = KeyedArchive.Decode(Archive(
             "$null",
-            Object(2, ("NS.time", 86400.0)),
-            Class("NSDate")));
+            Object(2, ("value", new PropertyListUid(0))),
+            Class("Thing")));
 
-        Assert.Equal(new DateTime(2001, 1, 2, 0, 0, 0, DateTimeKind.Utc), top!["root"]);
+        Dictionary<string, object?> root = Assert.IsType<Dictionary<string, object?>>(top!["root"]);
+        Assert.True(root.ContainsKey("value"));
+        Assert.Null(root["value"]);
+    }
+
+    [Fact]
+    public void Decodes_The_Foundation_Archive_Fixture()
+    {
+        Dictionary<string, object?>? top = KeyedArchive.Decode(PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
+
+        Assert.NotNull(top);
+        Dictionary<string, object?> store = Assert.IsType<Dictionary<string, object?>>(top["store"]);
+        Assert.Equal("Storage", store[KeyedArchive.ClassKey]);
+
+        Dictionary<string, object?> itemsByUser = Assert.IsType<Dictionary<string, object?>>(store["itemsByUserIdentifier"]);
+        List<object?> userItems = Assert.IsType<List<object?>>(itemsByUser[BackgroundItemsFixture.UserUuid]);
+        Dictionary<string, object?> example = Assert.IsType<Dictionary<string, object?>>(userItems[0]);
+
+        Assert.Equal("ItemRecord", example[KeyedArchive.ClassKey]);
+        Assert.Equal("Example", example["name"]);
+        Assert.Equal(2L, example["type"]);
+        Assert.Equal("file:///Applications/Example%20App.app/", example["url"]);
+        Assert.Equal("8A3D9EFD-3AAA-42FE-930A-17E385C436C5", example["uuid"]);
+    }
+
+    private static Dictionary<string, object?> Object(long classUid, params (string Key, object? Value)[] fields)
+    {
+        Dictionary<string, object?> result = fields.ToDictionary(field => field.Key, field => field.Value);
+        result["$class"] = new PropertyListUid(classUid);
+        return result;
+    }
+
+    [Fact]
+    public void Resolves_A_Relative_Url_Against_Its_Base()
+    {
+        Dictionary<string, object?>? top = KeyedArchive.Decode(PropertyList.ParseKeyedArchive(BackgroundItemsFixture.Bytes));
+
+        List<object?> userItems = (List<object?>)((Dictionary<string, object?>)((Dictionary<string, object?>)top!["store"]!)
+            ["itemsByUserIdentifier"]!)[BackgroundItemsFixture.UserUuid]!;
+
+        Dictionary<string, object?> based = Assert.IsType<Dictionary<string, object?>>(userItems[2]);
+        Assert.Equal(
+            "file:///Applications/Example%20App.app/Contents/Library/LaunchAgents/com.example.agent.plist",
+            based["url"]);
     }
 
     [Fact]

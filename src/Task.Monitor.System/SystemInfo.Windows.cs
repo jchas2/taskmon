@@ -89,6 +89,13 @@ public static partial class SystemInfo
         return true;
 	}
 
+    private static bool GetGpuCoresInternal(ref SystemStatistics systemStatistics)
+    {
+        // GPU core count has no portable Windows equivalent; left unreported.
+        systemStatistics.GpuCores = 0;
+        return true;
+    }
+
     private static bool GetGpuMemoryInternal(ref SystemStatistics systemStatistics)
     {
         bool result = true;
@@ -99,20 +106,6 @@ public static partial class SystemInfo
         
         systemStatistics.AvailableGpuMemory = 0;
         return result && GetGpuMemoryInternalUsed(ref systemStatistics);
-    }
-
-    private static bool GetGpuUsageInternal(ref SystemStatistics systemStatistics)
-    {
-        // Windows derives the system GPU total by summing per-process usage in Processor.
-        // No-op here so that summation is left untouched.
-        return true;
-    }
-
-    private static bool GetGpuCoresInternal(ref SystemStatistics systemStatistics)
-    {
-        // GPU core count has no portable Windows equivalent; left unreported.
-        systemStatistics.GpuCores = 0;
-        return true;
     }
 
     private static bool GetGpuMemoryInternalTotal(ref SystemStatistics systemStatistics)
@@ -213,6 +206,13 @@ public static partial class SystemInfo
 
         Pdh.PdhCloseQuery(hQuery);
         return true;        
+    }
+
+    private static bool GetGpuUsageInternal(ref SystemStatistics systemStatistics)
+    {
+        // Windows derives the system GPU total by summing per-process usage in Processor.
+        // No-op here so that summation is left untouched.
+        return true;
     }
 
     private static unsafe bool GetNetworkStatsInternal(ref NetworkStatistics networkStatistics)

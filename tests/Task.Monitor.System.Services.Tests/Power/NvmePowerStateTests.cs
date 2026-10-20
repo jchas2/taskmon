@@ -32,15 +32,15 @@ public sealed class NvmePowerStateTests
     }
 
     [Fact]
+    public void Rejects_An_Implausible_Value()
+    {
+        Assert.Null(NvmePowerState.PeakWatts(Identify(20000, maxPowerScale: false))); // 200 W
+    }
+
+    [Fact]
     public void Returns_Null_For_A_Zero_Or_Short_Structure()
     {
         Assert.Null(NvmePowerState.PeakWatts(Identify(0, maxPowerScale: false)));
         Assert.Null(NvmePowerState.PeakWatts(new byte[100]));
-    }
-
-    [Fact]
-    public void Rejects_An_Implausible_Value()
-    {
-        Assert.Null(NvmePowerState.PeakWatts(Identify(20000, maxPowerScale: false))); // 200 W
     }
 }

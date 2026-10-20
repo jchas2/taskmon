@@ -1,7 +1,7 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
-using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 using ListViewColumnHeader = Task.Monitor.System.Controls.ListView.ListViewColumnHeader;
+using ListViewControl = Task.Monitor.System.Controls.ListView.ListView;
 using ListViewItem = Task.Monitor.System.Controls.ListView.ListViewItem;
 
 namespace Task.Monitor.System.Controls.DriveInputBox;
@@ -21,8 +21,6 @@ public sealed class DriveInputBox : Control
     
     private bool okFocused = true;
 
-    public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
-
     public DriveInputBox(ISystemTerminal terminal) : base(terminal)
     {
         list = new ListViewControl(terminal) {
@@ -36,146 +34,64 @@ public sealed class DriveInputBox : Control
         list.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty));
     }
 
+    private void ApplySelection()
+    {
+        if (Result != DriveInputBoxResult.Ok) {
+            return;
+        }
+
+        int index = list.SelectedIndex;
+
+        if (index < 0 || index >= paths.Count) {
+            return;
+        }
+
+        bool isCustomPathRow = index == paths.Count - 1;
+        CustomPathRequested  = isCustomPathRow;
+        SelectedPath         = isCustomPathRow ? null : paths[index];
+    }
+
+    public bool CustomPathRequested { get; private set; }
+
     public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
     public Color DialogButtonBackgroundColour { get; set; } = ConsolePalette.DarkGray;
     public Color DialogButtonForegroundColour { get; set; } = ConsolePalette.Black;
     public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
 
-    public Color ListBackgroundHighlightColour
+    private void DrawButton(
+        int x, 
+        int y, 
+        int width, 
+        int height, 
+        string text, 
+        bool selected)
     {
-        get => list.BackgroundHighlightColour;
-        set => list.BackgroundHighlightColour = value;
-    }
+        DrawRectangle(x, y, width, height, DialogBackgroundColour);
 
-    public Color ListBackgroundHighlightInactiveColour
-    {
-        get => list.BackgroundHighlightInactiveColour;
-        set => list.BackgroundHighlightInactiveColour = value;
-    }
-
-    public Color ListForegroundHighlightColour
-    {
-        get => list.ForegroundHighlightColour;
-        set => list.ForegroundHighlightColour = value;
-    }
-
-    public Color ListForegroundHighlightInactiveColour
-    {
-        get => list.ForegroundHighlightInactiveColour;
-        set => list.ForegroundHighlightInactiveColour = value;
-    }
-
-    public string Title { get; set; } = string.Empty;
-
-    public int ListX => list.X;
-    public int ListY => list.Y;
-    public int ListWidth => list.Width;
-
-    public DriveInputBoxResult Result { get; private set; } = DriveInputBoxResult.None;
-
-    public string? SelectedPath { get; private set; }
-
-    public bool CustomPathRequested { get; private set; }
-
-    public void SetCandidates(IReadOnlyList<string> candidatePaths)
-    {
-        paths.Clear();
-        paths.AddRange(candidatePaths);
-        paths.Add("Custom path...");
-
-        list.Items.Clear();
-
-        foreach (string path in paths) {
-            list.Items.Add(new ListViewItem(path));
-        }
-
-        if (list.Items.Count > 0) {
-            list.SelectedIndex = 0;
-        }
-
-        Result              = DriveInputBoxResult.None;
-        SelectedPath        = null;
-        CustomPathRequested = false;
-        okFocused           = true;
-    }
-
-    public void ShowDriveInputBox()
-    {
-        OnResize();
-        OnDraw();
-    }
-
-    protected override void OnResize()
-    {
-        list.X      = X + 1;
-        list.Y      = Y + 2;
-        list.Width  = Math.Max(0, Width - 2);
-        list.Height = Math.Max(1, Height - ChromeHeight);
+        string centredText = text.CentreWithLength(width);
         
-        list.ColumnHeaders[0].Width = list.Width;
-        list.Resize();
+        Terminal.BackgroundColor = DialogButtonBackgroundColour;
+        Terminal.ForegroundColor = DialogButtonForegroundColour;
+        Terminal.SetCursorPosition(x, y);
 
-        base.OnResize();
-    }
+        bool isHighlightChar = true;
 
-    protected override void OnDraw()
-    {
-        if (Width < MinWidth || Height < MinHeight) {
-            return;
-        }
+        foreach (char ch in centredText) {
+            if (char.IsWhiteSpace(ch)) {
+                Terminal.Write(ch);
+                continue;
+            }
 
-        DrawFrame();
-        DrawList();
-        DrawFooter();
-    }
+            if (isHighlightChar && selected) {
+                Terminal.ForegroundColor = ConsolePalette.Red;
+                Terminal.Write(ch);
+                Terminal.ForegroundColor = DialogButtonForegroundColour;
+                isHighlightChar = false;
+                continue;
+            }
 
-    private void DrawList()
-    {
-        bool redrawEnabled = Control.RedrawEnabled;
-        Control.RedrawEnabled = true;
-
-        try {
-            list.Draw();
-        }
-        finally {
-            Control.RedrawEnabled = redrawEnabled;
-        }
-    }
-
-    private void DrawFrame()
-    {
-        DrawRectangle(
-            X, 
-            Y, 
-            Width, 
-            Height, 
-            DialogBackgroundColour);
-
-        int dialogWidth = Width - 2;
-        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen    = Math.Min(title.Length, dialogWidth);
-        int leftDashes  = (dialogWidth - titleLen) / 2;
-        int rightDashes = dialogWidth - titleLen - leftDashes;
-
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, Y);
-        Terminal.Write('╭');
-        Terminal.Write('─', leftDashes);
-        Terminal.Write(titleLen < title.Length ? title[..titleLen] : title);
-        Terminal.Write('─', rightDashes);
-        Terminal.Write('╮');
-
-        string spacer = new(' ', dialogWidth);
-        Terminal.SetCursorPosition(X, Y + 1);
-        Terminal.Write($"│{spacer}│");
-
-        for (int row = 0; row < list.Height; row++) {
-            Terminal.SetCursorPosition(X, list.Y + row);
-            Terminal.Write('│');
-            Terminal.SetCursorPosition(X + Width - 1, list.Y + row);
-            Terminal.Write('│');
+            Terminal.Write(ch);
         }
     }
 
@@ -228,40 +144,95 @@ public sealed class DriveInputBox : Control
         Terminal.Write('╯');
     }
 
-    private void DrawButton(
-        int x, 
-        int y, 
-        int width, 
-        int height, 
-        string text, 
-        bool selected)
+    private void DrawFrame()
     {
-        DrawRectangle(x, y, width, height, DialogBackgroundColour);
+        DrawRectangle(
+            X, 
+            Y, 
+            Width, 
+            Height, 
+            DialogBackgroundColour);
 
-        string centredText = text.CentreWithLength(width);
-        
-        Terminal.BackgroundColor = DialogButtonBackgroundColour;
-        Terminal.ForegroundColor = DialogButtonForegroundColour;
-        Terminal.SetCursorPosition(x, y);
+        int dialogWidth = Width - 2;
+        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
+        int titleLen    = Math.Min(title.Length, dialogWidth);
+        int leftDashes  = (dialogWidth - titleLen) / 2;
+        int rightDashes = dialogWidth - titleLen - leftDashes;
 
-        bool isHighlightChar = true;
+        Terminal.BackgroundColor = DialogBackgroundColour;
+        Terminal.ForegroundColor = DialogForegroundColour;
+        Terminal.SetCursorPosition(X, Y);
+        Terminal.Write('╭');
+        Terminal.Write('─', leftDashes);
+        Terminal.Write(titleLen < title.Length ? title[..titleLen] : title);
+        Terminal.Write('─', rightDashes);
+        Terminal.Write('╮');
 
-        foreach (char ch in centredText) {
-            if (char.IsWhiteSpace(ch)) {
-                Terminal.Write(ch);
-                continue;
-            }
+        string spacer = new(' ', dialogWidth);
+        Terminal.SetCursorPosition(X, Y + 1);
+        Terminal.Write($"│{spacer}│");
 
-            if (isHighlightChar && selected) {
-                Terminal.ForegroundColor = ConsolePalette.Red;
-                Terminal.Write(ch);
-                Terminal.ForegroundColor = DialogButtonForegroundColour;
-                isHighlightChar = false;
-                continue;
-            }
-
-            Terminal.Write(ch);
+        for (int row = 0; row < list.Height; row++) {
+            Terminal.SetCursorPosition(X, list.Y + row);
+            Terminal.Write('│');
+            Terminal.SetCursorPosition(X + Width - 1, list.Y + row);
+            Terminal.Write('│');
         }
+    }
+
+    private void DrawList()
+    {
+        bool redrawEnabled = Control.RedrawEnabled;
+        Control.RedrawEnabled = true;
+
+        try {
+            list.Draw();
+        }
+        finally {
+            Control.RedrawEnabled = redrawEnabled;
+        }
+    }
+
+    public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
+
+    public Color ListBackgroundHighlightColour
+    {
+        get => list.BackgroundHighlightColour;
+        set => list.BackgroundHighlightColour = value;
+    }
+
+    public Color ListBackgroundHighlightInactiveColour
+    {
+        get => list.BackgroundHighlightInactiveColour;
+        set => list.BackgroundHighlightInactiveColour = value;
+    }
+
+    public Color ListForegroundHighlightColour
+    {
+        get => list.ForegroundHighlightColour;
+        set => list.ForegroundHighlightColour = value;
+    }
+
+    public Color ListForegroundHighlightInactiveColour
+    {
+        get => list.ForegroundHighlightInactiveColour;
+        set => list.ForegroundHighlightInactiveColour = value;
+    }
+
+    public int ListWidth => list.Width;
+
+    public int ListX => list.X;
+    public int ListY => list.Y;
+
+    protected override void OnDraw()
+    {
+        if (Width < MinWidth || Height < MinHeight) {
+            return;
+        }
+
+        DrawFrame();
+        DrawList();
+        DrawFooter();
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -295,20 +266,50 @@ public sealed class DriveInputBox : Control
         }
     }
 
-    private void ApplySelection()
+    protected override void OnResize()
     {
-        if (Result != DriveInputBoxResult.Ok) {
-            return;
-        }
+        list.X      = X + 1;
+        list.Y      = Y + 2;
+        list.Width  = Math.Max(0, Width - 2);
+        list.Height = Math.Max(1, Height - ChromeHeight);
+        
+        list.ColumnHeaders[0].Width = list.Width;
+        list.Resize();
 
-        int index = list.SelectedIndex;
-
-        if (index < 0 || index >= paths.Count) {
-            return;
-        }
-
-        bool isCustomPathRow = index == paths.Count - 1;
-        CustomPathRequested  = isCustomPathRow;
-        SelectedPath         = isCustomPathRow ? null : paths[index];
+        base.OnResize();
     }
+
+    public DriveInputBoxResult Result { get; private set; } = DriveInputBoxResult.None;
+
+    public string? SelectedPath { get; private set; }
+
+    public void SetCandidates(IReadOnlyList<string> candidatePaths)
+    {
+        paths.Clear();
+        paths.AddRange(candidatePaths);
+        paths.Add("Custom path...");
+
+        list.Items.Clear();
+
+        foreach (string path in paths) {
+            list.Items.Add(new ListViewItem(path));
+        }
+
+        if (list.Items.Count > 0) {
+            list.SelectedIndex = 0;
+        }
+
+        Result              = DriveInputBoxResult.None;
+        SelectedPath        = null;
+        CustomPathRequested = false;
+        okFocused           = true;
+    }
+
+    public void ShowDriveInputBox()
+    {
+        OnResize();
+        OnDraw();
+    }
+
+    public string Title { get; set; } = string.Empty;
 }

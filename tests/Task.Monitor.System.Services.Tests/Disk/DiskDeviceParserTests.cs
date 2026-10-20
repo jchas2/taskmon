@@ -61,6 +61,50 @@ public sealed class DiskDeviceParserTests
         return descriptor;
     }
 
+    [Theory]
+    [InlineData(FileApi.DRIVE_FIXED, "Fixed")]
+    [InlineData(FileApi.DRIVE_REMOVABLE, "Removable")]
+    [InlineData(FileApi.DRIVE_CDROM, "CD-ROM")]
+    [InlineData(FileApi.DRIVE_REMOTE, "Network")]
+    [InlineData(FileApi.DRIVE_RAMDISK, "RAM Disk")]
+    [InlineData(FileApi.DRIVE_UNKNOWN, DiskDeviceParser.NotAvailable)]
+    public void Should_Decode_Drive_Type(uint driveType, string expected) =>
+        Assert.Equal(expected, DiskDeviceParser.DecodeDriveType(driveType));
+
+    [Fact]
+    public void Should_Fall_Back_To_Trim_When_Seek_Penalty_Is_Unavailable()
+    {
+        string mediaType = DiskDeviceParser.DecodeMediaType(
+            "USB",
+            isRemovable: false,
+            hasSeekPenalty: false,
+            incursSeekPenalty: false,
+            hasTrim: true,
+            trimEnabled: true);
+
+        Assert.Equal("SSD", mediaType);
+    }
+
+    [Fact]
+    public void Should_Not_Read_Past_An_Unterminated_String()
+    {
+        byte[] descriptor = BuildDescriptor(
+            "Seagate",
+            null,
+            null,
+            null,
+            WinIoCtl.BusTypeSas,
+            removableMedia: false);
+
+        // Drop the NUL that terminates the vendor id so it runs to the end of the buffer.
+        byte[] truncated = descriptor[..^1];
+
+        DiskDevice device = DiskDeviceParser.Parse(truncated);
+
+        Assert.Equal("Seagate", device.Manufacturer);
+        Assert.Equal("SAS", device.BusType);
+    }
+
     [Fact]
     public void Should_Parse_A_Complete_Descriptor()
     {
@@ -82,44 +126,30 @@ public sealed class DiskDeviceParserTests
         Assert.False(device.IsRemovable);
     }
 
-    [Fact]
-    public void Should_Trim_The_Padding_Drives_Pad_Their_Fields_With()
+    [Theory]
+    [InlineData(true, "HDD")]
+    [InlineData(false, "SSD")]
+    public void Should_Prefer_The_Seek_Penalty_Descriptor(bool incursSeekPenalty, string expected)
     {
-        byte[] descriptor = BuildDescriptor(
-            "ATA     ",
-            "  ST2000DM008-2FR102  ",
-            "0001",
-            "  WCC6Y1234567 ",
-            WinIoCtl.BusTypeSata,
-            removableMedia: false);
+        string mediaType = DiskDeviceParser.DecodeMediaType(
+            "SATA",
+            isRemovable: false,
+            hasSeekPenalty: true,
+            incursSeekPenalty,
+            hasTrim: false,
+            trimEnabled: false);
 
-        DiskDevice device = DiskDeviceParser.Parse(descriptor);
-
-        Assert.Equal("ATA", device.Manufacturer);
-        Assert.Equal("ST2000DM008-2FR102", device.Model);
-        Assert.Equal("WCC6Y1234567", device.SerialNumber);
-        Assert.Equal("SATA", device.BusType);
+        Assert.Equal(expected, mediaType);
     }
 
     [Fact]
-    public void Should_Report_Not_Available_For_Fields_The_Device_Omits()
+    public void Should_Report_An_Unknown_Bus_Type_As_Not_Available()
     {
-        // A zero offset means the device did not supply that field, which is common for the
-        // vendor id on consumer NVMe drives.
-        byte[] descriptor = BuildDescriptor(
-            vendorId: null,
-            productId: "WD Blue SN580",
-            productRevision: null,
-            serialNumber: null,
-            WinIoCtl.BusTypeNvme,
-            removableMedia: false);
+        byte[] descriptor = BuildDescriptor(null, null, null, null, 0x7F, removableMedia: false);
 
         DiskDevice device = DiskDeviceParser.Parse(descriptor);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
-        Assert.Equal("WD Blue SN580", device.Model);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.FirmwareRevision);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.SerialNumber);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
     }
 
     [Fact]
@@ -146,97 +176,38 @@ public sealed class DiskDeviceParserTests
     }
 
     [Fact]
-    public void Should_Not_Read_Past_An_Unterminated_String()
+    public void Should_Report_Not_Available_For_Fields_The_Device_Omits()
     {
+        // A zero offset means the device did not supply that field, which is common for the
+        // vendor id on consumer NVMe drives.
         byte[] descriptor = BuildDescriptor(
-            "Seagate",
-            null,
-            null,
-            null,
-            WinIoCtl.BusTypeSas,
+            vendorId: null,
+            productId: "WD Blue SN580",
+            productRevision: null,
+            serialNumber: null,
+            WinIoCtl.BusTypeNvme,
             removableMedia: false);
-
-        // Drop the NUL that terminates the vendor id so it runs to the end of the buffer.
-        byte[] truncated = descriptor[..^1];
-
-        DiskDevice device = DiskDeviceParser.Parse(truncated);
-
-        Assert.Equal("Seagate", device.Manufacturer);
-        Assert.Equal("SAS", device.BusType);
-    }
-
-    [Fact]
-    public void Should_Return_Defaults_For_A_Descriptor_Shorter_Than_Its_Header()
-    {
-        DiskDevice device = DiskDeviceParser.Parse(new byte[8]);
-
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Model);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
-    }
-
-    [Fact]
-    public void Should_Report_An_Unknown_Bus_Type_As_Not_Available()
-    {
-        byte[] descriptor = BuildDescriptor(null, null, null, null, 0x7F, removableMedia: false);
 
         DiskDevice device = DiskDeviceParser.Parse(descriptor);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
+        Assert.Equal("WD Blue SN580", device.Model);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.FirmwareRevision);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.SerialNumber);
     }
 
-    [Theory]
-    [InlineData(FileApi.DRIVE_FIXED, "Fixed")]
-    [InlineData(FileApi.DRIVE_REMOVABLE, "Removable")]
-    [InlineData(FileApi.DRIVE_CDROM, "CD-ROM")]
-    [InlineData(FileApi.DRIVE_REMOTE, "Network")]
-    [InlineData(FileApi.DRIVE_RAMDISK, "RAM Disk")]
-    [InlineData(FileApi.DRIVE_UNKNOWN, DiskDeviceParser.NotAvailable)]
-    public void Should_Decode_Drive_Type(uint driveType, string expected) =>
-        Assert.Equal(expected, DiskDeviceParser.DecodeDriveType(driveType));
-
     [Fact]
-    public void Should_Treat_Nvme_As_Solid_State_Without_Probing_Further()
+    public void Should_Report_Not_Available_When_Nothing_Identifies_The_Media()
     {
         string mediaType = DiskDeviceParser.DecodeMediaType(
-            "NVMe",
+            "SCSI",
             isRemovable: false,
             hasSeekPenalty: false,
             incursSeekPenalty: false,
             hasTrim: false,
             trimEnabled: false);
 
-        Assert.Equal("SSD", mediaType);
-    }
-
-    [Theory]
-    [InlineData(true, "HDD")]
-    [InlineData(false, "SSD")]
-    public void Should_Prefer_The_Seek_Penalty_Descriptor(bool incursSeekPenalty, string expected)
-    {
-        string mediaType = DiskDeviceParser.DecodeMediaType(
-            "SATA",
-            isRemovable: false,
-            hasSeekPenalty: true,
-            incursSeekPenalty,
-            hasTrim: false,
-            trimEnabled: false);
-
-        Assert.Equal(expected, mediaType);
-    }
-
-    [Fact]
-    public void Should_Fall_Back_To_Trim_When_Seek_Penalty_Is_Unavailable()
-    {
-        string mediaType = DiskDeviceParser.DecodeMediaType(
-            "USB",
-            isRemovable: false,
-            hasSeekPenalty: false,
-            incursSeekPenalty: false,
-            hasTrim: true,
-            trimEnabled: true);
-
-        Assert.Equal("SSD", mediaType);
+        Assert.Equal(DiskDeviceParser.NotAvailable, mediaType);
     }
 
     [Fact]
@@ -254,17 +225,46 @@ public sealed class DiskDeviceParserTests
     }
 
     [Fact]
-    public void Should_Report_Not_Available_When_Nothing_Identifies_The_Media()
+    public void Should_Return_Defaults_For_A_Descriptor_Shorter_Than_Its_Header()
+    {
+        DiskDevice device = DiskDeviceParser.Parse(new byte[8]);
+
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.Model);
+        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
+    }
+
+    [Fact]
+    public void Should_Treat_Nvme_As_Solid_State_Without_Probing_Further()
     {
         string mediaType = DiskDeviceParser.DecodeMediaType(
-            "SCSI",
+            "NVMe",
             isRemovable: false,
             hasSeekPenalty: false,
             incursSeekPenalty: false,
             hasTrim: false,
             trimEnabled: false);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, mediaType);
+        Assert.Equal("SSD", mediaType);
+    }
+
+    [Fact]
+    public void Should_Trim_The_Padding_Drives_Pad_Their_Fields_With()
+    {
+        byte[] descriptor = BuildDescriptor(
+            "ATA     ",
+            "  ST2000DM008-2FR102  ",
+            "0001",
+            "  WCC6Y1234567 ",
+            WinIoCtl.BusTypeSata,
+            removableMedia: false);
+
+        DiskDevice device = DiskDeviceParser.Parse(descriptor);
+
+        Assert.Equal("ATA", device.Manufacturer);
+        Assert.Equal("ST2000DM008-2FR102", device.Model);
+        Assert.Equal("WCC6Y1234567", device.SerialNumber);
+        Assert.Equal("SATA", device.BusType);
     }
 }
 #endif

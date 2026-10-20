@@ -31,6 +31,29 @@ public static unsafe class ShellLink
 
     public readonly record struct Target(string Path, string Arguments);
 
+    private static string GetString(nint shellLink, int slot, int capacity, bool withFindData)
+    {
+        char* buffer = stackalloc char[capacity];
+        new Span<char>(buffer, capacity).Clear();
+
+        int hr;
+
+        if (withFindData) {
+            byte* findData = stackalloc byte[Win32FindDataSize];
+
+            hr = ((delegate* unmanaged[Stdcall]<nint, char*, int, byte*, uint, int>)
+                Ole32.Vtbl(shellLink)[slot])(shellLink, buffer, capacity, findData, SLGP_RAWPATH);
+        }
+        else {
+            hr = ((delegate* unmanaged[Stdcall]<nint, char*, int, int>)
+                Ole32.Vtbl(shellLink)[slot])(shellLink, buffer, capacity);
+        }
+
+        return hr == 0 
+            ? new string(buffer) 
+            : string.Empty;
+    }
+
     public static Target? Resolve(string shortcutPath)
     {
         Target? target = null;
@@ -88,28 +111,5 @@ public static unsafe class ShellLink
         InteropHelper.MarshalRelease(ref shellLink);
         Ole32.ComUninitialize(hResult);
         return target;
-    }
-
-    private static string GetString(nint shellLink, int slot, int capacity, bool withFindData)
-    {
-        char* buffer = stackalloc char[capacity];
-        new Span<char>(buffer, capacity).Clear();
-
-        int hr;
-
-        if (withFindData) {
-            byte* findData = stackalloc byte[Win32FindDataSize];
-
-            hr = ((delegate* unmanaged[Stdcall]<nint, char*, int, byte*, uint, int>)
-                Ole32.Vtbl(shellLink)[slot])(shellLink, buffer, capacity, findData, SLGP_RAWPATH);
-        }
-        else {
-            hr = ((delegate* unmanaged[Stdcall]<nint, char*, int, int>)
-                Ole32.Vtbl(shellLink)[slot])(shellLink, buffer, capacity);
-        }
-
-        return hr == 0 
-            ? new string(buffer) 
-            : string.Empty;
     }
 }

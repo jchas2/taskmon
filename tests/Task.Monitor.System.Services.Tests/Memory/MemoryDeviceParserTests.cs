@@ -11,23 +11,6 @@ public sealed class MemoryDeviceParserTests
 
     private const string NotAvailable = "N/A";
 
-    // An SMBIOS string table: each string NUL-terminated, then a closing NUL. A structure with no
-    // strings still ends in a double NUL.
-    private static byte[] StringTable(string[] strings) =>
-        strings.Length == 0
-            ? [0, 0]
-            : [.. strings.SelectMany(value => Encoding.Latin1.GetBytes(value + '\0')), 0];
-
-    private static byte[] Structure(byte type, int formattedLength, string[] strings, Action<byte[]>? fill = null)
-    {
-        byte[] formatted = new byte[formattedLength];
-        formatted[0] = type;
-        formatted[1] = (byte)formattedLength;
-        fill?.Invoke(formatted);
-
-        return [.. formatted, .. StringTable(strings)];
-    }
-
     // A Type 17 structure for a 16 GB DDR5 DIMM, 4800 MT/s configured at 4400, with no serial
     // number. withStrings: false leaves every string index at 0 and an empty string table.
     private static byte[] MemoryDeviceStructure(
@@ -59,7 +42,23 @@ public sealed class MemoryDeviceParserTests
         });
     }
 
-    private static byte[] Table(params byte[][] structures) => [.. structures.SelectMany(structure => structure)];
+    [Fact]
+    public void ParseTable_Decodes_A_Device_Whose_String_Table_Is_Cut_Off()
+    {
+        byte[] full = MemoryDeviceStructure("DIMM 0");
+
+        // Cut inside "Kingston": no terminator for it, and no closing double NUL.
+        int cut = MemoryDeviceLength + "DIMM 0\0".Length + "BANK 0\0".Length + "Kingst".Length;
+        byte[] table = full[..cut];
+
+        List<MemoryDevice> devices = MemoryDeviceParser.ParseTable(table);
+
+        MemoryDevice device = Assert.Single(devices);
+        Assert.Equal("DIMM 0", device.DeviceLocator);
+        Assert.Equal("BANK 0", device.BankLocator);
+        Assert.Equal(NotAvailable, device.Manufacturer);
+        Assert.Equal(NotAvailable, device.PartNumber);
+    }
 
     [Fact]
     public void ParseTable_Decodes_Every_Memory_Device_And_Skips_Other_Structures()
@@ -92,20 +91,11 @@ public sealed class MemoryDeviceParserTests
         Assert.Equal("DIMM 1", devices[1].DeviceLocator);
     }
 
-    [Fact]
-    public void ParseTable_Walks_Past_A_Structure_With_An_Empty_String_Table()
-    {
-        byte[] table = Table(
-            MemoryDeviceStructure(withStrings: false),
-            MemoryDeviceStructure("DIMM 1"));
-
-        List<MemoryDevice> devices = MemoryDeviceParser.ParseTable(table);
-
-        Assert.Equal(2, devices.Count);
-        Assert.Equal(NotAvailable, devices[0].DeviceLocator);
-        Assert.Equal(NotAvailable, devices[0].Manufacturer);
-        Assert.Equal("DIMM 1", devices[1].DeviceLocator);
-    }
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public void ParseTable_Returns_No_Devices_For_A_Table_Too_Short_For_A_Structure_Header(int length) =>
+        Assert.Empty(MemoryDeviceParser.ParseTable(new byte[length]));
 
     // SMBIOS 2.3 era Type 17 structures stop at 0x1B, before the extended size and configured
     // speed fields. They are skipped, and do not take a slot number.
@@ -150,28 +140,19 @@ public sealed class MemoryDeviceParserTests
     }
 
     [Fact]
-    public void ParseTable_Decodes_A_Device_Whose_String_Table_Is_Cut_Off()
+    public void ParseTable_Walks_Past_A_Structure_With_An_Empty_String_Table()
     {
-        byte[] full = MemoryDeviceStructure("DIMM 0");
-
-        // Cut inside "Kingston": no terminator for it, and no closing double NUL.
-        int cut = MemoryDeviceLength + "DIMM 0\0".Length + "BANK 0\0".Length + "Kingst".Length;
-        byte[] table = full[..cut];
+        byte[] table = Table(
+            MemoryDeviceStructure(withStrings: false),
+            MemoryDeviceStructure("DIMM 1"));
 
         List<MemoryDevice> devices = MemoryDeviceParser.ParseTable(table);
 
-        MemoryDevice device = Assert.Single(devices);
-        Assert.Equal("DIMM 0", device.DeviceLocator);
-        Assert.Equal("BANK 0", device.BankLocator);
-        Assert.Equal(NotAvailable, device.Manufacturer);
-        Assert.Equal(NotAvailable, device.PartNumber);
+        Assert.Equal(2, devices.Count);
+        Assert.Equal(NotAvailable, devices[0].DeviceLocator);
+        Assert.Equal(NotAvailable, devices[0].Manufacturer);
+        Assert.Equal("DIMM 1", devices[1].DeviceLocator);
     }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(3)]
-    public void ParseTable_Returns_No_Devices_For_A_Table_Too_Short_For_A_Structure_Header(int length) =>
-        Assert.Empty(MemoryDeviceParser.ParseTable(new byte[length]));
 
     [Theory]
     [InlineData((ushort)16384, 0u, 16384u)]         // Megabytes.
@@ -185,4 +166,23 @@ public sealed class MemoryDeviceParserTests
 
         Assert.Equal(expectedMegabytes, device.SizeInMegabytes);
     }
+
+    // An SMBIOS string table: each string NUL-terminated, then a closing NUL. A structure with no
+    // strings still ends in a double NUL.
+    private static byte[] StringTable(string[] strings) =>
+        strings.Length == 0
+            ? [0, 0]
+            : [.. strings.SelectMany(value => Encoding.Latin1.GetBytes(value + '\0')), 0];
+
+    private static byte[] Structure(byte type, int formattedLength, string[] strings, Action<byte[]>? fill = null)
+    {
+        byte[] formatted = new byte[formattedLength];
+        formatted[0] = type;
+        formatted[1] = (byte)formattedLength;
+        fill?.Invoke(formatted);
+
+        return [.. formatted, .. StringTable(strings)];
+    }
+
+    private static byte[] Table(params byte[][] structures) => [.. structures.SelectMany(structure => structure)];
 }

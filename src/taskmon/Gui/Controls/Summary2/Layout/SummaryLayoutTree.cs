@@ -5,17 +5,34 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 // A recursive binary split tree.
 public sealed class SummaryLayoutTree
 {
-    public Dictionary<int, SummaryLayoutNode> Nodes { get; } = new();
-
-    public int RootId { get; private set; }
-
-    public int NextId { get; private set; }
-
     private int AddNode(SummaryLayoutNode node)
     {
         Nodes[node.Id] = node;
         NextId = Math.Max(NextId, node.Id + 1);
         return node.Id;
+    }
+
+    public bool AdjustRatio(int splitId, float delta)
+    {
+        if (!Nodes.TryGetValue(splitId, out SummaryLayoutNode? node) || !node.IsSplit) {
+            return false;
+        }
+
+        node.Ratio = Math.Clamp(node.Ratio + delta, 0.1f, 0.9f);
+        return true;
+    }
+
+    public static SummaryLayoutTree CreateEmpty()
+    {
+        SummaryLayoutTree tree = new();
+
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 0, ControlType = PaneControlType.Empty
+        });
+        
+        tree.RootId = 0;
+
+        return tree;
     }
 
     public static SummaryLayoutTree CreateExample()
@@ -49,18 +66,11 @@ public sealed class SummaryLayoutTree
         return tree;
     }
 
-    public static SummaryLayoutTree CreateEmpty()
-    {
-        SummaryLayoutTree tree = new();
-
-        tree.AddNode(new SummaryLayoutNode {
-            Id = 0, ControlType = PaneControlType.Empty
-        });
-        
-        tree.RootId = 0;
-
-        return tree;
-    }
+    public int? FindParentSplitId(int nodeId) =>
+        Nodes
+            .Where(kv => kv.Value.IsSplit && (kv.Value.FirstId == nodeId || kv.Value.SecondId == nodeId))
+            .Select(kv => (int?)kv.Key)
+            .FirstOrDefault();
 
     public static SummaryLayoutTree FromNodes(IEnumerable<SummaryLayoutNode> nodes, int rootId)
     {
@@ -75,6 +85,10 @@ public sealed class SummaryLayoutTree
         return tree;
     }
 
+    public int NextId { get; private set; }
+
+    public Dictionary<int, SummaryLayoutNode> Nodes { get; } = new();
+
     // Returns every pane (leaf) node in the tree.
     public IEnumerable<SummaryLayoutNode> Panes()
     {
@@ -83,61 +97,6 @@ public sealed class SummaryLayoutTree
                 yield return pane;
             }
         }
-    }
-
-    private IEnumerable<int> TraversalOrder(int nodeId)
-    {
-        SummaryLayoutNode node = Nodes[nodeId];
-
-        if (!node.IsSplit) {
-            yield return nodeId;
-            yield break;
-        }
-
-        foreach (int id in TraversalOrder(node.FirstId)) {
-            yield return id;
-        }
-
-        foreach (int id in TraversalOrder(node.SecondId)) {
-            yield return id;
-        }
-    }
-
-    public int? FindParentSplitId(int nodeId) =>
-        Nodes
-            .Where(kv => kv.Value.IsSplit && (kv.Value.FirstId == nodeId || kv.Value.SecondId == nodeId))
-            .Select(kv => (int?)kv.Key)
-            .FirstOrDefault();
-
-    public (int FirstId, int SecondId) Split(int paneId, Orientation orientation)
-    {
-        SummaryLayoutNode original = Nodes[paneId];
-
-        if (original.IsSplit) {
-            throw new InvalidOperationException($"Node {paneId} is already a split - only a pane (leaf) can be split.");
-        }
-
-        int firstId = AddNode(new SummaryLayoutNode {
-            Id             = NextId,
-            ControlType    = original.ControlType,
-            ProcessColumns = original.ProcessColumns,
-        });
-
-        int secondId = AddNode(new SummaryLayoutNode {
-            Id          = NextId,
-            ControlType = PaneControlType.Empty,
-        });
-
-        Nodes[paneId] = new SummaryLayoutNode {
-            Id          = paneId,
-            IsSplit     = true,
-            Orientation = orientation,
-            Ratio       = 0.5f,
-            FirstId     = firstId,
-            SecondId    = secondId,
-        };
-
-        return (firstId, secondId);
     }
 
     public bool Remove(int paneId)
@@ -177,13 +136,54 @@ public sealed class SummaryLayoutTree
         return true;
     }
 
-    public bool AdjustRatio(int splitId, float delta)
+    public int RootId { get; private set; }
+
+    public (int FirstId, int SecondId) Split(int paneId, Orientation orientation)
     {
-        if (!Nodes.TryGetValue(splitId, out SummaryLayoutNode? node) || !node.IsSplit) {
-            return false;
+        SummaryLayoutNode original = Nodes[paneId];
+
+        if (original.IsSplit) {
+            throw new InvalidOperationException($"Node {paneId} is already a split - only a pane (leaf) can be split.");
         }
 
-        node.Ratio = Math.Clamp(node.Ratio + delta, 0.1f, 0.9f);
-        return true;
+        int firstId = AddNode(new SummaryLayoutNode {
+            Id             = NextId,
+            ControlType    = original.ControlType,
+            ProcessColumns = original.ProcessColumns,
+        });
+
+        int secondId = AddNode(new SummaryLayoutNode {
+            Id          = NextId,
+            ControlType = PaneControlType.Empty,
+        });
+
+        Nodes[paneId] = new SummaryLayoutNode {
+            Id          = paneId,
+            IsSplit     = true,
+            Orientation = orientation,
+            Ratio       = 0.5f,
+            FirstId     = firstId,
+            SecondId    = secondId,
+        };
+
+        return (firstId, secondId);
+    }
+
+    private IEnumerable<int> TraversalOrder(int nodeId)
+    {
+        SummaryLayoutNode node = Nodes[nodeId];
+
+        if (!node.IsSplit) {
+            yield return nodeId;
+            yield break;
+        }
+
+        foreach (int id in TraversalOrder(node.FirstId)) {
+            yield return id;
+        }
+
+        foreach (int id in TraversalOrder(node.SecondId)) {
+            yield return id;
+        }
     }
 }

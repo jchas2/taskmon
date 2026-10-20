@@ -12,16 +12,6 @@ public sealed class DiskSpaceWalkerTests : IDisposable
         Directory.CreateDirectory(root);
     }
 
-    public void Dispose()
-    {
-        try {
-            Directory.Delete(root, recursive: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
-            // Best effort - a stray open handle on a temp dir shouldn't fail the test run.
-        }
-    }
-
     private string CreateFile(string relativePath, int sizeBytes)
     {
         string fullPath = Path.Combine(root, relativePath);
@@ -30,20 +20,14 @@ public sealed class DiskSpaceWalkerTests : IDisposable
         return fullPath;
     }
 
-    [Fact]
-    public void Walk_Sums_File_Sizes_Into_The_Accumulator()
+    public void Dispose()
     {
-        CreateFile("a.bin", 100);
-        CreateFile(Path.Combine("sub", "b.bin"), 250);
-
-        DiskSpaceAccumulator accumulator = new(root);
-        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None);
-
-        var specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-
-        Assert.Equal(350, specs.TotalBytesScanned);
-        Assert.Equal(2, specs.FilesScanned);
-        Assert.Equal(350, specs.RootNode!.TotalBytes);
+        try {
+            Directory.Delete(root, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            // Best effort - a stray open handle on a temp dir shouldn't fail the test run.
+        }
     }
 
     [Fact]
@@ -70,17 +54,19 @@ public sealed class DiskSpaceWalkerTests : IDisposable
     }
 
     [Fact]
-    public void Walk_Reports_The_Largest_Files_In_TopFiles()
+    public void Walk_Invokes_OnFolderVisited_Once_Per_Directory()
     {
-        string big = CreateFile("big.bin", 1000);
-        CreateFile("small.bin", 10);
+        CreateFile("a.bin", 1);
+        CreateFile(Path.Combine("sub1", "b.bin"), 1);
+        CreateFile(Path.Combine("sub2", "c.bin"), 1);
 
         DiskSpaceAccumulator accumulator = new(root);
-        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None);
+        int visits = 0;
 
-        var specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None, onFolderVisited: () => visits++);
 
-        Assert.Equal(big, specs.TopFiles.First().FullPath);
+        // The root plus sub1 and sub2.
+        Assert.Equal(3, visits);
     }
 
     [Fact]
@@ -108,32 +94,17 @@ public sealed class DiskSpaceWalkerTests : IDisposable
     }
 
     [Fact]
-    public void Walk_Throws_OperationCanceled_When_The_Token_Is_Already_Cancelled()
+    public void Walk_Reports_The_Largest_Files_In_TopFiles()
     {
-        CreateFile("a.bin", 1);
+        string big = CreateFile("big.bin", 1000);
+        CreateFile("small.bin", 10);
 
         DiskSpaceAccumulator accumulator = new(root);
-        using CancellationTokenSource cts = new();
-        cts.Cancel();
+        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None);
 
-        Assert.Throws<OperationCanceledException>(
-            () => DiskSpaceWalker.Walk(root, accumulator, cts.Token));
-    }
+        var specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
-    [Fact]
-    public void Walk_Invokes_OnFolderVisited_Once_Per_Directory()
-    {
-        CreateFile("a.bin", 1);
-        CreateFile(Path.Combine("sub1", "b.bin"), 1);
-        CreateFile(Path.Combine("sub2", "c.bin"), 1);
-
-        DiskSpaceAccumulator accumulator = new(root);
-        int visits = 0;
-
-        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None, onFolderVisited: () => visits++);
-
-        // The root plus sub1 and sub2.
-        Assert.Equal(3, visits);
+        Assert.Equal(big, specs.TopFiles.First().FullPath);
     }
 
     [Fact]
@@ -163,5 +134,34 @@ public sealed class DiskSpaceWalkerTests : IDisposable
 
         var specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
         Assert.Equal(123, specs.TotalBytesScanned);
+    }
+
+    [Fact]
+    public void Walk_Sums_File_Sizes_Into_The_Accumulator()
+    {
+        CreateFile("a.bin", 100);
+        CreateFile(Path.Combine("sub", "b.bin"), 250);
+
+        DiskSpaceAccumulator accumulator = new(root);
+        DiskSpaceWalker.Walk(root, accumulator, CancellationToken.None);
+
+        var specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+
+        Assert.Equal(350, specs.TotalBytesScanned);
+        Assert.Equal(2, specs.FilesScanned);
+        Assert.Equal(350, specs.RootNode!.TotalBytes);
+    }
+
+    [Fact]
+    public void Walk_Throws_OperationCanceled_When_The_Token_Is_Already_Cancelled()
+    {
+        CreateFile("a.bin", 1);
+
+        DiskSpaceAccumulator accumulator = new(root);
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.Throws<OperationCanceledException>(
+            () => DiskSpaceWalker.Walk(root, accumulator, cts.Token));
     }
 }

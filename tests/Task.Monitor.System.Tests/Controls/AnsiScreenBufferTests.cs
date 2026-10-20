@@ -8,9 +8,6 @@ public sealed class AnsiScreenBufferTests
 {
     private const char Esc = (char)27;
 
-    private static string Fg(Color c) => ConsolePalette.ForegroundSgr(c);
-    private static string Bg(Color c) => ConsolePalette.BackgroundSgr(c);
-
     [Fact]
     public void Append_Char_And_Span_Accumulate_In_Order()
     {
@@ -32,6 +29,30 @@ public sealed class AnsiScreenBufferTests
         Assert.Equal("---", buffer.AsSpan().ToString());
     }
 
+    private static string Bg(Color c) => ConsolePalette.BackgroundSgr(c);
+
+    [Fact]
+    public void Clear_Forces_Next_SetBold_To_Emit()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetBold(true);
+        buffer.Clear();
+        buffer.SetBold(true);
+
+        Assert.Equal(Esc + "[1m", buffer.AsSpan().ToString());
+    }
+
+    [Fact]
+    public void Clear_Forces_Next_SetColour_To_Emit()
+    {
+        AnsiScreenBuffer buffer = new();
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+        buffer.Clear();
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+
+        Assert.Equal(Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green), buffer.AsSpan().ToString());
+    }
+
     [Fact]
     public void Clear_Resets_Length_For_Reuse()
     {
@@ -41,6 +62,19 @@ public sealed class AnsiScreenBufferTests
         buffer.Append("next");
 
         Assert.Equal("next", buffer.AsSpan().ToString());
+    }
+
+    private static string Fg(Color c) => ConsolePalette.ForegroundSgr(c);
+
+    [Fact]
+    public void Growth_Preserves_Content_Beyond_Initial_Capacity()
+    {
+        AnsiScreenBuffer buffer = new(capacity: 4);
+        string payload = new('x', 1000);
+        buffer.Append(payload);
+
+        Assert.Equal(payload, buffer.AsSpan().ToString());
+        Assert.Equal(1000, buffer.Length);
     }
 
     [Theory]
@@ -65,49 +99,14 @@ public sealed class AnsiScreenBufferTests
     }
 
     [Fact]
-    public void SetColour_Emits_Background_Then_Foreground()
+    public void ResetColour_Clears_Bold_State()
     {
         AnsiScreenBuffer buffer = new();
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+        buffer.SetBold(true);
+        buffer.ResetColour();
+        buffer.SetBold(true);
 
-        // Background precedes foreground, matching AnsiConsoleStringExtensions.
-        Assert.Equal(Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green), buffer.AsSpan().ToString());
-    }
-
-    [Fact]
-    public void SetColour_Is_Skipped_When_Colour_Is_Unchanged()
-    {
-        AnsiScreenBuffer buffer = new();
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
-        int afterFirst = buffer.Length;
-
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
-
-        Assert.Equal(afterFirst, buffer.Length);
-    }
-
-    [Fact]
-    public void SetColour_Re_Emits_When_Colour_Changes()
-    {
-        AnsiScreenBuffer buffer = new();
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
-        buffer.SetColour(ConsolePalette.Red, ConsolePalette.Black);
-
-        string expected = Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green)
-                        + Bg(ConsolePalette.Black) + Fg(ConsolePalette.Red);
-
-        Assert.Equal(expected, buffer.AsSpan().ToString());
-    }
-
-    [Fact]
-    public void Clear_Forces_Next_SetColour_To_Emit()
-    {
-        AnsiScreenBuffer buffer = new();
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
-        buffer.Clear();
-        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
-
-        Assert.Equal(Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green), buffer.AsSpan().ToString());
+        Assert.Equal(Esc + "[1m" + AnsiConsoleStringExtensions.Reset + Esc + "[1m", buffer.AsSpan().ToString());
     }
 
     [Fact]
@@ -146,35 +145,37 @@ public sealed class AnsiScreenBufferTests
     }
 
     [Fact]
-    public void Clear_Forces_Next_SetBold_To_Emit()
+    public void SetColour_Emits_Background_Then_Foreground()
     {
         AnsiScreenBuffer buffer = new();
-        buffer.SetBold(true);
-        buffer.Clear();
-        buffer.SetBold(true);
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
 
-        Assert.Equal(Esc + "[1m", buffer.AsSpan().ToString());
+        // Background precedes foreground, matching AnsiConsoleStringExtensions.
+        Assert.Equal(Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green), buffer.AsSpan().ToString());
     }
 
     [Fact]
-    public void ResetColour_Clears_Bold_State()
+    public void SetColour_Is_Skipped_When_Colour_Is_Unchanged()
     {
         AnsiScreenBuffer buffer = new();
-        buffer.SetBold(true);
-        buffer.ResetColour();
-        buffer.SetBold(true);
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+        int afterFirst = buffer.Length;
 
-        Assert.Equal(Esc + "[1m" + AnsiConsoleStringExtensions.Reset + Esc + "[1m", buffer.AsSpan().ToString());
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+
+        Assert.Equal(afterFirst, buffer.Length);
     }
 
     [Fact]
-    public void Growth_Preserves_Content_Beyond_Initial_Capacity()
+    public void SetColour_Re_Emits_When_Colour_Changes()
     {
-        AnsiScreenBuffer buffer = new(capacity: 4);
-        string payload = new('x', 1000);
-        buffer.Append(payload);
+        AnsiScreenBuffer buffer = new();
+        buffer.SetColour(ConsolePalette.Green, ConsolePalette.Black);
+        buffer.SetColour(ConsolePalette.Red, ConsolePalette.Black);
 
-        Assert.Equal(payload, buffer.AsSpan().ToString());
-        Assert.Equal(1000, buffer.Length);
+        string expected = Bg(ConsolePalette.Black) + Fg(ConsolePalette.Green)
+                        + Bg(ConsolePalette.Black) + Fg(ConsolePalette.Red);
+
+        Assert.Equal(expected, buffer.AsSpan().ToString());
     }
 }

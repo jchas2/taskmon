@@ -19,24 +19,6 @@ public sealed class FooterControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
-        new() { Services = services };
-
-    private FooterControl CreateControl(int width = 160)
-    {
-        FooterControl ctrl = new(
-            runContext.ServiceController,
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = width,
-            Height = 1
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        return ctrl;
-    }
-
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -53,6 +35,21 @@ public sealed class FooterControlTests
         Assert.NotNull(ctrl);
     }
 
+    private FooterControl CreateControl(int width = 160)
+    {
+        FooterControl ctrl = new(
+            runContext.ServiceController,
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = width,
+            Height = 1
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        return ctrl;
+    }
+
     [Fact]
     public void Draws_The_Version_Banner_Without_A_Snapshot()
     {
@@ -63,4 +60,7 @@ public sealed class FooterControlTests
 
         ctrl.Unload();
     }
+
+    private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
+        new() { Services = services };
 }

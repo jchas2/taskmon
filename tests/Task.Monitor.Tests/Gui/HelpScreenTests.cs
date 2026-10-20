@@ -1,10 +1,9 @@
+using System.Drawing;
 using System.Reflection;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui;
 using Task.Monitor.Tests.Common;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class HelpScreenTests
@@ -17,10 +16,10 @@ public sealed class HelpScreenTests
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
     }
-    
+
     [Fact]
-    public void HelpScreen_Canary_Test() =>
-        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+    public void Constructor_With_Null_RunContext_Throws_ArgumentNullException() =>
+        Assert.Throws<NullReferenceException>(() => new HelpScreen(null!));
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()
@@ -30,10 +29,6 @@ public sealed class HelpScreenTests
         Assert.NotNull(helpScreen);
     }
 
-    [Fact]
-    public void Constructor_With_Null_RunContext_Throws_ArgumentNullException() =>
-        Assert.Throws<NullReferenceException>(() => new HelpScreen(null!));
-    
     [Fact]
     public void Default_Properties_After_Construction_Have_Default_Values()
     {
@@ -57,52 +52,6 @@ public sealed class HelpScreenTests
         Assert.Equal(0, helpScreen.Width);
         Assert.Equal(0, helpScreen.X);
         Assert.Equal(0, helpScreen.Y);
-    }
-    
-    [Fact]
-    public void Load_Calls_OnLoad_Sets_CursorVisible_False()
-    {
-        HelpScreen helpScreen = new(runContext);
-        runContextHelper.terminal.SetupSet(t => t.CursorVisible = false).Verifiable();
-        
-        helpScreen.Load();
-
-        runContextHelper.terminal.VerifySet(t => t.CursorVisible = false, Times.AtLeastOnce);
-    }
-
-    [Fact]
-    public void Load_Calls_OnUnload_Sets_CursorVisible_True()
-    {
-        HelpScreen helpScreen = new(runContext);
-        runContextHelper.terminal.SetupSet(t => t.CursorVisible = true).Verifiable();
-        
-        helpScreen.Unload();
-
-        runContextHelper.terminal.VerifySet(t => t.CursorVisible = true, Times.Once);
-    }
-
-    public static TheoryData<string> HelpTextData()
-        => new() 
-        {
-            "Chart Colours",
-            "Process and Path Colours",
-            "Function Keys"
-        };
-
-    [Theory]
-    [MemberData(nameof(HelpTextData))]
-    public void Should_Generate_Help_Text_OnLoad_And_OnDraw(string helpText)
-    {
-        HelpScreen helpScreen = new(runContext);
-        string capturedText = String.Empty;
-
-        runContextHelper.terminal.Setup(t => t.WriteLine(It.IsAny<string>()))
-            .Callback<string>(txt => capturedText += txt);
-        
-        helpScreen.Load();
-        helpScreen.Draw();
-
-        Assert.Contains(helpText, capturedText);
     }
 
     [Fact]
@@ -133,5 +82,55 @@ public sealed class HelpScreenTests
         Assert.NotNull(capturedFg);
         Assert.Equal(runContext.AppConfig.Theme.Background, capturedBg);
         Assert.Equal(runContext.AppConfig.Theme.Foreground, capturedFg);
+    }
+
+    [Fact]
+    public void HelpScreen_Canary_Test() =>
+        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+
+    public static TheoryData<string> HelpTextData()
+        => new() 
+        {
+            "Chart Colours",
+            "Process and Path Colours",
+            "Function Keys"
+        };
+
+    [Fact]
+    public void Load_Calls_OnLoad_Sets_CursorVisible_False()
+    {
+        HelpScreen helpScreen = new(runContext);
+        runContextHelper.terminal.SetupSet(t => t.CursorVisible = false).Verifiable();
+        
+        helpScreen.Load();
+
+        runContextHelper.terminal.VerifySet(t => t.CursorVisible = false, Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void Load_Calls_OnUnload_Sets_CursorVisible_True()
+    {
+        HelpScreen helpScreen = new(runContext);
+        runContextHelper.terminal.SetupSet(t => t.CursorVisible = true).Verifiable();
+        
+        helpScreen.Unload();
+
+        runContextHelper.terminal.VerifySet(t => t.CursorVisible = true, Times.Once);
+    }
+
+    [Theory]
+    [MemberData(nameof(HelpTextData))]
+    public void Should_Generate_Help_Text_OnLoad_And_OnDraw(string helpText)
+    {
+        HelpScreen helpScreen = new(runContext);
+        string capturedText = String.Empty;
+
+        runContextHelper.terminal.Setup(t => t.WriteLine(It.IsAny<string>()))
+            .Callback<string>(txt => capturedText += txt);
+        
+        helpScreen.Load();
+        helpScreen.Draw();
+
+        Assert.Contains(helpText, capturedText);
     }
 }

@@ -27,7 +27,9 @@ public class ListView : Control
     private const string UnCheckedText = "[ ] ";
 
     public const int CheckboxWidth = 4;
-    
+
+    private Color? borderBackgroundColour;
+
     public event EventHandler<ListViewItemEventArgs>? ItemClicked;
     public event EventHandler<ListViewItemEventArgs>? ItemSelected;
 
@@ -47,21 +49,19 @@ public class ListView : Control
 
     public Color BackgroundHighlightInactiveColour { get; set; } = ConsolePalette.Gray;
 
-    private Color? borderBackgroundColour;
-
     public Color BorderBackgroundColour
     {
         get => borderBackgroundColour ?? BackgroundColour;
         set => borderBackgroundColour = value;
     }
 
-    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
-
     public override Color BorderColour
     {
         get => BorderForegroundColour;
         set => BorderForegroundColour = value;
     }
+
+    public Color BorderForegroundColour { get; set; } = ConsolePalette.White;
 
     private void CalculateViewPortBounds()
     {
@@ -233,8 +233,6 @@ public class ListView : Control
         frame.Append('\u256F');
     }
 
-    private void SetBorderColour() => frame.SetColour(DisplayBorderColour, BorderBackgroundColour);
-
     private void DrawEmptyListView()
     {
         for (int i = 0; i < viewPort.Bounds.Height - 1; i++) {
@@ -256,31 +254,6 @@ public class ListView : Control
         frame.MoveTo(p.X, p.Y);
         frame.SetColour(ForegroundColour, BackgroundColour);
         frame.Append(EmptyListViewText);
-    }
-    
-    internal static string FormatColumnCell(string text, int width, bool rightAligned)
-    {
-        int contentWidth  = width - 1;
-        int contentLength = text.TruncateToTerminalWidth(contentWidth, out int contentDisplayWidth);
-        int padding       = contentWidth - contentDisplayWidth;
-
-        return string.Create(contentLength + padding + 1, (text, contentLength, padding, rightAligned),
-            static (span, state) =>
-        {
-            var (txt, len, pad, rightAlign) = state;
-            ReadOnlySpan<char> content      = txt.AsSpan(0, len);
-
-            if (rightAlign) {
-                span.Slice(0, pad).Fill(' ');
-                content.CopyTo(span.Slice(pad));
-            }
-            else {
-                content.CopyTo(span);
-                span.Slice(len, pad).Fill(' ');
-            }
-
-            span[^1] = ' ';
-        });
     }
 
     // Deliberately not bold: many terminals desaturate a bold foreground colour, which can make it
@@ -430,23 +403,6 @@ public class ListView : Control
         }
     }
 
-    private (int UpRow, int DownRow) GetScrollIndicatorRows()
-    {
-        if (!EnableScroll || viewPort.RowCount <= 0 || ItemCount <= viewPort.RowCount) {
-            return (-1, -1);
-        }
-
-        int upRow = viewPort.CurrentPageIndex > 0
-            ? viewPort.Bounds.Y
-            : -1;
-
-        int downRow = viewPort.CurrentPageIndex + viewPort.RowCount < ItemCount
-            ? viewPort.Bounds.Y + viewPort.RowCount - 1
-            : -1;
-
-        return (upRow, downRow);
-    }
-
     private void DrawScrollIndicators()
     {
         if (!ShowBorder || viewPort.RowCount <= 0) {
@@ -475,17 +431,36 @@ public class ListView : Control
     public bool EnableRowSelect { get; set; }
     
     public bool EnableScroll { get; set; }
-    
+
+    public string FooterText { get; set; } = string.Empty;
+
     public Color ForegroundHighlightColour { get; set; } = ConsolePalette.Cyan;
 
     public Color ForegroundHighlightInactiveColour { get; set; } = ConsolePalette.Black;
 
-    internal ListViewColumnHeader GetColumnHeaderByIndex(int index)
+    internal static string FormatColumnCell(string text, int width, bool rightAligned)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, columnHeaders.Count, nameof(index));
-        
-        return columnHeaders[index];
+        int contentWidth  = width - 1;
+        int contentLength = text.TruncateToTerminalWidth(contentWidth, out int contentDisplayWidth);
+        int padding       = contentWidth - contentDisplayWidth;
+
+        return string.Create(contentLength + padding + 1, (text, contentLength, padding, rightAligned),
+            static (span, state) =>
+        {
+            var (txt, len, pad, rightAlign) = state;
+            ReadOnlySpan<char> content      = txt.AsSpan(0, len);
+
+            if (rightAlign) {
+                span.Slice(0, pad).Fill(' ');
+                content.CopyTo(span.Slice(pad));
+            }
+            else {
+                content.CopyTo(span);
+                span.Slice(len, pad).Fill(' ');
+            }
+
+            span[^1] = ' ';
+        });
     }
 
     private void FrameClear() =>
@@ -496,7 +471,15 @@ public class ListView : Control
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
     }
-    
+
+    internal ListViewColumnHeader GetColumnHeaderByIndex(int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, columnHeaders.Count, nameof(index));
+        
+        return columnHeaders[index];
+    }
+
     internal ListViewItem GetItemByIndex(int index)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
@@ -505,10 +488,29 @@ public class ListView : Control
         return items[index];
     }
 
+    private (int UpRow, int DownRow) GetScrollIndicatorRows()
+    {
+        if (!EnableScroll || viewPort.RowCount <= 0 || ItemCount <= viewPort.RowCount) {
+            return (-1, -1);
+        }
+
+        int upRow = viewPort.CurrentPageIndex > 0
+            ? viewPort.Bounds.Y
+            : -1;
+
+        int downRow = viewPort.CurrentPageIndex + viewPort.RowCount < ItemCount
+            ? viewPort.Bounds.Y + viewPort.RowCount - 1
+            : -1;
+
+        return (upRow, downRow);
+    }
+
     public Color HeaderBackgroundColour { get; set; } = ConsolePalette.Black;
     
     public Color HeaderForegroundColour { get; set; } = ConsolePalette.White;
-    
+
+    public string HeaderText { get; set; } = string.Empty;
+
     internal int IndexOfColumnHeader(ListViewColumnHeader columnHeader)
     {
         for (int i = 0; i < columnHeaders.Count; i++) {
@@ -697,6 +699,8 @@ public class ListView : Control
         }
     }
 
+    private static bool SameColour(Color left, Color right) => left.ToArgb() == right.ToArgb();
+
     public int SelectedIndex
     {
         get => viewPort.SelectedIndex;
@@ -719,22 +723,18 @@ public class ListView : Control
         }
     }
 
-    private void SelectItemCheckbox(ListViewItem item) => item.Checked = !item.Checked;
-
     private (Color Foreground, Color Background) SelectionColours() =>
         Focused
             ? (ForegroundHighlightColour, BackgroundHighlightColour)
             : (ForegroundHighlightInactiveColour, BackgroundHighlightInactiveColour);
 
-    private static bool SameColour(Color left, Color right) => left.ToArgb() == right.ToArgb();
+    private void SelectItemCheckbox(ListViewItem item) => item.Checked = !item.Checked;
+
+    private void SetBorderColour() => frame.SetColour(DisplayBorderColour, BorderBackgroundColour);
 
     public bool ShowBorder { get; set; }
 
     public bool ShowCheckboxes { get; set; }
 
     public bool ShowColumnHeaders { get; set; }
-
-    public string FooterText { get; set; } = string.Empty;
-
-    public string HeaderText { get; set; } = string.Empty;
 }

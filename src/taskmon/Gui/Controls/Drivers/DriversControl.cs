@@ -70,17 +70,22 @@ public sealed partial class DriversControl : Control
         Controls.Add(detailView);
     }
 
-    public void Sample(SystemSnapshot snapshot)
+    private static string BuildSignature(IReadOnlyList<DriverInfo> entries) =>
+        entries.Count + "|" + 
+        string.Join("|", entries.Select(driver =>
+            $"{driver.ServiceName}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
+
+    private void EnsureRows(DriversInfo info)
     {
-        if (snapshot.Drivers is null) {
+        string signature = BuildSignature(info.Specs.Drivers);
+
+        if (signature == lastSignature) {
             return;
         }
 
-        drivers = snapshot.Drivers;
-        Draw();
+        lastSignature = signature;
+        RebuildRows(info.Specs.Drivers);
     }
-
-    protected override void OnGotFocus() => driversView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
@@ -96,32 +101,7 @@ public sealed partial class DriversControl : Control
         detailView.Draw();
     }
 
-    private void EnsureRows(DriversInfo info)
-    {
-        string signature = BuildSignature(info.Specs.Drivers);
-
-        if (signature == lastSignature) {
-            return;
-        }
-
-        lastSignature = signature;
-        RebuildRows(info.Specs.Drivers);
-    }
-
-    private static string BuildSignature(IReadOnlyList<DriverInfo> entries) =>
-        entries.Count + "|" + 
-        string.Join("|", entries.Select(driver =>
-            $"{driver.ServiceName}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
-
-    private void RefreshDetailPane()
-    {
-        int index = driversView.SelectedIndex;
-
-        IReadOnlyList<DriverInfo> entries = drivers?.Specs.Drivers ?? [];
-        DriverInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
-        
-        RebuildDetailRows(selected);
-    }
+    protected override void OnGotFocus() => driversView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -141,16 +121,6 @@ public sealed partial class DriversControl : Control
         }
     }
 
-    private void TryRequestRefresh()
-    {
-        try {
-            serviceController.GetService<DriversService>().RequestImmediateRefresh();
-        }
-        catch (InvalidOperationException) {
-            // No drivers service registered (e.g. under test) - nothing to refresh.
-        }
-    }
-
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
@@ -161,9 +131,6 @@ public sealed partial class DriversControl : Control
 
         base.OnLoad();
     }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
 
     protected override void OnResize()
     {
@@ -193,6 +160,9 @@ public sealed partial class DriversControl : Control
         base.OnResize();
     }
 
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
@@ -201,5 +171,35 @@ public sealed partial class DriversControl : Control
         lastSignature = string.Empty;
 
         base.OnUnload();
+    }
+
+    private void RefreshDetailPane()
+    {
+        int index = driversView.SelectedIndex;
+
+        IReadOnlyList<DriverInfo> entries = drivers?.Specs.Drivers ?? [];
+        DriverInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
+        
+        RebuildDetailRows(selected);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        if (snapshot.Drivers is null) {
+            return;
+        }
+
+        drivers = snapshot.Drivers;
+        Draw();
+    }
+
+    private void TryRequestRefresh()
+    {
+        try {
+            serviceController.GetService<DriversService>().RequestImmediateRefresh();
+        }
+        catch (InvalidOperationException) {
+            // No drivers service registered (e.g. under test) - nothing to refresh.
+        }
     }
 }

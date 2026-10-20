@@ -97,108 +97,9 @@ public static unsafe class Sys
         public int       ifm_timer;
         public if_data64 ifm_data;         /* Interface statistics */
     }
-    
-    [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
-    private static extern unsafe int Sysctl(
-        int*    name,
-        int     namelen,
-        void*   value,
-        size_t* len);
 
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Free")]
     private static extern unsafe void Free(void* ptr);
-
-    [DllImport(Libraries.LibC, EntryPoint = "sysctlbyname", SetLastError = true)]
-    private static extern unsafe int SysctlByName(
-        [MarshalAs(UnmanagedType.LPStr)] 
-        string  name,
-        void*   oldp,
-        size_t* oldlenp,
-        void*   newp,
-        size_t  newlen);
-
-    public static unsafe string? SysctlByNameString(string name)
-    {
-        size_t len = nint.Zero;
-        
-        if (SysctlByName(
-            name, 
-            null, 
-            &len, 
-            null, 
-            nint.Zero) != 0) {
-
-            Trace.WriteLine($"Failed SysctlByName() &len: {name}");
-            return null;
-        }
-
-        int byteLen = (int)len;
-
-        if (byteLen <= 0) {
-            return null;
-        }
-
-        using HGlobalScope scope = HGlobalScope.Allocate(byteLen);
-        byte* buffer = (byte*)scope.Value;
-
-        size_t outLen = (nint)byteLen;
-
-        if (SysctlByName(
-            name, 
-            buffer, 
-            &outLen, 
-            null, 
-            nint.Zero) != 0) {
-            
-            Trace.WriteLine($"Failed SysctlByName() buffer: {name}");
-            return null;
-        }
-
-        int strLen = (int)outLen;
-
-        // sysctl strings are null terminated; drop the terminator.
-        if (strLen > 0 && buffer[strLen - 1] == 0) {
-            strLen--;
-        }
-
-        return System.Text.Encoding.UTF8.GetString(buffer, strLen);
-    }
-
-    public static unsafe bool SysctlByNameInt(string name, out int value)
-    {
-        value         = 0;
-        int    result = 0;
-        size_t len    = (nint)sizeof(int);
-
-        if (SysctlByName(name, &result, &len, null, nint.Zero) != 0) {
-            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
-            return false;
-        }
-
-        value = result;
-        return true;
-    }
-
-    public static unsafe bool SysctlByNameLong(string name, out long value)
-    {
-        value         = 0;
-        long   result = 0;
-        size_t len    = (nint)sizeof(long);
-
-        if (SysctlByName(
-            name, 
-            &result, 
-            &len, 
-            null, 
-            nint.Zero) != 0) {
-
-            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
-            return false;
-        }
-
-        value = result;
-        return true;
-    }
 
     public static unsafe void FreeMemory(void* ptr)
     {
@@ -208,7 +109,14 @@ public static unsafe class Sys
 
         Sys.Free(ptr);
     }
-    
+
+    [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
+    private static extern unsafe int Sysctl(
+        int*    name,
+        int     namelen,
+        void*   value,
+        size_t* len);
+
     public static unsafe bool Sysctl(ReadOnlySpan<int> name, ref byte* value, ref int len)
     {
         fixed (int* ptr = &MemoryMarshal.GetReference(name)) {
@@ -291,5 +199,97 @@ public static unsafe class Sys
         len = (int)bytesLength;
 
         return true;
+    }
+
+    [DllImport(Libraries.LibC, EntryPoint = "sysctlbyname", SetLastError = true)]
+    private static extern unsafe int SysctlByName(
+        [MarshalAs(UnmanagedType.LPStr)] 
+        string  name,
+        void*   oldp,
+        size_t* oldlenp,
+        void*   newp,
+        size_t  newlen);
+
+    public static unsafe bool SysctlByNameInt(string name, out int value)
+    {
+        value         = 0;
+        int    result = 0;
+        size_t len    = (nint)sizeof(int);
+
+        if (SysctlByName(name, &result, &len, null, nint.Zero) != 0) {
+            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
+            return false;
+        }
+
+        value = result;
+        return true;
+    }
+
+    public static unsafe bool SysctlByNameLong(string name, out long value)
+    {
+        value         = 0;
+        long   result = 0;
+        size_t len    = (nint)sizeof(long);
+
+        if (SysctlByName(
+            name, 
+            &result, 
+            &len, 
+            null, 
+            nint.Zero) != 0) {
+
+            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
+            return false;
+        }
+
+        value = result;
+        return true;
+    }
+
+    public static unsafe string? SysctlByNameString(string name)
+    {
+        size_t len = nint.Zero;
+        
+        if (SysctlByName(
+            name, 
+            null, 
+            &len, 
+            null, 
+            nint.Zero) != 0) {
+
+            Trace.WriteLine($"Failed SysctlByName() &len: {name}");
+            return null;
+        }
+
+        int byteLen = (int)len;
+
+        if (byteLen <= 0) {
+            return null;
+        }
+
+        using HGlobalScope scope = HGlobalScope.Allocate(byteLen);
+        byte* buffer = (byte*)scope.Value;
+
+        size_t outLen = (nint)byteLen;
+
+        if (SysctlByName(
+            name, 
+            buffer, 
+            &outLen, 
+            null, 
+            nint.Zero) != 0) {
+            
+            Trace.WriteLine($"Failed SysctlByName() buffer: {name}");
+            return null;
+        }
+
+        int strLen = (int)outLen;
+
+        // sysctl strings are null terminated; drop the terminator.
+        if (strLen > 0 && buffer[strLen - 1] == 0) {
+            strLen--;
+        }
+
+        return System.Text.Encoding.UTF8.GetString(buffer, strLen);
     }
 }

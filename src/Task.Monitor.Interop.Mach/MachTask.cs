@@ -32,7 +32,15 @@ public static class MachTask
     }
 
     [DllImport(Libraries.LibSystemDyLib)]
-    public static extern uint task_self_trap();
+    public static extern int mach_port_deallocate(uint task, uint name);
+
+    [DllImport(Libraries.LibSystemDyLib)]
+    public static extern unsafe int mach_vm_read_overwrite(
+        uint   targetTask, 
+        ulong  address, 
+        ulong  size, 
+        ulong  data, 
+        ulong* outSize);
 
     [DllImport(Libraries.LibSystemDyLib)]
     public static extern int task_for_pid(uint targetTport, int pid, out uint task);
@@ -45,13 +53,5 @@ public static class MachTask
         ref uint           taskInfoCount);
 
     [DllImport(Libraries.LibSystemDyLib)]
-    public static extern unsafe int mach_vm_read_overwrite(
-        uint   targetTask, 
-        ulong  address, 
-        ulong  size, 
-        ulong  data, 
-        ulong* outSize);
-
-    [DllImport(Libraries.LibSystemDyLib)]
-    public static extern int mach_port_deallocate(uint task, uint name);
+    public static extern uint task_self_trap();
 }

@@ -5,6 +5,24 @@ namespace Task.Monitor.System.Services.Tests.Process;
 public sealed class WindowsServiceRefreshPolicyTests
 {
     [Fact]
+    public void HasStalePid_Detects_A_Mapped_Service_That_Is_No_Longer_Running()
+    {
+        HashSet<int> live = [100, 200, 300];
+
+        Assert.False(WindowsServiceRefreshPolicy.HasStalePid([100, 300], live));
+
+        // 400 was hosting a service last time the map was built and is gone, so the map no longer
+        // describes the machine.
+        Assert.True(WindowsServiceRefreshPolicy.HasStalePid([100, 400], live));
+    }
+
+    [Fact]
+    public void HasStalePid_Is_False_For_An_Empty_Map()
+    {
+        Assert.False(WindowsServiceRefreshPolicy.HasStalePid([], new HashSet<int> { 1, 2 }));
+    }
+
+    [Fact]
     public void ShouldRefresh_Holds_Off_Until_The_Interval_Elapses()
     {
         int cycles = 0;
@@ -42,23 +60,5 @@ public sealed class WindowsServiceRefreshPolicyTests
         // on every cycle that follows it.
         Assert.Equal(0, cycles);
         Assert.False(WindowsServiceRefreshPolicy.ShouldRefresh(ref cycles, refreshRequested: false));
-    }
-
-    [Fact]
-    public void HasStalePid_Detects_A_Mapped_Service_That_Is_No_Longer_Running()
-    {
-        HashSet<int> live = [100, 200, 300];
-
-        Assert.False(WindowsServiceRefreshPolicy.HasStalePid([100, 300], live));
-
-        // 400 was hosting a service last time the map was built and is gone, so the map no longer
-        // describes the machine.
-        Assert.True(WindowsServiceRefreshPolicy.HasStalePid([100, 400], live));
-    }
-
-    [Fact]
-    public void HasStalePid_Is_False_For_An_Empty_Map()
-    {
-        Assert.False(WindowsServiceRefreshPolicy.HasStalePid([], new HashSet<int> { 1, 2 }));
     }
 }

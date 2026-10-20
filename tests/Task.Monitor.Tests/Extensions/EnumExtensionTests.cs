@@ -37,14 +37,6 @@ public sealed class EnumExtensionTests
     public class EnumExtensionsTests
     {
         [Fact]
-        public void GetProperty_WithValidAttribute_ReturnsProperty()
-        {
-            var enumValue = TestEnum.First;
-            string result = enumValue.GetProperty();
-            Assert.Equal("FirstValue", result);
-        }
-
-        [Fact]
         public void GetProperty_WithDifferentEnumValues_ReturnsCorrectProperties()
         {
             Assert.Equal("FirstValue", TestEnum.First.GetProperty());
@@ -53,11 +45,38 @@ public sealed class EnumExtensionTests
         }
 
         [Fact]
-        public void GetTitle_WithValidAttribute_ReturnsTitle()
+        public void GetProperty_WithOnlyTitleAttribute_ThrowsInvalidOperationException()
+        {
+            var enumValue = EnumWithPartialAttributes.OnlyHasTitle;
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetProperty());
+            
+            Assert.Contains("has no Attribute", exception.Message);
+        }
+
+        [Fact]
+        public void GetProperty_WithoutAttribute_ThrowsInvalidOperationException()
+        {
+            var enumValue = EnumWithoutAttributes.NoAttribute;
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetProperty());
+            
+            Assert.Contains("has no Attribute", exception.Message);
+        }
+
+        [Fact]
+        public void GetProperty_WithValidAttribute_ReturnsProperty()
         {
             var enumValue = TestEnum.First;
-            string result = enumValue.GetTitle();
-            Assert.Equal("First Value", result);
+            string result = enumValue.GetProperty();
+            Assert.Equal("FirstValue", result);
+        }
+
+        [Fact]
+        public void GetProperty_WithValidPartialAttribute_ReturnsProperty()
+        {
+            var enumValue = EnumWithPartialAttributes.OnlyHasProperty;
+            string result = enumValue.GetProperty();
+            
+            Assert.Equal("OnlyProperty", result);
         }
 
         [Fact]
@@ -69,10 +88,10 @@ public sealed class EnumExtensionTests
         }
 
         [Fact]
-        public void GetProperty_WithoutAttribute_ThrowsInvalidOperationException()
+        public void GetTitle_WithOnlyPropertyAttribute_ThrowsInvalidOperationException()
         {
-            var enumValue = EnumWithoutAttributes.NoAttribute;
-            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetProperty());
+            var enumValue = EnumWithPartialAttributes.OnlyHasProperty;
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetTitle());
             
             Assert.Contains("has no Attribute", exception.Message);
         }
@@ -87,30 +106,11 @@ public sealed class EnumExtensionTests
         }
 
         [Fact]
-        public void GetProperty_WithOnlyTitleAttribute_ThrowsInvalidOperationException()
+        public void GetTitle_WithValidAttribute_ReturnsTitle()
         {
-            var enumValue = EnumWithPartialAttributes.OnlyHasTitle;
-            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetProperty());
-            
-            Assert.Contains("has no Attribute", exception.Message);
-        }
-
-        [Fact]
-        public void GetTitle_WithOnlyPropertyAttribute_ThrowsInvalidOperationException()
-        {
-            var enumValue = EnumWithPartialAttributes.OnlyHasProperty;
-            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => enumValue.GetTitle());
-            
-            Assert.Contains("has no Attribute", exception.Message);
-        }
-
-        [Fact]
-        public void GetProperty_WithValidPartialAttribute_ReturnsProperty()
-        {
-            var enumValue = EnumWithPartialAttributes.OnlyHasProperty;
-            string result = enumValue.GetProperty();
-            
-            Assert.Equal("OnlyProperty", result);
+            var enumValue = TestEnum.First;
+            string result = enumValue.GetTitle();
+            Assert.Equal("First Value", result);
         }
 
         [Fact]

@@ -42,19 +42,6 @@ public partial class ProcessControl
             
         }
 
-        public int Pid { get; private set; }
-
-        private AppConfig AppConfig { get; }
-
-        private static string FormatPowerBucket(ProcessPowerBucket bucket) => bucket switch {
-            ProcessPowerBucket.VeryLow  => metre[(int)ProcessPowerBucket.VeryLow],
-            ProcessPowerBucket.Low      => metre[(int)ProcessPowerBucket.Low],
-            ProcessPowerBucket.Moderate => metre[(int)ProcessPowerBucket.Moderate],
-            ProcessPowerBucket.High     => metre[(int)ProcessPowerBucket.High],
-            ProcessPowerBucket.VeryHigh => metre[(int)ProcessPowerBucket.VeryHigh],
-                                      _ => metre[(int)ProcessPowerBucket.VeryLow]
-        };
-
         private void AddSubItems(ProcessEntry processEntry)
         {
             SubItems.AddRange(
@@ -77,6 +64,17 @@ public partial class ProcessControl
                 new ListViewSubItem(this, FormatPowerBucket(processEntry.PowerBucket)),
                 new ListViewSubItem(this, processEntry.CmdLine));
         }
+
+        private AppConfig AppConfig { get; }
+
+        private static string FormatPowerBucket(ProcessPowerBucket bucket) => bucket switch {
+            ProcessPowerBucket.VeryLow  => metre[(int)ProcessPowerBucket.VeryLow],
+            ProcessPowerBucket.Low      => metre[(int)ProcessPowerBucket.Low],
+            ProcessPowerBucket.Moderate => metre[(int)ProcessPowerBucket.Moderate],
+            ProcessPowerBucket.High     => metre[(int)ProcessPowerBucket.High],
+            ProcessPowerBucket.VeryHigh => metre[(int)ProcessPowerBucket.VeryHigh],
+                                      _ => metre[(int)ProcessPowerBucket.VeryLow]
+        };
 
         private void FormatSubItems(ProcessEntry processEntry, ulong totalPhysicalMemory)
         {
@@ -223,7 +221,9 @@ public partial class ProcessControl
             lastUsedMemory         = processEntry.UsedMemory;
             lastDiskBytesPerSecond = processEntry.DiskBytesPerSecond;
         }
-        
+
+        public int Pid { get; private set; }
+
         public void UpdateSubItems(ProcessEntry processEntry, ulong totalPhysicalMemory)
         {
             Debug.Assert(processEntry.Pid == Pid);

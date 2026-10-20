@@ -39,15 +39,6 @@ public partial class ProcessInfoControl
         
         public int ThreadId { get; private set; }
 
-        private void UpdateSubItem(ListViewSubItem subItem, string text, Func<bool> changeCondition)
-        {
-            subItem.Text = text;
-            
-            if (changeCondition.Invoke()) {
-                subItem.ForegroundColor = AppConfig.Theme.DeltaHighlightColour;
-            }
-        }
-        
         public void UpdateItem(ThreadInfo threadInfo)
         {
             Debug.Assert(threadInfo.ThreadId == ThreadId);
@@ -98,6 +89,15 @@ public partial class ProcessInfoControl
                 () => threadInfo.CpuTotalTime != lastCpuTotalTime);
             
             lastCpuTotalTime = threadInfo.CpuTotalTime;
+        }
+
+        private void UpdateSubItem(ListViewSubItem subItem, string text, Func<bool> changeCondition)
+        {
+            subItem.Text = text;
+            
+            if (changeCondition.Invoke()) {
+                subItem.ForegroundColor = AppConfig.Theme.DeltaHighlightColour;
+            }
         }
     }
 }

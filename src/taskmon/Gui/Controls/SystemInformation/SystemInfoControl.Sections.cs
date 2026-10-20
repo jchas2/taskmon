@@ -16,38 +16,6 @@ public sealed partial class SystemInfoControl
 {
     private const string NotAvailable = "N/A";
 
-    private void RebuildRows(SystemSnapshot s)
-    {
-        systemInfoView.Items.Clear();
-
-        switch (selectedSection) {
-            case Section.Cpu:     AddCpuSection(systemInfoView, s);     break;
-            case Section.Memory:  AddMemorySection(systemInfoView, s);  break;
-            case Section.Gpu:     AddGpuSection(systemInfoView, s);     break;
-            case Section.Disk:    AddDiskSection(systemInfoView, s);    break;
-            case Section.Network: AddNetworkSection(systemInfoView, s); break;
-        }
-    }
-
-    private void RebuildSummaryRows(SystemSnapshot s)
-    {
-        systemSummaryView.Items.Clear();
-        AddSystemSection(systemSummaryView, s);
-    }
-
-    private void AddSystemSection(ListView target, SystemSnapshot s)
-    {
-        AddRow(target, "Machine Name:",      Environment.MachineName.ToUpper());
-        AddRow(target, "Operating System:",  SystemInfo.GetOsVersion());
-        AddRow(target, "Version:",           Environment.OSVersion.Version.ToString());
-        AddRow(target);
-        AddRow(target, "CPU:",               s.Cpu?.Specs.CpuName ?? string.Empty);
-        AddRow(target, "Logical Processors", s.Cpu?.Specs.CpuCores.ToString() ?? string.Empty);
-        AddRow(target, "Base Speed:",        s.Cpu?.Specs.ToCpuFrequencyGhz() ?? string.Empty);
-        AddRow(target);
-        AddRow(target, "Memory:",            s.Memory?.Metrics.TotalPhysical.ToFormattedByteSize() ?? string.Empty);
-    }
-
     private void AddCpuSection(ListView target, SystemSnapshot s)
     {
         if (s.Cpu is not { } cpu) {
@@ -68,57 +36,6 @@ public sealed partial class SystemInfoControl
         AddRow(target, "L2 Cache:",           specs.ToCpuL2Cache());
         AddRow(target, "L3 Cache:",           specs.ToCpuL3Cache());
         AddRow(target, "Virtualization:",     specs.ToCpuVirtualization());
-    }
-
-    private void AddMemorySection(ListView target, SystemSnapshot s)
-    {
-        if (s.Memory is not { } memory) {
-            AddRow(target, string.Empty, GatheringText);
-            return;
-        }
-
-        List<MemoryDevice> devices = memory.Specs.Devices;
-        AddRow(target, "Installed Modules:", devices.Count.ToString());
-
-        foreach (MemoryDevice device in devices) {
-            AddHeaderRow(target, $"SLOT {device.Slot}  {OrNotAvailable(device.DeviceLocator)}", indent: 2);
-
-            AddRow(target, "Capacity:",         device.ToMemoryCapacity(),             indent: 4);
-            AddRow(target, "Type:",             OrNotAvailable(device.MemoryType),     indent: 4);
-            AddRow(target, "Form Factor:",      OrNotAvailable(device.FormFactor),     indent: 4);
-            AddRow(target, "Speed:",            $"{device.Speed} MT/s",                indent: 4);
-            AddRow(target, "Configured Speed:", $"{device.ConfiguredClockSpeed} MT/s", indent: 4);
-            AddRow(target, "Manufacturer:",     OrNotAvailable(device.Manufacturer),   indent: 4);
-            AddRow(target, "Part Number:",      OrNotAvailable(device.PartNumber),     indent: 4);
-            AddRow(target, "Serial Number:",    OrNotAvailable(device.SerialNumber),   indent: 4);
-            AddRow(target, "Bank Locator:",     OrNotAvailable(device.BankLocator),    indent: 4);
-        }
-    }
-
-    private void AddGpuSection(ListView target, SystemSnapshot s)
-    {
-        if (s.Gpu is not { } gpu) {
-            AddRow(target, string.Empty, GatheringText);
-            return;
-        }
-
-        List<GpuDevice> devices = gpu.Specs.Devices;
-        AddRow(target, "Installed Adapters:",     devices.Count.ToString());
-        AddRow(target, "Total Dedicated Memory:", gpu.Specs.TotalGpuMemory.ToFormattedByteSize());
-
-        foreach (GpuDevice device in devices) {
-            AddHeaderRow(target, $"GPU {device.Index}  {OrNotAvailable(device.Description)}", indent: 2);
-
-            AddRow(target, "Vendor:",                  OrNotAvailable(device.Vendor), indent: 4);
-            AddRow(target, "Description:",             OrNotAvailable(device.Description), indent: 4);
-            AddRow(target, "Adapter Type:",            OrNotAvailable(device.AdapterType), indent: 4);
-            AddRow(target, "Dedicated Video Memory:",  device.DedicatedVideoMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Dedicated System Memory:", device.DedicatedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Shared System Memory:",    device.SharedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Vendor / Device ID:",      $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}", indent: 4);
-            AddRow(target, "Driver Version:",          OrNotAvailable(device.DriverVersion), indent: 4);
-            AddRow(target, "Driver Date:",             OrNotAvailable(device.DriverDate), indent: 4);
-        }
     }
 
     private void AddDiskSection(ListView target, SystemSnapshot s)
@@ -159,6 +76,67 @@ public sealed partial class SystemInfoControl
         }
     }
 
+    private void AddGpuSection(ListView target, SystemSnapshot s)
+    {
+        if (s.Gpu is not { } gpu) {
+            AddRow(target, string.Empty, GatheringText);
+            return;
+        }
+
+        List<GpuDevice> devices = gpu.Specs.Devices;
+        AddRow(target, "Installed Adapters:",     devices.Count.ToString());
+        AddRow(target, "Total Dedicated Memory:", gpu.Specs.TotalGpuMemory.ToFormattedByteSize());
+
+        foreach (GpuDevice device in devices) {
+            AddHeaderRow(target, $"GPU {device.Index}  {OrNotAvailable(device.Description)}", indent: 2);
+
+            AddRow(target, "Vendor:",                  OrNotAvailable(device.Vendor), indent: 4);
+            AddRow(target, "Description:",             OrNotAvailable(device.Description), indent: 4);
+            AddRow(target, "Adapter Type:",            OrNotAvailable(device.AdapterType), indent: 4);
+            AddRow(target, "Dedicated Video Memory:",  device.DedicatedVideoMemory.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Dedicated System Memory:", device.DedicatedSystemMemory.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Shared System Memory:",    device.SharedSystemMemory.ToFormattedByteSize(), indent: 4);
+            AddRow(target, "Vendor / Device ID:",      $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}", indent: 4);
+            AddRow(target, "Driver Version:",          OrNotAvailable(device.DriverVersion), indent: 4);
+            AddRow(target, "Driver Date:",             OrNotAvailable(device.DriverDate), indent: 4);
+        }
+    }
+
+    private void AddHeaderRow(ListView target, string title, int indent = 0)
+    {
+        ListViewItem row = new(new[] {
+            new ListViewSubItem(null!, $"{new string(' ', indent)}{title}"),
+            new ListViewSubItem(null!, string.Empty)
+        });
+
+        target.Items.Add(row);
+    }
+
+    private void AddMemorySection(ListView target, SystemSnapshot s)
+    {
+        if (s.Memory is not { } memory) {
+            AddRow(target, string.Empty, GatheringText);
+            return;
+        }
+
+        List<MemoryDevice> devices = memory.Specs.Devices;
+        AddRow(target, "Installed Modules:", devices.Count.ToString());
+
+        foreach (MemoryDevice device in devices) {
+            AddHeaderRow(target, $"SLOT {device.Slot}  {OrNotAvailable(device.DeviceLocator)}", indent: 2);
+
+            AddRow(target, "Capacity:",         device.ToMemoryCapacity(),             indent: 4);
+            AddRow(target, "Type:",             OrNotAvailable(device.MemoryType),     indent: 4);
+            AddRow(target, "Form Factor:",      OrNotAvailable(device.FormFactor),     indent: 4);
+            AddRow(target, "Speed:",            $"{device.Speed} MT/s",                indent: 4);
+            AddRow(target, "Configured Speed:", $"{device.ConfiguredClockSpeed} MT/s", indent: 4);
+            AddRow(target, "Manufacturer:",     OrNotAvailable(device.Manufacturer),   indent: 4);
+            AddRow(target, "Part Number:",      OrNotAvailable(device.PartNumber),     indent: 4);
+            AddRow(target, "Serial Number:",    OrNotAvailable(device.SerialNumber),   indent: 4);
+            AddRow(target, "Bank Locator:",     OrNotAvailable(device.BankLocator),    indent: 4);
+        }
+    }
+
     private void AddNetworkSection(ListView target, SystemSnapshot s)
     {
         if (s.Network is not { } network) {
@@ -185,6 +163,38 @@ public sealed partial class SystemInfoControl
         }
     }
 
+    private void AddRow(
+        ListView target, 
+        string   label, 
+        string   value, 
+        int      indent = 0)
+    {
+        Color background = appConfig.Theme.Background;
+
+        ListViewItem row = new(new[] {
+            new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
+            new ListViewSubItem(null!, value,                               background, appConfig.Theme.PropertyValue)
+        });
+
+        target.Items.Add(row);
+    }
+
+    private void AddRow(ListView target) =>
+        target.Items.Add(new ListViewItem(new[] { string.Empty, string.Empty }));
+
+    private void AddSystemSection(ListView target, SystemSnapshot s)
+    {
+        AddRow(target, "Machine Name:",      Environment.MachineName.ToUpper());
+        AddRow(target, "Operating System:",  SystemInfo.GetOsVersion());
+        AddRow(target, "Version:",           Environment.OSVersion.Version.ToString());
+        AddRow(target);
+        AddRow(target, "CPU:",               s.Cpu?.Specs.CpuName ?? string.Empty);
+        AddRow(target, "Logical Processors", s.Cpu?.Specs.CpuCores.ToString() ?? string.Empty);
+        AddRow(target, "Base Speed:",        s.Cpu?.Specs.ToCpuFrequencyGhz() ?? string.Empty);
+        AddRow(target);
+        AddRow(target, "Memory:",            s.Memory?.Metrics.TotalPhysical.ToFormattedByteSize() ?? string.Empty);
+    }
+
     private void AddVolumeRow(ListView target, DiskVolume volume, int indent)
     {
         string name = volume.MountPoints.Length > 0
@@ -205,35 +215,25 @@ public sealed partial class SystemInfoControl
         AddRow(target, $"{name}:", detail.Length > 0 ? detail : NotAvailable, indent);
     }
 
-    private void AddHeaderRow(ListView target, string title, int indent = 0)
-    {
-        ListViewItem row = new(new[] {
-            new ListViewSubItem(null!, $"{new string(' ', indent)}{title}"),
-            new ListViewSubItem(null!, string.Empty)
-        });
-
-        target.Items.Add(row);
-    }
-
-    private void AddRow(
-        ListView target, 
-        string   label, 
-        string   value, 
-        int      indent = 0)
-    {
-        Color background = appConfig.Theme.Background;
-
-        ListViewItem row = new(new[] {
-            new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
-            new ListViewSubItem(null!, value,                               background, appConfig.Theme.PropertyValue)
-        });
-
-        target.Items.Add(row);
-    }
-
-    private void AddRow(ListView target) =>
-        target.Items.Add(new ListViewItem(new[] { string.Empty, string.Empty }));
-
     private static string OrNotAvailable(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
+
+    private void RebuildRows(SystemSnapshot s)
+    {
+        systemInfoView.Items.Clear();
+
+        switch (selectedSection) {
+            case Section.Cpu:     AddCpuSection(systemInfoView, s);     break;
+            case Section.Memory:  AddMemorySection(systemInfoView, s);  break;
+            case Section.Gpu:     AddGpuSection(systemInfoView, s);     break;
+            case Section.Disk:    AddDiskSection(systemInfoView, s);    break;
+            case Section.Network: AddNetworkSection(systemInfoView, s); break;
+        }
+    }
+
+    private void RebuildSummaryRows(SystemSnapshot s)
+    {
+        systemSummaryView.Items.Clear();
+        AddSystemSection(systemSummaryView, s);
+    }
 }

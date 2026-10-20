@@ -7,15 +7,6 @@ public sealed class StartupServiceTests
     private const int MinimumDelay = 500;
 
     [Fact]
-    public void Should_Run_StartupService()
-    {
-        StartupService service = new();
-        service.Start();
-        Thread.Sleep((int)(service.Delay * 1.5));
-        service.Stop();
-    }
-
-    [Fact]
     public void Should_Publish_Startup_Entries_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
@@ -41,5 +32,14 @@ public sealed class StartupServiceTests
         }
 
         Assert.Contains(latest.Services, health => health.Name == "Startup");
+    }
+
+    [Fact]
+    public void Should_Run_StartupService()
+    {
+        StartupService service = new();
+        service.Start();
+        Thread.Sleep((int)(service.Delay * 1.5));
+        service.Stop();
     }
 }

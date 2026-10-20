@@ -119,6 +119,22 @@ public partial class Screen : Control
         }
     }
 
+    private void OnInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        inputBox.KeyPressed(keyInfo, ref handled);
+
+        if (inputBox.Result == InputBoxResult.None) {
+            return;
+        }
+
+        Control.RedrawEnabled = true;
+        inputBox.Visible      = false;
+
+        onInputBoxResult?.Invoke(inputBox.Text, inputBox.Result);
+
+        Draw();
+    }
+
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         base.OnKeyPressed(keyInfo, ref handled);
@@ -150,22 +166,6 @@ public partial class Screen : Control
         base.OnLoad();
     }
 
-    private void OnInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        inputBox.KeyPressed(keyInfo, ref handled);
-
-        if (inputBox.Result == InputBoxResult.None) {
-            return;
-        }
-
-        Control.RedrawEnabled = true;
-        inputBox.Visible      = false;
-
-        onInputBoxResult?.Invoke(inputBox.Text, inputBox.Result);
-
-        Draw();
-    }
-    
     private void OnMessageBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         messageBox.KeyPressed(keyInfo, ref handled);

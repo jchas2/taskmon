@@ -31,13 +31,6 @@ public static class ServiceManagement
     private static readonly Lazy<nint> SystemDomain = new(() =>
         DyLib.ReadExportedPointer(Libraries.ServiceManagement, "kSMDomainSystemLaunchd"));
 
-    [DllImport(Libraries.ServiceManagement)]
-    private static extern nint SMJobCopyDictionary(nint domain, nint jobLabel);
-
-    public static bool IsLoadedInUserDomain(string label) => IsLoaded(UserDomain.Value, label);
-
-    public static bool IsLoadedInSystemDomain(string label) => IsLoaded(SystemDomain.Value, label);
-
     public static LegacyServiceStatus? GetLegacyStatus(string plistPath)
     {
         (nint smAppService, nint selector) = StatusForLegacyUrl.Value;
@@ -83,4 +76,11 @@ public static class ServiceManagement
             return false;
         }
     }
+
+    public static bool IsLoadedInSystemDomain(string label) => IsLoaded(SystemDomain.Value, label);
+
+    public static bool IsLoadedInUserDomain(string label) => IsLoaded(UserDomain.Value, label);
+
+    [DllImport(Libraries.ServiceManagement)]
+    private static extern nint SMJobCopyDictionary(nint domain, nint jobLabel);
 }

@@ -26,8 +26,6 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     
     private ulong? scopedInterfaceLuid;
 
-    public void SetScope(ulong? interfaceLuid) => scopedInterfaceLuid = interfaceLuid;
-
     public NetworkPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.appConfig = appConfig;
@@ -62,44 +60,6 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkSpecsListView.ColumnHeaders
             .Add(new ListViewColumnHeader(""))
             .Add(new ListViewColumnHeader(""));
-    }
-
-    public void Sample(SystemSnapshot snapshot)
-    {
-        lock (@lock) {
-            if (snapshot.Network == null) {
-                return;
-            }
-
-            networkInfo = snapshot.Network;
-
-            (NetworkDeviceMetrics? device, _, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            sendChart.AddData(device?.SendBytesPerSecond ?? networkInfo.Metrics.SendBytesPerSecond);
-            receiveChart.AddData(device?.ReceiveBytesPerSecond ?? networkInfo.Metrics.ReceiveBytesPerSecond);
-        }
-    }
-
-    private (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) ResolveScope()
-    {
-        if (scopedInterfaceLuid is not { } luid) {
-            return (null, null, true);
-        }
-
-        NetworkDeviceMetrics? device = networkInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
-        NetworkDevice? spec          = networkInfo.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
-
-        return (device, spec, device != null);
-    }
-
-    private void SetSpecsRow(int index, string label, string value)
-    {
-        networkSpecsListView.Items[index].SubItems[0].Text = label;
-        networkSpecsListView.Items[index].SubItems[1].Text = value;
     }
 
     protected override void OnDraw()
@@ -262,5 +222,45 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     {
         networkMetricsListView.Items.Clear();
         networkSpecsListView.Items.Clear();
+    }
+
+    private (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) ResolveScope()
+    {
+        if (scopedInterfaceLuid is not { } luid) {
+            return (null, null, true);
+        }
+
+        NetworkDeviceMetrics? device = networkInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
+        NetworkDevice? spec          = networkInfo.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == luid);
+
+        return (device, spec, device != null);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        lock (@lock) {
+            if (snapshot.Network == null) {
+                return;
+            }
+
+            networkInfo = snapshot.Network;
+
+            (NetworkDeviceMetrics? device, _, bool render) = ResolveScope();
+
+            if (!render) {
+                return;
+            }
+
+            sendChart.AddData(device?.SendBytesPerSecond ?? networkInfo.Metrics.SendBytesPerSecond);
+            receiveChart.AddData(device?.ReceiveBytesPerSecond ?? networkInfo.Metrics.ReceiveBytesPerSecond);
+        }
+    }
+
+    public void SetScope(ulong? interfaceLuid) => scopedInterfaceLuid = interfaceLuid;
+
+    private void SetSpecsRow(int index, string label, string value)
+    {
+        networkSpecsListView.Items[index].SubItems[0].Text = label;
+        networkSpecsListView.Items[index].SubItems[1].Text = value;
     }
 }

@@ -70,20 +70,6 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""))
             .Add(new ListViewColumnHeader(""));
     }
-    
-    public void Sample(SystemSnapshot snapshot)
-    {
-        lock (@lock) {
-            if (snapshot.Memory is not { } memory) {
-                return;
-            }
-
-            memoryInfo = memory;
-
-            memoryChart.AddData(memory.Metrics.ToMemoryRatio());
-            pageFileChart.AddData(memory.Metrics.ToPageFileMemoryRatio());
-        }
-    }
 
     protected override void OnDraw()
     {
@@ -279,5 +265,19 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         
         memoryMetricsListView.Items.Clear();
         memorySpecsListView.Items.Clear();
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        lock (@lock) {
+            if (snapshot.Memory is not { } memory) {
+                return;
+            }
+
+            memoryInfo = memory;
+
+            memoryChart.AddData(memory.Metrics.ToMemoryRatio());
+            pageFileChart.AddData(memory.Metrics.ToPageFileMemoryRatio());
+        }
     }
 }

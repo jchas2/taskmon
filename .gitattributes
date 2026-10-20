@@ -1,0 +1,10 @@
+# Store and check out text files with LF line endings on every platform, matching .editorconfig.
+* text=auto eol=lf
+
+# Binary assets: never normalise or diff as text.
+*.png  binary
+*.gif  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.icns binary

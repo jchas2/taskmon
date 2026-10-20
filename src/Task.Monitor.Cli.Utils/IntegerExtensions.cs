@@ -14,16 +14,7 @@ public static class IntegerExtensions
 
         return (integralPart << 32) | (fractionalBits & 0xFFFFFFFFL);
     }
-    
-    public static double UnpackToDouble(this long packed)
-    {
-        long integralPart     = packed >> 32;
-        uint fractionalBits   = (uint)(packed & 0xFFFFFFFF);
-        double fractionalPart = (double)fractionalBits / uint.MaxValue;
 
-        return integralPart + fractionalPart;
-    }
-    
     public static string ToFormattedByteSize(this int num) => ToFormattedByteSize((long)num);
 
     public static string ToFormattedByteSize(this long num) =>
@@ -77,4 +68,13 @@ public static class IntegerExtensions
 
     public static double ToMbpsFromBytes(this double num) =>
          Math.Ceiling(num / 1000000.0 * 10.0) / 10.0;
+
+    public static double UnpackToDouble(this long packed)
+    {
+        long integralPart     = packed >> 32;
+        uint fractionalBits   = (uint)(packed & 0xFFFFFFFF);
+        double fractionalPart = (double)fractionalBits / uint.MaxValue;
+
+        return integralPart + fractionalPart;
+    }
 }

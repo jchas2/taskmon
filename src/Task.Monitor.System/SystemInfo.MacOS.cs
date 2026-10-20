@@ -12,7 +12,13 @@ public static partial class SystemInfo
     private const uint kIORegistryIterateRecursively = 0x00000001;
     
     private const int NanosecondsTo100NanosecondsFactor = 100;
-    
+
+    // Persistent IOReport subscription for device-wide GPU performance-state residency.
+    private static IntPtr gpuReportSubscription = IntPtr.Zero;
+    private static IntPtr gpuReportChannels = IntPtr.Zero;
+    private static IntPtr gpuReportPrevSample = IntPtr.Zero;
+    private static bool gpuReportInitFailed = false;
+
     internal static unsafe TimeSpan CalculateSystemTime(ulong systemTime)
     {
         MachTime.mach_timebase_info_data_t timeBase = default;
@@ -28,28 +34,84 @@ public static partial class SystemInfo
         return new TimeSpan(
             (Convert.ToInt64(systemTime / NanosecondsTo100NanosecondsFactor * timeBase.numer / timeBase.denom)));
     }
-    
-    private static bool GetCpuHighCoreUsageInternal(double processUsagePercent) =>
-        processUsagePercent >= 100.0;
 
-    private static unsafe bool GetCpuInfoInternal(ref SystemStatistics systemStatistics)
+    private static bool EnsureGpuReportSubscription()
     {
-        systemStatistics.CpuCores = (ulong)Environment.ProcessorCount;
-        systemStatistics.CpuFrequency = 0;
-        systemStatistics.CpuName = string.Empty;
-
-        string? brand = Sys.SysctlByNameString("machdep.cpu.brand_string");
-
-        if (string.IsNullOrEmpty(brand)) {
+        if (gpuReportInitFailed) {
             return false;
         }
 
-        systemStatistics.CpuName = brand;
+        if (gpuReportSubscription != IntPtr.Zero) {
+            return true;
+        }
 
-        GetPerfLevelCores(ref systemStatistics);
-        GetCpuFrequencyInternal(ref systemStatistics);
+        IntPtr group = CoreFoundation.CFStringCreate("GPU Stats");
+        IntPtr channels = IOReport.IOReportCopyChannelsInGroup(group, IntPtr.Zero, 0, 0, 0);
+        CoreFoundation.CFRelease(group);
 
+        if (channels == IntPtr.Zero) {
+            gpuReportInitFailed = true;
+            return false;
+        }
+
+        long count = CoreFoundation.CFDictionaryGetCount(channels);
+        IntPtr mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(IntPtr.Zero, count, channels);
+        CoreFoundation.CFRelease(channels);
+
+        if (mutableChannels == IntPtr.Zero) {
+            gpuReportInitFailed = true;
+            return false;
+        }
+
+        IntPtr subscription = IOReport.IOReportCreateSubscription(
+            IntPtr.Zero,
+            mutableChannels,
+            out _,
+            0,
+            IntPtr.Zero);
+
+        if (subscription == IntPtr.Zero) {
+            CoreFoundation.CFRelease(mutableChannels);
+            gpuReportInitFailed = true;
+            return false;
+        }
+
+        gpuReportChannels = mutableChannels;
+        gpuReportSubscription = subscription;
         return true;
+    }
+
+    private static uint FindPmgrEntry()
+    {
+        IntPtr matching = IOKit.IOServiceMatching("AppleARMIODevice");
+
+        if (IOKit.IOServiceGetMatchingServices(0, matching, out IntPtr iterator) != 0) {
+            return 0;
+        }
+
+        uint found = 0;
+        byte[] name = new byte[128];
+        uint entry;
+
+        while ((entry = IOKit.IOIteratorNext(iterator)) != 0) {
+            if (IOKit.IORegistryEntryGetName(entry, name) == 0) {
+                int len = Array.IndexOf(name, (byte)0);
+                
+                len = len < 0 
+                    ? name.Length 
+                    : len;
+
+                if (Encoding.ASCII.GetString(name, 0, len) == "pmgr") {
+                    found = entry;
+                    break;
+                }
+            }
+
+            IOKit.IOObjectRelease(entry);
+        }
+
+        IOKit.IOObjectRelease(iterator);
+        return found;
     }
 
     private static void GetCpuFrequencyInternal(ref SystemStatistics systemStatistics)
@@ -96,117 +158,27 @@ public static partial class SystemInfo
         IOKit.IOObjectRelease(pmgr);
     }
 
-    private static uint FindPmgrEntry()
+    private static bool GetCpuHighCoreUsageInternal(double processUsagePercent) =>
+        processUsagePercent >= 100.0;
+
+    private static unsafe bool GetCpuInfoInternal(ref SystemStatistics systemStatistics)
     {
-        IntPtr matching = IOKit.IOServiceMatching("AppleARMIODevice");
+        systemStatistics.CpuCores = (ulong)Environment.ProcessorCount;
+        systemStatistics.CpuFrequency = 0;
+        systemStatistics.CpuName = string.Empty;
 
-        if (IOKit.IOServiceGetMatchingServices(0, matching, out IntPtr iterator) != 0) {
-            return 0;
+        string? brand = Sys.SysctlByNameString("machdep.cpu.brand_string");
+
+        if (string.IsNullOrEmpty(brand)) {
+            return false;
         }
 
-        uint found = 0;
-        byte[] name = new byte[128];
-        uint entry;
+        systemStatistics.CpuName = brand;
 
-        while ((entry = IOKit.IOIteratorNext(iterator)) != 0) {
-            if (IOKit.IORegistryEntryGetName(entry, name) == 0) {
-                int len = Array.IndexOf(name, (byte)0);
-                
-                len = len < 0 
-                    ? name.Length 
-                    : len;
+        GetPerfLevelCores(ref systemStatistics);
+        GetCpuFrequencyInternal(ref systemStatistics);
 
-                if (Encoding.ASCII.GetString(name, 0, len) == "pmgr") {
-                    found = entry;
-                    break;
-                }
-            }
-
-            IOKit.IOObjectRelease(entry);
-        }
-
-        IOKit.IOObjectRelease(iterator);
-        return found;
-    }
-
-    private static double MaxDvfsFrequencyMhz(Dictionary<string, nint> props, string key)
-    {
-        // A DVFS table is an array of 8-byte entries whose first uint32 is the frequency. M1-M4
-        // encode it in Hz, M5+ in kHz; the largest entry is the cluster's max clock (in MHz).
-        if (!props.TryGetValue(key, out nint data) || data == IntPtr.Zero) {
-            return 0;
-        }
-
-        long length = CoreFoundation.CFDataGetLength(data);
-        IntPtr bytes = CoreFoundation.CFDataGetBytePtr(data);
-
-        if (length < 8 || bytes == IntPtr.Zero) {
-            return 0;
-        }
-
-        double maxMhz = 0;
-
-        for (long offset = 0; offset + 8 <= length; offset += 8) {
-            uint freq = unchecked((uint)Marshal.ReadInt32(bytes, (int)offset));
-            double mhz;
-
-            if (freq >= 100_000_000) {
-                mhz = freq / 1_000_000.0;   // Hz -> MHz (M1-M4)
-            }
-            else if (freq >= 100_000) {
-                mhz = freq / 1_000.0;       // kHz -> MHz (M5+)
-            }
-            else {
-                continue;
-            }
-
-            if (mhz > maxMhz) {
-                maxMhz = mhz;
-            }
-        }
-
-        return maxMhz;
-    }
-
-    private static void GetPerfLevelCores(ref SystemStatistics systemStatistics)
-    {
-        systemStatistics.CpuPerformanceCores = 0;
-        systemStatistics.CpuEfficiencyCores = 0;
-        systemStatistics.CpuSuperCores = 0;
-
-        if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
-            GetPerfLevelCoresLegacy(ref systemStatistics);
-            return;
-        }
-
-        for (int i = 0; i < nperflevels; i++) {
-            string? name = Sys.SysctlByNameString($"hw.perflevel{i}.name");
-
-            if (string.IsNullOrEmpty(name) || !Sys.SysctlByNameInt($"hw.perflevel{i}.logicalcpu", out int count)) {
-                continue;
-            }
-
-            if (name.StartsWith("Super", StringComparison.Ordinal)) {
-                systemStatistics.CpuSuperCores += (ulong)count;
-            }
-            else if (name.StartsWith("Efficiency", StringComparison.Ordinal)) {
-                systemStatistics.CpuEfficiencyCores += (ulong)count;
-            }
-            else {
-                systemStatistics.CpuPerformanceCores += (ulong)count;
-            }
-        }
-    }
-
-    private static void GetPerfLevelCoresLegacy(ref SystemStatistics systemStatistics)
-    {
-        if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
-            systemStatistics.CpuPerformanceCores = (ulong)pCount;
-        }
-
-        if (Sys.SysctlByNameInt("hw.perflevel1.logicalcpu", out int eCount)) {
-            systemStatistics.CpuEfficiencyCores = (ulong)eCount;
-        }
+        return true;
     }
 
     private static bool GetCpuTimesInternal(ref SystemTimes systemTimes)
@@ -341,58 +313,6 @@ public static partial class SystemInfo
         return true;
     }
 
-    // Persistent IOReport subscription for device-wide GPU performance-state residency.
-    private static IntPtr gpuReportSubscription = IntPtr.Zero;
-    private static IntPtr gpuReportChannels = IntPtr.Zero;
-    private static IntPtr gpuReportPrevSample = IntPtr.Zero;
-    private static bool gpuReportInitFailed = false;
-
-    private static bool EnsureGpuReportSubscription()
-    {
-        if (gpuReportInitFailed) {
-            return false;
-        }
-
-        if (gpuReportSubscription != IntPtr.Zero) {
-            return true;
-        }
-
-        IntPtr group = CoreFoundation.CFStringCreate("GPU Stats");
-        IntPtr channels = IOReport.IOReportCopyChannelsInGroup(group, IntPtr.Zero, 0, 0, 0);
-        CoreFoundation.CFRelease(group);
-
-        if (channels == IntPtr.Zero) {
-            gpuReportInitFailed = true;
-            return false;
-        }
-
-        long count = CoreFoundation.CFDictionaryGetCount(channels);
-        IntPtr mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(IntPtr.Zero, count, channels);
-        CoreFoundation.CFRelease(channels);
-
-        if (mutableChannels == IntPtr.Zero) {
-            gpuReportInitFailed = true;
-            return false;
-        }
-
-        IntPtr subscription = IOReport.IOReportCreateSubscription(
-            IntPtr.Zero,
-            mutableChannels,
-            out _,
-            0,
-            IntPtr.Zero);
-
-        if (subscription == IntPtr.Zero) {
-            CoreFoundation.CFRelease(mutableChannels);
-            gpuReportInitFailed = true;
-            return false;
-        }
-
-        gpuReportChannels = mutableChannels;
-        gpuReportSubscription = subscription;
-        return true;
-    }
-
     private static bool GetGpuUsageInternal(ref SystemStatistics systemStatistics)
     {
         systemStatistics.GpuPercentTime = 0.0;
@@ -423,56 +343,6 @@ public static partial class SystemInfo
 
         gpuReportPrevSample = sample;
         return true;
-    }
-
-    private static bool TryGetGpuResidency(IntPtr deltaSample, out double activeFraction)
-    {
-        activeFraction = 0.0;
-        Dictionary<string, nint> top = CoreFoundation.ToDictionary(deltaSample);
-
-        if (!top.TryGetValue("IOReportChannels", out var channelsArray)) {
-            return false;
-        }
-
-        long channelCount = CoreFoundation.CFArrayGetCount(channelsArray);
-
-        for (long i = 0; i < channelCount; i++) {
-            IntPtr item = CoreFoundation.CFArrayGetValueAtIndex(channelsArray, i);
-
-            if (CoreFoundation.GetString(IOReport.IOReportChannelGetGroup(item)) != "GPU Stats") {
-                continue;
-            }
-
-            if (CoreFoundation.GetString(IOReport.IOReportChannelGetSubGroup(item)) != "GPU Performance States") {
-                continue;
-            }
-
-            if (CoreFoundation.GetString(IOReport.IOReportChannelGetChannelName(item)) != "GPUPH") {
-                continue;
-            }
-
-            int stateCount = IOReport.IOReportStateGetCount(item);
-            long totalTime = 0;
-            long activeTime = 0;
-
-            for (int s = 0; s < stateCount; s++) {
-                long residency = IOReport.IOReportStateGetResidency(item, s);
-                totalTime += residency;
-
-                string? stateName = CoreFoundation.GetString(IOReport.IOReportStateGetNameForIndex(item, s));
-
-                if (stateName != "OFF" && stateName != "IDLE" && stateName != "DOWN") {
-                    activeTime += residency;
-                }
-            }
-
-            if (totalTime > 0) {
-                activeFraction = (double)activeTime / (double)totalTime;
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static unsafe bool GetNetworkStatsInternal(ref NetworkStatistics networkStatistics)
@@ -541,7 +411,31 @@ public static partial class SystemInfo
         Sys.FreeMemory(buffer);
         return true;
     }
-    
+
+    private static string GetOsVersionInternal()
+    {
+        string? version = Sys.SysctlByNameString("kern.osproductversion");
+
+        if (string.IsNullOrEmpty(version)) {
+            return Environment.OSVersion.VersionString;
+        }
+
+        int dot = version.IndexOf('.');
+        _ = int.TryParse(dot < 0 ? version : version.Substring(0, dot), out var major);
+
+        string name = major switch {
+            26 => "Tahoe",
+            15 => "Sequoia",
+            14 => "Sonoma",
+            13 => "Ventura",
+            12 => "Monterey",
+            11 => "Big Sur",
+            _  => "macOS"
+        };
+
+        return $"{name} {version}";
+    }
+
     private static unsafe int GetPageSize()
     {
         int pageSize = 0;
@@ -567,7 +461,48 @@ public static partial class SystemInfo
 
         return pageSize;
     }
-    
+
+    private static void GetPerfLevelCores(ref SystemStatistics systemStatistics)
+    {
+        systemStatistics.CpuPerformanceCores = 0;
+        systemStatistics.CpuEfficiencyCores = 0;
+        systemStatistics.CpuSuperCores = 0;
+
+        if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
+            GetPerfLevelCoresLegacy(ref systemStatistics);
+            return;
+        }
+
+        for (int i = 0; i < nperflevels; i++) {
+            string? name = Sys.SysctlByNameString($"hw.perflevel{i}.name");
+
+            if (string.IsNullOrEmpty(name) || !Sys.SysctlByNameInt($"hw.perflevel{i}.logicalcpu", out int count)) {
+                continue;
+            }
+
+            if (name.StartsWith("Super", StringComparison.Ordinal)) {
+                systemStatistics.CpuSuperCores += (ulong)count;
+            }
+            else if (name.StartsWith("Efficiency", StringComparison.Ordinal)) {
+                systemStatistics.CpuEfficiencyCores += (ulong)count;
+            }
+            else {
+                systemStatistics.CpuPerformanceCores += (ulong)count;
+            }
+        }
+    }
+
+    private static void GetPerfLevelCoresLegacy(ref SystemStatistics systemStatistics)
+    {
+        if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
+            systemStatistics.CpuPerformanceCores = (ulong)pCount;
+        }
+
+        if (Sys.SysctlByNameInt("hw.perflevel1.logicalcpu", out int eCount)) {
+            systemStatistics.CpuEfficiencyCores = (ulong)eCount;
+        }
+    }
+
     private static unsafe bool GetSystemMemoryInternal(ref SystemStatistics systemStatistics)
     {
         systemStatistics.AvailablePageFile = 0;
@@ -640,31 +575,96 @@ public static partial class SystemInfo
         return true;
     }
 
-    private static string GetOsVersionInternal()
-    {
-        string? version = Sys.SysctlByNameString("kern.osproductversion");
-
-        if (string.IsNullOrEmpty(version)) {
-            return Environment.OSVersion.VersionString;
-        }
-
-        int dot = version.IndexOf('.');
-        _ = int.TryParse(dot < 0 ? version : version.Substring(0, dot), out var major);
-
-        string name = major switch {
-            26 => "Tahoe",
-            15 => "Sequoia",
-            14 => "Sonoma",
-            13 => "Ventura",
-            12 => "Monterey",
-            11 => "Big Sur",
-            _  => "macOS"
-        };
-
-        return $"{name} {version}";
-    }
-
     private static bool IsRunningAsRootInternal() =>
         UniStd.geteuid() == 0;
+
+    private static double MaxDvfsFrequencyMhz(Dictionary<string, nint> props, string key)
+    {
+        // A DVFS table is an array of 8-byte entries whose first uint32 is the frequency. M1-M4
+        // encode it in Hz, M5+ in kHz; the largest entry is the cluster's max clock (in MHz).
+        if (!props.TryGetValue(key, out nint data) || data == IntPtr.Zero) {
+            return 0;
+        }
+
+        long length = CoreFoundation.CFDataGetLength(data);
+        IntPtr bytes = CoreFoundation.CFDataGetBytePtr(data);
+
+        if (length < 8 || bytes == IntPtr.Zero) {
+            return 0;
+        }
+
+        double maxMhz = 0;
+
+        for (long offset = 0; offset + 8 <= length; offset += 8) {
+            uint freq = unchecked((uint)Marshal.ReadInt32(bytes, (int)offset));
+            double mhz;
+
+            if (freq >= 100_000_000) {
+                mhz = freq / 1_000_000.0;   // Hz -> MHz (M1-M4)
+            }
+            else if (freq >= 100_000) {
+                mhz = freq / 1_000.0;       // kHz -> MHz (M5+)
+            }
+            else {
+                continue;
+            }
+
+            if (mhz > maxMhz) {
+                maxMhz = mhz;
+            }
+        }
+
+        return maxMhz;
+    }
+
+    private static bool TryGetGpuResidency(IntPtr deltaSample, out double activeFraction)
+    {
+        activeFraction = 0.0;
+        Dictionary<string, nint> top = CoreFoundation.ToDictionary(deltaSample);
+
+        if (!top.TryGetValue("IOReportChannels", out var channelsArray)) {
+            return false;
+        }
+
+        long channelCount = CoreFoundation.CFArrayGetCount(channelsArray);
+
+        for (long i = 0; i < channelCount; i++) {
+            IntPtr item = CoreFoundation.CFArrayGetValueAtIndex(channelsArray, i);
+
+            if (CoreFoundation.GetString(IOReport.IOReportChannelGetGroup(item)) != "GPU Stats") {
+                continue;
+            }
+
+            if (CoreFoundation.GetString(IOReport.IOReportChannelGetSubGroup(item)) != "GPU Performance States") {
+                continue;
+            }
+
+            if (CoreFoundation.GetString(IOReport.IOReportChannelGetChannelName(item)) != "GPUPH") {
+                continue;
+            }
+
+            int stateCount = IOReport.IOReportStateGetCount(item);
+            long totalTime = 0;
+            long activeTime = 0;
+
+            for (int s = 0; s < stateCount; s++) {
+                long residency = IOReport.IOReportStateGetResidency(item, s);
+                totalTime += residency;
+
+                string? stateName = CoreFoundation.GetString(IOReport.IOReportStateGetNameForIndex(item, s));
+
+                if (stateName != "OFF" && stateName != "IDLE" && stateName != "DOWN") {
+                    activeTime += residency;
+                }
+            }
+
+            if (totalTime > 0) {
+                activeFraction = (double)activeTime / (double)totalTime;
+                return true;
+            }
+        }
+
+        return false;
+    }
 #endif
 }

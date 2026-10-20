@@ -16,14 +16,85 @@ public sealed class SummaryControlLayout
 
     public SummaryControlLayout(ConfigSection configSection) => layoutSection = configSection;
 
-    public string Name => layoutSection?.Name ?? string.Empty;
+    public static SummaryControlLayout FromTree(string name, SummaryLayoutTree tree)
+    {
+        ConfigSection section = new(name);
+
+        section.Add(Constants.Keys.LayoutType,   LayoutTypeTree);
+        section.Add(Constants.Keys.SummaryRoot,  tree.RootId.ToString(CultureInfo.InvariantCulture));
+        section.Add(Constants.Keys.SummaryNodes, string.Join(FieldSeparator, tree.Nodes.Keys));
+
+        foreach ((int id, SummaryLayoutNode node) in tree.Nodes) {
+            section.Add($"{Constants.Keys.SummaryNodePrefix}{id}", SerializeNode(node));
+        }
+
+        return new SummaryControlLayout(section);
+    }
 
     public bool IsBuiltIn { get; init; }
 
-    public void Update(ConfigSection configSection) => layoutSection = configSection;
-
     public bool IsTreeLayout =>
         layoutSection?.GetString(Constants.Keys.LayoutType, string.Empty) == LayoutTypeTree;
+
+    public string Name => layoutSection?.Name ?? string.Empty;
+
+    private static Statistics? ParseColumns(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) {
+            return null;
+        }
+
+        Statistics result = 0;
+
+        foreach (string part in raw.Split(ColumnSeparator, StringSplitOptions.RemoveEmptyEntries)) {
+            if (Enum.TryParse(part, ignoreCase: true, out Statistics flag)) {
+                result |= flag;
+            }
+        }
+
+        return result == 0 ? null : result;
+    }
+
+    private static SummaryLayoutNode? ParseNode(int id, string raw)
+    {
+        string[] parts = raw.Split(FieldSeparator);
+
+        if (parts.Length >= 5 && parts[0] == "split") {
+            return new SummaryLayoutNode {
+                Id          = id,
+                IsSplit     = true,
+                Orientation = Enum.TryParse(parts[1], ignoreCase: true, out Orientation orientation) ? orientation : Orientation.Row,
+                Ratio       = float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float ratio) ? ratio : 0.5f,
+                FirstId     = int.TryParse(parts[3], out int firstId) ? firstId : 0,
+                SecondId    = int.TryParse(parts[4], out int secondId) ? secondId : 0,
+            };
+        }
+
+        if (parts.Length >= 2 && parts[0] == "pane") {
+            return new SummaryLayoutNode {
+                Id             = id,
+                ControlType    = Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
+                ProcessColumns = parts.Length >= 3 ? ParseColumns(parts[2]) : null,
+            };
+        }
+
+        return null;
+    }
+
+    private static string SerializeColumns(Statistics columns) =>
+        string.Join(ColumnSeparator, Enum.GetValues<Statistics>()
+            .Where(flag => flag != 0 && columns.HasFlag(flag))
+            .Select(flag => flag.ToString()));
+
+    private static string SerializeNode(SummaryLayoutNode node) =>
+        node.IsSplit
+            ? string.Join(FieldSeparator, "split", node.Orientation.ToString(),
+                node.Ratio.ToString(CultureInfo.InvariantCulture), node.FirstId, node.SecondId)
+            : node.ProcessColumns is { } columns
+                ? string.Join(FieldSeparator, "pane", node.ControlType.ToString(), SerializeColumns(columns))
+                : string.Join(FieldSeparator, "pane", node.ControlType.ToString());
+
+    public override string ToString() => layoutSection?.ToString() ?? string.Empty;
 
     public SummaryLayoutTree ToTree()
     {
@@ -58,76 +129,5 @@ public sealed class SummaryControlLayout
         return SummaryLayoutTree.FromNodes(nodes, rootId);
     }
 
-    private static SummaryLayoutNode? ParseNode(int id, string raw)
-    {
-        string[] parts = raw.Split(FieldSeparator);
-
-        if (parts.Length >= 5 && parts[0] == "split") {
-            return new SummaryLayoutNode {
-                Id          = id,
-                IsSplit     = true,
-                Orientation = Enum.TryParse(parts[1], ignoreCase: true, out Orientation orientation) ? orientation : Orientation.Row,
-                Ratio       = float.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float ratio) ? ratio : 0.5f,
-                FirstId     = int.TryParse(parts[3], out int firstId) ? firstId : 0,
-                SecondId    = int.TryParse(parts[4], out int secondId) ? secondId : 0,
-            };
-        }
-
-        if (parts.Length >= 2 && parts[0] == "pane") {
-            return new SummaryLayoutNode {
-                Id             = id,
-                ControlType    = Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
-                ProcessColumns = parts.Length >= 3 ? ParseColumns(parts[2]) : null,
-            };
-        }
-
-        return null;
-    }
-
-    private static Statistics? ParseColumns(string raw)
-    {
-        if (string.IsNullOrEmpty(raw)) {
-            return null;
-        }
-
-        Statistics result = 0;
-
-        foreach (string part in raw.Split(ColumnSeparator, StringSplitOptions.RemoveEmptyEntries)) {
-            if (Enum.TryParse(part, ignoreCase: true, out Statistics flag)) {
-                result |= flag;
-            }
-        }
-
-        return result == 0 ? null : result;
-    }
-
-    public static SummaryControlLayout FromTree(string name, SummaryLayoutTree tree)
-    {
-        ConfigSection section = new(name);
-
-        section.Add(Constants.Keys.LayoutType,   LayoutTypeTree);
-        section.Add(Constants.Keys.SummaryRoot,  tree.RootId.ToString(CultureInfo.InvariantCulture));
-        section.Add(Constants.Keys.SummaryNodes, string.Join(FieldSeparator, tree.Nodes.Keys));
-
-        foreach ((int id, SummaryLayoutNode node) in tree.Nodes) {
-            section.Add($"{Constants.Keys.SummaryNodePrefix}{id}", SerializeNode(node));
-        }
-
-        return new SummaryControlLayout(section);
-    }
-
-    private static string SerializeNode(SummaryLayoutNode node) =>
-        node.IsSplit
-            ? string.Join(FieldSeparator, "split", node.Orientation.ToString(),
-                node.Ratio.ToString(CultureInfo.InvariantCulture), node.FirstId, node.SecondId)
-            : node.ProcessColumns is { } columns
-                ? string.Join(FieldSeparator, "pane", node.ControlType.ToString(), SerializeColumns(columns))
-                : string.Join(FieldSeparator, "pane", node.ControlType.ToString());
-
-    private static string SerializeColumns(Statistics columns) =>
-        string.Join(ColumnSeparator, Enum.GetValues<Statistics>()
-            .Where(flag => flag != 0 && columns.HasFlag(flag))
-            .Select(flag => flag.ToString()));
-
-    public override string ToString() => layoutSection?.ToString() ?? string.Empty;
+    public void Update(ConfigSection configSection) => layoutSection = configSection;
 }

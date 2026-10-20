@@ -20,29 +20,6 @@ public sealed class MachHost
     // Const to set the host_statistics64 flavor arg.
     public const int HOST_VM_INFO64 = 4;
 
-    [DllImport(Libraries.LibSystemDyLib, SetLastError = true)]
-    public static extern nint host_self();
-
-    [DllImport(Libraries.LibSystemDyLib, SetLastError = true)]
-    public static extern nint mach_host_self();
-    
-    [DllImport(Libraries.LibSystemDyLib)]
-    public static extern int host_processor_info(
-        nint     host,
-        int      flavor,
-        out uint processorCount,
-        out nint processorInfo,
-        out uint processorInfoCount);
-
-    [DllImport(Libraries.LibSystemDyLib)]
-    public static extern int vm_deallocate(
-        nint task,
-        nint address,
-        nint size);
-
-    [DllImport(Libraries.LibSystemDyLib)]
-    public static extern nint mach_task_self();
-    
     [StructLayout(LayoutKind.Sequential)]
     public struct HostCpuLoadInfo
     {
@@ -80,9 +57,32 @@ public sealed class MachHost
     }
 
     [DllImport(Libraries.LibSystemDyLib)]
+    public static extern int host_processor_info(
+        nint     host,
+        int      flavor,
+        out uint processorCount,
+        out nint processorInfo,
+        out uint processorInfoCount);
+
+    [DllImport(Libraries.LibSystemDyLib, SetLastError = true)]
+    public static extern nint host_self();
+
+    [DllImport(Libraries.LibSystemDyLib)]
     public static extern int host_statistics64(
         nint    host, 
         int     flavor, 
         nint    hostInfo, 
         ref int hostInfoCount);
+
+    [DllImport(Libraries.LibSystemDyLib, SetLastError = true)]
+    public static extern nint mach_host_self();
+
+    [DllImport(Libraries.LibSystemDyLib)]
+    public static extern nint mach_task_self();
+
+    [DllImport(Libraries.LibSystemDyLib)]
+    public static extern int vm_deallocate(
+        nint task,
+        nint address,
+        nint size);
 }

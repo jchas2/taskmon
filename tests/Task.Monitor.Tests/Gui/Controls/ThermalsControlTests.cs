@@ -20,19 +20,47 @@ public sealed class ThermalsControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static SystemSnapshot SnapshotWith(params ThermalSensor[] sensors) =>
-        new() { Thermal = new ThermalInfo { Metrics = new ThermalMetrics { Sensors = [.. sensors] } } };
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
 
-    private static ThermalSensor Sensor(
-        ThermalComponent component, string id, string name, double celsius,
-        ThermalSource source = ThermalSource.NvApi) =>
-        new() {
-            Component = component,
-            ComponentId = id,
-            SensorName = name,
-            Celsius = celsius,
-            Source = source
-        };
+    [Fact]
+    public void Collapses_A_Multi_Sensor_Drive_To_A_Single_Chart()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        // A drive that reports a composite plus a hotter controller sensor is still one "Disk 0".
+        ctrl.Sample(SnapshotWith(
+            Sensor(ThermalComponent.Disk, "0", "Composite", 35, ThermalSource.NvmeHealthLog),
+            Sensor(ThermalComponent.Disk, "0", "Sensor 2", 63, ThermalSource.NvmeHealthLog)));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        // One "Disk 0" chart (one title in a single frame), plotting the composite - not the
+        // controller sensor.
+        int first = output.IndexOf("Disk 0", StringComparison.Ordinal);
+        Assert.True(first >= 0);
+        Assert.Equal(-1, output.IndexOf("Disk 0", first + 1, StringComparison.Ordinal));
+        Assert.Contains("35°C", output);
+        Assert.DoesNotContain("63°C", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        ThermalsControl ctrl = new(
+            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
+
+        Assert.NotNull(ctrl);
+    }
 
     private ThermalsControl CreateControl(int width = 120, int height = 40)
     {
@@ -47,36 +75,6 @@ public sealed class ThermalsControlTests
         ctrl.Load();
         ctrl.Resize();
         return ctrl;
-    }
-
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
-    [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        ThermalsControl ctrl = new(
-            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
-
-        Assert.NotNull(ctrl);
-    }
-
-    [Fact]
-    public void Draws_The_Empty_State_When_There_Are_No_Sensors()
-    {
-        ThermalsControl ctrl = CreateControl();
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        Assert.Contains("No thermal sensors detected", output);
-        Assert.Contains("kernel helper driver", output);
-
-        ctrl.Unload();
     }
 
     [Fact]
@@ -105,27 +103,28 @@ public sealed class ThermalsControlTests
     }
 
     [Fact]
-    public void Collapses_A_Multi_Sensor_Drive_To_A_Single_Chart()
+    public void Draws_The_Empty_State_When_There_Are_No_Sensors()
     {
         ThermalsControl ctrl = CreateControl();
-
-        // A drive that reports a composite plus a hotter controller sensor is still one "Disk 0".
-        ctrl.Sample(SnapshotWith(
-            Sensor(ThermalComponent.Disk, "0", "Composite", 35, ThermalSource.NvmeHealthLog),
-            Sensor(ThermalComponent.Disk, "0", "Sensor 2", 63, ThermalSource.NvmeHealthLog)));
-
-        runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
 
-        // One "Disk 0" chart (one title in a single frame), plotting the composite - not the
-        // controller sensor.
-        int first = output.IndexOf("Disk 0", StringComparison.Ordinal);
-        Assert.True(first >= 0);
-        Assert.Equal(-1, output.IndexOf("Disk 0", first + 1, StringComparison.Ordinal));
-        Assert.Contains("35°C", output);
-        Assert.DoesNotContain("63°C", output);
+        Assert.Contains("No thermal sensors detected", output);
+        Assert.Contains("kernel helper driver", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Ignores_A_Snapshot_With_No_Thermal_Info()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        ctrl.Sample(new SystemSnapshot());
+        ctrl.Draw();
+
+        Assert.Contains("No thermal sensors detected", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -164,16 +163,17 @@ public sealed class ThermalsControlTests
         ctrl.Unload();
     }
 
-    [Fact]
-    public void Ignores_A_Snapshot_With_No_Thermal_Info()
-    {
-        ThermalsControl ctrl = CreateControl();
+    private static ThermalSensor Sensor(
+        ThermalComponent component, string id, string name, double celsius,
+        ThermalSource source = ThermalSource.NvApi) =>
+        new() {
+            Component = component,
+            ComponentId = id,
+            SensorName = name,
+            Celsius = celsius,
+            Source = source
+        };
 
-        ctrl.Sample(new SystemSnapshot());
-        ctrl.Draw();
-
-        Assert.Contains("No thermal sensors detected", CapturedOutput());
-
-        ctrl.Unload();
-    }
+    private static SystemSnapshot SnapshotWith(params ThermalSensor[] sensors) =>
+        new() { Thermal = new ThermalInfo { Metrics = new ThermalMetrics { Sensors = [.. sensors] } } };
 }

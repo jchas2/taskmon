@@ -6,18 +6,6 @@ namespace Task.Monitor.System.Services.Tests.Startup;
 
 public sealed class StartupTargetUserTests
 {
-    [Fact]
-    public void A_Normal_User_Is_Always_Themselves()
-    {
-        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 501, uid: 501, sudoUid: "502", consoleUid: 503));
-    }
-
-    [Fact]
-    public void Under_Sudo_It_Is_The_User_Who_Ran_Sudo()
-    {
-        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: "501", consoleUid: 502));
-    }
-
     [Theory]
     [InlineData(null)]
     [InlineData("0")]
@@ -34,6 +22,12 @@ public sealed class StartupTargetUserTests
         Assert.Equal(0u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: null, consoleUid: 0));
     }
 
+    [Fact]
+    public void A_Normal_User_Is_Always_Themselves()
+    {
+        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 501, uid: 501, sudoUid: "502", consoleUid: 503));
+    }
+
     [SkippableFact]
     public void The_Current_User_Owns_Their_Session()
     {
@@ -45,6 +39,12 @@ public sealed class StartupTargetUserTests
         Assert.True(user.IsSessionOwner);
         Assert.True(Directory.Exists(user.HomeDirectory));
         Assert.NotNull(user.Uuid);
+    }
+
+    [Fact]
+    public void Under_Sudo_It_Is_The_User_Who_Ran_Sudo()
+    {
+        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: "501", consoleUid: 502));
     }
 }
 #endif

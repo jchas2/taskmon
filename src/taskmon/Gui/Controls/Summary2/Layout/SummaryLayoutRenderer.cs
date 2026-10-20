@@ -6,10 +6,6 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 public sealed class SummaryLayoutRenderer
 {
     private readonly Dictionary<int, Rectangle> paneBounds = new();
-    
-    // Every pane's last-computed screen rect, keyed by node id - used for nearest
-    // neighbour focus navigation between panes.
-    public IReadOnlyDictionary<int, Rectangle> PaneBounds => paneBounds;
 
     public void Layout(
         SummaryLayoutTree                 tree,
@@ -101,4 +97,8 @@ public sealed class SummaryLayoutRenderer
                 secondHeight);
         }
     }
+
+    // Every pane's last-computed screen rect, keyed by node id - used for nearest
+    // neighbour focus navigation between panes.
+    public IReadOnlyDictionary<int, Rectangle> PaneBounds => paneBounds;
 }

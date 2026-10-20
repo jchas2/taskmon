@@ -75,26 +75,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
-    public void Sample(SystemSnapshot snapshot)
-    {
-        lock (@lock) {
-            if (snapshot.Cpu is not { } cpu || cpu.CoreMetrics.Length == 0) {
-                return;
-            }
-
-            cpuInfo     = cpu;
-            temperature = snapshot.Thermal?.Metrics.CpuTemperature();
-
-            int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);
-
-            for (int i = 0; i < numCores; i++) {
-                coreCharts[i].AddData(cpu.CoreMetrics[i].Value);
-            }
-
-            cpuChart.AddData(cpu.Metrics.CpuTotalTime);
-        }
-    }
-
     protected override void OnDraw()
     {
         lock (@lock) {
@@ -272,5 +252,25 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
         cpuMetricsListView.Items.Clear();
         cpuSpecsListView.Items.Clear();
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        lock (@lock) {
+            if (snapshot.Cpu is not { } cpu || cpu.CoreMetrics.Length == 0) {
+                return;
+            }
+
+            cpuInfo     = cpu;
+            temperature = snapshot.Thermal?.Metrics.CpuTemperature();
+
+            int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);
+
+            for (int i = 0; i < numCores; i++) {
+                coreCharts[i].AddData(cpu.CoreMetrics[i].Value);
+            }
+
+            cpuChart.AddData(cpu.Metrics.CpuTotalTime);
+        }
     }
 }

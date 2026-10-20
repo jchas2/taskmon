@@ -8,16 +8,6 @@ public sealed class CpuTopologyParserTests
     private const uint RelationCache            = 2;
     private const uint RelationProcessorPackage = 3;
 
-    // A SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX record: DWORD Relationship; DWORD Size; payload.
-    // The payload beyond the fields the parser reads is left zeroed; only Size has to be honest.
-    private static byte[] Record(uint relationship)
-    {
-        byte[] record = new byte[24];
-        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(0), relationship);
-        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(4), (uint)record.Length);
-        return record;
-    }
-
     private static byte[] Cache(byte level, uint sizeInBytes)
     {
         byte[] record = Record(RelationCache);
@@ -39,6 +29,46 @@ public sealed class CpuTopologyParserTests
         return result;
     }
 
+    // A SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX record: DWORD Relationship; DWORD Size; payload.
+    // The payload beyond the fields the parser reads is left zeroed; only Size has to be honest.
+    private static byte[] Record(uint relationship)
+    {
+        byte[] record = new byte[24];
+        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(0), relationship);
+        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(4), (uint)record.Length);
+        return record;
+    }
+
+    [Fact]
+    public void Should_Count_One_Socket_Per_Package_Record() =>
+        Assert.Equal(2u, CpuTopologyParser.Parse(
+            Concat(Record(RelationProcessorPackage), Record(RelationProcessorPackage))).SocketCount);
+
+    [Fact]
+    public void Should_Fold_L4_Into_L3() =>
+        Assert.Equal(3_000u, CpuTopologyParser.Parse(
+            Concat(Cache(3, 1_000), Cache(4, 2_000))).L3CacheBytes);
+
+    [Fact]
+    public void Should_Ignore_A_Trailing_Truncated_Record() =>
+        // Four trailing bytes, fewer than a record header.
+        Assert.Equal(1u, CpuTopologyParser.Parse(
+            Concat(Record(RelationProcessorPackage), new byte[4])).SocketCount);
+
+    [Fact]
+    public void Should_Return_An_Empty_Topology_For_An_Empty_Buffer() =>
+        Assert.Equal(default, CpuTopologyParser.Parse(ReadOnlySpan<byte>.Empty));
+
+    [Fact]
+    public void Should_Stop_On_A_Zero_Size_Record()
+    {
+        // Relationship set, Size left at zero: a naive walk would never advance.
+        byte[] record = new byte[24];
+        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(0), RelationProcessorPackage);
+
+        Assert.Equal(0u, CpuTopologyParser.Parse(record).SocketCount);
+    }
+
     [Fact]
     public void Should_Sum_Cache_Sizes_By_Level()
     {
@@ -56,34 +86,4 @@ public sealed class CpuTopologyParserTests
         Assert.Equal(8u * 1024u * 1024u, topology.L3CacheBytes);
         Assert.Equal(1u, topology.SocketCount);
     }
-
-    [Fact]
-    public void Should_Count_One_Socket_Per_Package_Record() =>
-        Assert.Equal(2u, CpuTopologyParser.Parse(
-            Concat(Record(RelationProcessorPackage), Record(RelationProcessorPackage))).SocketCount);
-
-    [Fact]
-    public void Should_Fold_L4_Into_L3() =>
-        Assert.Equal(3_000u, CpuTopologyParser.Parse(
-            Concat(Cache(3, 1_000), Cache(4, 2_000))).L3CacheBytes);
-
-    [Fact]
-    public void Should_Stop_On_A_Zero_Size_Record()
-    {
-        // Relationship set, Size left at zero: a naive walk would never advance.
-        byte[] record = new byte[24];
-        BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(0), RelationProcessorPackage);
-
-        Assert.Equal(0u, CpuTopologyParser.Parse(record).SocketCount);
-    }
-
-    [Fact]
-    public void Should_Ignore_A_Trailing_Truncated_Record() =>
-        // Four trailing bytes, fewer than a record header.
-        Assert.Equal(1u, CpuTopologyParser.Parse(
-            Concat(Record(RelationProcessorPackage), new byte[4])).SocketCount);
-
-    [Fact]
-    public void Should_Return_An_Empty_Topology_For_An_Empty_Buffer() =>
-        Assert.Equal(default, CpuTopologyParser.Parse(ReadOnlySpan<byte>.Empty));
 }

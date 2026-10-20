@@ -11,6 +11,14 @@ public class ScreenApplication
         private Stack<Screen> screenStack = new();
         private Lock          @lock       = new();
 
+        private void FitScreenToConsole(Screen screen)
+        {
+            screen.X      = 0;
+            screen.Y      = 0;
+            screen.Width  = terminal.WindowWidth;
+            screen.Height = terminal.WindowHeight;
+        }
+
         internal Screen? OwnerScreen
         {
             get {
@@ -38,14 +46,6 @@ public class ScreenApplication
             }
         }
 
-        private void FitScreenToConsole(Screen screen)
-        {
-            screen.X      = 0;
-            screen.Y      = 0;
-            screen.Width  = terminal.WindowWidth;
-            screen.Height = terminal.WindowHeight;
-        }
-        
         public void RunApplicationLoop()
         {
             ConsoleKey consoleKey   = ConsoleKey.None;
@@ -141,7 +141,16 @@ public class ScreenApplication
         registeredScreens  = new Dictionary<Type, Screen>();
         applicationContext = new ScreenApplicationContext(terminal);
     }
-    
+
+    public T GetScreen<T>() where T : Screen
+    {
+        if (!registeredScreens.TryGetValue(typeof(T), out Screen? screen)) {
+            throw new InvalidOperationException($"Screen {typeof(T)} is not registered.");
+        }
+
+        return (T)screen;
+    }
+
     public ScreenApplication RegisterScreen(Screen screen)
     {
         if (registeredScreens.ContainsKey(screen.GetType())) {
@@ -177,14 +186,5 @@ public class ScreenApplication
         Screen screen = (T)registeredScreens[typeof(T)];
 
         applicationContext.OwnerScreen = screen;
-    }
-
-    public T GetScreen<T>() where T : Screen
-    {
-        if (!registeredScreens.TryGetValue(typeof(T), out Screen? screen)) {
-            throw new InvalidOperationException($"Screen {typeof(T)} is not registered.");
-        }
-
-        return (T)screen;
     }
 }

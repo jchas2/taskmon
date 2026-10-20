@@ -25,11 +25,6 @@ public sealed class DiskSpaceControlTests : IDisposable
         runContext = runContextHelper.GetRunContext();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
-    private static SystemSnapshot SnapshotWith(DiskSpaceSpecs specs) =>
-        new() { DiskSpace = new DiskSpaceInfo { Specs = specs } };
-
     private static DiskSpaceSpecs BuildScanningSpecs()
     {
         DiskSpaceAccumulator accumulator = new(@"C:\Root");
@@ -55,6 +50,49 @@ public sealed class DiskSpaceControlTests : IDisposable
         return accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
     }
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
+    [Fact]
+    public void Choosing_Custom_Path_Falls_Through_To_The_Free_Text_Scan_Prompt()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+
+        // "Custom path..." always sits one row past the last real candidate.
+        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
+
+        for (int i = 0; i < realCandidateCount; i++) {
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        }
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
+
+        // ShowScanPathPrompt pre-fills the free-text box with the system drive, same as before
+        // this control existed - that's the visible signal the fallback prompt actually opened.
+        string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
+        Assert.Contains(defaultRoot, CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        DiskSpaceControl ctrl = new(
+            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
+
+        Assert.NotNull(ctrl);
+    }
+
     private DiskSpaceControl CreateControl(int width = 160, int height = 40)
     {
         DiskSpaceControl ctrl = new(
@@ -70,33 +108,35 @@ public sealed class DiskSpaceControlTests : IDisposable
         return ctrl;
     }
 
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
     [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        DiskSpaceControl ctrl = new(
-            runContext.ServiceController, runContext.Terminal, runContext.AppConfig);
-
-        Assert.NotNull(ctrl);
-    }
-
-    [Fact]
-    public void Draws_The_Scan_Hint_In_The_Heat_Maps_Border_Before_Any_Scan_Has_Started()
+    public void C_Without_A_Registered_DiskSpaceService_Does_Not_Throw()
     {
         DiskSpaceControl ctrl = CreateControl();
         ctrl.Draw();
 
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('c', ConsoleKey.C, false, false, false), ref handled);
+
+        Assert.True(handled);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void Draws_A_Row_Per_File_Sorted_By_Size_Descending()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
         string output = CapturedOutput();
 
-        Assert.Contains("Start scanning", output);
-        Assert.Contains("Cancel", output);
-        Assert.Contains("No files scanned yet", output);
+        foreach (string fragment in new[] { "FILE", "SIZE", "PATH", "big.bin", "small.txt" }) {
+            Assert.Contains(fragment, output);
+        }
 
         ctrl.Unload();
     }
@@ -119,62 +159,67 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Shows_Zero_Percent_Progress_Before_Any_Scan_Has_Started()
+    public void Draws_The_Scan_Hint_In_The_Heat_Maps_Border_Before_Any_Scan_Has_Started()
     {
         DiskSpaceControl ctrl = CreateControl();
-        ctrl.Draw();
-
-        Assert.Contains("Root Folders", CapturedOutput());
-        Assert.Contains("0.0%", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Shows_The_Scan_Root_Path_As_The_Progress_Metre_Legend_Once_A_Scan_Has_One()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
         ctrl.Draw();
 
         string output = CapturedOutput();
 
-        Assert.Contains(@"C:\Root", output);
-        Assert.DoesNotContain("Root Folders", output);
+        Assert.Contains("Start scanning", output);
+        Assert.Contains("Cancel", output);
+        Assert.Contains("No files scanned yet", output);
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Shows_Root_Level_Folder_Completion_As_A_Percentage()
+    public void Escape_Cancels_The_Drive_Selection_Prompt_Without_Starting_A_Scan()
     {
         DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildSpecsWithRootProgress(total: 4, completed: 1)));
         ctrl.Draw();
 
-        Assert.Contains("25.0%", CapturedOutput());
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
+
+        Assert.True(handled);
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Shows_Full_Progress_Once_The_Scan_Completes()
+    public void Escape_From_The_Custom_Path_Prompt_Does_Not_Start_A_Scan()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+
+        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
+
+        for (int i = 0; i < realCandidateCount; i++) {
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        }
+
+        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
+
+        Assert.True(handled);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Ignores_A_Snapshot_With_No_DiskSpace_Info()
     {
         DiskSpaceControl ctrl = CreateControl();
 
-        DiskSpaceAccumulator accumulator = new(@"C:\Root");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\B");
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\B");
-        accumulator.MarkScanComplete();
-
-        ctrl.Sample(SnapshotWith(accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 1000)));
+        ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("100.0%", CapturedOutput());
+        Assert.Contains("Start scanning", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -197,54 +242,6 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Draws_A_Row_Per_File_Sorted_By_Size_Descending()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        foreach (string fragment in new[] { "FILE", "SIZE", "PATH", "big.bin", "small.txt" }) {
-            Assert.Contains(fragment, output);
-        }
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Shows_The_File_Count_In_The_Footer()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
-        ctrl.Draw();
-
-        Assert.Contains($"2 of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void The_Scan_Control_Hints_Live_On_The_Heat_Map_Border_Not_The_File_List_Footer()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        // The heat map's own border carries these now (see the earlier "before any scan" test) -
-        // the file list's footer should be about the list itself only.
-        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
-        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ PgUp PgDn Scroll", output);
-
-        ctrl.Unload();
-    }
-
-    [Fact]
     public void Rebuilds_Rows_When_Scan_Progress_Changes()
     {
         DiskSpaceControl ctrl = CreateControl();
@@ -261,6 +258,25 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Draw();
 
         Assert.Contains("two.bin", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Sample_Redraws_When_The_Scan_Publishes_New_Specs()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        DiskSpaceSpecs specs = BuildScanningSpecs();
+
+        // Settle on one set of specs until an unchanged snapshot no longer draws.
+        for (int i = 0; i < 10; i++) {
+            ctrl.Sample(SnapshotWith(specs));
+        }
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(SnapshotWith(BuildSpecsWithRootProgress(total: 2, completed: 1)));
+
+        Assert.Contains("50.0%", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -296,36 +312,81 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Sample_Redraws_When_The_Scan_Publishes_New_Specs()
+    public void Shows_Full_Progress_Once_The_Scan_Completes()
     {
         DiskSpaceControl ctrl = CreateControl();
-        DiskSpaceSpecs specs = BuildScanningSpecs();
 
-        // Settle on one set of specs until an unchanged snapshot no longer draws.
-        for (int i = 0; i < 10; i++) {
-            ctrl.Sample(SnapshotWith(specs));
-        }
+        DiskSpaceAccumulator accumulator = new(@"C:\Root");
+        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\A");
+        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\B");
+        accumulator.EnterFolder(@"C:\Root\A");
+        accumulator.EnterFolder(@"C:\Root\B");
+        accumulator.MarkScanComplete();
 
-        runContextHelper.terminal.Invocations.Clear();
-        ctrl.Sample(SnapshotWith(BuildSpecsWithRootProgress(total: 2, completed: 1)));
+        ctrl.Sample(SnapshotWith(accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 1000)));
+        ctrl.Draw();
 
-        Assert.Contains("50.0%", CapturedOutput());
+        Assert.Contains("100.0%", CapturedOutput());
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Ignores_A_Snapshot_With_No_DiskSpace_Info()
+    public void Shows_Root_Level_Folder_Completion_As_A_Percentage()
     {
         DiskSpaceControl ctrl = CreateControl();
 
-        ctrl.Sample(new SystemSnapshot());
+        ctrl.Sample(SnapshotWith(BuildSpecsWithRootProgress(total: 4, completed: 1)));
         ctrl.Draw();
 
-        Assert.Contains("Start scanning", CapturedOutput());
+        Assert.Contains("25.0%", CapturedOutput());
 
         ctrl.Unload();
     }
+
+    [Fact]
+    public void Shows_The_File_Count_In_The_Footer()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
+        Assert.Contains($"2 of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Shows_The_Scan_Root_Path_As_The_Progress_Metre_Legend_Once_A_Scan_Has_One()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains(@"C:\Root", output);
+        Assert.DoesNotContain("Root Folders", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Shows_Zero_Percent_Progress_Before_Any_Scan_Has_Started()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.Contains("Root Folders", CapturedOutput());
+        Assert.Contains("0.0%", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    private static SystemSnapshot SnapshotWith(DiskSpaceSpecs specs) =>
+        new() { DiskSpace = new DiskSpaceInfo { Specs = specs } };
 
     [Fact]
     public void S_Opens_A_Drive_Selection_Prompt_Listing_The_System_Drive()
@@ -349,80 +410,19 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Escape_Cancels_The_Drive_Selection_Prompt_Without_Starting_A_Scan()
+    public void The_Scan_Control_Hints_Live_On_The_Heat_Map_Border_Not_The_File_List_Footer()
     {
         DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
         ctrl.Draw();
 
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
+        string output = CapturedOutput();
 
-        Assert.True(handled);
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Choosing_Custom_Path_Falls_Through_To_The_Free_Text_Scan_Prompt()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-        ctrl.Draw();
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
-
-        // "Custom path..." always sits one row past the last real candidate.
-        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
-
-        for (int i = 0; i < realCandidateCount; i++) {
-            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
-        }
-
-        runContextHelper.terminal.Invocations.Clear();
-        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
-
-        // ShowScanPathPrompt pre-fills the free-text box with the system drive, same as before
-        // this control existed - that's the visible signal the fallback prompt actually opened.
-        string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
-        Assert.Contains(defaultRoot, CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Escape_From_The_Custom_Path_Prompt_Does_Not_Start_A_Scan()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-        ctrl.Draw();
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
-
-        int realCandidateCount = Task.Monitor.System.Services.DiskSpace.ScanRootProvider.GetCandidates().Count;
-
-        for (int i = 0; i < realCandidateCount; i++) {
-            ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
-        }
-
-        ctrl.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
-
-        Assert.True(handled);
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void C_Without_A_Registered_DiskSpaceService_Does_Not_Throw()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-        ctrl.Draw();
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('c', ConsoleKey.C, false, false, false), ref handled);
-
-        Assert.True(handled);
+        // The heat map's own border carries these now (see the earlier "before any scan" test) -
+        // the file list's footer should be about the list itself only.
+        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
+        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ PgUp PgDn Scroll", output);
 
         ctrl.Unload();
     }

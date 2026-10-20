@@ -11,6 +11,86 @@ public sealed class ScheduledTaskDefinitionTests
         """;
 
     [Fact]
+    public void A_ComHandler_Only_Task_Has_No_Executable_Path()
+    {
+        string xml = $"""
+            {Header}
+              <Triggers>
+                <LogonTrigger />
+              </Triggers>
+              <Actions>
+                <ComHandler />
+              </Actions>
+            </Task>
+            """;
+
+        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
+
+        Assert.NotNull(definition);
+        Assert.True(definition.HasLogonTrigger);
+        Assert.Null(definition.ExecutablePath);
+        Assert.Null(definition.Arguments);
+    }
+
+    [Fact]
+    public void Empty_Xml_Returns_Null()
+    {
+        Assert.Null(ScheduledTaskDefinition.Parse(""));
+    }
+
+    [Fact]
+    public void Malformed_Xml_Returns_Null()
+    {
+        Assert.Null(ScheduledTaskDefinition.Parse("<Task><Unclosed></Task>"));
+    }
+
+    [Fact]
+    public void Missing_Author_Is_Null()
+    {
+        string xml = $"""
+            {Header}
+              <Triggers>
+                <LogonTrigger />
+              </Triggers>
+              <Actions>
+                <Exec>
+                  <Command>app.exe</Command>
+                </Exec>
+              </Actions>
+            </Task>
+            """;
+
+        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
+
+        Assert.NotNull(definition);
+        Assert.Null(definition.Author);
+    }
+
+    [Fact]
+    public void Parses_A_Boot_Triggered_Task()
+    {
+        string xml = $"""
+            {Header}
+              <Triggers>
+                <BootTrigger />
+              </Triggers>
+              <Actions>
+                <Exec>
+                  <Command>C:\Windows\System32\svc.exe</Command>
+                </Exec>
+              </Actions>
+            </Task>
+            """;
+
+        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
+
+        Assert.NotNull(definition);
+        Assert.True(definition.HasBootTrigger);
+        Assert.False(definition.HasLogonTrigger);
+        Assert.Null(definition.Arguments);
+    }
+
+    [Fact]
     public void Parses_A_Logon_Triggered_Exec_Task()
     {
         string xml = $"""
@@ -44,55 +124,6 @@ public sealed class ScheduledTaskDefinitionTests
     }
 
     [Fact]
-    public void Parses_A_Boot_Triggered_Task()
-    {
-        string xml = $"""
-            {Header}
-              <Triggers>
-                <BootTrigger />
-              </Triggers>
-              <Actions>
-                <Exec>
-                  <Command>C:\Windows\System32\svc.exe</Command>
-                </Exec>
-              </Actions>
-            </Task>
-            """;
-
-        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
-
-        Assert.NotNull(definition);
-        Assert.True(definition.HasBootTrigger);
-        Assert.False(definition.HasLogonTrigger);
-        Assert.Null(definition.Arguments);
-    }
-
-    [Fact]
-    public void Treats_An_Empty_LogonTrigger_UserId_As_Any_User()
-    {
-        string xml = $"""
-            {Header}
-              <Triggers>
-                <LogonTrigger>
-                  <UserId></UserId>
-                </LogonTrigger>
-              </Triggers>
-              <Actions>
-                <Exec>
-                  <Command>app.exe</Command>
-                </Exec>
-              </Actions>
-            </Task>
-            """;
-
-        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
-
-        Assert.NotNull(definition);
-        Assert.True(definition.HasLogonTrigger);
-        Assert.Null(definition.LogonTriggerUserId);
-    }
-
-    [Fact]
     public void Time_Triggered_Task_Has_Neither_Logon_Nor_Boot_Trigger()
     {
         string xml = $"""
@@ -118,34 +149,14 @@ public sealed class ScheduledTaskDefinitionTests
     }
 
     [Fact]
-    public void A_ComHandler_Only_Task_Has_No_Executable_Path()
+    public void Treats_An_Empty_LogonTrigger_UserId_As_Any_User()
     {
         string xml = $"""
             {Header}
               <Triggers>
-                <LogonTrigger />
-              </Triggers>
-              <Actions>
-                <ComHandler />
-              </Actions>
-            </Task>
-            """;
-
-        ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
-
-        Assert.NotNull(definition);
-        Assert.True(definition.HasLogonTrigger);
-        Assert.Null(definition.ExecutablePath);
-        Assert.Null(definition.Arguments);
-    }
-
-    [Fact]
-    public void Missing_Author_Is_Null()
-    {
-        string xml = $"""
-            {Header}
-              <Triggers>
-                <LogonTrigger />
+                <LogonTrigger>
+                  <UserId></UserId>
+                </LogonTrigger>
               </Triggers>
               <Actions>
                 <Exec>
@@ -158,19 +169,8 @@ public sealed class ScheduledTaskDefinitionTests
         ScheduledTaskDefinition? definition = ScheduledTaskDefinition.Parse(xml);
 
         Assert.NotNull(definition);
-        Assert.Null(definition.Author);
-    }
-
-    [Fact]
-    public void Malformed_Xml_Returns_Null()
-    {
-        Assert.Null(ScheduledTaskDefinition.Parse("<Task><Unclosed></Task>"));
-    }
-
-    [Fact]
-    public void Empty_Xml_Returns_Null()
-    {
-        Assert.Null(ScheduledTaskDefinition.Parse(""));
+        Assert.True(definition.HasLogonTrigger);
+        Assert.Null(definition.LogonTriggerUserId);
     }
 }
 #endif

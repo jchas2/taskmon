@@ -5,9 +5,9 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
-using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Controls.PickerBox;
+using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
@@ -22,10 +22,10 @@ public sealed class LayoutDesignerScreen : Screen
     private const int   FooterHeight = 1;
     private const float RatioStep    = 0.05f;
 
-    private static readonly PaneControlType[] assignableControlTypes = Enum.GetValues<PaneControlType>();
+    private static readonly PaneControlType[] AssignableControlTypes = Enum.GetValues<PaneControlType>();
 
-    // TODO: Dup of SetupScreen's toggleableColumns table. Need a CommonControl functions class.
-    private static readonly (Statistics Statistic, string Label)[] toggleableColumns =
+    // TODO: Dup of SetupScreen's ToggleableColumns table. Need a CommonControl functions class.
+    private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
     [
         (Statistics.User,   "User"),
         (Statistics.Pri,    "Priority"),
@@ -75,40 +75,6 @@ public sealed class LayoutDesignerScreen : Screen
         RebuildPaneControls();
     }
 
-    public void Open(SummaryLayoutTree newTree, string? existingName)
-    {
-        tree       = newTree;
-        layoutName = existingName;
-        
-        RebuildPaneControls();
-    }
-
-    internal SummaryLayoutTree Tree => tree;
-
-    internal int SelectedNodeId => selectedNodeId;
-
-    internal string? LayoutName => layoutName;
-
-    private void RebuildPaneControls()
-    {
-        if (isLoaded) {
-            foreach (Control control in paneControls.Values) {
-                control.Unload();
-            }
-        }
-
-        Controls.Clear();
-        paneControls.Clear();
-        highlightedBorders.Clear();
-
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
-            AddPaneControl(pane);
-        }
-
-        selectedNodeId = tree.Panes().First().Id;
-        RefreshSelectionHighlight();
-    }
-
     private void AddPaneControl(SummaryLayoutNode pane)
     {
         Control control = SummaryPaneControlFactory.Create(pane, runContext.ServiceController, Terminal, runContext.AppConfig);
@@ -123,55 +89,35 @@ public sealed class LayoutDesignerScreen : Screen
         }
     }
 
-    private void RemovePaneControl(int paneId)
+    private void AdjustSelectedRatio(float delta)
     {
-        if (!paneControls.Remove(paneId, out Control? control)) {
+        int? parentId = tree.FindParentSplitId(selectedNodeId);
+
+        if (parentId is not { } pid) {
             return;
         }
 
-        if (isLoaded) {
-            control.Unload();
+        SummaryLayoutNode parent = tree.Nodes[pid];
+        
+        float signedDelta = parent.FirstId == selectedNodeId ? delta : -delta;
+
+        if (!tree.AdjustRatio(pid, signedDelta)) {
+            return;
         }
 
-        Controls.Remove(control);
+        Relayout();
+        Draw();
     }
+
+    internal void AssignSelectedPaneControlTypeForTests(PaneControlType newType) =>
+        ReassignSelectedPaneControlType(newType);
+
+    private int ContentHeight => Math.Max(0, Height - BannerHeight - FooterHeight);
 
     // private void ApplyTheme(Control control) =>
     //     SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
     private int ContentY => Y + BannerHeight;
-
-    private int ContentHeight => Math.Max(0, Height - BannerHeight - FooterHeight);
-
-    private void Relayout() =>
-        renderer.Layout(tree, paneControls, X, ContentY, Width, ContentHeight);
-
-    protected override void OnResize()
-    {
-        Relayout();
-        base.OnResize();
-    }
-
-    protected override void OnDraw()
-    {
-        DrawBanner();
-
-        foreach (Control control in paneControls.Values) {
-            control.Draw();
-        }
-
-        DrawFooter();
-
-        if (controlTypePicker.Visible) {
-            controlTypePicker.Draw();
-        }
-        else if (columnPicker.Visible) {
-            columnPicker.Draw();
-        }
-        else if (saveDialog.Visible) {
-            saveDialog.Draw();
-        }
-    }
 
     private void DrawBanner()
     {
@@ -202,19 +148,10 @@ public sealed class LayoutDesignerScreen : Screen
         Terminal.WriteEmptyLineTo(Math.Max(0, Width - shown.Length));
     }
 
-    private void RefreshSelectionHighlight()
+    private int FirstPaneUnder(int nodeId)
     {
-        foreach ((Control control, Color original) in highlightedBorders) {
-            control.BorderColour = original;
-        }
-
-        highlightedBorders.Clear();
-
-        if (!isLoaded || !paneControls.TryGetValue(selectedNodeId, out Control? selected)) {
-            return;
-        }
-
-        HighlightSubtree(selected);
+        SummaryLayoutNode node = tree.Nodes[nodeId];
+        return node.IsSplit ? FirstPaneUnder(node.FirstId) : nodeId;
     }
 
     private void HighlightSubtree(Control control)
@@ -224,6 +161,95 @@ public sealed class LayoutDesignerScreen : Screen
 
         foreach (Control child in control.Controls) {
             HighlightSubtree(child);
+        }
+    }
+
+    internal string? LayoutName => layoutName;
+
+    private void MoveSelection(SpatialDirection direction)
+    {
+        int? nextId = SpatialNavigation.FindNearest(renderer.PaneBounds, selectedNodeId, direction);
+
+        if (nextId is not { } id) {
+            return;
+        }
+
+        selectedNodeId = id;
+        RefreshSelectionHighlight();
+        Draw();
+    }
+
+    private void OnColumnPickerKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        columnPicker.KeyPressed(keyInfo, ref handled);
+
+        if (columnPicker.Result == PickerBoxResult.None) {
+            return;
+        }
+
+        PickerBoxResult result   = columnPicker.Result;
+        List<int> checkedIndices = columnPicker.CheckedIndices.ToList();
+
+        columnPicker.Visible  = false;
+        Control.RedrawEnabled = true;
+
+        if (result == PickerBoxResult.Ok) {
+            Statistics columns = Statistics.Process | Statistics.Pid;
+
+            foreach (int index in checkedIndices) {
+                columns |= ToggleableColumns[index].Statistic;
+            }
+
+            tree.Nodes[selectedNodeId].ProcessColumns = columns;
+
+            if (paneControls[selectedNodeId] is ProcessControl processControl) {
+                processControl.VisibleColumnsOverride = columns;
+                processControl.Resize();
+            }
+        }
+
+        Draw();
+    }
+
+    private void OnControlTypePickerKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        controlTypePicker.KeyPressed(keyInfo, ref handled);
+
+        if (controlTypePicker.Result == PickerBoxResult.None) {
+            return;
+        }
+
+        PickerBoxResult result = controlTypePicker.Result;
+        int selectedIndex = controlTypePicker.SelectedIndex;
+
+        controlTypePicker.Visible = false;
+        Control.RedrawEnabled     = true;
+
+        if (result == PickerBoxResult.Ok && selectedIndex >= 0 && selectedIndex < AssignableControlTypes.Length) {
+            ReassignSelectedPaneControlType(AssignableControlTypes[selectedIndex]);
+        }
+
+        Draw();
+    }
+
+    protected override void OnDraw()
+    {
+        DrawBanner();
+
+        foreach (Control control in paneControls.Values) {
+            control.Draw();
+        }
+
+        DrawFooter();
+
+        if (controlTypePicker.Visible) {
+            controlTypePicker.Draw();
+        }
+        else if (columnPicker.Visible) {
+            columnPicker.Draw();
+        }
+        else if (saveDialog.Visible) {
+            saveDialog.Draw();
         }
     }
 
@@ -319,33 +345,209 @@ public sealed class LayoutDesignerScreen : Screen
         }
     }
 
-    private void MoveSelection(SpatialDirection direction)
+    protected override void OnLoad()
     {
-        int? nextId = SpatialNavigation.FindNearest(renderer.PaneBounds, selectedNodeId, direction);
+        Terminal.CursorVisible = false;
+        
+        DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
+        DialogBorderColour     = runContext.AppConfig.Theme.HeaderForeground;
+        DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
+        
+        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
+        CommonControl.Theme(controlTypePicker, runContext.AppConfig.Theme);
+        CommonControl.Theme(columnPicker, runContext.AppConfig.Theme);
+        CommonControl.Theme(saveDialog, runContext.AppConfig.Theme);
+        
+        controlTypePicker.Load();
+        columnPicker.Load();
+        saveDialog.Load();
 
-        if (nextId is not { } id) {
+        foreach (Control control in paneControls.Values) {
+            SummaryPaneTheme.Apply(control, runContext.AppConfig);
+        }
+
+        isLoaded = true;
+
+        base.OnLoad();
+        RefreshSelectionHighlight();
+
+        runContext.ServiceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+    }
+
+    protected override void OnResize()
+    {
+        Relayout();
+        base.OnResize();
+    }
+
+    private void OnSaveDialogKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        saveDialog.KeyPressed(keyInfo, ref handled);
+
+        if (saveDialog.Result == TextInputDialogResult.None) {
             return;
         }
 
-        selectedNodeId = id;
-        RefreshSelectionHighlight();
+        TextInputDialogResult result = saveDialog.Result;
+        string name = saveDialog.Text.Trim();
+
+        saveDialog.Visible    = false;
+        Control.RedrawEnabled = true;
+
         Draw();
+
+        if (result == TextInputDialogResult.Ok && name.Length > 0) {
+            SaveLayoutAs(name);
+        }
     }
 
-    private void SplitSelectedPane(Orientation orientation)
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
-        (int firstId, int secondId) = tree.Split(selectedNodeId, orientation);
+        try {
+            Control.DrawingLockAcquire();
+            RefreshSelectionHighlight();
+            
+            SummaryChartFeeder.Feed(
+                tree, 
+                paneControls, 
+                e.Snapshot, 
+                runContext.AppConfig);
+        }
+        finally {
+            Control.DrawingLockRelease();
+        }
+    }
+    
+    protected override void OnUnload()
+    {
+        runContext.ServiceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+
+        highlightedBorders.Clear();
+
+        controlTypePicker.Unload();
+        columnPicker.Unload();
+        saveDialog.Unload();
+
+        isLoaded = false;
+        Terminal.CursorVisible = true;
+
+        base.OnUnload();
+    }
+
+    public void Open(SummaryLayoutTree newTree, string? existingName)
+    {
+        tree       = newTree;
+        layoutName = existingName;
+        
+        RebuildPaneControls();
+    }
+
+    private void OpenColumnPicker()
+    {
+        if (tree.Nodes[selectedNodeId].ControlType != PaneControlType.Process) {
+            return;
+        }
+
+        Control.RedrawEnabled = false;
+
+        Statistics current = tree.Nodes[selectedNodeId].ProcessColumns ?? runContext.AppConfig.VisibleColumns;
+        List<string> labels = ToggleableColumns.Select(c => c.Label).ToList();
+        List<bool> initiallyChecked = ToggleableColumns.Select(c => (current & c.Statistic) != 0).ToList();
+
+        columnPicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        columnPicker.Height = Math.Clamp(PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
+        columnPicker.X      = X + Math.Max(0, (Width - columnPicker.Width) / 2);
+        columnPicker.Y      = Y + Math.Max(0, (Height - columnPicker.Height) / 2);
+        columnPicker.Title  = "Columns";
+        
+        columnPicker.SetItems(labels, initiallyChecked);
+        columnPicker.Visible = true;
+        columnPicker.ShowPickerBox();
+    }
+
+    private void OpenControlTypePicker()
+    {
+        Control.RedrawEnabled = false;
+
+        List<string> labels = AssignableControlTypes.Select(ToDisplayLabel).ToList();
+        int currentIndex    = Array.IndexOf(AssignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
+
+        controlTypePicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        controlTypePicker.Height = Math.Clamp( PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
+        controlTypePicker.X      = X + Math.Max(0, (Width - controlTypePicker.Width) / 2);
+        controlTypePicker.Y      = Y + Math.Max(0, (Height - controlTypePicker.Height) / 2);
+        controlTypePicker.Title  = "Assign control";
+        
+        controlTypePicker.SetItems(labels, initialSelectedIndex: Math.Max(0, currentIndex));
+        controlTypePicker.Visible = true;
+        controlTypePicker.ShowPickerBox();
+    }
+
+    private void ReassignSelectedPaneControlType(PaneControlType newType)
+    {
+        SummaryLayoutNode pane = tree.Nodes[selectedNodeId];
+        
+        pane.ControlType = newType;
+
+        if (newType != PaneControlType.Process) {
+            pane.ProcessColumns = null;
+        }
 
         RemovePaneControl(selectedNodeId);
-        AddPaneControl(tree.Nodes[firstId]);
-        AddPaneControl(tree.Nodes[secondId]);
-
-        // The new empty pane, ready to be assigned straight away.
-        selectedNodeId = secondId;
-
+        AddPaneControl(pane);
         RefreshSelectionHighlight();
         Relayout();
-        Draw();
+    }
+
+    private void RebuildPaneControls()
+    {
+        if (isLoaded) {
+            foreach (Control control in paneControls.Values) {
+                control.Unload();
+            }
+        }
+
+        Controls.Clear();
+        paneControls.Clear();
+        highlightedBorders.Clear();
+
+        foreach (SummaryLayoutNode pane in tree.Panes()) {
+            AddPaneControl(pane);
+        }
+
+        selectedNodeId = tree.Panes().First().Id;
+        RefreshSelectionHighlight();
+    }
+
+    private void RefreshSelectionHighlight()
+    {
+        foreach ((Control control, Color original) in highlightedBorders) {
+            control.BorderColour = original;
+        }
+
+        highlightedBorders.Clear();
+
+        if (!isLoaded || !paneControls.TryGetValue(selectedNodeId, out Control? selected)) {
+            return;
+        }
+
+        HighlightSubtree(selected);
+    }
+
+    private void Relayout() =>
+        renderer.Layout(tree, paneControls, X, ContentY, Width, ContentHeight);
+
+    private void RemovePaneControl(int paneId)
+    {
+        if (!paneControls.Remove(paneId, out Control? control)) {
+            return;
+        }
+
+        if (isLoaded) {
+            control.Unload();
+        }
+
+        Controls.Remove(control);
     }
 
     private void RemoveSelectedPane()
@@ -387,148 +589,6 @@ public sealed class LayoutDesignerScreen : Screen
         Draw();
     }
 
-    private int FirstPaneUnder(int nodeId)
-    {
-        SummaryLayoutNode node = tree.Nodes[nodeId];
-        return node.IsSplit ? FirstPaneUnder(node.FirstId) : nodeId;
-    }
-
-    private void AdjustSelectedRatio(float delta)
-    {
-        int? parentId = tree.FindParentSplitId(selectedNodeId);
-
-        if (parentId is not { } pid) {
-            return;
-        }
-
-        SummaryLayoutNode parent = tree.Nodes[pid];
-        
-        float signedDelta = parent.FirstId == selectedNodeId ? delta : -delta;
-
-        if (!tree.AdjustRatio(pid, signedDelta)) {
-            return;
-        }
-
-        Relayout();
-        Draw();
-    }
-
-    private void OpenControlTypePicker()
-    {
-        Control.RedrawEnabled = false;
-
-        List<string> labels = assignableControlTypes.Select(ToDisplayLabel).ToList();
-        int currentIndex    = Array.IndexOf(assignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
-
-        controlTypePicker.Width  = Math.Clamp(Width - 4, 24, 40);
-        controlTypePicker.Height = Math.Clamp( PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
-        controlTypePicker.X      = X + Math.Max(0, (Width - controlTypePicker.Width) / 2);
-        controlTypePicker.Y      = Y + Math.Max(0, (Height - controlTypePicker.Height) / 2);
-        controlTypePicker.Title  = "Assign control";
-        
-        controlTypePicker.SetItems(labels, initialSelectedIndex: Math.Max(0, currentIndex));
-        controlTypePicker.Visible = true;
-        controlTypePicker.ShowPickerBox();
-    }
-
-    private void OnControlTypePickerKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        controlTypePicker.KeyPressed(keyInfo, ref handled);
-
-        if (controlTypePicker.Result == PickerBoxResult.None) {
-            return;
-        }
-
-        PickerBoxResult result = controlTypePicker.Result;
-        int selectedIndex = controlTypePicker.SelectedIndex;
-
-        controlTypePicker.Visible = false;
-        Control.RedrawEnabled     = true;
-
-        if (result == PickerBoxResult.Ok && selectedIndex >= 0 && selectedIndex < assignableControlTypes.Length) {
-            ReassignSelectedPaneControlType(assignableControlTypes[selectedIndex]);
-        }
-
-        Draw();
-    }
-
-    internal void AssignSelectedPaneControlTypeForTests(PaneControlType newType) =>
-        ReassignSelectedPaneControlType(newType);
-
-    private void ReassignSelectedPaneControlType(PaneControlType newType)
-    {
-        SummaryLayoutNode pane = tree.Nodes[selectedNodeId];
-        
-        pane.ControlType = newType;
-
-        if (newType != PaneControlType.Process) {
-            pane.ProcessColumns = null;
-        }
-
-        RemovePaneControl(selectedNodeId);
-        AddPaneControl(pane);
-        RefreshSelectionHighlight();
-        Relayout();
-    }
-
-    private static string ToDisplayLabel(PaneControlType type) =>
-        Regex.Replace(type.ToString(), "(?<!^)([A-Z])", " $1");
-
-    private void OpenColumnPicker()
-    {
-        if (tree.Nodes[selectedNodeId].ControlType != PaneControlType.Process) {
-            return;
-        }
-
-        Control.RedrawEnabled = false;
-
-        Statistics current = tree.Nodes[selectedNodeId].ProcessColumns ?? runContext.AppConfig.VisibleColumns;
-        List<string> labels = toggleableColumns.Select(c => c.Label).ToList();
-        List<bool> initiallyChecked = toggleableColumns.Select(c => (current & c.Statistic) != 0).ToList();
-
-        columnPicker.Width  = Math.Clamp(Width - 4, 24, 40);
-        columnPicker.Height = Math.Clamp(PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
-        columnPicker.X      = X + Math.Max(0, (Width - columnPicker.Width) / 2);
-        columnPicker.Y      = Y + Math.Max(0, (Height - columnPicker.Height) / 2);
-        columnPicker.Title  = "Columns";
-        
-        columnPicker.SetItems(labels, initiallyChecked);
-        columnPicker.Visible = true;
-        columnPicker.ShowPickerBox();
-    }
-
-    private void OnColumnPickerKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        columnPicker.KeyPressed(keyInfo, ref handled);
-
-        if (columnPicker.Result == PickerBoxResult.None) {
-            return;
-        }
-
-        PickerBoxResult result   = columnPicker.Result;
-        List<int> checkedIndices = columnPicker.CheckedIndices.ToList();
-
-        columnPicker.Visible  = false;
-        Control.RedrawEnabled = true;
-
-        if (result == PickerBoxResult.Ok) {
-            Statistics columns = Statistics.Process | Statistics.Pid;
-
-            foreach (int index in checkedIndices) {
-                columns |= toggleableColumns[index].Statistic;
-            }
-
-            tree.Nodes[selectedNodeId].ProcessColumns = columns;
-
-            if (paneControls[selectedNodeId] is ProcessControl processControl) {
-                processControl.VisibleColumnsOverride = columns;
-                processControl.Resize();
-            }
-        }
-
-        Draw();
-    }
-
     private void SaveLayout()
     {
         Control.RedrawEnabled = false;
@@ -544,27 +604,6 @@ public sealed class LayoutDesignerScreen : Screen
         
         saveDialog.Visible = true;
         saveDialog.ShowTextInputDialog();
-    }
-
-    private void OnSaveDialogKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        saveDialog.KeyPressed(keyInfo, ref handled);
-
-        if (saveDialog.Result == TextInputDialogResult.None) {
-            return;
-        }
-
-        TextInputDialogResult result = saveDialog.Result;
-        string name = saveDialog.Text.Trim();
-
-        saveDialog.Visible    = false;
-        Control.RedrawEnabled = true;
-
-        Draw();
-
-        if (result == TextInputDialogResult.Ok && name.Length > 0) {
-            SaveLayoutAs(name);
-        }
     }
 
     private void SaveLayoutAs(string name)
@@ -591,65 +630,26 @@ public sealed class LayoutDesignerScreen : Screen
         DrawBanner();
     }
 
-    protected override void OnLoad()
+    internal int SelectedNodeId => selectedNodeId;
+
+    private void SplitSelectedPane(Orientation orientation)
     {
-        Terminal.CursorVisible = false;
-        
-        DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour     = runContext.AppConfig.Theme.HeaderForeground;
-        DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
-        
-        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
-        CommonControl.Theme(controlTypePicker, runContext.AppConfig.Theme);
-        CommonControl.Theme(columnPicker, runContext.AppConfig.Theme);
-        CommonControl.Theme(saveDialog, runContext.AppConfig.Theme);
-        
-        controlTypePicker.Load();
-        columnPicker.Load();
-        saveDialog.Load();
+        (int firstId, int secondId) = tree.Split(selectedNodeId, orientation);
 
-        foreach (Control control in paneControls.Values) {
-            SummaryPaneTheme.Apply(control, runContext.AppConfig);
-        }
+        RemovePaneControl(selectedNodeId);
+        AddPaneControl(tree.Nodes[firstId]);
+        AddPaneControl(tree.Nodes[secondId]);
 
-        isLoaded = true;
+        // The new empty pane, ready to be assigned straight away.
+        selectedNodeId = secondId;
 
-        base.OnLoad();
         RefreshSelectionHighlight();
-
-        runContext.ServiceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+        Relayout();
+        Draw();
     }
 
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
-    {
-        try {
-            Control.DrawingLockAcquire();
-            RefreshSelectionHighlight();
-            
-            SummaryChartFeeder.Feed(
-                tree, 
-                paneControls, 
-                e.Snapshot, 
-                runContext.AppConfig);
-        }
-        finally {
-            Control.DrawingLockRelease();
-        }
-    }
-    
-    protected override void OnUnload()
-    {
-        runContext.ServiceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+    private static string ToDisplayLabel(PaneControlType type) =>
+        Regex.Replace(type.ToString(), "(?<!^)([A-Z])", " $1");
 
-        highlightedBorders.Clear();
-
-        controlTypePicker.Unload();
-        columnPicker.Unload();
-        saveDialog.Unload();
-
-        isLoaded = false;
-        Terminal.CursorVisible = true;
-
-        base.OnUnload();
-    }
+    internal SummaryLayoutTree Tree => tree;
 }

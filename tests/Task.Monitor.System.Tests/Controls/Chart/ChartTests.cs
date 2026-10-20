@@ -1,86 +1,32 @@
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using ChartControl = Task.Monitor.System.Controls.Chart.Chart;
-
-using System.Drawing;
 namespace Task.Monitor.System.Tests.Controls.Chart;
 
 public sealed class ChartTests
 {
     private const char Esc = (char)27;
 
-    private static ChartControl CreateChart(RecordingTerminal terminal, int width, int height)
-    {
-        ChartControl chart = new(terminal)
-        {
-            X = 0,
-            Y = 0,
-            Width = width,
-            Height = height,
-        };
-
-        chart.Resize();
-        return chart;
-    }
-
     [Fact]
-    public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
+    public void AddData_Accumulates_Without_Writing_To_The_Terminal()
     {
         RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-        
-        for (int i = 0; i < 8; i++) {
-            chart.Add(0.5);
-        }
+        ChartControl chart = CreateChart(terminal, width: 12, height: 6);
+        chart.AutoScale = false;
 
         terminal.Reset();
-        chart.Draw();
 
-        Assert.Equal(1, terminal.WriteSpanCalls);
-        Assert.Equal(0, terminal.WriteCharCalls);
+        for (int i = 0; i < 12; i++) {
+            chart.AddData(0.9);
+        }
+
+        Assert.Equal(0, terminal.WriteSpanCalls);
         Assert.Equal(0, terminal.WriteStringCalls);
-    }
+        Assert.Equal(0, terminal.WriteCharCalls);
 
-    [Fact]
-    public void OnDraw_Does_Not_Use_The_Console_Colour_Or_Cursor_Apis()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-
-        for (int i = 0; i < 8; i++) {
-            chart.Add(0.5);
-        }
-
-        terminal.Reset();
+        // The samples are there: a redraw now shows the high bars.
         chart.Draw();
-
-        Assert.Equal(0, terminal.SetCursorPositionCalls);
-        Assert.Equal(0, terminal.ForegroundColorSets);
-        Assert.Equal(0, terminal.BackgroundColorSets);
-    }
-
-    [Fact]
-    public void OnDraw_Emits_Border_Cursor_Moves_Colour_And_Reset()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-        chart.Add(0.5);
-
-        terminal.Reset();
-        chart.Draw();
-
-        string output = terminal.Output;
-
-        Assert.Contains(Esc + "[1;1H", output);
-
-        Assert.Contains('╭', output);
-        Assert.Contains('╮', output);
-        Assert.Contains('╰', output);
-        Assert.Contains('╯', output);
-
-        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ForegroundColour), output);
-        Assert.Contains(ConsolePalette.BackgroundSgr(chart.BackgroundColour), output);
-
-        Assert.EndsWith(AnsiConsoleStringExtensions.Reset, output);
+        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ColourHigh), terminal.Output);
     }
 
     [Fact]
@@ -107,138 +53,6 @@ public sealed class ChartTests
         // Generic focus / selection code recolours a border through BorderColour.
         chart.BorderColour = ConsolePalette.Yellow;
         Assert.Equal(ConsolePalette.Yellow, chart.BorderForegroundColour);
-    }
-
-    [Fact]
-    public void OnDraw_Paints_The_Border_With_The_Border_Colours_And_The_Plot_With_The_Chart_Colours()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-        chart.Text = "CPU";
-        chart.BackgroundColour = ConsolePalette.Black;
-        chart.ForegroundColour = ConsolePalette.White;
-        chart.BorderForegroundColour = ConsolePalette.Magenta;
-        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
-        chart.Add(0.5);
-
-        terminal.Reset();
-        chart.Draw();
-
-        string output = terminal.Output;
-        string border = ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.Magenta);
-
-        // Top-left corner, and the right edge drawn straight after a plot cell.
-        Assert.Contains(border + "╭", output);
-        Assert.Contains(border + "│", output);
-
-        // The bottom label sits on the border line: chart foreground on the border background.
-        Assert.Contains(
-            ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.White) + " CPU ",
-            output);
-
-        // The plot area keeps the chart's own background.
-        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.Black), output);
-    }
-
-    [Fact]
-    public void OnDraw_Emits_The_Low_Bar_Colour_For_Small_Values()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
-        
-        chart.AutoScale = false;
-        chart.Add(0.1);
-
-        terminal.Reset();
-        chart.Draw();
-
-        Assert.Contains(
-            ConsolePalette.ForegroundSgr(chart.ColourLow),
-            terminal.Output);
-    }
-
-    [Fact]
-    public void OnDraw_Does_Not_Draw_YAxisScale_When_Chart_Height_Is_6_Or_Less()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 6);
-        chart.ShowYAxisScale = true;
-        chart.Add(0.5);
-
-        terminal.Reset();
-        chart.Draw();
-
-        Assert.DoesNotContain('┤', terminal.Output);
-    }
-
-    [Fact]
-    public void OnDraw_Draws_YAxisScale_When_Chart_Height_Is_Greater_Than_6()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
-        chart.ShowYAxisScale = true;
-        chart.CustomYAxisScaleFormatter = ChartControl.FormatYScalePercentage;
-        chart.Add(1.0);
-
-        terminal.Reset();
-        chart.Draw();
-
-        string output = terminal.Output;
-        Assert.Contains('┤', output);
-        Assert.Contains("100%", output);
-        Assert.Contains("0%", output);
-    }
-
-    [Fact]
-    public void OnDraw_Hides_YAxisScale_When_ShowYAxisScale_Is_False()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
-        chart.ShowYAxisScale = false;
-        chart.Add(1.0);
-
-        terminal.Reset();
-        chart.Draw();
-
-        Assert.DoesNotContain('┤', terminal.Output);
-    }
-
-    [Fact]
-    public void OnDraw_Uses_CustomYAxisScaleFormatter_When_Provided()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
-        chart.CustomYAxisScaleFormatter = val => $"{val:F0}v";
-        chart.Add(10.0);
-
-        terminal.Reset();
-        chart.Draw();
-
-        string output = terminal.Output;
-        Assert.Contains("10v", output);
-        Assert.Contains("0v", output);
-    }
-
-    [Fact]
-    public void AddData_Accumulates_Without_Writing_To_The_Terminal()
-    {
-        RecordingTerminal terminal = new();
-        ChartControl chart = CreateChart(terminal, width: 12, height: 6);
-        chart.AutoScale = false;
-
-        terminal.Reset();
-
-        for (int i = 0; i < 12; i++) {
-            chart.AddData(0.9);
-        }
-
-        Assert.Equal(0, terminal.WriteSpanCalls);
-        Assert.Equal(0, terminal.WriteStringCalls);
-        Assert.Equal(0, terminal.WriteCharCalls);
-
-        // The samples are there: a redraw now shows the high bars.
-        chart.Draw();
-        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ColourHigh), terminal.Output);
     }
 
     [Fact]
@@ -280,5 +94,190 @@ public sealed class ChartTests
         string output = terminal.Output;
         Assert.Contains("5v", output);
         Assert.DoesNotContain("100v", output);
+    }
+
+    private static ChartControl CreateChart(RecordingTerminal terminal, int width, int height)
+    {
+        ChartControl chart = new(terminal)
+        {
+            X = 0,
+            Y = 0,
+            Width = width,
+            Height = height,
+        };
+
+        chart.Resize();
+        return chart;
+    }
+
+    [Fact]
+    public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        
+        for (int i = 0; i < 8; i++) {
+            chart.Add(0.5);
+        }
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.Equal(1, terminal.WriteSpanCalls);
+        Assert.Equal(0, terminal.WriteCharCalls);
+        Assert.Equal(0, terminal.WriteStringCalls);
+    }
+
+    [Fact]
+    public void OnDraw_Does_Not_Draw_YAxisScale_When_Chart_Height_Is_6_Or_Less()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 6);
+        chart.ShowYAxisScale = true;
+        chart.Add(0.5);
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.DoesNotContain('┤', terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Does_Not_Use_The_Console_Colour_Or_Cursor_Apis()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+
+        for (int i = 0; i < 8; i++) {
+            chart.Add(0.5);
+        }
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.Equal(0, terminal.SetCursorPositionCalls);
+        Assert.Equal(0, terminal.ForegroundColorSets);
+        Assert.Equal(0, terminal.BackgroundColorSets);
+    }
+
+    [Fact]
+    public void OnDraw_Draws_YAxisScale_When_Chart_Height_Is_Greater_Than_6()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.ShowYAxisScale = true;
+        chart.CustomYAxisScaleFormatter = ChartControl.FormatYScalePercentage;
+        chart.Add(1.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        Assert.Contains('┤', output);
+        Assert.Contains("100%", output);
+        Assert.Contains("0%", output);
+    }
+
+    [Fact]
+    public void OnDraw_Emits_Border_Cursor_Moves_Colour_And_Reset()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        chart.Add(0.5);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+
+        Assert.Contains(Esc + "[1;1H", output);
+
+        Assert.Contains('╭', output);
+        Assert.Contains('╮', output);
+        Assert.Contains('╰', output);
+        Assert.Contains('╯', output);
+
+        Assert.Contains(ConsolePalette.ForegroundSgr(chart.ForegroundColour), output);
+        Assert.Contains(ConsolePalette.BackgroundSgr(chart.BackgroundColour), output);
+
+        Assert.EndsWith(AnsiConsoleStringExtensions.Reset, output);
+    }
+
+    [Fact]
+    public void OnDraw_Emits_The_Low_Bar_Colour_For_Small_Values()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        
+        chart.AutoScale = false;
+        chart.Add(0.1);
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.Contains(
+            ConsolePalette.ForegroundSgr(chart.ColourLow),
+            terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Hides_YAxisScale_When_ShowYAxisScale_Is_False()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.ShowYAxisScale = false;
+        chart.Add(1.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.DoesNotContain('┤', terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Paints_The_Border_With_The_Border_Colours_And_The_Plot_With_The_Chart_Colours()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        chart.Text = "CPU";
+        chart.BackgroundColour = ConsolePalette.Black;
+        chart.ForegroundColour = ConsolePalette.White;
+        chart.BorderForegroundColour = ConsolePalette.Magenta;
+        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        chart.Add(0.5);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        string border = ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.Magenta);
+
+        // Top-left corner, and the right edge drawn straight after a plot cell.
+        Assert.Contains(border + "╭", output);
+        Assert.Contains(border + "│", output);
+
+        // The bottom label sits on the border line: chart foreground on the border background.
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.White) + " CPU ",
+            output);
+
+        // The plot area keeps the chart's own background.
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.Black), output);
+    }
+
+    [Fact]
+    public void OnDraw_Uses_CustomYAxisScaleFormatter_When_Provided()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 20, height: 9);
+        chart.CustomYAxisScaleFormatter = val => $"{val:F0}v";
+        chart.Add(10.0);
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+        Assert.Contains("10v", output);
+        Assert.Contains("0v", output);
     }
 }

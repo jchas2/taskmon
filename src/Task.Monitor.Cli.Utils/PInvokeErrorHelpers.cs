@@ -13,24 +13,6 @@ public static class PInvokeErrorHelpers
 #endif
     }
 
-    public static void TraceOnLastError(string message) =>
-        Trace.WriteLine(GetFormattedErrorMessage(message));
-
-    public static void TraceOnceOnLastError(string key) =>
-        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage());
-
-    public static void TraceOnceOnLastError(string key, string message) => 
-        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage(message));
-
-    public static void TraceOnPInvokeError(string message, uint error) =>
-        Trace.WriteLine($"PINVOKE ERROR ({error}): {message}");
-
-    public static void TraceOnceOnPInvokeError(string key, string message, uint error) =>
-        TraceEx.WriteLineOnce(key, $"PINVOKE ERROR ({error}): {message}");
-
-    public static void TraceOnceOnHResult(string key, string message, int hr) =>
-        TraceEx.WriteLineOnce(key, $"HRESULT ERROR (0x{hr:X8}): {message}");
-
     private static string GetFormattedErrorMessage() => GetFormattedErrorMessage(string.Empty);
     
     private static string GetFormattedErrorMessage(string message)
@@ -44,4 +26,22 @@ public static class PInvokeErrorHelpers
         
         return errorMessage;
     }
+
+    public static void TraceOnceOnHResult(string key, string message, int hr) =>
+        TraceEx.WriteLineOnce(key, $"HRESULT ERROR (0x{hr:X8}): {message}");
+
+    public static void TraceOnceOnLastError(string key) =>
+        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage());
+
+    public static void TraceOnceOnLastError(string key, string message) => 
+        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage(message));
+
+    public static void TraceOnceOnPInvokeError(string key, string message, uint error) =>
+        TraceEx.WriteLineOnce(key, $"PINVOKE ERROR ({error}): {message}");
+
+    public static void TraceOnLastError(string message) =>
+        Trace.WriteLine(GetFormattedErrorMessage(message));
+
+    public static void TraceOnPInvokeError(string message, uint error) =>
+        Trace.WriteLine($"PINVOKE ERROR ({error}): {message}");
 }

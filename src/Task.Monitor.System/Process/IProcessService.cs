@@ -2,6 +2,7 @@
 
 public interface IProcessService
 {
-    List<ProcessInfo> GetProcesses();
     ProcessInfo? GetProcessById(int pid);
+
+    List<ProcessInfo> GetProcesses();
 }

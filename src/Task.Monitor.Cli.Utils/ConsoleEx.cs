@@ -4,14 +4,6 @@ public static class ConsoleEx
 {
     // Simple static class until C# supports static extension methods.
     private static bool isAltBufferActive = false;
-    
-    public static void SetAlternateScreenBuffer()
-    {
-        Console.Write("\x1b[?1049h\x1b[2J\x1b[H");
-        Console.Out.Flush();
-        
-        isAltBufferActive = true;
-    }
 
     public static void RestoreScreenBuffer()
     {
@@ -23,5 +15,13 @@ public static class ConsoleEx
         Console.Out.Flush();
         
         isAltBufferActive = false;
+    }
+
+    public static void SetAlternateScreenBuffer()
+    {
+        Console.Write("\x1b[?1049h\x1b[2J\x1b[H");
+        Console.Out.Flush();
+        
+        isAltBufferActive = true;
     }
 }

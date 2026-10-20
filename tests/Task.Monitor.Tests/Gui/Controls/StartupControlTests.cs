@@ -20,40 +20,6 @@ public sealed class StartupControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static SystemSnapshot SnapshotWith(params StartupEntry[] entries) =>
-        new() { Startup = new StartupInfo { Specs = new StartupSpecs { Entries = [.. entries] } } };
-
-    private static StartupEntry Entry(
-        string name,
-        StartupEntrySource source = StartupTestSources.Primary,
-        StartupEntryScope scope = StartupEntryScope.User,
-        StartupEntryState state = StartupEntryState.Enabled,
-        string? publisher = null,
-        string command = "app.exe") =>
-        new() {
-            Name = name,
-            Source = source,
-            Scope = scope,
-            State = state,
-            Publisher = publisher,
-            Command = command
-        };
-
-    private StartupControl CreateControl(int width = 160, int height = 40)
-    {
-        StartupControl ctrl = new(
-            runContext.ServiceController,
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = width,
-            Height = height
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        return ctrl;
-    }
-
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -70,13 +36,44 @@ public sealed class StartupControlTests
         Assert.NotNull(ctrl);
     }
 
+    private StartupControl CreateControl(int width = 160, int height = 40)
+    {
+        StartupControl ctrl = new(
+            runContext.ServiceController,
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = width,
+            Height = height
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        return ctrl;
+    }
+
     [Fact]
-    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
+    public void Draws_A_Detail_Pane_For_The_Selected_Row()
     {
         StartupControl ctrl = CreateControl();
+
+        const string longCommand =
+            @"C:\Program Files\SomeVendor\SomeProduct\LongPathName\Application.exe --with --several --long --flags";
+
+        ctrl.Sample(SnapshotWith(
+            Entry("OneDrive", publisher: "Microsoft Corporation", command: longCommand),
+            Entry("Steam", scope: StartupEntryScope.Machine, publisher: "Valve")));
         ctrl.Draw();
 
-        Assert.Contains("Gathering startup applications", CapturedOutput());
+        string output = CapturedOutput();
+
+        // The first row is selected by default; its fields show in full in the detail pane, even
+        // though the command is too long to fit in the main table's COMMAND column.
+        foreach (string fragment in new[] {
+            "FIELD", "VALUE", "Name", "Publisher", "Type", "Scope", "Status", "Command",
+            "OneDrive", "Microsoft Corporation", StartupTestSources.PrimaryText, "User", "Enabled", longCommand
+        }) {
+            Assert.Contains(fragment, output);
+        }
 
         ctrl.Unload();
     }
@@ -108,63 +105,41 @@ public sealed class StartupControlTests
     }
 
     [Fact]
-    public void Draws_A_Detail_Pane_For_The_Selected_Row()
+    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
     {
         StartupControl ctrl = CreateControl();
-
-        const string longCommand =
-            @"C:\Program Files\SomeVendor\SomeProduct\LongPathName\Application.exe --with --several --long --flags";
-
-        ctrl.Sample(SnapshotWith(
-            Entry("OneDrive", publisher: "Microsoft Corporation", command: longCommand),
-            Entry("Steam", scope: StartupEntryScope.Machine, publisher: "Valve")));
         ctrl.Draw();
 
-        string output = CapturedOutput();
-
-        // The first row is selected by default; its fields show in full in the detail pane, even
-        // though the command is too long to fit in the main table's COMMAND column.
-        foreach (string fragment in new[] {
-            "FIELD", "VALUE", "Name", "Publisher", "Type", "Scope", "Status", "Command",
-            "OneDrive", "Microsoft Corporation", StartupTestSources.PrimaryText, "User", "Enabled", longCommand
-        }) {
-            Assert.Contains(fragment, output);
-        }
+        Assert.Contains("Gathering startup applications", CapturedOutput());
 
         ctrl.Unload();
     }
 
+    private static StartupEntry Entry(
+        string name,
+        StartupEntrySource source = StartupTestSources.Primary,
+        StartupEntryScope scope = StartupEntryScope.User,
+        StartupEntryState state = StartupEntryState.Enabled,
+        string? publisher = null,
+        string command = "app.exe") =>
+        new() {
+            Name = name,
+            Source = source,
+            Scope = scope,
+            State = state,
+            Publisher = publisher,
+            Command = command
+        };
+
     [Fact]
-    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    public void Ignores_A_Snapshot_With_No_Startup_Info()
     {
         StartupControl ctrl = CreateControl();
 
-        ctrl.Sample(SnapshotWith(
-            Entry("OneDrive", publisher: "Microsoft Corporation"),
-            Entry("Steam", scope: StartupEntryScope.Machine, publisher: "Valve")));
-        ctrl.Draw();
-        runContextHelper.terminal.Invocations.Clear();
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
-
-        Assert.Contains("Valve", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Shows_The_Enabled_And_Total_Counts_In_The_Footer()
-    {
-        StartupControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(
-            Entry("A"),
-            Entry("B", state: StartupEntryState.Disabled),
-            Entry("C")));
+        ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("2 enabled / 3 total", CapturedOutput());
+        Assert.Contains("Gathering startup applications", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -187,14 +162,39 @@ public sealed class StartupControlTests
     }
 
     [Fact]
-    public void Ignores_A_Snapshot_With_No_Startup_Info()
+    public void Shows_The_Enabled_And_Total_Counts_In_The_Footer()
     {
         StartupControl ctrl = CreateControl();
 
-        ctrl.Sample(new SystemSnapshot());
+        ctrl.Sample(SnapshotWith(
+            Entry("A"),
+            Entry("B", state: StartupEntryState.Disabled),
+            Entry("C")));
         ctrl.Draw();
 
-        Assert.Contains("Gathering startup applications", CapturedOutput());
+        Assert.Contains("2 enabled / 3 total", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    private static SystemSnapshot SnapshotWith(params StartupEntry[] entries) =>
+        new() { Startup = new StartupInfo { Specs = new StartupSpecs { Entries = [.. entries] } } };
+
+    [Fact]
+    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    {
+        StartupControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            Entry("OneDrive", publisher: "Microsoft Corporation"),
+            Entry("Steam", scope: StartupEntryScope.Machine, publisher: "Valve")));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.Contains("Valve", CapturedOutput());
 
         ctrl.Unload();
     }

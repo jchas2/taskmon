@@ -8,16 +8,16 @@ public readonly ref struct HGlobalScope
 
     public static HGlobalScope Allocate(int byteCount) => new(Marshal.AllocHGlobal(byteCount));
 
-    public nint Value { get; }
-
-    public bool IsNull => Value == nint.Zero;
-
-    public static implicit operator nint(in HGlobalScope scope) => scope.Value;
-
     public void Dispose()
     {
         if (Value != nint.Zero) {
             Marshal.FreeHGlobal(Value);
         }
     }
+
+    public bool IsNull => Value == nint.Zero;
+
+    public static implicit operator nint(in HGlobalScope scope) => scope.Value;
+
+    public nint Value { get; }
 }

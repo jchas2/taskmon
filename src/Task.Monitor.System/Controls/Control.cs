@@ -22,7 +22,7 @@ public class Control
     // append instead of one move per cell. Rows wider than this fall back to the heap.
     private const int MaxStackAllocChars = 512;
 
-    private static readonly object drawingLock = new();
+    private static readonly object DrawingLock = new();
 
     private static int drawingLocksAcquired = 0;
 
@@ -44,7 +44,33 @@ public class Control
     
     internal void ClearControls() => controls.Clear();
 
+    internal bool ContainsControl(Control control)
+    {
+        ArgumentNullException.ThrowIfNull(control, nameof(control));
+        
+        return controls.Contains(control);
+    }
+
     internal int ControlCount => controls.Count;
+
+    public ControlCollection Controls => controlCollection;
+
+    public virtual Color DisplayBorderColour => Focused ? FocusSelectionColour : BorderColour;
+
+    public void Draw()
+    {
+        if (!RedrawEnabled || !Visible) {
+            return;
+        }
+
+        try {
+            DrawingLockAcquire();
+            OnDraw();
+        }
+        finally {
+            DrawingLockRelease();
+        }
+    }
 
     protected void DrawHorizontalLine(
         int   y,
@@ -76,41 +102,11 @@ public class Control
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
     }
-    
-    protected void DrawVerticalLine(
-        int   x, 
-        int   y1, 
-        int   y2, 
-        Color colour)
-    {
-        frame.Clear();
-        frame.MoveTo(x, y1);
-        frame.SetColour(colour, BackgroundColour);
 
-        for (int i = y1; i < y2; i++) {
-            frame.MoveTo(x, i);
-            
-            if (i == y1) {
-                frame.Append('\u2577');
-                continue;
-            }
-
-            if (i + 1 == y2) {
-                frame.Append('\u2575');
-                continue;
-            }
-            
-            frame.Append('\u2502');
-        }
-        
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
-    }
-    
     protected static void DrawingLockAcquire()
     {
         drawingLocksAcquired++;
-        SysThreading::Monitor.Enter(drawingLock);
+        SysThreading::Monitor.Enter(DrawingLock);
     }
 
     protected static void DrawingLockRelease()
@@ -121,7 +117,7 @@ public class Control
         
         drawingLocksAcquired--;
         
-        SysThreading::Monitor.Exit(drawingLock);
+        SysThreading::Monitor.Exit(DrawingLock);
     }
 
     protected void DrawRectangle(
@@ -220,38 +216,40 @@ public class Control
         frame.ResetColour();
         terminal.Write(frame.AsSpan());
     }    
-    
-    public void Draw()
-    {
-        if (!RedrawEnabled || !Visible) {
-            return;
-        }
 
-        try {
-            DrawingLockAcquire();
-            OnDraw();
-        }
-        finally {
-            DrawingLockRelease();
-        }
-    }
-    
-    internal bool ContainsControl(Control control)
+    protected void DrawVerticalLine(
+        int   x, 
+        int   y1, 
+        int   y2, 
+        Color colour)
     {
-        ArgumentNullException.ThrowIfNull(control, nameof(control));
+        frame.Clear();
+        frame.MoveTo(x, y1);
+        frame.SetColour(colour, BackgroundColour);
+
+        for (int i = y1; i < y2; i++) {
+            frame.MoveTo(x, i);
+            
+            if (i == y1) {
+                frame.Append('\u2577');
+                continue;
+            }
+
+            if (i + 1 == y2) {
+                frame.Append('\u2575');
+                continue;
+            }
+            
+            frame.Append('\u2502');
+        }
         
-        return controls.Contains(control);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
-   
-    public ControlCollection Controls => controlCollection;
 
     public bool Focused { get; set; } = false;
 
-    public virtual bool HasFocus => Focused;
-
     public static Color FocusSelectionColour { get; set; } = ConsolePalette.White;
-
-    public virtual Color DisplayBorderColour => Focused ? FocusSelectionColour : BorderColour;
 
     public virtual Color ForegroundColour { get; set; } = ConsolePalette.White;
     
@@ -275,8 +273,6 @@ public class Control
             : focusableControls.OrderByDescending(ctrl => ctrl.TabIndex);
     }
 
-    internal void GotFocus() => OnGotFocus();
-
     private Screen? GetParentScreen()
     {
         Control? ctrl = this;
@@ -290,7 +286,11 @@ public class Control
 
         return ctrl as Screen;
     }
-    
+
+    internal void GotFocus() => OnGotFocus();
+
+    public virtual bool HasFocus => Focused;
+
     public int Height { get; set; } = 0;
 
     internal int IndexOfControl(Control control)
@@ -333,15 +333,15 @@ public class Control
         }
     }
 
+    public void Load() => OnLoad();
+
+    internal void LostFocus() => OnLostFocus();
+
     public string? Name
     {
         get => name ?? string.Empty;
         set => name = value ?? string.Empty;
     }
-    
-    public void Load() => OnLoad();
-
-    internal void LostFocus() => OnLostFocus();
 
     protected virtual void OnClear() =>
         DrawRectangle(
@@ -355,15 +355,6 @@ public class Control
 
     protected virtual void OnGotFocus() { }
 
-    protected virtual void OnLoad()
-    {
-        foreach (Control control in Controls) {
-            control.Load();
-        }
-    }
-
-    protected virtual void OnLostFocus() { }
-
     protected virtual void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         handled = keyInfo.Key switch {
@@ -376,6 +367,15 @@ public class Control
         //     Draw();
         // }
     }
+
+    protected virtual void OnLoad()
+    {
+        foreach (Control control in Controls) {
+            control.Load();
+        }
+    }
+
+    protected virtual void OnLostFocus() { }
 
     protected virtual void OnResize()
     {
@@ -412,14 +412,6 @@ public class Control
     }
 
     public static bool RedrawEnabled { get; set; } = true;
-    
-    internal void RemoveControlAt(int index)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, controls.Count, nameof(index));
-        
-        controls.RemoveAt(index);
-    }
 
     internal void RemoveControl(Control control)
     {
@@ -428,6 +420,14 @@ public class Control
         if (index != -1) {
             RemoveControlAt(index);
         }
+    }
+
+    internal void RemoveControlAt(int index)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(index, nameof(index));
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, controls.Count, nameof(index));
+        
+        controls.RemoveAt(index);
     }
 
     public void Resize()

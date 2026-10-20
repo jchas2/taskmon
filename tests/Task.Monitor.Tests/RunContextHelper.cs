@@ -1,13 +1,12 @@
-﻿using Moq;
+﻿using System.Drawing;
+using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System;
 using Task.Monitor.System.Process;
-using Task.Monitor.System.Tests.Controls;
-
-using System.Drawing;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Tests.Controls;
 
 namespace Task.Monitor.Tests;
 

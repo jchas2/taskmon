@@ -14,6 +14,20 @@ public sealed class AnsiConsoleStringExtensionsTests
     }
 
     [Fact]
+    public void ToColour_Returns_Input_Unchanged_When_Empty()
+    {
+        Assert.Equal(string.Empty, string.Empty.ToColour(ConsolePalette.White, ConsolePalette.Black));
+    }
+
+    [Fact]
+    public void ToColour_Uses_Default_Background_For_Transparent()
+    {
+        string result = "hi".ToColour(ConsolePalette.White, ConsolePalette.Transparent);
+
+        Assert.Contains(Esc + "[49m", result);
+    }
+
+    [Fact]
     public void ToColour_Wraps_Text_With_Background_Foreground_And_Reset()
     {
         Color fg = Color.FromArgb(255, 10, 20, 30);
@@ -28,19 +42,5 @@ public sealed class AnsiConsoleStringExtensionsTests
             AnsiConsoleStringExtensions.Reset;
 
         Assert.Equal(expected, result);
-    }
-
-    [Fact]
-    public void ToColour_Uses_Default_Background_For_Transparent()
-    {
-        string result = "hi".ToColour(ConsolePalette.White, ConsolePalette.Transparent);
-
-        Assert.Contains(Esc + "[49m", result);
-    }
-
-    [Fact]
-    public void ToColour_Returns_Input_Unchanged_When_Empty()
-    {
-        Assert.Equal(string.Empty, string.Empty.ToColour(ConsolePalette.White, ConsolePalette.Black));
     }
 }

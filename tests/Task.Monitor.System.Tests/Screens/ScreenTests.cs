@@ -1,10 +1,9 @@
-﻿using Moq;
+﻿using System.Drawing;
+using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Screens;
 
 public sealed class ScreenTests

@@ -2,11 +2,11 @@
 using Task.Monitor.Gui;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
-using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
 using Task.Monitor.System.Services.Drivers;
+using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;

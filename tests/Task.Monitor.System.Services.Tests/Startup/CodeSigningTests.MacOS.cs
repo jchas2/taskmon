@@ -24,6 +24,13 @@ public sealed class CodeSigningTests
     }
 
     [Fact]
+    public void Returns_Null_For_A_Path_That_Does_Not_Exist()
+    {
+        Assert.Null(CodeSigning.GetSigningCertificateSummary(
+            Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}", "missing")));
+    }
+
+    [Fact]
     public void Returns_Null_For_Unsigned_Code()
     {
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sh");
@@ -35,13 +42,6 @@ public sealed class CodeSigningTests
         finally {
             File.Delete(path);
         }
-    }
-
-    [Fact]
-    public void Returns_Null_For_A_Path_That_Does_Not_Exist()
-    {
-        Assert.Null(CodeSigning.GetSigningCertificateSummary(
-            Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}", "missing")));
     }
 
     [Fact]

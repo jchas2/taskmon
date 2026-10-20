@@ -1,10 +1,9 @@
+using System.Drawing;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls.PickerBox;
 using Task.Monitor.Tests.Common;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.PickerBox;
 
 public sealed class PickerBoxTests
@@ -32,37 +31,22 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
-    public void PickerBox_Canary_Test() =>
-        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
-
-    [Fact]
-    public void Should_Construct_Default()
+    public void DownArrow_Does_Not_Repaint_The_Frame_Or_Title()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        PickerBoxControl control = new(new ForwardingTerminal(terminal.Object));
-
-        Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
-        Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
-        Assert.NotNull(control.Title);
-        Assert.Empty(control.Title);
-        Assert.False(control.MultiSelect);
-        Assert.Equal(PickerBoxResult.None, control.Result);
-        Assert.True(control.Visible);
-    }
-
-    [Fact]
-    public void Enter_With_The_First_Row_Highlighted_Selects_It()
-    {
-        PickerBoxControl control = CreateBox();
+        PickerBoxControl control = CreateBox(terminal);
         control.ShowPickerBox();
 
-        bool handled = false;
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+        terminal.Invocations.Clear();
 
-        Assert.True(handled);
-        Assert.Equal(PickerBoxResult.Ok, control.Result);
-        Assert.Equal(0, control.SelectedIndex);
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+
+        // Browsing the list must only touch the list's own rows - repainting the border, title
+        // or help text on every arrow press is what caused DriveInputBox's dialog to flicker
+        // before PickerBox copied its incremental-redraw approach.
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Choose a control"))), Times.Never);
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("confirm") || s.Contains("select"))), Times.Never);
     }
 
     [Fact]
@@ -80,6 +64,20 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
+    public void Enter_With_The_First_Row_Highlighted_Selects_It()
+    {
+        PickerBoxControl control = CreateBox();
+        control.ShowPickerBox();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(PickerBoxResult.Ok, control.Result);
+        Assert.Equal(0, control.SelectedIndex);
+    }
+
+    [Fact]
     public void Escape_Cancels_Without_A_Selection()
     {
         PickerBoxControl control = CreateBox();
@@ -94,41 +92,6 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
-    public void SetItems_Resets_Any_Previous_Result()
-    {
-        PickerBoxControl control = CreateBox();
-        control.ShowPickerBox();
-
-        bool handled = false;
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
-        Assert.Equal(PickerBoxResult.Ok, control.Result);
-
-        control.SetItems(["Cpu"]);
-
-        Assert.Equal(PickerBoxResult.None, control.Result);
-    }
-
-    [Fact]
-    public void MultiSelect_Space_Toggles_A_Row_And_Enter_Confirms_Whatever_Is_Checked()
-    {
-        PickerBoxControl control = CreateBox(multiSelect: true);
-        control.ShowPickerBox();
-
-        bool handled = false;
-        // Check row 0 (Cpu), move to row 2 (Gpu) and check that too, leaving row 1 (Memory)
-        // unchecked - confirming that Enter reads back whatever is checked, not merely whichever
-        // row happens to be highlighted at the time.
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar), ref handled);
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar), ref handled);
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
-
-        Assert.Equal(PickerBoxResult.Ok, control.Result);
-        Assert.Equal([0, 2], control.CheckedIndices.ToList());
-    }
-
-    [Fact]
     public void MultiSelect_SetItems_Applies_The_Initially_Checked_Rows()
     {
         PickerBoxControl control = CreateBox(multiSelect: true, initiallyChecked: [true, false, true]);
@@ -139,16 +102,6 @@ public sealed class PickerBoxTests
 
         Assert.Equal(PickerBoxResult.Ok, control.Result);
         Assert.Equal([0, 2], control.CheckedIndices.ToList());
-    }
-
-    [Fact]
-    public void SingleSelect_Does_Not_Show_Checkboxes()
-    {
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        PickerBoxControl control = CreateBox(terminal, multiSelect: false);
-        control.ShowPickerBox();
-
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("[ ]") || s.Contains("[x]"))), Times.Never);
     }
 
     [Fact]
@@ -177,22 +130,58 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
-    public void DownArrow_Does_Not_Repaint_The_Frame_Or_Title()
+    public void MultiSelect_Space_Toggles_A_Row_And_Enter_Confirms_Whatever_Is_Checked()
     {
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        PickerBoxControl control = CreateBox(terminal);
+        PickerBoxControl control = CreateBox(multiSelect: true);
         control.ShowPickerBox();
 
-        terminal.Invocations.Clear();
+        bool handled = false;
+        // Check row 0 (Cpu), move to row 2 (Gpu) and check that too, leaving row 1 (Memory)
+        // unchecked - confirming that Enter reads back whatever is checked, not merely whichever
+        // row happens to be highlighted at the time.
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(PickerBoxResult.Ok, control.Result);
+        Assert.Equal([0, 2], control.CheckedIndices.ToList());
+    }
+
+    [Fact]
+    public void PickerBox_Canary_Test() =>
+        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+
+    [Fact]
+    public void SetItems_Resets_Any_Previous_Result()
+    {
+        PickerBoxControl control = CreateBox();
+        control.ShowPickerBox();
 
         bool handled = false;
-        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+        Assert.Equal(PickerBoxResult.Ok, control.Result);
 
-        // Browsing the list must only touch the list's own rows - repainting the border, title
-        // or help text on every arrow press is what caused DriveInputBox's dialog to flicker
-        // before PickerBox copied its incremental-redraw approach.
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Choose a control"))), Times.Never);
-        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("confirm") || s.Contains("select"))), Times.Never);
+        control.SetItems(["Cpu"]);
+
+        Assert.Equal(PickerBoxResult.None, control.Result);
+    }
+
+    [Fact]
+    public void Should_Construct_Default()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        PickerBoxControl control = new(new ForwardingTerminal(terminal.Object));
+
+        Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.NotNull(control.Title);
+        Assert.Empty(control.Title);
+        Assert.False(control.MultiSelect);
+        Assert.Equal(PickerBoxResult.None, control.Result);
+        Assert.True(control.Visible);
     }
 
     [Fact]
@@ -207,5 +196,15 @@ public sealed class PickerBoxTests
 
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(title))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Cpu"))), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void SingleSelect_Does_Not_Show_Checkboxes()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        PickerBoxControl control = CreateBox(terminal, multiSelect: false);
+        control.ShowPickerBox();
+
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("[ ]") || s.Contains("[x]"))), Times.Never);
     }
 }

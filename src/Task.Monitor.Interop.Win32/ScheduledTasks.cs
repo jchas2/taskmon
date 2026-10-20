@@ -42,6 +42,30 @@ public static unsafe class ScheduledTasks
         bool Enabled, 
         string Xml);
 
+    private static bool Connect(nint taskService)
+    {
+        // Connect to the local machine as the current user.
+        byte* server   = stackalloc byte[VariantSize]; 
+        byte* user     = stackalloc byte[VariantSize]; 
+        byte* domain   = stackalloc byte[VariantSize]; 
+        byte* password = stackalloc byte[VariantSize]; 
+
+        new Span<byte>(server,   VariantSize).Clear();
+        new Span<byte>(user,     VariantSize).Clear();
+        new Span<byte>(domain,   VariantSize).Clear();
+        new Span<byte>(password, VariantSize).Clear();
+        
+        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint, nint, nint, int>)
+            Ole32.Vtbl(taskService)[SlotServiceConnect])(
+                taskService, 
+                (nint)server, 
+                (nint)user, 
+                (nint)domain, 
+                (nint)password);
+
+        return hr >= 0;
+    }
+
     public static IReadOnlyList<TaskRecord> EnumerateTasks()
     {
         List<TaskRecord> records = new();
@@ -79,28 +103,43 @@ public static unsafe class ScheduledTasks
         return records;
     }
 
-    private static bool Connect(nint taskService)
+    private static string GetBSTRProperty(nint obj, int slot)
     {
-        // Connect to the local machine as the current user.
-        byte* server   = stackalloc byte[VariantSize]; 
-        byte* user     = stackalloc byte[VariantSize]; 
-        byte* domain   = stackalloc byte[VariantSize]; 
-        byte* password = stackalloc byte[VariantSize]; 
+        nint bstr;
+        int hr = ((delegate* unmanaged[Stdcall]<nint, nint*, int>)Ole32.Vtbl(obj)[slot])(obj, &bstr);
 
-        new Span<byte>(server,   VariantSize).Clear();
-        new Span<byte>(user,     VariantSize).Clear();
-        new Span<byte>(domain,   VariantSize).Clear();
-        new Span<byte>(password, VariantSize).Clear();
-        
-        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint, nint, nint, int>)
-            Ole32.Vtbl(taskService)[SlotServiceConnect])(
-                taskService, 
-                (nint)server, 
-                (nint)user, 
-                (nint)domain, 
-                (nint)password);
+        if (hr < 0 || bstr == nint.Zero) {
+            return string.Empty;
+        }
 
-        return hr >= 0;
+        string value = InteropHelper.TryMarshalPtrToStringBSTR(bstr); 
+        Marshal.FreeBSTR(bstr);
+        return value;
+    }
+
+    private static int GetCollectionCount(nint collection)
+    {
+        int count;
+
+        ((delegate* unmanaged[Stdcall]<nint, int*, int>)
+            Ole32.Vtbl(collection)[SlotCollectionCount])(collection, &count);
+
+        return count;
+    }
+
+    private static nint GetCollectionItem(nint collection, int index)
+    {
+        byte* indexVariant = stackalloc byte[VariantSize];
+        new Span<byte>(indexVariant, VariantSize).Clear();
+        *(ushort*)indexVariant = 3; // VT_I4
+        *(int*)(indexVariant + 8) = index;
+
+        nint item;
+
+        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint*, int>)
+            Ole32.Vtbl(collection)[SlotCollectionItem])(collection, (nint)indexVariant, &item);
+
+        return hr >= 0 ? item : nint.Zero;
     }
 
     private static nint GetFolder(nint taskService, string path)
@@ -114,6 +153,38 @@ public static unsafe class ScheduledTasks
         nint result = hr >= 0 ? folder : nint.Zero;
         Ole32.SysFreeString(pathBstr);
         return result;
+    }
+
+    private static bool GetVariantBoolProperty(nint obj, int slot)
+    {
+        short value;
+        ((delegate* unmanaged[Stdcall]<nint, short*, int>)Ole32.Vtbl(obj)[slot])(obj, &value);
+        return value != 0;
+    }
+
+    private static void ReadTasks(nint taskCollection, string folderPath, List<TaskRecord> records)
+    {
+        int count = GetCollectionCount(taskCollection);
+
+        for (int i = 1; i <= count; i++) {
+            nint task = GetCollectionItem(taskCollection, i);
+
+            if (task == nint.Zero) {
+                continue;
+            }
+
+            string name = GetBSTRProperty(task, SlotTaskName);
+            bool enabled = GetVariantBoolProperty(task, SlotTaskEnabled);
+            string xml = GetBSTRProperty(task, SlotTaskXml);
+
+            records.Add(new TaskRecord(
+                folderPath, 
+                name, 
+                enabled, 
+                xml));
+            
+            InteropHelper.MarshalRelease(ref task);
+        }
     }
 
     private static void WalkFolder(nint folder, List<TaskRecord> records)
@@ -150,76 +221,5 @@ public static unsafe class ScheduledTasks
             
             InteropHelper.MarshalRelease(ref folderCollection);
         }
-    }
-
-    private static void ReadTasks(nint taskCollection, string folderPath, List<TaskRecord> records)
-    {
-        int count = GetCollectionCount(taskCollection);
-
-        for (int i = 1; i <= count; i++) {
-            nint task = GetCollectionItem(taskCollection, i);
-
-            if (task == nint.Zero) {
-                continue;
-            }
-
-            string name = GetBSTRProperty(task, SlotTaskName);
-            bool enabled = GetVariantBoolProperty(task, SlotTaskEnabled);
-            string xml = GetBSTRProperty(task, SlotTaskXml);
-
-            records.Add(new TaskRecord(
-                folderPath, 
-                name, 
-                enabled, 
-                xml));
-            
-            InteropHelper.MarshalRelease(ref task);
-        }
-    }
-
-    private static int GetCollectionCount(nint collection)
-    {
-        int count;
-
-        ((delegate* unmanaged[Stdcall]<nint, int*, int>)
-            Ole32.Vtbl(collection)[SlotCollectionCount])(collection, &count);
-
-        return count;
-    }
-
-    private static nint GetCollectionItem(nint collection, int index)
-    {
-        byte* indexVariant = stackalloc byte[VariantSize];
-        new Span<byte>(indexVariant, VariantSize).Clear();
-        *(ushort*)indexVariant = 3; // VT_I4
-        *(int*)(indexVariant + 8) = index;
-
-        nint item;
-
-        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint*, int>)
-            Ole32.Vtbl(collection)[SlotCollectionItem])(collection, (nint)indexVariant, &item);
-
-        return hr >= 0 ? item : nint.Zero;
-    }
-
-    private static string GetBSTRProperty(nint obj, int slot)
-    {
-        nint bstr;
-        int hr = ((delegate* unmanaged[Stdcall]<nint, nint*, int>)Ole32.Vtbl(obj)[slot])(obj, &bstr);
-
-        if (hr < 0 || bstr == nint.Zero) {
-            return string.Empty;
-        }
-
-        string value = InteropHelper.TryMarshalPtrToStringBSTR(bstr); 
-        Marshal.FreeBSTR(bstr);
-        return value;
-    }
-
-    private static bool GetVariantBoolProperty(nint obj, int slot)
-    {
-        short value;
-        ((delegate* unmanaged[Stdcall]<nint, short*, int>)Ole32.Vtbl(obj)[slot])(obj, &value);
-        return value != 0;
     }
 }

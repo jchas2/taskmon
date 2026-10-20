@@ -14,6 +14,33 @@ public sealed class TerminalCapabilitiesTests
     }
 
     [Theory]
+    [InlineData("nonsense")]
+    [InlineData("")]
+    public void IsColorModeOverriddenByEnvironment_False_When_Env_Var_Absent_Or_Invalid(string envValue)
+    {
+        Assert.False(TerminalCapabilities.IsColorModeOverriddenByEnvironment(
+            Env((TerminalCapabilities.ColourModeEnvVar, envValue))));
+    }
+
+    [Fact]
+    public void IsColorModeOverriddenByEnvironment_True_When_Env_Var_Valid()
+    {
+        Assert.True(TerminalCapabilities.IsColorModeOverriddenByEnvironment(
+            Env((TerminalCapabilities.ColourModeEnvVar, "truecolour"))));
+    }
+
+    [Theory]
+    [InlineData("xterm-ghostty")]
+    [InlineData("xterm-kitty")]
+    [InlineData("alacritty")]
+    [InlineData("xterm-256color")]
+    [InlineData("tmux-256color")]
+    public void IsModernTerminal_Detects_Known_Term(string term)
+    {
+        Assert.True(TerminalCapabilities.IsModernTerminal(Env(("TERM", term))));
+    }
+
+    [Theory]
     [InlineData("ghostty")]
     [InlineData("Ghostty")]
     [InlineData("iTerm.app")]
@@ -37,15 +64,10 @@ public sealed class TerminalCapabilitiesTests
         Assert.True(TerminalCapabilities.IsModernTerminal(Env((marker, "anything"))));
     }
 
-    [Theory]
-    [InlineData("xterm-ghostty")]
-    [InlineData("xterm-kitty")]
-    [InlineData("alacritty")]
-    [InlineData("xterm-256color")]
-    [InlineData("tmux-256color")]
-    public void IsModernTerminal_Detects_Known_Term(string term)
+    [Fact]
+    public void IsModernTerminal_Rejects_Empty_Environment()
     {
-        Assert.True(TerminalCapabilities.IsModernTerminal(Env(("TERM", term))));
+        Assert.False(TerminalCapabilities.IsModernTerminal(Env()));
     }
 
     [Theory]
@@ -58,23 +80,37 @@ public sealed class TerminalCapabilitiesTests
     }
 
     [Fact]
-    public void IsModernTerminal_Rejects_Empty_Environment()
+    public void ResolveEffective_Collapses_Auto_To_Indexed_On_Modern_Terminal()
     {
-        Assert.False(TerminalCapabilities.IsModernTerminal(Env()));
+        Assert.Equal(
+            ColourMode.Indexed,
+            TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env(("TERM_PROGRAM", "ghostty"))));
     }
 
     [Fact]
-    public void ResolvePreferIndexed_Honours_Explicit_Indexed_Config()
+    public void ResolveEffective_Collapses_Auto_To_Truecolour_On_Unknown_Terminal()
     {
-        // Even on an unrecognised terminal, explicit Indexed wins.
-        Assert.True(TerminalCapabilities.ResolvePreferIndexed(ColourMode.Indexed, Env(("TERM", "xterm"))));
+        Assert.Equal(
+            ColourMode.Truecolour,
+            TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env(("TERM", "xterm"))));
     }
 
     [Fact]
-    public void ResolvePreferIndexed_Honours_Explicit_Truecolor_Config()
+    public void ResolveEffective_Env_Var_Overrides_Persisted_Preference()
     {
-        // Even on a modern terminal, explicit Truecolour wins.
-        Assert.False(TerminalCapabilities.ResolvePreferIndexed(ColourMode.Truecolour, Env(("TERM_PROGRAM", "ghostty"))));
+        // Persisted preference is Truecolour; env var forces Indexed and must win.
+        ColourMode effective = TerminalCapabilities.ResolveEffective(
+            ColourMode.Truecolour,
+            Env((TerminalCapabilities.ColourModeEnvVar, "indexed")));
+
+        Assert.Equal(ColourMode.Indexed, effective);
+    }
+
+    [Fact]
+    public void ResolveEffective_Never_Returns_Auto()
+    {
+        ColourMode effective = TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env());
+        Assert.NotEqual(ColourMode.Auto, effective);
     }
 
     [Fact]
@@ -104,7 +140,21 @@ public sealed class TerminalCapabilitiesTests
 
         Assert.Equal(expected, result);
     }
-    
+
+    [Fact]
+    public void ResolvePreferIndexed_Honours_Explicit_Indexed_Config()
+    {
+        // Even on an unrecognised terminal, explicit Indexed wins.
+        Assert.True(TerminalCapabilities.ResolvePreferIndexed(ColourMode.Indexed, Env(("TERM", "xterm"))));
+    }
+
+    [Fact]
+    public void ResolvePreferIndexed_Honours_Explicit_Truecolor_Config()
+    {
+        // Even on a modern terminal, explicit Truecolour wins.
+        Assert.False(TerminalCapabilities.ResolvePreferIndexed(ColourMode.Truecolour, Env(("TERM_PROGRAM", "ghostty"))));
+    }
+
     [Theory]
     [InlineData("auto", ColourMode.Auto)]
     [InlineData("INDEXED", ColourMode.Indexed)]
@@ -123,55 +173,5 @@ public sealed class TerminalCapabilitiesTests
     public void TryParseColorMode_Rejects_Invalid_Values(string? value)
     {
         Assert.False(TerminalCapabilities.TryParseColourMode(value, out _));
-    }
-
-    [Fact]
-    public void ResolveEffective_Collapses_Auto_To_Indexed_On_Modern_Terminal()
-    {
-        Assert.Equal(
-            ColourMode.Indexed,
-            TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env(("TERM_PROGRAM", "ghostty"))));
-    }
-
-    [Fact]
-    public void ResolveEffective_Collapses_Auto_To_Truecolour_On_Unknown_Terminal()
-    {
-        Assert.Equal(
-            ColourMode.Truecolour,
-            TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env(("TERM", "xterm"))));
-    }
-
-    [Fact]
-    public void ResolveEffective_Never_Returns_Auto()
-    {
-        ColourMode effective = TerminalCapabilities.ResolveEffective(ColourMode.Auto, Env());
-        Assert.NotEqual(ColourMode.Auto, effective);
-    }
-
-    [Fact]
-    public void ResolveEffective_Env_Var_Overrides_Persisted_Preference()
-    {
-        // Persisted preference is Truecolour; env var forces Indexed and must win.
-        ColourMode effective = TerminalCapabilities.ResolveEffective(
-            ColourMode.Truecolour,
-            Env((TerminalCapabilities.ColourModeEnvVar, "indexed")));
-
-        Assert.Equal(ColourMode.Indexed, effective);
-    }
-
-    [Fact]
-    public void IsColorModeOverriddenByEnvironment_True_When_Env_Var_Valid()
-    {
-        Assert.True(TerminalCapabilities.IsColorModeOverriddenByEnvironment(
-            Env((TerminalCapabilities.ColourModeEnvVar, "truecolour"))));
-    }
-
-    [Theory]
-    [InlineData("nonsense")]
-    [InlineData("")]
-    public void IsColorModeOverriddenByEnvironment_False_When_Env_Var_Absent_Or_Invalid(string envValue)
-    {
-        Assert.False(TerminalCapabilities.IsColorModeOverriddenByEnvironment(
-            Env((TerminalCapabilities.ColourModeEnvVar, envValue))));
     }
 }

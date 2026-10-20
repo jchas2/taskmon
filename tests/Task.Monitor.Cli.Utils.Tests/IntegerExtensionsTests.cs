@@ -24,14 +24,6 @@ public sealed class IntegerExtensionsTests
             { 17_044_301_824, "15.9 GB" },
             { 29_922_912_256, "27.9 GB" }
         };
-    
-    [Theory]
-    [MemberData(nameof(ByteData))]
-    public void Should_Format_ByteSize(long num, string expected)
-    {
-        string value = num.ToFormattedByteSize();
-        Assert.Equal(expected, value);
-    }
 
     public static TheoryData<long, string> HexDataLong()
         => new()
@@ -47,6 +39,14 @@ public sealed class IntegerExtensionsTests
             { 9_223_372_036_854_775_807,  "0x7FFFFFFFFFFFFFFF" },
             { 18_446_744_073_709_551_615, "0xFFFFFFFFFFFFFFFF" }
         };
+
+    [Theory]
+    [MemberData(nameof(ByteData))]
+    public void Should_Format_ByteSize(long num, string expected)
+    {
+        string value = num.ToFormattedByteSize();
+        Assert.Equal(expected, value);
+    }
 
     [Theory]
     [MemberData(nameof(HexDataLong))]

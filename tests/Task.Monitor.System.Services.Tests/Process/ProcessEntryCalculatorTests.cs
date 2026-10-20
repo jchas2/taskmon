@@ -6,39 +6,20 @@ namespace Task.Monitor.System.Services.Tests.Process;
 public sealed class ProcessEntryCalculatorTests
 {
     [Fact]
-    public void ElapsedSeconds_Converts_From_The_Stopwatch_Timebase()
+    public void BytesPerSecond_Divides_By_The_Elapsed_Interval()
     {
-        long from = 1_000_000;
-        long to = from + (Stopwatch.Frequency / 2);
-
-        Assert.Equal(0.5, ProcessEntryCalculator.ElapsedSeconds(from, to), precision: 6);
+        Assert.Equal(2048.0, ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.5));
     }
 
     [Fact]
-    public void IrixFactor_Measures_Against_One_Core_Or_All_Cores()
+    public void BytesPerSecond_Returns_Zero_On_A_Zero_Interval()
     {
-        // Irix reports 100% as one saturated core, matching macOS Activity Monitor.
-        Assert.Equal(16, ProcessEntryCalculator.IrixFactor(irixMode: true, logicalProcessorCount: 16));
+        // The priming cycle has no interval behind it, so it must report nothing rather than an
+        // infinite rate.
+        double result = ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.0);
 
-        // Non Irix reports 100% as every core saturated, matching Windows Task Manager.
-        Assert.Equal(1, ProcessEntryCalculator.IrixFactor(irixMode: false, logicalProcessorCount: 16));
-    }
-
-    [Fact]
-    public void TotalSystemTime_Scales_With_The_Elapsed_Interval_Not_A_Nominal_Delay()
-    {
-        // One second across 8 cores is 8 seconds of cpu time, in 100ns FILETIME ticks.
-        Assert.Equal(
-            8 * ProcessEntryCalculator.FileTimeTicksPerSecond,
-            ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.0, logicalProcessorCount: 8));
-
-        // The old Processor divided by Environment.ProcessorCount * Delay.Ticks regardless of how
-        // long the cycle really took. A cycle that overran by 20% must widen the denominator by
-        // 20%, otherwise every percentage is inflated by the overrun.
-        Assert.Equal(
-            9.6 * ProcessEntryCalculator.FileTimeTicksPerSecond,
-            ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.2, logicalProcessorCount: 8),
-            precision: 6);
+        Assert.Equal(0.0, result);
+        Assert.False(double.IsInfinity(result));
     }
 
     [Fact]
@@ -72,23 +53,6 @@ public sealed class ProcessEntryCalculatorTests
     }
 
     [Fact]
-    public void BytesPerSecond_Divides_By_The_Elapsed_Interval()
-    {
-        Assert.Equal(2048.0, ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.5));
-    }
-
-    [Fact]
-    public void BytesPerSecond_Returns_Zero_On_A_Zero_Interval()
-    {
-        // The priming cycle has no interval behind it, so it must report nothing rather than an
-        // infinite rate.
-        double result = ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.0);
-
-        Assert.Equal(0.0, result);
-        Assert.False(double.IsInfinity(result));
-    }
-
-    [Fact]
     public void Delta_Clamps_Instead_Of_Wrapping_Unsigned()
     {
         Assert.Equal(512UL, ProcessEntryCalculator.Delta(current: 1536, previous: 1024));
@@ -96,5 +60,41 @@ public sealed class ProcessEntryCalculatorTests
         // A counter that appears to move backwards must read as no traffic, not as a value near
         // ulong.MaxValue.
         Assert.Equal(0UL, ProcessEntryCalculator.Delta(current: 1024, previous: 1536));
+    }
+
+    [Fact]
+    public void ElapsedSeconds_Converts_From_The_Stopwatch_Timebase()
+    {
+        long from = 1_000_000;
+        long to = from + (Stopwatch.Frequency / 2);
+
+        Assert.Equal(0.5, ProcessEntryCalculator.ElapsedSeconds(from, to), precision: 6);
+    }
+
+    [Fact]
+    public void IrixFactor_Measures_Against_One_Core_Or_All_Cores()
+    {
+        // Irix reports 100% as one saturated core, matching macOS Activity Monitor.
+        Assert.Equal(16, ProcessEntryCalculator.IrixFactor(irixMode: true, logicalProcessorCount: 16));
+
+        // Non Irix reports 100% as every core saturated, matching Windows Task Manager.
+        Assert.Equal(1, ProcessEntryCalculator.IrixFactor(irixMode: false, logicalProcessorCount: 16));
+    }
+
+    [Fact]
+    public void TotalSystemTime_Scales_With_The_Elapsed_Interval_Not_A_Nominal_Delay()
+    {
+        // One second across 8 cores is 8 seconds of cpu time, in 100ns FILETIME ticks.
+        Assert.Equal(
+            8 * ProcessEntryCalculator.FileTimeTicksPerSecond,
+            ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.0, logicalProcessorCount: 8));
+
+        // The old Processor divided by Environment.ProcessorCount * Delay.Ticks regardless of how
+        // long the cycle really took. A cycle that overran by 20% must widen the denominator by
+        // 20%, otherwise every percentage is inflated by the overrun.
+        Assert.Equal(
+            9.6 * ProcessEntryCalculator.FileTimeTicksPerSecond,
+            ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.2, logicalProcessorCount: 8),
+            precision: 6);
     }
 }

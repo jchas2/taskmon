@@ -25,6 +25,31 @@ public sealed class ProcessInfoControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
+    // ProcessInfo's setters are internal to Task.Monitor.System, so these use the real current
+    // process (as the tests above do) rather than hand-built fixtures.
+    private (int Pid, string ProcessName) AddCurrentProcess()
+    {
+        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
+        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
+
+        Assert.NotNull(processInfo);
+        Assert.False(string.IsNullOrWhiteSpace(processInfo.ProcessName));
+
+        processServiceFake.AddProcessInfo(processInfo);
+
+        return (processInfo.Pid, processInfo.ProcessName);
+    }
+
+    [Fact]
+    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
+        Assert.Throws<ArgumentNullException>(() => 
+            new ProcessInfoControl(
+                processServiceFake,
+                moduleServiceFake,
+                threadServiceFake,
+                null!, 
+                runContext.AppConfig));
+
     [Fact]
     public void Constructor_With_Valid_Args_Initialises_Successfully()
     {
@@ -37,16 +62,83 @@ public sealed class ProcessInfoControlTests
 
         Assert.NotNull(ctrl);
     }
-    
+
+    private ProcessInfoControl CreateLoadedControl()
+    {
+        ProcessInfoControl ctrl = new(
+            processServiceFake,
+            moduleServiceFake,
+            threadServiceFake,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 128,
+            Height = 32
+        };
+
+        ctrl.AutoRefresh = false;
+        ctrl.Load();
+        ctrl.Resize();
+
+        return ctrl;
+    }
+
     [Fact]
-    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => 
-            new ProcessInfoControl(
-                processServiceFake,
-                moduleServiceFake,
-                threadServiceFake,
-                null!, 
-                runContext.AppConfig));
+    public void LoadProcess_Clears_Title_When_Process_Not_Found()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+        ctrl.LoadProcess(-2);
+
+        Assert.Equal(string.Empty, ctrl.ProcessTitle);
+    }
+
+    [Fact]
+    public void LoadProcess_Shows_Process_Name_In_Top_Border()
+    {
+        (int pid, string processName) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+
+        Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void Process_Title_Persists_Across_Tab_Switch()
+    {
+        (int pid, string processName) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.SelectMenuItemForTests(1);
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void ResetToDetail_Prevents_Module_Reload_On_Pid_Change()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+        ctrl.SelectMenuItemForTests(2);
+
+        int callsAfterModulesShown = moduleServiceFake.GetModulesCallCount;
+        Assert.True(callsAfterModulesShown > 0);
+
+        ctrl.ResetToDetailPane();
+        ctrl.LoadProcess(-2);
+
+        Assert.True(ctrl.IsDetailActiveForTests);
+        Assert.Equal(0, ctrl.SelectedMenuIndexForTests);
+        Assert.Equal(callsAfterModulesShown, moduleServiceFake.GetModulesCallCount);
+    }
 
     // DETAIL is the first menu item and the tab shown by default (no selection needed).
     [Fact]
@@ -156,97 +248,5 @@ public sealed class ProcessInfoControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("00:09:41"))), Times.Once);
 
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    private ProcessInfoControl CreateLoadedControl()
-    {
-        ProcessInfoControl ctrl = new(
-            processServiceFake,
-            moduleServiceFake,
-            threadServiceFake,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            Width = 128,
-            Height = 32
-        };
-
-        ctrl.AutoRefresh = false;
-        ctrl.Load();
-        ctrl.Resize();
-
-        return ctrl;
-    }
-
-    // ProcessInfo's setters are internal to Task.Monitor.System, so these use the real current
-    // process (as the tests above do) rather than hand-built fixtures.
-    private (int Pid, string ProcessName) AddCurrentProcess()
-    {
-        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
-
-        Assert.NotNull(processInfo);
-        Assert.False(string.IsNullOrWhiteSpace(processInfo.ProcessName));
-
-        processServiceFake.AddProcessInfo(processInfo);
-
-        return (processInfo.Pid, processInfo.ProcessName);
-    }
-
-    [Fact]
-    public void LoadProcess_Shows_Process_Name_In_Top_Border()
-    {
-        (int pid, string processName) = AddCurrentProcess();
-
-        ProcessInfoControl ctrl = CreateLoadedControl();
-        ctrl.LoadProcess(pid);
-
-        Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
-    }
-
-    [Fact]
-    public void LoadProcess_Clears_Title_When_Process_Not_Found()
-    {
-        (int pid, _) = AddCurrentProcess();
-
-        ProcessInfoControl ctrl = CreateLoadedControl();
-        ctrl.LoadProcess(pid);
-        ctrl.LoadProcess(-2);
-
-        Assert.Equal(string.Empty, ctrl.ProcessTitle);
-    }
-
-    [Fact]
-    public void ResetToDetail_Prevents_Module_Reload_On_Pid_Change()
-    {
-        (int pid, _) = AddCurrentProcess();
-
-        ProcessInfoControl ctrl = CreateLoadedControl();
-        ctrl.LoadProcess(pid);
-        ctrl.SelectMenuItemForTests(2);
-
-        int callsAfterModulesShown = moduleServiceFake.GetModulesCallCount;
-        Assert.True(callsAfterModulesShown > 0);
-
-        ctrl.ResetToDetailPane();
-        ctrl.LoadProcess(-2);
-
-        Assert.True(ctrl.IsDetailActiveForTests);
-        Assert.Equal(0, ctrl.SelectedMenuIndexForTests);
-        Assert.Equal(callsAfterModulesShown, moduleServiceFake.GetModulesCallCount);
-    }
-
-    [Fact]
-    public void Process_Title_Persists_Across_Tab_Switch()
-    {
-        (int pid, string processName) = AddCurrentProcess();
-
-        ProcessInfoControl ctrl = CreateLoadedControl();
-        ctrl.LoadProcess(pid);
-        runContextHelper.terminal.Invocations.Clear();
-
-        ctrl.SelectMenuItemForTests(1);
-
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
     }
 }

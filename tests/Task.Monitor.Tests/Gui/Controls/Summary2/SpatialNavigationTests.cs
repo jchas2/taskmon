@@ -7,6 +7,12 @@ namespace Task.Monitor.Tests.Gui.Controls.Summary2;
 // BottomRight(4) - deliberately simple bounds so each direction's expected answer is unambiguous.
 public sealed class SpatialNavigationTests
 {
+    [Fact]
+    public void Down_From_TopLeft_Finds_BottomLeft()
+    {
+        Assert.Equal(3, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Down));
+    }
+
     private static Dictionary<int, Rectangle> Grid() => new() {
         [1] = new Rectangle(0, 0, 50, 20),
         [2] = new Rectangle(50, 0, 50, 20),
@@ -15,40 +21,9 @@ public sealed class SpatialNavigationTests
     };
 
     [Fact]
-    public void Right_From_TopLeft_Finds_TopRight()
-    {
-        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Right));
-    }
-
-    [Fact]
-    public void Down_From_TopLeft_Finds_BottomLeft()
-    {
-        Assert.Equal(3, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Down));
-    }
-
-    [Fact]
     public void Left_From_BottomRight_Finds_BottomLeft()
     {
         Assert.Equal(3, SpatialNavigation.FindNearest(Grid(), 4, SpatialDirection.Left));
-    }
-
-    [Fact]
-    public void Up_From_BottomRight_Finds_TopRight()
-    {
-        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 4, SpatialDirection.Up));
-    }
-
-    [Fact]
-    public void Returns_Null_When_Nothing_Lies_In_That_Direction()
-    {
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Left));
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Up));
-    }
-
-    [Fact]
-    public void Returns_Null_For_An_Unknown_Starting_Id()
-    {
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 999, SpatialDirection.Right));
     }
 
     [Fact]
@@ -64,6 +39,25 @@ public sealed class SpatialNavigationTests
     }
 
     [Fact]
+    public void Returns_Null_For_An_Unknown_Starting_Id()
+    {
+        Assert.Null(SpatialNavigation.FindNearest(Grid(), 999, SpatialDirection.Right));
+    }
+
+    [Fact]
+    public void Returns_Null_When_Nothing_Lies_In_That_Direction()
+    {
+        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Left));
+        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Up));
+    }
+
+    [Fact]
+    public void Right_From_TopLeft_Finds_TopRight()
+    {
+        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Right));
+    }
+
+    [Fact]
     public void Ties_On_Gap_Break_By_Greatest_Perpendicular_Overlap()
     {
         // Two panes both directly to the right at the same horizontal gap; the one that overlaps
@@ -75,5 +69,11 @@ public sealed class SpatialNavigationTests
         };
 
         Assert.Equal(3, SpatialNavigation.FindNearest(bounds, 1, SpatialDirection.Right));
+    }
+
+    [Fact]
+    public void Up_From_BottomRight_Finds_TopRight()
+    {
+        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 4, SpatialDirection.Up));
     }
 }

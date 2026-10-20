@@ -19,20 +19,7 @@ public class ServiceUtilsTests
         Assert.NotNull(serviceInfos);
         Assert.NotEmpty(serviceInfos);
     }
-    
-    [SkippableFact]
-    [SupportedOSPlatform("windows")]
-    public void Should_Get_Services_With_Pid()
-    {
-        ProcessService processService = new();
-        
-        bool foundAnyService = processService.GetProcesses()
-            .Select(p => ServiceUtils.GetService(p.Pid, out _))
-            .Any();
 
-        Assert.True(foundAnyService);
-    }
-    
     [SkippableFact]
     [SupportedOSPlatform("windows")]
     public void Should_Get_Services_With_ImagePath()
@@ -48,6 +35,19 @@ public class ServiceUtilsTests
             })
             .Where(sc => sc != null)
             .Any(sc => !string.IsNullOrEmpty(ServiceUtils.GetServiceImagePath(sc!.ServiceName)));
+
+        Assert.True(foundAnyService);
+    }
+
+    [SkippableFact]
+    [SupportedOSPlatform("windows")]
+    public void Should_Get_Services_With_Pid()
+    {
+        ProcessService processService = new();
+        
+        bool foundAnyService = processService.GetProcesses()
+            .Select(p => ServiceUtils.GetService(p.Pid, out _))
+            .Any();
 
         Assert.True(foundAnyService);
     }

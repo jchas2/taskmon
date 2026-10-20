@@ -7,12 +7,16 @@ namespace Task.Monitor.System.Tests.Configuration;
 public sealed class ConfigTests
 {
     [Fact]
-    public void Should_Create_New_Empty_Config()
+    public void Duplicate_ConfigSection_Throws_InvalidOperationException()
     {
-        Config config = new();
+        Config config = new(); 
         
-        Assert.NotNull(config.ConfigSections);
-        Assert.Empty(config.ConfigSections);
+        config
+            .AddConfigSection(new ConfigSection("Section1"))
+            .AddConfigSection(new ConfigSection("Section2"));
+        
+        Assert.Throws<InvalidOperationException>(() => config.AddConfigSection(new ConfigSection("Section1")));
+        Assert.Throws<InvalidOperationException>(() => config.AddConfigSection(new ConfigSection("Section2")));
     }
 
     [Fact]
@@ -26,16 +30,12 @@ public sealed class ConfigTests
     }
 
     [Fact]
-    public void Duplicate_ConfigSection_Throws_InvalidOperationException()
+    public void Should_Create_New_Empty_Config()
     {
-        Config config = new(); 
+        Config config = new();
         
-        config
-            .AddConfigSection(new ConfigSection("Section1"))
-            .AddConfigSection(new ConfigSection("Section2"));
-        
-        Assert.Throws<InvalidOperationException>(() => config.AddConfigSection(new ConfigSection("Section1")));
-        Assert.Throws<InvalidOperationException>(() => config.AddConfigSection(new ConfigSection("Section2")));
+        Assert.NotNull(config.ConfigSections);
+        Assert.Empty(config.ConfigSections);
     }
 
     [Fact]

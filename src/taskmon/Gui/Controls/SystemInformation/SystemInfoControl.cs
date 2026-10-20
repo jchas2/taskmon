@@ -92,56 +92,6 @@ public sealed partial class SystemInfoControl : Control
             .Add(systemInfoView);
     }
 
-    protected override void OnGotFocus() => navMenu.SetFocus();
-
-    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
-
-    public void Sample(SystemSnapshot snapshot)
-    {
-        this.snapshot = snapshot;
-        Draw();
-    }
-
-    protected override void OnDraw()
-    {
-        SystemSnapshot s = snapshot ?? new SystemSnapshot();
-
-        EnsureSummaryRows(s);
-        EnsureSectionRows(s);
-
-        logoControl.Draw();
-        systemSummaryView.Draw();
-        navMenu.Draw();
-        systemInfoView.Draw();
-    }
-
-    private void EnsureSummaryRows(SystemSnapshot snapshot)
-    {
-        string signature = BuildSummarySignature(snapshot);
-
-        if (signature == lastSummarySignature) {
-            return;
-        }
-
-        lastSummarySignature = signature;
-        RebuildSummaryRows(snapshot);
-    }
-
-    private void EnsureSectionRows(SystemSnapshot snapshot)
-    {
-        string signature = BuildSectionSignature(snapshot);
-
-        if (signature == lastSectionSignature) {
-            return;
-        }
-
-        lastSectionSignature = signature;
-        RebuildRows(snapshot);
-    }
-
-    private string BuildSummarySignature(SystemSnapshot s) =>
-        s.Cpu?.Specs.CpuName ?? "-";
-
     private string BuildSectionSignature(SystemSnapshot s)
     {
         int volumeCount     = s.Disk?.Specs.Devices.Sum(device => device.Volumes.Count) ?? -1;
@@ -158,25 +108,49 @@ public sealed partial class SystemInfoControl : Control
             $"{s.Network?.Specs.Devices.Count ?? -1}";
     }
 
-    private void OnNavItemClicked(object? sender, MenuItemEventArgs e) =>
-        e.Item?.LoadItems?.Invoke();
+    private string BuildSummarySignature(SystemSnapshot s) =>
+        s.Cpu?.Specs.CpuName ?? "-";
 
-    private void SelectSection(Section section)
+    private void EnsureSectionRows(SystemSnapshot snapshot)
     {
-        if (section == selectedSection) {
+        string signature = BuildSectionSignature(snapshot);
+
+        if (signature == lastSectionSignature) {
             return;
         }
 
-        selectedSection = section;
-        Draw();
+        lastSectionSignature = signature;
+        RebuildRows(snapshot);
     }
 
-    internal void SelectSectionForTests(int navIndex) =>
-        navMenu.MenuItems?[navIndex].LoadItems?.Invoke();
+    private void EnsureSummaryRows(SystemSnapshot snapshot)
+    {
+        string signature = BuildSummarySignature(snapshot);
 
-    internal ListViewItemCollection SectionItemsForTests => systemInfoView.Items;
+        if (signature == lastSummarySignature) {
+            return;
+        }
 
-    internal ListViewItemCollection SummaryItemsForTests => systemSummaryView.Items;
+        lastSummarySignature = signature;
+        RebuildSummaryRows(snapshot);
+    }
+
+    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
+    protected override void OnDraw()
+    {
+        SystemSnapshot s = snapshot ?? new SystemSnapshot();
+
+        EnsureSummaryRows(s);
+        EnsureSectionRows(s);
+
+        logoControl.Draw();
+        systemSummaryView.Draw();
+        navMenu.Draw();
+        systemInfoView.Draw();
+    }
+
+    protected override void OnGotFocus() => navMenu.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -222,8 +196,8 @@ public sealed partial class SystemInfoControl : Control
         base.OnLoad();
     }
 
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
+    private void OnNavItemClicked(object? sender, MenuItemEventArgs e) =>
+        e.Item?.LoadItems?.Invoke();
 
     protected override void OnResize()
     {
@@ -264,6 +238,9 @@ public sealed partial class SystemInfoControl : Control
         base.OnResize();
     }
 
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
@@ -277,4 +254,27 @@ public sealed partial class SystemInfoControl : Control
 
         base.OnUnload();
     }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        this.snapshot = snapshot;
+        Draw();
+    }
+
+    internal ListViewItemCollection SectionItemsForTests => systemInfoView.Items;
+
+    private void SelectSection(Section section)
+    {
+        if (section == selectedSection) {
+            return;
+        }
+
+        selectedSection = section;
+        Draw();
+    }
+
+    internal void SelectSectionForTests(int navIndex) =>
+        navMenu.MenuItems?[navIndex].LoadItems?.Invoke();
+
+    internal ListViewItemCollection SummaryItemsForTests => systemSummaryView.Items;
 }

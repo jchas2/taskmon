@@ -44,6 +44,47 @@ public sealed class HeaderControl2 : Control
         this.appConfig = appConfig;
     }
 
+    private void AppendPadding(int count, Color bgColour)
+    {
+        if (count <= 0) {
+            return;
+        }
+
+        frame.SetColour(ForegroundColour, bgColour);
+        frame.Append(' ', count);
+    }
+
+    private void AppendSegment(
+        string  text, 
+        Color   fgColour, 
+        Color   bgColour, 
+        ref int remaining)
+    {
+        int length = Math.Min(text.Length, remaining);
+
+        if (length <= 0) {
+            return;
+        }
+
+        frame.SetColour(fgColour, bgColour);
+        frame.Append(text.AsSpan(0, length));
+        remaining -= length;
+    }
+
+    private void BeginRow(int y, Color borderColour, Color bgColour)
+    {
+        frame.MoveTo(X, y);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('│');
+    }
+
+    private void EndRow(int remaining, Color borderColour, Color bgColour)
+    {
+        AppendPadding(remaining, bgColour);
+        frame.SetColour(borderColour, bgColour);
+        frame.Append('│');
+    }
+
     protected override void OnDraw() => OnDrawInternal();
 
     private void OnDrawInternal()
@@ -181,47 +222,6 @@ public sealed class HeaderControl2 : Control
 
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
-    }
-
-    private void BeginRow(int y, Color borderColour, Color bgColour)
-    {
-        frame.MoveTo(X, y);
-        frame.SetColour(borderColour, bgColour);
-        frame.Append('│');
-    }
-
-    private void EndRow(int remaining, Color borderColour, Color bgColour)
-    {
-        AppendPadding(remaining, bgColour);
-        frame.SetColour(borderColour, bgColour);
-        frame.Append('│');
-    }
-
-    private void AppendSegment(
-        string  text, 
-        Color   fgColour, 
-        Color   bgColour, 
-        ref int remaining)
-    {
-        int length = Math.Min(text.Length, remaining);
-
-        if (length <= 0) {
-            return;
-        }
-
-        frame.SetColour(fgColour, bgColour);
-        frame.Append(text.AsSpan(0, length));
-        remaining -= length;
-    }
-
-    private void AppendPadding(int count, Color bgColour)
-    {
-        if (count <= 0) {
-            return;
-        }
-
-        frame.SetColour(ForegroundColour, bgColour);
-        frame.Append(' ', count);
     }
 
     protected override void OnLoad()

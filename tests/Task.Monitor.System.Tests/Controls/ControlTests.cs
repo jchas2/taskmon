@@ -1,31 +1,13 @@
-﻿using Moq;
-using Task.Monitor.System.Controls;
-
-using System.Drawing;
+﻿using System.Drawing;
+using Moq;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.System.Controls;
 namespace Task.Monitor.System.Tests.Controls;
 
 public class ControlTests
 {
     private static readonly Mock<ISystemTerminal> SystemTerminalSingleton = new();
-    
-    [Fact]
-    public void Should_Construct_Default()
-    {
-        Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
-        Control control = new(terminalMock.Object);
 
-        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
-        Assert.Equal(0, control.ControlCount);
-        Assert.Empty(control.Controls);
-        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
-        Assert.Equal(0, control.Height);
-        Assert.True(control.Visible);
-        Assert.Equal(0, control.Width);
-        Assert.Equal(0, control.X);
-        Assert.Equal(0, control.Y);
-    }
-    
     public static TheoryData<string> BorderedControls() => new() { "ListView", "Chart", "Metre" };
 
     private static Control CreateBorderedControl(string kind, ISystemTerminal terminal) => kind switch {
@@ -33,6 +15,13 @@ public class ControlTests
         "Chart"    => new Task.Monitor.System.Controls.Chart.Chart(terminal),
         _          => new Task.Monitor.System.Controls.Metre.MetreControl(terminal)
     };
+
+    public static List<Control> GetControlData()
+        => new() {
+            new Control(SystemTerminalSingleton.Object),
+            new Control(SystemTerminalSingleton.Object),
+            new Control(SystemTerminalSingleton.Object)
+        };
 
     // Regression test: focus used to be shown by swapping BorderColour to the focus colour, so a
     // screen re-applying its theme to a focused control (on every Load or Draw) wiped the cue out.
@@ -57,13 +46,6 @@ public class ControlTests
         Assert.Equal(themeColour.ToArgb(), control.DisplayBorderColour.ToArgb());
     }
 
-    public static List<Control> GetControlData()
-        => new() {
-            new Control(SystemTerminalSingleton.Object),
-            new Control(SystemTerminalSingleton.Object),
-            new Control(SystemTerminalSingleton.Object)
-        };
-
     [Fact]
     public void Should_Add_All_Items()
     {
@@ -71,5 +53,22 @@ public class ControlTests
         control.Controls.AddRange(GetControlData().ToArray());
         
         Assert.True(control.Controls.Count == 3);
+    }
+
+    [Fact]
+    public void Should_Construct_Default()
+    {
+        Mock<ISystemTerminal> terminalMock = TerminalMock.Setup();
+        Control control = new(terminalMock.Object);
+
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Equal(0, control.ControlCount);
+        Assert.Empty(control.Controls);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
+        Assert.Equal(0, control.Height);
+        Assert.True(control.Visible);
+        Assert.Equal(0, control.Width);
+        Assert.Equal(0, control.X);
+        Assert.Equal(0, control.Y);
     }
 }

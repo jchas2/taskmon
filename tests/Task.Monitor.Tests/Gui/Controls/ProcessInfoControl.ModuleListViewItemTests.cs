@@ -13,33 +13,20 @@ public sealed class ModuleListViewItemTests
                                                                                                                                                                                          
     public ModuleListViewItemTests() =>                                                                                                                                                    
         appConfig = new AppConfig(fileSystem.Object);                                                                                                                                      
-    
-    public static TheoryData<string, string> ModuleInfoData()                                                                                                                              
-        => new() {                                                                                                                                                                         
-            { "kernel32.dll", @"C:\Windows\System32\kernel32.dll" },                                                                                                                     
-            { "libSystem.B.dylib", "/usr/lib/libSystem.B.dylib" },                                                                                                                         
-            { "libc.so.6", "/lib/x86_64-linux-gnu/libc.so.6" },                                                                                                                            
-            { "User32.dll", @"C:\Windows\System32\User32.dll" }                                                                                                                          
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
-    [Theory]                                                                                                                                                                               
-    [MemberData(nameof(ModuleInfoData))]                                                                                                                                                   
-    public void Constructor_With_Valid_Args_Initialises_SubItems_Successfully(                                                                                                             
-        string moduleName,                                                                                                                                                                 
-        string fileName)                                                                                                                                                                   
+
+    [Fact]                                                                                                                                                                                 
+    public void Constructor_Creates_Correct_Number_Of_SubItems()                                                                                                                           
     {                                                                                                                                                                                      
         ModuleInfo moduleInfo = new() {                                                                                                                                                    
-            ModuleName = moduleName,                                                                                                                                                       
-            FileName = fileName                                                                                                                                                            
+            ModuleName = "TestModule",                                                                                                                                                     
+            FileName = "/path/to/TestModule.dll"                                                                                                                                           
         };                                                                                                                                                                                 
                                                                                                                                                                                          
         ProcessInfoControl.ModuleListViewItem item = new(moduleInfo, appConfig);                                                                                                           
                                                                                                                                                                                          
-        Assert.Equal(moduleName, item.Text);                                                                                                                                               
-        Assert.Equal(moduleName, item.SubItems[(int)ProcessInfoControl.ModuleColumns.ModuleName].Text);                                                                                    
-        Assert.Equal(fileName, item.SubItems[(int)ProcessInfoControl.ModuleColumns.FileName].Text);                                                                                        
+        Assert.Equal((int)ProcessInfoControl.ModuleColumns.Count, item.SubItems.Count());                                                                                                    
     }                                                                                                                                                                                      
-                                                                                                                                                                                         
+
     [Fact]                                                                                                                                                                                 
     public void Constructor_Sets_Background_Color_For_All_SubItems()                                                                                                                       
     {                                                                                                                                                                                      
@@ -73,27 +60,25 @@ public sealed class ModuleListViewItemTests
                 item.SubItems[i].ForegroundColor);                                                                                                                                         
         }                                                                                                                                                                                  
     }                                                                                                                                                                                      
-                                                                                                                                                                                         
-    [Fact]                                                                                                                                                                                 
-    public void Constructor_Creates_Correct_Number_Of_SubItems()                                                                                                                           
+
+    [Theory]                                                                                                                                                                               
+    [MemberData(nameof(ModuleInfoData))]                                                                                                                                                   
+    public void Constructor_With_Valid_Args_Initialises_SubItems_Successfully(                                                                                                             
+        string moduleName,                                                                                                                                                                 
+        string fileName)                                                                                                                                                                   
     {                                                                                                                                                                                      
         ModuleInfo moduleInfo = new() {                                                                                                                                                    
-            ModuleName = "TestModule",                                                                                                                                                     
-            FileName = "/path/to/TestModule.dll"                                                                                                                                           
+            ModuleName = moduleName,                                                                                                                                                       
+            FileName = fileName                                                                                                                                                            
         };                                                                                                                                                                                 
                                                                                                                                                                                          
         ProcessInfoControl.ModuleListViewItem item = new(moduleInfo, appConfig);                                                                                                           
                                                                                                                                                                                          
-        Assert.Equal((int)ProcessInfoControl.ModuleColumns.Count, item.SubItems.Count());                                                                                                    
+        Assert.Equal(moduleName, item.Text);                                                                                                                                               
+        Assert.Equal(moduleName, item.SubItems[(int)ProcessInfoControl.ModuleColumns.ModuleName].Text);                                                                                    
+        Assert.Equal(fileName, item.SubItems[(int)ProcessInfoControl.ModuleColumns.FileName].Text);                                                                                        
     }                                                                                                                                                                                      
-    
-    public static TheoryData<string, string> LongPathData()                                                                                                                                
-        => new() {                                                                                                                                                                         
-            { "VeryLongModuleName.With.Multiple.Namespaces.dll", "/usr/local/lib/very/long/path/to/module/VeryLongModuleName.With.Multiple.Namespaces.dll" },                              
-            { "Short.dll", "/short" },                                                                                                                                                     
-            { "M", "/m" }                                                                                                                                                                  
-        };                                                                                                                                                                                 
-                                                                                                                                                                                         
+
     [Theory]                                                                                                                                                                               
     [MemberData(nameof(LongPathData))]                                                                                                                                                     
     public void Constructor_With_Various_Length_Paths_Creates_Item_Successfully(                                                                                                           
@@ -111,4 +96,19 @@ public sealed class ModuleListViewItemTests
         Assert.Equal(moduleName, item.Text);                                                                                                                                               
         Assert.Equal(fileName, item.SubItems[(int)ProcessInfoControl.ModuleColumns.FileName].Text);                                                                                        
     }                                   
+
+    public static TheoryData<string, string> LongPathData()                                                                                                                                
+        => new() {                                                                                                                                                                         
+            { "VeryLongModuleName.With.Multiple.Namespaces.dll", "/usr/local/lib/very/long/path/to/module/VeryLongModuleName.With.Multiple.Namespaces.dll" },                              
+            { "Short.dll", "/short" },                                                                                                                                                     
+            { "M", "/m" }                                                                                                                                                                  
+        };                                                                                                                                                                                 
+
+    public static TheoryData<string, string> ModuleInfoData()                                                                                                                              
+        => new() {                                                                                                                                                                         
+            { "kernel32.dll", @"C:\Windows\System32\kernel32.dll" },                                                                                                                     
+            { "libSystem.B.dylib", "/usr/lib/libSystem.B.dylib" },                                                                                                                         
+            { "libc.so.6", "/lib/x86_64-linux-gnu/libc.so.6" },                                                                                                                            
+            { "User32.dll", @"C:\Windows\System32\User32.dll" }                                                                                                                          
+        };                                                                                                                                                                                 
 }

@@ -47,89 +47,6 @@ public sealed class NetworkPerformanceControlTests
             },
         };
 
-    [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        NetworkPerformanceControl ctrl = new(runContext.Terminal, runContext.AppConfig);
-
-        Assert.NotNull(ctrl);
-    }
-
-    [Fact]
-    public void Should_Draw_Send_And_Receive_Throughput()
-    {
-        // Wrap the mock terminal so the Chart's ReadOnlySpan<char> blit doesn't hit the Moq
-        // proxy (which can't proxy ref-struct params); other writes still forward to the mock.
-        NetworkPerformanceControl ctrl = new(
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 36
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        ctrl.Sample(new SystemSnapshot { Network = BuildNetworkInfo() });
-        ctrl.Draw();
-
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("Send"))), Times.AtLeastOnce);
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("Receive"))), Times.AtLeastOnce);
-
-        // 512 KB/s up, 28.5 MB/s down.
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("512.0 KB/s"))), Times.AtLeastOnce);
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("28.5 MB/s"))), Times.AtLeastOnce);
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
-    public void Should_Draw_Network_Totals_Keys_And_Values()
-    {
-        NetworkPerformanceControl ctrl = new(
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 36
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        ctrl.Sample(new SystemSnapshot { Network = BuildNetworkInfo() });
-        ctrl.Draw();
-
-        // All four rows have to render: ListView.DrawItems draws Height - 1 rows, so the last
-        // one is clipped if the list view is sized to its row count.
-        foreach (string key in new[] {
-            "Total Bytes Sent:",
-            "Total Bytes Received:",
-            "Total Packets Sent:",
-            "Total Packets Received:" }) {
-
-            runContextHelper.terminal.Verify(
-                t => t.Write(It.Is<string>(s => s.Contains(key))), Times.AtLeastOnce);
-        }
-
-        // 1782579 bytes sent, 55037657 received.
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("1.7 MB"))), Times.AtLeastOnce);
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("52.5 MB"))), Times.AtLeastOnce);
-
-        // Packets are a count, not a size, so they keep their digits.
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("20,050,161"))), Times.AtLeastOnce);
-        runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("28,475,940"))), Times.AtLeastOnce);
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
     private static NetworkInfo BuildNetworkInfoWithDevices()
     {
         NetworkInfo info = BuildNetworkInfo();
@@ -185,6 +102,14 @@ public sealed class NetworkPerformanceControlTests
     }
 
     [Fact]
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        NetworkPerformanceControl ctrl = new(runContext.Terminal, runContext.AppConfig);
+
+        Assert.NotNull(ctrl);
+    }
+
+    [Fact]
     public void Scoped_To_An_Adapter_Draws_That_Adapter_Only()
     {
         NetworkPerformanceControl ctrl = new(
@@ -226,6 +151,81 @@ public sealed class NetworkPerformanceControlTests
             runContextHelper.terminal.Verify(
                 t => t.Write(It.Is<string>(s => s.Contains(value))), Times.AtLeastOnce);
         }
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Should_Draw_Network_Totals_Keys_And_Values()
+    {
+        NetworkPerformanceControl ctrl = new(
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 36
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Sample(new SystemSnapshot { Network = BuildNetworkInfo() });
+        ctrl.Draw();
+
+        // All four rows have to render: ListView.DrawItems draws Height - 1 rows, so the last
+        // one is clipped if the list view is sized to its row count.
+        foreach (string key in new[] {
+            "Total Bytes Sent:",
+            "Total Bytes Received:",
+            "Total Packets Sent:",
+            "Total Packets Received:" }) {
+
+            runContextHelper.terminal.Verify(
+                t => t.Write(It.Is<string>(s => s.Contains(key))), Times.AtLeastOnce);
+        }
+
+        // 1782579 bytes sent, 55037657 received.
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("1.7 MB"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("52.5 MB"))), Times.AtLeastOnce);
+
+        // Packets are a count, not a size, so they keep their digits.
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("20,050,161"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("28,475,940"))), Times.AtLeastOnce);
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Should_Draw_Send_And_Receive_Throughput()
+    {
+        // Wrap the mock terminal so the Chart's ReadOnlySpan<char> blit doesn't hit the Moq
+        // proxy (which can't proxy ref-struct params); other writes still forward to the mock.
+        NetworkPerformanceControl ctrl = new(
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 36
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Sample(new SystemSnapshot { Network = BuildNetworkInfo() });
+        ctrl.Draw();
+
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("Send"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("Receive"))), Times.AtLeastOnce);
+
+        // 512 KB/s up, 28.5 MB/s down.
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("512.0 KB/s"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("28.5 MB/s"))), Times.AtLeastOnce);
 
         ctrl.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);

@@ -20,34 +20,32 @@ public sealed class AnsiScreenBuffer
     public AnsiScreenBuffer(int capacity = 1024) =>
         buffer = new char[Math.Max(1, capacity)];
 
-    public int Length => length;
-
-    public ReadOnlySpan<char> AsSpan() => buffer.AsSpan(0, length);
-
-    public void Clear()
+    public void Append(char ch)
     {
-        length        = 0;
-        foregroundSet = false;
-        backgroundSet = false;
-        bold          = false;
+        EnsureCapacity(length + 1);
+        buffer[length++] = ch;
     }
 
-    public void MoveTo(int left, int top)
+    public void Append(ReadOnlySpan<char> chars)
     {
-        if (left < 0) {
-            left = 0;
+        if (chars.IsEmpty) {
+            return;
         }
 
-        if (top < 0) {
-            top = 0;
+        EnsureCapacity(length + chars.Length);
+        chars.CopyTo(buffer.AsSpan(length));
+        length += chars.Length;
+    }
+
+    public void Append(char ch, int count)
+    {
+        if (count <= 0) {
+            return;
         }
 
-        Append(Escape);
-        Append('[');
-        AppendInt(top + 1);
-        Append(';');
-        AppendInt(left + 1);
-        Append('H');
+        EnsureCapacity(length + count);
+        buffer.AsSpan(length, count).Fill(ch);
+        length += count;
     }
 
     public void AppendBackground(Color colour)
@@ -104,34 +102,6 @@ public sealed class AnsiScreenBuffer
         foregroundSet = true;
     }
 
-    public void Append(char ch)
-    {
-        EnsureCapacity(length + 1);
-        buffer[length++] = ch;
-    }
-
-    public void Append(ReadOnlySpan<char> chars)
-    {
-        if (chars.IsEmpty) {
-            return;
-        }
-
-        EnsureCapacity(length + chars.Length);
-        chars.CopyTo(buffer.AsSpan(length));
-        length += chars.Length;
-    }
-
-    public void Append(char ch, int count)
-    {
-        if (count <= 0) {
-            return;
-        }
-
-        EnsureCapacity(length + count);
-        buffer.AsSpan(length, count).Fill(ch);
-        length += count;
-    }
-
     private void AppendInt(int value)
     {
         if (value < 0) {
@@ -150,6 +120,16 @@ public sealed class AnsiScreenBuffer
         Append(digits[pos..]);
     }
 
+    public ReadOnlySpan<char> AsSpan() => buffer.AsSpan(0, length);
+
+    public void Clear()
+    {
+        length        = 0;
+        foregroundSet = false;
+        backgroundSet = false;
+        bold          = false;
+    }
+
     private void EnsureCapacity(int required)
     {
         if (required <= buffer.Length) {
@@ -163,6 +143,26 @@ public sealed class AnsiScreenBuffer
         }
 
         Array.Resize(ref buffer, newSize);
+    }
+
+    public int Length => length;
+
+    public void MoveTo(int left, int top)
+    {
+        if (left < 0) {
+            left = 0;
+        }
+
+        if (top < 0) {
+            top = 0;
+        }
+
+        Append(Escape);
+        Append('[');
+        AppendInt(top + 1);
+        Append(';');
+        AppendInt(left + 1);
+        Append('H');
     }
 
     public void ResetColour()

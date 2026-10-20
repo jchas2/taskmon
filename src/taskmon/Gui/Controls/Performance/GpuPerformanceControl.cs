@@ -32,8 +32,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
     private double? powerWatts;
     private long?   scopedAdapterLuid;
 
-    public void SetScope(long? adapterLuid) => scopedAdapterLuid = adapterLuid;
-
     public GpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
         this.appConfig = appConfig;
@@ -72,65 +70,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.ColumnHeaders
             .Add(new ListViewColumnHeader(""))
             .Add(new ListViewColumnHeader(""));
-    }
-
-    public void Sample(SystemSnapshot snapshot)
-    {
-        lock (@lock) {
-            if (snapshot.Gpu == null) {
-                return;
-            }
-
-            gpuInfo = snapshot.Gpu;
-            
-            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
-                ThermalComponent.Gpu, scopedAdapterLuid?.ToString());
-            
-            powerWatts = ResolvePower(snapshot);
-
-            (GpuDeviceMetrics? device, _, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
-            gpuDedicatedMemChart.AddData(device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
-            gpuMemChart.AddData(device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
-        }
-    }
-
-    private double? ResolvePower(SystemSnapshot snapshot)
-    {
-        if (snapshot.Power is not { } power) {
-            return null;
-        }
-
-        if (scopedAdapterLuid is { } luid) {
-            return power.Metrics.GpuPower(luid);
-        }
-
-        double? total = null;
-
-        foreach (GpuDevice spec in snapshot.Gpu?.Specs.Devices ?? []) {
-            if (power.Metrics.GpuPower(spec.AdapterLuid) is { } watts) {
-                total = (total ?? 0) + watts;
-            }
-        }
-
-        return total;
-    }
-
-    private (GpuDeviceMetrics? device, GpuDevice? spec, bool render) ResolveScope()
-    {
-        if (scopedAdapterLuid is not { } luid) {
-            return (null, null, true);
-        }
-
-        GpuDeviceMetrics? device = gpuInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
-        GpuDevice?        spec   = gpuInfo.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
-
-        return (device, spec, device != null);
     }
 
     protected override void OnDraw()
@@ -285,4 +224,65 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuMetricsListView.Items.Clear();
         gpuSpecsListView.Items.Clear();
     }
+
+    private double? ResolvePower(SystemSnapshot snapshot)
+    {
+        if (snapshot.Power is not { } power) {
+            return null;
+        }
+
+        if (scopedAdapterLuid is { } luid) {
+            return power.Metrics.GpuPower(luid);
+        }
+
+        double? total = null;
+
+        foreach (GpuDevice spec in snapshot.Gpu?.Specs.Devices ?? []) {
+            if (power.Metrics.GpuPower(spec.AdapterLuid) is { } watts) {
+                total = (total ?? 0) + watts;
+            }
+        }
+
+        return total;
+    }
+
+    private (GpuDeviceMetrics? device, GpuDevice? spec, bool render) ResolveScope()
+    {
+        if (scopedAdapterLuid is not { } luid) {
+            return (null, null, true);
+        }
+
+        GpuDeviceMetrics? device = gpuInfo!.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
+        GpuDevice?        spec   = gpuInfo.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == luid);
+
+        return (device, spec, device != null);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        lock (@lock) {
+            if (snapshot.Gpu == null) {
+                return;
+            }
+
+            gpuInfo = snapshot.Gpu;
+            
+            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
+                ThermalComponent.Gpu, scopedAdapterLuid?.ToString());
+            
+            powerWatts = ResolvePower(snapshot);
+
+            (GpuDeviceMetrics? device, _, bool render) = ResolveScope();
+
+            if (!render) {
+                return;
+            }
+
+            gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
+            gpuDedicatedMemChart.AddData(device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
+            gpuMemChart.AddData(device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
+        }
+    }
+
+    public void SetScope(long? adapterLuid) => scopedAdapterLuid = adapterLuid;
 }

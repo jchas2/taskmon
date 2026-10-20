@@ -5,9 +5,6 @@ namespace Task.Monitor.Interop.Mach;
 // SystemConfiguration/SCDynamicStoreCopySpecific.h.
 public static class SystemConfiguration
 {
-    [DllImport(Libraries.SystemConfiguration)]
-    private static extern nint SCDynamicStoreCopyConsoleUser(nint store, out uint uid, out uint gid);
-
     // The uid of the user logged in at the console, or null at the login window or when nobody
     // is (e.g. a headless or SSH-only session).
     public static uint? GetConsoleUserId()
@@ -33,4 +30,7 @@ public static class SystemConfiguration
         // The login window reports itself as the console user.
         return userName is null or "loginwindow" ? null : uid;
     }
+
+    [DllImport(Libraries.SystemConfiguration)]
+    private static extern nint SCDynamicStoreCopyConsoleUser(nint store, out uint uid, out uint gid);
 }

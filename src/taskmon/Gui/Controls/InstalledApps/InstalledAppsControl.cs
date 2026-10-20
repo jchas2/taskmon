@@ -75,17 +75,23 @@ public sealed partial class InstalledAppsControl : Control
         Controls.Add(detailView);
     }
 
-    public void Sample(SystemSnapshot snapshot)
+    private static string BuildSignature(IReadOnlyList<InstalledApp> apps) =>
+        apps.Count + "|" + 
+        string.Join("|", apps.Select(app =>
+            $"{app.Name}:{app.Version}:{(int)app.Scope}"));
+
+    private void EnsureRows(InstalledAppsInfo info)
     {
-        if (snapshot.InstalledApps is null) {
+        string signature = BuildSignature(info.Specs.Apps);
+
+        if (signature == lastSignature) {
             return;
         }
 
-        installedApps = snapshot.InstalledApps;
-        Draw();
+        lastSignature = signature;
+        
+        RebuildRows(info.Specs.Apps);
     }
-
-    protected override void OnGotFocus() => installedAppsView.SetFocus();
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
@@ -101,33 +107,7 @@ public sealed partial class InstalledAppsControl : Control
         detailView.Draw();
     }
 
-    private void EnsureRows(InstalledAppsInfo info)
-    {
-        string signature = BuildSignature(info.Specs.Apps);
-
-        if (signature == lastSignature) {
-            return;
-        }
-
-        lastSignature = signature;
-        
-        RebuildRows(info.Specs.Apps);
-    }
-
-    private static string BuildSignature(IReadOnlyList<InstalledApp> apps) =>
-        apps.Count + "|" + 
-        string.Join("|", apps.Select(app =>
-            $"{app.Name}:{app.Version}:{(int)app.Scope}"));
-
-    private void RefreshDetailPane()
-    {
-        int index = installedAppsView.SelectedIndex;
-        
-        IReadOnlyList<InstalledApp> apps     = installedApps?.Specs.Apps ?? [];
-        InstalledApp?               selected = index >= 0 && index < apps.Count ? apps[index] : null;
-        
-        RebuildDetailRows(selected);
-    }
+    protected override void OnGotFocus() => installedAppsView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -147,16 +127,6 @@ public sealed partial class InstalledAppsControl : Control
         }
     }
 
-    private void TryRequestRefresh()
-    {
-        try {
-            serviceController.GetService<InstalledAppsService>().RequestImmediateRefresh();
-        }
-        catch (InvalidOperationException) {
-            // No installed-apps service registered (e.g. under test) - nothing to refresh.
-        }
-    }
-
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
@@ -167,9 +137,6 @@ public sealed partial class InstalledAppsControl : Control
 
         base.OnLoad();
     }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
 
     protected override void OnResize()
     {
@@ -207,6 +174,9 @@ public sealed partial class InstalledAppsControl : Control
         base.OnResize();
     }
 
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
@@ -215,5 +185,35 @@ public sealed partial class InstalledAppsControl : Control
         lastSignature = string.Empty;
 
         base.OnUnload();
+    }
+
+    private void RefreshDetailPane()
+    {
+        int index = installedAppsView.SelectedIndex;
+        
+        IReadOnlyList<InstalledApp> apps     = installedApps?.Specs.Apps ?? [];
+        InstalledApp?               selected = index >= 0 && index < apps.Count ? apps[index] : null;
+        
+        RebuildDetailRows(selected);
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        if (snapshot.InstalledApps is null) {
+            return;
+        }
+
+        installedApps = snapshot.InstalledApps;
+        Draw();
+    }
+
+    private void TryRequestRefresh()
+    {
+        try {
+            serviceController.GetService<InstalledAppsService>().RequestImmediateRefresh();
+        }
+        catch (InvalidOperationException) {
+            // No installed-apps service registered (e.g. under test) - nothing to refresh.
+        }
     }
 }

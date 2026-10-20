@@ -1,91 +1,13 @@
-﻿using Moq;
+﻿using System.Drawing;
+using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.Tests.Common;
 using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.MessageBox;
 
 public sealed class MessageBoxTests
 {
-    [Fact]
-    public void MessageBox_Canary_Test() =>
-        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
-
-    [Fact]
-    public void Should_Construct_Default()
-    {
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object));
-
-        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
-        Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
-        Assert.Empty(control.Controls);
-        Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
-        Assert.Equal(ConsolePalette.DarkGray, control.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, control.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
-        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
-        Assert.Equal(0, control.Height);
-        Assert.NotNull(control.Name);
-        Assert.Equal(MessageBoxResult.None, control.Result);
-        Assert.True(0 == control.TabIndex);
-        Assert.False(control.TabStop);
-        Assert.NotNull(control.Text);
-        Assert.Empty(control.Text);
-        Assert.NotNull(control.Title);
-        Assert.Empty(control.Title);
-        Assert.True(control.Visible);
-        Assert.Equal(0, control.Width);
-        Assert.Equal(0, control.X);
-        Assert.Equal(0, control.Y);
-    }
-    
-    [Fact]
-    public void Should_Set_Initial_Properties()
-    {
-        const string text = "Are you sure you want to continue?";
-        const string title = "Confirm Delete";
-        
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        
-        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
-            BackgroundColour = ConsolePalette.Gray,
-            DialogBackgroundColour = ConsolePalette.Green,
-            DialogBorderColour = ConsolePalette.Yellow,
-            DialogButtonBackgroundColour = ConsolePalette.Magenta,
-            DialogButtonForegroundColour = ConsolePalette.Red,
-            DialogForegroundColour = ConsolePalette.DarkBlue,
-            ForegroundColour = ConsolePalette.Black,
-            Buttons = MessageBoxButtons.OkCancel,
-            Height = 12,
-            Text = text,
-            Title = title,
-            Visible =  true,
-            Width = 40,
-            X = 5,
-            Y = 10
-        };
-
-        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
-        Assert.Equal(ConsolePalette.Green, control.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Yellow, control.DialogBorderColour);
-        Assert.Equal(ConsolePalette.Magenta, control.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Red, control.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.DarkBlue, control.DialogForegroundColour);
-        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
-        Assert.True(control.Buttons == MessageBoxButtons.OkCancel);
-        Assert.Equal(12, control.Height);
-        Assert.Equal(text, control.Text);
-        Assert.Equal(title, control.Title);
-        Assert.True(control.Visible);
-        Assert.Equal(40, control.Width);
-        Assert.Equal(5, control.X);
-        Assert.Equal(10, control.Y);
-    }
-
     public static TheoryData<List<ConsoleKey>, MessageBoxResult> KeyPressData()
         => new() {
             // Key combinations with defined behaviour.
@@ -153,7 +75,11 @@ public sealed class MessageBoxTests
             { new List<ConsoleKey>() { ConsoleKey.DownArrow }, MessageBoxResult.None },
             { new List<ConsoleKey>() { ConsoleKey.UpArrow }, MessageBoxResult.None },
         };
-    
+
+    [Fact]
+    public void MessageBox_Canary_Test() =>
+        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+
     [Theory]
     [MemberData(nameof(KeyPressData))]
     public void MessageBox_On_ConsoleKey_Should_Set_Result(List<ConsoleKey> consoleKeys, MessageBoxResult result)
@@ -177,6 +103,36 @@ public sealed class MessageBoxTests
         
         Assert.True(handled);
         Assert.True(result == control.Result);
+    }
+
+    [Fact]
+    public void Should_Construct_Default()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object));
+
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
+        Assert.Empty(control.Controls);
+        Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.DarkGray, control.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
+        Assert.Equal(0, control.Height);
+        Assert.NotNull(control.Name);
+        Assert.Equal(MessageBoxResult.None, control.Result);
+        Assert.True(0 == control.TabIndex);
+        Assert.False(control.TabStop);
+        Assert.NotNull(control.Text);
+        Assert.Empty(control.Text);
+        Assert.NotNull(control.Title);
+        Assert.Empty(control.Title);
+        Assert.True(control.Visible);
+        Assert.Equal(0, control.Width);
+        Assert.Equal(0, control.X);
+        Assert.Equal(0, control.Y);
     }
 
     [Fact]
@@ -204,5 +160,48 @@ public sealed class MessageBoxTests
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(title))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(text))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(help))), Times.Once);
+    }
+
+    [Fact]
+    public void Should_Set_Initial_Properties()
+    {
+        const string text = "Are you sure you want to continue?";
+        const string title = "Confirm Delete";
+        
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        
+        MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
+            BackgroundColour = ConsolePalette.Gray,
+            DialogBackgroundColour = ConsolePalette.Green,
+            DialogBorderColour = ConsolePalette.Yellow,
+            DialogButtonBackgroundColour = ConsolePalette.Magenta,
+            DialogButtonForegroundColour = ConsolePalette.Red,
+            DialogForegroundColour = ConsolePalette.DarkBlue,
+            ForegroundColour = ConsolePalette.Black,
+            Buttons = MessageBoxButtons.OkCancel,
+            Height = 12,
+            Text = text,
+            Title = title,
+            Visible =  true,
+            Width = 40,
+            X = 5,
+            Y = 10
+        };
+
+        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Green, control.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Yellow, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.Magenta, control.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Red, control.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.DarkBlue, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
+        Assert.True(control.Buttons == MessageBoxButtons.OkCancel);
+        Assert.Equal(12, control.Height);
+        Assert.Equal(text, control.Text);
+        Assert.Equal(title, control.Title);
+        Assert.True(control.Visible);
+        Assert.Equal(40, control.Width);
+        Assert.Equal(5, control.X);
+        Assert.Equal(10, control.Y);
     }
 }

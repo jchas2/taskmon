@@ -282,31 +282,6 @@ public sealed partial class ProcessService
             return defaultValue;            
         }
     }
-    
-    private static string GetProcessUserName(SafeProcessHandle processHandle)
-    {
-        SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
-
-        if (sid == null) {
-            return string.Empty;
-        }
-        
-        IdentityReference identityRef = sid.Translate(typeof(NTAccount));
-        string userName = identityRef.ToString();
-
-        if (userMap.TryGetValue(userName, out string? name)) {
-            return name;
-        }
-        
-        int domainIndex = userName.IndexOf('\\');
-        
-        if (domainIndex != -1) {
-            string abbrevUserName = userName.Substring(domainIndex + 1);
-            userMap.Add(userName, abbrevUserName);
-        }
-        
-        return userName;
-    }
 
     private static SecurityIdentifier? GetProcessSecurityIdentifier(SafeProcessHandle processHandle)
     {
@@ -365,6 +340,31 @@ public sealed partial class ProcessService
             ExceptionHelper.LogException(ex);
             return result;
         }
+    }
+
+    private static string GetProcessUserName(SafeProcessHandle processHandle)
+    {
+        SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
+
+        if (sid == null) {
+            return string.Empty;
+        }
+        
+        IdentityReference identityRef = sid.Translate(typeof(NTAccount));
+        string userName = identityRef.ToString();
+
+        if (userMap.TryGetValue(userName, out string? name)) {
+            return name;
+        }
+        
+        int domainIndex = userName.IndexOf('\\');
+        
+        if (domainIndex != -1) {
+            string abbrevUserName = userName.Substring(domainIndex + 1);
+            userMap.Add(userName, abbrevUserName);
+        }
+        
+        return userName;
     }
 #endif
 }

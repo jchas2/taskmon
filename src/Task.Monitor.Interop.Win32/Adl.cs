@@ -19,21 +19,22 @@ public static unsafe class Adl
     private const int OffsetPnpString = 1312;       // strPNPString[256]
 
     private const int Od6CurrentPowerTotal = 0;
-    
-    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
-    private static extern int ADL2_Main_Control_Create(nint callback, int enumConnectedAdapters, out nint context);
 
-    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
-    private static extern int ADL2_Main_Control_Destroy(nint context);
+    public readonly record struct Adapter(int AdapterIndex, uint VendorId, uint DeviceId);
 
-    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
-    private static extern int ADL2_Adapter_NumberOfAdapters_Get(nint context, out int count);
+    private const int AdlMaxPath = 256;
 
     [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
     private static extern int ADL2_Adapter_AdapterInfo_Get(nint context, nint info, int inputSize);
 
     [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
-    private static extern int ADL2_Overdrive6_Temperature_Get(nint context, int adapterIndex, out int temperatureMilliC);
+    private static extern int ADL2_Adapter_NumberOfAdapters_Get(nint context, out int count);
+
+    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
+    private static extern int ADL2_Main_Control_Create(nint callback, int enumConnectedAdapters, out nint context);
+
+    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
+    private static extern int ADL2_Main_Control_Destroy(nint context);
 
     [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
     private static extern int ADL2_Overdrive5_Temperature_Get(
@@ -49,30 +50,8 @@ public static unsafe class Adl
         int powerType, 
         out int currentValueQ8);
 
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-    private static nint Malloc(int size) => Marshal.AllocHGlobal(size);
-
-    public readonly record struct Adapter(int AdapterIndex, uint VendorId, uint DeviceId);
-
-    private const int AdlMaxPath = 256;
-
-    public static bool TryCreate(out nint context)
-    {
-        context = nint.Zero;
-
-        try {
-            // The lib is only available when an AMD driver is installed.
-            int status = ADL2_Main_Control_Create(
-                (nint)(delegate* unmanaged[Stdcall]<int, nint>)&Malloc, 
-                1, 
-                out context);
-
-            return status == AdlOk && context != nint.Zero;
-        }
-        catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException) {
-            return false;
-        }
-    }
+    [DllImport(AtiAdlxx, CallingConvention = CallingConvention.Cdecl)]
+    private static extern int ADL2_Overdrive6_Temperature_Get(nint context, int adapterIndex, out int temperatureMilliC);
 
     public static void Destroy(nint context)
     {
@@ -133,6 +112,23 @@ public static unsafe class Adl
         return adapters;
     }
 
+    public static bool GetPowerWatts(nint context, int adapterIndex, out double watts)
+    {
+        watts = 0;
+
+        if (ADL2_Overdrive6_CurrentPower_Get(
+            context, 
+            adapterIndex, 
+            Od6CurrentPowerTotal, 
+            out int q8) != AdlOk) {
+            
+            return false;
+        }
+
+        watts = q8 / 256.0;
+        return watts is > 0 and < 2000;
+    }
+
     public static bool GetTemperatureCelsius(nint context, int adapterIndex, out double celsius)
     {
         celsius = 0;
@@ -150,21 +146,25 @@ public static unsafe class Adl
         return false;
     }
 
-    public static bool GetPowerWatts(nint context, int adapterIndex, out double watts)
-    {
-        watts = 0;
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static nint Malloc(int size) => Marshal.AllocHGlobal(size);
 
-        if (ADL2_Overdrive6_CurrentPower_Get(
-            context, 
-            adapterIndex, 
-            Od6CurrentPowerTotal, 
-            out int q8) != AdlOk) {
-            
+    public static bool TryCreate(out nint context)
+    {
+        context = nint.Zero;
+
+        try {
+            // The lib is only available when an AMD driver is installed.
+            int status = ADL2_Main_Control_Create(
+                (nint)(delegate* unmanaged[Stdcall]<int, nint>)&Malloc, 
+                1, 
+                out context);
+
+            return status == AdlOk && context != nint.Zero;
+        }
+        catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException) {
             return false;
         }
-
-        watts = q8 / 256.0;
-        return watts is > 0 and < 2000;
     }
 
     private static bool TryParseDeviceId(string pnpOrUdid, out uint deviceId)

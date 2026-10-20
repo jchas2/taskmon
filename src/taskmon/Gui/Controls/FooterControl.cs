@@ -27,27 +27,6 @@ public class FooterControl : Control
         this.appConfig         = appConfig;
     }
 
-    protected override void OnLoad()
-    {
-        serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
-        base.OnLoad();
-    }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
-    {
-        lock (@lock) {
-            snapshot = e.Snapshot;
-        }
-
-        Draw();
-    }
-
-    protected override void OnUnload()
-    {
-        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
-        base.OnUnload();
-    }
-
     protected override void OnDraw()
     {
         Color background = appConfig.Theme.Background;
@@ -99,5 +78,26 @@ public class FooterControl : Control
         }
 
         Terminal.Write(frame.AsSpan());
+    }
+
+    protected override void OnLoad()
+    {
+        serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+        base.OnLoad();
+    }
+
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
+    {
+        lock (@lock) {
+            snapshot = e.Snapshot;
+        }
+
+        Draw();
+    }
+
+    protected override void OnUnload()
+    {
+        serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+        base.OnUnload();
     }
 }

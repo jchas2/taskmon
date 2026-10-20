@@ -1,10 +1,9 @@
 using Moq;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
-
-using Task.Monitor.Cli.Utils;
-using Task.Monitor.Gui.Commands;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
@@ -26,7 +25,19 @@ public sealed class CommandControlTests
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
     }
-    
+
+    [Fact]
+    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
+        Assert.Throws<ArgumentNullException>(() => new CommandControl(null!, runContext.AppConfig));
+
+    [Fact]
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        CommandControl ctrl = new(runContext.Terminal, runContext.AppConfig);
+
+        Assert.NotNull(ctrl);
+    }
+
     [Fact]                                                                                                                                        
     public void Should_Construct_Default()                                                                                                        
     {                                                                                                                                             
@@ -42,18 +53,6 @@ public sealed class CommandControlTests
         Assert.Equal(0, control.X);                                                                                                               
         Assert.Equal(0, control.Y);                                                                                                               
     }                 
-    
-    [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        CommandControl ctrl = new(runContext.Terminal, runContext.AppConfig);
-
-        Assert.NotNull(ctrl);
-    }
-
-    [Fact]
-    public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => new CommandControl(null!, runContext.AppConfig));
 
     [Fact]
     public void Should_Draw_Command()

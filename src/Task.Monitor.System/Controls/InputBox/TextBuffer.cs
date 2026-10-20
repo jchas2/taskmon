@@ -7,25 +7,54 @@ public class TextBuffer
     private StringBuilder buffer = new();
     
     private int cursorBufferPosition = 0;
-    
-    public int CursorBufferPosition => cursorBufferPosition;
-    
-    public int Length => buffer.Length;
-    
-    public string Text => buffer.ToString();
-    
+
+    public bool Add(char ch)
+    {
+        if (char.IsControl(ch)) {
+            return false;
+        }
+        
+        if (InsertMode) {
+            buffer.Insert(cursorBufferPosition, ch);
+            cursorBufferPosition++;
+        }
+        else {
+            if (cursorBufferPosition < buffer.Length) {
+                buffer[cursorBufferPosition] = ch;
+                cursorBufferPosition++; 
+            }
+            else {
+                // Overwrite at the end behaves like an insert.
+                buffer.Append(ch);
+                cursorBufferPosition++;
+            }
+        }
+
+        return true;
+    }
+
     public void Clear()
     {
         buffer.Clear();
         cursorBufferPosition = 0;
     }
 
-    public void SetText(string text)
+    public int CursorBufferPosition => cursorBufferPosition;
+
+    public bool Delete()
     {
-        buffer.Clear();
-        buffer.Append(text);
-        cursorBufferPosition = buffer.Length;
+        if (cursorBufferPosition == buffer.Length) {
+            return false;
+        }
+
+        buffer.Remove(cursorBufferPosition, 1);
+        
+        return true;
     }
+
+    public bool InsertMode { get; set; } = true;
+
+    public int Length => buffer.Length;
 
     public bool MoveBackwards()
     {
@@ -35,17 +64,6 @@ public class TextBuffer
         
         buffer.Remove(cursorBufferPosition - 1, 1);
         cursorBufferPosition--;
-        
-        return true;
-    }
-
-    public bool Delete()
-    {
-        if (cursorBufferPosition == buffer.Length) {
-            return false;
-        }
-
-        buffer.Remove(cursorBufferPosition, 1);
         
         return true;
     }
@@ -72,30 +90,12 @@ public class TextBuffer
         return true;
     }
 
-    public bool InsertMode { get; set; } = true;
-
-    public bool Add(char ch)
+    public void SetText(string text)
     {
-        if (char.IsControl(ch)) {
-            return false;
-        }
-        
-        if (InsertMode) {
-            buffer.Insert(cursorBufferPosition, ch);
-            cursorBufferPosition++;
-        }
-        else {
-            if (cursorBufferPosition < buffer.Length) {
-                buffer[cursorBufferPosition] = ch;
-                cursorBufferPosition++; 
-            }
-            else {
-                // Overwrite at the end behaves like an insert.
-                buffer.Append(ch);
-                cursorBufferPosition++;
-            }
-        }
-
-        return true;
+        buffer.Clear();
+        buffer.Append(text);
+        cursorBufferPosition = buffer.Length;
     }
+
+    public string Text => buffer.ToString();
 }

@@ -7,6 +7,29 @@ namespace Task.Monitor.Gui.Controls.DiskSpace;
 
 public sealed partial class DiskSpaceControl
 {
+    private sealed class FileListViewItem : ListViewItem
+    {
+        public FileListViewItem(DiskSpaceFileEntry file, Color background, Color foreground)
+            : base(Path.GetFileName(file.FullPath), background, foreground)
+        {
+            FullPath = file.FullPath;
+
+            SubItems.AddRange(
+                new ListViewSubItem(
+                    this, 
+                    file.SizeBytes.ToFormattedByteSize(), 
+                    background, 
+                    foreground),
+                new ListViewSubItem(
+                    this, 
+                    Path.GetDirectoryName(file.FullPath) ?? file.FullPath, 
+                    background, 
+                    foreground));
+        }
+
+        public string FullPath { get; }
+    }
+
     private void RebuildFileRows(IReadOnlyList<DiskSpaceFileEntry> files)
     {
         if (files.Count == 0) {
@@ -54,27 +77,4 @@ public sealed partial class DiskSpaceControl
         filesView.FooterText =
             $"{files.Count} of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files     " +
             "↑ ↓ PgUp PgDn Scroll";
-
-    private sealed class FileListViewItem : ListViewItem
-    {
-        public FileListViewItem(DiskSpaceFileEntry file, Color background, Color foreground)
-            : base(Path.GetFileName(file.FullPath), background, foreground)
-        {
-            FullPath = file.FullPath;
-
-            SubItems.AddRange(
-                new ListViewSubItem(
-                    this, 
-                    file.SizeBytes.ToFormattedByteSize(), 
-                    background, 
-                    foreground),
-                new ListViewSubItem(
-                    this, 
-                    Path.GetDirectoryName(file.FullPath) ?? file.FullPath, 
-                    background, 
-                    foreground));
-        }
-
-        public string FullPath { get; }
-    }
 }

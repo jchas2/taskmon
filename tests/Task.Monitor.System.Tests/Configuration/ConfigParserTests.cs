@@ -1,17 +1,11 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Drawing;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
-
-using System.Drawing;
 namespace Task.Monitor.System.Tests.Configuration;
 
 public sealed class ConfigParserTests
 {
-    internal static string MinConfigFile => @"
-[section1]
-key1=value1
-key2=value2";
-
     internal static string MinConfigFileWithAllDataTypes = @"
 [data-types]
 string-key=string value
@@ -37,14 +31,12 @@ console-color-yellow=yellow
 console-color-white=white
 ";
 
-    [Fact]
-    public void Invalid_Config_File_Name_Should_Throw_FileNotFoundException()
-    {
-        Assert.Throws<FileNotFoundException>(() =>
-            new ConfigParser(
-                new FileSystem(),
-                "_file_does_not_exist.tmp"));
-    }
+    internal static string ConfigFileWithDottedKeys => @"
+[dotted-keys]
+control.background=#000000
+control.background.highlight.focused=#00FFFF
+performance.panel.titlebar.background=#000080
+process.list.user.currentnonroot=#00FF00";
 
     [Fact]
     public void Empty_Config_File_Should_Load_Empty_Config()
@@ -64,12 +56,19 @@ console-color-white=white
         Assert.Throws<ConfigParseException>(() => configParser.Parse());
     }
 
-    internal static string ConfigFileWithDottedKeys => @"
-[dotted-keys]
-control.background=#000000
-control.background.highlight.focused=#00FFFF
-performance.panel.titlebar.background=#000080
-process.list.user.currentnonroot=#00FF00";
+    [Fact]
+    public void Invalid_Config_File_Name_Should_Throw_FileNotFoundException()
+    {
+        Assert.Throws<FileNotFoundException>(() =>
+            new ConfigParser(
+                new FileSystem(),
+                "_file_does_not_exist.tmp"));
+    }
+
+    internal static string MinConfigFile => @"
+[section1]
+key1=value1
+key2=value2";
 
     [Fact]
     public void Should_Parse_Keys_Containing_Dots()

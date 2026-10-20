@@ -6,21 +6,22 @@ namespace Task.Monitor.System.Services.Tests.Startup;
 public sealed class StartupCommandLineTests
 {
     [Fact]
-    public void Splits_A_Quoted_Path_From_Its_Arguments()
+    public void Expands_Environment_Variables()
     {
-        (string path, string arguments) =
-            StartupCommandLine.Split("\"C:\\Program Files\\App\\app.exe\" --start /min");
+        (string path, _) = StartupCommandLine.Split(@"%SystemRoot%\System32\notepad.exe");
 
-        Assert.Equal(@"C:\Program Files\App\app.exe", path);
-        Assert.Equal("--start /min", arguments);
+        Assert.Equal(
+            Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\notepad.exe"),
+            path);
+        Assert.DoesNotContain("%", path);
     }
 
     [Fact]
-    public void Splits_A_Quoted_Path_With_No_Arguments()
+    public void Handles_An_Unbalanced_Quote()
     {
-        (string path, string arguments) = StartupCommandLine.Split("\"C:\\Tools\\agent.exe\"");
+        (string path, string arguments) = StartupCommandLine.Split("\"C:\\x.exe");
 
-        Assert.Equal(@"C:\Tools\agent.exe", path);
+        Assert.Equal(@"C:\x.exe", path);
         Assert.Equal("", arguments);
     }
 
@@ -31,27 +32,6 @@ public sealed class StartupCommandLineTests
 
         Assert.Equal("OneDrive.exe", path);
         Assert.Equal("", arguments);
-    }
-
-    [Fact]
-    public void Splits_An_Unquoted_Spaceless_Path_From_Its_Arguments()
-    {
-        (string path, string arguments) =
-            StartupCommandLine.Split(@"C:\Windows\System32\rundll32.exe shell32.dll,Control_RunDLL");
-
-        Assert.Equal(@"C:\Windows\System32\rundll32.exe", path);
-        Assert.Equal("shell32.dll,Control_RunDLL", arguments);
-    }
-
-    [Fact]
-    public void Expands_Environment_Variables()
-    {
-        (string path, _) = StartupCommandLine.Split(@"%SystemRoot%\System32\notepad.exe");
-
-        Assert.Equal(
-            Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\notepad.exe"),
-            path);
-        Assert.DoesNotContain("%", path);
     }
 
     [Fact]
@@ -88,11 +68,31 @@ public sealed class StartupCommandLineTests
     }
 
     [Fact]
-    public void Handles_An_Unbalanced_Quote()
+    public void Splits_An_Unquoted_Spaceless_Path_From_Its_Arguments()
     {
-        (string path, string arguments) = StartupCommandLine.Split("\"C:\\x.exe");
+        (string path, string arguments) =
+            StartupCommandLine.Split(@"C:\Windows\System32\rundll32.exe shell32.dll,Control_RunDLL");
 
-        Assert.Equal(@"C:\x.exe", path);
+        Assert.Equal(@"C:\Windows\System32\rundll32.exe", path);
+        Assert.Equal("shell32.dll,Control_RunDLL", arguments);
+    }
+
+    [Fact]
+    public void Splits_A_Quoted_Path_From_Its_Arguments()
+    {
+        (string path, string arguments) =
+            StartupCommandLine.Split("\"C:\\Program Files\\App\\app.exe\" --start /min");
+
+        Assert.Equal(@"C:\Program Files\App\app.exe", path);
+        Assert.Equal("--start /min", arguments);
+    }
+
+    [Fact]
+    public void Splits_A_Quoted_Path_With_No_Arguments()
+    {
+        (string path, string arguments) = StartupCommandLine.Split("\"C:\\Tools\\agent.exe\"");
+
+        Assert.Equal(@"C:\Tools\agent.exe", path);
         Assert.Equal("", arguments);
     }
 }

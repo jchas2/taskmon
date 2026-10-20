@@ -7,11 +7,35 @@ public static class ThermalMetricsExtensions
     public static double? CpuTemperature(this ThermalMetrics metrics) =>
         PrimaryTemperature(metrics, ThermalComponent.Cpu, componentId: null);
 
+    public static double? DiskTemperature(this ThermalMetrics metrics, int diskIndex) =>
+        PrimaryTemperature(metrics, ThermalComponent.Disk, diskIndex.ToString());
+
     public static double? GpuTemperature(this ThermalMetrics metrics, long adapterLuid) =>
         PrimaryTemperature(metrics, ThermalComponent.Gpu, adapterLuid.ToString());
 
-    public static double? DiskTemperature(this ThermalMetrics metrics, int diskIndex) =>
-        PrimaryTemperature(metrics, ThermalComponent.Disk, diskIndex.ToString());
+    private static bool IsPreferred(ThermalSensor candidate, ThermalSensor current)
+    {
+        int candidateSource = SourceRank(candidate.Source);
+        int currentSource   = SourceRank(current.Source);
+
+        if (candidateSource != currentSource) {
+            return candidateSource > currentSource;
+        }
+
+        int candidateName = NameRank(candidate.SensorName);
+        int currentName   = NameRank(current.SensorName);
+
+        if (candidateName != currentName) {
+            return candidateName > currentName;
+        }
+
+        return candidate.Celsius > current.Celsius;
+    }
+
+    private static int NameRank(string sensorName) => sensorName switch {
+        "Composite" or "GPU" or "Drive" or "Package" or "Edge" => 1,
+        _ => 0
+    };
 
     public static double? PrimaryTemperature(
         this ThermalMetrics metrics, ThermalComponent component, string? componentId)
@@ -35,24 +59,14 @@ public static class ThermalMetricsExtensions
         return best?.Celsius;
     }
 
-    private static bool IsPreferred(ThermalSensor candidate, ThermalSensor current)
-    {
-        int candidateSource = SourceRank(candidate.Source);
-        int currentSource   = SourceRank(current.Source);
-
-        if (candidateSource != currentSource) {
-            return candidateSource > currentSource;
-        }
-
-        int candidateName = NameRank(candidate.SensorName);
-        int currentName   = NameRank(current.SensorName);
-
-        if (candidateName != currentName) {
-            return candidateName > currentName;
-        }
-
-        return candidate.Celsius > current.Celsius;
-    }
+    private static int SourceRank(ThermalSource source) => source switch {
+        ThermalSource.KernelMsr => 4,
+        ThermalSource.NvApi or ThermalSource.Adl or ThermalSource.Igcl => 3,
+        ThermalSource.NvmeHealthLog or ThermalSource.AtaSmart => 3,
+        ThermalSource.Battery => 2,
+        ThermalSource.AcpiThermalZone => 1,
+        _ => 0
+    };
 
     public static string ToDisplayName(this ThermalSensor sensor, string? componentLabel) =>
         string.IsNullOrEmpty(componentLabel)
@@ -63,18 +77,4 @@ public static class ThermalMetricsExtensions
 
     public static string ToTemperatureText(this double? celsius) =>
         celsius is { } value ? value.ToTemperatureText() : "N/A";
-
-    private static int SourceRank(ThermalSource source) => source switch {
-        ThermalSource.KernelMsr => 4,
-        ThermalSource.NvApi or ThermalSource.Adl or ThermalSource.Igcl => 3,
-        ThermalSource.NvmeHealthLog or ThermalSource.AtaSmart => 3,
-        ThermalSource.Battery => 2,
-        ThermalSource.AcpiThermalZone => 1,
-        _ => 0
-    };
-
-    private static int NameRank(string sensorName) => sensorName switch {
-        "Composite" or "GPU" or "Drive" or "Package" or "Edge" => 1,
-        _ => 0
-    };
 }

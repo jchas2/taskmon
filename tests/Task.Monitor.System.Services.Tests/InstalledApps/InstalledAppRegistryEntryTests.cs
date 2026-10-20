@@ -4,6 +4,33 @@ namespace Task.Monitor.System.Services.Tests.InstalledApps;
 
 public sealed class InstalledAppRegistryEntryTests
 {
+    [Fact]
+    public void Includes_An_Entry_With_SystemComponent_Zero()
+    {
+        Assert.NotNull(Parse(systemComponent: 0));
+    }
+
+    [Fact]
+    public void Missing_Optional_Fields_Are_Null()
+    {
+        InstalledApp? app = Parse(
+            displayVersion: null,
+            publisher: null,
+            installDate: null,
+            installLocation: null,
+            uninstallString: null,
+            quietUninstallString: null,
+            estimatedSizeKb: null);
+
+        Assert.NotNull(app);
+        Assert.Null(app.Version);
+        Assert.Null(app.Publisher);
+        Assert.Null(app.InstallDate);
+        Assert.Null(app.InstallLocation);
+        Assert.Null(app.UninstallCommand);
+        Assert.Null(app.EstimatedSizeKb);
+    }
+
     private static InstalledApp? Parse(
         string? displayName = "My App",
         string? displayVersion = "1.2.3",
@@ -50,38 +77,17 @@ public sealed class InstalledAppRegistryEntryTests
         Assert.Equal("uninstall.exe /quiet", app!.UninstallCommand);
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Returns_Null_When_DisplayName_Is_Missing(string? displayName) =>
-        Assert.Null(Parse(displayName: displayName));
-
-    [Fact]
-    public void Returns_Null_For_A_System_Component()
-    {
-        Assert.Null(Parse(systemComponent: 1));
-    }
-
-    [Fact]
-    public void Includes_An_Entry_With_SystemComponent_Zero()
-    {
-        Assert.NotNull(Parse(systemComponent: 0));
-    }
-
     [Fact]
     public void Returns_Null_For_An_Entry_With_A_Parent_Key()
     {
         Assert.Null(Parse(parentKeyName: "{PARENT-GUID}"));
     }
 
-    [Theory]
-    [InlineData("Update")]
-    [InlineData("Security Update")]
-    [InlineData("Hotfix")]
-    [InlineData("ServicePack")]
-    public void Returns_Null_For_Update_Release_Types(string releaseType) =>
-        Assert.Null(Parse(releaseType: releaseType));
+    [Fact]
+    public void Returns_Null_For_A_System_Component()
+    {
+        Assert.Null(Parse(systemComponent: 1));
+    }
 
     [Fact]
     public void Returns_Null_For_Malformed_InstallDate()
@@ -92,26 +98,20 @@ public sealed class InstalledAppRegistryEntryTests
         Assert.Null(app.InstallDate);
     }
 
-    [Fact]
-    public void Missing_Optional_Fields_Are_Null()
-    {
-        InstalledApp? app = Parse(
-            displayVersion: null,
-            publisher: null,
-            installDate: null,
-            installLocation: null,
-            uninstallString: null,
-            quietUninstallString: null,
-            estimatedSizeKb: null);
+    [Theory]
+    [InlineData("Update")]
+    [InlineData("Security Update")]
+    [InlineData("Hotfix")]
+    [InlineData("ServicePack")]
+    public void Returns_Null_For_Update_Release_Types(string releaseType) =>
+        Assert.Null(Parse(releaseType: releaseType));
 
-        Assert.NotNull(app);
-        Assert.Null(app.Version);
-        Assert.Null(app.Publisher);
-        Assert.Null(app.InstallDate);
-        Assert.Null(app.InstallLocation);
-        Assert.Null(app.UninstallCommand);
-        Assert.Null(app.EstimatedSizeKb);
-    }
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Returns_Null_When_DisplayName_Is_Missing(string? displayName) =>
+        Assert.Null(Parse(displayName: displayName));
 
     [Fact]
     public void User_Scope_Is_Preserved()

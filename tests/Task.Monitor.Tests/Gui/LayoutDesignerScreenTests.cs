@@ -27,172 +27,8 @@ public sealed class LayoutDesignerScreenTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static ConsoleKeyInfo Key(ConsoleKey key, bool ctrl = false) =>
-        new('\0', key, shift: false, alt: false, control: ctrl);
-
-    // Opens the multi-pane example tree explicitly - the designer itself now starts on a single
-    // empty pane (see Defaults_To_One_Empty_Pane), and most tests here need panes to split,
-    // delete and move between.
-    private LayoutDesignerScreen CreateScreen(int width = 120, int height = 40)
-    {
-        LayoutDesignerScreen screen = new(runContext) {
-            Width = width,
-            Height = height
-        };
-
-        screen.Open(SummaryLayoutTree.CreateExample(), null);
-        screen.Load();
-        screen.Resize();
-        return screen;
-    }
-
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
-    [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
-    {
-        LayoutDesignerScreen screen = new(runContext);
-
-        Assert.NotNull(screen);
-        Assert.Null(screen.LayoutName);
-    }
-
-    [Fact]
-    public void Draws_The_Example_Trees_Panes_And_Banner()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-        screen.Draw();
-
-        string output = CapturedOutput();
-
-        Assert.Contains("LAYOUT DESIGNER", output);
-        Assert.Contains("Untitled", output);
-        Assert.Contains("Cpu", output);
-        Assert.Contains("Memory", output);
-        Assert.Contains("Gpu", output);
-
-        screen.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
-    public void Defaults_To_One_Empty_Pane()
-    {
-        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
-        screen.Load();
-        screen.Resize();
-
-        SummaryLayoutNode pane = Assert.Single(screen.Tree.Panes());
-        Assert.Equal(PaneControlType.Empty, pane.ControlType);
-        Assert.Equal(screen.Tree.RootId, pane.Id);
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void CreateEmpty_Is_A_Single_Empty_Root_Pane()
-    {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-
-        SummaryLayoutNode pane = Assert.Single(tree.Nodes.Values);
-        Assert.False(pane.IsSplit);
-        Assert.Equal(PaneControlType.Empty, pane.ControlType);
-        Assert.Equal(tree.RootId, pane.Id);
-        Assert.Equal(1, tree.NextId);
-    }
-
     private static bool AnyDescendantFocused(Control control) =>
         control.Focused || control.Controls.Any(AnyDescendantFocused);
-
-    // Regression test: ProcessControl and SystemInfoControl used to grab their own internal
-    // focus unconditionally in OnLoad (processView.SetFocus() / navMenu.SetFocus()) - fine for
-    // their usual standalone hosting, where a subsequent OnGotFocus-driven SetFocus() from the
-    // host masks it, but fatal here, where nothing ever calls SetFocus() on a pane at all
-    // (selectedNodeId is a designer-owned cursor, not real focus - see the class comment). That
-    // stray real focus produced a second, permanent "orange border" on top of the designer's own
-    // selection overlay, on whichever pane happened to grab it during Load.
-    [Fact]
-    public void No_Pane_Holds_Real_Focus_After_Load()
-    {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
-                Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
-            },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
-        ], rootId: 0);
-
-        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
-        screen.Open(tree, null);
-        screen.Load();
-        screen.Resize();
-
-        foreach (Control control in screen.Controls) {
-            Assert.False(AnyDescendantFocused(control));
-        }
-
-        screen.Unload();
-    }
-
-    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
-    // itself, from inside its real worker loop.
-    private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
-    {
-        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
-            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .GetValue(runContext.ServiceController);
-
-        handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
-    }
-
-    private static IEnumerable<Control> Subtree(Control control) =>
-        new[] { control }.Concat(control.Controls.SelectMany(Subtree));
-
-    // Cpu on the left, Process on the right - Right arrow from the default selection (Cpu, first
-    // in tree order) lands on the Process pane.
-    private LayoutDesignerScreen CreateCpuProcessScreen()
-    {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
-                Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
-            },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
-        ], rootId: 0);
-
-        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
-        screen.Open(tree, null);
-        screen.Load();
-        screen.Resize();
-        return screen;
-    }
-
-    [Fact]
-    public void Chart_Panes_Use_The_Chart_Colours()
-    {
-        runContext.AppConfig.Theme.ChartBackground = ConsolePalette.DarkMagenta;
-        runContext.AppConfig.Theme.ChartBorderBackground = ConsolePalette.DarkBlue;
-        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBackground);
-        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBorderBackground);
-
-        LayoutDesignerScreen screen = CreateCpuProcessScreen();
-
-        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
-
-        Assert.Equal(ConsolePalette.DarkMagenta, cpuPane.BackgroundColour);
-        Assert.Equal(ConsolePalette.DarkBlue, cpuPane.BorderBackgroundColour);
-
-        // Cpu is selected by default, and the selection highlight reaches the chart's border
-        // foreground through the BorderColour alias.
-        Assert.Equal(Control.FocusSelectionColour, cpuPane.BorderForegroundColour);
-
-        screen.Unload();
-    }
 
     [Fact]
     public void An_Unselected_Chart_Pane_Uses_The_Theme_Border_Foreground()
@@ -210,112 +46,6 @@ public sealed class LayoutDesignerScreenTests
         Assert.Equal(ConsolePalette.DarkRed, cpuPane.BorderForegroundColour);
 
         screen.Unload();
-    }
-
-    // Regression test: selection used to be an outline painted over the pane from outside, which
-    // flickered - a pane with a live snapshot subscription (Process, or a chart fed on the tick)
-    // repaints its own default-coloured border on every tick, and the outline could only go back
-    // on after that. The selected pane now draws its own borders in the focus colour, so there is
-    // nothing to repaint afterwards. Walks the whole subtree because ProcessControl draws no
-    // border itself - its inner, active ListView does.
-    [Fact]
-    public void The_Selected_Pane_Draws_Every_Border_In_Its_Subtree_In_The_Focus_Colour()
-    {
-        LayoutDesignerScreen screen = CreateCpuProcessScreen();
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
-        Assert.Equal(2, screen.SelectedNodeId);
-
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
-        Control cpuPane = screen.Controls.Single(c => c.GetType().Name == "Chart");
-
-        Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
-        Assert.Equal(runContext.AppConfig.Theme.ChartBorderForeground, cpuPane.BorderColour);
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void Moving_The_Selection_Away_Restores_The_Previous_Panes_Own_Border_Colours()
-    {
-        LayoutDesignerScreen screen = CreateCpuProcessScreen();
-
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
-        List<(Control Control, Color Colour)> unselected =
-            Subtree(processPane).Select(c => (c, c.BorderColour)).ToList();
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled); // onto Process
-        screen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);  // back off it
-
-        Assert.All(unselected, pair => Assert.Equal(pair.Colour, pair.Control.BorderColour));
-
-        screen.Unload();
-    }
-
-    // The flicker the user saw happened on exactly this path: a tick redraws the Process pane by
-    // itself. The highlight is a property the pane's own redraw reads, so it survives the tick.
-    [Fact]
-    public void The_Highlight_Survives_A_Snapshot_Tick()
-    {
-        LayoutDesignerScreen screen = CreateCpuProcessScreen();
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
-
-        RaiseSnapshotUpdated(new SystemSnapshot {
-            Processes = new Task.Monitor.System.Services.Process.ProcessInfo {
-                Metrics = new Task.Monitor.System.Services.Process.ProcessMetrics {
-                    Entries = [
-                        new Task.Monitor.System.Services.Process.ProcessEntry {
-                            Pid = 4242, ProcessName = "proc4242", FileDescription = "Test Process", CpuTimePercent = 0.5
-                        },
-                    ],
-                },
-            },
-        });
-
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
-        Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
-
-        screen.Unload();
-    }
-
-    private int SnapshotSubscriberCount(string controlTypeName)
-    {
-        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
-            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .GetValue(runContext.ServiceController);
-
-        return handler?.GetInvocationList().Count(d => d.Target?.GetType().Name == controlTypeName) ?? 0;
-    }
-
-    // Regression test for the reported "replacing the bottom Process pane with Drivers flickers
-    // and jumps around": OnLoad Load()ed every pane explicitly AND via base.OnLoad() (Control's
-    // default OnLoad loads every child), so the Process pane subscribed to snapshot updates twice.
-    // Replacing it Unload()ed once, removing only one subscription - the detached ProcessControl
-    // kept redrawing itself at its old position, underneath the new Drivers pane.
-    [Fact]
-    public void Replacing_A_Loaded_Process_Pane_Leaves_No_Process_Subscription_Behind()
-    {
-        LayoutDesignerScreen screen = CreateCpuProcessScreen();
-
-        Assert.Equal(1, SnapshotSubscriberCount("ProcessControl"));
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled); // onto Process
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);      // picker opens on Process
-        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);  // Process -> Drivers
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-
-        Assert.Equal(PaneControlType.Drivers, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
-        Assert.Equal(0, SnapshotSubscriberCount("ProcessControl"));
-        Assert.Equal(1, SnapshotSubscriberCount("DriversControl"));
-
-        screen.Unload();
-
-        Assert.Equal(0, SnapshotSubscriberCount("DriversControl"));
     }
 
     [Fact]
@@ -359,32 +89,123 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
     [Fact]
-    public void Open_Replaces_The_Tree_And_Resets_The_Layout_Name()
+    public void Chart_Panes_Use_The_Chart_Colours()
     {
-        LayoutDesignerScreen screen = CreateScreen();
+        runContext.AppConfig.Theme.ChartBackground = ConsolePalette.DarkMagenta;
+        runContext.AppConfig.Theme.ChartBorderBackground = ConsolePalette.DarkBlue;
+        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBackground);
+        Assert.NotEqual(runContext.AppConfig.Theme.Background, runContext.AppConfig.Theme.ChartBorderBackground);
 
-        SummaryLayoutTree freshTree = SummaryLayoutTree.CreateExample();
-        screen.Open(freshTree, "My Dashboard");
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
 
-        Assert.Same(freshTree, screen.Tree);
-        Assert.Equal("My Dashboard", screen.LayoutName);
-        Assert.Equal(freshTree.Panes().First().Id, screen.SelectedNodeId);
+        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
+
+        Assert.Equal(ConsolePalette.DarkMagenta, cpuPane.BackgroundColour);
+        Assert.Equal(ConsolePalette.DarkBlue, cpuPane.BorderBackgroundColour);
+
+        // Cpu is selected by default, and the selection highlight reaches the chart's border
+        // foreground through the BorderColour alias.
+        Assert.Equal(Control.FocusSelectionColour, cpuPane.BorderForegroundColour);
 
         screen.Unload();
     }
 
     [Fact]
-    public void Right_Arrow_Moves_Selection_To_The_Pane_On_The_Right()
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    {
+        LayoutDesignerScreen screen = new(runContext);
+
+        Assert.NotNull(screen);
+        Assert.Null(screen.LayoutName);
+    }
+
+    // The picker is built from Enum.GetValues<PaneControlType>(), so a new member shows up in it
+    // automatically - this pins that the CpuCores pane really is assignable and swaps the control in.
+    [Fact]
+    public void Cpu_Cores_Can_Be_Assigned_To_A_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuCores);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Contains("CPU CORES", CapturedOutput());
+
+        screen.Unload();
+    }
+
+    // Cpu on the left, Process on the right - Right arrow from the default selection (Cpu, first
+    // in tree order) lands on the Process pane.
+    private LayoutDesignerScreen CreateCpuProcessScreen()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            new SummaryLayoutNode {
+                Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
+            },
+            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
+            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+        ], rootId: 0);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+        return screen;
+    }
+
+    [Fact]
+    public void CreateEmpty_Is_A_Single_Empty_Root_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        SummaryLayoutNode pane = Assert.Single(tree.Nodes.Values);
+        Assert.False(pane.IsSplit);
+        Assert.Equal(PaneControlType.Empty, pane.ControlType);
+        Assert.Equal(tree.RootId, pane.Id);
+        Assert.Equal(1, tree.NextId);
+    }
+
+    // Opens the multi-pane example tree explicitly - the designer itself now starts on a single
+    // empty pane (see Defaults_To_One_Empty_Pane), and most tests here need panes to split,
+    // delete and move between.
+    private LayoutDesignerScreen CreateScreen(int width = 120, int height = 40)
+    {
+        LayoutDesignerScreen screen = new(runContext) {
+            Width = width,
+            Height = height
+        };
+
+        screen.Open(SummaryLayoutTree.CreateExample(), null);
+        screen.Load();
+        screen.Resize();
+        return screen;
+    }
+
+    [Fact]
+    public void Ctrl_Down_Splits_Column_Wise()
     {
         LayoutDesignerScreen screen = CreateScreen();
-        int startId = screen.SelectedNodeId;
+        int originalPaneId = screen.SelectedNodeId;
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.DownArrow, ctrl: true), ref handled);
 
         Assert.True(handled);
-        Assert.NotEqual(startId, screen.SelectedNodeId);
+        Assert.Equal(Orientation.Column, screen.Tree.Nodes[originalPaneId].Orientation);
 
         screen.Unload();
     }
@@ -409,83 +230,6 @@ public sealed class LayoutDesignerScreenTests
         SummaryLayoutNode selectedPane = screen.Tree.Nodes[screen.SelectedNodeId];
         Assert.False(selectedPane.IsSplit);
         Assert.Equal(PaneControlType.Empty, selectedPane.ControlType);
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void Ctrl_Down_Splits_Column_Wise()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-        int originalPaneId = screen.SelectedNodeId;
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.DownArrow, ctrl: true), ref handled);
-
-        Assert.True(handled);
-        Assert.Equal(Orientation.Column, screen.Tree.Nodes[originalPaneId].Orientation);
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void Enter_Then_Picking_Cpu_Reassigns_The_Selected_Empty_Pane()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled); // split -> new Empty pane selected
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // open the control-type picker
-
-        // PaneControlType order is Empty, Cpu, Memory, ... - one Down from Empty reaches Cpu.
-        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // confirm
-
-        Assert.Equal(PaneControlType.Cpu, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
-
-        runContextHelper.terminal.Invocations.Clear();
-        screen.Draw();
-
-        Assert.Contains("Cpu", CapturedOutput());
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void Escape_Cancels_The_Control_Type_Picker_Without_Reassigning()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled);
-        int emptyPaneId = screen.SelectedNodeId;
-
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
-        screen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
-
-        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[emptyPaneId].ControlType);
-
-        screen.Unload();
-    }
-
-    // The picker is built from Enum.GetValues<PaneControlType>(), so a new member shows up in it
-    // automatically - this pins that the CpuCores pane really is assignable and swaps the control in.
-    [Fact]
-    public void Cpu_Cores_Can_Be_Assigned_To_A_Pane()
-    {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-
-        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
-        screen.Open(tree, null);
-        screen.Load();
-        screen.Resize();
-
-        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuCores);
-        screen.Draw();
-
-        Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
-        Assert.Contains("CPU CORES", CapturedOutput());
 
         screen.Unload();
     }
@@ -552,6 +296,20 @@ public sealed class LayoutDesignerScreenTests
     }
 
     [Fact]
+    public void Defaults_To_One_Empty_Pane()
+    {
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Load();
+        screen.Resize();
+
+        SummaryLayoutNode pane = Assert.Single(screen.Tree.Panes());
+        Assert.Equal(PaneControlType.Empty, pane.ControlType);
+        Assert.Equal(screen.Tree.RootId, pane.Id);
+
+        screen.Unload();
+    }
+
+    [Fact]
     public void Delete_On_The_Root_Pane_Does_Nothing()
     {
         // A tree with a single pane (the root itself) - nothing to merge it into.
@@ -589,53 +347,83 @@ public sealed class LayoutDesignerScreenTests
     }
 
     [Fact]
-    public void Plus_And_Minus_Adjust_The_Parent_Splits_Ratio()
+    public void Draws_The_Example_Trees_Panes_And_Banner()
     {
         LayoutDesignerScreen screen = CreateScreen();
-        int? parentId = screen.Tree.FindParentSplitId(screen.SelectedNodeId);
-        Assert.NotNull(parentId);
+        screen.Draw();
 
-        float ratioBefore = screen.Tree.Nodes[parentId!.Value].Ratio;
+        string output = CapturedOutput();
 
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.Add), ref handled);
-
-        Assert.True(handled);
-        Assert.NotEqual(ratioBefore, screen.Tree.Nodes[parentId.Value].Ratio);
+        Assert.Contains("LAYOUT DESIGNER", output);
+        Assert.Contains("Untitled", output);
+        Assert.Contains("Cpu", output);
+        Assert.Contains("Memory", output);
+        Assert.Contains("Gpu", output);
 
         screen.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
     }
 
-    // Typed with each letter's real ConsoleKey (not a placeholder key) - so the 'S' in "My Stats"
-    // arrives as ConsoleKey.S, the save key itself, proving the save-name prompt swallows it
-    // rather than it re-triggering a save mid-typing.
-    private static ConsoleKeyInfo Typed(char ch) =>
-        new(ch, char.IsLetter(ch) ? Enum.Parse<ConsoleKey>(char.ToUpperInvariant(ch).ToString()) : ConsoleKey.Spacebar,
-            shift: char.IsUpper(ch), alt: false, control: false);
-
-    // Plain S rather than Ctrl+S: consoles take Ctrl+S as "pause output" (XOFF) and it never
-    // reaches the app - the reported "screen hangs until the next key, no save dialog".
     [Fact]
-    public void S_With_No_Name_Prompts_And_Then_Saves_On_Enter()
+    public void Editing_The_Prefilled_Name_Saves_A_Copy_Under_The_New_Name()
     {
         runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         LayoutDesignerScreen screen = CreateScreen();
+        screen.Open(SummaryLayoutTree.CreateExample(), "Original");
 
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.S), ref handled);
-        Assert.True(handled);
-        Assert.Null(screen.LayoutName); // still unnamed - only the prompt has opened so far
-        Assert.Contains("Save Layout As", CapturedOutput());
 
-        foreach (char ch in "My Stats") {
+        foreach (char ch in " Copy") {
             screen.KeyPressed(Typed(ch), ref handled);
         }
 
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Assert.Equal("My Stats", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "My Stats");
+        Assert.Equal("Original Copy", screen.LayoutName);
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Original Copy");
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Enter_Then_Picking_Cpu_Reassigns_The_Selected_Empty_Pane()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled); // split -> new Empty pane selected
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // open the control-type picker
+
+        // PaneControlType order is Empty, Cpu, Memory, ... - one Down from Empty reaches Cpu.
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // confirm
+
+        Assert.Equal(PaneControlType.Cpu, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+
+        runContextHelper.terminal.Invocations.Clear();
+        screen.Draw();
+
+        Assert.Contains("Cpu", CapturedOutput());
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Escape_Cancels_The_Control_Type_Picker_Without_Reassigning()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled);
+        int emptyPaneId = screen.SelectedNodeId;
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
+
+        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[emptyPaneId].ControlType);
 
         screen.Unload();
     }
@@ -668,129 +456,139 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
-    [Fact]
-    public void Tab_To_Cancel_In_The_Save_Dialog_Then_Enter_Does_Not_Save()
-    {
-        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+    private static ConsoleKeyInfo Key(ConsoleKey key, bool ctrl = false) =>
+        new('\0', key, shift: false, alt: false, control: ctrl);
 
-        LayoutDesignerScreen screen = CreateScreen();
+    [Fact]
+    public void Moving_The_Selection_Away_Restores_The_Previous_Panes_Own_Border_Colours()
+    {
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
+
+        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
+        List<(Control Control, Color Colour)> unselected =
+            Subtree(processPane).Select(c => (c, c.BorderColour)).ToList();
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled); // onto Process
+        screen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);  // back off it
 
-        foreach (char ch in "Nope") {
-            screen.KeyPressed(Typed(ch), ref handled);
-        }
-
-        screen.KeyPressed(Key(ConsoleKey.Tab), ref handled);
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-
-        Assert.Null(screen.LayoutName);
-        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Nope");
+        Assert.All(unselected, pair => Assert.Equal(pair.Colour, pair.Control.BorderColour));
 
         screen.Unload();
     }
 
-    // A layout's name becomes its [section] name in the saved .layout file, and ConfigParser only
-    // accepts letters, digits, '-' and spaces there - e.g. "My_Dash" would save, then fail to parse
-    // on the next load. So the save dialog won't accept anything else.
+    // Regression test: ProcessControl and SystemInfoControl used to grab their own internal
+    // focus unconditionally in OnLoad (processView.SetFocus() / navMenu.SetFocus()) - fine for
+    // their usual standalone hosting, where a subsequent OnGotFocus-driven SetFocus() from the
+    // host masks it, but fatal here, where nothing ever calls SetFocus() on a pane at all
+    // (selectedNodeId is a designer-owned cursor, not real focus - see the class comment). That
+    // stray real focus produced a second, permanent "orange border" on top of the designer's own
+    // selection overlay, on whichever pane happened to grab it during Load.
     [Fact]
-    public void The_Save_Dialog_Rejects_Characters_A_Layout_Section_Name_Cannot_Hold()
+    public void No_Pane_Holds_Real_Focus_After_Load()
     {
-        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            new SummaryLayoutNode {
+                Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
+            },
+            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
+            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+        ], rootId: 0);
 
-        LayoutDesignerScreen screen = CreateScreen();
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
 
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
-
-        foreach (char ch in "My_Dash.1") {
-            screen.KeyPressed(new ConsoleKeyInfo(ch, char.IsLetter(ch)
-                ? Enum.Parse<ConsoleKey>(char.ToUpperInvariant(ch).ToString())
-                : ConsoleKey.Oem1, false, false, false), ref handled);
+        foreach (Control control in screen.Controls) {
+            Assert.False(AnyDescendantFocused(control));
         }
-
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-
-        Assert.Equal("MyDash1", screen.LayoutName);
 
         screen.Unload();
     }
 
-    // Regression test: re-saving an already-named layout used to write straight over it with no
-    // dialog - and no visible change either (the banner already showed the name), so S looked
-    // dead. It now always prompts, pre-filled with the current name.
     [Fact]
-    public void S_With_An_Existing_Name_Opens_The_Dialog_Prefilled_And_Enter_Overwrites()
+    public void Open_Replaces_The_Tree_And_Resets_The_Layout_Name()
     {
-        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-
         LayoutDesignerScreen screen = CreateScreen();
-        screen.Open(SummaryLayoutTree.CreateExample(), "Already Named");
-        runContextHelper.terminal.Invocations.Clear();
+
+        SummaryLayoutTree freshTree = SummaryLayoutTree.CreateExample();
+        screen.Open(freshTree, "My Dashboard");
+
+        Assert.Same(freshTree, screen.Tree);
+        Assert.Equal("My Dashboard", screen.LayoutName);
+        Assert.Equal(freshTree.Panes().First().Id, screen.SelectedNodeId);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Plus_And_Minus_Adjust_The_Parent_Splits_Ratio()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        int? parentId = screen.Tree.FindParentSplitId(screen.SelectedNodeId);
+        Assert.NotNull(parentId);
+
+        float ratioBefore = screen.Tree.Nodes[parentId!.Value].Ratio;
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Add), ref handled);
 
         Assert.True(handled);
-        Assert.Contains("Save Layout As", CapturedOutput());
-        Assert.Contains("Already Named", CapturedOutput()); // the pre-filled field
-        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Already Named"); // nothing saved yet
-
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-
-        Assert.Equal("Already Named", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Already Named");
+        Assert.NotEqual(ratioBefore, screen.Tree.Nodes[parentId.Value].Ratio);
 
         screen.Unload();
     }
 
-    [Fact]
-    public void Editing_The_Prefilled_Name_Saves_A_Copy_Under_The_New_Name()
+    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
+    // itself, from inside its real worker loop.
+    private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
     {
-        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
+            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(runContext.ServiceController);
 
-        LayoutDesignerScreen screen = CreateScreen();
-        screen.Open(SummaryLayoutTree.CreateExample(), "Original");
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
-
-        foreach (char ch in " Copy") {
-            screen.KeyPressed(Typed(ch), ref handled);
-        }
-
-        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
-
-        Assert.Equal("Original Copy", screen.LayoutName);
-        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Original Copy");
-
-        screen.Unload();
+        handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
     }
 
-    // Built-in layouts are read-only, so editing one starts the save from a copy's name.
+    // Regression test for the reported "replacing the bottom Process pane with Drivers flickers
+    // and jumps around": OnLoad Load()ed every pane explicitly AND via base.OnLoad() (Control's
+    // default OnLoad loads every child), so the Process pane subscribed to snapshot updates twice.
+    // Replacing it Unload()ed once, removing only one subscription - the detached ProcessControl
+    // kept redrawing itself at its old position, underneath the new Drivers pane.
     [Fact]
-    public void S_On_A_Built_In_Layout_Prefills_A_Copys_Name_And_Enter_Saves_The_Copy()
+    public void Replacing_A_Loaded_Process_Pane_Leaves_No_Process_Subscription_Behind()
     {
-        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
 
-        LayoutDesignerScreen screen = CreateScreen();
-        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
-        Assert.True(builtIn.IsBuiltIn);
-
-        screen.Open(builtIn.ToTree(), builtIn.Name);
-        runContextHelper.terminal.Invocations.Clear();
+        Assert.Equal(1, SnapshotSubscriberCount("ProcessControl"));
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
-
-        Assert.Contains("Cpu and Memory Copy", CapturedOutput());
-
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled); // onto Process
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);      // picker opens on Process
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);  // Process -> Drivers
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Assert.Equal("Cpu and Memory Copy", screen.LayoutName);
-        Assert.False(runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory Copy").IsBuiltIn);
-        Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory"));
+        Assert.Equal(PaneControlType.Drivers, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(0, SnapshotSubscriberCount("ProcessControl"));
+        Assert.Equal(1, SnapshotSubscriberCount("DriversControl"));
+
+        screen.Unload();
+
+        Assert.Equal(0, SnapshotSubscriberCount("DriversControl"));
+    }
+
+    [Fact]
+    public void Right_Arrow_Moves_Selection_To_The_Pane_On_The_Right()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        int startId = screen.SelectedNodeId;
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        Assert.True(handled);
+        Assert.NotEqual(startId, screen.SelectedNodeId);
 
         screen.Unload();
     }
@@ -830,4 +628,206 @@ public sealed class LayoutDesignerScreenTests
 
         screen.Unload();
     }
+
+    private int SnapshotSubscriberCount(string controlTypeName)
+    {
+        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
+            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(runContext.ServiceController);
+
+        return handler?.GetInvocationList().Count(d => d.Target?.GetType().Name == controlTypeName) ?? 0;
+    }
+
+    private static IEnumerable<Control> Subtree(Control control) =>
+        new[] { control }.Concat(control.Controls.SelectMany(Subtree));
+
+    // Built-in layouts are read-only, so editing one starts the save from a copy's name.
+    [Fact]
+    public void S_On_A_Built_In_Layout_Prefills_A_Copys_Name_And_Enter_Saves_The_Copy()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
+        Assert.True(builtIn.IsBuiltIn);
+
+        screen.Open(builtIn.ToTree(), builtIn.Name);
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        Assert.Contains("Cpu and Memory Copy", CapturedOutput());
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal("Cpu and Memory Copy", screen.LayoutName);
+        Assert.False(runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory Copy").IsBuiltIn);
+        Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory"));
+
+        screen.Unload();
+    }
+
+    // Regression test: re-saving an already-named layout used to write straight over it with no
+    // dialog - and no visible change either (the banner already showed the name), so S looked
+    // dead. It now always prompts, pre-filled with the current name.
+    [Fact]
+    public void S_With_An_Existing_Name_Opens_The_Dialog_Prefilled_And_Enter_Overwrites()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+        screen.Open(SummaryLayoutTree.CreateExample(), "Already Named");
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        Assert.True(handled);
+        Assert.Contains("Save Layout As", CapturedOutput());
+        Assert.Contains("Already Named", CapturedOutput()); // the pre-filled field
+        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Already Named"); // nothing saved yet
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal("Already Named", screen.LayoutName);
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "Already Named");
+
+        screen.Unload();
+    }
+
+    // Plain S rather than Ctrl+S: consoles take Ctrl+S as "pause output" (XOFF) and it never
+    // reaches the app - the reported "screen hangs until the next key, no save dialog".
+    [Fact]
+    public void S_With_No_Name_Prompts_And_Then_Saves_On_Enter()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+        Assert.True(handled);
+        Assert.Null(screen.LayoutName); // still unnamed - only the prompt has opened so far
+        Assert.Contains("Save Layout As", CapturedOutput());
+
+        foreach (char ch in "My Stats") {
+            screen.KeyPressed(Typed(ch), ref handled);
+        }
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal("My Stats", screen.LayoutName);
+        Assert.Contains(runContext.AppConfig.Layouts, l => l.Name == "My Stats");
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Tab_To_Cancel_In_The_Save_Dialog_Then_Enter_Does_Not_Save()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        foreach (char ch in "Nope") {
+            screen.KeyPressed(Typed(ch), ref handled);
+        }
+
+        screen.KeyPressed(Key(ConsoleKey.Tab), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Null(screen.LayoutName);
+        Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Nope");
+
+        screen.Unload();
+    }
+
+    // The flicker the user saw happened on exactly this path: a tick redraws the Process pane by
+    // itself. The highlight is a property the pane's own redraw reads, so it survives the tick.
+    [Fact]
+    public void The_Highlight_Survives_A_Snapshot_Tick()
+    {
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Processes = new Task.Monitor.System.Services.Process.ProcessInfo {
+                Metrics = new Task.Monitor.System.Services.Process.ProcessMetrics {
+                    Entries = [
+                        new Task.Monitor.System.Services.Process.ProcessEntry {
+                            Pid = 4242, ProcessName = "proc4242", FileDescription = "Test Process", CpuTimePercent = 0.5
+                        },
+                    ],
+                },
+            },
+        });
+
+        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
+        Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
+
+        screen.Unload();
+    }
+
+    // A layout's name becomes its [section] name in the saved .layout file, and ConfigParser only
+    // accepts letters, digits, '-' and spaces there - e.g. "My_Dash" would save, then fail to parse
+    // on the next load. So the save dialog won't accept anything else.
+    [Fact]
+    public void The_Save_Dialog_Rejects_Characters_A_Layout_Section_Name_Cannot_Hold()
+    {
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        LayoutDesignerScreen screen = CreateScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.S), ref handled);
+
+        foreach (char ch in "My_Dash.1") {
+            screen.KeyPressed(new ConsoleKeyInfo(ch, char.IsLetter(ch)
+                ? Enum.Parse<ConsoleKey>(char.ToUpperInvariant(ch).ToString())
+                : ConsoleKey.Oem1, false, false, false), ref handled);
+        }
+
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal("MyDash1", screen.LayoutName);
+
+        screen.Unload();
+    }
+
+    // Regression test: selection used to be an outline painted over the pane from outside, which
+    // flickered - a pane with a live snapshot subscription (Process, or a chart fed on the tick)
+    // repaints its own default-coloured border on every tick, and the outline could only go back
+    // on after that. The selected pane now draws its own borders in the focus colour, so there is
+    // nothing to repaint afterwards. Walks the whole subtree because ProcessControl draws no
+    // border itself - its inner, active ListView does.
+    [Fact]
+    public void The_Selected_Pane_Draws_Every_Border_In_Its_Subtree_In_The_Focus_Colour()
+    {
+        LayoutDesignerScreen screen = CreateCpuProcessScreen();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.Equal(2, screen.SelectedNodeId);
+
+        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
+        Control cpuPane = screen.Controls.Single(c => c.GetType().Name == "Chart");
+
+        Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
+        Assert.Equal(runContext.AppConfig.Theme.ChartBorderForeground, cpuPane.BorderColour);
+
+        screen.Unload();
+    }
+
+    // Typed with each letter's real ConsoleKey (not a placeholder key) - so the 'S' in "My Stats"
+    // arrives as ConsoleKey.S, the save key itself, proving the save-name prompt swallows it
+    // rather than it re-triggering a save mid-typing.
+    private static ConsoleKeyInfo Typed(char ch) =>
+        new(ch, char.IsLetter(ch) ? Enum.Parse<ConsoleKey>(char.ToUpperInvariant(ch).ToString()) : ConsoleKey.Spacebar,
+            shift: char.IsUpper(ch), alt: false, control: false);
 }

@@ -34,7 +34,19 @@ public sealed class AppConfig
     private ConfigSection? sortSection;
     private ConfigSection? statsSection;
     private ConfigSection? uxSection;
-    
+
+    public const Statistics DefaultVisibleColumns =
+        Statistics.Process | 
+        Statistics.Pid     | 
+        Statistics.User    | 
+        Statistics.Pri     |
+        Statistics.Cpu     | 
+        Statistics.Thrd    | 
+        Statistics.Gpu     | 
+        Statistics.Mem     |
+        Statistics.Path    | 
+        Statistics.Disk;
+
     public AppConfig(IFileSystem fileSystem)
     {
         this.fileSystem = fileSystem;
@@ -105,6 +117,19 @@ public sealed class AppConfig
         }
     }
 
+    public SummaryControlLayout? DefaultLayout
+    {
+        get => defaultLayout;
+        set {
+            if (value != null && !allLayouts.Contains(value)) {
+                throw new InvalidOperationException();
+            }
+
+            defaultLayout = value;
+            uxSection?.Add(Constants.Keys.DefaultSummaryLayout, value?.Name ?? string.Empty);
+        }
+    }
+
     public string? DefaultLogPath
     {
         get {
@@ -139,186 +164,12 @@ public sealed class AppConfig
             }
         }
     }
-    
-    public SummaryControlLayout? DefaultLayout
-    {
-        get => defaultLayout;
-        set {
-            if (value != null && !allLayouts.Contains(value)) {
-                throw new InvalidOperationException();
-            }
 
-            defaultLayout = value;
-            uxSection?.Add(Constants.Keys.DefaultSummaryLayout, value?.Name ?? string.Empty);
-        }
-    }
-
-    public Theme Theme
-    {
-        get => defaultTheme;
-        set {
-            if (!allThemes.Contains(value)) {
-                throw new InvalidOperationException();
-            }
-
-            defaultTheme = value;
-            
-            ConsolePalette.PreferIndexedColours = 
-                TerminalCapabilities.ResolvePreferIndexed(defaultTheme.ColourMode, Environment.GetEnvironmentVariable);
-            
-            uxSection?.Add(Constants.Keys.DefaultTheme, defaultTheme.Name);
-        }
-    }
-    
     public int DelayInMilliseconds
     {
         get => statsSection?.GetInt(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds) ??
                WorkerService.DefaultDelayInMilliseconds;
         set => statsSection?.Add(Constants.Keys.Delay, value.ToString());
-    }
-
-    public int FilterPid
-    {
-        get => filterSection?.GetInt(Constants.Keys.Pid, -1) ?? -1;
-        set => filterSection?.Add(Constants.Keys.Pid, value.ToString());
-    }
-
-    public string FilterUserName
-    {
-        get => filterSection?.GetString(Constants.Keys.UserName, string.Empty) ?? string.Empty;
-        set => filterSection?.Add(Constants.Keys.UserName, value);
-    }
-
-    public string FilterProcess
-    {
-        get => filterSection?.GetString(Constants.Keys.Process, string.Empty) ?? string.Empty;
-        set => filterSection?.Add(Constants.Keys.Process, value);
-    }
-    
-    public bool HighlightDaemons
-    {
-        get => uxSection?.GetBool(Constants.Keys.HighlightDaemons, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.HighlightDaemons, value.ToString());
-    }
-    
-    public bool HighlightStatisticsColumnUpdate
-    {
-        get => uxSection?.GetBool(Constants.Keys.HighlightStatsColUpdate, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.HighlightStatsColUpdate, value.ToString());
-    }
-
-    public MetreControlStyle MetreStyle
-    {
-        get => uxSection?.GetEnum(Constants.Keys.MetreStyle, MetreControlStyle.Dots) ?? MetreControlStyle.Dots;
-        set => uxSection?.Add(Constants.Keys.MetreStyle, value.ToString());
-    }
-    
-    public bool MultiSelectProcesses
-    {
-        get => uxSection?.GetBool(Constants.Keys.MultiSelectProcesses, false) ?? false;
-        set => uxSection?.Add(Constants.Keys.MultiSelectProcesses, value.ToString());
-    }
-
-    public int NumberOfProcesses
-    {
-        get => statsSection?.GetInt(Constants.Keys.NProcs, -1) ?? -1;
-        set => statsSection?.Add(Constants.Keys.NProcs, value.ToString());
-    }
-
-    public const Statistics DefaultVisibleColumns =
-        Statistics.Process | 
-        Statistics.Pid     | 
-        Statistics.User    | 
-        Statistics.Pri     |
-        Statistics.Cpu     | 
-        Statistics.Thrd    | 
-        Statistics.Gpu     | 
-        Statistics.Mem     |
-        Statistics.Path    | 
-        Statistics.Disk;
-
-    public Statistics VisibleColumns
-    {
-        get => statsSection?.GetEnum(Constants.Keys.Cols, DefaultVisibleColumns) ?? DefaultVisibleColumns;
-        set => statsSection?.Add(Constants.Keys.Cols, value.ToString());
-    }
-
-    public bool ShowYAxisScale
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowYAxisScale, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowYAxisScale, value.ToString());
-    }
-
-    public Statistics SortColumn
-    {
-        get => sortSection?.GetEnum(Constants.Keys.Col, Statistics.Cpu) ?? Statistics.Cpu;
-        set => sortSection?.Add(Constants.Keys.Col, value.ToString());
-    }
-
-    public bool SortAscending
-    {
-        get => sortSection?.GetBool(Constants.Keys.Asc, false) ?? false;
-        set => sortSection?.Add(Constants.Keys.Asc, value.ToString());
-    }
-
-    public bool ShowMetreCpuNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreCpuNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreCpuNumerically, value.ToString());
-    }
-
-    public bool ShowMetreDiskNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreDiskNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreDiskNumerically, value.ToString());
-    }
-
-    public bool ShowMetreGpuNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreGpuNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreGpuNumerically, value.ToString());
-    }
-
-    public bool ShowMetreGpuMemNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreGpuMemNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreGpuMemNumerically, value.ToString());
-    }
-
-    public bool ShowMetreMemoryNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreMemNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreMemNumerically, value.ToString());
-    }
-    
-    public bool ShowMetreNetworkNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreNetworkNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreNetworkNumerically, value.ToString());
-    }
-
-    public bool ShowMetreSwapNumerically
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowMetreSwapNumerically, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowMetreSwapNumerically, value.ToString());
-    }
-
-    public bool ShowSmallMetreGrid
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowSmallMetreGrid, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowSmallMetreGrid, value.ToString());
-    }
-
-    public bool ShowLargeMetreGrid
-    {
-        get => uxSection?.GetBool(Constants.Keys.ShowLargeMetreGrid, true) ?? true;
-        set => uxSection?.Add(Constants.Keys.ShowLargeMetreGrid, value.ToString());
-    }
-
-    public bool UseIrixReporting
-    {
-        get => uxSection?.GetBool(Constants.Keys.UseIrixCpuReporting, useIrixMode) ?? useIrixMode;
-        set => uxSection?.Add(Constants.Keys.UseIrixCpuReporting, value.ToString());
     }
 
     private void DeployIfChanged(string filePath, string text)
@@ -330,6 +181,24 @@ public sealed class AppConfig
         Trace.WriteLine($"Creating/Overwriting {filePath}");
         fileSystem.WriteAllText(filePath, text);
         PathPermissions.EnsureUserOwnership(filePath);
+    }
+
+    public int FilterPid
+    {
+        get => filterSection?.GetInt(Constants.Keys.Pid, -1) ?? -1;
+        set => filterSection?.Add(Constants.Keys.Pid, value.ToString());
+    }
+
+    public string FilterProcess
+    {
+        get => filterSection?.GetString(Constants.Keys.Process, string.Empty) ?? string.Empty;
+        set => filterSection?.Add(Constants.Keys.Process, value);
+    }
+
+    public string FilterUserName
+    {
+        get => filterSection?.GetString(Constants.Keys.UserName, string.Empty) ?? string.Empty;
+        set => filterSection?.Add(Constants.Keys.UserName, value);
     }
 
     private string? GetConfigSubdirectory(string directoryName)
@@ -354,8 +223,27 @@ public sealed class AppConfig
         return path;
     }
 
+    public bool HighlightDaemons
+    {
+        get => uxSection?.GetBool(Constants.Keys.HighlightDaemons, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.HighlightDaemons, value.ToString());
+    }
+    
+    public bool HighlightStatisticsColumnUpdate
+    {
+        get => uxSection?.GetBool(Constants.Keys.HighlightStatsColUpdate, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.HighlightStatsColUpdate, value.ToString());
+    }
+
+    // Built-in layouts are read-only: they are refreshed from the embedded copy on every start, so
+    // an edit saved under one of their names would be replaced on the next run.
+    public bool IsBuiltInLayout(string name) =>
+        allLayouts.Any(t => t.IsBuiltIn && t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+
     private bool IsLayoutNameTaken(string name) =>
         allLayouts.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+
+    public List<SummaryControlLayout> Layouts => allLayouts;
 
     private void LoadLayouts()
     {
@@ -585,7 +473,153 @@ public sealed class AppConfig
         }
     }
 
-    public List<SummaryControlLayout> Layouts => allLayouts;
+    public MetreControlStyle MetreStyle
+    {
+        get => uxSection?.GetEnum(Constants.Keys.MetreStyle, MetreControlStyle.Dots) ?? MetreControlStyle.Dots;
+        set => uxSection?.Add(Constants.Keys.MetreStyle, value.ToString());
+    }
+    
+    public bool MultiSelectProcesses
+    {
+        get => uxSection?.GetBool(Constants.Keys.MultiSelectProcesses, false) ?? false;
+        set => uxSection?.Add(Constants.Keys.MultiSelectProcesses, value.ToString());
+    }
+
+    public int NumberOfProcesses
+    {
+        get => statsSection?.GetInt(Constants.Keys.NProcs, -1) ?? -1;
+        set => statsSection?.Add(Constants.Keys.NProcs, value.ToString());
+    }
+
+    public bool SaveLayout(SummaryControlLayout layout)
+    {
+        if (IsBuiltInLayout(layout.Name)) {
+            return false;
+        }
+
+        try {
+            string? layoutPath = GetConfigSubdirectory(Constants.LayoutDirectory);
+
+            if (layoutPath == null) {
+                return false;
+            }
+
+            string layoutFilePath = Path.Combine(layoutPath, $"{layout.Name}{Constants.LayoutExtension}");
+            fileSystem.WriteAllText(layoutFilePath, layout.ToString());
+            PathPermissions.EnsureUserOwnership(layoutFilePath);
+
+            SummaryControlLayout? existing = allLayouts.FirstOrDefault(
+                t => t.Name.Equals(layout.Name, StringComparison.CurrentCultureIgnoreCase));
+
+            if (existing != null) {
+                allLayouts.Remove(existing);
+            }
+
+            allLayouts.Add(layout);
+
+            // Re-saving the layout currently in use replaces its entry above - repoint the default
+            // at the new instance, or it would keep serving the pre-edit copy (SummaryControl2
+            // reloads when the default instance changes, so this is also what shows the edits).
+            if (existing != null && existing == defaultLayout) {
+                defaultLayout = layout;
+            }
+
+            return true;
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error saving summary layout: {ex.Message}");
+            return false;
+        }
+    }
+
+    public bool ShowLargeMetreGrid
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowLargeMetreGrid, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowLargeMetreGrid, value.ToString());
+    }
+
+    public bool ShowMetreCpuNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreCpuNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreCpuNumerically, value.ToString());
+    }
+
+    public bool ShowMetreDiskNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreDiskNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreDiskNumerically, value.ToString());
+    }
+
+    public bool ShowMetreGpuMemNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreGpuMemNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreGpuMemNumerically, value.ToString());
+    }
+
+    public bool ShowMetreGpuNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreGpuNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreGpuNumerically, value.ToString());
+    }
+
+    public bool ShowMetreMemoryNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreMemNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreMemNumerically, value.ToString());
+    }
+    
+    public bool ShowMetreNetworkNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreNetworkNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreNetworkNumerically, value.ToString());
+    }
+
+    public bool ShowMetreSwapNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreSwapNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreSwapNumerically, value.ToString());
+    }
+
+    public bool ShowSmallMetreGrid
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowSmallMetreGrid, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowSmallMetreGrid, value.ToString());
+    }
+
+    public bool ShowYAxisScale
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowYAxisScale, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowYAxisScale, value.ToString());
+    }
+
+    public bool SortAscending
+    {
+        get => sortSection?.GetBool(Constants.Keys.Asc, false) ?? false;
+        set => sortSection?.Add(Constants.Keys.Asc, value.ToString());
+    }
+
+    public Statistics SortColumn
+    {
+        get => sortSection?.GetEnum(Constants.Keys.Col, Statistics.Cpu) ?? Statistics.Cpu;
+        set => sortSection?.Add(Constants.Keys.Col, value.ToString());
+    }
+
+    public Theme Theme
+    {
+        get => defaultTheme;
+        set {
+            if (!allThemes.Contains(value)) {
+                throw new InvalidOperationException();
+            }
+
+            defaultTheme = value;
+            
+            ConsolePalette.PreferIndexedColours = 
+                TerminalCapabilities.ResolvePreferIndexed(defaultTheme.ColourMode, Environment.GetEnvironmentVariable);
+            
+            uxSection?.Add(Constants.Keys.DefaultTheme, defaultTheme.Name);
+        }
+    }
 
     public List<Theme> Themes => allThemes;
 
@@ -666,55 +700,6 @@ public sealed class AppConfig
         }
     }
 
-    // Built-in layouts are read-only: they are refreshed from the embedded copy on every start, so
-    // an edit saved under one of their names would be replaced on the next run.
-    public bool IsBuiltInLayout(string name) =>
-        allLayouts.Any(t => t.IsBuiltIn && t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
-
-    // Writes a layout created or edited in the layout designer to the layouts folder, and makes it
-    // available alongside the loaded ones. Refuses a built-in layout's name (see IsBuiltInLayout);
-    // the designer checks for that first, to tell the user why.
-    public bool SaveLayout(SummaryControlLayout layout)
-    {
-        if (IsBuiltInLayout(layout.Name)) {
-            return false;
-        }
-
-        try {
-            string? layoutPath = GetConfigSubdirectory(Constants.LayoutDirectory);
-
-            if (layoutPath == null) {
-                return false;
-            }
-
-            string layoutFilePath = Path.Combine(layoutPath, $"{layout.Name}{Constants.LayoutExtension}");
-            fileSystem.WriteAllText(layoutFilePath, layout.ToString());
-            PathPermissions.EnsureUserOwnership(layoutFilePath);
-
-            SummaryControlLayout? existing = allLayouts.FirstOrDefault(
-                t => t.Name.Equals(layout.Name, StringComparison.CurrentCultureIgnoreCase));
-
-            if (existing != null) {
-                allLayouts.Remove(existing);
-            }
-
-            allLayouts.Add(layout);
-
-            // Re-saving the layout currently in use replaces its entry above - repoint the default
-            // at the new instance, or it would keep serving the pre-edit copy (SummaryControl2
-            // reloads when the default instance changes, so this is also what shows the edits).
-            if (existing != null && existing == defaultLayout) {
-                defaultLayout = layout;
-            }
-
-            return true;
-        }
-        catch (Exception ex) {
-            ExceptionHelper.LogException(ex, $"Error saving summary layout: {ex.Message}");
-            return false;
-        }
-    }
-
     public bool TrySave(string path)
     {
         try {
@@ -726,5 +711,17 @@ public sealed class AppConfig
             ExceptionHelper.LogException(ex, $"Error saving config: {ex.Message} to path {path}");
             return false;
         }
+    }
+
+    public bool UseIrixReporting
+    {
+        get => uxSection?.GetBool(Constants.Keys.UseIrixCpuReporting, useIrixMode) ?? useIrixMode;
+        set => uxSection?.Add(Constants.Keys.UseIrixCpuReporting, value.ToString());
+    }
+
+    public Statistics VisibleColumns
+    {
+        get => statsSection?.GetEnum(Constants.Keys.Cols, DefaultVisibleColumns) ?? DefaultVisibleColumns;
+        set => statsSection?.Add(Constants.Keys.Cols, value.ToString());
     }
 }

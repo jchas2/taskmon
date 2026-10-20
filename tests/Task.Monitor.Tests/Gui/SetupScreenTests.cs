@@ -1,13 +1,12 @@
+using System.Drawing;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.Tests.Common;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class SetupScreenTests
@@ -23,9 +22,31 @@ public sealed class SetupScreenTests
         screenApp = new ScreenApplication(runContext.Terminal);
     }
 
+    // Makes LAYOUTS the active tab with its list focused - what Right arrow does after picking
+    // LAYOUTS in the category menu.
+    private static ListView ActivateLayoutsTab(SetupScreen setupScreen)
+    {
+        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
+            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
+                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
+            tab.Visible = tab.Name == "layoutView";
+        }
+
+        ListView layoutView = TabView(setupScreen, "layoutView");
+        layoutView.SetFocus();
+        return layoutView;
+    }
+
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
     [Fact]
-    public void SetupScreen_Canary_Test() =>
-        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+    public void Constructor_With_Null_RunContext_Throws_NullReferenceException() =>
+        Assert.Throws<NullReferenceException>(() => new SetupScreen(null!, screenApp));
 
     [Fact]
     public void Constructor_With_Valid_Run_Context_Initialises_Successfully()
@@ -33,78 +54,6 @@ public sealed class SetupScreenTests
         SetupScreen setupScreen = new(runContext, screenApp);
 
         Assert.NotNull(setupScreen);
-    }
-
-    [Fact]
-    public void Constructor_With_Null_RunContext_Throws_NullReferenceException() =>
-        Assert.Throws<NullReferenceException>(() => new SetupScreen(null!, screenApp));
-
-    [Fact]
-    public void Default_Properties_After_Construction_Have_Default_Values()
-    {
-        SetupScreen setupScreen = new(runContext, screenApp);
-
-        Assert.Equal(ConsolePalette.Black, setupScreen.BackgroundColour);
-        Assert.NotEmpty(setupScreen.Controls);
-        Assert.True(setupScreen.CursorVisible);
-        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, setupScreen.DialogBorderColour);
-        Assert.Equal(ConsolePalette.DarkGray, setupScreen.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, setupScreen.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.White, setupScreen.ForegroundColour);
-        Assert.Equal(0, setupScreen.Height);
-        Assert.NotNull(setupScreen.Name);
-        Assert.Empty(setupScreen.Name);
-        Assert.True(0 == setupScreen.TabIndex);
-        Assert.False(setupScreen.TabStop);
-        Assert.True(setupScreen.Visible);
-        Assert.Equal(0, setupScreen.Width);
-        Assert.Equal(0, setupScreen.X);
-        Assert.Equal(0, setupScreen.Y);
-    }
-
-    [Fact]
-    public void Load_Calls_OnLoad_Sets_CursorVisible_False()
-    {
-        SetupScreen setupScreen = new(runContext, screenApp);
-        runContextHelper.terminal.SetupSet(t => t.CursorVisible = false).Verifiable();
-
-        setupScreen.Load();
-
-        runContextHelper.terminal.VerifySet(t => t.CursorVisible = false, Times.AtLeastOnce);
-        
-        setupScreen.Unload();
-    }
-
-    [Fact]
-    public void Unload_Calls_OnUnload_Sets_CursorVisible_True()
-    {
-        SetupScreen setupScreen = new(runContext, screenApp);
-        runContextHelper.terminal.SetupSet(t => t.CursorVisible = true).Verifiable();
-
-        setupScreen.Unload();
-
-        runContextHelper.terminal.VerifySet(t => t.CursorVisible = true, Times.Once);
-    }
-
-    [Fact]
-    public void Load_Initialises_Header_Table()
-    {
-        string header = "Changes are saved to the following config file:";
-        SetupScreen setupScreen = new(runContext, screenApp);
-        setupScreen.Load();
-
-        Assert.NotNull(setupScreen.Controls);
-        Assert.NotEmpty(setupScreen.Controls);
-
-        ListView headerView = setupScreen.Controls
-            .OfType<ListView>()
-            .Single(c => c.Name == nameof(headerView));
-        
-        Assert.True(headerView.Items[0].Text == header);
-        
-        setupScreen.Unload();
     }
 
     public static TheoryData<string, string> ControlSettingData()
@@ -190,63 +139,30 @@ public sealed class SetupScreenTests
             { "1000",                                              "numProcsView" },
         };
 
-    [Theory]
-    [MemberData(nameof(ControlSettingData))]
-    public void Load_Initialises_Control_With_Settings(string setting, string controlName)
+    [Fact]
+    public void Default_Properties_After_Construction_Have_Default_Values()
     {
         SetupScreen setupScreen = new(runContext, screenApp);
-        setupScreen.Load();
 
-        Assert.NotNull(setupScreen.Controls);
+        Assert.Equal(ConsolePalette.Black, setupScreen.BackgroundColour);
         Assert.NotEmpty(setupScreen.Controls);
-
-        ListView listView = setupScreen.Controls
-            .OfType<ListView>()
-            .Single(c => c.Name == controlName);
-
-        bool result = listView.Items.Any(item => item.Text == setting);
-
-        Assert.True(result);
-        
-        setupScreen.Unload();
+        Assert.True(setupScreen.CursorVisible);
+        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, setupScreen.DialogBorderColour);
+        Assert.Equal(ConsolePalette.DarkGray, setupScreen.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, setupScreen.DialogButtonForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
+        Assert.Equal(ConsolePalette.White, setupScreen.ForegroundColour);
+        Assert.Equal(0, setupScreen.Height);
+        Assert.NotNull(setupScreen.Name);
+        Assert.Empty(setupScreen.Name);
+        Assert.True(0 == setupScreen.TabIndex);
+        Assert.False(setupScreen.TabStop);
+        Assert.True(setupScreen.Visible);
+        Assert.Equal(0, setupScreen.Width);
+        Assert.Equal(0, setupScreen.X);
+        Assert.Equal(0, setupScreen.Y);
     }
-    
-    [Fact]
-    public void Draw_Uses_Theme_Colours()
-    {
-        runContext.AppConfig.Theme.Background = ConsolePalette.Magenta;
-        runContext.AppConfig.Theme.Foreground = ConsolePalette.DarkCyan;
-        
-        SetupScreen setupScreen = new(runContext, screenApp)
-        {
-            Visible = true,
-            Width = 80,
-            Height = 25
-        };
-
-        List<Color> capturedBgColors = [];
-        List<Color> capturedFgColors = [];
-
-        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<Color>())
-            .Callback<Color>(color => capturedBgColors.Add(color));
-        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<Color>())
-            .Callback<Color>(color => capturedFgColors.Add(color));
-
-        setupScreen.Load();
-        setupScreen.Draw();
-
-        Assert.NotEmpty(capturedBgColors);
-        Assert.NotEmpty(capturedFgColors);
-        Assert.Contains(ConsolePalette.Magenta, capturedBgColors);
-        Assert.Contains(ConsolePalette.DarkCyan, capturedFgColors);
-    }
-
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
 
     // Regression test: every list here defaults to ShowBorder = true, which insets the actual
     // drawable viewport by one column each side - OnResize was setting column 0's width to the
@@ -276,101 +192,35 @@ public sealed class SetupScreenTests
 
         setupScreen.Unload();
     }
-    
-    // Regression coverage for the minimal LayoutDesignerScreen entry point: 'N' only means
-    // anything while the LAYOUTS tab is the active one, and it must call Open() (a fresh tree of
-    // one empty pane, no name) before showing the designer, since that's the only way the singleton screen
-    // ever picks up per-visit state.
-    [Fact]
-    public void N_Key_On_The_Layouts_Tab_Opens_The_Layout_Designer_On_A_Fresh_Tree()
-    {
-        ScreenApplication localScreenApp = new(runContext.Terminal);
-        LayoutDesignerScreen designer = new(runContext);
-        localScreenApp.RegisterScreen(designer);
 
-        SetupScreen setupScreen = new(runContext, localScreenApp);
+    [Fact]
+    public void Draw_Uses_Theme_Colours()
+    {
+        runContext.AppConfig.Theme.Background = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.Foreground = ConsolePalette.DarkCyan;
+        
+        SetupScreen setupScreen = new(runContext, screenApp)
+        {
+            Visible = true,
+            Width = 80,
+            Height = 25
+        };
+
+        List<Color> capturedBgColors = [];
+        List<Color> capturedFgColors = [];
+
+        runContextHelper.terminal.SetupSet(t => t.BackgroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedBgColors.Add(color));
+        runContextHelper.terminal.SetupSet(t => t.ForegroundColor = It.IsAny<Color>())
+            .Callback<Color>(color => capturedFgColors.Add(color));
+
         setupScreen.Load();
+        setupScreen.Draw();
 
-        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
-            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
-            tab.Visible = tab.Name == "layoutView";
-        }
-
-        bool handled = false;
-        setupScreen.KeyPressed(new ConsoleKeyInfo('n', ConsoleKey.N, false, false, false), ref handled);
-
-        Assert.True(handled);
-        Assert.Null(designer.LayoutName);
-        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
-
-        setupScreen.Unload();
-    }
-
-    [Fact]
-    public void N_Key_On_A_Different_Tab_Does_Nothing()
-    {
-        ScreenApplication localScreenApp = new(runContext.Terminal);
-        LayoutDesignerScreen designer = new(runContext);
-        localScreenApp.RegisterScreen(designer);
-
-        SetupScreen setupScreen = new(runContext, localScreenApp);
-        setupScreen.Load(); // GENERAL is the active tab by default, not LAYOUTS
-
-        bool handled = false;
-        setupScreen.KeyPressed(new ConsoleKeyInfo('n', ConsoleKey.N, false, false, false), ref handled);
-
-        Assert.False(handled);
-
-        setupScreen.Unload();
-    }
-
-    private static ListView TabView(SetupScreen setupScreen, string name) =>
-        setupScreen.Controls.OfType<ListView>().Single(c => c.Name == name);
-
-    // Makes LAYOUTS the active tab with its list focused - what Right arrow does after picking
-    // LAYOUTS in the category menu.
-    private static ListView ActivateLayoutsTab(SetupScreen setupScreen)
-    {
-        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
-            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
-            tab.Visible = tab.Name == "layoutView";
-        }
-
-        ListView layoutView = TabView(setupScreen, "layoutView");
-        layoutView.SetFocus();
-        return layoutView;
-    }
-
-    private static void SelectRow(ListView listView, string text)
-    {
-        for (int i = 0; i < listView.Items.Count; i++) {
-            if (listView.Items[i].Text == text) {
-                listView.SelectedIndex = i;
-                return;
-            }
-        }
-
-        throw new InvalidOperationException($"No row '{text}'.");
-    }
-
-    [Fact]
-    public void Layouts_Tab_Lists_New_Layout_Then_The_Summary_Layouts_With_The_Default_Highlighted()
-    {
-        SetupScreen setupScreen = new(runContext, screenApp);
-        setupScreen.Load();
-
-        ListView layoutView = TabView(setupScreen, "layoutView");
-        List<string> rows = Enumerable.Range(0, layoutView.Items.Count).Select(i => layoutView.Items[i].Text).ToList();
-
-        Assert.Equal("+ New Layout", rows[0]);
-        Assert.Equal(
-            runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n),
-            rows.Skip(1));
-        Assert.Equal("All Charts", layoutView.SelectedItem?.Text);
-
-        setupScreen.Unload();
+        Assert.NotEmpty(capturedBgColors);
+        Assert.NotEmpty(capturedFgColors);
+        Assert.Contains(ConsolePalette.Magenta, capturedBgColors);
+        Assert.Contains(ConsolePalette.DarkCyan, capturedFgColors);
     }
 
     [Fact]
@@ -482,6 +332,139 @@ public sealed class SetupScreenTests
         setupScreen.Unload();
     }
 
+    [Fact]
+    public void Layouts_Tab_Lists_New_Layout_Then_The_Summary_Layouts_With_The_Default_Highlighted()
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView layoutView = TabView(setupScreen, "layoutView");
+        List<string> rows = Enumerable.Range(0, layoutView.Items.Count).Select(i => layoutView.Items[i].Text).ToList();
+
+        Assert.Equal("+ New Layout", rows[0]);
+        Assert.Equal(
+            runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n),
+            rows.Skip(1));
+        Assert.Equal("All Charts", layoutView.SelectedItem?.Text);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Load_Calls_OnLoad_Sets_CursorVisible_False()
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+        runContextHelper.terminal.SetupSet(t => t.CursorVisible = false).Verifiable();
+
+        setupScreen.Load();
+
+        runContextHelper.terminal.VerifySet(t => t.CursorVisible = false, Times.AtLeastOnce);
+        
+        setupScreen.Unload();
+    }
+
+    [Theory]
+    [MemberData(nameof(ControlSettingData))]
+    public void Load_Initialises_Control_With_Settings(string setting, string controlName)
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        Assert.NotNull(setupScreen.Controls);
+        Assert.NotEmpty(setupScreen.Controls);
+
+        ListView listView = setupScreen.Controls
+            .OfType<ListView>()
+            .Single(c => c.Name == controlName);
+
+        bool result = listView.Items.Any(item => item.Text == setting);
+
+        Assert.True(result);
+        
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Load_Initialises_Header_Table()
+    {
+        string header = "Changes are saved to the following config file:";
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        Assert.NotNull(setupScreen.Controls);
+        Assert.NotEmpty(setupScreen.Controls);
+
+        ListView headerView = setupScreen.Controls
+            .OfType<ListView>()
+            .Single(c => c.Name == nameof(headerView));
+        
+        Assert.True(headerView.Items[0].Text == header);
+        
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Load_Sets_General_View_Visible_By_Default()
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+
+        setupScreen.Load();
+        
+        ListView generalView = setupScreen.Controls
+            .OfType<ListView>()
+            .Single(c => c.Name == nameof(generalView));
+
+        Assert.True(generalView.Visible);
+    }
+
+    [Fact]
+    public void N_Key_On_A_Different_Tab_Does_Nothing()
+    {
+        ScreenApplication localScreenApp = new(runContext.Terminal);
+        LayoutDesignerScreen designer = new(runContext);
+        localScreenApp.RegisterScreen(designer);
+
+        SetupScreen setupScreen = new(runContext, localScreenApp);
+        setupScreen.Load(); // GENERAL is the active tab by default, not LAYOUTS
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('n', ConsoleKey.N, false, false, false), ref handled);
+
+        Assert.False(handled);
+
+        setupScreen.Unload();
+    }
+
+    // Regression coverage for the minimal LayoutDesignerScreen entry point: 'N' only means
+    // anything while the LAYOUTS tab is the active one, and it must call Open() (a fresh tree of
+    // one empty pane, no name) before showing the designer, since that's the only way the singleton screen
+    // ever picks up per-visit state.
+    [Fact]
+    public void N_Key_On_The_Layouts_Tab_Opens_The_Layout_Designer_On_A_Fresh_Tree()
+    {
+        ScreenApplication localScreenApp = new(runContext.Terminal);
+        LayoutDesignerScreen designer = new(runContext);
+        localScreenApp.RegisterScreen(designer);
+
+        SetupScreen setupScreen = new(runContext, localScreenApp);
+        setupScreen.Load();
+
+        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
+            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
+                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
+            tab.Visible = tab.Name == "layoutView";
+        }
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('n', ConsoleKey.N, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Null(designer.LayoutName);
+        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
+
+        setupScreen.Unload();
+    }
+
     // Coming back from the designer (its Esc pops back to this screen, which is Show()n again)
     // lands on the LAYOUTS tab with the list focused, not reset to GENERAL.
     [Fact]
@@ -516,17 +499,33 @@ public sealed class SetupScreenTests
         setupScreen.Unload();
     }
 
+    private static void SelectRow(ListView listView, string text)
+    {
+        for (int i = 0; i < listView.Items.Count; i++) {
+            if (listView.Items[i].Text == text) {
+                listView.SelectedIndex = i;
+                return;
+            }
+        }
+
+        throw new InvalidOperationException($"No row '{text}'.");
+    }
+
     [Fact]
-    public void Load_Sets_General_View_Visible_By_Default()
+    public void SetupScreen_Canary_Test() =>
+        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+
+    private static ListView TabView(SetupScreen setupScreen, string name) =>
+        setupScreen.Controls.OfType<ListView>().Single(c => c.Name == name);
+
+    [Fact]
+    public void Unload_Calls_OnUnload_Sets_CursorVisible_True()
     {
         SetupScreen setupScreen = new(runContext, screenApp);
+        runContextHelper.terminal.SetupSet(t => t.CursorVisible = true).Verifiable();
 
-        setupScreen.Load();
-        
-        ListView generalView = setupScreen.Controls
-            .OfType<ListView>()
-            .Single(c => c.Name == nameof(generalView));
+        setupScreen.Unload();
 
-        Assert.True(generalView.Visible);
+        runContextHelper.terminal.VerifySet(t => t.CursorVisible = true, Times.Once);
     }
 }

@@ -29,44 +29,31 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
         directory = Path.GetDirectoryName(Path.GetFullPath(fileName)) ?? ".";
     }
 
-    public override void Write(string? message) => 
-        WriteInternal(FormatMessage(message), newLine: false);
+    private string FormatMessage(string? message) =>
+        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{Thread.CurrentThread.ManagedThreadId}] : {message}";
 
-    public override void WriteLine(string? message) => 
-        WriteInternal(FormatMessage(message), newLine: true);
-
-    private void WriteInternal(string formatted, bool newLine)
+    public static void Initialise(
+        string directory, 
+        long   maxBytes, 
+        int    maxFiles, 
+        string prefix    = "debug", 
+        string extension = "log")
     {
-        lock (rollLock) {
-            long length = Encoding.UTF8.GetByteCount(formatted) + (newLine ? Environment.NewLine.Length : 0);
-
-            if (bytesWritten > 0 && bytesWritten + length > maxBytes) {
-                RollFile();
-            }
-
-            if (newLine) {
-                base.WriteLine(formatted);
-            }
-            else {
-                base.Write(formatted);
-            }
-            
-            bytesWritten += length;
+        if (!Directory.Exists(directory)) {
+            throw new InvalidOperationException();
         }
-    }
-
-    private void RollFile()
-    {
-        Writer?.Flush();
-        Writer?.Dispose();
-
-        string next = Path.Combine(directory, UseNextFileName(prefix, extension));
         
-        Writer = new StreamWriter(next) {
-            AutoFlush = true
-        };
+        string fileName = Path.Combine(directory, UseNextFileName(prefix, extension));
         
-        bytesWritten = 0;
+        FormattedTextWriterTraceListener traceListener = new(
+            fileName, 
+            maxBytes, 
+            maxFiles, 
+            prefix, 
+            extension);
+
+        Trace.Listeners.Add(traceListener);
+        Trace.AutoFlush = true;
         
         PruneOldLogs(
             directory,
@@ -104,28 +91,18 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
         }
     }
 
-    public static void Initialise(
-        string directory, 
-        long   maxBytes, 
-        int    maxFiles, 
-        string prefix    = "debug", 
-        string extension = "log")
+    private void RollFile()
     {
-        if (!Directory.Exists(directory)) {
-            throw new InvalidOperationException();
-        }
-        
-        string fileName = Path.Combine(directory, UseNextFileName(prefix, extension));
-        
-        FormattedTextWriterTraceListener traceListener = new(
-            fileName, 
-            maxBytes, 
-            maxFiles, 
-            prefix, 
-            extension);
+        Writer?.Flush();
+        Writer?.Dispose();
 
-        Trace.Listeners.Add(traceListener);
-        Trace.AutoFlush = true;
+        string next = Path.Combine(directory, UseNextFileName(prefix, extension));
+        
+        Writer = new StreamWriter(next) {
+            AutoFlush = true
+        };
+        
+        bytesWritten = 0;
         
         PruneOldLogs(
             directory,
@@ -137,6 +114,29 @@ public class FormattedTextWriterTraceListener : TextWriterTraceListener
     private static string UseNextFileName(string prefix = "debug", string extension = "log") =>
         $"{prefix}_{DateTime.Now:yyyyMMdd_HHmmss_fff}.{extension}";
 
-    private string FormatMessage(string? message) =>
-        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{Thread.CurrentThread.ManagedThreadId}] : {message}";
+    public override void Write(string? message) => 
+        WriteInternal(FormatMessage(message), newLine: false);
+
+    private void WriteInternal(string formatted, bool newLine)
+    {
+        lock (rollLock) {
+            long length = Encoding.UTF8.GetByteCount(formatted) + (newLine ? Environment.NewLine.Length : 0);
+
+            if (bytesWritten > 0 && bytesWritten + length > maxBytes) {
+                RollFile();
+            }
+
+            if (newLine) {
+                base.WriteLine(formatted);
+            }
+            else {
+                base.Write(formatted);
+            }
+            
+            bytesWritten += length;
+        }
+    }
+
+    public override void WriteLine(string? message) => 
+        WriteInternal(FormatMessage(message), newLine: true);
 }

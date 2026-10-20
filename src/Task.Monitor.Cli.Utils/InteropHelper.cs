@@ -15,6 +15,15 @@ public static class InteropHelper
         }
     }
 
+    public static unsafe byte* ReadPointer(byte* structure, int offset) =>
+        (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
+
+    public static unsafe uint ReadUInt32(byte* structure, int offset) =>
+        BinaryPrimitives.ReadUInt32LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(uint)));
+
+    public static unsafe ulong ReadUInt64(byte* structure, int offset) =>
+        BinaryPrimitives.ReadUInt64LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(ulong)));
+
     public static unsafe string? TryMarshalPtrToStringAnsi(nint pointer, int maxLength)
     {
         if (pointer == nint.Zero || maxLength <= 0) {
@@ -38,15 +47,6 @@ public static class InteropHelper
             return string.Empty;
         }
     }
-
-    public static unsafe byte* ReadPointer(byte* structure, int offset) =>
-        (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
-
-    public static unsafe uint ReadUInt32(byte* structure, int offset) =>
-        BinaryPrimitives.ReadUInt32LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(uint)));
-
-    public static unsafe ulong ReadUInt64(byte* structure, int offset) =>
-        BinaryPrimitives.ReadUInt64LittleEndian(new ReadOnlySpan<byte>(structure + offset, sizeof(ulong)));
 
     public static string TryMarshalPtrToStringBSTR(nint pointer)
     {

@@ -5,6 +5,10 @@ namespace Task.Monitor.System.Services.Tests.Process;
 
 public sealed class WindowsServiceConfigMapperTests
 {
+    [Fact]
+    public void MapStartType_Defaults_Unknown_Values_To_Manual() =>
+        Assert.Equal(WindowsServiceStartType.ManualStart, WindowsServiceConfigMapper.MapStartType((WinService.ServiceStartType)999));
+
     [Theory]
     [InlineData(WinService.ServiceStartType.SERVICE_BOOT_START, WindowsServiceStartType.BootStart)]
     [InlineData(WinService.ServiceStartType.SERVICE_SYSTEM_START, WindowsServiceStartType.SystemStart)]
@@ -16,8 +20,8 @@ public sealed class WindowsServiceConfigMapperTests
         Assert.Equal(expected, WindowsServiceConfigMapper.MapStartType(raw));
 
     [Fact]
-    public void MapStartType_Defaults_Unknown_Values_To_Manual() =>
-        Assert.Equal(WindowsServiceStartType.ManualStart, WindowsServiceConfigMapper.MapStartType((WinService.ServiceStartType)999));
+    public void MapStatus_Defaults_Unknown_Values_To_Stopped() =>
+        Assert.Equal(WindowsServiceStatus.Stopped, WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)999));
 
     [Theory]
     [InlineData(WinService.ServiceCurrentState.SERVICE_STOPPED, WindowsServiceStatus.Stopped)]
@@ -30,8 +34,4 @@ public sealed class WindowsServiceConfigMapperTests
     public void MapStatus_Maps_Every_Known_Value(
         WinService.ServiceCurrentState raw, WindowsServiceStatus expected) =>
         Assert.Equal(expected, WindowsServiceConfigMapper.MapStatus(raw));
-
-    [Fact]
-    public void MapStatus_Defaults_Unknown_Values_To_Stopped() =>
-        Assert.Equal(WindowsServiceStatus.Stopped, WindowsServiceConfigMapper.MapStatus((WinService.ServiceCurrentState)999));
 }

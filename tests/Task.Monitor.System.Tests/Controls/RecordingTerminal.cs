@@ -8,14 +8,38 @@ public sealed class RecordingTerminal : ISystemTerminal
 {
     private readonly StringBuilder output = new();
 
+    private Color backgroundColor = Color.Black;
+    private Color foregroundColor = Color.White;
+
+    public Color BackgroundColor
+    {
+        get => backgroundColor;
+        set { backgroundColor = value; BackgroundColorSets++; }
+    }
+
+    public int BackgroundColorSets { get; private set; }
+
+    public void Clear() { }
+
+    public int CursorLeft { get; set; }
+    public int CursorTop { get; set; }
+    public bool CursorVisible { get; set; }
+
+    public void EnableAnsiTerminalCodes() { }
+
+    public Color ForegroundColor
+    {
+        get => foregroundColor;
+        set { foregroundColor = value; ForegroundColorSets++; }
+    }
+
+    public int ForegroundColorSets { get; private set; }
+
+    public bool KeyAvailable => false;
+
     public string Output => output.ToString();
 
-    public int WriteSpanCalls { get; private set; }
-    public int WriteCharCalls { get; private set; }
-    public int WriteStringCalls { get; private set; }
-    public int SetCursorPositionCalls { get; private set; }
-    public int ForegroundColorSets { get; private set; }
-    public int BackgroundColorSets { get; private set; }
+    public ConsoleKeyInfo ReadKey() => default;
 
     public void Reset()
     {
@@ -27,6 +51,18 @@ public sealed class RecordingTerminal : ISystemTerminal
         ForegroundColorSets = 0;
         BackgroundColorSets = 0;
     }
+
+    public void SetCursorPosition(int left, int top) => SetCursorPositionCalls++;
+
+    public int SetCursorPositionCalls { get; private set; }
+
+    public TextWriter StdError => TextWriter.Null;
+    public TextReader StdIn => TextReader.Null;
+    public TextWriter StdOut => TextWriter.Null;
+
+    public int WindowHeight => 24;
+
+    public int WindowWidth => 80;
 
     public void Write(ReadOnlySpan<char> chars)
     {
@@ -52,38 +88,14 @@ public sealed class RecordingTerminal : ISystemTerminal
         output.Append(message);
     }
 
-    public void SetCursorPosition(int left, int top) => SetCursorPositionCalls++;
+    public int WriteCharCalls { get; private set; }
 
-    private Color backgroundColor = Color.Black;
-    private Color foregroundColor = Color.White;
-
-    public Color BackgroundColor
-    {
-        get => backgroundColor;
-        set { backgroundColor = value; BackgroundColorSets++; }
-    }
-
-    public Color ForegroundColor
-    {
-        get => foregroundColor;
-        set { foregroundColor = value; ForegroundColorSets++; }
-    }
-
-    public int CursorLeft { get; set; }
-    public int CursorTop { get; set; }
-    public bool CursorVisible { get; set; }
-    public bool KeyAvailable => false;
-    public TextWriter StdError => TextWriter.Null;
-    public TextReader StdIn => TextReader.Null;
-    public TextWriter StdOut => TextWriter.Null;
-    public int WindowWidth => 80;
-    public int WindowHeight => 24;
-
-    public void EnableAnsiTerminalCodes() { }
-    public void Clear() { }
-    public ConsoleKeyInfo ReadKey() => default;
     public void WriteEmptyLine() { }
     public void WriteEmptyLineTo(int x) { }
     public void WriteLine(char ch) { }
     public void WriteLine(string message) { }
+
+    public int WriteSpanCalls { get; private set; }
+
+    public int WriteStringCalls { get; private set; }
 }

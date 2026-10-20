@@ -39,7 +39,10 @@ public static class AnsiConsoleStringExtensions
     private const string MagentaForeground     = "\u001b[95m";
     private const string YellowForeground      = "\u001b[93m";
     private const string WhiteForeground       = "\u001b[97m";
-    
+
+    public static string ToBlack(this string str) => str.ToColor(BlackForeground);
+    public static string ToBlue(this string str) => str.ToColor(BlueForeground);
+
     public static string ToBold(this string str) => $"\u001b[1m{str}\u001b[1m";
     
     private static string ToColor(this string str, string colourCode)
@@ -75,13 +78,14 @@ public static class AnsiConsoleStringExtensions
                Reset;
     }
 
-    public static string ToBlack(this string str) => str.ToColor(BlackForeground);
-    public static string ToBlue(this string str) => str.ToColor(BlueForeground);
     public static string ToCyan(this string str) => str.ToColor(CyanForeground);
     public static string ToDarkBlue(this string str) => str.ToColor(DarkBlueForeground);
     public static string ToDarkCyan(this string str) => str.ToColor(DarkCyanForeground);
-    public static string ToDarkGreen(this string str) => str.ToColor(DarkGreenForeground);
+
     public static string ToDarkGray(this string str) => str.ToColor(DarkGrayForeground);
+
+    public static string ToDarkGreen(this string str) => str.ToColor(DarkGreenForeground);
+
     public static string ToDarkMagenta(this string str) => str.ToColor(DarkMagentaForeground);
     public static string ToDarkRed(this string str) => str.ToColor(DarkRedForeground);
     public static string ToDarkYellow(this string str) => str.ToColor(DarkYellowForeground);

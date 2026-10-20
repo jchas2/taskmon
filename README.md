@@ -339,6 +339,27 @@ To run the full test suite:
 ```
 *(This is equivalent to running `./eng/build.sh --test`)*
 
+### Checking Code Style
+
+To check the whole solution against [docs/CODING_STYLE.md](docs/CODING_STYLE.md):
+
+**macOS:**
+```bash
+./style.sh
+```
+
+**Windows:**
+```powershell
+.\style.ps1
+```
+*(This is equivalent to running `./eng/build.sh --style`)*
+
+It runs two checks and reports every problem before failing:
+*   `dotnet format style`: naming, `using` order and other `.editorconfig` rules.
+*   `eng/tools/reorder-members.cs --check`: member ordering in `src/`, `tests/` and `eng/tools/`.
+
+To fix member ordering, run `dotnet run eng/tools/reorder-members.cs -- <file-or-directory>`.
+
 ### Publishing
 
 To build self-contained, Native AOT-compiled binaries for release:

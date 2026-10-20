@@ -10,15 +10,6 @@ public sealed class PowerServiceTests(ITestOutputHelper output)
     private const int MinimumDelay = 500;
 
     [Fact]
-    public void Should_Run_PowerService()
-    {
-        PowerService service = new();
-        service.Start();
-        Thread.Sleep((int)(service.Delay * 1.5));
-        service.Stop();
-    }
-
-    [Fact]
     public void Should_Publish_Well_Formed_Readings_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
@@ -49,5 +40,14 @@ public sealed class PowerServiceTests(ITestOutputHelper output)
 
         Assert.Contains(latest.Services, health => health.Name == "Power");
         output.WriteLine($"total readings: {latest.Power.Metrics.Readings.Count}");
+    }
+
+    [Fact]
+    public void Should_Run_PowerService()
+    {
+        PowerService service = new();
+        service.Start();
+        Thread.Sleep((int)(service.Delay * 1.5));
+        service.Stop();
     }
 }

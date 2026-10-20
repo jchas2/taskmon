@@ -4,16 +4,11 @@ namespace Task.Monitor.System.Services.Tests.Gpu;
 
 public sealed class GpuDeviceParserTests
 {
-    [Theory]
-    [InlineData(0x10DEu, "NVIDIA")]
-    [InlineData(0x1002u, "AMD")]
-    [InlineData(0x1022u, "AMD")]
-    [InlineData(0x8086u, "Intel")]
-    [InlineData(0x1414u, "Microsoft")]
-    [InlineData(0x15ADu, "VMware")]
-    [InlineData(0xBEEFu, GpuDeviceParser.NotAvailable)]
-    public void DecodeVendor_Maps_Known_Pci_Vendor_Ids(uint vendorId, string expected) =>
-        Assert.Equal(expected, GpuDeviceParser.DecodeVendor(vendorId));
+    [Fact]
+    public void DecodeAdapterType_Flags_A_Hypervisor_Vendor_As_Virtual() =>
+        Assert.Equal(
+            "Virtual",
+            GpuDeviceParser.DecodeAdapterType(0, 0x15AD, 256L * 1024 * 1024));
 
     [Fact]
     public void DecodeAdapterType_Flags_A_Software_Adapter() =>
@@ -33,11 +28,37 @@ public sealed class GpuDeviceParserTests
             "Integrated",
             GpuDeviceParser.DecodeAdapterType(0, 0x8086, 128L * 1024 * 1024));
 
+    [Theory]
+    [InlineData(0x10DEu, "NVIDIA")]
+    [InlineData(0x1002u, "AMD")]
+    [InlineData(0x1022u, "AMD")]
+    [InlineData(0x8086u, "Intel")]
+    [InlineData(0x1414u, "Microsoft")]
+    [InlineData(0x15ADu, "VMware")]
+    [InlineData(0xBEEFu, GpuDeviceParser.NotAvailable)]
+    public void DecodeVendor_Maps_Known_Pci_Vendor_Ids(uint vendorId, string expected) =>
+        Assert.Equal(expected, GpuDeviceParser.DecodeVendor(vendorId));
+
     [Fact]
-    public void DecodeAdapterType_Flags_A_Hypervisor_Vendor_As_Virtual() =>
+    public void ParseEngineFromInstance_Returns_Everything_After_The_Pid() =>
         Assert.Equal(
-            "Virtual",
-            GpuDeviceParser.DecodeAdapterType(0, 0x15AD, 256L * 1024 * 1024));
+            "luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D",
+            GpuDeviceParser.ParseEngineFromInstance(
+                "pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D"));
+
+    [Theory]
+    [InlineData("pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D", 1234)]
+    [InlineData("pid_0_luid_0x00000000_0x0000ABCD_phys_0_eng_1_engtype_Copy", 0)]
+    public void ParsePidFromInstance_Reads_The_Leading_Pid(string instanceName, int expected) =>
+        Assert.Equal(expected, GpuDeviceParser.ParsePidFromInstance(instanceName));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("engtype_3D")]
+    [InlineData("pid_")]
+    [InlineData("pid_notanumber_luid_0x0")]
+    public void ParsePidFromInstance_Rejects_Anything_Else(string instanceName) =>
+        Assert.Equal(-1, GpuDeviceParser.ParsePidFromInstance(instanceName));
 
     [Theory]
     [InlineData("pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D", 0x0000ABCDL)]
@@ -76,25 +97,4 @@ public sealed class GpuDeviceParserTests
     [InlineData(@"USB\VID_1234&PID_5678")]
     public void TryParsePciIds_Rejects_A_Non_Pci_Id(string? matchingDeviceId) =>
         Assert.False(GpuDeviceParser.TryParsePciIds(matchingDeviceId, out _, out _));
-
-    [Theory]
-    [InlineData("pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D", 1234)]
-    [InlineData("pid_0_luid_0x00000000_0x0000ABCD_phys_0_eng_1_engtype_Copy", 0)]
-    public void ParsePidFromInstance_Reads_The_Leading_Pid(string instanceName, int expected) =>
-        Assert.Equal(expected, GpuDeviceParser.ParsePidFromInstance(instanceName));
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("engtype_3D")]
-    [InlineData("pid_")]
-    [InlineData("pid_notanumber_luid_0x0")]
-    public void ParsePidFromInstance_Rejects_Anything_Else(string instanceName) =>
-        Assert.Equal(-1, GpuDeviceParser.ParsePidFromInstance(instanceName));
-
-    [Fact]
-    public void ParseEngineFromInstance_Returns_Everything_After_The_Pid() =>
-        Assert.Equal(
-            "luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D",
-            GpuDeviceParser.ParseEngineFromInstance(
-                "pid_1234_luid_0x00000000_0x0000ABCD_phys_0_eng_3_engtype_3D"));
 }

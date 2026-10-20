@@ -45,6 +45,146 @@ public sealed class DiskSpaceAccumulatorTests
     }
 
     [Fact]
+    public void EnterFolder_Increments_FoldersScanned_And_Tracks_CurrentPath_Only_While_Scanning()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.EnterFolder(Root);
+        accumulator.EnterFolder(@"C:\Root\A");
+
+        DiskSpaceSpecs scanning = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
+        Assert.Equal(2, scanning.FoldersScanned);
+        Assert.Equal(@"C:\Root\A", scanning.CurrentPath);
+
+        DiskSpaceSpecs completed = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+        Assert.Equal(string.Empty, completed.CurrentPath);
+    }
+
+    [Fact]
+    public void EnterFolder_Marks_The_Previous_Root_Level_Folder_Completed_When_The_Walk_Moves_To_A_Sibling()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+
+        accumulator.EnterFolder(Root);
+        accumulator.EnterFolder(@"C:\Root\A");
+        accumulator.EnterFolder(@"C:\Root\A\Sub");
+
+        DiskSpaceSpecs beforeSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
+        Assert.Equal(0, beforeSibling.RootLevelFoldersCompleted);
+
+        // The walk has finished A's whole subtree and moved on to B - A is now done.
+        accumulator.EnterFolder(@"C:\Root\B");
+
+        DiskSpaceSpecs afterSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
+        Assert.Equal(1, afterSibling.RootLevelFoldersCompleted);
+        Assert.Equal(2, afterSibling.RootLevelFoldersTotal);
+    }
+
+    [Fact]
+    public void EnterFolder_On_The_Root_Itself_Does_Not_Affect_Root_Level_Progress()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.EnterFolder(Root);
+        accumulator.MarkScanComplete();
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+
+        Assert.Equal(0, specs.RootLevelFoldersTotal);
+        Assert.Equal(0, specs.RootLevelFoldersCompleted);
+    }
+
+    [Fact]
+    public void EnterFolder_With_No_Files_Still_Appears_In_The_Tree_With_A_Zero_Total()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.EnterFolder(Root);
+        accumulator.EnterFolder(@"C:\Root\Empty");
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+
+        DiskSpaceFolderNode empty = Assert.Single(specs.RootNode!.Children);
+        Assert.Equal("Empty", empty.Name);
+        Assert.Equal(0, empty.TotalBytes);
+    }
+
+    [Fact]
+    public void MarkScanComplete_Completes_Whichever_Root_Level_Folder_Was_Last_Visited()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+
+        accumulator.EnterFolder(Root);
+        accumulator.EnterFolder(@"C:\Root\A");
+        accumulator.EnterFolder(@"C:\Root\B");
+
+        accumulator.MarkScanComplete();
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+
+        Assert.Equal(2, specs.RootLevelFoldersCompleted);
+        Assert.Equal(2, specs.RootLevelFoldersTotal);
+    }
+
+    [Fact]
+    public void RegisterDiscoveredFolder_Ignores_A_Folder_Discovered_Below_The_Root_Level()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
+        accumulator.RegisterDiscoveredFolder(@"C:\Root\A", @"C:\Root\A\Sub");
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
+
+        Assert.Equal(1, specs.RootLevelFoldersTotal);
+    }
+
+    [Fact]
+    public void RegisterDiscoveredFolder_Sets_RootLevelFoldersTotal_Before_Any_Of_Them_Are_Visited()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
+        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
+
+        Assert.Equal(2, specs.RootLevelFoldersTotal);
+        Assert.Equal(0, specs.RootLevelFoldersCompleted);
+    }
+
+    [Fact]
+    public void SkipFolder_Increments_FoldersSkipped()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        accumulator.SkipFolder();
+        accumulator.SkipFolder();
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
+
+        Assert.Equal(2, specs.FoldersSkipped);
+    }
+
+    [Fact]
+    public void Snapshot_Passes_Through_ErrorMessage()
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+
+        DiskSpaceSpecs specs = accumulator.Snapshot(
+            DiskSpaceScanState.Faulted, elapsedMilliseconds: 0, errorMessage: "Access denied.");
+
+        Assert.Equal(DiskSpaceScanState.Faulted, specs.State);
+        Assert.Equal("Access denied.", specs.ErrorMessage);
+    }
+
+    [Fact]
     public void Snapshot_Sorts_Children_By_TotalBytes_Descending()
     {
         DiskSpaceAccumulator accumulator = new(Root);
@@ -90,145 +230,5 @@ public sealed class DiskSpaceAccumulatorTests
         // The smallest files (0..49) should have been evicted in favour of the largest ones.
         Assert.DoesNotContain(specs.TopFiles, f => f.FullPath == @"C:\Root\file0.txt");
         Assert.Contains(specs.TopFiles, f => f.FullPath == @"C:\Root\file249.txt");
-    }
-
-    [Fact]
-    public void EnterFolder_Increments_FoldersScanned_And_Tracks_CurrentPath_Only_While_Scanning()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-
-        DiskSpaceSpecs scanning = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
-        Assert.Equal(2, scanning.FoldersScanned);
-        Assert.Equal(@"C:\Root\A", scanning.CurrentPath);
-
-        DiskSpaceSpecs completed = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-        Assert.Equal(string.Empty, completed.CurrentPath);
-    }
-
-    [Fact]
-    public void SkipFolder_Increments_FoldersSkipped()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.SkipFolder();
-        accumulator.SkipFolder();
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-
-        Assert.Equal(2, specs.FoldersSkipped);
-    }
-
-    [Fact]
-    public void EnterFolder_With_No_Files_Still_Appears_In_The_Tree_With_A_Zero_Total()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\Empty");
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-
-        DiskSpaceFolderNode empty = Assert.Single(specs.RootNode!.Children);
-        Assert.Equal("Empty", empty.Name);
-        Assert.Equal(0, empty.TotalBytes);
-    }
-
-    [Fact]
-    public void Snapshot_Passes_Through_ErrorMessage()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(
-            DiskSpaceScanState.Faulted, elapsedMilliseconds: 0, errorMessage: "Access denied.");
-
-        Assert.Equal(DiskSpaceScanState.Faulted, specs.State);
-        Assert.Equal("Access denied.", specs.ErrorMessage);
-    }
-
-    [Fact]
-    public void RegisterDiscoveredFolder_Sets_RootLevelFoldersTotal_Before_Any_Of_Them_Are_Visited()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
-
-        Assert.Equal(2, specs.RootLevelFoldersTotal);
-        Assert.Equal(0, specs.RootLevelFoldersCompleted);
-    }
-
-    [Fact]
-    public void RegisterDiscoveredFolder_Ignores_A_Folder_Discovered_Below_The_Root_Level()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root\A", @"C:\Root\A\Sub");
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
-
-        Assert.Equal(1, specs.RootLevelFoldersTotal);
-    }
-
-    [Fact]
-    public void EnterFolder_Marks_The_Previous_Root_Level_Folder_Completed_When_The_Walk_Moves_To_A_Sibling()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
-
-        accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\A\Sub");
-
-        DiskSpaceSpecs beforeSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
-        Assert.Equal(0, beforeSibling.RootLevelFoldersCompleted);
-
-        // The walk has finished A's whole subtree and moved on to B - A is now done.
-        accumulator.EnterFolder(@"C:\Root\B");
-
-        DiskSpaceSpecs afterSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
-        Assert.Equal(1, afterSibling.RootLevelFoldersCompleted);
-        Assert.Equal(2, afterSibling.RootLevelFoldersTotal);
-    }
-
-    [Fact]
-    public void MarkScanComplete_Completes_Whichever_Root_Level_Folder_Was_Last_Visited()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
-
-        accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\B");
-
-        accumulator.MarkScanComplete();
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-
-        Assert.Equal(2, specs.RootLevelFoldersCompleted);
-        Assert.Equal(2, specs.RootLevelFoldersTotal);
-    }
-
-    [Fact]
-    public void EnterFolder_On_The_Root_Itself_Does_Not_Affect_Root_Level_Progress()
-    {
-        DiskSpaceAccumulator accumulator = new(Root);
-
-        accumulator.EnterFolder(Root);
-        accumulator.MarkScanComplete();
-
-        DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
-
-        Assert.Equal(0, specs.RootLevelFoldersTotal);
-        Assert.Equal(0, specs.RootLevelFoldersCompleted);
     }
 }

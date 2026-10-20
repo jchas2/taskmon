@@ -31,6 +31,8 @@ public sealed class FileCleanupHelper : IDisposable
         }
     }
 
+    public string GetTempDirectory([CallerMemberName] string memberName = "") => GetTempDirectoryInternal(memberName);
+
     private string GetTempDirectoryInternal([CallerMemberName] string memberName = "")
     {
         lock (@lock) {
@@ -40,8 +42,6 @@ public sealed class FileCleanupHelper : IDisposable
             return tempDirectory;
         }
     }
-
-    public string GetTempDirectory([CallerMemberName] string memberName = "") => GetTempDirectoryInternal(memberName);
 
     public string GetTempFile(string extension)
     {

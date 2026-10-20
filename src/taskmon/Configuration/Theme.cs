@@ -8,14 +8,6 @@ public sealed class Theme
 {
     private ConfigSection? themeSection;
 
-    public Theme() { }
-
-    public Theme(ConfigSection configSection) => themeSection = configSection;
-
-    public string Name => themeSection?.Name ?? Constants.Sections.ThemeTaskmonDefault;
-
-    public void Update(ConfigSection configSection) => themeSection = configSection;
-
     internal static readonly string[] ColourKeys =
     [
         Constants.Keys.Background,
@@ -83,29 +75,9 @@ public sealed class Theme
         Constants.Keys.RangeMidForeground,
     ];
 
-    private Color GetColour(string key, Color fallback) =>
-        themeSection?.GetColour(key, fallback) ?? fallback;
+    public Theme() { }
 
-    private void SetColour(string key, Color value) =>
-        themeSection?.Add(key, ConsolePalette.ToHex(value));
-
-    // Rewrites every colour value to hex, so legacy colour names (e.g. "Black") are persisted as
-    // hex on the next save. 
-    public void Normalize()
-    {
-        if (themeSection is null) {
-            return;
-        }
-
-        foreach (string key in ColourKeys) {
-            if (themeSection.Contains(key)) {
-                Color colour = ConsolePalette.FromHex(themeSection.GetString(key), ConsolePalette.Black);
-                themeSection.Add(key, ConsolePalette.ToHex(colour));
-            }
-        }
-    }
-
-    public ColourMode ColourMode => themeSection?.GetEnum(Constants.Keys.ColourMode, ColourMode.Auto) ?? ColourMode.Auto;
+    public Theme(ConfigSection configSection) => themeSection = configSection;
 
     public Color Background
     {
@@ -131,52 +103,16 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ChartBackground, value);
     }
 
-    public Color ChartBorderForeground
-    {
-        get => GetColour(Constants.Keys.ChartBorderForeground, Foreground);
-        set => SetColour(Constants.Keys.ChartBorderForeground, value);
-    }
-
     public Color ChartBorderBackground
     {
         get => GetColour(Constants.Keys.ChartBorderBackground, Background);
         set => SetColour(Constants.Keys.ChartBorderBackground, value);
     }
 
-    public Color MetreBackground
+    public Color ChartBorderForeground
     {
-        get => GetColour(Constants.Keys.MetreBackground, Background);
-        set => SetColour(Constants.Keys.MetreBackground, value);
-    }
-
-    public Color MetreForeground
-    {
-        get => GetColour(Constants.Keys.MetreForeground, Foreground);
-        set => SetColour(Constants.Keys.MetreForeground, value);
-    }
-
-    public Color MetreBorderForeground
-    {
-        get => GetColour(Constants.Keys.MetreBorderForeground, Foreground);
-        set => SetColour(Constants.Keys.MetreBorderForeground, value);
-    }
-
-    public Color MetreBorderBackground
-    {
-        get => GetColour(Constants.Keys.MetreBorderBackground, Background);
-        set => SetColour(Constants.Keys.MetreBorderBackground, value);
-    }
-
-    public Color ChartYAxis
-    {
-        get => GetColour(Constants.Keys.ChartYAxis, ConsolePalette.White);
-        set => SetColour(Constants.Keys.ChartYAxis, value);
-    }
-
-    public Color ChartTitle
-    {
-        get => GetColour(Constants.Keys.ChartTitle, ConsolePalette.White);
-        set => SetColour(Constants.Keys.ChartTitle, value);
+        get => GetColour(Constants.Keys.ChartBorderForeground, Foreground);
+        set => SetColour(Constants.Keys.ChartBorderForeground, value);
     }
 
     public Color ChartGrid
@@ -185,23 +121,19 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ChartGrid, value);
     }
 
-    public Color ControlBorder
+    public Color ChartTitle
     {
-        get => GetColour(Constants.Keys.ControlBorder, ConsolePalette.White);
-        set => SetColour(Constants.Keys.ControlBorder, value);
+        get => GetColour(Constants.Keys.ChartTitle, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ChartTitle, value);
     }
 
-    public Color ColumnCommandNormalUserSpace
+    public Color ChartYAxis
     {
-        get => GetColour(Constants.Keys.ColCmdNormalUserSpace, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.ColCmdNormalUserSpace, value);
+        get => GetColour(Constants.Keys.ChartYAxis, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ChartYAxis, value);
     }
 
-    public Color ColumnCommandLowPriority
-    {
-        get => GetColour(Constants.Keys.ColCmdLowPriority, ConsolePalette.Blue);
-        set => SetColour(Constants.Keys.ColCmdLowPriority, value);
-    }
+    public ColourMode ColourMode => themeSection?.GetEnum(Constants.Keys.ColourMode, ColourMode.Auto) ?? ColourMode.Auto;
 
     public Color ColumnCommandHighCpu
     {
@@ -213,6 +145,18 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.ColCmdIoBound, ConsolePalette.Cyan);
         set => SetColour(Constants.Keys.ColCmdIoBound, value);
+    }
+
+    public Color ColumnCommandLowPriority
+    {
+        get => GetColour(Constants.Keys.ColCmdLowPriority, ConsolePalette.Blue);
+        set => SetColour(Constants.Keys.ColCmdLowPriority, value);
+    }
+
+    public Color ColumnCommandNormalUserSpace
+    {
+        get => GetColour(Constants.Keys.ColCmdNormalUserSpace, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.ColCmdNormalUserSpace, value);
     }
 
     public Color ColumnCommandScript
@@ -233,16 +177,16 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ColUserOtherNonRoot, value);
     }
 
-    public Color ColumnUserSystem
-    {
-        get => GetColour(Constants.Keys.ColUserSystem, ConsolePalette.Gray);
-        set => SetColour(Constants.Keys.ColUserSystem, value);
-    }
-
     public Color ColumnUserRoot
     {
         get => GetColour(Constants.Keys.ColUserRoot, ConsolePalette.White);
         set => SetColour(Constants.Keys.ColUserRoot, value);
+    }
+
+    public Color ColumnUserSystem
+    {
+        get => GetColour(Constants.Keys.ColUserSystem, ConsolePalette.Gray);
+        set => SetColour(Constants.Keys.ColUserSystem, value);
     }
 
     public Color CommandBackground
@@ -257,6 +201,12 @@ public sealed class Theme
         set => SetColour(Constants.Keys.CommandForeground, value);
     }
 
+    public Color ControlBorder
+    {
+        get => GetColour(Constants.Keys.ControlBorder, ConsolePalette.White);
+        set => SetColour(Constants.Keys.ControlBorder, value);
+    }
+
     public Color DeltaHighlightColour
     {
         get => GetColour(Constants.Keys.DeltaHighlightColour, ConsolePalette.DarkYellow);
@@ -267,6 +217,12 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.Error, ConsolePalette.Red);
         set => SetColour(Constants.Keys.Error, value);
+    }
+
+    public Color FocusSelectionColour
+    {
+        get => GetColour(Constants.Keys.FocusSelectionColour, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.FocusSelectionColour, value);
     }
 
     public Color Foreground
@@ -287,16 +243,19 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ForegroundHighlightInactive, value);
     }
 
-    public Color HeatmapSizeSmall
+    private Color GetColour(string key, Color fallback) =>
+        themeSection?.GetColour(key, fallback) ?? fallback;
+
+    public Color HeaderBackground
     {
-        get => GetColour(Constants.Keys.HeatmapSizeSmall, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.HeatmapSizeSmall, value);
+        get => GetColour(Constants.Keys.HeaderBackground, ConsolePalette.DarkGreen);
+        set => SetColour(Constants.Keys.HeaderBackground, value);
     }
 
-    public Color HeatmapSizeMid
+    public Color HeaderForeground
     {
-        get => GetColour(Constants.Keys.HeatmapSizeMid, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.HeatmapSizeMid, value);
+        get => GetColour(Constants.Keys.HeaderForeground, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.HeaderForeground, value);
     }
 
     public Color HeatmapSizeLarge
@@ -305,10 +264,16 @@ public sealed class Theme
         set => SetColour(Constants.Keys.HeatmapSizeLarge, value);
     }
 
-    public Color HeatmapStateScanning
+    public Color HeatmapSizeMid
     {
-        get => GetColour(Constants.Keys.HeatmapStateScanning, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.HeatmapStateScanning, value);
+        get => GetColour(Constants.Keys.HeatmapSizeMid, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.HeatmapSizeMid, value);
+    }
+
+    public Color HeatmapSizeSmall
+    {
+        get => GetColour(Constants.Keys.HeatmapSizeSmall, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.HeatmapSizeSmall, value);
     }
 
     public Color HeatmapStateCompleted
@@ -323,28 +288,16 @@ public sealed class Theme
         set => SetColour(Constants.Keys.HeatmapStateFaulted, value);
     }
 
-    public Color FocusSelectionColour
+    public Color HeatmapStateScanning
     {
-        get => GetColour(Constants.Keys.FocusSelectionColour, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.FocusSelectionColour, value);
+        get => GetColour(Constants.Keys.HeatmapStateScanning, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.HeatmapStateScanning, value);
     }
 
-    public Color HeaderBackground
+    public Color ListViewBackground
     {
-        get => GetColour(Constants.Keys.HeaderBackground, ConsolePalette.DarkGreen);
-        set => SetColour(Constants.Keys.HeaderBackground, value);
-    }
-
-    public Color HeaderForeground
-    {
-        get => GetColour(Constants.Keys.HeaderForeground, ConsolePalette.Black);
-        set => SetColour(Constants.Keys.HeaderForeground, value);
-    }
-    
-    public Color ListViewBorderForeground
-    {
-        get => GetColour(Constants.Keys.ListViewBorderForeground, Foreground);
-        set => SetColour(Constants.Keys.ListViewBorderForeground, value);
+        get => GetColour(Constants.Keys.ListViewBackground, ConsolePalette.Black);
+        set => SetColour(Constants.Keys.ListViewBackground, value);
     }
 
     public Color ListViewBorderBackground
@@ -353,10 +306,10 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ListViewBorderBackground, value);
     }
 
-    public Color ListViewBackground
+    public Color ListViewBorderForeground
     {
-        get => GetColour(Constants.Keys.ListViewBackground, ConsolePalette.Black);
-        set => SetColour(Constants.Keys.ListViewBackground, value);
+        get => GetColour(Constants.Keys.ListViewBorderForeground, Foreground);
+        set => SetColour(Constants.Keys.ListViewBorderForeground, value);
     }
 
     public Color ListViewForeground
@@ -375,6 +328,84 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.MenubarForeground, ConsolePalette.White);
         set => SetColour(Constants.Keys.MenubarForeground, value);
+    }
+
+    public Color MetreBackground
+    {
+        get => GetColour(Constants.Keys.MetreBackground, Background);
+        set => SetColour(Constants.Keys.MetreBackground, value);
+    }
+
+    public Color MetreBorderBackground
+    {
+        get => GetColour(Constants.Keys.MetreBorderBackground, Background);
+        set => SetColour(Constants.Keys.MetreBorderBackground, value);
+    }
+
+    public Color MetreBorderForeground
+    {
+        get => GetColour(Constants.Keys.MetreBorderForeground, Foreground);
+        set => SetColour(Constants.Keys.MetreBorderForeground, value);
+    }
+
+    public Color MetreForeground
+    {
+        get => GetColour(Constants.Keys.MetreForeground, Foreground);
+        set => SetColour(Constants.Keys.MetreForeground, value);
+    }
+
+    public string Name => themeSection?.Name ?? Constants.Sections.ThemeTaskmonDefault;
+
+    // Rewrites every colour value to hex, so legacy colour names (e.g. "Black") are persisted as
+    // hex on the next save. 
+    public void Normalize()
+    {
+        if (themeSection is null) {
+            return;
+        }
+
+        foreach (string key in ColourKeys) {
+            if (themeSection.Contains(key)) {
+                Color colour = ConsolePalette.FromHex(themeSection.GetString(key), ConsolePalette.Black);
+                themeSection.Add(key, ConsolePalette.ToHex(colour));
+            }
+        }
+    }
+
+    public Color PerformanceCpuKernel
+    {
+        get => GetColour(Constants.Keys.PerformanceCpuKernel, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.PerformanceCpuKernel, value);
+    }
+
+    public Color PerformanceCpuUser
+    {
+        get => GetColour(Constants.Keys.PerformanceCpuUser, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.PerformanceCpuUser, value);
+    }
+
+    public Color PerformanceMemoryFree
+    {
+        get => GetColour(Constants.Keys.PerformanceMemoryFree, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.PerformanceMemoryFree, value);
+    }
+
+    public Color PerformanceMemoryInUse
+    {
+        get => GetColour(Constants.Keys.PerformanceMemoryInUse, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.PerformanceMemoryInUse, value);
+    }
+
+    public Color PerformanceMemoryModified
+    {
+        get => GetColour(Constants.Keys.PerformanceMemoryModified, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.PerformanceMemoryModified, value);
+    }
+
+    public Color PerformanceMemoryStandby
+    {
+        get => GetColour(Constants.Keys.PerformanceMemoryStandby, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.PerformanceMemoryStandby, value);
     }
 
     public Color PerformancePanelBackground
@@ -401,42 +432,6 @@ public sealed class Theme
         set => SetColour(Constants.Keys.PerformancePanelTitlebarForeground, value);
     }
 
-    public Color PerformanceCpuKernel
-    {
-        get => GetColour(Constants.Keys.PerformanceCpuKernel, ConsolePalette.Red);
-        set => SetColour(Constants.Keys.PerformanceCpuKernel, value);
-    }
-
-    public Color PerformanceCpuUser
-    {
-        get => GetColour(Constants.Keys.PerformanceCpuUser, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.PerformanceCpuUser, value);
-    }
-
-    public Color PerformanceMemoryInUse
-    {
-        get => GetColour(Constants.Keys.PerformanceMemoryInUse, ConsolePalette.Red);
-        set => SetColour(Constants.Keys.PerformanceMemoryInUse, value);
-    }
-
-    public Color PerformanceMemoryModified
-    {
-        get => GetColour(Constants.Keys.PerformanceMemoryModified, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.PerformanceMemoryModified, value);
-    }
-
-    public Color PerformanceMemoryStandby
-    {
-        get => GetColour(Constants.Keys.PerformanceMemoryStandby, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.PerformanceMemoryStandby, value);
-    }
-
-    public Color PerformanceMemoryFree
-    {
-        get => GetColour(Constants.Keys.PerformanceMemoryFree, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.PerformanceMemoryFree, value);
-    }
-
     public Color PropertyKey
     {
         get => GetColour(Constants.Keys.PropertyKey, Foreground);
@@ -455,22 +450,16 @@ public sealed class Theme
         set => SetColour(Constants.Keys.RangeHighBackground, value);
     }
 
-    public Color RangeLowBackground
-    {
-        get => GetColour(Constants.Keys.RangeLowBackground, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.RangeLowBackground, value);
-    }
-
-    public Color RangeMidBackground
-    {
-        get => GetColour(Constants.Keys.RangeMidBackground, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.RangeMidBackground, value);
-    }
-
     public Color RangeHighForeground
     {
         get => GetColour(Constants.Keys.RangeHighForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.RangeHighForeground, value);
+    }
+
+    public Color RangeLowBackground
+    {
+        get => GetColour(Constants.Keys.RangeLowBackground, ConsolePalette.Green);
+        set => SetColour(Constants.Keys.RangeLowBackground, value);
     }
 
     public Color RangeLowForeground
@@ -479,9 +468,20 @@ public sealed class Theme
         set => SetColour(Constants.Keys.RangeLowForeground, value);
     }
 
+    public Color RangeMidBackground
+    {
+        get => GetColour(Constants.Keys.RangeMidBackground, ConsolePalette.Yellow);
+        set => SetColour(Constants.Keys.RangeMidBackground, value);
+    }
+
     public Color RangeMidForeground
     {
         get => GetColour(Constants.Keys.RangeMidForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.RangeMidForeground, value);
     }
+
+    private void SetColour(string key, Color value) =>
+        themeSection?.Add(key, ConsolePalette.ToHex(value));
+
+    public void Update(ConfigSection configSection) => themeSection = configSection;
 }

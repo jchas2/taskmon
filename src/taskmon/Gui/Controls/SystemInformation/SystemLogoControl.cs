@@ -13,8 +13,8 @@ public sealed class SystemLogoControl : Control
 
     private static readonly TimeSpan PulseInterval = TimeSpan.FromSeconds(1);
 
-    private static readonly int logoWidth  = LogoArt.Lines.Max(line => line.Length);
-    private static readonly int logoHeight = LogoArt.Lines.Length;
+    private static readonly int LogoArtWidth  = LogoArt.Lines.Max(line => line.Length);
+    private static readonly int LogoArtHeight = LogoArt.Lines.Length;
     
 #if __WIN32__
     private static readonly int[] SplitIndex =
@@ -54,28 +54,35 @@ public sealed class SystemLogoControl : Control
 
     public SystemLogoControl(ISystemTerminal terminal) : base(terminal) { }
 
-    public int LogoWidth => logoWidth + Margin * 2;
-
-    public int LogoHeight => logoHeight + Margin * 2;
-
-    protected override void OnLoad()
+#if __APPLE__
+    private void DrawRow(int row)
     {
-        pulseBold  = false;
-        loaded     = true;
-        pulseTimer = new SysThreading::Timer(OnPulseTick, null, PulseInterval, PulseInterval);
-
-        base.OnLoad();
+        frame.SetColour(ConsolePalette.FromHex(RowHex[row], ConsolePalette.White), BackgroundColour);
+        frame.Append(LogoArt.Lines[row]);
     }
-
-    private void OnPulseTick(object? state)
+#endif
+#if __WIN32__
+    private void DrawRow(int row)
     {
-        if (!loaded) {
-            return;
-        }
+        bool topHalf = row < LogoArt.Lines.Length / 2;
 
-        pulseBold = !pulseBold;
-        Draw();
+        frame.SetColour(topHalf 
+            ? TopLeftColour 
+            : BottomLeftColour, BackgroundColour);
+        
+        frame.Append(LeftHalves[row]);
+        
+        frame.SetColour(topHalf 
+            ? TopRightColour 
+            : BottomRightColour, BackgroundColour);
+        
+        frame.Append(RightHalves[row]);
     }
+#endif
+
+    public int LogoHeight => LogoArtHeight + Margin * 2;
+
+    public int LogoWidth => LogoArtWidth + Margin * 2;
 
     protected override void OnDraw()
     {
@@ -108,31 +115,24 @@ public sealed class SystemLogoControl : Control
         Terminal.Write(frame.AsSpan());
     }
 
-#if __APPLE__
-    private void DrawRow(int row)
+    protected override void OnLoad()
     {
-        frame.SetColour(ConsolePalette.FromHex(RowHex[row], ConsolePalette.White), BackgroundColour);
-        frame.Append(LogoArt.Lines[row]);
-    }
-#endif
-#if __WIN32__
-    private void DrawRow(int row)
-    {
-        bool topHalf = row < LogoArt.Lines.Length / 2;
+        pulseBold  = false;
+        loaded     = true;
+        pulseTimer = new SysThreading::Timer(OnPulseTick, null, PulseInterval, PulseInterval);
 
-        frame.SetColour(topHalf 
-            ? TopLeftColour 
-            : BottomLeftColour, BackgroundColour);
-        
-        frame.Append(LeftHalves[row]);
-        
-        frame.SetColour(topHalf 
-            ? TopRightColour 
-            : BottomRightColour, BackgroundColour);
-        
-        frame.Append(RightHalves[row]);
+        base.OnLoad();
     }
-#endif
+
+    private void OnPulseTick(object? state)
+    {
+        if (!loaded) {
+            return;
+        }
+
+        pulseBold = !pulseBold;
+        Draw();
+    }
 
     protected override void OnUnload()
     {

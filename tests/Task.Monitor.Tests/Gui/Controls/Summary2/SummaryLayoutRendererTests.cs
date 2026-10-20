@@ -19,6 +19,18 @@ public sealed class SummaryLayoutRendererTests
         runContext = runContextHelper.GetRunContext();
     }
 
+    private static void AssertBounds(
+        SummaryLayoutRenderer renderer,
+        SummaryLayoutTree tree,
+        PaneControlType controlType,
+        int x, int y, int width, int height)
+    {
+        SummaryLayoutNode pane = tree.Panes().Single(p => p.ControlType == controlType);
+        Rectangle bounds = renderer.PaneBounds[pane.Id];
+
+        Assert.Equal(new Rectangle(x, y, width, height), bounds);
+    }
+
     [Fact]
     public void Computes_Expected_Rects_For_The_Example_Tree()
     {
@@ -57,17 +69,5 @@ public sealed class SummaryLayoutRendererTests
         Assert.Equal(0, cpuControl.Y);
         Assert.Equal(40, cpuControl.Width);
         Assert.Equal(24, cpuControl.Height);
-    }
-
-    private static void AssertBounds(
-        SummaryLayoutRenderer renderer,
-        SummaryLayoutTree tree,
-        PaneControlType controlType,
-        int x, int y, int width, int height)
-    {
-        SummaryLayoutNode pane = tree.Panes().Single(p => p.ControlType == controlType);
-        Rectangle bounds = renderer.PaneBounds[pane.Id];
-
-        Assert.Equal(new Rectangle(x, y, width, height), bounds);
     }
 }

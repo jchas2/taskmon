@@ -21,42 +21,6 @@ public sealed class ServicesControlTests
         runContext = runContextHelper.GetRunContext();
     }
 
-    private static SystemSnapshot SnapshotWith(params WindowsServiceInfo[] services) =>
-        new() { WindowsServices = new WindowsServicesInfo { Specs = new WindowsServicesSpecs { Services = [.. services] } } };
-
-    private static WindowsServiceInfo Service(
-        string displayName,
-        string serviceName = "Svc",
-        WindowsServiceStatus status = WindowsServiceStatus.Running,
-        WindowsServiceStartType startType = WindowsServiceStartType.AutomaticStart,
-        bool delayedAutoStart = false,
-        string? logOnAs = "LocalSystem",
-        string? description = "A service.") =>
-        new() {
-            ServiceName = serviceName,
-            DisplayName = displayName,
-            Status = status,
-            StartType = startType,
-            DelayedAutoStart = delayedAutoStart,
-            LogOnAs = logOnAs,
-            Description = description
-        };
-
-    private ServicesControl CreateControl(int width = 160, int height = 40)
-    {
-        ServicesControl ctrl = new(
-            runContext.ServiceController,
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width = width,
-            Height = height
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-        return ctrl;
-    }
-
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -73,44 +37,19 @@ public sealed class ServicesControlTests
         Assert.NotNull(ctrl);
     }
 
-    [Fact]
-    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
+    private ServicesControl CreateControl(int width = 160, int height = 40)
     {
-        ServicesControl ctrl = CreateControl();
-        ctrl.Draw();
+        ServicesControl ctrl = new(
+            runContext.ServiceController,
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = width,
+            Height = height
+        };
 
-        Assert.Contains("Gathering Windows services", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void Draws_The_Column_Headers_And_A_Row_Per_Service()
-    {
-        ServicesControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(
-            Service("Windows Update", status: WindowsServiceStatus.Running,
-                startType: WindowsServiceStartType.AutomaticStart, delayedAutoStart: true,
-                logOnAs: "LocalSystem", description: "Enables detection of updates."),
-            Service("Fax", status: WindowsServiceStatus.Stopped,
-                startType: WindowsServiceStartType.ManualStart,
-                logOnAs: @"NT AUTHORITY\NetworkService")));
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        foreach (string fragment in new[] {
-            "NAME", "STATUS", "STARTUP TYPE", "LOG ON AS", "DESCRIPTION",
-            "Windows Update", "Running", "Automatic (Delayed Start)", "Local System",
-            "Enables detection of updates.",
-            "Fax", "Stopped", "Manual", "Network Service",
-        }) {
-            Assert.Contains(fragment, output);
-        }
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+        ctrl.Load();
+        ctrl.Resize();
+        return ctrl;
     }
 
     // The Service Control Manager is inconsistent about casing for these well-known accounts - real
@@ -160,36 +99,54 @@ public sealed class ServicesControlTests
     }
 
     [Fact]
-    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    public void Draws_The_Column_Headers_And_A_Row_Per_Service()
     {
         ServicesControl ctrl = CreateControl();
 
         ctrl.Sample(SnapshotWith(
-            Service("Windows Update"),
-            Service("Fax", description: "Enables you to send and receive faxes.")));
+            Service("Windows Update", status: WindowsServiceStatus.Running,
+                startType: WindowsServiceStartType.AutomaticStart, delayedAutoStart: true,
+                logOnAs: "LocalSystem", description: "Enables detection of updates."),
+            Service("Fax", status: WindowsServiceStatus.Stopped,
+                startType: WindowsServiceStartType.ManualStart,
+                logOnAs: @"NT AUTHORITY\NetworkService")));
         ctrl.Draw();
-        runContextHelper.terminal.Invocations.Clear();
 
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        string output = CapturedOutput();
 
-        Assert.Contains("Enables you to send and receive faxes.", CapturedOutput());
+        foreach (string fragment in new[] {
+            "NAME", "STATUS", "STARTUP TYPE", "LOG ON AS", "DESCRIPTION",
+            "Windows Update", "Running", "Automatic (Delayed Start)", "Local System",
+            "Enables detection of updates.",
+            "Fax", "Stopped", "Manual", "Network Service",
+        }) {
+            Assert.Contains(fragment, output);
+        }
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public void Draws_The_Empty_Text_Before_A_Snapshot_Arrives()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.Contains("Gathering Windows services", CapturedOutput());
 
         ctrl.Unload();
     }
 
     [Fact]
-    public void Shows_The_Running_And_Total_Counts_In_The_Footer()
+    public void Ignores_A_Snapshot_With_No_WindowsServices_Info()
     {
         ServicesControl ctrl = CreateControl();
 
-        ctrl.Sample(SnapshotWith(
-            Service("A", status: WindowsServiceStatus.Running),
-            Service("B", status: WindowsServiceStatus.Stopped),
-            Service("C", status: WindowsServiceStatus.Running)));
+        ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("2 running / 3 total", CapturedOutput());
+        Assert.Contains("Gathering Windows services", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -211,15 +168,58 @@ public sealed class ServicesControlTests
         ctrl.Unload();
     }
 
+    private static WindowsServiceInfo Service(
+        string displayName,
+        string serviceName = "Svc",
+        WindowsServiceStatus status = WindowsServiceStatus.Running,
+        WindowsServiceStartType startType = WindowsServiceStartType.AutomaticStart,
+        bool delayedAutoStart = false,
+        string? logOnAs = "LocalSystem",
+        string? description = "A service.") =>
+        new() {
+            ServiceName = serviceName,
+            DisplayName = displayName,
+            Status = status,
+            StartType = startType,
+            DelayedAutoStart = delayedAutoStart,
+            LogOnAs = logOnAs,
+            Description = description
+        };
+
     [Fact]
-    public void Ignores_A_Snapshot_With_No_WindowsServices_Info()
+    public void Shows_The_Running_And_Total_Counts_In_The_Footer()
     {
         ServicesControl ctrl = CreateControl();
 
-        ctrl.Sample(new SystemSnapshot());
+        ctrl.Sample(SnapshotWith(
+            Service("A", status: WindowsServiceStatus.Running),
+            Service("B", status: WindowsServiceStatus.Stopped),
+            Service("C", status: WindowsServiceStatus.Running)));
         ctrl.Draw();
 
-        Assert.Contains("Gathering Windows services", CapturedOutput());
+        Assert.Contains("2 running / 3 total", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    private static SystemSnapshot SnapshotWith(params WindowsServiceInfo[] services) =>
+        new() { WindowsServices = new WindowsServicesInfo { Specs = new WindowsServicesSpecs { Services = [.. services] } } };
+
+    [Fact]
+    public void Updates_The_Detail_Pane_When_The_Selection_Moves()
+    {
+        ServicesControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            Service("Windows Update"),
+            Service("Fax", description: "Enables you to send and receive faxes.")));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.Contains("Enables you to send and receive faxes.", CapturedOutput());
 
         ctrl.Unload();
     }

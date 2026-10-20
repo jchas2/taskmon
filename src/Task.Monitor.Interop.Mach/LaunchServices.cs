@@ -15,17 +15,23 @@ public static class LaunchServices
 
     public readonly record struct LoginItem(string Name, string? Path);
 
-    [DllImport(Libraries.CoreServices)]
-    private static extern nint LSSharedFileListCreate(nint allocator, nint listType, nint listOptions);
+    private static string? CopyDisplayName(nint item)
+    {
+        using CFScope name = new(LSSharedFileListItemCopyDisplayName(item));
 
-    [DllImport(Libraries.CoreServices)]
-    private static extern nint LSSharedFileListCopySnapshot(nint list, out uint seed);
+        return CoreFoundation.GetString(name);
+    }
 
-    [DllImport(Libraries.CoreServices)]
-    private static extern nint LSSharedFileListItemCopyDisplayName(nint item);
+    private static string? CopyResolvedPath(nint item)
+    {
+        // Never prompt or mount: an item on an unmounted volume simply has no path.
+        using CFScope url = new(LSSharedFileListItemCopyResolvedURL(
+            item,
+            kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes,
+            nint.Zero));
 
-    [DllImport(Libraries.CoreServices)]
-    private static extern nint LSSharedFileListItemCopyResolvedURL(nint item, uint flags, nint error);
+        return CoreFoundation.GetPath(url);
+    }
 
     public static List<LoginItem> GetSessionLoginItems()
     {
@@ -75,21 +81,15 @@ public static class LaunchServices
         return items;
     }
 
-    private static string? CopyDisplayName(nint item)
-    {
-        using CFScope name = new(LSSharedFileListItemCopyDisplayName(item));
+    [DllImport(Libraries.CoreServices)]
+    private static extern nint LSSharedFileListCopySnapshot(nint list, out uint seed);
 
-        return CoreFoundation.GetString(name);
-    }
+    [DllImport(Libraries.CoreServices)]
+    private static extern nint LSSharedFileListCreate(nint allocator, nint listType, nint listOptions);
 
-    private static string? CopyResolvedPath(nint item)
-    {
-        // Never prompt or mount: an item on an unmounted volume simply has no path.
-        using CFScope url = new(LSSharedFileListItemCopyResolvedURL(
-            item,
-            kLSSharedFileListNoUserInteraction | kLSSharedFileListDoNotMountVolumes,
-            nint.Zero));
+    [DllImport(Libraries.CoreServices)]
+    private static extern nint LSSharedFileListItemCopyDisplayName(nint item);
 
-        return CoreFoundation.GetPath(url);
-    }
+    [DllImport(Libraries.CoreServices)]
+    private static extern nint LSSharedFileListItemCopyResolvedURL(nint item, uint flags, nint error);
 }

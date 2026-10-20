@@ -138,38 +138,6 @@ public static unsafe class Wbem
         return rows;
     }
 
-    private static void ReadRows(
-        nint enumerator, 
-        string[] properties, 
-        List<Dictionary<string, object?>> rows)
-    {
-        while (true) {
-            nint classObject = nint.Zero;
-            uint returned = 0;
-
-            int hr = ((delegate* unmanaged[Stdcall]<nint, int, uint, nint*, uint*, int>)
-                Ole32.Vtbl(enumerator)[SlotEnumNext])(
-                    enumerator, 
-                    WBEM_INFINITE, 
-                    1, 
-                    &classObject, 
-                    &returned);
-
-            if (hr != S_OK || returned == 0 || classObject == nint.Zero) {
-                break;
-            }
-
-            Dictionary<string, object?> row = new(properties.Length);
-
-            foreach (string property in properties) {
-                row[property] = ReadProperty(classObject, property);
-            }
-
-            rows.Add(row);
-            InteropHelper.MarshalRelease(ref classObject);
-        }
-    }
-
     private static object? ReadProperty(nint classObject, string property)
     {
         byte* variant = stackalloc byte[VariantSize];
@@ -211,5 +179,37 @@ public static unsafe class Wbem
             
         Ole32.VariantClear(variant);
         return result;
+    }
+
+    private static void ReadRows(
+        nint enumerator, 
+        string[] properties, 
+        List<Dictionary<string, object?>> rows)
+    {
+        while (true) {
+            nint classObject = nint.Zero;
+            uint returned = 0;
+
+            int hr = ((delegate* unmanaged[Stdcall]<nint, int, uint, nint*, uint*, int>)
+                Ole32.Vtbl(enumerator)[SlotEnumNext])(
+                    enumerator, 
+                    WBEM_INFINITE, 
+                    1, 
+                    &classObject, 
+                    &returned);
+
+            if (hr != S_OK || returned == 0 || classObject == nint.Zero) {
+                break;
+            }
+
+            Dictionary<string, object?> row = new(properties.Length);
+
+            foreach (string property in properties) {
+                row[property] = ReadProperty(classObject, property);
+            }
+
+            rows.Add(row);
+            InteropHelper.MarshalRelease(ref classObject);
+        }
     }
 }

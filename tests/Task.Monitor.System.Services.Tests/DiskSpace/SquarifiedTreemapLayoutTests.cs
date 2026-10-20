@@ -6,6 +6,76 @@ namespace Task.Monitor.System.Services.Tests.DiskSpace;
 public sealed class SquarifiedTreemapLayoutTests
 {
     [Fact]
+    public void Cells_Do_Not_Overlap_And_Stay_Within_Bounds()
+    {
+        Rectangle bounds = new(0, 0, 40, 20);
+        TreemapItem[] items = [
+            new TreemapItem { Id = "A", Weight = 100 },
+            new TreemapItem { Id = "B", Weight = 60 },
+            new TreemapItem { Id = "C", Weight = 40 },
+            new TreemapItem { Id = "D", Weight = 25 },
+            new TreemapItem { Id = "E", Weight = 10 },
+            new TreemapItem { Id = "F", Weight = 5 }
+        ];
+
+        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
+
+        foreach (TreemapCell cell in cells) {
+            Assert.True(bounds.Contains(cell.Bounds), $"{cell.Id} escaped bounds: {cell.Bounds}");
+        }
+
+        for (int i = 0; i < cells.Count; i++) {
+            for (int j = i + 1; j < cells.Count; j++) {
+                Assert.False(
+                    cells[i].Bounds.IntersectsWith(cells[j].Bounds),
+                    $"{cells[i].Id} overlaps {cells[j].Id}: {cells[i].Bounds} vs {cells[j].Bounds}");
+            }
+        }
+    }
+
+    [Fact]
+    public void Empty_Items_Produces_No_Cells()
+    {
+        Assert.Empty(SquarifiedTreemapLayout.Layout([], new Rectangle(0, 0, 10, 10)));
+    }
+
+    [Fact]
+    public void Every_Item_Appears_Exactly_Once()
+    {
+        Rectangle bounds = new(0, 0, 40, 20);
+        TreemapItem[] items = [
+            new TreemapItem { Id = "A", Weight = 100 },
+            new TreemapItem { Id = "B", Weight = 60 },
+            new TreemapItem { Id = "C", Weight = 40 },
+            new TreemapItem { Id = "D", Weight = 25 },
+            new TreemapItem { Id = "E", Weight = 10 },
+            new TreemapItem { Id = "F", Weight = 5 }
+        ];
+
+        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
+
+        Assert.Equal(items.Select(i => i.Id).OrderBy(id => id), cells.Select(c => c.Id).OrderBy(id => id));
+    }
+
+    // Regression case for a rounding bug: a middle item's cumulative offset can independently
+    // round up to the full strip length before the row's actual last item is reached, which used
+    // to steal the last unit of space and push that final item's cell one column past the right
+    // edge - exactly the "colours bleed into the border" symptom reported against the live control.
+    [Fact]
+    public void Middle_Item_Rounding_Up_To_Strip_Length_Does_Not_Push_The_Last_Cell_Out_Of_Bounds()
+    {
+        Rectangle bounds = new(0, 0, 36, 8);
+        double[] weights = [15, 801, 817, 869, 846, 14, 306, 774, 568, 563, 760, 212, 680, 232, 403, 865, 409, 74];
+        TreemapItem[] items = [.. weights.Select((w, i) => new TreemapItem { Id = i.ToString(), Weight = w })];
+
+        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
+
+        foreach (TreemapCell cell in cells) {
+            Assert.True(bounds.Contains(cell.Bounds), $"{cell.Id} escaped bounds: {cell.Bounds}");
+        }
+    }
+
+    [Fact]
     public void Single_Item_Fills_The_Entire_Bounds()
     {
         Rectangle bounds = new(2, 3, 10, 5);
@@ -16,6 +86,31 @@ public sealed class SquarifiedTreemapLayoutTests
         TreemapCell cell = Assert.Single(cells);
         Assert.Equal("A", cell.Id);
         Assert.Equal(bounds, cell.Bounds);
+    }
+
+    [Fact]
+    public void Total_Cell_Area_Approximately_Equals_Bounds_Area()
+    {
+        Rectangle bounds = new(0, 0, 37, 23);
+        TreemapItem[] items = [
+            new TreemapItem { Id = "A", Weight = 91 },
+            new TreemapItem { Id = "B", Weight = 47 },
+            new TreemapItem { Id = "C", Weight = 33 },
+            new TreemapItem { Id = "D", Weight = 21 },
+            new TreemapItem { Id = "E", Weight = 13 },
+            new TreemapItem { Id = "F", Weight = 7 },
+            new TreemapItem { Id = "G", Weight = 3 }
+        ];
+
+        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
+
+        long totalCellArea = cells.Sum(c => (long)c.Bounds.Width * c.Bounds.Height);
+        long boundsArea = (long)bounds.Width * bounds.Height;
+
+        // Rounding each cell's boundary to a whole character independently can drift the total by
+        // a handful of cells on a small grid; a tolerance proportional to the item count covers
+        // that without hiding a real layout bug.
+        Assert.InRange(totalCellArea, boundsArea - items.Length * 2, boundsArea);
     }
 
     [Fact]
@@ -50,106 +145,11 @@ public sealed class SquarifiedTreemapLayoutTests
     }
 
     [Fact]
-    public void Empty_Items_Produces_No_Cells()
-    {
-        Assert.Empty(SquarifiedTreemapLayout.Layout([], new Rectangle(0, 0, 10, 10)));
-    }
-
-    [Fact]
     public void Zero_Size_Bounds_Produces_No_Cells()
     {
         TreemapItem[] items = [new TreemapItem { Id = "A", Weight = 1 }];
 
         Assert.Empty(SquarifiedTreemapLayout.Layout(items, new Rectangle(0, 0, 0, 10)));
         Assert.Empty(SquarifiedTreemapLayout.Layout(items, new Rectangle(0, 0, 10, 0)));
-    }
-
-    [Fact]
-    public void Every_Item_Appears_Exactly_Once()
-    {
-        Rectangle bounds = new(0, 0, 40, 20);
-        TreemapItem[] items = [
-            new TreemapItem { Id = "A", Weight = 100 },
-            new TreemapItem { Id = "B", Weight = 60 },
-            new TreemapItem { Id = "C", Weight = 40 },
-            new TreemapItem { Id = "D", Weight = 25 },
-            new TreemapItem { Id = "E", Weight = 10 },
-            new TreemapItem { Id = "F", Weight = 5 }
-        ];
-
-        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
-
-        Assert.Equal(items.Select(i => i.Id).OrderBy(id => id), cells.Select(c => c.Id).OrderBy(id => id));
-    }
-
-    [Fact]
-    public void Cells_Do_Not_Overlap_And_Stay_Within_Bounds()
-    {
-        Rectangle bounds = new(0, 0, 40, 20);
-        TreemapItem[] items = [
-            new TreemapItem { Id = "A", Weight = 100 },
-            new TreemapItem { Id = "B", Weight = 60 },
-            new TreemapItem { Id = "C", Weight = 40 },
-            new TreemapItem { Id = "D", Weight = 25 },
-            new TreemapItem { Id = "E", Weight = 10 },
-            new TreemapItem { Id = "F", Weight = 5 }
-        ];
-
-        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
-
-        foreach (TreemapCell cell in cells) {
-            Assert.True(bounds.Contains(cell.Bounds), $"{cell.Id} escaped bounds: {cell.Bounds}");
-        }
-
-        for (int i = 0; i < cells.Count; i++) {
-            for (int j = i + 1; j < cells.Count; j++) {
-                Assert.False(
-                    cells[i].Bounds.IntersectsWith(cells[j].Bounds),
-                    $"{cells[i].Id} overlaps {cells[j].Id}: {cells[i].Bounds} vs {cells[j].Bounds}");
-            }
-        }
-    }
-
-    // Regression case for a rounding bug: a middle item's cumulative offset can independently
-    // round up to the full strip length before the row's actual last item is reached, which used
-    // to steal the last unit of space and push that final item's cell one column past the right
-    // edge - exactly the "colours bleed into the border" symptom reported against the live control.
-    [Fact]
-    public void Middle_Item_Rounding_Up_To_Strip_Length_Does_Not_Push_The_Last_Cell_Out_Of_Bounds()
-    {
-        Rectangle bounds = new(0, 0, 36, 8);
-        double[] weights = [15, 801, 817, 869, 846, 14, 306, 774, 568, 563, 760, 212, 680, 232, 403, 865, 409, 74];
-        TreemapItem[] items = [.. weights.Select((w, i) => new TreemapItem { Id = i.ToString(), Weight = w })];
-
-        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
-
-        foreach (TreemapCell cell in cells) {
-            Assert.True(bounds.Contains(cell.Bounds), $"{cell.Id} escaped bounds: {cell.Bounds}");
-        }
-    }
-
-    [Fact]
-    public void Total_Cell_Area_Approximately_Equals_Bounds_Area()
-    {
-        Rectangle bounds = new(0, 0, 37, 23);
-        TreemapItem[] items = [
-            new TreemapItem { Id = "A", Weight = 91 },
-            new TreemapItem { Id = "B", Weight = 47 },
-            new TreemapItem { Id = "C", Weight = 33 },
-            new TreemapItem { Id = "D", Weight = 21 },
-            new TreemapItem { Id = "E", Weight = 13 },
-            new TreemapItem { Id = "F", Weight = 7 },
-            new TreemapItem { Id = "G", Weight = 3 }
-        ];
-
-        IReadOnlyList<TreemapCell> cells = SquarifiedTreemapLayout.Layout(items, bounds);
-
-        long totalCellArea = cells.Sum(c => (long)c.Bounds.Width * c.Bounds.Height);
-        long boundsArea = (long)bounds.Width * bounds.Height;
-
-        // Rounding each cell's boundary to a whole character independently can drift the total by
-        // a handful of cells on a small grid; a tolerance proportional to the item count covers
-        // that without hiding a real layout bug.
-        Assert.InRange(totalCellArea, boundsArea - items.Length * 2, boundsArea);
     }
 }

@@ -87,21 +87,6 @@ public sealed partial class DiskSpaceControl : Control
         Controls.Add(filesView);
     }
 
-    public void Sample(SystemSnapshot snapshot)
-    {
-        if (snapshot.DiskSpace is not { } latest) {
-            return;
-        }
-
-        bool changed = !ReferenceEquals(latest.Specs, diskSpace?.Specs);
-        
-        diskSpace = latest;
-
-        if (changed || heatMap.IsFading) {
-            Draw();
-        }
-    }
-
     private void DrawFileCountRow(DiskSpaceSpecs? specs)
     {
         string text = specs?.State switch {
@@ -121,8 +106,18 @@ public sealed partial class DiskSpaceControl : Control
         Terminal.ForegroundColor = ForegroundColour;
         Terminal.Write(padded);
     }
-    
-    protected override void OnGotFocus() => filesView.SetFocus();
+
+    private void EnsureFileRows(DiskSpaceSpecs specs)
+    {
+        string signature = $"{specs.State}|{specs.FilesScanned}|{specs.TotalBytesScanned}";
+
+        if (signature == lastFileListSignature) {
+            return;
+        }
+
+        lastFileListSignature = signature;
+        RebuildFileRows(specs.TopFiles);
+    }
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
@@ -144,80 +139,6 @@ public sealed partial class DiskSpaceControl : Control
         else if (scanPathInputBox.Visible) {
             scanPathInputBox.Draw();
         }
-    }
-
-    private void EnsureFileRows(DiskSpaceSpecs specs)
-    {
-        string signature = $"{specs.State}|{specs.FilesScanned}|{specs.TotalBytesScanned}";
-
-        if (signature == lastFileListSignature) {
-            return;
-        }
-
-        lastFileListSignature = signature;
-        RebuildFileRows(specs.TopFiles);
-    }
-
-    private void UpdateProgressMetre(DiskSpaceSpecs? specs)
-    {
-        double ratio = specs switch {
-            null                                    => 0.0,
-            { RootLevelFoldersTotal: > 0 }          => (double)specs.RootLevelFoldersCompleted / specs.RootLevelFoldersTotal,
-            { State: DiskSpaceScanState.Completed } => 1.0,
-                                                  _ => 0.0
-        };
-
-        if (rootFoldersSeries is not null) {
-            rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) 
-                ? "Root Folders" 
-                : specs.RootPath;
-        }
-
-        progressMetre.SetValue(0, ratio);
-    }
-
-    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        if (driveInputBox.Visible) {
-            OnDriveInputBoxKeyPressed(keyInfo, ref handled);
-            return;
-        }
-
-        if (scanPathInputBox.Visible) {
-            OnScanPathInputBoxKeyPressed(keyInfo, ref handled);
-            return;
-        }
-
-        switch (keyInfo.Key) {
-            case ConsoleKey.S:
-                ShowDriveSelectionPrompt();
-                handled = true;
-                return;
-
-            case ConsoleKey.C:
-                TryCancelScan();
-                handled = true;
-                return;
-        }
-
-        filesView.KeyPressed(keyInfo, ref handled);
-    }
-
-    private void ShowDriveSelectionPrompt()
-    {
-        Control.RedrawEnabled = false;
-
-        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
-
-        driveInputBox.Width  = Math.Clamp(Width - 4, 30, 60);
-        driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
-        driveInputBox.X      = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
-        driveInputBox.Y      = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
-        driveInputBox.Title  = "Select a drive";
-        
-        driveInputBox.SetCandidates(candidates);
-        driveInputBox.Visible = true;
-        driveInputBox.ShowDriveInputBox();
     }
 
     private void OnDriveInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -254,62 +175,33 @@ public sealed partial class DiskSpaceControl : Control
         Draw();
     }
 
-    private void ShowScanPathPrompt()
+    protected override void OnGotFocus() => filesView.SetFocus();
+
+    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
-        
-        Control.RedrawEnabled = false;
-
-        // Overlay so it looks like an in-place edit to the user.
-        scanPathInputBox.X       = driveInputBox.ListX;
-        scanPathInputBox.Y       = driveInputBox.ListY;
-        scanPathInputBox.Width   = driveInputBox.ListWidth;
-        scanPathInputBox.Title   = "Scan path:";
-        scanPathInputBox.Visible = true;
-        
-        scanPathInputBox.SetText(defaultRoot);
-        scanPathInputBox.ShowInputBox();
-    }
-
-    private void OnScanPathInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        scanPathInputBox.KeyPressed(keyInfo, ref handled);
-
-        if (scanPathInputBox.Result == InputBoxResult.None) {
+        if (driveInputBox.Visible) {
+            OnDriveInputBoxKeyPressed(keyInfo, ref handled);
             return;
         }
 
-        InputBoxResult result = scanPathInputBox.Result;
-        string         path   = scanPathInputBox.Text;
-
-        Control.RedrawEnabled    = true;
-        scanPathInputBox.Visible = false;
-
-        if (result == InputBoxResult.Enter && !string.IsNullOrWhiteSpace(path)) {
-            TryStartScan(path.Trim());
+        if (scanPathInputBox.Visible) {
+            OnScanPathInputBoxKeyPressed(keyInfo, ref handled);
+            return;
         }
 
-        Draw();
-    }
+        switch (keyInfo.Key) {
+            case ConsoleKey.S:
+                ShowDriveSelectionPrompt();
+                handled = true;
+                return;
 
-    private void TryStartScan(string path)
-    {
-        try {
-            serviceController.GetService<DiskSpaceService>().StartScan(path);
+            case ConsoleKey.C:
+                TryCancelScan();
+                handled = true;
+                return;
         }
-        catch (InvalidOperationException) {
-            // No DiskSpaceService registered (e.g. under test) - nothing to start.
-        }
-    }
 
-    private void TryCancelScan()
-    {
-        try {
-            serviceController.GetService<DiskSpaceService>().CancelScan();
-        }
-        catch (InvalidOperationException) {
-            // No DiskSpaceService registered (e.g. under test) - nothing to cancel.
-        }
+        filesView.KeyPressed(keyInfo, ref handled);
     }
 
     protected override void OnLoad()
@@ -331,9 +223,6 @@ public sealed partial class DiskSpaceControl : Control
 
         base.OnLoad();
     }
-
-    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
-        Sample(e.Snapshot);
 
     protected override void OnResize()
     {
@@ -373,6 +262,30 @@ public sealed partial class DiskSpaceControl : Control
         base.OnResize();
     }
 
+    private void OnScanPathInputBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        scanPathInputBox.KeyPressed(keyInfo, ref handled);
+
+        if (scanPathInputBox.Result == InputBoxResult.None) {
+            return;
+        }
+
+        InputBoxResult result = scanPathInputBox.Result;
+        string         path   = scanPathInputBox.Text;
+
+        Control.RedrawEnabled    = true;
+        scanPathInputBox.Visible = false;
+
+        if (result == InputBoxResult.Enter && !string.IsNullOrWhiteSpace(path)) {
+            TryStartScan(path.Trim());
+        }
+
+        Draw();
+    }
+
+    private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e) =>
+        Sample(e.Snapshot);
+
     protected override void OnUnload()
     {
         progressMetre.ClearSeries();
@@ -385,5 +298,92 @@ public sealed partial class DiskSpaceControl : Control
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
 
         base.OnUnload();
+    }
+
+    public void Sample(SystemSnapshot snapshot)
+    {
+        if (snapshot.DiskSpace is not { } latest) {
+            return;
+        }
+
+        bool changed = !ReferenceEquals(latest.Specs, diskSpace?.Specs);
+        
+        diskSpace = latest;
+
+        if (changed || heatMap.IsFading) {
+            Draw();
+        }
+    }
+
+    private void ShowDriveSelectionPrompt()
+    {
+        Control.RedrawEnabled = false;
+
+        IReadOnlyList<string> candidates = ScanRootProvider.GetCandidates();
+
+        driveInputBox.Width  = Math.Clamp(Width - 4, 30, 60);
+        driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
+        driveInputBox.X      = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
+        driveInputBox.Y      = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
+        driveInputBox.Title  = "Select a drive";
+        
+        driveInputBox.SetCandidates(candidates);
+        driveInputBox.Visible = true;
+        driveInputBox.ShowDriveInputBox();
+    }
+
+    private void ShowScanPathPrompt()
+    {
+        string defaultRoot = Path.GetPathRoot(Environment.SystemDirectory) ?? string.Empty;
+        
+        Control.RedrawEnabled = false;
+
+        // Overlay so it looks like an in-place edit to the user.
+        scanPathInputBox.X       = driveInputBox.ListX;
+        scanPathInputBox.Y       = driveInputBox.ListY;
+        scanPathInputBox.Width   = driveInputBox.ListWidth;
+        scanPathInputBox.Title   = "Scan path:";
+        scanPathInputBox.Visible = true;
+        
+        scanPathInputBox.SetText(defaultRoot);
+        scanPathInputBox.ShowInputBox();
+    }
+
+    private void TryCancelScan()
+    {
+        try {
+            serviceController.GetService<DiskSpaceService>().CancelScan();
+        }
+        catch (InvalidOperationException) {
+            // No DiskSpaceService registered (e.g. under test) - nothing to cancel.
+        }
+    }
+
+    private void TryStartScan(string path)
+    {
+        try {
+            serviceController.GetService<DiskSpaceService>().StartScan(path);
+        }
+        catch (InvalidOperationException) {
+            // No DiskSpaceService registered (e.g. under test) - nothing to start.
+        }
+    }
+
+    private void UpdateProgressMetre(DiskSpaceSpecs? specs)
+    {
+        double ratio = specs switch {
+            null                                    => 0.0,
+            { RootLevelFoldersTotal: > 0 }          => (double)specs.RootLevelFoldersCompleted / specs.RootLevelFoldersTotal,
+            { State: DiskSpaceScanState.Completed } => 1.0,
+                                                  _ => 0.0
+        };
+
+        if (rootFoldersSeries is not null) {
+            rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) 
+                ? "Root Folders" 
+                : specs.RootPath;
+        }
+
+        progressMetre.SetValue(0, ratio);
     }
 }

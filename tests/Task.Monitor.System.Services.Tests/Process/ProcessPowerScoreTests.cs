@@ -11,17 +11,17 @@ public sealed class ProcessPowerScoreTests
     }
 
     [Fact]
-    public void A_Process_Nudging_One_Core_Is_Low()
-    {
-        // ~2% of an 8-core machine.
-        Assert.Equal(ProcessPowerBucket.Low, ProcessPowerScore.Classify(0.02, 0, 0));
-    }
-
-    [Fact]
     public void A_Process_Holding_A_Whole_Core_Is_High()
     {
         // One full core of eight.
         Assert.Equal(ProcessPowerBucket.High, ProcessPowerScore.Classify(0.125, 0, 0));
+    }
+
+    [Fact]
+    public void A_Process_Nudging_One_Core_Is_Low()
+    {
+        // ~2% of an 8-core machine.
+        Assert.Equal(ProcessPowerBucket.Low, ProcessPowerScore.Classify(0.02, 0, 0));
     }
 
     [Fact]
@@ -31,15 +31,15 @@ public sealed class ProcessPowerScoreTests
     }
 
     [Fact]
-    public void Sustained_Gpu_Work_Drives_The_Bucket_Up()
-    {
-        Assert.Equal(ProcessPowerBucket.VeryHigh, ProcessPowerScore.Classify(0, 0.4, 0));
-    }
-
-    [Fact]
     public void Heavy_Disk_Io_Alone_Is_Only_Moderate()
     {
         Assert.Equal(ProcessPowerBucket.Moderate, ProcessPowerScore.Classify(0, 0, 50_000_000));
+    }
+
+    [Fact]
+    public void Sustained_Gpu_Work_Drives_The_Bucket_Up()
+    {
+        Assert.Equal(ProcessPowerBucket.VeryHigh, ProcessPowerScore.Classify(0, 0.4, 0));
     }
 
     [Fact]

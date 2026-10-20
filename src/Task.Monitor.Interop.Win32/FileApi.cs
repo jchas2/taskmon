@@ -46,11 +46,14 @@ public static class FileApi
     public static extern bool FindVolumeClose(nint hFindVolume);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern unsafe bool GetVolumePathNamesForVolumeNameW(
-        string lpszVolumeName,
-        char*  lpszVolumePathNames,
-        uint   cchBufferLength,
-        uint*  lpcchReturnLength);
+    public static extern unsafe bool GetDiskFreeSpaceExW(
+        string lpDirectoryName,
+        ulong* lpFreeBytesAvailableToCaller,
+        ulong* lpTotalNumberOfBytes,
+        ulong* lpTotalNumberOfFreeBytes);
+
+    [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern uint GetDriveTypeW(string lpRootPathName);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern unsafe bool GetVolumeInformationW(
@@ -64,12 +67,9 @@ public static class FileApi
         uint   nFileSystemNameSize);
 
     [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern unsafe bool GetDiskFreeSpaceExW(
-        string lpDirectoryName,
-        ulong* lpFreeBytesAvailableToCaller,
-        ulong* lpTotalNumberOfBytes,
-        ulong* lpTotalNumberOfFreeBytes);
-
-    [DllImport(Libraries.Kernel32, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern uint GetDriveTypeW(string lpRootPathName);
+    public static extern unsafe bool GetVolumePathNamesForVolumeNameW(
+        string lpszVolumeName,
+        char*  lpszVolumePathNames,
+        uint   cchBufferLength,
+        uint*  lpcchReturnLength);
 }

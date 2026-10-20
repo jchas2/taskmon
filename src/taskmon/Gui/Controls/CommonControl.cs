@@ -11,13 +11,6 @@ namespace Task.Monitor.Gui.Controls;
 
 public static class CommonControl
 {
-    public static void ThemeDefaults(Control control, Theme theme)
-    {
-        control.BackgroundColour = theme.Background;
-        control.BorderColour     = theme.ControlBorder;
-        control.ForegroundColour = theme.Foreground;
-    }
-
     public static void Theme(Chart control, Theme theme)
     {
         control.BackgroundColour       = theme.ChartBackground;
@@ -90,5 +83,12 @@ public static class CommonControl
         control.DialogButtonForegroundColour = theme.ForegroundHighlight;
         control.FieldBackgroundColour        = theme.Background;
         control.FieldForegroundColour        = theme.Foreground;
+    }
+
+    public static void ThemeDefaults(Control control, Theme theme)
+    {
+        control.BackgroundColour = theme.Background;
+        control.BorderColour     = theme.ControlBorder;
+        control.ForegroundColour = theme.Foreground;
     }
 }

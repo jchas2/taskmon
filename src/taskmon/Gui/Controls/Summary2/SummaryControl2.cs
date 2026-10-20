@@ -47,11 +47,26 @@ public sealed class SummaryControl2 : Control
         }
     }
 
-    protected override void OnGotFocus()
+    private int? FindAdjacentPane(int step)
     {
-        int paneId = focusedPaneId ?? tree.Panes().First().Id;
-        paneControls[paneId].SetFocus();
+        List<SummaryLayoutNode> panes       = tree.Panes().ToList();
+        Control?                focusedPane = FindFocusedPane();
+        
+        int currentIndex = panes.FindIndex(pane => paneControls[pane.Id] == focusedPane);
+
+        if (currentIndex < 0) {
+            return null;
+        }
+
+        int targetIndex = currentIndex + step;
+
+        return targetIndex >= 0 && targetIndex < panes.Count 
+            ? panes[targetIndex].Id 
+            : null;
     }
+
+    private Control? FindFocusedPane() =>
+        paneControls.Values.FirstOrDefault(control => control.HasFocus);
 
     protected override void OnDraw()
     {
@@ -90,6 +105,12 @@ public sealed class SummaryControl2 : Control
         }
     }
 
+    protected override void OnGotFocus()
+    {
+        int paneId = focusedPaneId ?? tree.Panes().First().Id;
+        paneControls[paneId].SetFocus();
+    }
+
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         Control? focusedPane = FindFocusedPane();
@@ -118,27 +139,6 @@ public sealed class SummaryControl2 : Control
         }
     }
 
-    private Control? FindFocusedPane() =>
-        paneControls.Values.FirstOrDefault(control => control.HasFocus);
-
-    private int? FindAdjacentPane(int step)
-    {
-        List<SummaryLayoutNode> panes       = tree.Panes().ToList();
-        Control?                focusedPane = FindFocusedPane();
-        
-        int currentIndex = panes.FindIndex(pane => paneControls[pane.Id] == focusedPane);
-
-        if (currentIndex < 0) {
-            return null;
-        }
-
-        int targetIndex = currentIndex + step;
-
-        return targetIndex >= 0 && targetIndex < panes.Count 
-            ? panes[targetIndex].Id 
-            : null;
-    }
-
     protected override void OnLoad()
     {
         if (appConfig.DefaultLayout != builtFrom) {
@@ -157,6 +157,9 @@ public sealed class SummaryControl2 : Control
         base.OnLoad();
     }
 
+    protected override void OnResize() =>
+        renderer.Layout(tree, paneControls, X, Y, Width, Height);
+
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
         snapshot = e.Snapshot;
@@ -170,9 +173,6 @@ public sealed class SummaryControl2 : Control
             Control.DrawingLockRelease();
         }
     }
-
-    protected override void OnResize() =>
-        renderer.Layout(tree, paneControls, X, Y, Width, Height);
 
     protected override void OnUnload()
     {

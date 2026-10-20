@@ -30,121 +30,21 @@ public sealed class SummaryControl2Tests
     }
 
     [Fact]
-    public void Constructor_With_Valid_Args_Initialises_Successfully()
+    public void An_Unchanged_Default_Keeps_The_Same_Pane_Controls_Across_Reloads()
     {
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
 
-        Assert.NotNull(ctrl);
-    }
-
-    private string CapturedOutput() =>
-        string.Concat(runContextHelper.terminal.Invocations
-            .Where(invocation => invocation.Method.Name == "Write"
-                && invocation.Arguments.Count == 1
-                && invocation.Arguments[0] is string)
-            .Select(invocation => (string)invocation.Arguments[0]!));
-
-    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
-    // itself, from inside its real worker loop.
-    private static void RaiseSnapshotUpdated(ServiceController serviceController, SystemSnapshot snapshot)
-    {
-        FieldInfo? field = typeof(ServiceController).GetField(
-            "SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
-        handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
-    }
-
-    [Fact]
-    public void Draws_The_Example_Trees_Chart_Titles_And_Process_Header()
-    {
-        SummaryControl2 ctrl = new(
-            runContext.ServiceController,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
         ctrl.Load();
-        ctrl.Resize();
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        Assert.Contains("Cpu", output);
-        Assert.Contains("Memory", output);
-        Assert.Contains("Gpu", output);
-        Assert.Contains("Top", output);
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
-    public void Feeds_A_Published_Snapshot_Into_The_Cpu_Chart()
-    {
-        SummaryControl2 ctrl = new(
-            runContext.ServiceController,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
-
-        runContext.AppConfig.ShowMetreCpuNumerically = true;
-
-        RaiseSnapshotUpdated(runContext.ServiceController, new SystemSnapshot {
-            Cpu = new CpuInfo {
-                Metrics = new CpuMetrics {
-                    CpuPercentKernelTime = 0.1,
-                    CpuPercentUserTime = 0.2,
-                }
-            }
-        });
-
-        ctrl.Draw();
-
-        Assert.Contains("Kernel", CapturedOutput());
-
-        ctrl.Unload();
-    }
-
-    // Regression test: panes are loaded by base.OnLoad() (Control.OnLoad loads every child), so an
-    // extra explicit Load() loop here double-subscribed ProcessControl to snapshot updates -
-    // rows redrawn twice per tick, and an Unload() that left one live subscription behind.
-    [Fact]
-    public void Each_Pane_Is_Subscribed_To_Snapshot_Updates_Exactly_Once()
-    {
-        SummaryControl2 ctrl = new(
-            runContext.ServiceController,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        ctrl.Load();
-
-        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
-            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .GetValue(runContext.ServiceController);
-
-        Assert.Equal(1, handler!.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl"));
-
+        List<Control> before = ctrl.Controls.ToList();
         ctrl.Unload();
 
-        handler = (MulticastDelegate?)typeof(ServiceController)
-            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
-            .GetValue(runContext.ServiceController);
+        ctrl.Load();
+        Assert.Equal(before, ctrl.Controls.ToList());
 
-        Assert.Equal(0, handler?.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl") ?? 0);
+        ctrl.Unload();
     }
 
     // The SUMMARY screen's layout is chosen in Setup (or edited in the designer) while this control
@@ -181,22 +81,184 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
     [Fact]
-    public void An_Unchanged_Default_Keeps_The_Same_Pane_Controls_Across_Reloads()
+    public void Constructor_With_Valid_Args_Initialises_Successfully()
     {
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
 
-        ctrl.Load();
-        List<Control> before = ctrl.Controls.ToList();
-        ctrl.Unload();
+        Assert.NotNull(ctrl);
+    }
+
+    // The runtime summary used to theme only its Chart panes, leaving a CpuCores (or Empty) pane's
+    // border at the white Control default while the designer showed it in the theme colour.
+    [Fact]
+    public void CpuCores_And_Empty_Panes_Take_The_Theme_Border_Colour()
+    {
+        Color chartBorder = ColorTranslator.FromHtml("#404040");
+
+        ConfigSection themeSection = new("Summary Border Theme");
+        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ChartBorderForeground, "#404040");
+        runContext.AppConfig.Theme.Update(themeSection);
+
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        (int cpuCoresId, _) = tree.Split(tree.RootId, Orientation.Row);
+        tree.Nodes[cpuCoresId].ControlType = PaneControlType.CpuCores;
+
+        UseSummaryLayout(SummaryControlLayout.FromTree("CpuCores Border Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
 
         ctrl.Load();
-        Assert.Equal(before, ctrl.Controls.ToList());
+
+        Assert.Single(ctrl.Controls.OfType<CpuCoresControl>());
+        Assert.Single(ctrl.Controls.OfType<EmptyPaneControl>());
+
+        Assert.All(ctrl.Controls, pane =>
+            Assert.Equal(chartBorder.ToArgb(), pane.BorderColour.ToArgb()));
 
         ctrl.Unload();
+    }
+
+    [Fact]
+    public void Draws_The_Example_Trees_Chart_Titles_And_Process_Header()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("Cpu", output);
+        Assert.Contains("Memory", output);
+        Assert.Contains("Gpu", output);
+        Assert.Contains("Top", output);
+
+        ctrl.Unload();
+        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    // Regression test: panes are loaded by base.OnLoad() (Control.OnLoad loads every child), so an
+    // extra explicit Load() loop here double-subscribed ProcessControl to snapshot updates -
+    // rows redrawn twice per tick, and an Unload() that left one live subscription behind.
+    [Fact]
+    public void Each_Pane_Is_Subscribed_To_Snapshot_Updates_Exactly_Once()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
+            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(runContext.ServiceController);
+
+        Assert.Equal(1, handler!.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl"));
+
+        ctrl.Unload();
+
+        handler = (MulticastDelegate?)typeof(ServiceController)
+            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(runContext.ServiceController);
+
+        Assert.Equal(0, handler?.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl") ?? 0);
+    }
+
+    [Fact]
+    public void Feeds_A_Published_Snapshot_Into_The_Cpu_Chart()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        runContext.AppConfig.ShowMetreCpuNumerically = true;
+
+        RaiseSnapshotUpdated(runContext.ServiceController, new SystemSnapshot {
+            Cpu = new CpuInfo {
+                Metrics = new CpuMetrics {
+                    CpuPercentKernelTime = 0.1,
+                    CpuPercentUserTime = 0.2,
+                }
+            }
+        });
+
+        ctrl.Draw();
+
+        Assert.Contains("Kernel", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    // Regression coverage for the same OnGotFocus redirect bug this session hit repeatedly:
+    // SummaryControl2 itself never holds Focused = true (it always redirects to whichever pane
+    // was last focused), so callers must ask HasFocus, not Focused.
+    [Fact]
+    public void Focus_Redirects_To_The_First_Pane_In_Tree_Order()
+    {
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 40 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        Assert.False(ctrl.Focused);
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+
+        ctrl.Unload();
+    }
+
+    private static Control? GetFocusedPane(SummaryControl2 ctrl)
+    {
+        MethodInfo? method = typeof(SummaryControl2).GetMethod(
+            "FindFocusedPane", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        return (Control?)method!.Invoke(ctrl, null);
     }
 
     // A Process pane's rows come from ProcessControl's own snapshot subscription, wired in its
@@ -237,33 +299,15 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
-    // Regression coverage for the same OnGotFocus redirect bug this session hit repeatedly:
-    // SummaryControl2 itself never holds Focused = true (it always redirects to whichever pane
-    // was last focused), so callers must ask HasFocus, not Focused.
-    [Fact]
-    public void Focus_Redirects_To_The_First_Pane_In_Tree_Order()
+    // Reflection is the only way to raise this from a test: ServiceController only ever raises it
+    // itself, from inside its real worker loop.
+    private static void RaiseSnapshotUpdated(ServiceController serviceController, SystemSnapshot snapshot)
     {
-        ForwardingTerminal terminal = new(runContext.Terminal);
-        Screen screen = new(terminal) { Width = 120, Height = 40 };
+        FieldInfo? field = typeof(ServiceController).GetField(
+            "SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        screen.Controls.Add(ctrl);
-        ctrl.Load();
-        ctrl.Resize();
-        ctrl.SetFocus();
-
-        Assert.False(ctrl.Focused);
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
-
-        Assert.True(handled);
-
-        ctrl.Unload();
+        MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
+        handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
     }
 
     // Regression test: only Left/Right should cycle between panes. Up/Down go to the focused
@@ -345,50 +389,6 @@ public sealed class SummaryControl2Tests
         ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
 
         Assert.Same(focusedPaneBefore, GetFocusedPane(ctrl));
-
-        ctrl.Unload();
-    }
-
-    private static Control? GetFocusedPane(SummaryControl2 ctrl)
-    {
-        MethodInfo? method = typeof(SummaryControl2).GetMethod(
-            "FindFocusedPane", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        return (Control?)method!.Invoke(ctrl, null);
-    }
-
-    // The runtime summary used to theme only its Chart panes, leaving a CpuCores (or Empty) pane's
-    // border at the white Control default while the designer showed it in the theme colour.
-    [Fact]
-    public void CpuCores_And_Empty_Panes_Take_The_Theme_Border_Colour()
-    {
-        Color chartBorder = ColorTranslator.FromHtml("#404040");
-
-        ConfigSection themeSection = new("Summary Border Theme");
-        themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ChartBorderForeground, "#404040");
-        runContext.AppConfig.Theme.Update(themeSection);
-
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-        (int cpuCoresId, _) = tree.Split(tree.RootId, Orientation.Row);
-        tree.Nodes[cpuCoresId].ControlType = PaneControlType.CpuCores;
-
-        UseSummaryLayout(SummaryControlLayout.FromTree("CpuCores Border Test", tree));
-
-        SummaryControl2 ctrl = new(
-            runContext.ServiceController,
-            runContext.Terminal,
-            runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        ctrl.Load();
-
-        Assert.Single(ctrl.Controls.OfType<CpuCoresControl>());
-        Assert.Single(ctrl.Controls.OfType<EmptyPaneControl>());
-
-        Assert.All(ctrl.Controls, pane =>
-            Assert.Equal(chartBorder.ToArgb(), pane.BorderColour.ToArgb()));
 
         ctrl.Unload();
     }

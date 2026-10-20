@@ -13,6 +13,16 @@ public sealed class StartupApprovedStateTests
         return blob;
     }
 
+    [Fact]
+    public void Ignores_A_Nonsense_Timestamp()
+    {
+        (StartupEntryState state, DateTime? disabledOn) =
+            StartupApprovedState.Parse(Blob(0x03, long.MaxValue));
+
+        Assert.Equal(StartupEntryState.Disabled, state);
+        Assert.Null(disabledOn);
+    }
+
     [Theory]
     [InlineData(0x02u)]
     [InlineData(0x06u)]
@@ -54,16 +64,6 @@ public sealed class StartupApprovedStateTests
         (StartupEntryState state, DateTime? disabledOn) = StartupApprovedState.Parse(new byte[length]);
 
         Assert.Equal(StartupEntryState.Unknown, state);
-        Assert.Null(disabledOn);
-    }
-
-    [Fact]
-    public void Ignores_A_Nonsense_Timestamp()
-    {
-        (StartupEntryState state, DateTime? disabledOn) =
-            StartupApprovedState.Parse(Blob(0x03, long.MaxValue));
-
-        Assert.Equal(StartupEntryState.Disabled, state);
         Assert.Null(disabledOn);
     }
 }

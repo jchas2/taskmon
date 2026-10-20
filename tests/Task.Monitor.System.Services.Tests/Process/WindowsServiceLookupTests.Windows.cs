@@ -6,22 +6,6 @@ namespace Task.Monitor.System.Services.Tests.Process;
 [Collection(ProcessServiceCollection.Name)]
 public sealed class WindowsServiceLookupTests
 {
-    // The refresh counters are static and other tests in this collection will have advanced them,
-    // so drive cycles until a rebuild fires. The interval is then known to have just restarted.
-    private static void SyncToIntervalStart()
-    {
-        WindowsServiceLookup.GetService(pid: 0, out _);
-
-        int baseline = WindowsServiceLookup.RebuildCount;
-
-        for (int i = 0;
-             i <= WindowsServiceRefreshPolicy.RefreshCycles && WindowsServiceLookup.RebuildCount == baseline;
-             i++) {
-
-            WindowsServiceLookup.RefreshIfDue();
-        }
-    }
-
     [Fact]
     public void RefreshIfDue_Rebuilds_Only_Once_The_Interval_Elapses()
     {
@@ -59,6 +43,22 @@ public sealed class WindowsServiceLookupTests
         WindowsServiceLookup.RefreshIfDue();
 
         Assert.Equal(before + 1, WindowsServiceLookup.RebuildCount);
+    }
+
+    // The refresh counters are static and other tests in this collection will have advanced them,
+    // so drive cycles until a rebuild fires. The interval is then known to have just restarted.
+    private static void SyncToIntervalStart()
+    {
+        WindowsServiceLookup.GetService(pid: 0, out _);
+
+        int baseline = WindowsServiceLookup.RebuildCount;
+
+        for (int i = 0;
+             i <= WindowsServiceRefreshPolicy.RefreshCycles && WindowsServiceLookup.RebuildCount == baseline;
+             i++) {
+
+            WindowsServiceLookup.RefreshIfDue();
+        }
     }
 
     [Fact]

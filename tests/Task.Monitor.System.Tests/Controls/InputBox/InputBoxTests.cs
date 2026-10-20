@@ -1,11 +1,10 @@
-﻿using System.Reflection;
+﻿using System.Drawing;
+using System.Reflection;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls.InputBox;
 using Task.Monitor.Tests.Common;
 using InputBoxControl = Task.Monitor.System.Controls.InputBox.InputBox;
-
-using System.Drawing;
-using Task.Monitor.Cli.Utils;
 namespace Task.Monitor.System.Tests.Controls.InputBox;
 
 public sealed class InputBoxTests
@@ -13,57 +12,6 @@ public sealed class InputBoxTests
     [Fact]
     public void InputBox_Canary_Test() =>
         Assert.Equal(18, CanaryTestHelper.GetPropertyCount<InputBoxControl>());
-    
-    [Fact]
-    public void Should_Construct_Default()
-    {
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        InputBoxControl control = new(new ForwardingTerminal(terminal.Object));
-
-        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
-        Assert.Empty(control.Controls);
-        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
-        Assert.Equal(0, control.Height);
-        Assert.NotNull(control.Name);
-        Assert.Empty(control.Name);
-        Assert.Equal(InputBoxResult.Enter, control.Result);
-        Assert.True(0 == control.TabIndex);
-        Assert.False(control.TabStop);
-        Assert.NotNull(control.Text);
-        Assert.Empty(control.Text);
-        Assert.NotNull(control.Title);
-        Assert.Empty(control.Title);
-        Assert.True(control.Visible);
-        Assert.Equal(0, control.Width);
-        Assert.Equal(0, control.X);
-        Assert.Equal(0, control.Y);
-    }
-
-    [Fact]
-    public void Should_Set_Initial_Properties()
-    {
-        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
-        
-        InputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
-            BackgroundColour = ConsolePalette.Gray,
-            ForegroundColour = ConsolePalette.Black,
-            Height = 1,
-            Title = "Enter Text",
-            Visible =  true,
-            Width = 42,
-            X = 5,
-            Y = 10
-        };
-
-        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
-        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
-        Assert.Equal(1, control.Height);
-        Assert.Equal("Enter Text", control.Title);
-        Assert.True(control.Visible);
-        Assert.Equal(42, control.Width);
-        Assert.Equal(5, control.X);
-        Assert.Equal(10, control.Y);
-    }
 
     public static TheoryData<ConsoleKeyInfo, InputBoxResult> KeyPressData()
         => new()
@@ -99,6 +47,31 @@ public sealed class InputBoxTests
     }
 
     [Fact]
+    public void Should_Construct_Default()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object));
+
+        Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Empty(control.Controls);
+        Assert.Equal(ConsolePalette.White, control.ForegroundColour);
+        Assert.Equal(0, control.Height);
+        Assert.NotNull(control.Name);
+        Assert.Empty(control.Name);
+        Assert.Equal(InputBoxResult.Enter, control.Result);
+        Assert.True(0 == control.TabIndex);
+        Assert.False(control.TabStop);
+        Assert.NotNull(control.Text);
+        Assert.Empty(control.Text);
+        Assert.NotNull(control.Title);
+        Assert.Empty(control.Title);
+        Assert.True(control.Visible);
+        Assert.Equal(0, control.Width);
+        Assert.Equal(0, control.X);
+        Assert.Equal(0, control.Y);
+    }
+
+    [Fact]
     public void Should_Draw()
     {
         Mock<ISystemTerminal> terminal = TerminalMock.Setup();
@@ -128,5 +101,31 @@ public sealed class InputBoxTests
         
         Assert.Equal("H", control.Text);
         Assert.True(handled);
+    }
+
+    [Fact]
+    public void Should_Set_Initial_Properties()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        
+        InputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
+            BackgroundColour = ConsolePalette.Gray,
+            ForegroundColour = ConsolePalette.Black,
+            Height = 1,
+            Title = "Enter Text",
+            Visible =  true,
+            Width = 42,
+            X = 5,
+            Y = 10
+        };
+
+        Assert.Equal(ConsolePalette.Gray, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ForegroundColour);
+        Assert.Equal(1, control.Height);
+        Assert.Equal("Enter Text", control.Title);
+        Assert.True(control.Visible);
+        Assert.Equal(42, control.Width);
+        Assert.Equal(5, control.X);
+        Assert.Equal(10, control.Y);
     }
 }
