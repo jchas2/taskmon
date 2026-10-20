@@ -13,15 +13,15 @@ public sealed class PowerServiceTests(ITestOutputHelper output)
     public void Should_Publish_Well_Formed_Readings_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new GpuService());
         controller.AddService(() => new DiskService());
         controller.AddService(() => new PowerService { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 6);
+        // Several power cycles, so the providers that read the GPU and disk results have them.
+        SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Power, count: 5);
         controller.Stop();
 
         Assert.NotNull(latest);

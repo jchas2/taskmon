@@ -8,6 +8,7 @@ public sealed class InstalledApp
     public DateTime? InstallDate    { get; set; }
     public string? InstallLocation  { get; set; }
     public long? EstimatedSizeKb    { get; set; }
+    public bool SizePending         { get; set; }
     public string? UninstallCommand { get; set; }
     public InstalledAppScope Scope  { get; set; }
     public string Origin            { get; set; } = string.Empty;

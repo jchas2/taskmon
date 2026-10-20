@@ -14,17 +14,14 @@ public sealed class ProcessServiceTests
         // state for every process that has ever been seen, and a recycled pid would inherit the
         // previous process's mean and max.
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 3);
-        int early = latest?.Processes?.Metrics.ProcessCount ?? 0;
-
-        Thread.Sleep(MinimumDelay * 6);
-        int late = latest?.Processes?.Metrics.ProcessCount ?? 0;
+        // Six process cycles apart.
+        int early = snapshots.WaitForUpdates(snapshot => snapshot.Processes, count: 2)?.Processes?.Metrics.ProcessCount ?? 0;
+        int late  = snapshots.WaitForUpdates(snapshot => snapshot.Processes, count: 8)?.Processes?.Metrics.ProcessCount ?? 0;
 
         controller.Stop();
 
@@ -40,15 +37,14 @@ public sealed class ProcessServiceTests
     public void Should_Publish_Process_Metrics_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
-        // Long enough for several cycles: the first only primes the per pid baselines, so the
-        // second is the earliest that can report a rate at all.
-        Thread.Sleep(MinimumDelay * 5);
+        // Several cycles: the first only primes the per pid baselines, so the second is the earliest
+        // that can report a rate at all.
+        SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Processes, count: 3);
         controller.Stop();
 
         Assert.NotNull(latest);
@@ -68,13 +64,12 @@ public sealed class ProcessServiceTests
     public void Should_Publish_Rates_That_Are_Finite_And_Non_Negative()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 5);
+        SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Processes, count: 3);
         controller.Stop();
 
         Assert.NotNull(latest?.Processes);

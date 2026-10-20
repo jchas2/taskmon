@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
@@ -12,6 +13,51 @@ public static class PropertyList
     private const long   kCFPropertyListXMLFormat_v1_0 = 100;
     private const string UidKey                        = "CF$UID";
     private const int    MaxDepth                      = 32;
+
+    private static Dictionary<string, object?>? ExtractStrings(
+        nint                   plist,
+        IReadOnlyList<string>  keys,
+        IReadOnlyList<string>? tables)
+    {
+        nint dictionary = IsDictionary(plist) ? plist : nint.Zero;
+
+        if (dictionary != nint.Zero && tables is not null) {
+            dictionary = FindTable(dictionary, tables);
+        }
+
+        if (dictionary == nint.Zero) {
+            return null;
+        }
+
+        Dictionary<string, object?> strings = new(keys.Count, StringComparer.Ordinal);
+
+        foreach (string key in keys) {
+            nint value = GetValue(dictionary, key);
+
+            if (value != nint.Zero &&
+                CoreFoundation.CFGetTypeID(value) == CoreFoundation.CFStringGetTypeID() &&
+                CoreFoundation.GetString(value) is { } text) {
+
+                strings[key] = text;
+            }
+        }
+
+        return strings;
+    }
+
+    // The first of the tables present as a nested dictionary, or zero when there are none.
+    private static nint FindTable(nint dictionary, IReadOnlyList<string> tables)
+    {
+        foreach (string table in tables) {
+            nint candidate = GetValue(dictionary, table);
+
+            if (IsDictionary(candidate)) {
+                return candidate;
+            }
+        }
+
+        return nint.Zero;
+    }
 
     private static byte[]? FromBase64(string text)
     {
@@ -83,6 +129,19 @@ public static class PropertyList
         return result;
     }
 
+    // The value stored under the key, borrowed from the dictionary, or zero when there is none.
+    private static nint GetValue(nint dictionary, string key)
+    {
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate(key));
+
+        return cfKey.IsNull 
+            ? nint.Zero 
+            : CoreFoundation.CFDictionaryGetValue(dictionary, cfKey);
+    }
+
+    private static bool IsDictionary(nint cf) =>
+        cf != nint.Zero && CoreFoundation.CFGetTypeID(cf) == CoreFoundation.CFDictionaryGetTypeID();
+
     public static object? Parse(ReadOnlySpan<byte> bytes) =>
         WithPropertyList(bytes, ToManaged);
 
@@ -124,6 +183,59 @@ public static class PropertyList
         }
 
         return ParseKeyedArchive(bytes);
+    }
+
+    // Reads only the named string values from a property list file, without converting the rest of
+    // it to managed objects - a localized InfoPlist.loctable holds every language, yet a caller wants
+    // a few keys from one. With tables, the values come from the first of those nested dictionaries
+    // the file has (a loctable is keyed by language). Null when the file is missing or unreadable,
+    // isn't a dictionary, or has none of the tables.
+    public static Dictionary<string, object?>? ReadStrings(
+        string                 path,
+        IReadOnlyList<string>  keys,
+        IReadOnlyList<string>? tables = null)
+    {
+        if (!File.Exists(path)) {
+            return null;
+        }
+
+        byte[]? buffer = null;
+
+        try {
+            using Microsoft.Win32.SafeHandles.SafeFileHandle handle = File.OpenHandle(path);
+
+            long length = RandomAccess.GetLength(handle);
+
+            if (length is <= 0 or > int.MaxValue) {
+                return null;
+            }
+
+            // Pooled, so reading a few hundred small files allocates no new arrays.
+            buffer = ArrayPool<byte>.Shared.Rent((int)length);
+
+            int read = 0;
+
+            while (read < length) {
+                int count = RandomAccess.Read(handle, buffer.AsSpan(read, (int)length - read), read);
+
+                if (count == 0) {
+                    break;
+                }
+
+                read += count;
+            }
+
+            return WithPropertyList(buffer.AsSpan(0, read), plist => ExtractStrings(plist, keys, tables))
+                as Dictionary<string, object?>;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            return null;
+        }
+        finally {
+            if (buffer is not null) {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
     }
 
     private static unsafe byte[] ToBytes(nint cfData)

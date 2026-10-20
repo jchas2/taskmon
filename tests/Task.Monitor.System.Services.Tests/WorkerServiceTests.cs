@@ -64,18 +64,19 @@ public sealed class WorkerServiceTests
     {
         SpyWorkerService service = new();
 
-        // Clamped up to the 500ms minimum, so a natural next cycle is 500ms away.
-        service.Delay = 100;
+        // A natural next cycle is 10s away, while a woken one runs within milliseconds. The 5s wait
+        // sits between the two, so the test tells them apart even on a heavily loaded machine.
+        service.Delay = 10_000;
         service.Start();
 
         try {
-            Assert.True(service.WaitForCycle(1000), "the first cycle should run immediately");
+            Assert.True(service.WaitForCycle(5_000), "the first cycle should run immediately");
 
             service.RequestImmediateRefresh();
 
             Assert.True(
-                service.WaitForCycle(250),
-                "RequestImmediateRefresh should end the wait long before the 500ms delay");
+                service.WaitForCycle(5_000),
+                "RequestImmediateRefresh should end the wait long before the 10s delay");
 
             Assert.Contains(true, service.Snapshot());
         }

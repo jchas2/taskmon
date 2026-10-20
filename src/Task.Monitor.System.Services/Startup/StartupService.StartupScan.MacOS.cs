@@ -1,6 +1,7 @@
 #if __APPLE__
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.MacOS;
 
 namespace Task.Monitor.System.Services.Startup;
 
@@ -52,7 +53,7 @@ public partial class StartupService
         public string? FindParentPath(BackgroundItemRecord record) =>
             FindParent(record)?.ResolvePath(null);
 
-        public static BackgroundItems? From(BackgroundItemsDatabase? database, StartupTargetUser user)
+        public static BackgroundItems? From(BackgroundItemsDatabase? database, TargetUser user)
         {
             if (database is null || user.Uuid is null) {
                 return null;
@@ -129,7 +130,7 @@ public partial class StartupService
             return;
         }
 
-        (string? bundleId, string? executable) = ReadBundleInfo(helperPath);
+        (string? bundleId, string? executable) = AppBundle.ReadBundleInfo(helperPath);
         
         string label = record.BundleIdentifier 
             ?? bundleId 
@@ -176,44 +177,13 @@ public partial class StartupService
         new() {
             Name           = name ?? Path.GetFileNameWithoutExtension(appPath),
             Command        = appPath,
-            ExecutablePath = ReadBundleInfo(appPath).Executable ?? appPath,
+            ExecutablePath = AppBundle.ReadBundleInfo(appPath).Executable ?? appPath,
             Publisher      = ResolvePublisher(appPath) ?? developerName,
             Source         = StartupEntrySource.OpenAtLogin,
             Scope          = StartupEntryScope.User,
             State          = StartupEntryState.Enabled,
             Origin         = OpenAtLoginOrigin
         };
-
-    private static IEnumerable<string> EnumerateApplications(string home)
-    {
-        foreach (string root in new[] { ApplicationsPath, Path.Combine(home, UserApplicationsFolder) }) {
-            foreach (string directory in EnumerateDirectories(root, "*")) {
-                if (directory.EndsWith(".app", StringComparison.OrdinalIgnoreCase)) {
-                    yield return directory;
-                    continue;
-                }
-
-                foreach (string nested in EnumerateDirectories(directory, "*.app")) {
-                    yield return nested;
-                }
-            }
-        }
-    }
-
-    private static string[] EnumerateDirectories(string folderPath, string pattern)
-    {
-        if (!Directory.Exists(folderPath)) {
-            return [];
-        }
-
-        try {
-            return Directory.GetDirectories(folderPath, pattern);
-        }
-        catch (Exception ex) {
-            TraceEx.WriteLineOnce($"{nameof(EnumerateDirectories)} {folderPath}", ex.Message);
-            return [];
-        }
-    }
 
     // TODO: Use IFileSystem abstraction.
     private static string[] EnumerateFiles(string folderPath, string pattern)
@@ -244,30 +214,13 @@ public partial class StartupService
         };
     }
 
-    private static Func<string, bool> IsLoadedInUserDomain(StartupTargetUser user) =>
+    private static Func<string, bool> IsLoadedInUserDomain(TargetUser user) =>
         user.IsSessionOwner
             ? ServiceManagement.IsLoadedInUserDomain
             : static _ => false;
 
     private static bool IsRegistered(string label, LaunchdOverrides overrides, Func<string, bool> isLoaded) =>
         overrides.Contains(label) || isLoaded(label);
-
-    private static (string? BundleId, string? Executable) ReadBundleInfo(string appPath)
-    {
-        if (PropertyList.ReadFile(Path.Combine(appPath, "Contents", "Info.plist")) is not
-            IReadOnlyDictionary<string, object?> info) {
-
-            return (null, null);
-        }
-
-        string? bundleId = info.GetValueOrDefault("CFBundleIdentifier") as string;
-        
-        string? executable = info.GetValueOrDefault("CFBundleExecutable") is string { Length: > 0 } name
-            ? Path.Combine(appPath, "Contents", "MacOS", name)
-            : null;
-
-        return (string.IsNullOrEmpty(bundleId) ? null : bundleId, executable);
-    }
 
     private static LaunchdOverrides ReadOverrides(string fileName) =>
         LaunchdOverrides.Parse(PropertyList.ReadFile(Path.Combine(LaunchdOverridesPath, fileName)));
@@ -340,11 +293,11 @@ public partial class StartupService
     }
 
     private void ScanBundledLaunchdJobs(
-        StartupSpecs      specs,
-        string            appPath,
-        StartupTargetUser user,
-        LaunchdOverrides  userOverrides,
-        LaunchdOverrides  systemOverrides)
+        StartupSpecs     specs,
+        string           appPath,
+        TargetUser       user,
+        LaunchdOverrides userOverrides,
+        LaunchdOverrides systemOverrides)
     {
         string libraryPath = Path.Combine(appPath, "Contents", "Library");
 
@@ -416,10 +369,10 @@ public partial class StartupService
     }
 
     private void ScanLoginHelpers(
-        StartupSpecs      specs,
-        string            appPath,
-        StartupTargetUser user,
-        LaunchdOverrides  userOverrides)
+        StartupSpecs     specs,
+        string           appPath,
+        TargetUser       user,
+        LaunchdOverrides userOverrides)
     {
         string loginItemsPath = Path.Combine(
             appPath, 
@@ -427,8 +380,8 @@ public partial class StartupService
             "Library", 
             "LoginItems");
 
-        foreach (string helperPath in EnumerateDirectories(loginItemsPath, "*.app")) {
-            (string? bundleId, string? executable) = ReadBundleInfo(helperPath);
+        foreach (string helperPath in AppBundle.EnumerateDirectories(loginItemsPath, "*.app")) {
+            (string? bundleId, string? executable) = AppBundle.ReadBundleInfo(helperPath);
 
             if (bundleId is null || !IsRegistered(bundleId, userOverrides, IsLoadedInUserDomain(user))) {
                 continue;
@@ -447,7 +400,7 @@ public partial class StartupService
         }
     }
 
-    private void ScanOpenAtLoginItems(StartupSpecs specs, StartupTargetUser user)
+    private void ScanOpenAtLoginItems(StartupSpecs specs, TargetUser user)
     {
         if (!user.IsSessionOwner) {
             specs.Notes.Add(OpenAtLoginUnavailable);
@@ -472,7 +425,7 @@ public partial class StartupService
         publisherCache.Clear();
 
         StartupSpecs specs = new();
-        StartupTargetUser user = StartupTargetUser.Current();
+        TargetUser user = TargetUser.Current();
 
         LaunchdOverrides systemOverrides = ReadOverrides("disabled.plist");
         LaunchdOverrides userOverrides   = ReadOverrides($"disabled.{user.Uid}.plist");
@@ -491,7 +444,9 @@ public partial class StartupService
         else {
             ScanOpenAtLoginItems(specs, user);
 
-            foreach (string appPath in EnumerateApplications(user.HomeDirectory)) {
+            string[] applicationRoots = [ApplicationsPath, Path.Combine(user.HomeDirectory, UserApplicationsFolder)];
+
+            foreach (string appPath in AppBundle.EnumerateApplications(applicationRoots)) {
                 ScanLoginHelpers(
                     specs, 
                     appPath, 

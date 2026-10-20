@@ -26,15 +26,18 @@ public sealed class ServiceControllerTests
     public void Snapshot_Lists_Every_Registered_Service_In_Registration_Order_With_Its_Status()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller
             .AddService(() => new FakeAlphaService())
             .AddService(() => new FakeBravoService());
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 3);
+        // A service reports Starting until its worker is up, so wait for a snapshot with both running.
+        SystemSnapshot? latest = snapshots.WaitFor(snapshot =>
+            snapshot.Services.Count == 2 &&
+            snapshot.Services.All(service => service.Status == ServiceStatus.Running));
+
         controller.Stop();
 
         Assert.NotNull(latest);
@@ -51,15 +54,16 @@ public sealed class ServiceControllerTests
     public void Snapshot_Reports_A_Service_That_Threw_As_Errored()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller
             .AddService(() => new FakeAlphaService())
             .AddService(() => new FaultyService());
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 3);
+        SystemSnapshot? latest = snapshots.WaitFor(snapshot =>
+            snapshot.Services.Any(service => service is { Name: "Faulty", Status: ServiceStatus.Errored }));
+
         controller.Stop();
 
         Assert.NotNull(latest);

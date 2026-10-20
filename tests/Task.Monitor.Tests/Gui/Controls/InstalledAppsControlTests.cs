@@ -27,7 +27,8 @@ public sealed class InstalledAppsControlTests
         InstalledAppScope scope = InstalledAppScope.Machine,
         DateTime? installDate = null,
         long? estimatedSizeKb = null,
-        string? installLocation = null) =>
+        string? installLocation = null,
+        bool sizePending = false) =>
         new() {
             Name = name,
             Version = version,
@@ -35,7 +36,8 @@ public sealed class InstalledAppsControlTests
             Scope = scope,
             InstallDate = installDate,
             EstimatedSizeKb = estimatedSizeKb,
-            InstallLocation = installLocation
+            InstallLocation = installLocation,
+            SizePending = sizePending
         };
 
     private string CapturedOutput() =>
@@ -162,6 +164,38 @@ public sealed class InstalledAppsControlTests
         ctrl.Draw();
 
         Assert.Contains("Added", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Redraws_A_Row_When_Its_Size_Arrives()
+    {
+        // On macOS the app set stays the same while bundle sizes are measured after the scan, so a
+        // size alone must be enough to rebuild the rows.
+        InstalledAppsControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(App("Xcode", sizePending: true)));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Sample(SnapshotWith(App("Xcode", estimatedSizeKb: 51200)));
+        ctrl.Draw();
+
+        Assert.Contains("50.0 MB", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Shows_A_Pending_Size_As_An_Ellipsis()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(App("Xcode", sizePending: true)));
+        ctrl.Draw();
+
+        Assert.Contains("...", CapturedOutput());
 
         ctrl.Unload();
     }

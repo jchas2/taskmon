@@ -36,18 +36,16 @@ public sealed class DiskSpaceServiceTests : IDisposable
     public void Should_Publish_Idle_State_Before_Any_Scan_Starts()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new DiskSpaceService { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 2);
+        SystemSnapshot? latest = snapshots.WaitFor(snapshot => snapshot.DiskSpace is not null);
         controller.Stop();
 
-        Assert.NotNull(latest);
-        Assert.NotNull(latest!.DiskSpace);
-        Assert.Equal(DiskSpaceScanState.Idle, latest.DiskSpace!.Specs.State);
+        Assert.NotNull(latest?.DiskSpace);
+        Assert.Equal(DiskSpaceScanState.Idle, latest.DiskSpace.Specs.State);
     }
 
     [Fact]

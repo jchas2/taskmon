@@ -1,7 +1,7 @@
 #if __APPLE__
-using Task.Monitor.System.Services.Startup;
+using Task.Monitor.System.Services.MacOS;
 
-namespace Task.Monitor.System.Services.Tests.Startup;
+namespace Task.Monitor.System.Services.Tests.MacOS;
 
 public sealed class CodeSigningPublisherTests
 {

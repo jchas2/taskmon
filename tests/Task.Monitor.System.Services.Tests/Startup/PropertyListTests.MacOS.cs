@@ -106,5 +106,72 @@ public sealed class PropertyListTests
     {
         Assert.Null(PropertyList.ReadFile(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.plist")));
     }
+
+    [Fact]
+    public void ReadStrings_Reads_From_The_First_Table_Present()
+    {
+        // A loctable is keyed by language; the caller lists the languages it would take, in order.
+        string path = WriteTemp(Encoding.UTF8.GetBytes("""
+            <plist version="1.0"><dict>
+                <key>fr</key><dict><key>CFBundleDisplayName</key><string>Localiser</string></dict>
+                <key>en</key><dict><key>CFBundleDisplayName</key><string>Find My</string></dict>
+            </dict></plist>
+            """));
+
+        try {
+            Dictionary<string, object?>? strings = PropertyList.ReadStrings(path, ["CFBundleDisplayName"], ["de", "en", "fr"]);
+
+            Assert.Equal("Find My", strings!["CFBundleDisplayName"]);
+        }
+        finally {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void ReadStrings_Returns_Null_For_A_Missing_File()
+    {
+        Assert.Null(PropertyList.ReadStrings(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.plist"), ["Label"]));
+    }
+
+    [Fact]
+    public void ReadStrings_Returns_Null_When_None_Of_The_Tables_Is_Present()
+    {
+        string path = WriteTemp(Encoding.UTF8.GetBytes(XmlJob));
+
+        try {
+            Assert.Null(PropertyList.ReadStrings(path, ["Label"], ["en"]));
+        }
+        finally {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Formats))]
+    public void ReadStrings_Returns_Only_The_Requested_String_Values(string format)
+    {
+        string path = WriteTemp(format == "xml"
+            ? Encoding.UTF8.GetBytes(XmlJob)
+            : Convert.FromBase64String(BinaryJob));
+
+        try {
+            // Nice is a real, not a string, and Missing isn't in the file: neither comes back.
+            Dictionary<string, object?>? strings = PropertyList.ReadStrings(path, ["Label", "Nice", "Missing"]);
+
+            Assert.Equal(["Label"], strings!.Keys);
+            Assert.Equal("com.example.agent", strings["Label"]);
+        }
+        finally {
+            File.Delete(path);
+        }
+    }
+
+    private static string WriteTemp(byte[] contents)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.plist");
+        File.WriteAllBytes(path, contents);
+        return path;
+    }
 }
 #endif

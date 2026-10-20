@@ -1,10 +1,10 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
-using Task.Monitor.System.Services.Startup;
+using Task.Monitor.System.Services.MacOS;
 
-namespace Task.Monitor.System.Services.Tests.Startup;
+namespace Task.Monitor.System.Services.Tests.MacOS;
 
-public sealed class StartupTargetUserTests
+public sealed class TargetUserTests
 {
     [Theory]
     [InlineData(null)]
@@ -12,20 +12,20 @@ public sealed class StartupTargetUserTests
     [InlineData("not a uid")]
     public void As_Root_Without_A_Sudoer_It_Is_The_Console_User(string? sudoUid)
     {
-        Assert.Equal(502u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid, consoleUid: 502));
+        Assert.Equal(502u, TargetUser.ResolveUid(euid: 0, uid: 0, sudoUid, consoleUid: 502));
     }
 
     [Fact]
     public void As_Root_With_Nobody_At_The_Console_It_Is_Root()
     {
-        Assert.Equal(0u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: null, consoleUid: null));
-        Assert.Equal(0u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: null, consoleUid: 0));
+        Assert.Equal(0u, TargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: null, consoleUid: null));
+        Assert.Equal(0u, TargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: null, consoleUid: 0));
     }
 
     [Fact]
     public void A_Normal_User_Is_Always_Themselves()
     {
-        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 501, uid: 501, sudoUid: "502", consoleUid: 503));
+        Assert.Equal(501u, TargetUser.ResolveUid(euid: 501, uid: 501, sudoUid: "502", consoleUid: 503));
     }
 
     [SkippableFact]
@@ -33,7 +33,7 @@ public sealed class StartupTargetUserTests
     {
         Skip.If(UniStd.geteuid() == 0, "Under sudo the target is the sudoer, not the caller");
 
-        StartupTargetUser user = StartupTargetUser.Current();
+        TargetUser user = TargetUser.Current();
 
         Assert.Equal(UniStd.getuid(), user.Uid);
         Assert.True(user.IsSessionOwner);
@@ -44,7 +44,7 @@ public sealed class StartupTargetUserTests
     [Fact]
     public void Under_Sudo_It_Is_The_User_Who_Ran_Sudo()
     {
-        Assert.Equal(501u, StartupTargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: "501", consoleUid: 502));
+        Assert.Equal(501u, TargetUser.ResolveUid(euid: 0, uid: 0, sudoUid: "501", consoleUid: 502));
     }
 }
 #endif

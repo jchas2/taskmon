@@ -14,16 +14,16 @@ public sealed class ThermalServiceTests(ITestOutputHelper output)
     public void Should_Publish_Well_Formed_Sensors_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new CpuService());
         controller.AddService(() => new GpuService());
         controller.AddService(() => new DiskService());
         controller.AddService(() => new ThermalService { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 6);
+        // Several thermal cycles, so the providers that read the CPU, GPU and disk results have them.
+        SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Thermal, count: 5);
         controller.Stop();
 
         Assert.NotNull(latest);

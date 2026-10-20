@@ -7,8 +7,9 @@ using Task.Monitor.System.Services.InstalledApps;
 
 namespace Task.Monitor.Gui.Controls.InstalledApps;
 
-// The applications registered under the Windows Uninstall registry keys - the same source
-// Programs and Features / Settings > Apps reads - in one selectable, scrolling table.
+// The installed applications in one selectable, scrolling table: on Windows, those registered
+// under the Uninstall registry keys (the source Settings > Apps reads); on macOS, the app bundles in
+// /Applications, /System/Applications and ~/Applications.
 public sealed partial class InstalledAppsControl : Control
 {
     private const int NameColumnWidth        = 30;
@@ -75,10 +76,11 @@ public sealed partial class InstalledAppsControl : Control
         Controls.Add(detailView);
     }
 
+    // Includes sizes, which on macOS arrive after the rows as each bundle is measured.
     private static string BuildSignature(IReadOnlyList<InstalledApp> apps) =>
         apps.Count + "|" + 
         string.Join("|", apps.Select(app =>
-            $"{app.Name}:{app.Version}:{(int)app.Scope}"));
+            $"{app.Name}:{app.Version}:{(int)app.Scope}:{app.EstimatedSizeKb}:{app.SizePending}"));
 
     private void EnsureRows(InstalledAppsInfo info)
     {
@@ -162,6 +164,9 @@ public sealed partial class InstalledAppsControl : Control
         installedAppsView.ColumnHeaders[4].Width = InstallDateColumnWidth;
         installedAppsView.ColumnHeaders[5].Width = SizeColumnWidth;
         installedAppsView.ColumnHeaders[6].Width = Math.Max(1, Width - fixedWidth - 3);
+
+        installedAppsView.ColumnHeaders[1].RightAligned = true;
+        installedAppsView.ColumnHeaders[5].RightAligned = true;
 
         detailView.X      = X;
         detailView.Y      = Y + installedAppsViewHeight;

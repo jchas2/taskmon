@@ -2,13 +2,13 @@
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Services.Startup;
+namespace Task.Monitor.System.Services.MacOS;
 
-public sealed class StartupTargetUser
+public sealed class TargetUser
 {
     private const int PasswdBufferSize = 1024;
 
-    public static StartupTargetUser Current()
+    public static TargetUser Current()
     {
         uint euid = UniStd.geteuid();
         uint uid  = UniStd.getuid();
@@ -19,7 +19,7 @@ public sealed class StartupTargetUser
             Environment.GetEnvironmentVariable("SUDO_UID"),
             euid == 0 ? SystemConfiguration.GetConsoleUserId() : null);
 
-        return new StartupTargetUser {
+        return new TargetUser {
             Uid            = targetUid,
             IsRoot         = euid == 0,
             IsSessionOwner = targetUid == uid,

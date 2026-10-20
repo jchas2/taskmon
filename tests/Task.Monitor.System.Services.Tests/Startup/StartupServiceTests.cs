@@ -10,17 +10,16 @@ public sealed class StartupServiceTests
     public void Should_Publish_Startup_Entries_Through_The_Controller()
     {
         ServiceController controller = new() { Delay = MinimumDelay };
-        SystemSnapshot? latest = null;
+        using SnapshotRecorder snapshots = new(controller);
 
-        controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
         controller.AddService(() => new StartupService { Delay = MinimumDelay });
         controller.Start();
 
-        Thread.Sleep(MinimumDelay * 3);
+        SystemSnapshot? latest = snapshots.WaitFor(snapshot => snapshot.Startup is not null);
         controller.Stop();
 
         Assert.NotNull(latest);
-        Assert.NotNull(latest!.Startup);
+        Assert.NotNull(latest.Startup);
 
         // The exact contents depend on the host, but every entry the scan produces must be
         // well-formed, whichever platform's sources (Run keys, launchd jobs...) produced it.
