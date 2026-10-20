@@ -27,9 +27,9 @@ namespace Task.Monitor.Tests.Gui.Controls;
 
 // Every ListView - and every row it holds - must be painted with the theme's listview.background
 // and listview.foreground rather than control.background / control.foreground, and its border
-// with listview.borderforeground / listview.borderbackground (or the chart border pair, for the
-// lists that sit beside charts). Each test sets every one of these to a distinct colour, so
-// anything still using a control colour, or the wrong border pair, fails.
+// with listview.borderforeground / listview.borderbackground. Lists never borrow the chart
+// colours, even beside charts. Each test sets every one of these, and the chart border pair, to a
+// distinct colour, so anything using a control colour or a chart colour fails.
 public sealed class ListViewColourTests
 {
     private static readonly Color ListViewBackground = ConsolePalette.DarkCyan;
@@ -38,16 +38,6 @@ public sealed class ListViewColourTests
     private static readonly Color ListViewBorderBackground = ConsolePalette.DarkRed;
     private static readonly Color ChartBorderForeground = ConsolePalette.Magenta;
     private static readonly Color ChartBorderBackground = ConsolePalette.DarkBlue;
-
-    // Hosts whose lists deliberately take the chart border colours, to match the charts beside them.
-    private static readonly HashSet<string> ChartBorderedHosts = [
-        nameof(CpuPerformanceControl),
-        nameof(DiskPerformanceControl),
-        nameof(GpuPerformanceControl),
-        nameof(MemoryPerformanceControl),
-        nameof(NetworkPerformanceControl),
-        nameof(ProcessControl)
-    ];
 
     private readonly RunContext runContext;
 
@@ -67,20 +57,16 @@ public sealed class ListViewColourTests
 
     // Pop-up dialogs (DriveInputBox, PickerBox) own a private list drawn on the dialog's own
     // colours, not a themed pane, so their lists are left out.
-    private static void AssertListViewsUseListViewColours(Control host, bool chartBordered = false)
+    private static void AssertListViewsUseListViewColours(Control host)
     {
-        (Color borderForeground, Color borderBackground) = chartBordered
-            ? (ChartBorderForeground, ChartBorderBackground)
-            : (ListViewBorderForeground, ListViewBorderBackground);
-
         List<ListView> listViews = ThemedListViews(host);
 
         Assert.NotEmpty(listViews);
         Assert.All(listViews, listView => {
             Assert.Equal(ListViewBackground, listView.BackgroundColour);
             Assert.Equal(ListViewForeground, listView.ForegroundColour);
-            Assert.Equal(borderForeground, listView.BorderForegroundColour);
-            Assert.Equal(borderBackground, listView.BorderBackgroundColour);
+            Assert.Equal(ListViewBorderForeground, listView.BorderForegroundColour);
+            Assert.Equal(ListViewBorderBackground, listView.BorderBackgroundColour);
         });
     }
 
@@ -161,7 +147,7 @@ public sealed class ListViewColourTests
             host.Draw();
         }
 
-        AssertListViewsUseListViewColours(host, chartBordered: ChartBorderedHosts.Contains(hostName));
+        AssertListViewsUseListViewColours(host);
 
         host.Unload();
     }

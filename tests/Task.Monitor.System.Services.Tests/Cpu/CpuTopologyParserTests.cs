@@ -11,7 +11,7 @@ public sealed class CpuTopologyParserTests
     private static byte[] Cache(byte level, uint sizeInBytes)
     {
         byte[] record = Record(RelationCache);
-        record[8] = level;                                                        // CACHE_RELATIONSHIP.Level
+        record[8] = level;                                                         // CACHE_RELATIONSHIP.Level
         BinaryPrimitives.WriteUInt32LittleEndian(record.AsSpan(12), sizeInBytes);  // CACHE_RELATIONSHIP.CacheSize
         return record;
     }

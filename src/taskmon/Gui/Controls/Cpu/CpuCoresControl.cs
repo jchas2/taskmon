@@ -269,7 +269,11 @@ public sealed class  CpuCoresControl : Control
 
     protected override void OnLoad()
     {
-        CommonControl.ThemeDefaults(this, appConfig.Theme);
+        // Not ThemeDefaults: it would reset BorderColour, which the hosting summary or layout
+        // designer has already set through SummaryPaneTheme before loading its panes.
+        BackgroundColour = appConfig.Theme.Background;
+        ForegroundColour = appConfig.Theme.Foreground;
+
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
         base.OnLoad();

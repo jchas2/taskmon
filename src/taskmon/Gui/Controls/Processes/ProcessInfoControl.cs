@@ -323,12 +323,25 @@ public partial class ProcessInfoControl : Control
         base.OnUnload();
     }
 
+    // Test-only seam: the process name and pid shown centred in the top border of every tab view.
     internal string ProcessTitle => processInfoView.HeaderText;
 
     public void ResetToDetailPane()
     {
         SetActiveControl(processInfoView);
         menuView.SelectedIndex = 0;
+    }
+
+    // "chrome.exe (1234)" - the pid disambiguates processes sharing a name.
+    private static string ResolveProcessTitle(ProcessInfo processInfo)
+    {
+        string name = !string.IsNullOrWhiteSpace(processInfo.ProcessName) ? processInfo.ProcessName
+            : !string.IsNullOrWhiteSpace(processInfo.ModuleName) ? processInfo.ModuleName
+            : Path.GetFileName(processInfo.FileName);
+
+        return string.IsNullOrWhiteSpace(name)
+            ? $"({processInfo.Pid})"
+            : $"{name} ({processInfo.Pid})";
     }
 
     internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
@@ -344,14 +357,25 @@ public partial class ProcessInfoControl : Control
         activeControl.Visible = true;
     }
 
+    // ProcessInfoControl draws no border of its own, so the title goes on every tab view's
+    // HeaderText (ListView.DrawBorder centres it) - set on all four so it survives tab switches.
+    // menuView is left alone: at MenuViewWidth it has no room for a name.
+    private void SetProcessTitle(string title) =>
+        tabControls.ForEach(ctrl => ctrl.HeaderText = title);
+
     private void TryLoadProcessInfo()
     {
         try {
             ProcessInfo? processInfo = processService.GetProcessById(SelectedProcessId);
             if (processInfo == null) {
                 processInfoView.Items.Clear();
+                SetProcessTitle(string.Empty);
                 return;
             }
+
+            // Set before the FileInfo/FileVersionInfo calls below, which throw for protected or
+            // system processes - the title should still say what's selected when detail can't load.
+            SetProcessTitle(ResolveProcessTitle(processInfo));
 
             FileInfo finfo = new(processInfo.FileName);
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(finfo.FullName);

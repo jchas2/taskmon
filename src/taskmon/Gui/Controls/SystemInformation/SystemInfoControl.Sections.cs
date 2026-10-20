@@ -169,7 +169,7 @@ public sealed partial class SystemInfoControl
         string   value, 
         int      indent = 0)
     {
-        Color background = appConfig.Theme.Background;
+        Color background = appConfig.Theme.ListViewBackground;
 
         ListViewItem row = new(new[] {
             new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),

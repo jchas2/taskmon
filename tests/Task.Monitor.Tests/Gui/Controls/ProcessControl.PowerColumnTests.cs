@@ -14,13 +14,14 @@ public sealed class ProcessControlPowerColumnTests
     private static ProcessEntry Entry(ProcessPowerBucket bucket) =>
         new() { Pid = 1, FileDescription = "test.exe", CmdLine = "test", PowerBucket = bucket };
 
+    // Each bucket is a fixed-width bar of ten cells, so the column lines up whatever the bucket.
     [Theory]
-    [InlineData(ProcessPowerBucket.VeryLow, "Very Low")]
-    [InlineData(ProcessPowerBucket.Low, "Low")]
-    [InlineData(ProcessPowerBucket.Moderate, "Moderate")]
-    [InlineData(ProcessPowerBucket.High, "High")]
-    [InlineData(ProcessPowerBucket.VeryHigh, "Very High")]
-    public void Renders_The_Power_Bucket_As_Text(ProcessPowerBucket bucket, string expected)
+    [InlineData(ProcessPowerBucket.VeryLow,  "⣿         ")]
+    [InlineData(ProcessPowerBucket.Low,      "⣿⣿        ")]
+    [InlineData(ProcessPowerBucket.Moderate, "⣿⣿⣿⣿      ")]
+    [InlineData(ProcessPowerBucket.High,     "⣿⣿⣿⣿⣿⣿⣿   ")]
+    [InlineData(ProcessPowerBucket.VeryHigh, "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿")]
+    public void Renders_The_Power_Bucket_As_A_Bar(ProcessPowerBucket bucket, string expected)
     {
         ProcessControl.ProcessListViewItem item = new(Entry(bucket), TotalPhysicalMemory, AppConfig);
 
@@ -34,6 +35,6 @@ public sealed class ProcessControlPowerColumnTests
 
         item.UpdateSubItems(Entry(ProcessPowerBucket.VeryHigh), TotalPhysicalMemory);
 
-        Assert.Equal("Very High", item.SubItems[(int)ProcessControl.Columns.Power].Text);
+        Assert.Equal("⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿", item.SubItems[(int)ProcessControl.Columns.Power].Text);
     }
 }

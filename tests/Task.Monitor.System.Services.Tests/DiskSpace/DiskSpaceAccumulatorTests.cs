@@ -4,7 +4,9 @@ namespace Task.Monitor.System.Services.Tests.DiskSpace;
 
 public sealed class DiskSpaceAccumulatorTests
 {
-    private const string Root = @"C:\Root";
+    // Built from the platform's own root and separator ("C:\Root" on Windows, "/Root" on macOS), so
+    // the tests exercise the same path handling as a real scan on whichever OS runs them.
+    private static readonly string Root = Path.Combine(Path.GetPathRoot(Path.GetTempPath())!, "Root");
 
     [Fact]
     public void AddFile_Attributes_Size_To_The_Root_Level_Ancestor_Only()
@@ -12,9 +14,9 @@ public sealed class DiskSpaceAccumulatorTests
         DiskSpaceAccumulator accumulator = new(Root);
 
         accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\A\B");
-        accumulator.AddFile(@"C:\Root\A\B", @"C:\Root\A\B\file.txt", 100);
+        accumulator.EnterFolder(UnderRoot("A"));
+        accumulator.EnterFolder(UnderRoot("A", "B"));
+        accumulator.AddFile(UnderRoot("A", "B"), UnderRoot("A", "B", "file.txt"), 100);
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
@@ -34,8 +36,8 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.AddFile(Root, @"C:\Root\one.txt", 10);
-        accumulator.AddFile(Root, @"C:\Root\two.txt", 25);
+        accumulator.AddFile(Root, UnderRoot("one.txt"), 10);
+        accumulator.AddFile(Root, UnderRoot("two.txt"), 25);
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
@@ -50,11 +52,11 @@ public sealed class DiskSpaceAccumulatorTests
         DiskSpaceAccumulator accumulator = new(Root);
 
         accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
+        accumulator.EnterFolder(UnderRoot("A"));
 
         DiskSpaceSpecs scanning = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
         Assert.Equal(2, scanning.FoldersScanned);
-        Assert.Equal(@"C:\Root\A", scanning.CurrentPath);
+        Assert.Equal(UnderRoot("A"), scanning.CurrentPath);
 
         DiskSpaceSpecs completed = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
         Assert.Equal(string.Empty, completed.CurrentPath);
@@ -65,18 +67,18 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("A"));
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("B"));
 
         accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\A\Sub");
+        accumulator.EnterFolder(UnderRoot("A"));
+        accumulator.EnterFolder(UnderRoot("A", "Sub"));
 
         DiskSpaceSpecs beforeSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
         Assert.Equal(0, beforeSibling.RootLevelFoldersCompleted);
 
         // The walk has finished A's whole subtree and moved on to B - A is now done.
-        accumulator.EnterFolder(@"C:\Root\B");
+        accumulator.EnterFolder(UnderRoot("B"));
 
         DiskSpaceSpecs afterSibling = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
         Assert.Equal(1, afterSibling.RootLevelFoldersCompleted);
@@ -103,7 +105,7 @@ public sealed class DiskSpaceAccumulatorTests
         DiskSpaceAccumulator accumulator = new(Root);
 
         accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\Empty");
+        accumulator.EnterFolder(UnderRoot("Empty"));
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
@@ -117,12 +119,12 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("A"));
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("B"));
 
         accumulator.EnterFolder(Root);
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\B");
+        accumulator.EnterFolder(UnderRoot("A"));
+        accumulator.EnterFolder(UnderRoot("B"));
 
         accumulator.MarkScanComplete();
 
@@ -137,8 +139,8 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root\A", @"C:\Root\A\Sub");
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("A"));
+        accumulator.RegisterDiscoveredFolder(UnderRoot("A"), UnderRoot("A", "Sub"));
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
 
@@ -150,8 +152,8 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(Root, @"C:\Root\B");
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("A"));
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("B"));
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
 
@@ -189,9 +191,9 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.AddFile(@"C:\Root\Small", @"C:\Root\Small\a.txt", 5);
-        accumulator.AddFile(@"C:\Root\Large", @"C:\Root\Large\b.txt", 500);
-        accumulator.AddFile(@"C:\Root\Medium", @"C:\Root\Medium\c.txt", 50);
+        accumulator.AddFile(UnderRoot("Small"), UnderRoot("Small", "a.txt"), 5);
+        accumulator.AddFile(UnderRoot("Large"), UnderRoot("Large", "b.txt"), 500);
+        accumulator.AddFile(UnderRoot("Medium"), UnderRoot("Medium", "c.txt"), 50);
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
@@ -203,14 +205,14 @@ public sealed class DiskSpaceAccumulatorTests
     {
         DiskSpaceAccumulator accumulator = new(Root);
 
-        accumulator.AddFile(Root, @"C:\Root\small.txt", 1);
-        accumulator.AddFile(Root, @"C:\Root\big.txt", 1000);
-        accumulator.AddFile(Root, @"C:\Root\medium.txt", 100);
+        accumulator.AddFile(Root, UnderRoot("small.txt"), 1);
+        accumulator.AddFile(Root, UnderRoot("big.txt"), 1000);
+        accumulator.AddFile(Root, UnderRoot("medium.txt"), 100);
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
 
         Assert.Equal(
-            [@"C:\Root\big.txt", @"C:\Root\medium.txt", @"C:\Root\small.txt"],
+            [UnderRoot("big.txt"), UnderRoot("medium.txt"), UnderRoot("small.txt")],
             specs.TopFiles.Select(f => f.FullPath));
     }
 
@@ -220,7 +222,7 @@ public sealed class DiskSpaceAccumulatorTests
         DiskSpaceAccumulator accumulator = new(Root);
 
         for (int i = 0; i < DiskSpaceAccumulator.MaxTrackedFiles + 50; i++) {
-            accumulator.AddFile(Root, $@"C:\Root\file{i}.txt", i);
+            accumulator.AddFile(Root, UnderRoot($"file{i}.txt"), i);
         }
 
         DiskSpaceSpecs specs = accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 0);
@@ -228,7 +230,9 @@ public sealed class DiskSpaceAccumulatorTests
         Assert.Equal(DiskSpaceAccumulator.MaxTrackedFiles, specs.TopFiles.Count);
 
         // The smallest files (0..49) should have been evicted in favour of the largest ones.
-        Assert.DoesNotContain(specs.TopFiles, f => f.FullPath == @"C:\Root\file0.txt");
-        Assert.Contains(specs.TopFiles, f => f.FullPath == @"C:\Root\file249.txt");
+        Assert.DoesNotContain(specs.TopFiles, f => f.FullPath == UnderRoot("file0.txt"));
+        Assert.Contains(specs.TopFiles, f => f.FullPath == UnderRoot("file249.txt"));
     }
+
+    private static string UnderRoot(params string[] parts) => Path.Combine([Root, .. parts]);
 }

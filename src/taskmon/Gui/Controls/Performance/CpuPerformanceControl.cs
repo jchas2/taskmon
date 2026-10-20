@@ -170,7 +170,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         chart.MetreStyle                = appConfig.MetreStyle;
         chart.ShowGrid                  = false;
 
-        CommonControl.ThemeDefaults(chart, appConfig.Theme);
+        CommonControl.Theme(chart, appConfig.Theme);
     }
     
     protected override void OnResize()

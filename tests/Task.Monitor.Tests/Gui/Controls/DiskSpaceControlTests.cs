@@ -14,6 +14,10 @@ namespace Task.Monitor.Tests.Gui.Controls;
 // opening the prompt can never silently blind every Draw() call in tests that run after it.
 public sealed class DiskSpaceControlTests : IDisposable
 {
+    // Built from the platform's own root and separator ("C:\Root" on Windows, "/Root" on macOS), so
+    // the tests exercise the same path handling as a real scan on whichever OS runs them.
+    private static readonly string Root = Path.Combine(Path.GetPathRoot(Path.GetTempPath())!, "Root");
+
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
@@ -27,9 +31,9 @@ public sealed class DiskSpaceControlTests : IDisposable
 
     private static DiskSpaceSpecs BuildScanningSpecs()
     {
-        DiskSpaceAccumulator accumulator = new(@"C:\Root");
-        accumulator.AddFile(@"C:\Root\AppData", @"C:\Root\AppData\big.bin", 1_000_000);
-        accumulator.AddFile(@"C:\Root\Documents", @"C:\Root\Documents\small.txt", 1_000);
+        DiskSpaceAccumulator accumulator = new(Root);
+        accumulator.AddFile(UnderRoot("AppData"), UnderRoot("AppData", "big.bin"), 1_000_000);
+        accumulator.AddFile(UnderRoot("Documents"), UnderRoot("Documents", "small.txt"), 1_000);
         return accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 500);
     }
 
@@ -37,14 +41,14 @@ public sealed class DiskSpaceControlTests : IDisposable
     // sibling), so entering one more folder than `completed` leaves exactly `completed` done.
     private static DiskSpaceSpecs BuildSpecsWithRootProgress(int total, int completed)
     {
-        DiskSpaceAccumulator accumulator = new(@"C:\Root");
+        DiskSpaceAccumulator accumulator = new(Root);
 
         for (int i = 0; i < total; i++) {
-            accumulator.RegisterDiscoveredFolder(@"C:\Root", $@"C:\Root\Folder{i}");
+            accumulator.RegisterDiscoveredFolder(Root, UnderRoot($"Folder{i}"));
         }
 
         for (int i = 0; i <= completed && i < total; i++) {
-            accumulator.EnterFolder($@"C:\Root\Folder{i}");
+            accumulator.EnterFolder(UnderRoot($"Folder{i}"));
         }
 
         return accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 0);
@@ -151,7 +155,7 @@ public sealed class DiskSpaceControlTests : IDisposable
 
         string output = CapturedOutput();
 
-        Assert.Contains(@"C:\Root", output);
+        Assert.Contains(Root, output);
         Assert.Contains("Scanning", output);
 
         ctrl.Unload();
@@ -246,14 +250,14 @@ public sealed class DiskSpaceControlTests : IDisposable
     {
         DiskSpaceControl ctrl = CreateControl();
 
-        DiskSpaceAccumulator accumulator = new(@"C:\Root");
-        accumulator.AddFile(@"C:\Root", @"C:\Root\one.bin", 10);
+        DiskSpaceAccumulator accumulator = new(Root);
+        accumulator.AddFile(Root, UnderRoot("one.bin"), 10);
 
         ctrl.Sample(SnapshotWith(accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 100)));
         ctrl.Draw();
         runContextHelper.terminal.Invocations.Clear();
 
-        accumulator.AddFile(@"C:\Root", @"C:\Root\two.bin", 20);
+        accumulator.AddFile(Root, UnderRoot("two.bin"), 20);
         ctrl.Sample(SnapshotWith(accumulator.Snapshot(DiskSpaceScanState.Scanning, elapsedMilliseconds: 200)));
         ctrl.Draw();
 
@@ -316,11 +320,11 @@ public sealed class DiskSpaceControlTests : IDisposable
     {
         DiskSpaceControl ctrl = CreateControl();
 
-        DiskSpaceAccumulator accumulator = new(@"C:\Root");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\A");
-        accumulator.RegisterDiscoveredFolder(@"C:\Root", @"C:\Root\B");
-        accumulator.EnterFolder(@"C:\Root\A");
-        accumulator.EnterFolder(@"C:\Root\B");
+        DiskSpaceAccumulator accumulator = new(Root);
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("A"));
+        accumulator.RegisterDiscoveredFolder(Root, UnderRoot("B"));
+        accumulator.EnterFolder(UnderRoot("A"));
+        accumulator.EnterFolder(UnderRoot("B"));
         accumulator.MarkScanComplete();
 
         ctrl.Sample(SnapshotWith(accumulator.Snapshot(DiskSpaceScanState.Completed, elapsedMilliseconds: 1000)));
@@ -367,7 +371,7 @@ public sealed class DiskSpaceControlTests : IDisposable
 
         string output = CapturedOutput();
 
-        Assert.Contains(@"C:\Root", output);
+        Assert.Contains(Root, output);
         Assert.DoesNotContain("Root Folders", output);
 
         ctrl.Unload();
@@ -426,4 +430,6 @@ public sealed class DiskSpaceControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    private static string UnderRoot(params string[] parts) => Path.Combine([Root, .. parts]);
 }

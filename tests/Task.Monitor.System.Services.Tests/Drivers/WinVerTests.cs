@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.Tests.Drivers;
@@ -12,7 +13,8 @@ public sealed class WinVerTests
     private static readonly string Kernel32Path =
         Path.Combine(Environment.GetEnvironmentVariable("SystemRoot") ?? @"C:\Windows", "System32", "kernel32.dll");
 
-    [Fact]
+    [SkippableFact]
+    [SupportedOSPlatform("windows")]
     public void GetFileVersion_Returns_A_Four_Part_Version_For_A_Real_File()
     {
         string? version = WinVer.GetFileVersion(Kernel32Path);

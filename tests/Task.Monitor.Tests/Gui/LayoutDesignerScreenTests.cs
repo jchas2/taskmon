@@ -54,7 +54,7 @@ public sealed class LayoutDesignerScreenTests
         LayoutDesignerScreen screen = CreateScreen();
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.V), ref handled);
 
         Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
 
@@ -193,45 +193,6 @@ public sealed class LayoutDesignerScreenTests
         screen.Load();
         screen.Resize();
         return screen;
-    }
-
-    [Fact]
-    public void Ctrl_Down_Splits_Column_Wise()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-        int originalPaneId = screen.SelectedNodeId;
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.DownArrow, ctrl: true), ref handled);
-
-        Assert.True(handled);
-        Assert.Equal(Orientation.Column, screen.Tree.Nodes[originalPaneId].Orientation);
-
-        screen.Unload();
-    }
-
-    [Fact]
-    public void Ctrl_Right_Splits_The_Selected_Pane_And_Selects_The_New_Empty_Pane()
-    {
-        LayoutDesignerScreen screen = CreateScreen();
-        int originalPaneId = screen.SelectedNodeId;
-        int nodeCountBefore = screen.Tree.Nodes.Count;
-
-        bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled);
-
-        Assert.True(handled);
-        Assert.Equal(nodeCountBefore + 2, screen.Tree.Nodes.Count);
-
-        SummaryLayoutNode splitNode = screen.Tree.Nodes[originalPaneId];
-        Assert.True(splitNode.IsSplit);
-        Assert.Equal(Orientation.Row, splitNode.Orientation);
-
-        SummaryLayoutNode selectedPane = screen.Tree.Nodes[screen.SelectedNodeId];
-        Assert.False(selectedPane.IsSplit);
-        Assert.Equal(PaneControlType.Empty, selectedPane.ControlType);
-
-        screen.Unload();
     }
 
     [Fact]
@@ -393,7 +354,7 @@ public sealed class LayoutDesignerScreenTests
         LayoutDesignerScreen screen = CreateScreen();
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled); // split -> new Empty pane selected
+        screen.KeyPressed(Key(ConsoleKey.V), ref handled); // split -> new Empty pane selected
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // open the control-type picker
 
         // PaneControlType order is Empty, Cpu, Memory, ... - one Down from Empty reaches Cpu.
@@ -416,7 +377,7 @@ public sealed class LayoutDesignerScreenTests
         LayoutDesignerScreen screen = CreateScreen();
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.RightArrow, ctrl: true), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.V), ref handled);
         int emptyPaneId = screen.SelectedNodeId;
 
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
@@ -456,8 +417,23 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
-    private static ConsoleKeyInfo Key(ConsoleKey key, bool ctrl = false) =>
-        new('\0', key, shift: false, alt: false, control: ctrl);
+    [Fact]
+    public void H_Splits_Column_Wise()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        int originalPaneId = screen.SelectedNodeId;
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.H), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(Orientation.Column, screen.Tree.Nodes[originalPaneId].Orientation);
+
+        screen.Unload();
+    }
+
+    private static ConsoleKeyInfo Key(ConsoleKey key) =>
+        new('\0', key, shift: false, alt: false, control: false);
 
     [Fact]
     public void Moving_The_Selection_Away_Restores_The_Previous_Panes_Own_Border_Colours()
@@ -830,4 +806,28 @@ public sealed class LayoutDesignerScreenTests
     private static ConsoleKeyInfo Typed(char ch) =>
         new(ch, char.IsLetter(ch) ? Enum.Parse<ConsoleKey>(char.ToUpperInvariant(ch).ToString()) : ConsoleKey.Spacebar,
             shift: char.IsUpper(ch), alt: false, control: false);
+
+    [Fact]
+    public void V_Splits_The_Selected_Pane_And_Selects_The_New_Empty_Pane()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        int originalPaneId = screen.SelectedNodeId;
+        int nodeCountBefore = screen.Tree.Nodes.Count;
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.V), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(nodeCountBefore + 2, screen.Tree.Nodes.Count);
+
+        SummaryLayoutNode splitNode = screen.Tree.Nodes[originalPaneId];
+        Assert.True(splitNode.IsSplit);
+        Assert.Equal(Orientation.Row, splitNode.Orientation);
+
+        SummaryLayoutNode selectedPane = screen.Tree.Nodes[screen.SelectedNodeId];
+        Assert.False(selectedPane.IsSplit);
+        Assert.Equal(PaneControlType.Empty, selectedPane.ControlType);
+
+        screen.Unload();
+    }
 }

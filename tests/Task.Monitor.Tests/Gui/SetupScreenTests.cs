@@ -63,7 +63,7 @@ public sealed class SetupScreenTests
             { "THEMES",                                            "menuView" },
             { "METRES",                                            "menuView" },
             { "DELAY",                                             "menuView" },
-            { "LIMIT",                                             "menuView" },
+            { "LAYOUTS",                                           "menuView" },
             { "PROCESSES",                                         "menuView" },
 
             { "CPU %",                                             "columnsView" },
@@ -117,17 +117,6 @@ public sealed class SetupScreenTests
             { "2000",                                              "delayView" },
             { "5000",                                              "delayView" },
             { "10000",                                             "delayView" },
-
-            { "0",                                                 "limitView" },
-            { "1",                                                 "limitView" },
-            { "3",                                                 "limitView" },
-            { "5",                                                 "limitView" },
-            { "10",                                                "limitView" },
-            { "20",                                                "limitView" },
-            { "50",                                                "limitView" },
-            { "100",                                               "limitView" },
-            { "500",                                               "limitView" },
-            { "1000",                                              "limitView" },
 
             { "-1",                                                "numProcsView" },
             { "5",                                                 "numProcsView" },
