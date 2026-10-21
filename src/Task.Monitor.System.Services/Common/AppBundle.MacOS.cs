@@ -3,7 +3,7 @@ using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Services.MacOS;
+namespace Task.Monitor.System.Services.Common;
 
 // Application bundles (.app directories), shared by the Startup and InstalledApps scans.
 public static class AppBundle

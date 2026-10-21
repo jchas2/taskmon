@@ -1,4 +1,5 @@
 #if __WIN32__
+using System.Buffers.Binary;
 using Microsoft.Win32;
 #endif
 using Task.Monitor.Cli.Utils;
@@ -17,9 +18,44 @@ public partial class StartupService
     private const string ApprovedRun32Path  = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32";
     private const string ApprovedFolderPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder";
 
+    private static readonly long MaxFileTime = DateTime.MaxValue.ToFileTimeUtc();
+
     private readonly Dictionary<string, string?> publisherCache = new(StringComparer.OrdinalIgnoreCase);
 
     private const string BuiltInWindowsTaskFolderPrefix = @"\Microsoft\Windows\";
+
+    private static bool LooksLikeExistingFile(string path)
+    {
+        try {
+            return File.Exists(path) || File.Exists(path + ".exe");
+        }
+        catch {
+            return false;
+        }
+    }
+
+    // Parses the binary value Explorer writes under
+    //   HK{CU,LM}\...\CurrentVersion\Explorer\StartupApproved\{Run, Run32, StartupFolder}
+    internal static (StartupEntryState State, DateTime? DisabledOnUtc) ParseApprovedState(ReadOnlySpan<byte> blob)
+    {
+        if (blob.Length < 12) {
+            return (StartupEntryState.Unknown, null);
+        }
+
+        uint flags = BinaryPrimitives.ReadUInt32LittleEndian(blob);
+        
+        if ((flags & 0x1) == 0) {
+            return (StartupEntryState.Enabled, null);
+        }
+
+        long fileTime = BinaryPrimitives.ReadInt64LittleEndian(blob[4..]);
+
+        DateTime? disabledOn = fileTime > 0 && fileTime <= MaxFileTime
+            ? DateTime.FromFileTimeUtc(fileTime)
+            : null;
+
+        return (StartupEntryState.Disabled, disabledOn);
+    }
 
     private void PopulateFromShortcut(StartupEntry entry, string shortcutPath)
     {
@@ -38,7 +74,7 @@ public partial class StartupService
 
     private void PopulateTarget(StartupEntry entry, string rawCommand)
     {
-        (string path, string arguments) = StartupCommandLine.Split(rawCommand);
+        (string path, string arguments) = SplitCommandLine(rawCommand);
 
         if (path.Length == 0) {
             return;
@@ -54,7 +90,7 @@ public partial class StartupService
         string valueName)
     {
         return approvedKey?.GetValue(valueName) is byte[] blob
-            ? StartupApprovedState.Parse(blob)
+            ? ParseApprovedState(blob)
             : (StartupEntryState.Enabled, null);
     }
 
@@ -310,6 +346,48 @@ public partial class StartupService
             Environment.SpecialFolder.Startup, 
             StartupEntryScope.User, 
             approvedKey);
+    }
+
+    internal static (string Path, string Arguments) SplitCommandLine(string? command)
+    {
+        string expanded = Environment.ExpandEnvironmentVariables(command?.Trim() ?? string.Empty);
+
+        if (expanded.Length == 0) {
+            return (string.Empty, string.Empty);
+        }
+
+        if (expanded[0] == '"') {
+            int closingQuote = expanded.IndexOf('"', 1);
+
+            return closingQuote > 0
+                ? (expanded[1..closingQuote], expanded[(closingQuote + 1)..].TrimStart())
+                : (expanded[1..], string.Empty);
+        }
+
+        int searchFrom = 0;
+
+        while (true) {
+            int space = expanded.IndexOf(' ', searchFrom);
+
+            if (space < 0) {
+                break;
+            }
+
+            string candidate = expanded[..space];
+
+            if (LooksLikeExistingFile(candidate)) {
+                return (candidate, expanded[(space + 1)..].TrimStart());
+            }
+
+            searchFrom = space + 1;
+        }
+
+        // No prefix resolved: fall back to a plain first-space split.
+        int firstSpace = expanded.IndexOf(' ');
+
+        return firstSpace < 0
+            ? (expanded, string.Empty)
+            : (expanded[..firstSpace], expanded[(firstSpace + 1)..].TrimStart());
     }
 #endif
 }

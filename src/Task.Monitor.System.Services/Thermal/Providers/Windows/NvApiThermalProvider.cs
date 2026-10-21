@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
@@ -25,26 +26,6 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
         initialised = false;
     }
 
-    private static GpuDevice? MatchGpu(
-        IReadOnlyList<GpuDevice> gpus, 
-        uint                     vendorId, 
-        uint                     deviceId, 
-        Dictionary<long, int>    assigned)
-    {
-        // Match on PCI ids; if several identical cards match, hand out each GpuDevice once.
-        foreach (GpuDevice candidate in gpus) {
-            if (candidate.VendorId == vendorId && 
-                candidate.DeviceId == deviceId && 
-                !assigned.ContainsKey(candidate.AdapterLuid)) {
-
-                assigned[candidate.AdapterLuid] = 1;
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
     public string Name => "NVAPI";
 
     public IEnumerable<ThermalSensor> Read()
@@ -64,20 +45,15 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
             yield break;
         }
 
-        IReadOnlyList<GpuDevice> gpus = getGpus();
-        Dictionary<long, int> assignedByLuid = new();
+        GpuDeviceMatcher matcher = new(getGpus());
 
         for (int i = 0; i < count; i++) {
             if (!NvApi.TryGetPciIds(handles[i], out uint vendorId, out uint deviceId)) {
                 continue;
             }
 
-            GpuDevice? gpu = MatchGpu(
-                gpus, 
-                vendorId, 
-                deviceId, 
-                assignedByLuid);
-            
+            GpuDevice? gpu = matcher.Match(vendorId, deviceId);
+
             string componentId = gpu?.AdapterLuid.ToString() ?? $"nvapi{i}";
 
             foreach (NvApi.ThermalReading reading in NvApi.GetThermalSettings(handles[i])) {

@@ -1,16 +1,13 @@
 #if __WIN32__
-using System.Buffers.Binary;
 using Task.Monitor.Interop.Win32;
 using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
-internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
+internal sealed class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
 {
-    private const int HeaderSize       = 8;
-    private const int ProtocolDataSize = 40;
-    private const int LogSize          = 512;
-    private const int BufferSize       = HeaderSize + ProtocolDataSize + LogSize;
+    // The SMART / Health Information log page (0x02) is 512 bytes.
+    private const int LogSize = 512;
 
     public void Dispose() { }
 
@@ -55,71 +52,11 @@ internal sealed unsafe class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevi
 
     private static byte[]? ReadHealthLog(int physicalDriveIndex)
     {
-        nint handle = FileApi.CreateFileW(
-            $@"\\.\PhysicalDrive{physicalDriveIndex}",
-            0,
-            FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE,
-            nint.Zero,
-            FileApi.OPEN_EXISTING,
-            0,
-            nint.Zero);
+        byte[] log = new byte[LogSize];
 
-        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
-            return null;
-        }
-
-        try {
-            byte* buffer = stackalloc byte[BufferSize];
-            new Span<byte>(buffer, BufferSize).Clear();
-
-            BinaryPrimitives.WriteUInt32LittleEndian(
-                new Span<byte>(buffer, 4), WinIoCtl.StorageDeviceProtocolSpecificProperty);
-            BinaryPrimitives.WriteUInt32LittleEndian(
-                new Span<byte>(buffer + 4, 4), WinIoCtl.PropertyStandardQuery);
-
-            byte* proto = buffer + HeaderSize;
-            *(uint*)(proto + WinIoCtl.ProtocolSpecificProtocolTypeOffset) = WinIoCtl.ProtocolTypeNvme;
-            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataTypeOffset)     = WinIoCtl.NVMeDataTypeLogPage;
-            *(uint*)(proto + WinIoCtl.ProtocolSpecificRequestValueOffset) = WinIoCtl.NVMeLogPageHealthInfo;
-            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataOffsetOffset)   = ProtocolDataSize;
-            *(uint*)(proto + WinIoCtl.ProtocolSpecificDataLengthOffset)   = LogSize;
-
-            uint returned = 0;
-
-            bool ok = IoApiSet.DeviceIoControl(
-                handle,
-                WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-                buffer, BufferSize,
-                buffer, BufferSize,
-                &returned, nint.Zero);
-
-            if (!ok || returned < HeaderSize + ProtocolDataSize) {
-                return null;
-            }
-
-            byte* responseProto = buffer + HeaderSize;
-            uint dataOffset     = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataOffsetOffset);
-            uint dataLength     = *(uint*)(responseProto + WinIoCtl.ProtocolSpecificDataLengthOffset);
-
-            int logStart = HeaderSize + (int)dataOffset;
-
-            // Some drivers do not fill the response descriptor, fall back to the standard segment.
-            if (dataLength < 216 || logStart < 0 || logStart + 216 > BufferSize) {
-                logStart = HeaderSize + ProtocolDataSize;
-                dataLength = LogSize;
-            }
-
-            int available = Math.Min((int)dataLength, BufferSize - logStart);
-
-            if (available < 216) {
-                return null;
-            }
-
-            return new Span<byte>(buffer + logStart, available).ToArray();
-        }
-        finally {
-            Kernel32.CloseHandle(handle);
-        }
+        return Nvme.TryQueryLogPage(physicalDriveIndex, WinIoCtl.NVMeLogPageHealthInfo, log)
+            ? log
+            : null;
     }
 
     public bool TryInitialise() => true;

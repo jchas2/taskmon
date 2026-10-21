@@ -7,6 +7,7 @@ public static class Pdh
     public const uint ERROR_SUCCESS = 0;
     
     public const uint PDH_CSTATUS_VALID_DATA = 0x00000000;
+    public const uint PDH_CSTATUS_NEW_DATA   = 0x00000001;
     public const int  PDH_MORE_DATA          = unchecked((int)0x800007D2);
     public const uint PDH_FMT_DOUBLE         = 0x00000200;
 

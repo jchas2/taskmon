@@ -2,7 +2,7 @@ using Task.Monitor.System.Services.Startup;
 
 namespace Task.Monitor.System.Services.Tests.Startup;
 
-public sealed class StartupServiceTests
+public sealed partial class StartupServiceTests
 {
     private const int MinimumDelay = 500;
 

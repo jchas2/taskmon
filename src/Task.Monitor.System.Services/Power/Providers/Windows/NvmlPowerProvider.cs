@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
@@ -25,9 +26,8 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
             yield break;
         }
 
-        IReadOnlyList<GpuDevice> gpus     = getGpus();
-        HashSet<long>            assigned = new();
-        int                      count    = Nvml.DeviceCount();
+        GpuDeviceMatcher matcher = new(getGpus());
+        int              count   = Nvml.DeviceCount();
 
         for (int i = 0; i < count; i++) {
             if (!Nvml.TryGetHandle(i, out nint handle) || !Nvml.TryGetPowerWatts(handle, out double watts)) {
@@ -36,15 +36,10 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
 
             string id = $"nvml{i}";
 
-            if (Nvml.TryGetPciIds(handle, out uint vendorId, out uint deviceId)) {
-                GpuDevice? gpu = gpus.FirstOrDefault(candidate =>
-                    candidate.VendorId == vendorId
-                    && candidate.DeviceId == deviceId
-                    && assigned.Add(candidate.AdapterLuid));
+            if (Nvml.TryGetPciIds(handle, out uint vendorId, out uint deviceId) &&
+                matcher.Match(vendorId, deviceId) is { } gpu) {
 
-                if (gpu != null) {
-                    id = gpu.AdapterLuid.ToString();
-                }
+                id = gpu.AdapterLuid.ToString();
             }
 
             yield return new PowerReading {

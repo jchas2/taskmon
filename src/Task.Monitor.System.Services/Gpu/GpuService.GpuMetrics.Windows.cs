@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Gpu;
 
@@ -10,13 +11,10 @@ public partial class GpuService
 {
 #if __WIN32__
     private const string GpuEngineCounterPath = @"\GPU Engine(*)\Utilization Percentage";
-    private const uint PDH_CSTATUS_NEW_DATA = 0x00000001;
 
-    private nint engineQuery       = nint.Zero;
-    private nint engineCounter     = nint.Zero;
-    private nint counterBuffer     = nint.Zero;
-    private uint counterBufferSize = 0;
-    private bool counterPrimed     = false;
+    private PdhQuery? engineQuery;
+    private nint      engineCounter;
+    private bool      counterPrimed;
 
     private readonly Dictionary<long, double> engineUtilisationByLuid = new();
 
@@ -169,21 +167,11 @@ public partial class GpuService
 
     private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
     {
-        uint pdhResult;
         gpuInfo.Metrics.GpuPercentTime = 0.0;
 
         engineUtilisationByLuid.Clear();
 
-        if (engineQuery == nint.Zero) {
-            return;
-        }
-
-        if ((pdhResult = Pdh.PdhCollectQueryData(engineQuery)) != Pdh.ERROR_SUCCESS) {
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhCollectQueryData),
-                $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
-                pdhResult);
-
+        if (engineQuery is null || !engineQuery.Collect()) {
             return;
         }
 
@@ -192,11 +180,11 @@ public partial class GpuService
             return;
         }
 
-        if (!TryGetEngineCounterArray(out uint itemCount)) {
+        if (!engineQuery.TryReadFormattedDoubles(engineCounter, out uint itemCount)) {
             return;
         }
 
-        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)counterBuffer;
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)engineQuery.Buffer;
 
         Dictionary<string, double> engineTotals  = new();
         Dictionary<int, double>    processTotals = new();
@@ -205,7 +193,7 @@ public partial class GpuService
             Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
 
             if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
-                item.CStatus != PDH_CSTATUS_NEW_DATA) {
+                item.CStatus != Pdh.PDH_CSTATUS_NEW_DATA) {
                 continue;
             }
 
@@ -247,59 +235,18 @@ public partial class GpuService
         }
     }
 
-    private unsafe void OnStartGpuPidMetrics()
+    private void OnStartGpuPidMetrics()
     {
-        uint pdhResult;
-        nint query   = nint.Zero;
-        nint counter = nint.Zero;
-
-        if ((pdhResult = Pdh.PdhOpenQuery(
-            null,
-            nint.Zero,
-            &query)) != Pdh.ERROR_SUCCESS) {
-
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhOpenQuery),
-                $"Failed {nameof(OnStartGpuPidMetrics)}",
-                pdhResult);
-
-            return;
-        }
-
-        if ((pdhResult = Pdh.PdhAddEnglishCounter(
-            query,
-            GpuEngineCounterPath,
-            nint.Zero,
-            &counter)) != Pdh.ERROR_SUCCESS) {
-
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                GpuEngineCounterPath,
-                $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
-                pdhResult);
-
-            Pdh.PdhCloseQuery(query);
-            return;
-        }
-
-        engineQuery   = query;
-        engineCounter = counter;
+        engineQuery   = PdhQuery.Open(nameof(GpuService), GpuEngineCounterPath);
+        engineCounter = engineQuery?.Counters[0] ?? nint.Zero;
         counterPrimed = false;
     }
 
     private void OnStopGpuPidMetrics()
     {
-        if (counterBuffer != nint.Zero) {
-            Marshal.FreeHGlobal(counterBuffer);
-            counterBuffer     = nint.Zero;
-            counterBufferSize = 0;
-        }
-
-        if (engineQuery != nint.Zero) {
-            Pdh.PdhCloseQuery(engineQuery);
-            engineQuery   = nint.Zero;
-            engineCounter = nint.Zero;
-        }
-
+        engineQuery?.Dispose();
+        engineQuery   = null;
+        engineCounter = nint.Zero;
         counterPrimed = false;
     }
 
@@ -410,55 +357,6 @@ public partial class GpuService
         return true;
     }
 
-    private unsafe bool TryGetEngineCounterArray(out uint itemCount)
-    {
-        itemCount = 0;
-
-        for (int attempt = 0; attempt < 3; attempt++) {
-            uint bufferSize = counterBufferSize;
-            uint count      = 0;
-
-            int result = Pdh.PdhGetFormattedCounterArrayW(
-                engineCounter,
-                Pdh.PDH_FMT_DOUBLE,
-                &bufferSize,
-                &count,
-                counterBuffer);
-
-            if (result == (int)Pdh.ERROR_SUCCESS) {
-                itemCount = count;
-                return true;
-            }
-
-            if (result != Pdh.PDH_MORE_DATA) {
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
-                    $"Failed {nameof(OnDoWorkGpuPidMetrics)}",
-                    (uint)result);
-
-                return false;
-            }
-
-            if (bufferSize <= counterBufferSize) {
-                TraceEx.WriteLineOnce(
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} {engineCounter}",
-                    $"{nameof(Pdh.PdhGetFormattedCounterArrayW)} failed to calculate {nameof(bufferSize)}");
-
-                return false;
-            }
-
-            if (counterBuffer != nint.Zero) {
-                Marshal.FreeHGlobal(counterBuffer);
-                counterBuffer     = nint.Zero;
-                counterBufferSize = 0;
-            }
-
-            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
-            counterBufferSize = bufferSize;
-        }
-
-        return false;
-    }
 #endif
 }
 #pragma warning restore CA1416 // Validate platform compatibility

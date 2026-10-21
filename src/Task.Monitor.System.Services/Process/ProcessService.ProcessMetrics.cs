@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Process;
 
@@ -68,10 +69,10 @@ public partial class ProcessService
 
         entry.CpuTimePercent = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
 
-        ulong readDelta  = ProcessEntryCalculator.Delta(sample.DiskReadBytes, state.DiskReadBytes);
-        ulong writeDelta = ProcessEntryCalculator.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
+        ulong readDelta  = CounterRate.Delta(sample.DiskReadBytes, state.DiskReadBytes);
+        ulong writeDelta = CounterRate.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
 
-        entry.DiskBytesPerSecond = ProcessEntryCalculator.BytesPerSecond(
+        entry.DiskBytesPerSecond = CounterRate.PerSecond(
             readDelta + writeDelta,
             elapsedSeconds);
 
@@ -97,9 +98,6 @@ public partial class ProcessService
             DiskWriteBytes  = sample.DiskWriteBytes
         };
 
-    // Platform-neutral metrics core: turns a per-platform list of ProcessSample into ProcessEntry
-    // rows, applying rates, averages and power classification. The only platform-specific input is
-    // how the samples (and the optional GPU-percent map) are gathered.
     private void BuildMetrics(
         ProcessMetrics          metrics,
         ProcessSpecs            specs,
@@ -135,8 +133,6 @@ public partial class ProcessService
                 now,
                 specs);
 
-            // CpuTimePercent is scaled by the Irix factor; divide it out so the bucket is
-            // always calculated against the whole machine regardless of the reporting mode.
             double cpuFractionOfMachine = entry.CpuTimePercent /
                 ProcessEntryCalculator.IrixFactor(specs.IrixMode, specs.LogicalProcessorCount);
 
@@ -153,18 +149,6 @@ public partial class ProcessService
             metrics.Entries.Add(entry);
         }
 
-        PruneStaleStates();
-    }
-
-    private void OnStopProcessMetrics()
-    {
-        sampleStates.Clear();
-        stalePids.Clear();
-        generation = 0;
-    }
-
-    private void PruneStaleStates()
-    {
         if (sampleStates.Count == 0) {
             return;
         }
@@ -182,6 +166,13 @@ public partial class ProcessService
         }
     }
 
+    private void OnStopProcessMetrics()
+    {
+        sampleStates.Clear();
+        stalePids.Clear();
+        generation = 0;
+    }
+    
     private static void Rebase(ProcessSampleState state, ProcessSample sample, long now)
     {
         state.KernelTime     = sample.KernelTime;

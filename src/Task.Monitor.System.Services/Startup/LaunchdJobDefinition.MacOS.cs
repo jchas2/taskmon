@@ -4,10 +4,9 @@ namespace Task.Monitor.System.Services.Startup;
 // Parses a launchd job property list.
 public sealed class LaunchdJobDefinition
 {
-    public string? Arguments      { get; private set; }
-    public string  Command        { get; private set; } = string.Empty;
-
-    public bool?   Disabled       { get; private set; }
+    public string? Arguments { get; private set; }
+    public string Command { get; private set; } = string.Empty;
+    public bool? Disabled { get; private set; }
 
     public string? ExecutablePath { get; private set; }
 
@@ -17,9 +16,9 @@ public sealed class LaunchdJobDefinition
         _                                             => false
     };
 
-    public bool    KeepAlive      { get; private set; }
+    public bool KeepAlive { get; private set; }
 
-    public string? Label          { get; private set; }
+    public string? Label { get; private set; }
 
     public static LaunchdJobDefinition? Parse(object? plist, string? bundleRoot = null)
     {
@@ -73,7 +72,7 @@ public sealed class LaunchdJobDefinition
             ? values.OfType<string>().ToList()
             : [];
 
-    public bool    RunAtLoad      { get; private set; }
+    public bool RunAtLoad { get; private set; }
 
     public bool StartsAtLoad => RunAtLoad || KeepAlive;
 }

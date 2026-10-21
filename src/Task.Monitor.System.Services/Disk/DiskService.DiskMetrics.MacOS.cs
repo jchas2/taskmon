@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Disk;
 
@@ -9,7 +10,7 @@ public partial class DiskService
     private const double BytesPerMegabyte     = 1024.0 * 1024.0;
     private const double NanosecondsPerSecond = 1_000_000_000.0;
 
-    private sealed class DiskDeviceState
+    private sealed class DiskDeviceState : IMissedSampleCounter
     {
         public int    Index;
         public long   PrevReadBytes;
@@ -18,7 +19,7 @@ public partial class DiskService
         public long   PrevWriteTimeNanos;
         public long   PrevTimestamp;
         public bool   Primed;
-        public int    ConsecutiveMisses;
+        public int    ConsecutiveMisses { get; set; }
 
         public ulong  TotalBytesRead;
         public ulong  TotalBytesWritten;
@@ -64,21 +65,20 @@ public partial class DiskService
             return;
         }
 
-        long readDelta      = readBytes - state.PrevReadBytes;
-        long writeDelta     = writeBytes - state.PrevWriteBytes;
         long readTimeDelta  = readTime - state.PrevReadTimeNanos;
         long writeTimeDelta = writeTime - state.PrevWriteTimeNanos;
 
-        state.ReadBytesPerSecond  = readDelta > 0 ? readDelta / elapsedSeconds : 0.0;
-        state.WriteBytesPerSecond = writeDelta > 0 ? writeDelta / elapsedSeconds : 0.0;
+        state.ReadBytesPerSecond = CounterRate.Accumulate(
+            readBytes,
+            ref state.PrevReadBytes,
+            ref state.TotalBytesRead,
+            elapsedSeconds);
 
-        if (readDelta > 0) {
-            state.TotalBytesRead += (ulong)readDelta;
-        }
-
-        if (writeDelta > 0) {
-            state.TotalBytesWritten += (ulong)writeDelta;
-        }
+        state.WriteBytesPerSecond = CounterRate.Accumulate(
+            writeBytes,
+            ref state.PrevWriteBytes,
+            ref state.TotalBytesWritten,
+            elapsedSeconds);
 
         double busyNanos    = (readTimeDelta > 0 ? readTimeDelta : 0) + (writeTimeDelta > 0 ? writeTimeDelta : 0);
         double elapsedNanos = elapsedSeconds * NanosecondsPerSecond;
@@ -147,31 +147,6 @@ public partial class DiskService
     private void OnStartDiskMetrics() => diskStates.Clear();
 
     private void OnStopDiskMetrics() => diskStates.Clear();
-
-    private void PruneMissingDisks(HashSet<string> live)
-    {
-        const int MaxMisses = 3;
-        List<string>? stale = null;
-
-        foreach ((string name, DiskDeviceState state) in diskStates) {
-            if (live.Contains(name)) {
-                state.ConsecutiveMisses = 0;
-                continue;
-            }
-
-            if (++state.ConsecutiveMisses >= MaxMisses) {
-                (stale ??= new()).Add(name);
-            }
-        }
-
-        if (stale == null) {
-            return;
-        }
-
-        foreach (string name in stale) {
-            diskStates.Remove(name);
-        }
-    }
 
     private void ReadDriverStatistics(uint entry, HashSet<string> live)
     {
@@ -256,7 +231,7 @@ public partial class DiskService
             ReadDriverStatistics(entry, live);
         }
 
-        PruneMissingDisks(live);
+        PruneMissing(diskStates, live.Contains);
     }
 }
 #endif

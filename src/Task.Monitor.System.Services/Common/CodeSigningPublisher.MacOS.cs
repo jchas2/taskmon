@@ -1,7 +1,7 @@
 #if __APPLE__
 using System.Text.RegularExpressions;
 
-namespace Task.Monitor.System.Services.MacOS;
+namespace Task.Monitor.System.Services.Common;
 
 public static partial class CodeSigningPublisher
 {

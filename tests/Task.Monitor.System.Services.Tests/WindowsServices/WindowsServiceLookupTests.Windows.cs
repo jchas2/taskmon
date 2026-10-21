@@ -1,9 +1,9 @@
 #if __WIN32__
-using Task.Monitor.System.Services.Process;
+using Task.Monitor.System.Services.WindowsServices;
 
-namespace Task.Monitor.System.Services.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.WindowsServices;
 
-[Collection(ProcessServiceCollection.Name)]
+[Collection(WindowsServiceLookupCollection.Name)]
 public sealed class WindowsServiceLookupTests
 {
     [Fact]

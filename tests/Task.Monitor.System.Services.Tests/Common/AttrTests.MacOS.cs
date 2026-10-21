@@ -1,7 +1,7 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Services.Tests.MacOS;
+namespace Task.Monitor.System.Services.Tests.Common;
 
 public sealed class AttrTests
 {

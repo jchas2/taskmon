@@ -210,6 +210,12 @@ defined per OS in [`eng/Preprocessor.props`](../eng/Preprocessor.props).
   (Windows).
 - Platform implementations go in partial files suffixed `.MacOS.cs` or `.Windows.cs`, with the whole
   body wrapped in `#if __APPLE__` / `#if __WIN32__`.
+- Logic that two or more services share goes in `Task.Monitor.System.Services/Common`, namespace
+  `Task.Monitor.System.Services.Common`, with the same platform suffixes. Examples are `PdhQuery`
+  on Windows, `AppBundle` on macOS, and the platform-neutral `CounterRate`. Code that belongs to one
+  feature stays in that feature's folder even when another service uses it: the Service Control
+  Manager calls live in `WindowsServices`, and Drivers uses them from there. Logic one service shares between its own platforms goes in that service's shared
+  file instead (e.g. `DiskService.cs`).
 - Keep `#if` blocks around whole members. Inside a method body, keep them short.
 - When only one platform implements a feature, declare a `partial` method in the shared file and put
   the fallback stub at the end of the class:

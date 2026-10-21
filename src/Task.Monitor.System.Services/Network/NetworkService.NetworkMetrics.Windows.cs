@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Network;
 
@@ -57,24 +58,6 @@ public partial class NetworkService
         public ulong BytesReceived   { get; }
         public ulong PacketsSent     { get; }
         public ulong PacketsReceived { get; }
-    }
-
-    private static double AccumulateDelta(
-        ulong     current,
-        ref ulong previous,
-        ref ulong total,
-        double    elapsedSeconds)
-    {
-        double rate = 0.0;
-
-        if (current > previous) {
-            ulong delta = current - previous;
-            total += delta;
-            rate = delta / elapsedSeconds;
-        }
-
-        previous = current;
-        return rate;
     }
 
     private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
@@ -285,25 +268,25 @@ public partial class NetworkService
 
         state.InterfaceIndex = sample.InterfaceIndex;
 
-        state.SendBytesPerSecond = AccumulateDelta(
+        state.SendBytesPerSecond = CounterRate.Accumulate(
             sample.BytesSent, 
             ref state.PreviousBytesSent, 
             ref state.TotalBytesSent, 
             elapsedSeconds);
 
-        state.ReceiveBytesPerSecond = AccumulateDelta(
+        state.ReceiveBytesPerSecond = CounterRate.Accumulate(
             sample.BytesReceived, 
             ref state.PreviousBytesReceived, 
             ref state.TotalBytesReceived, 
             elapsedSeconds);
 
-        state.SendPacketsPerSecond = AccumulateDelta(
+        state.SendPacketsPerSecond = CounterRate.Accumulate(
             sample.PacketsSent, 
             ref state.PreviousPacketsSent, 
             ref state.TotalPacketsSent, 
             elapsedSeconds);
 
-        state.ReceivePacketsPerSecond = AccumulateDelta(
+        state.ReceivePacketsPerSecond = CounterRate.Accumulate(
             sample.PacketsReceived, 
             ref state.PreviousPacketsReceived, 
             ref state.TotalPacketsReceived, 

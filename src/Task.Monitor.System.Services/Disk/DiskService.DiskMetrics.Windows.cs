@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Disk;
 
@@ -11,21 +12,17 @@ public partial class DiskService
     private const string DiskWriteBytesCounterPath = @"\PhysicalDisk(*)\Disk Write Bytes/sec";
     private const string DiskIdleTimeCounterPath   = @"\PhysicalDisk(*)\% Idle Time";
 
-    private const uint   PDH_CSTATUS_NEW_DATA = 0x00000001;
+    private const double BytesPerMegabyte = 1024.0 * 1024.0;
 
-    private const double BytesPerMegabyte       = 1024.0 * 1024.0;
-    private const double FileTimeTicksPerSecond = 10_000_000.0;
+    private PdhQuery? diskQuery;
 
-    private nint diskQuery         = nint.Zero;
-    private nint readBytesCounter  = nint.Zero;
-    private nint writeBytesCounter = nint.Zero;
-    private nint idleTimeCounter   = nint.Zero;
-    private nint counterBuffer     = nint.Zero;
-    private uint counterBufferSize = 0;
+    private nint readBytesCounter;
+    private nint writeBytesCounter;
+    private nint idleTimeCounter;
 
     private readonly Dictionary<string, DiskInstanceState> instanceStates = new();
 
-    private sealed class DiskInstanceState
+    private sealed class DiskInstanceState : IMissedSampleCounter
     {
         public long PreviousReadBytes;
         public long PreviousWriteBytes;
@@ -33,7 +30,7 @@ public partial class DiskService
         public long PreviousTimeStamp;
         public bool Primed;
 
-        public int ConsecutiveMisses;
+        public int ConsecutiveMisses { get; set; }
 
         public ulong  TotalBytesRead;
         public ulong  TotalBytesWritten;
@@ -113,63 +110,35 @@ public partial class DiskService
 
     private void OnDoWorkDiskMetrics(DiskInfo diskInfo)
     {
-        if (diskQuery == nint.Zero) {
+        if (diskQuery is null) {
             return;
         }
-        
+
         UpdateInstanceStates();
         BuildMetrics(diskInfo.Metrics);
     }
 
-    private unsafe void OnStartDiskMetrics()
+    private void OnStartDiskMetrics()
     {
-        uint pdhResult;
-        nint query = nint.Zero;
+        diskQuery = PdhQuery.Open(
+            nameof(DiskService),
+            DiskReadBytesCounterPath,
+            DiskWriteBytesCounterPath,
+            DiskIdleTimeCounterPath);
 
-        if ((pdhResult = Pdh.PdhOpenQuery(
-            null,
-            nint.Zero,
-            &query)) != Pdh.ERROR_SUCCESS) {
-
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhOpenQuery),
-                $"Failed {nameof(OnStartDiskMetrics)}",
-                pdhResult);
-
-            return;
+        if (diskQuery is not null) {
+            readBytesCounter  = diskQuery.Counters[0];
+            writeBytesCounter = diskQuery.Counters[1];
+            idleTimeCounter   = diskQuery.Counters[2];
         }
-
-        if (!TryAddCounter(query, DiskReadBytesCounterPath, out nint readCounter) ||
-            !TryAddCounter(query, DiskWriteBytesCounterPath, out nint writeCounter) ||
-            !TryAddCounter(query, DiskIdleTimeCounterPath, out nint idleCounter)) {
-
-            Pdh.PdhCloseQuery(query);
-            return;
-        }
-
-        diskQuery         = query;
-        readBytesCounter  = readCounter;
-        writeBytesCounter = writeCounter;
-        idleTimeCounter   = idleCounter;
 
         instanceStates.Clear();
     }
 
     private void OnStopDiskMetrics()
     {
-        if (counterBuffer != nint.Zero) {
-            Marshal.FreeHGlobal(counterBuffer);
-            counterBuffer = nint.Zero;
-            counterBufferSize = 0;
-        }
-
-        if (diskQuery != nint.Zero) {
-            Pdh.PdhCloseQuery(diskQuery);
-            diskQuery = nint.Zero;
-            readBytesCounter = nint.Zero;
-            writeBytesCounter = nint.Zero;
-            idleTimeCounter = nint.Zero;
-        }
+        diskQuery?.Dispose();
+        diskQuery = null;
 
         instanceStates.Clear();
     }
@@ -191,122 +160,20 @@ public partial class DiskService
             : -1;
     }
 
-    private void PruneMissingInstances(Dictionary<string, RawSample> liveInstances)
+    private bool TryReadRawCounterArray(nint counter, Dictionary<string, RawSample> samples)
     {
-        const int MaxMisses = 3;
-
-        List<string>? stale = null;
-
-        foreach ((string instanceName, DiskInstanceState state) in instanceStates) {
-            if (liveInstances.ContainsKey(instanceName)) {
-                state.ConsecutiveMisses = 0;
-                continue;
-            }
-
-            if (++state.ConsecutiveMisses >= MaxMisses) {
-                (stale ??= new()).Add(instanceName);
-            }
-        }
-
-        if (stale == null) {
-            return;
-        }
-
-        foreach (string instanceName in stale) {
-            instanceStates.Remove(instanceName);
-        }
-    }
-
-    private static unsafe bool TryAddCounter(nint query, string counterPath, out nint counter)
-    {
-        nint handle = nint.Zero;
-        
-        uint pdhResult = Pdh.PdhAddEnglishCounter(
-            query, 
-            counterPath, 
-            nint.Zero, 
-            &handle);
-
-        counter = handle;
-
-        if (pdhResult == Pdh.ERROR_SUCCESS) {
-            return true;
-        }
-
-        PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-            counterPath,
-            $"Failed {nameof(Pdh.PdhAddEnglishCounter)}",
-            pdhResult);
-
-        return false;
-    }
-
-    private unsafe bool TryGetRawCounterArray(nint counter, string counterPath, out uint itemCount)
-    {
-        itemCount = 0;
-
-        for (int attempt = 0; attempt < 3; attempt++) {
-            uint bufferSize = counterBufferSize;
-            uint count      = 0;
-
-            uint result = Pdh.PdhGetRawCounterArray(
-                counter,
-                &bufferSize,
-                &count,
-                counterBuffer);
-
-            if (result == Pdh.ERROR_SUCCESS) {
-                itemCount = count;
-                return true;
-            }
-
-            if (result != unchecked((uint)Pdh.PDH_MORE_DATA)) {
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    $"{nameof(Pdh.PdhGetRawCounterArray)} {counterPath}",
-                    $"Failed {nameof(OnDoWorkDiskMetrics)}",
-                    result);
-
-                return false;
-            }
-
-            if (bufferSize <= counterBufferSize) {
-                TraceEx.WriteLineOnce(
-                    $"{nameof(Pdh.PdhGetRawCounterArray)} {counterPath}",
-                    $"{nameof(Pdh.PdhGetRawCounterArray)} failed to calculate {nameof(bufferSize)}");
-
-                return false;
-            }
-
-            if (counterBuffer != nint.Zero) {
-                Marshal.FreeHGlobal(counterBuffer);
-                counterBuffer     = nint.Zero;
-                counterBufferSize = 0;
-            }
-
-            counterBuffer     = Marshal.AllocHGlobal((int)bufferSize);
-            counterBufferSize = bufferSize;
-        }
-
-        return false;
-    }
-
-    private unsafe bool TryReadRawCounterArray(
-        nint   counter,
-        string counterPath,
-        Dictionary<string, RawSample> samples)
-    {
-        if (!TryGetRawCounterArray(counter, counterPath, out uint itemCount)) {
+        if (diskQuery is null || !diskQuery.TryReadRaw(counter, out uint itemCount)) {
             return false;
         }
 
         int itemSize = Marshal.SizeOf<Pdh.PDH_RAW_COUNTER_ITEM>();
 
         for (uint item = 0; item < itemCount; item++) {
-            nint itemPointer             = counterBuffer + (nint)(item * (uint)itemSize);
+            nint itemPointer             = diskQuery.Buffer + (nint)(item * (uint)itemSize);
             Pdh.PDH_RAW_COUNTER_ITEM raw = Marshal.PtrToStructure<Pdh.PDH_RAW_COUNTER_ITEM>(itemPointer);
 
             if (raw.RawValue.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
-                raw.RawValue.CStatus != PDH_CSTATUS_NEW_DATA) {
+                raw.RawValue.CStatus != Pdh.PDH_CSTATUS_NEW_DATA) {
 
                 continue;
             }
@@ -350,48 +217,32 @@ public partial class DiskService
             return;
         }
 
-        long readDelta  = read.Value - state.PreviousReadBytes;
-        long writeDelta = write.Value - state.PreviousWriteBytes;
-        long idleDelta  = idleTime.Value - state.PreviousIdleTime;
-        
-        double elapsedSeconds = elapsedTicks / FileTimeTicksPerSecond;
+        double elapsedSeconds = elapsedTicks / CounterRate.FileTimeTicksPerSecond;
+        long   idleDelta      = idleTime.Value - state.PreviousIdleTime;
 
-        if (readDelta > 0) {
-            state.TotalBytesRead += (ulong)readDelta;
-            state.ReadBytesPerSecond = readDelta / elapsedSeconds;
-        }
-        else {
-            state.ReadBytesPerSecond = 0.0;
-        }
+        state.ReadBytesPerSecond = CounterRate.Accumulate(
+            read.Value,
+            ref state.PreviousReadBytes,
+            ref state.TotalBytesRead,
+            elapsedSeconds);
 
-        if (writeDelta > 0) {
-            state.TotalBytesWritten += (ulong)writeDelta;
-            state.WriteBytesPerSecond = writeDelta / elapsedSeconds;
-        }
-        else {
-            state.WriteBytesPerSecond = 0.0;
-        }
+        state.WriteBytesPerSecond = CounterRate.Accumulate(
+            write.Value,
+            ref state.PreviousWriteBytes,
+            ref state.TotalBytesWritten,
+            elapsedSeconds);
 
         state.PercentActiveTime = idleDelta >= 0
             ? Math.Clamp(100.0 * (1.0 - (idleDelta / (double)elapsedTicks)), 0.0, 100.0)
             : 0.0;
 
-        state.PreviousReadBytes  = read.Value;
-        state.PreviousWriteBytes = write.Value;
-        state.PreviousIdleTime   = idleTime.Value;
-        state.PreviousTimeStamp  = read.TimeStamp;
+        state.PreviousIdleTime  = idleTime.Value;
+        state.PreviousTimeStamp = read.TimeStamp;
     }
 
     private void UpdateInstanceStates()
     {
-        uint pdhResult;
-
-        if ((pdhResult = Pdh.PdhCollectQueryData(diskQuery)) != Pdh.ERROR_SUCCESS) {
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(Pdh.PdhCollectQueryData),
-                $"Failed {nameof(OnDoWorkDiskMetrics)}",
-                pdhResult);
-
+        if (diskQuery is null || !diskQuery.Collect()) {
             return;
         }
 
@@ -399,9 +250,9 @@ public partial class DiskService
         Dictionary<string, RawSample> writes = new();
         Dictionary<string, RawSample> idleTimes = new();
 
-        if (!TryReadRawCounterArray(readBytesCounter, DiskReadBytesCounterPath, reads) ||
-            !TryReadRawCounterArray(writeBytesCounter, DiskWriteBytesCounterPath, writes) ||
-            !TryReadRawCounterArray(idleTimeCounter, DiskIdleTimeCounterPath, idleTimes)) {
+        if (!TryReadRawCounterArray(readBytesCounter, reads) ||
+            !TryReadRawCounterArray(writeBytesCounter, writes) ||
+            !TryReadRawCounterArray(idleTimeCounter, idleTimes)) {
 
             return;
         }
@@ -417,7 +268,7 @@ public partial class DiskService
         }
 
         if (reads.Count > 0) {
-            PruneMissingInstances(reads);
+            PruneMissing(instanceStates, reads.ContainsKey);
         }
     }
 #endif

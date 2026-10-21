@@ -1,4 +1,4 @@
-namespace Task.Monitor.System.Services.Process;
+namespace Task.Monitor.System.Services.WindowsServices;
 
 public sealed class WindowsServiceInfo
 {

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.Tests.Process;
@@ -6,29 +7,12 @@ namespace Task.Monitor.System.Services.Tests.Process;
 public sealed class ProcessEntryCalculatorTests
 {
     [Fact]
-    public void BytesPerSecond_Divides_By_The_Elapsed_Interval()
-    {
-        Assert.Equal(2048.0, ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.5));
-    }
-
-    [Fact]
-    public void BytesPerSecond_Returns_Zero_On_A_Zero_Interval()
-    {
-        // The priming cycle has no interval behind it, so it must report nothing rather than an
-        // infinite rate.
-        double result = ProcessEntryCalculator.BytesPerSecond(1024, elapsedSeconds: 0.0);
-
-        Assert.Equal(0.0, result);
-        Assert.False(double.IsInfinity(result));
-    }
-
-    [Fact]
     public void CpuPercent_Is_The_Share_Of_Available_Cpu_Time()
     {
         double totalSystemTime = ProcessEntryCalculator.TotalSystemTime(1.0, 8);
 
         // One core fully consumed for one second out of eight available cores is one eighth.
-        long oneCoreSecond = (long)ProcessEntryCalculator.FileTimeTicksPerSecond;
+        long oneCoreSecond = (long)CounterRate.FileTimeTicksPerSecond;
 
         Assert.Equal(
             0.125,
@@ -50,16 +34,6 @@ public sealed class ProcessEntryCalculatorTests
         Assert.Equal(0.0, result);
         Assert.False(double.IsNaN(result));
         Assert.False(double.IsInfinity(result));
-    }
-
-    [Fact]
-    public void Delta_Clamps_Instead_Of_Wrapping_Unsigned()
-    {
-        Assert.Equal(512UL, ProcessEntryCalculator.Delta(current: 1536, previous: 1024));
-
-        // A counter that appears to move backwards must read as no traffic, not as a value near
-        // ulong.MaxValue.
-        Assert.Equal(0UL, ProcessEntryCalculator.Delta(current: 1024, previous: 1536));
     }
 
     [Fact]
@@ -86,14 +60,14 @@ public sealed class ProcessEntryCalculatorTests
     {
         // One second across 8 cores is 8 seconds of cpu time, in 100ns FILETIME ticks.
         Assert.Equal(
-            8 * ProcessEntryCalculator.FileTimeTicksPerSecond,
+            8 * CounterRate.FileTimeTicksPerSecond,
             ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.0, logicalProcessorCount: 8));
 
         // The old Processor divided by Environment.ProcessorCount * Delay.Ticks regardless of how
         // long the cycle really took. A cycle that overran by 20% must widen the denominator by
         // 20%, otherwise every percentage is inflated by the overrun.
         Assert.Equal(
-            9.6 * ProcessEntryCalculator.FileTimeTicksPerSecond,
+            9.6 * CounterRate.FileTimeTicksPerSecond,
             ProcessEntryCalculator.TotalSystemTime(elapsedSeconds: 1.2, logicalProcessorCount: 8),
             precision: 6);
     }

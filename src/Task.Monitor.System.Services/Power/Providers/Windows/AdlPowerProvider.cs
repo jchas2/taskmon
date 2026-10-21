@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
@@ -7,57 +8,21 @@ namespace Task.Monitor.System.Services.Power.Providers.Windows;
 // AMD GPUs via ADL.
 internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IPowerProvider
 {
-    private nint context;
+    private readonly AdlAdapters adapters = new();
 
-    public void Dispose()
-    {
-        if (context != nint.Zero) {
-            Adl.Destroy(context);
-            context = nint.Zero;
-        }
-    }
+    public void Dispose() => adapters.Dispose();
 
     public string Name => "ADL power";
 
-    public IEnumerable<PowerReading> Read()
-    {
-        if (context == nint.Zero) {
-            yield break;
-        }
+    public IEnumerable<PowerReading> Read() =>
+        adapters.Read(getGpus(), Adl.GetPowerWatts).Select(reading => new PowerReading {
+            Component   = PowerComponent.Gpu,
+            ComponentId = reading.ComponentId,
+            Rail        = "GPU",
+            Watts       = reading.Value,
+            Source      = PowerSource.Adl
+        });
 
-        IReadOnlyList<GpuDevice> gpus     = getGpus();
-        HashSet<long>            assigned = new();
-
-        foreach (Adl.Adapter adapter in Adl.GetAdapters(context)) {
-            if (!Adl.GetPowerWatts(context, adapter.AdapterIndex, out double watts)) {
-                continue;
-            }
-
-            GpuDevice? gpu = gpus.FirstOrDefault(candidate =>
-                candidate.DeviceId == adapter.DeviceId && assigned.Add(candidate.AdapterLuid));
-
-            yield return new PowerReading {
-                Component   = PowerComponent.Gpu,
-                ComponentId = gpu?.AdapterLuid.ToString() ?? $"adl{adapter.AdapterIndex}",
-                Rail        = "GPU",
-                Watts       = watts,
-                Source      = PowerSource.Adl
-            };
-        }
-    }
-
-    public bool TryInitialise()
-    {
-        context = nint.Zero;
-
-        try {
-            Adl.TryCreate(out context);
-        }
-        catch (DllNotFoundException) {
-            context = nint.Zero;
-        }
-
-        return context != nint.Zero;
-    }
+    public bool TryInitialise() => adapters.TryOpen();
 }
 #endif

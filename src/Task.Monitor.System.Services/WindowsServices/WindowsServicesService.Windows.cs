@@ -1,4 +1,3 @@
-using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.WindowsServices;
 
@@ -9,7 +8,7 @@ public partial class WindowsServicesService
     {
         WindowsServicesSpecs specs = new();
 
-        specs.Services.AddRange(WindowsServiceLookup.GetServices());
+        specs.Services.AddRange(WindowsServiceEnumerator.GetServices());
 
         specs.Services.Sort(static (left, right) =>
             string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));

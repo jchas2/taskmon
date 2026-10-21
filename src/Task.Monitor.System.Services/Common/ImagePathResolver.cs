@@ -1,6 +1,6 @@
-namespace Task.Monitor.System.Services.Drivers;
+namespace Task.Monitor.System.Services.Common;
 
-public static class DriverPathResolver
+public static class ImagePathResolver
 {
     private const string SystemRootToken = @"\SystemRoot\";
     private const string NtDevicePrefix  = @"\??\";
@@ -11,10 +11,15 @@ public static class DriverPathResolver
             return null;
         }
 
-        string path = imagePath.Trim();
+        string path = Environment.ExpandEnvironmentVariables(imagePath.Trim());
 
         if (path.StartsWith(NtDevicePrefix, StringComparison.Ordinal)) {
             path = path[NtDevicePrefix.Length..];
+        }
+
+        // Only an absolute path is ever quoted, so a quoted command line needs nothing resolving.
+        if (path.StartsWith('"')) {
+            return path;
         }
 
         string windowsDir = windowsDirectory 

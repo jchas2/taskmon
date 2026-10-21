@@ -1,6 +1,7 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
@@ -10,24 +11,14 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 {
     private const string CounterPath = @"\Power Meter(*)\Power";
 
-    private nint query;
-    private nint counter;
-    private nint buffer;
-    private uint bufferSize;
+    private PdhQuery? query;
+    private nint      counter;
 
     public void Dispose()
     {
-        if (buffer != nint.Zero) {
-            Marshal.FreeHGlobal(buffer);
-            buffer = nint.Zero;
-            bufferSize = 0;
-        }
-
-        if (query != nint.Zero) {
-            Pdh.PdhCloseQuery(query);
-            query   = nint.Zero;
-            counter = nint.Zero;
-        }
+        query?.Dispose();
+        query   = null;
+        counter = nint.Zero;
     }
 
     public string Name => "ACPI Power Meter";
@@ -47,7 +38,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
     public IEnumerable<PowerReading> Read()
     {
-        if (query == nint.Zero || ReadWatts() is not { } watts) {
+        if (query is null || ReadWatts() is not { } watts) {
             return [];
         }
 
@@ -63,11 +54,11 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
     private double? ReadWatts()
     {
-        if (Pdh.PdhCollectQueryData(query) != Pdh.ERROR_SUCCESS || !TryReadArray(out uint itemCount)) {
+        if (query is null || !query.Collect() || !query.TryReadFormattedDoubles(counter, out uint itemCount)) {
             return null;
         }
 
-        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)buffer;
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)query.Buffer;
         
         double summed = 0;
         bool   any    = false;
@@ -94,60 +85,17 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
     public bool TryInitialise()
     {
-        nint newQuery   = nint.Zero;
-        nint newCounter = nint.Zero;
+        query = PdhQuery.Open(nameof(PowerMeterPdhProvider), CounterPath);
 
-        if (Pdh.PdhOpenQuery(null, nint.Zero, &newQuery) != Pdh.ERROR_SUCCESS) {
+        if (query is null) {
             return false;
         }
 
-        if (Pdh.PdhAddEnglishCounter(newQuery, CounterPath, nint.Zero, &newCounter) != Pdh.ERROR_SUCCESS) {
-            Pdh.PdhCloseQuery(newQuery);
-            return false;
-        }
-
-        query   = newQuery;
-        counter = newCounter;
-
-        Pdh.PdhCollectQueryData(query);
+        counter = query.Counters[0];
+        query.Collect();
 
         // Keep the provider only if the machine actually has a power meter instance.
         return ReadWatts() is not null;
-    }
-
-    private bool TryReadArray(out uint itemCount)
-    {
-        itemCount = 0;
-
-        for (int attempt = 0; attempt < 3; attempt++) {
-            uint size  = bufferSize;
-            uint count = 0;
-
-            int result = Pdh.PdhGetFormattedCounterArrayW(
-                counter, 
-                Pdh.PDH_FMT_DOUBLE,
-                &size, 
-                &count,
-                buffer);
-
-            if (result == (int)Pdh.ERROR_SUCCESS) {
-                itemCount = count;
-                return true;
-            }
-
-            if (result != Pdh.PDH_MORE_DATA || size <= bufferSize) {
-                return false;
-            }
-
-            if (buffer != nint.Zero) {
-                Marshal.FreeHGlobal(buffer);
-            }
-
-            buffer = Marshal.AllocHGlobal((int)size);
-            bufferSize = size;
-        }
-
-        return false;
     }
 }
 #endif

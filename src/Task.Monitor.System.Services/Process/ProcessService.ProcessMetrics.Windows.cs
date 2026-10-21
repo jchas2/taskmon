@@ -1,4 +1,5 @@
 using Task.Monitor.System.Services.Gpu;
+using Task.Monitor.System.Services.WindowsServices;
 
 namespace Task.Monitor.System.Services.Process;
 

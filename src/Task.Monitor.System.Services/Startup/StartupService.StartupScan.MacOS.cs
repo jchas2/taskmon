@@ -1,7 +1,7 @@
 #if __APPLE__
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
-using Task.Monitor.System.Services.MacOS;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Startup;
 

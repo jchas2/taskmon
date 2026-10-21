@@ -25,15 +25,15 @@ public enum BackgroundItemDisposition : long
 
 public sealed class BackgroundItemRecord
 {
-    public string?                   BundleIdentifier { get; init; }
+    public string? BundleIdentifier { get; init; }
 
-    public string?                   DeveloperName    { get; init; }
+    public string? DeveloperName { get; init; }
 
-    public BackgroundItemDisposition Disposition      { get; init; }
+    public BackgroundItemDisposition Disposition { get; init; }
 
-    public string?                   ExecutablePath   { get; init; }
+    public string? ExecutablePath { get; init; }
 
-    public string?                   Identifier       { get; init; }
+    public string? Identifier { get; init; }
 
     public bool Is(BackgroundItemType type) => (Type & type) == type;
 
@@ -43,9 +43,9 @@ public sealed class BackgroundItemRecord
 
     public bool IsLegacy => Type.HasFlag(BackgroundItemType.Legacy);
 
-    public string?                   Name             { get; init; }
+    public string? Name { get; init; }
 
-    public string?                   ParentIdentifier { get; init; }
+    public string? ParentIdentifier { get; init; }
 
     public string? ResolvePath(string? parentPath)
     {
@@ -62,8 +62,8 @@ public sealed class BackgroundItemRecord
             : Path.Combine(parentPath, Uri.UnescapeDataString(Url)).TrimEnd('/');
     }
 
-    public BackgroundItemType        Type             { get; init; }
+    public BackgroundItemType Type { get; init; }
 
-    public string?                   Url              { get; init; }
+    public string? Url { get; init; }
 }
 #endif

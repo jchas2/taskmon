@@ -64,7 +64,10 @@ public static unsafe class Nvme
             int start = HeaderSize + ProtocolDataSize;
             long reportedStart = HeaderSize + (long)dataOffset;
 
-            if (dataLength >= (uint)output.Length && reportedStart + output.Length <= total) {
+            // Honour the data offset the driver reports whenever it lies inside the buffer, even with a
+            // short length (anything past it stays zeroed). Some drivers leave the response
+            // descriptor empty, in which case the data sits in the standard segment.
+            if (dataLength > 0 && reportedStart >= HeaderSize && reportedStart + output.Length <= total) {
                 start = (int)reportedStart;
             }
 

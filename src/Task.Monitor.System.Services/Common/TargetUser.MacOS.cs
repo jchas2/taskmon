@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Services.MacOS;
+namespace Task.Monitor.System.Services.Common;
 
 public sealed class TargetUser
 {
@@ -50,9 +50,9 @@ public sealed class TargetUser
 
     public string  HomeDirectory  { get; private init; } = string.Empty;
 
-    public bool    IsRoot         { get; private init; }
+    public bool IsRoot { get; private init; }
 
-    public bool IsSessionOwner    { get; private init; }
+    public bool IsSessionOwner { get; private init; }
 
     public static uint ResolveUid(
         uint    euid, 
@@ -71,8 +71,8 @@ public sealed class TargetUser
         return consoleUid is > 0 ? consoleUid.Value : uid;
     }
 
-    public uint    Uid            { get; private init; }
+    public uint Uid { get; private init; }
 
-    public string? Uuid           { get; private init; }
+    public string? Uuid { get; private init; }
 }
 #endif

@@ -3,6 +3,8 @@ using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
+using Task.Monitor.System.Services.WindowsServices;
 using SysDiag = System.Diagnostics;
 
 namespace Task.Monitor.System.Services.Process;
@@ -87,7 +89,7 @@ public partial class ProcessService
         try {
             if (WindowsServiceLookup.GetService(pid, out WindowsServiceInfo? serviceInfo)) {
                 string imagePath = WindowsServiceLookup.GetServiceImagePath(serviceInfo!.ServiceName) ?? defaultValue;
-                return Environment.ExpandEnvironmentVariables(imagePath);
+                return ImagePathResolver.Expand(imagePath) ?? defaultValue;
             }
 
             // TODO: Kernel PEB + Commandline offset.

@@ -5,7 +5,8 @@ namespace Task.Monitor.System.Services.Tests.Drivers;
 
 // No dedicated Interop.Win32 test project exists yet (GetCompanyName isn't unit-tested in
 // isolation either - only indirectly, through the services/startup lookups that consume it), so
-// this lives alongside DriverPathResolverTests as the first direct coverage of WinVer itself.
+// this lives with the Drivers tests, which read driver versions through it, as the first direct
+// coverage of WinVer itself.
 public sealed class WinVerTests
 {
     // kernel32.dll is present with a real version resource on every Windows install, making it a
