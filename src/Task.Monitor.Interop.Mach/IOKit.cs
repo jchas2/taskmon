@@ -4,6 +4,31 @@ namespace Task.Monitor.Interop.Mach;
 
 public static class IOKit
 {
+    public static unsafe Dictionary<string, object?>? GetLoadedKextInfo(IReadOnlyList<string> infoKeys)
+    {
+        nint[] keys = new nint[infoKeys.Count];
+
+        try {
+            for (int i = 0; i < keys.Length; i++) {
+                keys[i] = CoreFoundation.CFStringCreate(infoKeys[i]);
+            }
+
+            fixed (nint* keysPtr = keys) {
+                using CFScope keyArray = new(CoreFoundation.CFArrayCreate(nint.Zero, keysPtr, keys.Length, nint.Zero));
+                using CFScope info     = new(KextManagerCopyLoadedKextInfo(nint.Zero, keyArray));
+
+                return PropertyList.ToManaged(info) as Dictionary<string, object?>;
+            }
+        }
+        finally {
+            foreach (nint key in keys) {
+                if (key != nint.Zero) {
+                    CoreFoundation.CFRelease(key);
+                }
+            }
+        }
+    }
+
     [DllImport(Libraries.IOKit)]
     public static extern uint IOIteratorNext(IntPtr iterator);
 
@@ -54,4 +79,7 @@ public static class IOKit
 
     [DllImport(Libraries.IOKit)]
     public static extern IntPtr IOServiceMatching(string name);
+
+    [DllImport(Libraries.IOKit)]
+    private static extern nint KextManagerCopyLoadedKextInfo(nint kextIdentifiers, nint infoKeys);
 }

@@ -10,6 +10,9 @@ public static class CoreFoundation
     private const int MaxPathBytes         = 1024; // PATH_MAX
 
     [DllImport(Libraries.CoreFoundation)]
+    public static unsafe extern IntPtr CFArrayCreate(IntPtr allocator, IntPtr* values, long numValues, IntPtr callBacks);
+
+    [DllImport(Libraries.CoreFoundation)]
     public static extern long CFArrayGetCount(IntPtr array);
 
     [DllImport(Libraries.CoreFoundation)]                                                                                                                         

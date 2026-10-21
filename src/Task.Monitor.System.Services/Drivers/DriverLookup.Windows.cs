@@ -6,15 +6,15 @@ namespace Task.Monitor.System.Services.Drivers;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-internal static class DriverLookup
+internal static partial class DriverLookup
 {
 #if __WIN32__
     internal static DriverInfo[] GetDrivers() =>
         ServiceControlManager.EnumerateServices(WinService.SERVICE_DRIVER, nameof(GetDrivers), (hSCM, entry) => {
             DriverInfo driver = new() {
-                ServiceName = entry.ServiceName,
+                Name        = entry.ServiceName,
                 DisplayName = entry.DisplayName,
-                Status      = entry.Status
+                Status      = MapStatus(entry.Status)
             };
 
             ServiceControlManager.QueryService(hSCM, entry.ServiceName, hService => PopulateDriverConfig(hService, driver));
@@ -22,14 +22,34 @@ internal static class DriverLookup
             return driver;
         });
 
+    internal static DriverStartType MapStartType(WindowsServiceStartType startType) => startType switch {
+        WindowsServiceStartType.BootStart      => DriverStartType.BootStart,
+        WindowsServiceStartType.SystemStart    => DriverStartType.SystemStart,
+        WindowsServiceStartType.AutomaticStart => DriverStartType.AutomaticStart,
+        WindowsServiceStartType.ManualStart    => DriverStartType.ManualStart,
+        WindowsServiceStartType.Disabled       => DriverStartType.Disabled,
+                                             _ => DriverStartType.ManualStart
+    };
+
+    internal static DriverStatus MapStatus(WindowsServiceStatus status) => status switch {
+        WindowsServiceStatus.Stopped         => DriverStatus.Stopped,
+        WindowsServiceStatus.StartPending    => DriverStatus.StartPending,
+        WindowsServiceStatus.StopPending     => DriverStatus.StopPending,
+        WindowsServiceStatus.Running         => DriverStatus.Running,
+        WindowsServiceStatus.ContinuePending => DriverStatus.ContinuePending,
+        WindowsServiceStatus.PausePending    => DriverStatus.PausePending,
+        WindowsServiceStatus.Paused          => DriverStatus.Paused,
+                                           _ => DriverStatus.Stopped
+    };
+
     private static void PopulateDriverConfig(nint hService, DriverInfo driver)
     {
-        if (ServiceControlManager.QueryConfig(hService, driver.ServiceName) is { } config) {
-            driver.StartType = config.StartType;
+        if (ServiceControlManager.QueryConfig(hService, driver.Name) is { } config) {
+            driver.StartType = MapStartType(config.StartType);
             driver.ImagePath = config.BinaryPathName;
         }
 
-        if (driver.StartType == WindowsServiceStartType.AutomaticStart) {
+        if (driver.StartType == DriverStartType.AutomaticStart) {
             driver.DelayedAutoStart = ServiceControlManager.QueryDelayedAutoStart(hService);
         }
 

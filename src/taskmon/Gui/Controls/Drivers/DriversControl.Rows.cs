@@ -1,7 +1,6 @@
 using System.Drawing;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Drivers;
-using Task.Monitor.System.Services.WindowsServices;
 
 namespace Task.Monitor.Gui.Controls.Drivers;
 
@@ -13,25 +12,32 @@ public sealed partial class DriversControl
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeStartType(DriverInfo driver) => driver.StartType switch {
-        WindowsServiceStartType.AutomaticStart =>
+        DriverStartType.AutomaticStart =>
             driver.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
-        WindowsServiceStartType.ManualStart    => "Manual",
-        WindowsServiceStartType.Disabled       => "Disabled",
-        WindowsServiceStartType.BootStart      => "Boot Start",
-        WindowsServiceStartType.SystemStart    => "System Start",
-                                             _ => driver.StartType.ToString()
+        DriverStartType.ManualStart    => "Manual",
+        DriverStartType.Disabled       => "Disabled",
+        DriverStartType.BootStart      => "Boot Start",
+        DriverStartType.SystemStart    => "System Start",
+        DriverStartType.OnDemand       => "On Demand",
+                                     _ => driver.StartType.ToString()
     };
 
-    private static string DescribeStatus(WindowsServiceStatus status) => status switch {
-        WindowsServiceStatus.Stopped => "Stopped",
-        WindowsServiceStatus.StartPending    => "Start Pending",
-        WindowsServiceStatus.StopPending     => "Stop Pending",
-        WindowsServiceStatus.Running         => "Running",
-        WindowsServiceStatus.ContinuePending => "Continue Pending",
-        WindowsServiceStatus.PausePending    => "Pause Pending",
-        WindowsServiceStatus.Paused          => "Paused",
-                                           _ => status.ToString()
+    private static string DescribeStatus(DriverStatus status) => status switch {
+        DriverStatus.Stopped         => "Stopped",
+        DriverStatus.StartPending    => "Start Pending",
+        DriverStatus.StopPending     => "Stop Pending",
+        DriverStatus.Running         => "Running",
+        DriverStatus.ContinuePending => "Continue Pending",
+        DriverStatus.PausePending    => "Pause Pending",
+        DriverStatus.Paused          => "Paused",
+        DriverStatus.Loaded          => "Loaded",
+        DriverStatus.NotLoaded       => "Not Loaded",
+                                   _ => status.ToString()
     };
+
+    // A running Windows driver or a loaded kext; anything else draws in the stopped colour.
+    private static bool IsActive(DriverStatus status) =>
+        status is DriverStatus.Running or DriverStatus.Loaded;
 
     private void RebuildDetailRows(DriverInfo? driver)
     {
@@ -45,7 +51,7 @@ public sealed partial class DriversControl
         Color foreground = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
-        Color statusForeground = driver.Status == WindowsServiceStatus.Running 
+        Color statusForeground = IsActive(driver.Status) 
                 ? foreground 
                 : stoppedForeground;
 
@@ -57,6 +63,7 @@ public sealed partial class DriversControl
 
         detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(driver)], background, foreground));
         detailView.Items.Add(new ListViewItem(["Version",      Cell(driver.Version)],      background, foreground));
+        detailView.Items.Add(new ListViewItem(["Publisher",    Cell(driver.Publisher)],    background, foreground));
         detailView.Items.Add(new ListViewItem(["Path",         Cell(driver.ImagePath)],    background, foreground));
     }
 
@@ -71,12 +78,12 @@ public sealed partial class DriversControl
         int running = 0;
 
         foreach (DriverInfo driver in drivers) {
-            if (driver.Status == WindowsServiceStatus.Running) {
+            if (IsActive(driver.Status)) {
                 running++;
             }
 
             Color statusForeground =
-                driver.Status == WindowsServiceStatus.Running ? foreground : stoppedForeground;
+                IsActive(driver.Status) ? foreground : stoppedForeground;
 
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, Cell(driver.DisplayName),      background, foreground),

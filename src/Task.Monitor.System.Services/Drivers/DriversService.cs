@@ -5,8 +5,10 @@ public sealed partial class DriversService : WorkerService
     private const int RescanEveryCycles = 40;
 
     private DriversSpecs driversSpecs = new();
-    
+
     private int cyclesSinceScan;
+
+    private partial IEnumerable<DriverInfo> EnumerateDrivers();
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
@@ -21,9 +23,19 @@ public sealed partial class DriversService : WorkerService
     protected override void OnStart() =>
         driversSpecs = ScanDrivers();
 
-    private partial DriversSpecs ScanDrivers();
+    private DriversSpecs ScanDrivers()
+    {
+        DriversSpecs specs = new();
 
-#if !__WIN32__
-    private partial DriversSpecs ScanDrivers() => new();
+        specs.Drivers.AddRange(EnumerateDrivers());
+
+        specs.Drivers.Sort(static (left, right) =>
+            string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
+
+        return specs;
+    }
+
+#if !__WIN32__ && !__APPLE__
+    private partial IEnumerable<DriverInfo> EnumerateDrivers() => [];
 #endif
 }

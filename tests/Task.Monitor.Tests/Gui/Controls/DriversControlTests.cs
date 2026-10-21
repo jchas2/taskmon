@@ -2,7 +2,6 @@ using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Drivers;
-using Task.Monitor.System.Services.WindowsServices;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
@@ -62,7 +61,7 @@ public sealed class DriversControlTests
             @"C:\Windows\System32\DriverStore\FileRepository\acpipagr.inf_amd64_d1093347a27ff89c\acpipagr.sys";
 
         ctrl.Sample(SnapshotWith(
-            Driver("ACPI Processor Aggregator Driver", imagePath: longPath),
+            Driver("ACPI Processor Aggregator Driver", imagePath: longPath, publisher: "Microsoft Corporation"),
             Driver("3ware")));
         ctrl.Draw();
 
@@ -71,8 +70,8 @@ public sealed class DriversControlTests
         // The first row is selected by default; its fields show in full in the detail pane, even
         // though the path is too long to fit in the main table's PATH column.
         foreach (string fragment in new[] {
-            "FIELD", "VALUE", "Name", "Status", "Startup Type", "Version", "Path",
-            "ACPI Processor Aggregator Driver", "Running", "Boot Start", longPath
+            "FIELD", "VALUE", "Name", "Status", "Startup Type", "Version", "Publisher", "Path",
+            "ACPI Processor Aggregator Driver", "Running", "Boot Start", "Microsoft Corporation", longPath
         }) {
             Assert.Contains(fragment, output);
         }
@@ -86,11 +85,11 @@ public sealed class DriversControlTests
         DriversControl ctrl = CreateControl();
 
         ctrl.Sample(SnapshotWith(
-            Driver("Microsoft ACPI Driver", status: WindowsServiceStatus.Running,
-                startType: WindowsServiceStartType.BootStart,
+            Driver("Microsoft ACPI Driver", status: DriverStatus.Running,
+                startType: DriverStartType.BootStart,
                 imagePath: @"C:\Windows\System32\drivers\ACPI.sys", version: "10.0.26100.9278"),
-            Driver("3ware", status: WindowsServiceStatus.Stopped,
-                startType: WindowsServiceStartType.ManualStart,
+            Driver("3ware", status: DriverStatus.Stopped,
+                startType: DriverStartType.ManualStart,
                 imagePath: @"C:\Windows\System32\drivers\3ware.sys", version: "5.1.0.51")));
         ctrl.Draw();
 
@@ -119,22 +118,47 @@ public sealed class DriversControlTests
         ctrl.Unload();
     }
 
+    [Fact]
+    public void Draws_The_Kext_Status_And_Start_Type()
+    {
+        DriversControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            Driver("IOKit USB host family", status: DriverStatus.Loaded,
+                startType: DriverStartType.BootStart,
+                imagePath: "/System/Library/Extensions/IOUSBHostFamily.kext", version: "1.2"),
+            Driver("HighPointRR", status: DriverStatus.NotLoaded,
+                startType: DriverStartType.OnDemand,
+                imagePath: "/Library/Extensions/HighPointRR.kext", version: "1.1.12")));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        foreach (string fragment in new[] { "Loaded", "Not Loaded", "On Demand" }) {
+            Assert.Contains(fragment, output);
+        }
+
+        ctrl.Unload();
+    }
+
     private static DriverInfo Driver(
         string displayName,
-        string serviceName = "Drv",
-        WindowsServiceStatus status = WindowsServiceStatus.Running,
-        WindowsServiceStartType startType = WindowsServiceStartType.BootStart,
+        string name = "Drv",
+        DriverStatus status = DriverStatus.Running,
+        DriverStartType startType = DriverStartType.BootStart,
         bool delayedAutoStart = false,
         string? imagePath = @"C:\Windows\System32\drivers\drv.sys",
-        string? version = "10.0.26100.1150") =>
+        string? version = "10.0.26100.1150",
+        string? publisher = null) =>
         new() {
-            ServiceName = serviceName,
+            Name = name,
             DisplayName = displayName,
             Status = status,
             StartType = startType,
             DelayedAutoStart = delayedAutoStart,
             ImagePath = imagePath,
-            Version = version
+            Version = version,
+            Publisher = publisher
         };
 
     // Regression test: OnGotFocus redirects focus down to driversView, which makes this
@@ -206,15 +230,31 @@ public sealed class DriversControlTests
         ctrl.Unload();
     }
 
+    // A loaded kext is macOS's running driver, so it counts towards the same total.
+    [Fact]
+    public void Shows_Loaded_Kexts_In_The_Running_Count()
+    {
+        DriversControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            Driver("A", status: DriverStatus.Loaded),
+            Driver("B", status: DriverStatus.NotLoaded)));
+        ctrl.Draw();
+
+        Assert.Contains("1 running / 2 total", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Shows_The_Running_And_Total_Counts_In_The_Footer()
     {
         DriversControl ctrl = CreateControl();
 
         ctrl.Sample(SnapshotWith(
-            Driver("A", status: WindowsServiceStatus.Running),
-            Driver("B", status: WindowsServiceStatus.Stopped),
-            Driver("C", status: WindowsServiceStatus.Running)));
+            Driver("A", status: DriverStatus.Running),
+            Driver("B", status: DriverStatus.Stopped),
+            Driver("C", status: DriverStatus.Running)));
         ctrl.Draw();
 
         Assert.Contains("2 running / 3 total", CapturedOutput());

@@ -5,7 +5,8 @@ namespace Task.Monitor.System.Services.Common;
 
 public static partial class CodeSigningPublisher
 {
-    private const string ApplePublisher    = "Apple Inc.";
+    public const string ApplePublisher = "Apple Inc.";
+
     private const string AppStorePublisher = "Mac App Store";
 
     public static string? Parse(string? subjectSummary)

@@ -15,7 +15,7 @@ public sealed partial class DriversControl : Control
     private const int StartupTypeColumnWidth = 26;
 
     private const int DetailFieldColumnWidth = 14;
-    private const int DetailViewHeight       = 8;   // border (2) + column headers (1) + 5 field rows
+    private const int DetailViewHeight       = 9;   // border (2) + column headers (1) + 6 field rows
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
@@ -72,7 +72,7 @@ public sealed partial class DriversControl : Control
     private static string BuildSignature(IReadOnlyList<DriverInfo> entries) =>
         entries.Count + "|" + 
         string.Join("|", entries.Select(driver =>
-            $"{driver.ServiceName}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
+            $"{driver.Name}:{(int)driver.Status}:{(int)driver.StartType}:{driver.Version}"));
 
     private void EnsureRows(DriversInfo info)
     {
