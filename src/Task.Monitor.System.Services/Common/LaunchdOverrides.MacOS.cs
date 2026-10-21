@@ -1,8 +1,12 @@
 #if __APPLE__
-namespace Task.Monitor.System.Services.Startup;
+using Task.Monitor.Interop.Mach;
+
+namespace Task.Monitor.System.Services.Common;
 
 public sealed class LaunchdOverrides
 {
+    private const string DatabasePath = "/private/var/db/com.apple.xpc.launchd";
+
     public static readonly LaunchdOverrides Empty = new(new Dictionary<string, bool>());
 
     private readonly IReadOnlyDictionary<string, bool> disabledByLabel;
@@ -11,6 +15,17 @@ public sealed class LaunchdOverrides
         this.disabledByLabel = disabledByLabel;
 
     public bool Contains(string? label) => label is not null && disabledByLabel.ContainsKey(label);
+
+    public bool IsDisabled(string? label, bool? plistDisabled, bool? approved = null)
+    {
+        if (approved == false) {
+            return true;
+        }
+
+        return label is not null && disabledByLabel.TryGetValue(label, out bool overridden)
+            ? overridden
+            : plistDisabled ?? false;
+    }
 
     public static LaunchdOverrides Parse(object? plist)
     {
@@ -29,19 +44,11 @@ public sealed class LaunchdOverrides
         return new LaunchdOverrides(disabledByLabel);
     }
 
-    public StartupEntryState ResolveState(string? label, bool? plistDisabled, bool? approved = null)
-    {
-        if (approved == false) {
-            return StartupEntryState.Disabled;
-        }
+    private static LaunchdOverrides Read(string fileName) =>
+        Parse(PropertyList.ReadFile(Path.Combine(DatabasePath, fileName)));
 
-        bool disabled = label is not null && disabledByLabel.TryGetValue(label, out bool overridden)
-            ? overridden
-            : plistDisabled ?? false;
+    public static LaunchdOverrides ReadSystem() => Read("disabled.plist");
 
-        return disabled 
-            ? StartupEntryState.Disabled 
-            : StartupEntryState.Enabled;
-    }
+    public static LaunchdOverrides ReadUser(uint uid) => Read($"disabled.{uid}.plist");
 }
 #endif

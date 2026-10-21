@@ -7,7 +7,6 @@ namespace Task.Monitor.System.Services.Drivers;
 internal static partial class DriverLookup
 {
     private const string KernelInterfacePrefix = "com.apple.kpi.";
-    private const string SystemVolumePrefix    = "/System/";
 
     private static readonly string[] ExtensionRoots = ["/System/Library/Extensions", "/Library/Extensions"];
     private static readonly string[] InfoKeys       = ["CFBundleIdentifier", "CFBundleName", "CFBundleVersion", "OSBundleRequired"];
@@ -71,7 +70,7 @@ internal static partial class DriverLookup
         }
 
         foreach (DriverInfo driver in drivers) {
-            driver.Publisher = ResolvePublisher(driver.ImagePath!);
+            driver.Publisher = CodeSigningPublisher.Resolve(driver.ImagePath!);
         }
 
         return drivers;
@@ -111,16 +110,5 @@ internal static partial class DriverLookup
         "Console" or "Safe Boot"                 => DriverStartType.SystemStart,
                                                _ => DriverStartType.OnDemand
     };
-
-    internal static string? ResolvePublisher(string bundlePath)
-    {
-        if (CodeSigningPublisher.Parse(CodeSigning.GetSigningCertificateSummary(bundlePath)) is { } publisher) {
-            return publisher;
-        }
-
-        return bundlePath.StartsWith(SystemVolumePrefix, StringComparison.Ordinal)
-            ? CodeSigningPublisher.ApplePublisher
-            : null;
-    }
 }
 #endif

@@ -1,13 +1,20 @@
 #if __APPLE__
 using System.Text.RegularExpressions;
+using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Common;
 
 public static partial class CodeSigningPublisher
 {
-    public const string ApplePublisher = "Apple Inc.";
-
+    private const string ApplePublisher    = "Apple Inc.";
     private const string AppStorePublisher = "Mac App Store";
+    private const string UserLocalPrefix   = "/usr/local/";
+
+    private static readonly string[] SealedSystemPrefixes = ["/System/", "/usr/", "/bin/", "/sbin/"];
+
+    private static bool IsOnSealedSystemVolume(string path) =>
+        SealedSystemPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal)) &&
+        !path.StartsWith(UserLocalPrefix, StringComparison.Ordinal);
 
     public static string? Parse(string? subjectSummary)
     {
@@ -33,6 +40,17 @@ public static partial class CodeSigningPublisher
 
         return name.Length > 0 
             ? name 
+            : null;
+    }
+
+    public static string? Resolve(string path)
+    {
+        if (Parse(CodeSigning.GetSigningCertificateSummary(path)) is { } publisher) {
+            return publisher;
+        }
+
+        return IsOnSealedSystemVolume(path)
+            ? ApplePublisher
             : null;
     }
 

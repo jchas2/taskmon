@@ -1,5 +1,4 @@
 #if __APPLE__
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 using Task.Monitor.System.Services.Common;
 
@@ -10,7 +9,6 @@ public partial class StartupService
     private const string MachineLaunchAgentsPath  = "/Library/LaunchAgents";
     private const string MachineLaunchDaemonsPath = "/Library/LaunchDaemons";
     private const string UserLaunchAgentsFolder   = "Library/LaunchAgents";
-    private const string LaunchdOverridesPath     = "/private/var/db/com.apple.xpc.launchd";
     private const string ApplicationsPath         = "/Applications";
     private const string UserApplicationsFolder   = "Applications";
     private const string OpenAtLoginOrigin        = "Login Items (Open at Login)";
@@ -115,7 +113,7 @@ public partial class StartupService
             plistPath);
 
         entry.Publisher ??= background.FindDeveloperName(record);
-        entry.State       = overrides.ResolveState(label, definition.Disabled, record.IsApproved);
+        entry.State       = ToState(overrides.IsDisabled(label, definition.Disabled, record.IsApproved));
 
         specs.Entries.Add(entry);
     }
@@ -144,7 +142,7 @@ public partial class StartupService
             Publisher      = ResolvePublisher(helperPath) ?? background.FindDeveloperName(record),
             Source         = StartupEntrySource.LoginHelper,
             Scope          = StartupEntryScope.User,
-            State          = userOverrides.ResolveState(label, null, record.IsApproved),
+            State          = ToState(userOverrides.IsDisabled(label, null, record.IsApproved)),
             Origin         = helperPath
         });
     }
@@ -186,21 +184,6 @@ public partial class StartupService
         };
 
     // TODO: Use IFileSystem abstraction.
-    private static string[] EnumerateFiles(string folderPath, string pattern)
-    {
-        if (!Directory.Exists(folderPath)) {
-            return [];
-        }
-
-        try {
-            return Directory.GetFiles(folderPath, pattern);
-        }
-        catch (Exception ex) {
-            TraceEx.WriteLineOnce($"{nameof(EnumerateFiles)} {folderPath}", ex.Message);
-            return [];
-        }
-    }
-
     private static bool? GetLegacyApproval(string plistPath, bool isAnswerable)
     {
         if (!isAnswerable) {
@@ -221,9 +204,6 @@ public partial class StartupService
 
     private static bool IsRegistered(string label, LaunchdOverrides overrides, Func<string, bool> isLoaded) =>
         overrides.Contains(label) || isLoaded(label);
-
-    private static LaunchdOverrides ReadOverrides(string fileName) =>
-        LaunchdOverrides.Parse(PropertyList.ReadFile(Path.Combine(LaunchdOverridesPath, fileName)));
 
     private string? ResolvePublisher(string path)
     {
@@ -272,7 +252,7 @@ public partial class StartupService
         LaunchdOverrides   overrides,
         Func<string, bool> isLoaded)
     {
-        foreach (string file in EnumerateFiles(folderPath, "*.plist")) {
+        foreach (string file in LaunchdJobDefinition.EnumeratePlists(folderPath)) {
             LaunchdJobDefinition? definition = LaunchdJobDefinition.Parse(PropertyList.ReadFile(file), appPath);
 
             if (definition is not { StartsAtLoad: true, Label: { } label } || !IsRegistered(label, overrides, isLoaded)) {
@@ -286,7 +266,7 @@ public partial class StartupService
                 scope, 
                 file);
             
-            entry.State = overrides.ResolveState(label, definition.Disabled);
+            entry.State = ToState(overrides.IsDisabled(label, definition.Disabled));
 
             specs.Entries.Add(entry);
         }
@@ -328,7 +308,7 @@ public partial class StartupService
         LaunchdOverrides    overrides,
         Func<string, bool?> getApproval)
     {
-        foreach (string file in EnumerateFiles(folderPath, "*.plist")) {
+        foreach (string file in LaunchdJobDefinition.EnumeratePlists(folderPath)) {
             string fileLabel = Path.GetFileNameWithoutExtension(file);
 
             if (fileLabel.StartsWith(AppleLabelPrefix, StringComparison.Ordinal)) {
@@ -362,7 +342,7 @@ public partial class StartupService
                 scope, 
                 file);
             
-            entry.State = overrides.ResolveState(label, definition.Disabled, getApproval(file));
+            entry.State = ToState(overrides.IsDisabled(label, definition.Disabled, getApproval(file)));
 
             specs.Entries.Add(entry);
         }
@@ -394,7 +374,7 @@ public partial class StartupService
                 Publisher      = ResolvePublisher(helperPath),
                 Source         = StartupEntrySource.LoginHelper,
                 Scope          = StartupEntryScope.User,
-                State          = userOverrides.ResolveState(bundleId, null),
+                State          = ToState(userOverrides.IsDisabled(bundleId, null)),
                 Origin         = helperPath
             });
         }
@@ -427,8 +407,8 @@ public partial class StartupService
         StartupSpecs specs = new();
         TargetUser user = TargetUser.Current();
 
-        LaunchdOverrides systemOverrides = ReadOverrides("disabled.plist");
-        LaunchdOverrides userOverrides   = ReadOverrides($"disabled.{user.Uid}.plist");
+        LaunchdOverrides systemOverrides = LaunchdOverrides.ReadSystem();
+        LaunchdOverrides userOverrides   = LaunchdOverrides.ReadUser(user.Uid);
 
         BackgroundItems? background = user.IsRoot
             ? BackgroundItems.From(BackgroundItemsDatabase.Read(), user)
@@ -488,5 +468,8 @@ public partial class StartupService
 
         return specs;
     }
+
+    private static StartupEntryState ToState(bool disabled) =>
+        disabled ? StartupEntryState.Disabled : StartupEntryState.Enabled;
 }
 #endif

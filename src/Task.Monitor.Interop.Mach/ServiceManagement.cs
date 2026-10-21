@@ -31,6 +31,24 @@ public static class ServiceManagement
     private static readonly Lazy<nint> SystemDomain = new(() =>
         DyLib.ReadExportedPointer(Libraries.ServiceManagement, "kSMDomainSystemLaunchd"));
 
+    private static List<Dictionary<string, object?>>? GetJobs(nint domain)
+    {
+        if (domain == nint.Zero) {
+            return null;
+        }
+
+        try {
+            using CFScope jobs = new(SMCopyAllJobDictionaries(domain));
+
+            return PropertyList.ToManaged(jobs) is List<object?> list
+                ? list.OfType<Dictionary<string, object?>>().ToList()
+                : null;
+        }
+        catch (EntryPointNotFoundException) {
+            return null;
+        }
+    }
+
     public static LegacyServiceStatus? GetLegacyStatus(string plistPath)
     {
         (nint smAppService, nint selector) = StatusForLegacyUrl.Value;
@@ -59,6 +77,10 @@ public static class ServiceManagement
         }
     }
 
+    public static List<Dictionary<string, object?>>? GetSystemJobs() => GetJobs(SystemDomain.Value);
+
+    public static List<Dictionary<string, object?>>? GetUserJobs() => GetJobs(UserDomain.Value);
+
     private static bool IsLoaded(nint domain, string label)
     {
         if (domain == nint.Zero || label.Length == 0) {
@@ -80,6 +102,9 @@ public static class ServiceManagement
     public static bool IsLoadedInSystemDomain(string label) => IsLoaded(SystemDomain.Value, label);
 
     public static bool IsLoadedInUserDomain(string label) => IsLoaded(UserDomain.Value, label);
+
+    [DllImport(Libraries.ServiceManagement)]
+    private static extern nint SMCopyAllJobDictionaries(nint domain);
 
     [DllImport(Libraries.ServiceManagement)]
     private static extern nint SMJobCopyDictionary(nint domain, nint jobLabel);

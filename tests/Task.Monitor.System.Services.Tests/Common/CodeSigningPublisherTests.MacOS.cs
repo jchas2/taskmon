@@ -24,6 +24,45 @@ public sealed class CodeSigningPublisherTests
     }
 
     [Theory]
+    [InlineData("/usr/local/bin/tool")]
+    [InlineData("/Library/Application Support/Vendor/tool")]
+    public void Resolve_Does_Not_Treat_Writable_Locations_As_Apples(string path)
+    {
+        Assert.Null(CodeSigningPublisher.Resolve(path));
+    }
+
+    [Fact]
+    public void Resolve_Reads_A_Signed_Programs_Publisher()
+    {
+        Assert.Equal("Apple Inc.", CodeSigningPublisher.Resolve("/bin/ls"));
+    }
+
+    [Fact]
+    public void Resolve_Returns_Null_For_Unsigned_Code_Outside_The_System_Volume()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sh");
+        File.WriteAllText(path, "#!/bin/sh\n");
+
+        try {
+            Assert.Null(CodeSigningPublisher.Resolve(path));
+        }
+        finally {
+            File.Delete(path);
+        }
+    }
+
+    // Apple's kext bundles hold no code, so they carry no signature; the sealed volume vouches for them.
+    [SkippableFact]
+    public void Resolve_Treats_Unsigned_Code_On_The_System_Volume_As_Apples()
+    {
+        const string UsbHostFamily = "/System/Library/Extensions/IOUSBHostFamily.kext";
+
+        Skip.IfNot(Directory.Exists(UsbHostFamily), $"{UsbHostFamily} is not installed");
+
+        Assert.Equal("Apple Inc.", CodeSigningPublisher.Resolve(UsbHostFamily));
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]

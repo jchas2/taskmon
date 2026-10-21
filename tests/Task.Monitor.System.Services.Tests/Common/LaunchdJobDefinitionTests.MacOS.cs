@@ -1,7 +1,7 @@
 #if __APPLE__
-using Task.Monitor.System.Services.Startup;
+using Task.Monitor.System.Services.Common;
 
-namespace Task.Monitor.System.Services.Tests.Startup;
+namespace Task.Monitor.System.Services.Tests.Common;
 
 public sealed class LaunchdJobDefinitionTests
 {
@@ -27,6 +27,30 @@ public sealed class LaunchdJobDefinitionTests
 
         Assert.NotNull(definition);
         Assert.False(definition.StartsAtLoad);
+    }
+
+    [Fact]
+    public void EnumeratePlists_Lists_Only_Plist_Files()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "com.example.agent.plist"), string.Empty);
+        File.WriteAllText(Path.Combine(folder, "notes.txt"), string.Empty);
+
+        try {
+            string path = Assert.Single(LaunchdJobDefinition.EnumeratePlists(folder));
+
+            Assert.EndsWith("com.example.agent.plist", path);
+        }
+        finally {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void EnumeratePlists_Returns_Nothing_For_A_Missing_Folder()
+    {
+        Assert.Empty(LaunchdJobDefinition.EnumeratePlists(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}")));
     }
 
     [Fact]

@@ -8,6 +8,7 @@ using Task.Monitor.System.Services.DiskSpace;
 using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.InstalledApps;
+using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
 using Task.Monitor.System.Services.Power;
@@ -32,16 +33,19 @@ public sealed class RunAppAction(RunContext runContext) : IAction
             .AddService(() => new DiskService())
             .AddService(() => new DiskSpaceService())
             .AddService(() => new NetworkService())
-            .AddService(() => new ProcessService {
-                IrixMode = runContext.AppConfig.UseIrixReporting
-            })
+            .AddService(() => new ProcessService())
             .AddService(() => new StartupService())
             .AddService(() => new InstalledAppsService())
+#if __WIN32__
             .AddService(() => new WindowsServicesService())
+#elif __APPLE__
+            .AddService(() => new LaunchdServicesService())
+#endif
             .AddService(() => new DriversService())
             .AddService(() => new ThermalService())
             .AddService(() => new PowerService());
 
+        runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
 
         ScreenApplication screenApp = new(runContext.Terminal);

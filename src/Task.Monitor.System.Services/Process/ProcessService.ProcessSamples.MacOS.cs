@@ -32,9 +32,6 @@ public partial class ProcessService
 
     private static unsafe ProcessSample? CreateProcessSample(int pid)
     {
-        const int KernelTaskPid = 0;
-        const int LaunchdPid    = 1;
-
         int size = sizeof(ProcInfo.proc_taskallinfo);
         ProcInfo.proc_taskallinfo procTaskInfo = default;
 
@@ -69,7 +66,7 @@ public partial class ProcessService
         sample.FileDescription = Marshal.PtrToStringUTF8(pbiNamePtr) ?? sample.ProcessName;
         sample.ModuleName      = Path.GetFileName(sample.FileName);
         sample.ParentPid       = (int)procBsdInfo.pbi_ppid;
-        sample.IsDaemon        = procBsdInfo.pbi_ppid == LaunchdPid || pid == LaunchdPid || pid == KernelTaskPid;
+        sample.IsDaemon        = IsDaemon(pid, (int)procBsdInfo.pbi_ppid, procBsdInfo.pbi_uid);
         sample.IsLowPriority   = procBsdInfo.pbi_nice > 0;
         sample.IsRunningAsRoot = procBsdInfo.pbi_uid == 0;
         sample.UserName        = GetProcessUserName(ref procTaskInfo);
@@ -165,6 +162,15 @@ public partial class ProcessService
         }
 
         return Encoding.UTF8.GetString(buffer, byteCount);
+    }
+
+    internal static bool IsDaemon(int pid, int parentPid, uint uid)
+    {
+        const int  KernelTaskPid = 0;
+        const int  LaunchdPid    = 1;
+        const uint FirstUserUid  = 500;
+
+        return pid is KernelTaskPid or LaunchdPid || (parentPid == LaunchdPid && uid < FirstUserUid);
     }
 #endif
 }

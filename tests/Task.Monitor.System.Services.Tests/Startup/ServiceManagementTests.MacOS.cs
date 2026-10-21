@@ -23,5 +23,32 @@ public sealed class ServiceManagementTests
 
         Assert.Equal(ServiceManagement.LegacyServiceStatus.NotRegistered, status);
     }
+
+    // Every Mac loads these system daemons, whether or not anything is using them.
+    [Fact]
+    public void GetSystemJobs_Lists_The_System_Daemons_With_Their_Programs()
+    {
+        List<Dictionary<string, object?>>? jobs = ServiceManagement.GetSystemJobs();
+
+        Assert.NotNull(jobs);
+
+        Dictionary<string, object?> syslogd = Assert.Single(jobs, job => job.GetValueOrDefault("Label") as string == "com.apple.syslogd");
+
+        Assert.Equal("/usr/sbin/syslogd", syslogd.GetValueOrDefault("Program") ?? (syslogd.GetValueOrDefault("ProgramArguments") as List<object?>)?[0]);
+    }
+
+    // launchd keeps a handful of system daemons running at all times, and reports their pids to any
+    // caller, root or not.
+    [Fact]
+    public void GetSystemJobs_Reports_The_Pid_Of_A_Running_Daemon()
+    {
+        Assert.Contains(ServiceManagement.GetSystemJobs() ?? [], job => job.GetValueOrDefault("PID") is long pid && pid > 0);
+    }
+
+    [Fact]
+    public void GetUserJobs_Lists_This_Users_Agents()
+    {
+        Assert.NotEmpty(ServiceManagement.GetUserJobs() ?? []);
+    }
 }
 #endif

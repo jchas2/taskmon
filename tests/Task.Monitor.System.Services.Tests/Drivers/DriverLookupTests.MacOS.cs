@@ -8,10 +8,8 @@ public sealed partial class DriverLookupTests
 {
     private const string BundlePath = "/Library/Extensions/Example.kext";
 
-    // Every Apple Silicon Mac has USB, so this family is installed and loaded. Its bundle isn't
-    // signed: the code lives in the kernel collection.
-    private const string UsbHostFamily     = "com.apple.iokit.IOUSBHostFamily";
-    private const string UsbHostFamilyPath = "/System/Library/Extensions/IOUSBHostFamily.kext";
+    // Every Apple Silicon Mac has USB, so this family is installed and loaded.
+    private const string UsbHostFamily = "com.apple.iokit.IOUSBHostFamily";
 
     [Fact]
     public void GetDrivers_Finds_The_USB_Host_Family_Loaded_With_A_Version_And_Apple_Publisher()
@@ -160,28 +158,6 @@ public sealed partial class DriverLookupTests
     public void MapRequired_Maps_The_Boot_Stage_To_A_Start_Type(string? required, DriverStartType expected)
     {
         Assert.Equal(expected, DriverLookup.MapRequired(required));
-    }
-
-    [Fact]
-    public void ResolvePublisher_Returns_Null_For_Unsigned_Code_Outside_The_System_Volume()
-    {
-        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.kext");
-        Directory.CreateDirectory(path);
-
-        try {
-            Assert.Null(DriverLookup.ResolvePublisher(path));
-        }
-        finally {
-            Directory.Delete(path);
-        }
-    }
-
-    [SkippableFact]
-    public void ResolvePublisher_Treats_An_Unsigned_System_Kext_As_Apples()
-    {
-        Skip.IfNot(Directory.Exists(UsbHostFamilyPath), $"{UsbHostFamilyPath} is not installed");
-
-        Assert.Equal("Apple Inc.", DriverLookup.ResolvePublisher(UsbHostFamilyPath));
     }
 }
 #endif

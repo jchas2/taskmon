@@ -5,7 +5,7 @@ namespace Task.Monitor.System.Services.Tests.Process;
 
 // Shares WindowsServiceLookup's static map: on Windows, ProcessService drives it every cycle.
 [Collection(WindowsServiceLookupCollection.Name)]
-public sealed class ProcessServiceTests
+public sealed partial class ProcessServiceTests
 {
     private const int MinimumDelay = 500;
 

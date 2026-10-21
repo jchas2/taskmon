@@ -4,6 +4,7 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.Gui.Controls.InstalledApps;
+using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
@@ -34,7 +35,7 @@ public sealed class MainScreen2 : Screen
     private readonly SystemInfoControl    systemInfoControl;
     private readonly StartupControl       startupControl;
     private readonly InstalledAppsControl installedAppsControl;
-    private readonly ServicesControl      servicesControl;
+    private readonly Control              servicesControl;
     private readonly DriversControl       driversControl;
     private readonly DiskSpaceControl     diskSpaceControl;
     private readonly FooterControl        footerControl;
@@ -135,11 +136,15 @@ public sealed class MainScreen2 : Screen
             TabIndex = 2
         };
 
+#if __APPLE__
+        servicesControl = new LaunchdServicesControl(
+#else
         servicesControl = new ServicesControl(
+#endif
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
-            TabStop = true,
+            TabStop  = true,
             TabIndex = 2
         };
 

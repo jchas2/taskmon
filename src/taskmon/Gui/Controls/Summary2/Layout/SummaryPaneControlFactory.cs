@@ -3,6 +3,7 @@ using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.Gui.Controls.InstalledApps;
+using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
@@ -74,7 +75,11 @@ public static class SummaryPaneControlFactory
                 VisibleColumnsOverride = pane.ProcessColumns
             },
             PaneControlType.Drivers       => new DriversControl(serviceController, terminal, appConfig)       { TabStop = true },
+#if __APPLE__
+            PaneControlType.Services      => new LaunchdServicesControl(serviceController, terminal, appConfig) { TabStop = true },
+#else
             PaneControlType.Services      => new ServicesControl(serviceController, terminal, appConfig)      { TabStop = true },
+#endif
             PaneControlType.Startup       => new StartupControl(serviceController, terminal, appConfig)       { TabStop = true },
             PaneControlType.InstalledApps => new InstalledAppsControl(serviceController, terminal, appConfig) { TabStop = true },
             PaneControlType.SystemInfo    => new SystemInfoControl(serviceController, terminal, appConfig)    { TabStop = true },

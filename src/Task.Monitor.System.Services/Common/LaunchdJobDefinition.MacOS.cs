@@ -1,5 +1,7 @@
 #if __APPLE__
-namespace Task.Monitor.System.Services.Startup;
+using Task.Monitor.Cli.Utils;
+
+namespace Task.Monitor.System.Services.Common;
 
 // Parses a launchd job property list.
 public sealed class LaunchdJobDefinition
@@ -7,6 +9,21 @@ public sealed class LaunchdJobDefinition
     public string? Arguments { get; private set; }
     public string Command { get; private set; } = string.Empty;
     public bool? Disabled { get; private set; }
+
+    public static string[] EnumeratePlists(string folderPath)
+    {
+        if (!Directory.Exists(folderPath)) {
+            return [];
+        }
+
+        try {
+            return Directory.GetFiles(folderPath, "*.plist");
+        }
+        catch (Exception ex) {
+            TraceEx.WriteLineOnce($"{nameof(EnumeratePlists)} {folderPath}", ex.Message);
+            return [];
+        }
+    }
 
     public string? ExecutablePath { get; private set; }
 
