@@ -14,6 +14,9 @@ public static class IOReport
     public static extern nint IOReportChannelGetSubGroup(nint item);
 
     [DllImport(Libraries.IOReport)]
+    public static extern nint IOReportChannelGetUnitLabel(nint item);
+
+    [DllImport(Libraries.IOReport)]
     public static extern IntPtr IOReportCopyChannelsInGroup(
         nint  group,
         nint  subgroup,
@@ -34,6 +37,9 @@ public static class IOReport
         out nint subbedChannels,
         ulong    d,
         nint     e);
+
+    [DllImport(Libraries.IOReport)]
+    public static extern long IOReportSimpleGetIntegerValue(nint item, int index);
 
     [DllImport(Libraries.IOReport)]
     public static extern int IOReportStateGetCount(nint item);

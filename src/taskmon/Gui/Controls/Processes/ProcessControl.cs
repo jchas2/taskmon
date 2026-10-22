@@ -114,8 +114,7 @@ public sealed partial class ProcessControl : Control
     public List<int> CheckedProcesses
     {
         get {
-            try {
-                Control.DrawingLockAcquire();
+            lock (DrawingLock) {
 
                 int GetItemPid(ListViewItem item)
                 {
@@ -136,9 +135,6 @@ public sealed partial class ProcessControl : Control
                     : [];
 
                 return checkedProcesses;
-            }
-            finally {
-                Control.DrawingLockRelease();
             }
         }
     }
@@ -396,8 +392,7 @@ public sealed partial class ProcessControl : Control
     public int SelectedProcessId
     {
         get {
-            try {
-                Control.DrawingLockAcquire();
+            lock (DrawingLock) {
                 if (processView.SelectedItem == null) {
                     return InvalidSelectedItemIndex;
                 }
@@ -409,9 +404,6 @@ public sealed partial class ProcessControl : Control
                 }
 
                 return InvalidSelectedItemIndex;
-            }
-            finally {
-                Control.DrawingLockRelease();
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
@@ -64,6 +65,7 @@ public sealed class MenuControl : Control
     private void OnMenuItemClicked(object? sender, ListViewItemEventArgs e)
     {
         if (e.Item is MenuListViewItem menuItem) {
+            Trace.WriteLine($"MenuControl.MenuItemClicked = {menuItem.Text}");
             MenuItemClicked?.Invoke(sender,  new MenuItemEventArgs(menuItem));
         }
     }

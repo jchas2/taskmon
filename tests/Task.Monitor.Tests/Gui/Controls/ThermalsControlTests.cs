@@ -1,5 +1,6 @@
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
@@ -103,6 +104,48 @@ public sealed class ThermalsControlTests
     }
 
     [Fact]
+    public void Draws_Power_Readings_In_The_Right_Hand_Table()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        ctrl.Sample(new SystemSnapshot {
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [
+                        Power(PowerComponent.Cpu,          PowerRails.PerformanceCores, 1.9),
+                        Power(PowerComponent.NeuralEngine, PowerRails.NeuralEngine,     0.0),
+                        Power(PowerComponent.System,       PowerRails.SystemBattery,    9.6),
+                        Power(PowerComponent.Disk,         "Drive",                     5.5, componentId: "0", rated: true),
+                    ]
+                }
+            }
+        });
+
+        string output = CapturedOutput();
+
+        Assert.Contains("POWER", output);
+        Assert.Contains("P-Cores", output);
+        Assert.Contains("1.9 W", output);
+        Assert.Contains("Neural Engine", output);
+        Assert.Contains("System (battery)", output);
+        Assert.Contains("5.5 W (rated)", output);
+        Assert.True(output.IndexOf("System (battery)", StringComparison.Ordinal) < output.IndexOf("P-Cores", StringComparison.Ordinal));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Draws_The_Empty_Power_Table_Without_Readings()
+    {
+        ThermalsControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.Contains("No power readings available.", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Draws_The_Empty_State_When_There_Are_No_Sensors()
     {
         ThermalsControl ctrl = CreateControl();
@@ -128,6 +171,17 @@ public sealed class ThermalsControlTests
 
         ctrl.Unload();
     }
+
+    private static PowerReading Power(
+        PowerComponent component, string rail, double watts, string componentId = "", bool rated = false) =>
+        new() {
+            Component   = component,
+            ComponentId = componentId,
+            Rail        = rail,
+            Watts       = watts,
+            IsRated     = rated,
+            Source      = PowerSource.IOReport
+        };
 
     [Fact]
     public void Scrolls_Charts_That_Do_Not_Fit()

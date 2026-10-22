@@ -75,9 +75,7 @@ public partial class Screen : Control
 
         Control? previous = focusedControl;
 
-        try {
-            DrawingLockAcquire();
-
+        lock (DrawingLock) {
             if (previous != null) {
                 previous.Focused = false;
                 previous.LostFocus();
@@ -89,9 +87,6 @@ public partial class Screen : Control
             control.Focused = true;
             control.GotFocus();
             control.Draw();
-        }
-        finally {
-            DrawingLockRelease();
         }
     }
     

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.MessageBox;
 
@@ -90,6 +91,7 @@ public class ScreenApplication
                         
                         consoleKey = consoleKeyInfo.Key;
                         
+                        Trace.WriteLine($"Terminal.ReadKey = {consoleKeyInfo.Key}");
                         currScreen.KeyPressed(consoleKeyInfo, ref handled);
 
                         if (!handled && consoleKey == ConsoleKey.Escape && screenStack.Count == 1) {
@@ -183,8 +185,9 @@ public class ScreenApplication
             throw new InvalidOperationException($"Screen {typeof(T)} is not registered.");
         }
 
+        Trace.WriteLine($"ShowScreen {typeof(T)}");
+        
         Screen screen = (T)registeredScreens[typeof(T)];
-
         applicationContext.OwnerScreen = screen;
     }
 }

@@ -164,13 +164,9 @@ public sealed class SummaryControl2 : Control
     {
         snapshot = e.Snapshot;
 
-        try {
-            Control.DrawingLockAcquire();
+        lock (DrawingLock) {
             OnDrawCharts();
             OnDrawProcesses();
-        }
-        finally {
-            Control.DrawingLockRelease();
         }
     }
 

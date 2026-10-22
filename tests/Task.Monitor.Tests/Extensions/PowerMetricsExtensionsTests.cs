@@ -6,6 +6,20 @@ namespace Task.Monitor.Tests.Extensions;
 public sealed class PowerMetricsExtensionsTests
 {
     [Fact]
+    public void CpuPower_Returns_The_Total_Rather_Than_A_Cluster()
+    {
+        PowerMetrics metrics = new() {
+            Readings = [
+                Reading(PowerComponent.Cpu, "", 0.4, rail: PowerRails.EfficiencyCores),
+                Reading(PowerComponent.Cpu, "", 2.5, rail: PowerRails.Cpu),
+            ]
+        };
+
+        Assert.Equal(2.5, metrics.CpuPower());
+        Assert.Null(new PowerMetrics().CpuPower());
+    }
+
+    [Fact]
     public void DiskPower_Returns_The_Reading_With_Its_Rated_Flag()
     {
         PowerMetrics metrics = new() {
@@ -43,11 +57,11 @@ public sealed class PowerMetricsExtensionsTests
     }
 
     private static PowerReading Reading(
-        PowerComponent component, string id, double watts, bool rated = false) =>
+        PowerComponent component, string id, double watts, bool rated = false, string rail = "test") =>
         new() {
             Component = component,
             ComponentId = id,
-            Rail = "test",
+            Rail = rail,
             Watts = watts,
             IsRated = rated,
             Source = PowerSource.Nvml

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
@@ -672,21 +673,10 @@ public sealed class PerformanceControl : Control
 
     private void SetActiveControl(PerformancePanelControl nextControl)
     {
+        Trace.WriteLine($"SetActiveControl {nextControl.AssociatedControl.GetType()}");
+        
         activeControl.IsSelected = false;
         activeControl = nextControl;
-
-        // int previousScrollOffset = scrollOffset;
-        // LayoutPanelColumn();
-        //
-        // if (scrollOffset != previousScrollOffset) {
-        //     DrawRectangle(
-        //         X, 
-        //         Y, 
-        //         panelColumnWidth, 
-        //         Height, 
-        //         BackgroundColour);
-        // }
-
         activeControl.AssociatedControl.Clear();
         activeControl.IsSelected = true;
         activeControl.SetFocus();

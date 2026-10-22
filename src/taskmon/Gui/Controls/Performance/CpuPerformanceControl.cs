@@ -29,6 +29,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     private ListView     cpuSpecsListView;
     private CpuInfo?     cpuInfo;
     
+    private double? power;
     private double? temperature;
     
     public CpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
@@ -58,7 +59,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader("Utilization"))
             .Add(new ListViewColumnHeader("Speed"))
             .Add(new ListViewColumnHeader("Processes"))
-            .Add(new ListViewColumnHeader("Threads"));
+            .Add(new ListViewColumnHeader("Threads"))
+            .Add(new ListViewColumnHeader("Power Draw"));
         
         cpuSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -110,6 +112,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             cpuMetricsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
             cpuMetricsListView.Items[0].SubItems[2].Text = "0";
             cpuMetricsListView.Items[0].SubItems[3].Text = "0";
+            cpuMetricsListView.Items[0].SubItems[4].Text = power.ToWattText();
             cpuMetricsListView.Draw();
 
             cpuSpecsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.CpuName;
@@ -148,7 +151,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetre.AddSeries("Kernel", appConfig.Theme.PerformanceCpuKernel);
         cpuMetre.AddSeries("User",   appConfig.Theme.PerformanceCpuUser);
         
-        ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0" });
+        ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", "N/A" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         
         cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Name:",                string.Empty }));
@@ -262,6 +265,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             }
 
             cpuInfo     = cpu;
+            power       = snapshot.Power?.Metrics.CpuPower();
             temperature = snapshot.Thermal?.Metrics.CpuTemperature();
 
             int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);

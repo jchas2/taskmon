@@ -432,93 +432,90 @@ public partial class ProcessInfoControl : Control
 
         string prevEmptyText = modulesView.EmptyListViewText;
         
-        try {
-            Control.DrawingLockAcquire();
-            modulesView.EmptyListViewText = MsgLoading;
-            modulesView.Items.Clear();
-            modulesView.Draw();
+        lock (DrawingLock) {
+            try {
+                modulesView.EmptyListViewText = MsgLoading;
+                modulesView.Items.Clear();
+                modulesView.Draw();
 
-            List<ModuleInfo> modules = moduleService.GetModules(SelectedProcessId)
-                .OrderBy(m => m.ModuleName)
-                .ToList();
+                List<ModuleInfo> modules = moduleService.GetModules(SelectedProcessId)
+                    .OrderBy(m => m.ModuleName)
+                    .ToList();
 
-            if (modules.Count > 0) {
-                foreach (var moduleInfo in modules) {
-                    modulesView.Items.Add(new ModuleListViewItem(moduleInfo, appConfig));
+                if (modules.Count > 0) {
+                    foreach (var moduleInfo in modules) {
+                        modulesView.Items.Add(new ModuleListViewItem(moduleInfo, appConfig));
+                    }
                 }
-            }
-            else {
-                Trace.WriteLine($"GetModules returned 0 for pid {SelectedProcessId}.");
-            }
+                else {
+                    Trace.WriteLine($"GetModules returned 0 for pid {SelectedProcessId}.");
+                }
 
-            modulesLoaded = true;
-        }
-        catch (Exception ex) {
-            ExceptionHelper.LogException(ex, $"Error loading ModuleInfos for pid {SelectedProcessId}.");
-        }
-        finally {
-            modulesView.EmptyListViewText = prevEmptyText;
-            Control.DrawingLockRelease();
+                modulesLoaded = true;
+            }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex, $"Error loading ModuleInfos for pid {SelectedProcessId}.");
+            }
+            finally {
+                modulesView.EmptyListViewText = prevEmptyText;
+            }
         }
     }
     
     private void TryUpdateListViewThreadItems()
     {
-        try {
-            Control.DrawingLockAcquire();
+        lock (DrawingLock) {
+            try {
+                List<ThreadInfo> threads = threadService.GetThreads(SelectedProcessId)
+                    .OrderByDescending(t => t.CpuTotalTime.Ticks)
+                    .ToList();
 
-            List<ThreadInfo> threads = threadService.GetThreads(SelectedProcessId)
-                .OrderByDescending(t => t.CpuTotalTime.Ticks)
-                .ToList();
+                if (threads.Count == 0) {
+                    threadsView.Items.Clear();
+                    Trace.WriteLine($"GetThreads returned 0 for pid {SelectedProcessId}.");
+                    return;
+                }
 
-            if (threads.Count == 0) {
-                threadsView.Items.Clear();
-                Trace.WriteLine($"GetThreads returned 0 for pid {SelectedProcessId}.");
-                return;
-            }
+                int selectedIndex = threadsView.SelectedIndex;
 
-            int selectedIndex = threadsView.SelectedIndex;
+                HashSet<int> sortedThreadIds = new(threads.Count);
+                
+                for (int i = 0; i < threads.Count; i++) {
+                    sortedThreadIds.Add(threads[i].ThreadId);
+                }
+                
+                for (int i = threadsView.Items.Count - 1; i >= 0; i--) {
+                    var item = (ThreadListViewItem)threadsView.Items[i];
 
-            HashSet<int> sortedThreadIds = new(threads.Count);
-            
-            for (int i = 0; i < threads.Count; i++) {
-                sortedThreadIds.Add(threads[i].ThreadId);
-            }
-            
-            for (int i = threadsView.Items.Count - 1; i >= 0; i--) {
-                var item = (ThreadListViewItem)threadsView.Items[i];
+                    if (!sortedThreadIds.Contains(item.ThreadId)) {
+                        threadsView.Items.RemoveAt(i);
+                    }
+                }
 
-                if (!sortedThreadIds.Contains(item.ThreadId)) {
-                    threadsView.Items.RemoveAt(i);
+                var threadLookup = threadsView.Items.Cast<ThreadListViewItem>().ToDictionary(t => t.ThreadId);
+
+                for (int i = 0; i < threads.Count; i++) {
+                    if (threadLookup.TryGetValue(threads[i].ThreadId, out var foundItem)) {
+                        foundItem.UpdateItem(threads[i]);
+                        int insertAt = Math.Min(i, threadsView.Items.Count - 1);
+                        threadsView.Items.Remove(foundItem);
+                        threadsView.Items.InsertAt(insertAt, foundItem);
+                    }
+                    else {
+                        ThreadListViewItem item = new(threads[i], appConfig);
+                        threadsView.Items.InsertAt(i, item);
+                    }
+                }
+
+                if (threadsView.Items.Count > 0) {
+                    threadsView.SelectedIndex = selectedIndex >= 0 && selectedIndex < threadsView.Items.Count
+                        ? selectedIndex
+                        : 0;
                 }
             }
-
-            var threadLookup = threadsView.Items.Cast<ThreadListViewItem>().ToDictionary(t => t.ThreadId);
-
-            for (int i = 0; i < threads.Count; i++) {
-                if (threadLookup.TryGetValue(threads[i].ThreadId, out var foundItem)) {
-                    foundItem.UpdateItem(threads[i]);
-                    int insertAt = Math.Min(i, threadsView.Items.Count - 1);
-                    threadsView.Items.Remove(foundItem);
-                    threadsView.Items.InsertAt(insertAt, foundItem);
-                }
-                else {
-                    ThreadListViewItem item = new(threads[i], appConfig);
-                    threadsView.Items.InsertAt(i, item);
-                }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex, $"Error loading ThreadInfos for pid {SelectedProcessId}.");
             }
-
-            if (threadsView.Items.Count > 0) {
-                threadsView.SelectedIndex = selectedIndex >= 0 && selectedIndex < threadsView.Items.Count
-                    ? selectedIndex
-                    : 0;
-            }
-        }
-        catch (Exception ex) {
-            ExceptionHelper.LogException(ex, $"Error loading ThreadInfos for pid {SelectedProcessId}.");
-        }
-        finally {
-            Control.DrawingLockRelease();
         }
     }
     

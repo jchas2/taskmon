@@ -6,5 +6,8 @@ public enum PowerComponent
     Gpu,
     Disk,
     System,
-    Battery
+    Battery,
+    NeuralEngine,
+    Memory,
+    Display
 }

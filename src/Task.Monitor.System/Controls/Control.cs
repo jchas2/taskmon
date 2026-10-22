@@ -22,9 +22,7 @@ public class Control
     // append instead of one move per cell. Rows wider than this fall back to the heap.
     private const int MaxStackAllocChars = 512;
 
-    private static readonly object DrawingLock = new();
-
-    private static int drawingLocksAcquired = 0;
+    protected static readonly SysThreading::Lock DrawingLock = new();
 
     private readonly ISystemTerminal terminal;
 
@@ -63,12 +61,8 @@ public class Control
             return;
         }
 
-        try {
-            DrawingLockAcquire();
+        lock (DrawingLock) {
             OnDraw();
-        }
-        finally {
-            DrawingLockRelease();
         }
     }
 
@@ -101,23 +95,6 @@ public class Control
         frame.Append(line);
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
-    }
-
-    protected static void DrawingLockAcquire()
-    {
-        drawingLocksAcquired++;
-        SysThreading::Monitor.Enter(DrawingLock);
-    }
-
-    protected static void DrawingLockRelease()
-    {
-        if (drawingLocksAcquired == 0) {
-            return;
-        }
-        
-        drawingLocksAcquired--;
-        
-        SysThreading::Monitor.Exit(DrawingLock);
     }
 
     protected void DrawRectangle(
@@ -324,12 +301,8 @@ public class Control
     
     public void KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        try {
-            DrawingLockAcquire();
+        lock (DrawingLock) {
             OnKeyPressed(keyInfo, ref handled);
-        }
-        finally {
-            DrawingLockRelease();
         }
     }
 

@@ -5,21 +5,27 @@ using Task.Monitor.Extensions;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Gui.Controls.Thermals;
 
-public sealed class ThermalsControl : Control
+public sealed partial class ThermalsControl : Control
 {
     private const double FixedScaleCelsius = 110.0;
     private const int    ChartHeight       = 9;
+
+    private const int PowerPaneWidth            = 56;
+    private const int PowerComponentColumnWidth = 20;
+    private const int PowerRailColumnWidth      = 18;
 
     private readonly AnsiScreenBuffer          frame      = new();
     private readonly Dictionary<string, Chart> chartCache = new();
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
+    private readonly ListView          powerView;
     
     private List<SensorRow> rows = new();
     private string lastSignature = string.Empty;
@@ -44,6 +50,24 @@ public sealed class ThermalsControl : Control
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
+
+        powerView = new ListView(terminal) {
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            ShowColumnHeaders = true,
+            ShowBorder        = true,
+            TabStop           = false,
+            Visible           = true,
+            HeaderText        = "POWER",
+            EmptyListViewText = "No power readings available."
+        };
+
+        powerView.ColumnHeaders
+            .Add(new ListViewColumnHeader("COMPONENT"))
+            .Add(new ListViewColumnHeader("RAIL"))
+            .Add(new ListViewColumnHeader("POWER"));
+
+        Controls.Add(powerView);
     }
 
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
@@ -55,6 +79,8 @@ public sealed class ThermalsControl : Control
         ThermalComponent.Ambient => "Ambient",
         _ => "System"
     };
+
+    private int ChartsWidth => Math.Max(4, Width - PowerPaneWidth);
 
     private void ConfigureChart(Chart chart)
     {
@@ -83,7 +109,7 @@ public sealed class ThermalsControl : Control
 
         for (int i = 0; i < lines.Length; i++) {
             string line = lines[i];
-            int x = X + Math.Max(0, (Width - line.Length) / 2);
+            int x = X + Math.Max(0, (ChartsWidth - line.Length) / 2);
             int y = Y + Height / 2 - lines.Length / 2 + i;
 
             frame.Clear();
@@ -108,7 +134,7 @@ public sealed class ThermalsControl : Control
 
     private void DrawScrollBar(int visibleCharts)
     {
-        int x = X + Width - 1;
+        int x = X + ChartsWidth - 1;
 
         DrawVerticalLine(
             x, 
@@ -181,7 +207,7 @@ public sealed class ThermalsControl : Control
 
         ConfigureChart(chart);
         
-        chart.Width  = Math.Max(4, Width);
+        chart.Width  = ChartsWidth;
         chart.Height = ChartHeight;
         chart.Resize();
 
@@ -201,13 +227,17 @@ public sealed class ThermalsControl : Control
         return "GPU";
     }
 
-    protected override void OnDraw() => OnDrawInternal();
+    protected override void OnDraw()
+    {
+        OnDrawInternal();
+        powerView.Draw();
+    }
 
     private void OnDrawInternal()
     {
         if (rows.Count == 0) {
             if (needsFullClear || lastDrawnChartCount != 0 || scrollBarShown) {
-                DrawRectangle(X, Y, Width, Height, BackgroundColour);
+                DrawRectangle(X, Y, ChartsWidth, Height, BackgroundColour);
             }
 
             DrawEmptyState();
@@ -224,7 +254,7 @@ public sealed class ThermalsControl : Control
 
         int  drawn        = Math.Min(visibleCharts, rows.Count - scrollOffset);
         bool scrollNeeded = rows.Count > visibleCharts;
-        int  chartWidth   = scrollNeeded ? Math.Max(4, Width - 1) : Width;
+        int  chartWidth   = scrollNeeded ? Math.Max(4, ChartsWidth - 1) : ChartsWidth;
 
         if (scrollNeeded != scrollBarShown) {
             needsFullClear = true;
@@ -235,7 +265,7 @@ public sealed class ThermalsControl : Control
             DrawRectangle(
                 X, 
                 Y, 
-                Width, 
+                ChartsWidth, 
                 Height, 
                 BackgroundColour);
         }
@@ -272,7 +302,7 @@ public sealed class ThermalsControl : Control
             DrawRectangle(
                 X, 
                 Y + coveredRows, 
-                Width, 
+                ChartsWidth, 
                 Height - coveredRows, 
                 BackgroundColour);
         }
@@ -317,6 +347,7 @@ public sealed class ThermalsControl : Control
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.Theme(powerView, appConfig.Theme);
 
         foreach (Chart chart in chartCache.Values) {
             ConfigureChart(chart);
@@ -330,10 +361,19 @@ public sealed class ThermalsControl : Control
     {
         foreach (Chart chart in chartCache.Values) {
             chart.X      = X;
-            chart.Width  = Math.Max(4, Width);
+            chart.Width  = ChartsWidth;
             chart.Height = ChartHeight;
             chart.Resize();
         }
+
+        powerView.X      = X + ChartsWidth;
+        powerView.Y      = Y;
+        powerView.Width  = Math.Max(1, Width - ChartsWidth);
+        powerView.Height = Height;
+
+        powerView.ColumnHeaders[0].Width = PowerComponentColumnWidth;
+        powerView.ColumnHeaders[1].Width = PowerRailColumnWidth;
+        powerView.ColumnHeaders[2].Width = Math.Max(1, powerView.Width - PowerComponentColumnWidth - PowerRailColumnWidth - 3);
 
         needsFullClear      = true;
         lastDrawnChartCount = -1;
@@ -348,6 +388,7 @@ public sealed class ThermalsControl : Control
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         chartCache.Clear();
+        powerView.Items.Clear();
         rows                = new();
         lastSignature       = string.Empty;
         scrollOffset        = 0;
@@ -374,6 +415,10 @@ public sealed class ThermalsControl : Control
         if (snapshot.Thermal is { } thermal) {
             EnsureRows(thermal.Metrics);
             FeedCharts(thermal.Metrics);
+        }
+
+        if (snapshot.Power is { } power) {
+            RebuildPowerRows(power.Metrics);
         }
 
         Draw();

@@ -403,8 +403,7 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
-        try {
-            Control.DrawingLockAcquire();
+        lock (DrawingLock) {
             RefreshSelectionHighlight();
             
             SummaryChartFeeder.Feed(
@@ -412,9 +411,6 @@ public sealed class LayoutDesignerScreen : Screen
                 paneControls, 
                 e.Snapshot, 
                 runContext.AppConfig);
-        }
-        finally {
-            Control.DrawingLockRelease();
         }
     }
     

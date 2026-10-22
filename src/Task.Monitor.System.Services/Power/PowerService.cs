@@ -64,7 +64,13 @@ public sealed partial class PowerService : WorkerService
 
     protected override void OnStart() => BuildProviders();
 
-    protected override void OnStop() => DisposeProviders();
+    protected override void OnStop()
+    {
+        DisposeProviders();
+        OnStopPlatform();
+    }
+
+    partial void OnStopPlatform();
 
     private static void TryDispose(IPowerProvider provider)
     {
@@ -76,7 +82,7 @@ public sealed partial class PowerService : WorkerService
         }
     }
 
-#if !__WIN32__
+#if !__WIN32__ && !__APPLE__
     private partial IEnumerable<IPowerProvider> CreateProviders() => [];
 #endif
 }

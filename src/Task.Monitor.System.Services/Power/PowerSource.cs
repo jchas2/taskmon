@@ -7,5 +7,8 @@ public enum PowerSource
     PowerMeter,
     Battery,
     NvmeRated,
-    KernelRapl
+    KernelRapl,
+    IOReport,
+    SmartBattery,
+    Smc
 }

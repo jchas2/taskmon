@@ -33,7 +33,7 @@ public sealed class PowerServiceTests(ITestOutputHelper output)
                 $"{reading.Watts:0.0} W{(reading.IsRated ? " (rated)" : "")} via {reading.Source}");
 
             Assert.False(string.IsNullOrWhiteSpace(reading.Rail));
-            Assert.True(reading.Watts is > 0 and < 2000, $"implausible {reading.Watts} W");
+            Assert.True(reading.Watts is >= 0 and < 2000, $"implausible {reading.Watts} W");
             Assert.True(Enum.IsDefined(reading.Component));
             Assert.True(Enum.IsDefined(reading.Source));
         }

@@ -30,6 +30,15 @@ public static class IOKit
     }
 
     [DllImport(Libraries.IOKit)]
+    public static extern unsafe int IOConnectCallStructMethod(
+        uint   connection,
+        uint   selector,
+        void*  input,
+        nuint  inputSize,
+        void*  output,
+        nuint* outputSize);
+
+    [DllImport(Libraries.IOKit)]
     public static extern uint IOIteratorNext(IntPtr iterator);
 
     [DllImport(Libraries.IOKit)]
@@ -69,6 +78,9 @@ public static class IOKit
         uint   options);
 
     [DllImport(Libraries.IOKit)]
+    public static extern int IOServiceClose(uint connection);
+
+    [DllImport(Libraries.IOKit)]
     public static extern uint IOServiceGetMatchingService(uint masterPort, IntPtr matching);
 
     [DllImport(Libraries.IOKit)]
@@ -79,6 +91,13 @@ public static class IOKit
 
     [DllImport(Libraries.IOKit)]
     public static extern IntPtr IOServiceMatching(string name);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern int IOServiceOpen(
+        uint     service,
+        uint     owningTask,
+        uint     type,
+        out uint connection);
 
     [DllImport(Libraries.IOKit)]
     private static extern nint KextManagerCopyLoadedKextInfo(nint kextIdentifiers, nint infoKeys);

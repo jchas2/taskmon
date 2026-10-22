@@ -299,8 +299,7 @@ public sealed class  CpuCoresControl : Control
 
     public void Sample(SystemSnapshot snapshot)
     {
-        try {
-            DrawingLockAcquire();
+        lock (DrawingLock) {
 
             if (snapshot.Cpu is { } cpu && cpu.CoreMetrics.Length > 0) {
                 if (coreValues.Length != cpu.CoreMetrics.Length) {
@@ -315,9 +314,6 @@ public sealed class  CpuCoresControl : Control
                     coreValues[i] = Math.Clamp(core.Value, 0.0, 1.0);
                 }
             }
-        }
-        finally {
-            DrawingLockRelease();
         }
 
         Draw();

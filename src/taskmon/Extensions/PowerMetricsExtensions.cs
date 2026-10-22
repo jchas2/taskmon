@@ -4,6 +4,10 @@ namespace Task.Monitor.Extensions;
 
 public static class PowerMetricsExtensions
 {
+    public static double? CpuPower(this PowerMetrics metrics) =>
+        metrics.Readings.FirstOrDefault(reading =>
+            reading.Component == PowerComponent.Cpu && reading.Rail == PowerRails.Cpu)?.Watts;
+
     public static PowerReading? DiskPower(this PowerMetrics metrics, int diskIndex) =>
         Match(metrics, PowerComponent.Disk, diskIndex.ToString());
 
