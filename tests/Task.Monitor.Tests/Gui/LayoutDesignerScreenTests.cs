@@ -516,6 +516,25 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
+    [Fact]
+    public void Power_Can_Be_Assigned_To_A_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Power);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Contains("POWER", CapturedOutput());
+
+        screen.Unload();
+    }
+
     // Reflection is the only way to raise this from a test: ServiceController only ever raises it
     // itself, from inside its real worker loop.
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)

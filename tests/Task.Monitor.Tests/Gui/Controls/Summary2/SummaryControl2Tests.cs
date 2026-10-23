@@ -4,6 +4,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
@@ -77,6 +78,36 @@ public sealed class SummaryControl2Tests
             .GetValue(runContext.ServiceController);
 
         Assert.Equal(1, handler!.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl"));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Builds_A_Power_Pane_And_A_Charts_Only_Thermals_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        (int powerId, int thermalsId) = tree.Split(tree.RootId, Orientation.Row);
+        tree.Nodes[powerId].ControlType    = PaneControlType.Power;
+        tree.Nodes[thermalsId].ControlType = PaneControlType.Thermals;
+
+        UseSummaryLayout(SummaryControlLayout.FromTree("Power Pane Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        Assert.Single(ctrl.Controls.OfType<PowerControl>());
+
+        ThermalsControl thermals = Assert.Single(ctrl.Controls.OfType<ThermalsControl>());
+
+        Assert.False(thermals.ShowPowerPane);
+        Assert.Empty(thermals.Controls.OfType<PowerControl>());
 
         ctrl.Unload();
     }

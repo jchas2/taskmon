@@ -84,8 +84,9 @@ public static class SummaryPaneControlFactory
             PaneControlType.InstalledApps => new InstalledAppsControl(serviceController, terminal, appConfig) { TabStop = true },
             PaneControlType.SystemInfo    => new SystemInfoControl(serviceController, terminal, appConfig)    { TabStop = true },
             PaneControlType.DiskSpace     => new DiskSpaceControl(serviceController, terminal, appConfig)     { TabStop = true },
-            PaneControlType.Thermals      => new ThermalsControl(serviceController, terminal, appConfig)      { TabStop = true },
+            PaneControlType.Thermals      => new ThermalsControl(serviceController, terminal, appConfig)      { TabStop = true, ShowPowerPane = false },
             PaneControlType.CpuCores      => new CpuCoresControl(serviceController, terminal, appConfig)      { TabStop = false },
+            PaneControlType.Power         => new PowerControl(serviceController, terminal, appConfig)         { TabStop = false },
                                         _ => new EmptyPaneControl(terminal),
         };
 }

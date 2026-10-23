@@ -98,6 +98,17 @@ public static class SystemSnapshotExtensions
     public static double ToDiskActiveTimeRatio(this DiskDeviceMetrics device) =>
         Math.Clamp(device.PercentActiveTime / 100.0, 0.0, 1.0);
 
+    public static string ToDiskLabel(this SystemSnapshot? snapshot, string componentId)
+    {
+        if (int.TryParse(componentId, out int index) &&
+            snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
+
+            return $"Disk {index} · {disk.Model}";
+        }
+
+        return $"Disk {componentId}";
+    }
+
     public static string ToDiskReadRate(this DiskMetrics metrics) =>
         metrics.ReadBytesPerSecond.ToFormattedByteRate();
 
@@ -178,6 +189,17 @@ public static class SystemSnapshotExtensions
         }
 
         return $"{rate:0.0} {rateFormatters[index]}";
+    }
+
+    public static string ToGpuLabel(this SystemSnapshot? snapshot, string componentId)
+    {
+        if (long.TryParse(componentId, out long luid) &&
+            snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
+
+            return $"GPU · {gpu.Description}";
+        }
+
+        return "GPU";
     }
 
     public static string ToGpuMemoryAvailableFormattedBytes(this GpuMetrics metrics) =>

@@ -78,6 +78,22 @@ public sealed class SummaryControlLayoutTests
         Assert.Equal("Custom Name", layout.Name);
     }
 
+    [Fact]
+    public void Power_Pane_Round_Trips()
+    {
+        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
+            [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Power }], rootId: 0);
+
+        string iniText = SummaryControlLayout.FromTree("Power", original).ToString();
+
+        ConfigParser parser = new(iniText);
+        parser.Parse();
+
+        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
+
+        Assert.Equal(PaneControlType.Power, Assert.Single(tree.Panes()).ControlType);
+    }
+
     // Confirms the round trip survives an actual reparse of the written text, not just the
     // in-memory ConfigSection - ';' is a comment marker to ConfigParser, so this is what proves
     // the "," / "+" separator choice (see the class comment) actually holds up.

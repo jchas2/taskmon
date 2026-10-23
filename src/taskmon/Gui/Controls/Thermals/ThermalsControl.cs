@@ -5,28 +5,24 @@ using Task.Monitor.Extensions;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
-using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Gui.Controls.Thermals;
 
-public sealed partial class ThermalsControl : Control
+public sealed class ThermalsControl : Control
 {
     private const double FixedScaleCelsius = 110.0;
     private const int    ChartHeight       = 9;
-
-    private const int PowerPaneWidth            = 56;
-    private const int PowerComponentColumnWidth = 20;
-    private const int PowerRailColumnWidth      = 18;
 
     private readonly AnsiScreenBuffer          frame      = new();
     private readonly Dictionary<string, Chart> chartCache = new();
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
-    private readonly ListView          powerView;
     
+    private PowerControl? powerControl;
+
     private List<SensorRow> rows = new();
     private string lastSignature = string.Empty;
     
@@ -50,53 +46,26 @@ public sealed partial class ThermalsControl : Control
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
-
-        powerView = new ListView(terminal) {
-            EnableScroll      = false,
-            EnableRowSelect   = false,
-            ShowColumnHeaders = true,
-            ShowBorder        = true,
-            TabStop           = false,
-            Visible           = true,
-            HeaderText        = "POWER",
-            EmptyListViewText = "No power readings available."
-        };
-
-        powerView.ColumnHeaders
-            .Add(new ListViewColumnHeader("COMPONENT"))
-            .Add(new ListViewColumnHeader("RAIL"))
-            .Add(new ListViewColumnHeader("POWER"));
-
-        Controls.Add(powerView);
     }
 
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
         ThermalComponent.Cpu     => "CPU",
-        ThermalComponent.Gpu     => GpuLabel(componentId),
-        ThermalComponent.Disk    => DiskLabel(componentId),
+        ThermalComponent.Gpu     => snapshot.ToGpuLabel(componentId),
+        ThermalComponent.Disk    => snapshot.ToDiskLabel(componentId),
         ThermalComponent.Battery => "Battery",
         ThermalComponent.Chipset => "Chipset",
         ThermalComponent.Ambient => "Ambient",
         _ => "System"
     };
 
-    private int ChartsWidth => Math.Max(4, Width - PowerPaneWidth);
+    private int ChartsWidth => ShowPowerPane
+        ? Math.Max(4, Width - PowerControl.PreferredWidth)
+        : Math.Max(4, Width);
 
     private void ConfigureChart(Chart chart)
     {
         CommonControl.Theme(chart, appConfig.Theme);
         chart.MetreStyle = appConfig.MetreStyle;
-    }
-
-    private string DiskLabel(string componentId)
-    {
-        if (int.TryParse(componentId, out int index) &&
-            snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
-
-            return $"Disk {index} · {disk.Model}";
-        }
-
-        return $"Disk {componentId}";
     }
 
     private void DrawEmptyState()
@@ -216,21 +185,10 @@ public sealed partial class ThermalsControl : Control
         return chart;
     }
 
-    private string GpuLabel(string componentId)
-    {
-        if (long.TryParse(componentId, out long luid) &&
-            snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
-
-            return $"GPU · {gpu.Description}";
-        }
-
-        return "GPU";
-    }
-
     protected override void OnDraw()
     {
         OnDrawInternal();
-        powerView.Draw();
+        powerControl?.Draw();
     }
 
     private void OnDrawInternal()
@@ -347,7 +305,11 @@ public sealed partial class ThermalsControl : Control
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
-        CommonControl.Theme(powerView, appConfig.Theme);
+
+        if (ShowPowerPane && powerControl is null) {
+            powerControl = new PowerControl(serviceController, Terminal, appConfig) { TabStop = false };
+            Controls.Add(powerControl);
+        }
 
         foreach (Chart chart in chartCache.Values) {
             ConfigureChart(chart);
@@ -366,14 +328,12 @@ public sealed partial class ThermalsControl : Control
             chart.Resize();
         }
 
-        powerView.X      = X + ChartsWidth;
-        powerView.Y      = Y;
-        powerView.Width  = Math.Max(1, Width - ChartsWidth);
-        powerView.Height = Height;
-
-        powerView.ColumnHeaders[0].Width = PowerComponentColumnWidth;
-        powerView.ColumnHeaders[1].Width = PowerRailColumnWidth;
-        powerView.ColumnHeaders[2].Width = Math.Max(1, powerView.Width - PowerComponentColumnWidth - PowerRailColumnWidth - 3);
+        if (powerControl is not null) {
+            powerControl.X      = X + ChartsWidth;
+            powerControl.Y      = Y;
+            powerControl.Width  = Math.Max(1, Width - ChartsWidth);
+            powerControl.Height = Height;
+        }
 
         needsFullClear      = true;
         lastDrawnChartCount = -1;
@@ -388,7 +348,6 @@ public sealed partial class ThermalsControl : Control
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
         chartCache.Clear();
-        powerView.Items.Clear();
         rows                = new();
         lastSignature       = string.Empty;
         scrollOffset        = 0;
@@ -417,10 +376,8 @@ public sealed partial class ThermalsControl : Control
             FeedCharts(thermal.Metrics);
         }
 
-        if (snapshot.Power is { } power) {
-            RebuildPowerRows(power.Metrics);
-        }
-
         Draw();
     }
+
+    public bool ShowPowerPane { get; init; } = true;
 }
