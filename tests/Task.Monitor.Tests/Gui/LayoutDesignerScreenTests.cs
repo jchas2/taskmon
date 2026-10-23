@@ -148,6 +148,25 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
+    [Fact]
+    public void Cpu_Metre_Can_Be_Assigned_To_A_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuMetre);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.CpuMetre, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Contains(" CPU% ", CapturedOutput());
+
+        screen.Unload();
+    }
+
     // Cpu on the left, Process on the right - Right arrow from the default selection (Cpu, first
     // in tree order) lands on the Process pane.
     private LayoutDesignerScreen CreateCpuProcessScreen()

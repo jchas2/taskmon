@@ -83,6 +83,29 @@ public sealed class SummaryControl2Tests
     }
 
     [Fact]
+    public void Builds_A_Cpu_Metre_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        tree.Nodes[tree.RootId].ControlType = PaneControlType.CpuMetre;
+
+        UseSummaryLayout(SummaryControlLayout.FromTree("Cpu Metre Pane Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        Assert.Single(ctrl.Controls.OfType<CpuMetreControl>());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Builds_A_Power_Pane_And_A_Charts_Only_Thermals_Pane()
     {
         SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();

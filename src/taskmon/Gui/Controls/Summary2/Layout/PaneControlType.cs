@@ -21,4 +21,12 @@ public enum PaneControlType
     Thermals,
     CpuCores,
     Power,
+    CpuMetre,
+    GpuMetre,
+    GpuMemoryMetre,
+    MemoryMetre,
+    VirtualMemoryMetre,
+    DiskMetre,
+    NetworkSendMetre,
+    NetworkReceiveMetre,
 }

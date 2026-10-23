@@ -257,35 +257,34 @@ public sealed class MetreControl : Control
         }
     }
 
-    private void DrawBottomBorder(int y, int innerWidth)
+    private void DrawBorderEdge(int y, int innerWidth, char left, char right, bool withText)
     {
-        string labelPadded = Text.Length > 0 
+        string labelPadded = withText && Text.Length > 0 
             ? $" {Text} " 
             : string.Empty;
         
         int labelLength = Math.Min(labelPadded.Length, innerWidth);
-        int leftDashes  = (innerWidth - labelLength) / 2;
+        int leftDashes  = TextPosition == MetreTextPosition.TopLeft
+            ? Math.Min(1, innerWidth - labelLength)
+            : (innerWidth - labelLength) / 2;
         int rightDashes = innerWidth - labelLength - leftDashes;
 
         frame.MoveTo(X, y);
         SetBorderColour();
-        frame.Append('╰');
+        frame.Append(left);
         frame.Append('─', leftDashes);
         frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(labelPadded.AsSpan(0, labelLength));
         SetBorderColour();
         frame.Append('─', rightDashes);
-        frame.Append('╯');
+        frame.Append(right);
     }
 
-    private void DrawTopBorder(int y, int innerWidth)
-    {
-        frame.MoveTo(X, y);
-        SetBorderColour();
-        frame.Append('╭');
-        frame.Append('─', innerWidth);
-        frame.Append('╮');
-    }
+    private void DrawBottomBorder(int y, int innerWidth) =>
+        DrawBorderEdge(y, innerWidth, '╰', '╯', withText: TextPosition == MetreTextPosition.BottomCentre);
+
+    private void DrawTopBorder(int y, int innerWidth) =>
+        DrawBorderEdge(y, innerWidth, '╭', '╮', withText: TextPosition != MetreTextPosition.BottomCentre);
 
     public static string FormatLegendPercentage(double value) => $"{value:0.0%}";
 
@@ -455,7 +454,11 @@ public sealed class MetreControl : Control
         }
     }
 
-    private int SubCellsPerCell => MetreStyle == MetreControlStyle.Bars ? 1 : 2;
+    private int SubCellsPerCell => MetreStyle == MetreControlStyle.Bars 
+        ? 1 
+        : 2;
 
     public string Text { get; set; } = string.Empty;
+
+    public MetreTextPosition TextPosition { get; set; } = MetreTextPosition.BottomCentre;
 }

@@ -70,6 +70,30 @@ public sealed class SummaryControlLayoutTests
         Assert.False(layout.IsTreeLayout);
     }
 
+    [Theory]
+    [InlineData(PaneControlType.CpuMetre)]
+    [InlineData(PaneControlType.GpuMetre)]
+    [InlineData(PaneControlType.GpuMemoryMetre)]
+    [InlineData(PaneControlType.MemoryMetre)]
+    [InlineData(PaneControlType.VirtualMemoryMetre)]
+    [InlineData(PaneControlType.DiskMetre)]
+    [InlineData(PaneControlType.NetworkSendMetre)]
+    [InlineData(PaneControlType.NetworkReceiveMetre)]
+    public void Metre_Panes_Round_Trip(PaneControlType type)
+    {
+        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
+            [new SummaryLayoutNode { Id = 0, ControlType = type }], rootId: 0);
+
+        string iniText = SummaryControlLayout.FromTree("Metre", original).ToString();
+
+        ConfigParser parser = new(iniText);
+        parser.Parse();
+
+        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
+
+        Assert.Equal(type, Assert.Single(tree.Panes()).ControlType);
+    }
+
     [Fact]
     public void Name_Reflects_The_Backing_Sections_Name()
     {

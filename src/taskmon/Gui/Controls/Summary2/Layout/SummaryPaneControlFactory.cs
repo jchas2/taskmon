@@ -1,9 +1,13 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.Gui.Controls.Disk;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
+using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.Gui.Controls.LaunchdServices;
+using Task.Monitor.Gui.Controls.Memory;
+using Task.Monitor.Gui.Controls.Network;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
@@ -74,19 +78,27 @@ public static class SummaryPaneControlFactory
                 TabStop                = true,
                 VisibleColumnsOverride = pane.ProcessColumns
             },
-            PaneControlType.Drivers       => new DriversControl(serviceController, terminal, appConfig)       { TabStop = true },
+            PaneControlType.Drivers             => new DriversControl(serviceController, terminal, appConfig)             { TabStop = true },
 #if __APPLE__
-            PaneControlType.Services      => new LaunchdServicesControl(serviceController, terminal, appConfig) { TabStop = true },
+            PaneControlType.Services            => new LaunchdServicesControl(serviceController, terminal, appConfig)     { TabStop = true },
 #else
-            PaneControlType.Services      => new ServicesControl(serviceController, terminal, appConfig)      { TabStop = true },
+            PaneControlType.Services            => new ServicesControl(serviceController, terminal, appConfig)            { TabStop = true },
 #endif
-            PaneControlType.Startup       => new StartupControl(serviceController, terminal, appConfig)       { TabStop = true },
-            PaneControlType.InstalledApps => new InstalledAppsControl(serviceController, terminal, appConfig) { TabStop = true },
-            PaneControlType.SystemInfo    => new SystemInfoControl(serviceController, terminal, appConfig)    { TabStop = true },
-            PaneControlType.DiskSpace     => new DiskSpaceControl(serviceController, terminal, appConfig)     { TabStop = true },
-            PaneControlType.Thermals      => new ThermalsControl(serviceController, terminal, appConfig)      { TabStop = true, ShowPowerPane = false },
-            PaneControlType.CpuCores      => new CpuCoresControl(serviceController, terminal, appConfig)      { TabStop = false },
-            PaneControlType.Power         => new PowerControl(serviceController, terminal, appConfig)         { TabStop = false },
-                                        _ => new EmptyPaneControl(terminal),
+            PaneControlType.Startup             => new StartupControl(serviceController, terminal, appConfig)             { TabStop = true },
+            PaneControlType.InstalledApps       => new InstalledAppsControl(serviceController, terminal, appConfig)       { TabStop = true },
+            PaneControlType.SystemInfo          => new SystemInfoControl(serviceController, terminal, appConfig)          { TabStop = true },
+            PaneControlType.DiskSpace           => new DiskSpaceControl(serviceController, terminal, appConfig)           { TabStop = true },
+            PaneControlType.Thermals            => new ThermalsControl(serviceController, terminal, appConfig)            { TabStop = true, ShowPowerPane = false },
+            PaneControlType.CpuCores            => new CpuCoresControl(serviceController, terminal, appConfig)            { TabStop = false },
+            PaneControlType.Power               => new PowerControl(serviceController, terminal, appConfig)               { TabStop = false },
+            PaneControlType.CpuMetre            => new CpuMetreControl(serviceController, terminal, appConfig)            { TabStop = false },
+            PaneControlType.GpuMetre            => new GpuMetreControl(serviceController, terminal, appConfig)            { TabStop = false },
+            PaneControlType.GpuMemoryMetre      => new GpuMemoryMetreControl(serviceController, terminal, appConfig)      { TabStop = false },
+            PaneControlType.MemoryMetre         => new MemoryMetreControl(serviceController, terminal, appConfig)         { TabStop = false },
+            PaneControlType.VirtualMemoryMetre  => new VirtualMemoryMetreControl(serviceController, terminal, appConfig)  { TabStop = false },
+            PaneControlType.DiskMetre           => new DiskMetreControl(serviceController, terminal, appConfig)           { TabStop = false },
+            PaneControlType.NetworkSendMetre    => new NetworkSendMetreControl(serviceController, terminal, appConfig)    { TabStop = false },
+            PaneControlType.NetworkReceiveMetre => new NetworkReceiveMetreControl(serviceController, terminal, appConfig) { TabStop = false },
+                                              _ => new EmptyPaneControl(terminal),
         };
 }
