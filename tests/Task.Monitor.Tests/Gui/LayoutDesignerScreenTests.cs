@@ -261,14 +261,14 @@ public sealed class LayoutDesignerScreenTests
 
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.C), ref handled);
-        // Toggle the first row ("User") on with Space, then confirm.
+        // The column list is sorted, so the first row is "Average CPU %"; toggle it on with Space, then confirm.
         screen.KeyPressed(Key(ConsoleKey.Spacebar), ref handled);
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
         Statistics? columns = screen.Tree.Nodes[processPaneId].ProcessColumns;
 
         Assert.NotNull(columns);
-        Assert.True((columns!.Value & Statistics.User) != 0);
+        Assert.True((columns!.Value & Statistics.AvgCpu) != 0);
         Assert.True((columns.Value & Statistics.Process) != 0);
         Assert.True((columns.Value & Statistics.Pid) != 0);
 
@@ -308,15 +308,17 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
-    [Fact]
-    public void Delete_Removes_The_Selected_Pane_And_Selection_Moves_To_The_Promoted_Sibling()
+    [Theory]
+    [InlineData(ConsoleKey.Delete)]
+    [InlineData(ConsoleKey.Backspace)]
+    public void Delete_Removes_The_Selected_Pane_And_Selection_Moves_To_The_Promoted_Sibling(ConsoleKey key)
     {
         LayoutDesignerScreen screen = CreateScreen();
         int startingPaneCount = screen.Tree.Panes().Count();
         int selectedBefore = screen.SelectedNodeId;
 
         bool handled = false;
-        screen.KeyPressed(Key(ConsoleKey.Delete), ref handled);
+        screen.KeyPressed(Key(key), ref handled);
 
         Assert.True(handled);
         Assert.Equal(startingPaneCount - 1, screen.Tree.Panes().Count());
@@ -376,8 +378,8 @@ public sealed class LayoutDesignerScreenTests
         screen.KeyPressed(Key(ConsoleKey.V), ref handled); // split -> new Empty pane selected
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // open the control-type picker
 
-        // PaneControlType order is Empty, Cpu, Memory, ... - one Down from Empty reaches Cpu.
-        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        // The picker is sorted, so Cpu is the first row; PageUp from Empty reaches it.
+        screen.KeyPressed(Key(ConsoleKey.PageUp), ref handled);
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // confirm
 
         Assert.Equal(PaneControlType.Cpu, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
@@ -535,6 +537,34 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
+    [Theory]
+    [InlineData(Orientation.Column, 0.5f)]
+    [InlineData(Orientation.Row,    0.55f)]
+    public void Plus_On_A_Metre_Only_Resizes_A_Side_By_Side_Split(Orientation orientation, float expectedRatio)
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            new SummaryLayoutNode {
+                Id = 0, IsSplit = true, Orientation = orientation, Ratio = 0.5f, FirstId = 1, SecondId = 2
+            },
+            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.CpuMetre },
+            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+        ], rootId: 0);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        Assert.Equal(1, screen.SelectedNodeId);
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.OemPlus), ref handled);
+
+        Assert.Equal(expectedRatio, screen.Tree.Nodes[0].Ratio, precision: 3);
+
+        screen.Unload();
+    }
+
     [Fact]
     public void Power_Can_Be_Assigned_To_A_Pane()
     {
@@ -580,16 +610,16 @@ public sealed class LayoutDesignerScreenTests
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled); // onto Process
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);      // picker opens on Process
-        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);  // Process -> Drivers
+        screen.KeyPressed(Key(ConsoleKey.UpArrow), ref handled);    // Process -> Power (sorted)
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Assert.Equal(PaneControlType.Drivers, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
         Assert.Equal(0, SnapshotSubscriberCount("ProcessControl"));
-        Assert.Equal(1, SnapshotSubscriberCount("DriversControl"));
+        Assert.Equal(1, SnapshotSubscriberCount("PowerControl"));
 
         screen.Unload();
 
-        Assert.Equal(0, SnapshotSubscriberCount("DriversControl"));
+        Assert.Equal(0, SnapshotSubscriberCount("PowerControl"));
     }
 
     [Fact]

@@ -14,6 +14,8 @@ public sealed class PickerBox : Control
 
     private readonly ListViewControl list;
 
+    private int[] order = [];
+
     public PickerBox(ISystemTerminal terminal) : base(terminal)
     {
         list = new ListViewControl(terminal) {
@@ -31,7 +33,8 @@ public sealed class PickerBox : Control
         list.Items
             .Select((item, index) => (item, index))
             .Where(pair => pair.item.Checked)
-            .Select(pair => pair.index);
+            .Select(pair => order[pair.index])
+            .Order();
 
     public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
@@ -83,9 +86,9 @@ public sealed class PickerBox : Control
         for (int row = 0; row < list.Height; row++) {
             Terminal.SetCursorPosition(X, list.Y + row);
             Terminal.Write('│');
-            Terminal.SetCursorPosition(X + Width - 1, list.Y + row);
-            Terminal.Write('│');
         }
+
+        DrawScrollIndicators();
     }
 
     private void DrawList()
@@ -99,6 +102,21 @@ public sealed class PickerBox : Control
         }
         finally {
             Control.RedrawEnabled = redrawEnabled;
+        }
+    }
+
+    private void DrawScrollIndicators()
+    {
+        (int upRow, int downRow) = list.GetScrollIndicatorRows();
+
+        Terminal.BackgroundColor = DialogBackgroundColour;
+        Terminal.ForegroundColor = DialogForegroundColour;
+
+        for (int row = 0; row < list.Height; row++) {
+            int y = list.Y + row;
+
+            Terminal.SetCursorPosition(X + Width - 1, y);
+            Terminal.Write(y == upRow ? '▲' : y == downRow ? '▼' : '│');
         }
     }
 
@@ -157,6 +175,7 @@ public sealed class PickerBox : Control
 
             default:
                 list.KeyPressed(keyInfo, ref handled);
+                DrawScrollIndicators();
                 break;
         }
     }
@@ -177,26 +196,35 @@ public sealed class PickerBox : Control
 
     public PickerBoxResult Result { get; private set; } = PickerBoxResult.None;
 
-    public int SelectedIndex => list.SelectedIndex;
+    public int SelectedIndex =>
+        list.SelectedIndex >= 0 && list.SelectedIndex < order.Length
+            ? order[list.SelectedIndex]
+            : list.SelectedIndex;
 
     public void SetItems(
         IReadOnlyList<string> labels,
         IReadOnlyList<bool>? initiallyChecked = null,
-        int initialSelectedIndex = 0)
+        int? initialSelectedIndex = null)
     {
         list.ShowCheckboxes = MultiSelect;
         list.Items.Clear();
 
-        for (int i = 0; i < labels.Count; i++) {
-            ListViewItem item = new(labels[i]) {
-                Checked = MultiSelect && initiallyChecked != null && i < initiallyChecked.Count && initiallyChecked[i]
+        order = Enumerable.Range(0, labels.Count)
+            .OrderBy(index => labels[index], StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        foreach (int index in order) {
+            ListViewItem item = new(labels[index]) {
+                Checked = MultiSelect && initiallyChecked != null && index < initiallyChecked.Count && initiallyChecked[index]
             };
 
             list.Items.Add(item);
         }
 
         if (list.Items.Count > 0) {
-            list.SelectedIndex = Math.Clamp(initialSelectedIndex, 0, list.Items.Count - 1);
+            list.SelectedIndex = initialSelectedIndex is { } initial
+                ? Array.IndexOf(order, Math.Clamp(initial, 0, list.Items.Count - 1))
+                : 0;
         }
 
         Result = PickerBoxResult.None;

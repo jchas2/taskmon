@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Thermals;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Tests.Controls;
@@ -98,6 +99,24 @@ public sealed class PowerControlTests
         ctrl.Draw();
 
         Assert.Contains("No power readings available.", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Highlights_The_Table_Border_While_Focused()
+    {
+        PowerControl ctrl = CreateControl();
+
+        ctrl.Focused = true;
+        ctrl.Draw();
+
+        Assert.Equal(Control.FocusSelectionColour, ctrl.PowerView.DisplayBorderColour);
+
+        ctrl.Focused = false;
+        ctrl.Draw();
+
+        Assert.False(ctrl.PowerView.Focused);
 
         ctrl.Unload();
     }

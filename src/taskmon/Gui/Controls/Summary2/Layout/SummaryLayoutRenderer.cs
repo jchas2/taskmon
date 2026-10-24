@@ -7,6 +7,42 @@ public sealed class SummaryLayoutRenderer
 {
     private readonly Dictionary<int, Rectangle> paneBounds = new();
 
+    private static int FirstHeight(
+        SummaryLayoutTree                 tree,
+        IReadOnlyDictionary<int, Control> paneControls,
+        SummaryLayoutNode                 split,
+        int                               height)
+    {
+        int? first  = FixedHeight(tree, paneControls, split.FirstId);
+        int? second = FixedHeight(tree, paneControls, split.SecondId);
+
+        return (first, second) switch {
+            ({ } fixedFirst, _)     => Math.Min(fixedFirst, height),
+            (null, { } fixedSecond) => height - Math.Min(fixedSecond, height),
+                                  _ => (int)(height * split.Ratio)
+        };
+    }
+
+    public static int? FixedHeight(SummaryLayoutTree tree, IReadOnlyDictionary<int, Control> paneControls, int nodeId)
+    {
+        SummaryLayoutNode node = tree.Nodes[nodeId];
+
+        if (!node.IsSplit) {
+            return paneControls.TryGetValue(nodeId, out Control? control) && control is IFixedHeightPane pane
+                ? pane.FixedHeight
+                : null;
+        }
+
+        if (FixedHeight(tree, paneControls, node.FirstId) is not { } first ||
+            FixedHeight(tree, paneControls, node.SecondId) is not { } second) {
+            return null;
+        }
+
+        return node.Orientation == Orientation.Column
+            ? first + second
+            : Math.Max(first, second);
+    }
+
     public void Layout(
         SummaryLayoutTree                 tree,
         IReadOnlyDictionary<int, Control> paneControls,
@@ -75,7 +111,7 @@ public sealed class SummaryLayoutRenderer
                 height);
         }
         else {
-            int firstHeight  = (int)(height * node.Ratio);
+            int firstHeight  = FirstHeight(tree, paneControls, node, height);
             int secondHeight = height - firstHeight;
 
             LayoutNode(

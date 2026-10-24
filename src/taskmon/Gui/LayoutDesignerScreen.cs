@@ -98,6 +98,12 @@ public sealed class LayoutDesignerScreen : Screen
         }
 
         SummaryLayoutNode parent = tree.Nodes[pid];
+
+        if (parent.Orientation == Orientation.Column &&
+            (SummaryLayoutRenderer.FixedHeight(tree, paneControls, parent.FirstId) is not null ||
+             SummaryLayoutRenderer.FixedHeight(tree, paneControls, parent.SecondId) is not null)) {
+            return;
+        }
         
         float signedDelta = parent.FirstId == selectedNodeId ? delta : -delta;
 
@@ -333,6 +339,8 @@ public sealed class LayoutDesignerScreen : Screen
                 handled = true;
                 break;
 
+            // The Mac keyboard's delete key arrives as Backspace.
+            case ConsoleKey.Backspace:
             case ConsoleKey.Delete:
                 RemoveSelectedPane();
                 handled = true;

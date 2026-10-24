@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
@@ -57,6 +58,24 @@ public sealed class CpuMetreControlTests
         ctrl.Load();
         ctrl.Resize();
         return ctrl;
+    }
+
+    [Fact]
+    public void Highlights_The_Metre_Border_While_Focused()
+    {
+        CpuMetreControl ctrl = CreateControl();
+
+        ctrl.Focused = true;
+        ctrl.Draw();
+
+        Assert.Equal(Control.FocusSelectionColour, ctrl.Metre.DisplayBorderColour);
+
+        ctrl.Focused = false;
+        ctrl.Draw();
+
+        Assert.Equal(runContext.AppConfig.Theme.MetreBorderForeground, ctrl.Metre.DisplayBorderColour);
+
+        ctrl.Unload();
     }
 
     [Fact]

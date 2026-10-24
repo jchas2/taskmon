@@ -1,5 +1,6 @@
 using System.Drawing;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -8,7 +9,7 @@ using Task.Monitor.System.Services;
 
 namespace Task.Monitor.Gui.Controls;
 
-public abstract class SnapshotMetreControl : Control
+public abstract class SnapshotMetreControl : Control, IFixedHeightPane
 {
     private const double MidLoadThreshold  = 0.5;
     private const double HighLoadThreshold = 0.85;
@@ -44,6 +45,8 @@ public abstract class SnapshotMetreControl : Control
 
     protected virtual bool ColourByLevel => true;
 
+    public int FixedHeight => metre.RequiredHeight;
+
     protected static string FormatPercentage(double ratio) => MetreControl.FormatLegendPercentage(ratio);
 
     private Color LevelColour(double ratio) => ratio switch {
@@ -60,6 +63,7 @@ public abstract class SnapshotMetreControl : Control
             return;
         }
 
+        metre.Focused = Focused;
         metre.Draw();
 
         if (Height > metre.RequiredHeight) {

@@ -488,7 +488,7 @@ public class ListView : Control
         return items[index];
     }
 
-    private (int UpRow, int DownRow) GetScrollIndicatorRows()
+    internal (int UpRow, int DownRow) GetScrollIndicatorRows()
     {
         if (!EnableScroll || viewPort.RowCount <= 0 || ItemCount <= viewPort.RowCount) {
             return (-1, -1);

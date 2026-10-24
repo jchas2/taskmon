@@ -86,7 +86,11 @@ public sealed class PowerControl : Control
         return (component, remaining - component, power);
     }
 
-    protected override void OnDraw() => powerView.Draw();
+    protected override void OnDraw()
+    {
+        powerView.Focused = Focused;
+        powerView.Draw();
+    }
 
     protected override void OnLoad()
     {
@@ -124,6 +128,8 @@ public sealed class PowerControl : Control
 
         base.OnUnload();
     }
+
+    internal ListView PowerView => powerView;
 
     private void RebuildRows(PowerMetrics metrics)
     {

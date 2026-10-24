@@ -50,8 +50,9 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
-    public void DownArrow_Then_Enter_Selects_The_Second_Row()
+    public void DownArrow_Then_Enter_Selects_The_Second_Row_In_Sorted_Order()
     {
+        // Cpu, Memory, Gpu are listed as Cpu, Gpu, Memory; the second row is Gpu, index 2 in the caller's list.
         PickerBoxControl control = CreateBox();
         control.ShowPickerBox();
 
@@ -60,7 +61,37 @@ public sealed class PickerBoxTests
         control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
 
         Assert.Equal(PickerBoxResult.Ok, control.Result);
-        Assert.Equal(1, control.SelectedIndex);
+        Assert.Equal(2, control.SelectedIndex);
+    }
+
+    [Fact]
+    public void Draws_A_Down_Indicator_Until_Scrolled_And_Then_An_Up_Indicator()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        PickerBoxControl control = CreateBox(terminal, labels: Enumerable.Range(0, 10).Select(i => $"Item {i}").ToList());
+        control.ShowPickerBox();
+
+        terminal.Verify(t => t.Write('▼'), Times.Once);
+        terminal.Verify(t => t.Write('▲'), Times.Never);
+
+        terminal.Invocations.Clear();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.PageDown), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.PageDown), ref handled);
+
+        terminal.Verify(t => t.Write('▲'), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void Draws_No_Scroll_Indicators_When_Every_Row_Fits()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        PickerBoxControl control = CreateBox(terminal);
+        control.ShowPickerBox();
+
+        terminal.Verify(t => t.Write('▲'), Times.Never);
+        terminal.Verify(t => t.Write('▼'), Times.Never);
     }
 
     [Fact]
@@ -136,9 +167,9 @@ public sealed class PickerBoxTests
         control.ShowPickerBox();
 
         bool handled = false;
-        // Check row 0 (Cpu), move to row 2 (Gpu) and check that too, leaving row 1 (Memory)
+        // Rows are sorted Cpu, Gpu, Memory. Check Cpu, move to Memory and check that too, leaving Gpu
         // unchecked - confirming that Enter reads back whatever is checked, not merely whichever
-        // row happens to be highlighted at the time.
+        // row happens to be highlighted at the time, as indices into the caller's list.
         control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar), ref handled);
         control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
         control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
@@ -146,12 +177,26 @@ public sealed class PickerBoxTests
         control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
 
         Assert.Equal(PickerBoxResult.Ok, control.Result);
-        Assert.Equal([0, 2], control.CheckedIndices.ToList());
+        Assert.Equal([0, 1], control.CheckedIndices.ToList());
     }
 
     [Fact]
     public void PickerBox_Canary_Test() =>
         Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+
+    [Fact]
+    public void SetItems_Highlights_The_Initial_Item_Wherever_It_Sorts()
+    {
+        PickerBoxControl control = CreateBox();
+        control.SetItems(["Cpu", "Memory", "Gpu"], initialSelectedIndex: 1);
+        control.ShowPickerBox();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.UpArrow), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(2, control.SelectedIndex);
+    }
 
     [Fact]
     public void SetItems_Resets_Any_Previous_Result()
