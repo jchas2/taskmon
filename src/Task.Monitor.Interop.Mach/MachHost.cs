@@ -80,6 +80,12 @@ public sealed class MachHost
     [DllImport(Libraries.LibSystemDyLib)]
     public static extern nint mach_task_self();
 
+    // Activity Monitor's "Memory Used"; the active and inactive lists also hold the reclaimable file cache.
+    public static ulong UsedMemoryPages(in VmStatistics64 stats) =>
+        (ulong)Math.Max(0L, (long)stats.internal_page_count - stats.purgeable_count) +
+        stats.wire_count +
+        stats.compressor_page_count;
+
     [DllImport(Libraries.LibSystemDyLib)]
     public static extern int vm_deallocate(
         nint task,

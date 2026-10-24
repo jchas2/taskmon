@@ -63,6 +63,7 @@ public static class ThermalMetricsExtensions
         ThermalSource.KernelMsr => 4,
         ThermalSource.NvApi or ThermalSource.Adl or ThermalSource.Igcl => 3,
         ThermalSource.NvmeHealthLog or ThermalSource.AtaSmart => 3,
+        ThermalSource.Smc or ThermalSource.HidSensor => 3,
         ThermalSource.Battery => 2,
         ThermalSource.AcpiThermalZone => 1,
         _ => 0
@@ -72,6 +73,14 @@ public static class ThermalMetricsExtensions
         string.IsNullOrEmpty(componentLabel)
             ? sensor.SensorName
             : $"{componentLabel} — {sensor.SensorName}";
+
+    public static string ToLoadText(this FanReading fan) =>
+        fan.MaxRpm > 0 ? $"{Math.Clamp(fan.Rpm / fan.MaxRpm, 0, 1) * 100:0}%" : "N/A";
+
+    public static string ToRpmText(this double rpm) => $"{rpm:N0}";
+
+    public static string ToSpeedText(this FanReading fan) =>
+        fan.Rpm < 1 ? "Off" : fan.Rpm.ToRpmText();
 
     public static string ToTemperatureText(this double celsius) => $"{celsius:0}°C";
 

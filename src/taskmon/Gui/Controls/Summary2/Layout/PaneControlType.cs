@@ -29,4 +29,5 @@ public enum PaneControlType
     DiskMetre,
     NetworkSendMetre,
     NetworkReceiveMetre,
+    Fans,
 }

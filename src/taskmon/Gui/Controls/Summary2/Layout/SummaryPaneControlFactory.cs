@@ -99,6 +99,9 @@ public static class SummaryPaneControlFactory
             PaneControlType.DiskMetre           => new DiskMetreControl(serviceController, terminal, appConfig)           { TabStop = false },
             PaneControlType.NetworkSendMetre    => new NetworkSendMetreControl(serviceController, terminal, appConfig)    { TabStop = false },
             PaneControlType.NetworkReceiveMetre => new NetworkReceiveMetreControl(serviceController, terminal, appConfig) { TabStop = false },
+#if __APPLE__
+            PaneControlType.Fans                => new FansControl(serviceController, terminal, appConfig)                { TabStop = false },
+#endif
                                               _ => new EmptyPaneControl(terminal),
         };
 }

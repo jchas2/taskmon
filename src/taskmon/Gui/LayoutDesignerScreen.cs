@@ -15,14 +15,22 @@ using TextInputDialogControl = Task.Monitor.System.Controls.TextInputDialog.Text
 
 namespace Task.Monitor.Gui;
 
-// A live WYSIWYG editor the SummaryLayout control.
+// A live WYSIWYG editor for the SummaryLayout control.
 public sealed class LayoutDesignerScreen : Screen
 {
     private const int   BannerHeight = 1;
     private const int   FooterHeight = 1;
     private const float RatioStep    = 0.05f;
 
-    private static readonly PaneControlType[] AssignableControlTypes = Enum.GetValues<PaneControlType>();
+#if __APPLE__
+    private static readonly PaneControlType[] UnavailableControlTypes = [];
+#else
+    private static readonly PaneControlType[] UnavailableControlTypes = [PaneControlType.Fans];
+#endif
+
+    internal static readonly PaneControlType[] AssignableControlTypes = Enum.GetValues<PaneControlType>()
+        .Except(UnavailableControlTypes)
+        .ToArray();
 
     // TODO: Dup of SetupScreen's ToggleableColumns table. Need a CommonControl functions class.
     private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
@@ -304,9 +312,6 @@ public sealed class LayoutDesignerScreen : Screen
                 handled = true;
                 break;
 
-            // V splits the pane side-by-side (vertical divider); H splits it stacked (horizontal
-            // divider). Plain letter keys are used so the binding is identical and conflict-free on
-            // every platform's terminal (macOS intercepts Ctrl+Arrow for Mission Control).
             case ConsoleKey.V:
                 SplitSelectedPane(Orientation.Row);
                 handled = true;
@@ -339,7 +344,6 @@ public sealed class LayoutDesignerScreen : Screen
                 handled = true;
                 break;
 
-            // The Mac keyboard's delete key arrives as Backspace.
             case ConsoleKey.Backspace:
             case ConsoleKey.Delete:
                 RemoveSelectedPane();

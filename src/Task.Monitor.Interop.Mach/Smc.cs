@@ -7,9 +7,11 @@ public sealed class Smc : IDisposable
 {
     private const uint KernelIndexSmc = 2;
     private const byte ReadBytes      = 5;
+    private const byte ReadIndex      = 8;
     private const byte ReadKeyInfo    = 9;
+    private const string KeyCountKey  = "#KEY";
 
-    private static readonly uint FloatType = EncodeKey("flt ");
+    private readonly Dictionary<uint, (uint Size, uint Type)?> keyInfo = new();
 
     private readonly uint connection;
 
@@ -46,6 +48,24 @@ public sealed class Smc : IDisposable
         }
     }
 
+    public static double? Decode(string dataType, ReadOnlySpan<byte> bytes) => dataType switch {
+        "flt " when bytes.Length >= 4 => BinaryPrimitives.ReadSingleLittleEndian(bytes),
+        "sp78" when bytes.Length >= 2 => BinaryPrimitives.ReadInt16BigEndian(bytes) / 256.0,
+        "fpe2" when bytes.Length >= 2 => BinaryPrimitives.ReadUInt16BigEndian(bytes) / 4.0,
+        "ui8 " when bytes.Length >= 1 => bytes[0],
+        "ui16" when bytes.Length >= 2 => BinaryPrimitives.ReadUInt16BigEndian(bytes),
+        "ui32" when bytes.Length >= 4 => BinaryPrimitives.ReadUInt32BigEndian(bytes),
+        _ => null
+    };
+
+    public static string DecodeKey(uint key) =>
+        string.Create(4, key, (chars, value) => {
+            chars[0] = (char)(byte)(value >> 24);
+            chars[1] = (char)(byte)(value >> 16);
+            chars[2] = (char)(byte)(value >> 8);
+            chars[3] = (char)(byte)value;
+        });
+
     public void Dispose() => IOKit.IOServiceClose(connection);
 
     public static uint EncodeKey(string key)
@@ -55,6 +75,22 @@ public sealed class Smc : IDisposable
         }
 
         return (uint)key[0] << 24 | (uint)key[1] << 16 | (uint)key[2] << 8 | key[3];
+    }
+
+    private (uint Size, uint Type)? GetKeyInfo(uint key)
+    {
+        if (keyInfo.TryGetValue(key, out (uint Size, uint Type)? cached)) {
+            return cached;
+        }
+
+        KeyData input = new() { Key = key, Data8 = ReadKeyInfo };
+
+        (uint Size, uint Type)? info = Call(ref input, out KeyData output)
+            ? (output.DataSize, output.DataType)
+            : null;
+
+        keyInfo[key] = info;
+        return info;
     }
 
     public static Smc? Open()
@@ -70,22 +106,39 @@ public sealed class Smc : IDisposable
             : null;
     }
 
-    public unsafe float? ReadFloat(string key)
+    public List<string> ReadKeys()
     {
-        KeyData input = new() { Key = EncodeKey(key), Data8 = ReadKeyInfo };
+        List<string> keys = new();
 
-        if (!Call(ref input, out KeyData info) || info.DataType != FloatType || info.DataSize != sizeof(float)) {
+        if (ReadValue(KeyCountKey) is not { } count) {
+            return keys;
+        }
+
+        for (uint i = 0; i < (uint)count; i++) {
+            KeyData input = new() { Data8 = ReadIndex, Data32 = i };
+
+            if (Call(ref input, out KeyData output)) {
+                keys.Add(DecodeKey(output.Key));
+            }
+        }
+
+        return keys;
+    }
+
+    public unsafe double? ReadValue(string key)
+    {
+        uint code = EncodeKey(key);
+
+        if (GetKeyInfo(code) is not { } info || info.Size > 32) {
             return null;
         }
 
-        input.DataSize = info.DataSize;
-        input.DataType = info.DataType;
-        input.Data8    = ReadBytes;
+        KeyData input = new() { Key = code, DataSize = info.Size, DataType = info.Type, Data8 = ReadBytes };
 
         if (!Call(ref input, out KeyData value)) {
             return null;
         }
 
-        return BinaryPrimitives.ReadSingleLittleEndian(new ReadOnlySpan<byte>(value.Bytes, sizeof(float)));
+        return Decode(DecodeKey(info.Type), new ReadOnlySpan<byte>(value.Bytes, (int)info.Size));
     }
 }

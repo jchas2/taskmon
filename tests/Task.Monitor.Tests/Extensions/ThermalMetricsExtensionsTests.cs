@@ -108,4 +108,21 @@ public sealed class ThermalMetricsExtensionsTests
             Celsius = celsius,
             Source = source
         };
+
+    [Theory]
+    [InlineData(2900, 5800, "50%")]
+    [InlineData(0,    5349, "0%")]
+    [InlineData(6000, 5800, "100%")]
+    [InlineData(1200, 0,    "N/A")]
+    public void ToLoadText_Reports_Speed_As_A_Share_Of_The_Maximum(double rpm, double maxRpm, string expected)
+    {
+        Assert.Equal(expected, new FanReading { Rpm = rpm, MaxRpm = maxRpm }.ToLoadText());
+    }
+
+    [Fact]
+    public void ToSpeedText_Shows_A_Stopped_Fan_As_Off()
+    {
+        Assert.Equal("Off", new FanReading { Rpm = 0 }.ToSpeedText());
+        Assert.Equal(2900.0.ToRpmText(), new FanReading { Rpm = 2900 }.ToSpeedText());
+    }
 }

@@ -59,16 +59,29 @@ public sealed partial class ThermalService : WorkerService
             }
         }
 
-        Publish(new ThermalInfo {
-            Metrics = new ThermalMetrics {
-                Sensors = sensors
-            }
-        });
+        ThermalMetrics metrics = new() { Sensors = sensors };
+
+        try {
+            ReadPlatform(metrics);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex);
+        }
+
+        Publish(new ThermalInfo { Metrics = metrics });
     }
 
     protected override void OnStart() => BuildProviders();
 
-    protected override void OnStop() => DisposeProviders();
+    protected override void OnStop()
+    {
+        DisposeProviders();
+        OnStopPlatform();
+    }
+
+    partial void OnStopPlatform();
+
+    partial void ReadPlatform(ThermalMetrics metrics);
 
     private static void TryDispose(IThermalProvider provider)
     {
@@ -80,7 +93,7 @@ public sealed partial class ThermalService : WorkerService
         }
     }
 
-#if !__WIN32__
+#if !__WIN32__ && !__APPLE__
     private partial IEnumerable<IThermalProvider> CreateProviders() => [];
 #endif
 }

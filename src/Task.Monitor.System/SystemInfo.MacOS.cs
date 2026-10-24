@@ -545,11 +545,10 @@ public static partial class SystemInfo
         ulong totalPhysical = *(ulong*)buffer;
         Sys.FreeMemory(buffer);
         
-        long totalUsedCount = info.wire_count + info.inactive_count + info.active_count + info.compressor_page_count;
-        long totalUsed = totalUsedCount * pageSize;
+        ulong totalUsed = MachHost.UsedMemoryPages(info) * (ulong)pageSize;
         
         systemStatistics.TotalPhysical = totalPhysical;
-        systemStatistics.AvailablePhysical = totalPhysical - (ulong)totalUsed;
+        systemStatistics.AvailablePhysical = totalPhysical > totalUsed ? totalPhysical - totalUsed : 0;
 
         sysctlName = [(int)Sys.Selectors.CTL_VM, Sys.VM_SWAPUSAGE];
         buffer = null;

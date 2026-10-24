@@ -9,5 +9,7 @@ public enum ThermalSource
     AtaSmart,
     AcpiThermalZone,
     Battery,
-    KernelMsr
+    KernelMsr,
+    Smc,
+    HidSensor
 }

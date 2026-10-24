@@ -22,17 +22,18 @@ public sealed class ThermalsControl : Control
     private readonly AppConfig         appConfig;
     
     private PowerControl? powerControl;
+    private FansControl?  fansControl;
 
     private List<SensorRow> rows = new();
     private string lastSignature = string.Empty;
     
     private SystemSnapshot? snapshot;
 
+    private int fanCount;
     private int scrollOffset;
     private int lastDrawnChartCount = -1;
 
     private bool needsFullClear = true;
-    private bool scrollBarShown;
 
 
     private sealed record SensorRow(
@@ -48,8 +49,21 @@ public sealed class ThermalsControl : Control
         this.appConfig         = appConfig;
     }
 
+    private static string BuildChartText(SensorRow row, ThermalMetrics? metrics)
+    {
+        if (metrics?.PrimaryTemperature(row.Component, row.ComponentId) is not { } celsius) {
+            return row.Title;
+        }
+
+        string text = $"{row.Title}   {celsius.ToTemperatureText()}";
+
+        return row.Component == ThermalComponent.Cpu && metrics.Pressure is { } pressure
+            ? $"{text}   Pressure: {pressure}"
+            : text;
+    }
+
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
-        ThermalComponent.Cpu     => "CPU",
+        ThermalComponent.Cpu     => string.IsNullOrEmpty(componentId) ? "CPU" : $"CPU {componentId}",
         ThermalComponent.Gpu     => snapshot.ToGpuLabel(componentId),
         ThermalComponent.Disk    => snapshot.ToDiskLabel(componentId),
         ThermalComponent.Battery => "Battery",
@@ -58,9 +72,13 @@ public sealed class ThermalsControl : Control
         _ => "System"
     };
 
+    internal IReadOnlyDictionary<string, Chart> Charts => chartCache;
+
     private int ChartsWidth => ShowPowerPane
         ? Math.Max(4, Width - PowerControl.PreferredWidth)
         : Math.Max(4, Width);
+
+    private int ChartWidth => Math.Max(4, ChartsWidth - 1);
 
     private void ConfigureChart(Chart chart)
     {
@@ -68,13 +86,29 @@ public sealed class ThermalsControl : Control
         chart.MetreStyle = appConfig.MetreStyle;
     }
 
+    private FansControl? CreateFansControl()
+    {
+#if __APPLE__
+        return new FansControl(serviceController, Terminal, appConfig) { TabStop = false };
+#else
+        return null;
+#endif
+    }
+
     private void DrawEmptyState()
     {
+#if __APPLE__
+        string[] lines = [
+            "No thermal sensors detected.",
+            "The SMC and HID temperature sensors could not be read.",
+        ];
+#else
         string[] lines = [
             "No thermal sensors detected.",
             "GPU and NVMe drive temperatures appear here when available.",
             "Accurate CPU temperature needs a signed kernel helper driver.",
         ];
+#endif
 
         for (int i = 0; i < lines.Length; i++) {
             string line = lines[i];
@@ -94,7 +128,7 @@ public sealed class ThermalsControl : Control
     {
         frame.Clear();
         frame.MoveTo(x, y);
-        frame.SetColour(appConfig.Theme.ChartBorderForeground, BackgroundColour);
+        frame.SetColour(ScrollBarColour, BackgroundColour);
         frame.Append(glyph);
         frame.ResetColour();
         
@@ -109,7 +143,7 @@ public sealed class ThermalsControl : Control
             x, 
             Y, 
             Y + Height, 
-            appConfig.Theme.ChartBorderForeground);
+            ScrollBarColour);
 
         if (scrollOffset > 0) {
             DrawGlyph(x, Y, '▲');
@@ -176,7 +210,7 @@ public sealed class ThermalsControl : Control
 
         ConfigureChart(chart);
         
-        chart.Width  = ChartsWidth;
+        chart.Width  = ChartWidth;
         chart.Height = ChartHeight;
         chart.Resize();
 
@@ -185,23 +219,45 @@ public sealed class ThermalsControl : Control
         return chart;
     }
 
+    private void LayoutSidePanes()
+    {
+        int x          = X + ChartsWidth;
+        int width      = Math.Max(1, Width - ChartsWidth);
+        int fansHeight = fansControl is null ? 0 : Math.Min(FansControl.HeightFor(fanCount), Height);
+
+        if (powerControl is not null) {
+            powerControl.X      = x;
+            powerControl.Y      = Y;
+            powerControl.Width  = width;
+            powerControl.Height = Height - fansHeight;
+        }
+
+        if (fansControl is not null) {
+            fansControl.X      = x;
+            fansControl.Y      = Y + Height - fansHeight;
+            fansControl.Width  = width;
+            fansControl.Height = fansHeight;
+        }
+    }
+
     protected override void OnDraw()
     {
         OnDrawInternal();
         powerControl?.Draw();
+        fansControl?.Draw();
     }
 
     private void OnDrawInternal()
     {
         if (rows.Count == 0) {
-            if (needsFullClear || lastDrawnChartCount != 0 || scrollBarShown) {
+            if (needsFullClear || lastDrawnChartCount != 0) {
                 DrawRectangle(X, Y, ChartsWidth, Height, BackgroundColour);
             }
 
             DrawEmptyState();
+            DrawScrollBar(visibleCharts: 1);
 
             needsFullClear      = false;
-            scrollBarShown      = false;
             lastDrawnChartCount = 0;
             return;
         }
@@ -210,14 +266,7 @@ public sealed class ThermalsControl : Control
         
         scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, rows.Count - visibleCharts));
 
-        int  drawn        = Math.Min(visibleCharts, rows.Count - scrollOffset);
-        bool scrollNeeded = rows.Count > visibleCharts;
-        int  chartWidth   = scrollNeeded ? Math.Max(4, ChartsWidth - 1) : ChartsWidth;
-
-        if (scrollNeeded != scrollBarShown) {
-            needsFullClear = true;
-            scrollBarShown = scrollNeeded;
-        }
+        int drawn = Math.Min(visibleCharts, rows.Count - scrollOffset);
 
         if (needsFullClear) {
             DrawRectangle(
@@ -237,14 +286,10 @@ public sealed class ThermalsControl : Control
                 continue;
             }
 
-            double? current = metrics?.PrimaryTemperature(row.Component, row.ComponentId);
+            chart.Text = BuildChartText(row, metrics);
 
-            chart.Text = current is { } value
-                ? $"{row.Title}   {value.ToTemperatureText()}"
-                : row.Title;
-
-            if (chart.Width != chartWidth) {
-                chart.Width = chartWidth;
+            if (chart.Width != ChartWidth) {
+                chart.Width = ChartWidth;
                 chart.Resize();
             }
 
@@ -265,9 +310,7 @@ public sealed class ThermalsControl : Control
                 BackgroundColour);
         }
 
-        if (scrollNeeded) {
-            DrawScrollBar(visibleCharts);
-        }
+        DrawScrollBar(visibleCharts);
 
         needsFullClear = false;
         lastDrawnChartCount = drawn;
@@ -311,6 +354,11 @@ public sealed class ThermalsControl : Control
             Controls.Add(powerControl);
         }
 
+        if (ShowPowerPane && fansControl is null && CreateFansControl() is { } fans) {
+            fansControl = fans;
+            Controls.Add(fansControl);
+        }
+
         foreach (Chart chart in chartCache.Values) {
             ConfigureChart(chart);
         }
@@ -323,17 +371,12 @@ public sealed class ThermalsControl : Control
     {
         foreach (Chart chart in chartCache.Values) {
             chart.X      = X;
-            chart.Width  = ChartsWidth;
+            chart.Width  = ChartWidth;
             chart.Height = ChartHeight;
             chart.Resize();
         }
 
-        if (powerControl is not null) {
-            powerControl.X      = X + ChartsWidth;
-            powerControl.Y      = Y;
-            powerControl.Width  = Math.Max(1, Width - ChartsWidth);
-            powerControl.Height = Height;
-        }
+        LayoutSidePanes();
 
         needsFullClear      = true;
         lastDrawnChartCount = -1;
@@ -347,13 +390,9 @@ public sealed class ThermalsControl : Control
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
-        chartCache.Clear();
-        rows                = new();
-        lastSignature       = string.Empty;
         scrollOffset        = 0;
         needsFullClear      = true;
         lastDrawnChartCount = -1;
-        scrollBarShown      = false;
 
         base.OnUnload();
     }
@@ -376,8 +415,21 @@ public sealed class ThermalsControl : Control
             FeedCharts(thermal.Metrics);
         }
 
+        if (fansControl is not null && snapshot.Thermal?.Metrics.Fans.Count is { } count && count != fanCount) {
+            fanCount = count;
+
+            LayoutSidePanes();
+            powerControl?.Resize();
+            fansControl.Resize();
+        }
+
         Draw();
     }
+
+    internal Color ScrollBarColour =>
+        Focused
+            ? FocusSelectionColour
+            : appConfig.Theme.ChartBorderForeground;
 
     public bool ShowPowerPane { get; init; } = true;
 }

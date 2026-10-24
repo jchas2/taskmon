@@ -1,4 +1,7 @@
+using System.Reflection;
 using Task.Monitor.Gui.Controls.Thermals;
+using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Tests.Controls;
@@ -62,6 +65,22 @@ public sealed class ThermalsControlTests
         Assert.NotNull(ctrl);
     }
 
+    private ThermalsControl CreateChartsOnlyControl()
+    {
+        ThermalsControl ctrl = new(
+            runContext.ServiceController,
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width         = 120,
+            Height        = 40,
+            ShowPowerPane = false
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        return ctrl;
+    }
+
     private ThermalsControl CreateControl(int width = 120, int height = 40)
     {
         ThermalsControl ctrl = new(
@@ -111,10 +130,115 @@ public sealed class ThermalsControlTests
         string output = CapturedOutput();
 
         Assert.Contains("No thermal sensors detected", output);
+#if __APPLE__
+        Assert.Contains("SMC and HID temperature sensors", output);
+#else
         Assert.Contains("kernel helper driver", output);
+#endif
 
         ctrl.Unload();
     }
+
+    [Fact]
+    public void Draws_The_Scroll_Bar_Even_When_The_Charts_Fit()
+    {
+        ThermalsControl ctrl = CreateChartsOnlyControl();
+
+        ctrl.Sample(SnapshotWith(Sensor(ThermalComponent.Gpu, "111", "GPU", 42)));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("\u2577", output);
+        Assert.DoesNotContain("▲", output);
+        Assert.DoesNotContain("▼", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Draws_The_Scroll_Bar_With_The_Empty_State()
+    {
+        ThermalsControl ctrl = CreateChartsOnlyControl();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("No thermal sensors detected", output);
+        Assert.Contains("\u2577", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Gives_Each_Cpu_Cluster_Its_Own_Chart()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(
+            Sensor(ThermalComponent.Cpu, "P-Cores", "Hottest", 67, ThermalSource.Smc),
+            Sensor(ThermalComponent.Cpu, "E-Cores", "Hottest", 49, ThermalSource.Smc)));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("CPU P-Cores   67°C", output);
+        Assert.Contains("CPU E-Cores   49°C", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Highlights_The_Scroll_Bar_While_Focused()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        ctrl.Focused = true;
+
+        Assert.Equal(Control.FocusSelectionColour, ctrl.ScrollBarColour);
+
+        ctrl.Focused = false;
+
+        Assert.Equal(runContext.AppConfig.Theme.ChartBorderForeground, ctrl.ScrollBarColour);
+
+        ctrl.Unload();
+    }
+
+#if __APPLE__
+    [Fact]
+    public void Hosts_A_Fans_Pane_Below_The_Power_Pane()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Thermal = new ThermalInfo {
+                Metrics = new ThermalMetrics {
+                    Fans = [
+                        new FanReading { Name = "Fan 1", Rpm = 0,    MinRpm = 1350, MaxRpm = 5349 },
+                        new FanReading { Name = "Fan 2", Rpm = 2900, MinRpm = 1458, MaxRpm = 5800 },
+                    ]
+                }
+            }
+        });
+
+        FansControl fans   = Assert.Single(ctrl.Controls.OfType<FansControl>());
+        PowerControl power = Assert.Single(ctrl.Controls.OfType<PowerControl>());
+
+        Assert.Equal(5, fans.Height);
+        Assert.Equal(ctrl.Y + ctrl.Height - fans.Height, fans.Y);
+        Assert.Equal(power.X, fans.X);
+        Assert.Equal(ctrl.Height - fans.Height, power.Height);
+
+        string output = CapturedOutput();
+
+        Assert.Contains("FANS", output);
+        Assert.Contains("Fan 1", output);
+        Assert.Contains("Off", output);
+        Assert.Contains("50%", output);
+
+        ctrl.Unload();
+    }
+#endif
 
     [Fact]
     public void Hosts_A_Power_Pane_By_Default()
@@ -142,6 +266,41 @@ public sealed class ThermalsControlTests
         Assert.Contains("No thermal sensors detected", CapturedOutput());
 
         ctrl.Unload();
+    }
+
+    [Fact]
+    public void Keeps_Chart_History_When_Navigating_Away_And_Back()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        for (int i = 0; i < 5; i++) {
+            ctrl.Sample(SnapshotWith(Sensor(ThermalComponent.Gpu, "111", "GPU", 40 + i)));
+        }
+
+        Chart chart = Assert.Single(ctrl.Charts.Values);
+
+        ctrl.Unload();
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Draw();
+
+        Assert.Same(chart, Assert.Single(ctrl.Charts.Values));
+        Assert.Contains("44°C", CapturedOutput());
+        Assert.DoesNotContain("No thermal sensors detected", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    // ServiceController only raises this from its worker loop, and the fans pane subscribes itself.
+    private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
+    {
+        MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
+            .GetField("SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(runContext.ServiceController);
+
+        handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
     }
 
     [Fact]
@@ -192,21 +351,41 @@ public sealed class ThermalsControlTests
     [Fact]
     public void Shows_Charts_Only_Without_The_Power_Pane()
     {
-        ThermalsControl ctrl = new(
-            runContext.ServiceController,
-            new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
-            Width         = 120,
-            Height        = 40,
-            ShowPowerPane = false
-        };
-
-        ctrl.Load();
-        ctrl.Resize();
+        ThermalsControl ctrl = CreateChartsOnlyControl();
         ctrl.Draw();
 
         Assert.Empty(ctrl.Controls.OfType<PowerControl>());
+        Assert.Empty(ctrl.Controls.OfType<FansControl>());
         Assert.DoesNotContain("POWER", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Shows_Thermal_Pressure_On_The_Cpu_Charts_Only()
+    {
+        ThermalsControl ctrl = CreateControl();
+
+        ctrl.Sample(new SystemSnapshot {
+            Thermal = new ThermalInfo {
+                Metrics = new ThermalMetrics {
+                    Sensors  = [
+                        Sensor(ThermalComponent.Cpu, "P-Cores", "Hottest", 88, ThermalSource.Smc),
+                        Sensor(ThermalComponent.Gpu, "0", "Hottest", 61, ThermalSource.Smc),
+                    ],
+                    Pressure = ThermalPressure.Heavy
+                }
+            }
+        });
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        int first     = output.IndexOf("Pressure: Heavy", StringComparison.Ordinal);
+
+        Assert.Contains("CPU P-Cores   88°C   Pressure: Heavy", output);
+        Assert.Equal(-1, output.IndexOf("Pressure: Heavy", first + 1, StringComparison.Ordinal));
 
         ctrl.Unload();
     }

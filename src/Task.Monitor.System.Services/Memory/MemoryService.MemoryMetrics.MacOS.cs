@@ -49,10 +49,7 @@ public partial class MemoryService
             ? (ulong)memSize
             : 0;
 
-        ulong usedPages = vmStats.wire_count + vmStats.inactive_count + vmStats.active_count +
-            vmStats.compressor_page_count;
-        
-        ulong usedBytes = usedPages * (ulong)pageSize;
+        ulong usedBytes = MachHost.UsedMemoryPages(vmStats) * (ulong)pageSize;
 
         memoryInfo.Metrics.TotalPhysical     = totalPhysical;
         memoryInfo.Metrics.AvailablePhysical = totalPhysical > usedBytes

@@ -439,6 +439,37 @@ public sealed class LayoutDesignerScreenTests
     }
 
     [Fact]
+    public void Fans_Are_Offered_On_MacOS_Only()
+    {
+#if __APPLE__
+        Assert.Contains(PaneControlType.Fans, LayoutDesignerScreen.AssignableControlTypes);
+#else
+        Assert.DoesNotContain(PaneControlType.Fans, LayoutDesignerScreen.AssignableControlTypes);
+#endif
+    }
+
+#if __APPLE__
+    [Fact]
+    public void Fans_Can_Be_Assigned_To_A_Pane()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Fans);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.Fans, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Contains("FANS", CapturedOutput());
+
+        screen.Unload();
+    }
+#endif
+
+    [Fact]
     public void H_Splits_Column_Wise()
     {
         LayoutDesignerScreen screen = CreateScreen();

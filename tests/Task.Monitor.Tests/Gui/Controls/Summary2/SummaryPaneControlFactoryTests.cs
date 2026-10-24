@@ -4,6 +4,7 @@ using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Memory;
 using Task.Monitor.Gui.Controls.Network;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Controls;
 using Task.Monitor.Tests.Common;
 
@@ -11,6 +12,25 @@ namespace Task.Monitor.Tests.Gui.Controls.Summary2;
 
 public sealed class SummaryPaneControlFactoryTests
 {
+    [Fact]
+    public void Create_Builds_A_Fans_Pane_On_MacOS_Only()
+    {
+        RunContext runContext = new RunContextHelper().GetRunContext();
+
+        Control control = SummaryPaneControlFactory.Create(
+            new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Fans },
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig);
+
+#if __APPLE__
+        Assert.IsType<FansControl>(control);
+        Assert.False(control.TabStop);
+#else
+        Assert.IsType<EmptyPaneControl>(control);
+#endif
+    }
+
     [Theory]
     [InlineData(PaneControlType.CpuMetre,            typeof(CpuMetreControl))]
     [InlineData(PaneControlType.GpuMetre,            typeof(GpuMetreControl))]

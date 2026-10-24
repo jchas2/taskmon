@@ -19,7 +19,7 @@ internal sealed class SmcPowerProvider : IPowerProvider
 
     public IEnumerable<PowerReading> Read()
     {
-        if (smc?.ReadFloat(SystemTotalKey) is { } watts && watts > 0) {
+        if (smc?.ReadValue(SystemTotalKey) is { } watts && watts > 0) {
             yield return new PowerReading {
                 Component = PowerComponent.System,
                 Rail      = PowerRails.System,
@@ -37,7 +37,7 @@ internal sealed class SmcPowerProvider : IPowerProvider
 
         smc = Smc.Open();
 
-        return smc?.ReadFloat(SystemTotalKey) is not null;
+        return smc?.ReadValue(SystemTotalKey) is not null;
     }
 }
 #endif
