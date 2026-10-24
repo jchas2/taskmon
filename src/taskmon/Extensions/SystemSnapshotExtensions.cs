@@ -177,6 +177,9 @@ public static class SystemSnapshotExtensions
     public static string ToDisplayName(this NetworkDeviceMetrics device) =>
         device.FriendlyName is { Length: > 0 } ? device.FriendlyName : $"Adapter {device.InterfaceIndex}";
 
+    public static string ToFormattedByteRate(this double? bytesPerSecond) =>
+        bytesPerSecond is { } rate ? rate.ToFormattedByteRate() : "N/A";
+
     public static string ToFormattedByteRate(this double bytesPerSecond)
     {
         string[] rateFormatters = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"];

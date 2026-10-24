@@ -25,7 +25,7 @@ public sealed class LayoutDesignerScreen : Screen
 #if __APPLE__
     private static readonly PaneControlType[] UnavailableControlTypes = [];
 #else
-    private static readonly PaneControlType[] UnavailableControlTypes = [PaneControlType.Fans];
+    private static readonly PaneControlType[] UnavailableControlTypes = [PaneControlType.Fans, PaneControlType.NpuMetre, PaneControlType.Npu];
 #endif
 
     internal static readonly PaneControlType[] AssignableControlTypes = Enum.GetValues<PaneControlType>()

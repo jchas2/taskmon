@@ -12,6 +12,7 @@ using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
 using Task.Monitor.System.Services.Power;
+using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Services.WindowsServices;
@@ -42,6 +43,9 @@ public sealed class RunAppAction(RunContext runContext) : IAction
             .AddService(() => new LaunchdServicesService())
 #endif
             .AddService(() => new DriversService())
+#if __APPLE__
+            .AddService(() => new SocService())
+#endif
             .AddService(() => new ThermalService())
             .AddService(() => new PowerService());
 

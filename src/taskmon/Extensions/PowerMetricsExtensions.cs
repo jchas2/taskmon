@@ -31,6 +31,9 @@ public static class PowerMetricsExtensions
         return null;
     }
 
+    public static double? NeuralEnginePower(this PowerMetrics metrics) =>
+        Match(metrics, PowerComponent.NeuralEngine, componentId: null)?.Watts;
+
     public static double? SystemPower(this PowerMetrics metrics) =>
         Match(metrics, PowerComponent.System, componentId: null)?.Watts;
 

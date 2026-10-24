@@ -8,6 +8,7 @@ using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
 
 namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 
@@ -81,6 +82,15 @@ public static class SummaryChartFeeder
                     break;
                 }
 
+                case PaneControlType.Npu when snapshot.Npu?.Metrics.Devices.FirstOrDefault() is { } npu: {
+                    chart.LabelSeries = appConfig.ShowMetreNpuNumerically
+                        ? ToNpuLabel(npu, snapshot.Power?.Metrics.NeuralEnginePower())
+                        : string.Empty;
+
+                    chart.Add(npu.ActiveRatio);
+                    break;
+                }
+
                 case PaneControlType.Disk when snapshot.Disk is { } disk: {
                     double diskMbps = disk.Metrics.ToDiskTransferBytesPerSecond().ToMbpsFromBytes();
 
@@ -117,4 +127,9 @@ public static class SummaryChartFeeder
             }
         }
     }
+
+    private static string ToNpuLabel(NpuDeviceMetrics npu, double? watts) =>
+        watts is { } value
+            ? $"{npu.ToNpuPercentage()} · {value.ToWattText()}"
+            : npu.ToNpuPercentage();
 }

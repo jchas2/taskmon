@@ -5,11 +5,14 @@ using Task.Monitor.Gui.Controls.Disk;
 using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Memory;
 using Task.Monitor.Gui.Controls.Network;
+using Task.Monitor.Gui.Controls.Npu;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
+using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 
@@ -141,6 +144,41 @@ public sealed class SnapshotMetreControlTests
         Assert.Equal(0.25, ctrl.Metre.Series[0].Value, precision: 9);
         Assert.StartsWith("Net Send ", ctrl.Metre.Text);
         Assert.Equal(runContext.AppConfig.Theme.RangeLowBackground, ctrl.Metre.Series[0].Colour);
+
+        ctrl.Unload();
+    }
+
+    private static NpuInfo NpuWith(double activeRatio) =>
+        new() { Metrics = new NpuMetrics { Devices = [new NpuDeviceMetrics { Index = 0, ActiveRatio = activeRatio }] } };
+
+    [Fact]
+    public void Npu_Shows_Activity_And_Power()
+    {
+        NpuMetreControl ctrl = Create((s, t, a) => new NpuMetreControl(s, t, a));
+
+        ctrl.Sample(new SystemSnapshot {
+            Npu   = NpuWith(0.6),
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [new PowerReading { Component = PowerComponent.NeuralEngine, Rail = "Neural Engine", Watts = 1.4 }]
+                }
+            }
+        });
+
+        Assert.Equal("NPU% 60.0% · 1.4 W", ctrl.Metre.Text);
+        Assert.Equal(0.6, ctrl.Metre.Series[0].Value, precision: 9);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Npu_Shows_Activity_Without_A_Power_Reading()
+    {
+        NpuMetreControl ctrl = Create((s, t, a) => new NpuMetreControl(s, t, a));
+
+        ctrl.Sample(new SystemSnapshot { Npu = NpuWith(0) });
+
+        Assert.Equal("NPU% 0.0%", ctrl.Metre.Text);
 
         ctrl.Unload();
     }

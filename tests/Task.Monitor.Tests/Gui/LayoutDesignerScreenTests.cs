@@ -438,13 +438,16 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
-    [Fact]
-    public void Fans_Are_Offered_On_MacOS_Only()
+    [Theory]
+    [InlineData(PaneControlType.Fans)]
+    [InlineData(PaneControlType.NpuMetre)]
+    [InlineData(PaneControlType.Npu)]
+    public void Fans_And_The_Npu_Panes_Are_Offered_On_MacOS_Only(PaneControlType type)
     {
 #if __APPLE__
-        Assert.Contains(PaneControlType.Fans, LayoutDesignerScreen.AssignableControlTypes);
+        Assert.Contains(type, LayoutDesignerScreen.AssignableControlTypes);
 #else
-        Assert.DoesNotContain(PaneControlType.Fans, LayoutDesignerScreen.AssignableControlTypes);
+        Assert.DoesNotContain(type, LayoutDesignerScreen.AssignableControlTypes);
 #endif
     }
 

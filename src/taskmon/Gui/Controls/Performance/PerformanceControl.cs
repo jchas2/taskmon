@@ -10,6 +10,7 @@ using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
 
 namespace Task.Monitor.Gui.Controls.Performance;
 
@@ -180,6 +181,27 @@ public sealed class PerformanceControl : Control
         }
     }
 
+    private void AddNpuPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
+    {
+        foreach (NpuDevice device in snapshot?.Npu?.Specs.Devices ?? []) {
+            panels.Add(MakePanel(
+                $"npu:{device.Index}", device.ToDisplayName(), autoScaleChart: false, Chart.FormatYScalePercentage,
+                (panel, s) => {
+                    NpuDeviceMetrics? match = s.Npu?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
+
+                    if (match == null) {
+                        return;
+                    }
+
+                    panel.Line1 = string.Empty;
+                    panel.Line2 = AppendPower(match.ToNpuPercentage(), s.Power?.Metrics.NeuralEnginePower());
+                    panel.Line3 = device.ToNpuCoresText();
+                    panel.Line4 = string.Empty;
+                    panel.Chart.Add(match.ActiveRatio);
+                }));
+        }
+    }
+
     internal static void AppendDeviceKeys(List<string> keys, string prefix, IEnumerable<string>? deviceIds)
     {
         List<string> ids = deviceIds?.ToList() ?? new();
@@ -193,6 +215,11 @@ public sealed class PerformanceControl : Control
             keys.Add($"{prefix}:{id}");
         }
     }
+
+    private static string AppendPower(string line, double? watts) =>
+        watts is { } value
+            ? $"{line} ({value.ToWattText()})"
+            : line;
 
     private static string AppendTemperature(string line, double? celsius) =>
         celsius is { } value 
@@ -239,6 +266,7 @@ public sealed class PerformanceControl : Control
             }));
 
         AddGpuPanels(panels, snapshot);
+        AddNpuPanels(panels, snapshot);
         AddDiskPanels(panels, snapshot);
         AddNetworkPanels(panels, snapshot);
 
@@ -300,6 +328,14 @@ public sealed class PerformanceControl : Control
                 return control;
             }
 
+            case "npu": {
+                NpuPerformanceControl control = new(Terminal, appConfig);
+                control.SetScope(id != null && int.TryParse(id, out int npuIndex) 
+                    ? npuIndex 
+                    : 0);
+                return control;
+            }
+
             case "disk": {
                 DiskPerformanceControl control = new(Terminal, appConfig);
                 control.SetScope(id != null && int.TryParse(id, out int index) 
@@ -321,12 +357,15 @@ public sealed class PerformanceControl : Control
         }
     }
 
-    private List<string> DesiredPanelKeys(SystemSnapshot? snapshot)
+    internal static List<string> DesiredPanelKeys(SystemSnapshot? snapshot)
     {
         List<string> keys = new() { "cpu", "memory" };
 
         AppendDeviceKeys(keys, "gpu",
             snapshot?.Gpu?.Metrics.Devices.Select(device => device.AdapterLuid.ToString()));
+
+        // Unlike the GPU there is no placeholder panel: machines without an NPU show none.
+        keys.AddRange(snapshot?.Npu?.Specs.Devices.Select(device => $"npu:{device.Index}") ?? []);
 
         AppendDeviceKeys(keys, "disk",
             snapshot?.Disk?.Metrics.Devices.Select(device => device.Index.ToString()));

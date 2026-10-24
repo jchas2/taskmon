@@ -18,6 +18,9 @@ public static class ObjCRuntime
     [DllImport(Libraries.ObjC, EntryPoint = "objc_msgSend")]
     public static extern long objc_msgSend_Int64_IntPtr(nint receiver, nint selector, nint argument);
 
+    [DllImport(Libraries.ObjC, EntryPoint = "objc_msgSend")]
+    public static extern ulong objc_msgSend_UInt64(nint receiver, nint selector);
+
     [DllImport(Libraries.ObjC)]
     public static extern nint sel_registerName([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 }

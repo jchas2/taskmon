@@ -7,8 +7,10 @@ using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Process;
+using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Services.WindowsServices;
@@ -22,6 +24,7 @@ public sealed record SystemSnapshot
     public CpuInfo?             Cpu             { get; init; }
     public MemoryInfo?          Memory          { get; init; }
     public GpuInfo?             Gpu             { get; init; }
+    public NpuInfo?             Npu             { get; init; }
     public DiskInfo?            Disk            { get; init; }
     public DiskSpaceInfo?       DiskSpace       { get; init; }
     public NetworkInfo?         Network         { get; init; }
@@ -30,6 +33,7 @@ public sealed record SystemSnapshot
     public InstalledAppsInfo?   InstalledApps   { get; init; }
     public ThermalInfo?         Thermal         { get; init; }
     public PowerInfo?           Power           { get; init; }
+    public SocInfo?             Soc             { get; init; }
     public WindowsServicesInfo? WindowsServices { get; init; }
     public LaunchdServicesInfo? LaunchdServices { get; init; }
     public DriversInfo?         Drivers         { get; init; }

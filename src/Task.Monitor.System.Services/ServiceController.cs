@@ -10,8 +10,10 @@ using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Process;
+using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Services.WindowsServices;
@@ -62,6 +64,7 @@ public sealed class ServiceController : WorkerService
             Cpu             = GetLatestInfo<CpuInfo>(),
             Memory          = GetLatestInfo<MemoryInfo>(),
             Gpu             = GetLatestInfo<GpuInfo>(),
+            Npu             = GetLatestInfo<NpuInfo>(),
             Disk            = GetLatestInfo<DiskInfo>(),
             DiskSpace       = GetLatestInfo<DiskSpaceInfo>(),
             Network         = GetLatestInfo<NetworkInfo>(),
@@ -73,6 +76,7 @@ public sealed class ServiceController : WorkerService
             Drivers         = GetLatestInfo<DriversInfo>(),
             Thermal         = GetLatestInfo<ThermalInfo>(),
             Power           = GetLatestInfo<PowerInfo>(),
+            Soc             = GetLatestInfo<SocInfo>(),
             Services        = BuildServiceHealth()
         };
 

@@ -30,4 +30,6 @@ public enum PaneControlType
     NetworkSendMetre,
     NetworkReceiveMetre,
     Fans,
+    NpuMetre,
+    Npu,
 }

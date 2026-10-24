@@ -58,6 +58,7 @@ public sealed class Constants
         public const string ShowMetreGpuNumerically     = "show-metre-gpu-numerically";
         public const string ShowMetreGpuMemNumerically  = "show-metre-gpu-mem-numerically";
         public const string ShowMetreNetworkNumerically = "show-metre-network-numerically";
+        public const string ShowMetreNpuNumerically     = "show-metre-npu-numerically";
         public const string ShowYAxisScale              = "show-y-axis-scale";
         public const string UseIrixCpuReporting         = "use-irix-cpu-reporting";
 

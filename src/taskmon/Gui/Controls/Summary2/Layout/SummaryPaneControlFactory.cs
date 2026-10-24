@@ -8,6 +8,7 @@ using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Memory;
 using Task.Monitor.Gui.Controls.Network;
+using Task.Monitor.Gui.Controls.Npu;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
@@ -74,6 +75,13 @@ public static class SummaryPaneControlFactory
                 AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
             },
+#if __APPLE__
+            PaneControlType.Npu => new Chart(terminal) {
+                Text                      = "Npu",
+                AutoScale                 = false,
+                CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
+            },
+#endif
             PaneControlType.Process => new ProcessControl(serviceController, terminal, appConfig) {
                 TabStop                = true,
                 VisibleColumnsOverride = pane.ProcessColumns
@@ -101,6 +109,7 @@ public static class SummaryPaneControlFactory
             PaneControlType.NetworkReceiveMetre => new NetworkReceiveMetreControl(serviceController, terminal, appConfig) { TabStop = false },
 #if __APPLE__
             PaneControlType.Fans                => new FansControl(serviceController, terminal, appConfig)                { TabStop = false },
+            PaneControlType.NpuMetre            => new NpuMetreControl(serviceController, terminal, appConfig)            { TabStop = false },
 #endif
                                               _ => new EmptyPaneControl(terminal),
         };

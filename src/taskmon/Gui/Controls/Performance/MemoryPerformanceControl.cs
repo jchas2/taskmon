@@ -55,6 +55,12 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader("Swap File"))
 #endif
             .Add(new ListViewColumnHeader("Available"));
+
+#if __APPLE__
+        memoryMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("Swap In"))
+            .Add(new ListViewColumnHeader("Swap Out"));
+#endif
         
         memorySpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -103,6 +109,10 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
             memoryMetricsListView.Items[0].SubItems[1].Text = memoryInfo.Metrics.ToMemoryAvailableFormattedBytes();
             memoryMetricsListView.Items[0].SubItems[2].Text = memoryInfo.Metrics.ToPageFileMemoryRatioFormattedBytes();
             memoryMetricsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.ToPageFileMemoryAvailableFormattedBytes();
+#if __APPLE__
+            memoryMetricsListView.Items[0].SubItems[4].Text = memoryInfo.Metrics.SwapInBytesPerSecond.ToFormattedByteRate();
+            memoryMetricsListView.Items[0].SubItems[5].Text = memoryInfo.Metrics.SwapOutBytesPerSecond.ToFormattedByteRate();
+#endif
             
             memoryMetricsListView.Draw();
 
@@ -174,7 +184,11 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetre.AddSeries("Standby",  appConfig.Theme.PerformanceMemoryStandby);
         memoryMetre.AddSeries("Free",     appConfig.Theme.PerformanceMemoryFree);
         
+#if __APPLE__
+        ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB", "N/A", "N/A" });
+#else
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
+#endif
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         
         memorySpecsListView.Items.Add(new ListViewItem(new[] { "Memory:",            string.Empty }));

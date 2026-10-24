@@ -93,6 +93,9 @@ public static class IOKit
     public static extern IntPtr IOServiceMatching(string name);
 
     [DllImport(Libraries.IOKit)]
+    public static extern IntPtr IOServiceNameMatching(string name);
+
+    [DllImport(Libraries.IOKit)]
     public static extern int IOServiceOpen(
         uint     service,
         uint     owningTask,

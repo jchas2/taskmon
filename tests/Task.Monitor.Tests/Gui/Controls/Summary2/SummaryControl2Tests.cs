@@ -7,6 +7,7 @@ using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
@@ -134,6 +135,33 @@ public sealed class SummaryControl2Tests
 
         ctrl.Unload();
     }
+
+#if __APPLE__
+    [Fact]
+    public void Builds_Gpu_And_Npu_Chart_Panes_Side_By_Side()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        (int gpuId, int npuId) = tree.Split(tree.RootId, Orientation.Row);
+        tree.Nodes[gpuId].ControlType = PaneControlType.Gpu;
+        tree.Nodes[npuId].ControlType = PaneControlType.Npu;
+
+        UseSummaryLayout(SummaryControlLayout.FromTree("Npu Chart Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        Assert.Equal(["Gpu", "Npu"], ctrl.Controls.OfType<Chart>().Select(chart => chart.Text).Order());
+
+        ctrl.Unload();
+    }
+#endif
 
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations

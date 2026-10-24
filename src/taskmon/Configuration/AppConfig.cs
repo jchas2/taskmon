@@ -387,6 +387,7 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowMetreMemNumerically,     true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreGpuMemNumerically,  true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreNetworkNumerically, true.ToString())
+            .AddIfMissing(Constants.Keys.ShowMetreNpuNumerically,     true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically,    true.ToString())
             .AddIfMissing(Constants.Keys.ShowSmallMetreGrid,          false.ToString())
             .AddIfMissing(Constants.Keys.ShowLargeMetreGrid,          true.ToString())
@@ -572,6 +573,12 @@ public sealed class AppConfig
     {
         get => uxSection?.GetBool(Constants.Keys.ShowMetreNetworkNumerically, true) ?? true;
         set => uxSection?.Add(Constants.Keys.ShowMetreNetworkNumerically, value.ToString());
+    }
+
+    public bool ShowMetreNpuNumerically
+    {
+        get => uxSection?.GetBool(Constants.Keys.ShowMetreNpuNumerically, true) ?? true;
+        set => uxSection?.Add(Constants.Keys.ShowMetreNpuNumerically, value.ToString());
     }
 
     public bool ShowMetreSwapNumerically

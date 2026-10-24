@@ -88,6 +88,9 @@ public sealed class SetupScreenTests
             { "Enable multiple process selection",                 "generalView" },
             { "Show Cpu chart label numerically",                  "generalView" },
             { "Show Gpu chart label numerically",                  "generalView" },
+#if __APPLE__
+            { "Show Npu chart label numerically",                  "generalView" },
+#endif
             { "Show Memory chart label numerically",               "generalView" },
             { "Show Gpu Memory chart label numerically",           "generalView" },
 #if __WIN32__

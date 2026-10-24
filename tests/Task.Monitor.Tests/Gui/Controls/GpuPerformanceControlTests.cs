@@ -3,6 +3,7 @@ using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Power;
+using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
@@ -64,6 +65,35 @@ public sealed class GpuPerformanceControlTests
 
         Assert.NotNull(ctrl);
     }
+
+#if __APPLE__
+    [Fact]
+    public void Draws_The_Gpu_Frequency_And_Throttling()
+    {
+        GpuPerformanceControl ctrl = new(
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Sample(new SystemSnapshot {
+            Gpu = BuildGpuInfoWithDevices(),
+            Soc = new SocInfo { Metrics = new SocMetrics { GpuFrequencyMhz = 1244, GpuThermalLimitRatio = 0.3 } }
+        });
+        ctrl.Draw();
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Frequency"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($"{1244:N0} MHz"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Thermal 30%"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(
+            t => t.Write(It.Is<string>(s => s.Contains("Utilization") && s.Contains("Dedicated GPU Memory"))), Times.Never);
+
+        ctrl.Unload();
+    }
+#endif
 
     [Fact]
     public void Scoped_To_An_Adapter_Draws_Its_Power_Draw()

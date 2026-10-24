@@ -11,6 +11,7 @@ internal static class Libraries
     internal const string LibProcDyLib        = "libproc.dylib";
     internal const string LibSystemDyLib      = "libSystem.dylib";
     internal const string LibSystemNative     = "libSystem.Native";
+    internal const string Metal               = "/System/Library/Frameworks/Metal.framework/Metal";
     internal const string ObjC                = "/usr/lib/libobjc.A.dylib";
     internal const string Security            = "/System/Library/Frameworks/Security.framework/Security";
     internal const string ServiceManagement   = "/System/Library/Frameworks/ServiceManagement.framework/ServiceManagement";

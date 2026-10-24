@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
@@ -11,6 +12,10 @@ public partial class MemoryService
     
     private ulong totalPhysical;
     private long  pageSize;
+
+    private ulong previousSwapIns;
+    private ulong previousSwapOuts;
+    private long  previousSwapTimestamp;
 
     private void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
@@ -61,6 +66,7 @@ public partial class MemoryService
         memoryInfo.Metrics.AvailableVirtual = 0;
 
         ReadSwapUsage(memoryInfo);
+        ReadSwapRates(memoryInfo);
 
         memoryInfo.Metrics.AvailablePhysicalRatio = totalPhysical > 0
             ? 1.0 - memoryInfo.Metrics.AvailablePhysical / (double)totalPhysical
@@ -71,6 +77,27 @@ public partial class MemoryService
             : 0.0;
 
         memoryInfo.Metrics.AvailableVirtualRatio = 0.0;
+    }
+
+    internal static double? PagesPerSecondInBytes(ulong previous, ulong current, double seconds, long pageSize) =>
+        seconds > 0 && current >= previous
+            ? (current - previous) * (double)pageSize / seconds
+            : null;
+
+    private void ReadSwapRates(MemoryInfo memoryInfo)
+    {
+        long timestamp = Stopwatch.GetTimestamp();
+
+        if (previousSwapTimestamp != 0) {
+            double seconds = Stopwatch.GetElapsedTime(previousSwapTimestamp, timestamp).TotalSeconds;
+
+            memoryInfo.Metrics.SwapInBytesPerSecond  = PagesPerSecondInBytes(previousSwapIns,  vmStats.swapins,  seconds, pageSize);
+            memoryInfo.Metrics.SwapOutBytesPerSecond = PagesPerSecondInBytes(previousSwapOuts, vmStats.swapouts, seconds, pageSize);
+        }
+
+        previousSwapIns       = vmStats.swapins;
+        previousSwapOuts      = vmStats.swapouts;
+        previousSwapTimestamp = timestamp;
     }
 
     private static unsafe void ReadSwapUsage(MemoryInfo memoryInfo)

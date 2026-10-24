@@ -4,8 +4,14 @@ namespace Task.Monitor.Interop.Mach;
 
 public static class IOReport
 {
+    public const int FormatSimple = 1;
+    public const int FormatState  = 2;
+
     [DllImport(Libraries.IOReport)]
     public static extern nint IOReportChannelGetChannelName(nint item);
+
+    [DllImport(Libraries.IOReport)]
+    public static extern int IOReportChannelGetFormat(nint item);
 
     [DllImport(Libraries.IOReport)]
     public static extern nint IOReportChannelGetGroup(nint item);
@@ -37,6 +43,9 @@ public static class IOReport
         out nint subbedChannels,
         ulong    d,
         nint     e);
+
+    [DllImport(Libraries.IOReport)]
+    public static extern void IOReportMergeChannels(nint channels, nint additional, nint unused);
 
     [DllImport(Libraries.IOReport)]
     public static extern long IOReportSimpleGetIntegerValue(nint item, int index);

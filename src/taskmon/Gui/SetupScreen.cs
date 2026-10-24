@@ -245,6 +245,13 @@ public class SetupScreen : Screen
             Constants.Keys.ShowMetreGpuNumerically,
             runContext.AppConfig.ShowMetreGpuNumerically);
         
+#if __APPLE__
+        AddGeneralItem(
+            "Show Npu chart label numerically",
+            Constants.Keys.ShowMetreNpuNumerically,
+            runContext.AppConfig.ShowMetreNpuNumerically);
+#endif
+
         AddGeneralItem(
             "Show Memory chart label numerically", 
             Constants.Keys.ShowMetreMemNumerically,
@@ -418,6 +425,9 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowMetreSwapNumerically        = GetItemValueByKey(Constants.Keys.ShowMetreSwapNumerically).Checked;
         runContext.AppConfig.ShowMetreDiskNumerically        = GetItemValueByKey(Constants.Keys.ShowMetreDiskNumerically).Checked;
         runContext.AppConfig.ShowMetreNetworkNumerically     = GetItemValueByKey(Constants.Keys.ShowMetreNetworkNumerically).Checked;
+#if __APPLE__
+        runContext.AppConfig.ShowMetreNpuNumerically         = GetItemValueByKey(Constants.Keys.ShowMetreNpuNumerically).Checked;
+#endif
         runContext.AppConfig.ShowYAxisScale                  = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
         runContext.AppConfig.UseIrixReporting                = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 

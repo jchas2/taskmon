@@ -9,6 +9,7 @@ using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
+using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Gui.Controls.Performance;
@@ -31,6 +32,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
     private double? temperature;
     private double? powerWatts;
     private long?   scopedAdapterLuid;
+
+#if __APPLE__
+    private SocMetrics? socMetrics;
+#endif
 
     public GpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
@@ -56,6 +61,12 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader("GPU Memory"))
             .Add(new ListViewColumnHeader("Shared GPU Memory"))
             .Add(new ListViewColumnHeader("Power Draw"));
+
+#if __APPLE__
+        gpuMetricsListView.ColumnHeaders
+            .Add(new ListViewColumnHeader("Frequency"))
+            .Add(new ListViewColumnHeader("Throttling"));
+#endif
 
         gpuSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -113,6 +124,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuMetricsListView.Items[0].SubItems[2].Text = device?.ToCombinedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatioFormattedBytes();
             gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
             gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
+#if __APPLE__
+            gpuMetricsListView.Items[0].SubItems[5].Text = socMetrics?.ToGpuFrequencyText() ?? "N/A";
+            gpuMetricsListView.Items[0].SubItems[6].Text = socMetrics?.ToGpuLimitText() ?? "N/A";
+#endif
             gpuMetricsListView.Draw();
 
             GpuDevice? specRows = scopedAdapterLuid is null
@@ -138,7 +153,11 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         OnLoadChart(gpuDedicatedMemChart);
         OnLoadChart(gpuMemChart);
         
+#if __APPLE__
+        ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A", "N/A", "N/A" });
+#else
         ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
+#endif
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Vendor:",         GpuDeviceParser.NotAvailable }));
@@ -200,6 +219,14 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuMetricsListView.ColumnHeaders[2].Width = 22;
         gpuMetricsListView.ColumnHeaders[3].Width = 22;
         gpuMetricsListView.ColumnHeaders[4].Width = 12;
+#if __APPLE__
+        // Unified memory: the dedicated and shared figures repeat GPU Memory, so they make way for
+        // the clock and throttling columns.
+        gpuMetricsListView.ColumnHeaders[1].Width = 0;
+        gpuMetricsListView.ColumnHeaders[3].Width = 0;
+        gpuMetricsListView.ColumnHeaders[5].Width = 12;
+        gpuMetricsListView.ColumnHeaders[6].Width = 24;
+#endif
 
         for (int i = 0; i < gpuSpecsListView.ColumnHeaders.Count(); i++) {
             gpuSpecsListView.ColumnHeaders[i].Width = i % 2 == 0
@@ -271,6 +298,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
                 ThermalComponent.Gpu, scopedAdapterLuid?.ToString());
             
             powerWatts = ResolvePower(snapshot);
+#if __APPLE__
+            socMetrics = snapshot.Soc?.Metrics;
+#endif
 
             (GpuDeviceMetrics? device, _, bool render) = ResolveScope();
 
