@@ -17,4 +17,5 @@ public sealed class NetworkDevice
     public string   OperationalStatus     { get; set; } = NetworkDeviceParser.NotAvailable;
     public bool     IsActive              { get; set; }
     public bool     CountsTowardAggregate { get; set; }
+    public bool     IsPrimary             { get; set; }
 }

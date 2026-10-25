@@ -70,6 +70,9 @@ public static class IOKit
     public static extern int IORegistryEntryGetName(uint entry, byte[] name);
 
     [DllImport(Libraries.IOKit)]
+    public static extern int IORegistryEntryGetRegistryEntryID(uint entry, out ulong entryId);
+
+    [DllImport(Libraries.IOKit)]
     public static extern IntPtr IORegistryEntrySearchCFProperty(
         uint   entry,
         string plane,

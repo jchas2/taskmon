@@ -28,7 +28,8 @@ public partial class DiskService
         public double PercentActiveTime;
     }
 
-    private readonly Dictionary<string, DiskDeviceState> diskStates = new();
+    private readonly Dictionary<string, DiskDeviceState> diskStates         = new();
+    private readonly Dictionary<ulong, bool>             virtualDiskEntries = new();
 
     private void ApplyDiskSample(
         string bsdName,
@@ -138,15 +139,39 @@ public partial class DiskService
         metrics.PercentActiveTime       = busiest;
     }
 
+    private bool IsVirtualDisk(uint entry, HashSet<ulong> seenEntries)
+    {
+        if (IOKit.IORegistryEntryGetRegistryEntryID(entry, out ulong entryId) != 0) {
+            return IsVirtualInterconnect(ReadPhysicalInterconnect(entry));
+        }
+
+        seenEntries.Add(entryId);
+
+        if (!virtualDiskEntries.TryGetValue(entryId, out bool isVirtual)) {
+            isVirtual = IsVirtualInterconnect(ReadPhysicalInterconnect(entry));
+            virtualDiskEntries[entryId] = isVirtual;
+        }
+
+        return isVirtual;
+    }
+
     private void OnDoWorkDiskMetrics(DiskInfo diskInfo)
     {
         UpdateDiskStates();
         BuildDiskMetrics(diskInfo.Metrics);
     }
 
-    private void OnStartDiskMetrics() => diskStates.Clear();
+    private void OnStartDiskMetrics()
+    {
+        diskStates.Clear();
+        virtualDiskEntries.Clear();
+    }
 
-    private void OnStopDiskMetrics() => diskStates.Clear();
+    private void OnStopDiskMetrics()
+    {
+        diskStates.Clear();
+        virtualDiskEntries.Clear();
+    }
 
     private void ReadDriverStatistics(uint entry, HashSet<string> live)
     {
@@ -223,15 +248,23 @@ public partial class DiskService
             return;
         }
 
-        HashSet<string> live = new();
+        HashSet<string> live        = new();
+        HashSet<ulong>  seenEntries = new();
         uint entryRef;
 
         while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
             using IOObjectScope entry = new(entryRef);
-            ReadDriverStatistics(entry, live);
+
+            if (!IsVirtualDisk(entry, seenEntries)) {
+                ReadDriverStatistics(entry, live);
+            }
         }
 
         PruneMissing(diskStates, live.Contains);
+
+        foreach (ulong stale in virtualDiskEntries.Keys.Where(entryId => !seenEntries.Contains(entryId)).ToList()) {
+            virtualDiskEntries.Remove(stale);
+        }
     }
 }
 #endif

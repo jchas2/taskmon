@@ -7,9 +7,13 @@ public partial class DiskService
 {
     private const string BlockStorageDriverClass = "IOBlockStorageDriver";
     private const string IOServicePlane          = "IOService";
+    private const string VirtualInterconnect     = "Virtual Interface";
 
     private const uint IterateRecursively = 0x00000001;
     private const uint IterateParents     = 0x00000002;
+
+    internal static bool IsVirtualInterconnect(string? physicalInterconnect) =>
+        string.Equals(physicalInterconnect, VirtualInterconnect, StringComparison.Ordinal);
 
     // Parses "disk0", "disk12" -> 0, 12; otherwise  -1.
     private static int ParseDiskIndex(string? bsdName) =>
@@ -18,6 +22,27 @@ public partial class DiskService
         int.TryParse(bsdName.AsSpan(4), out int index)
             ? index
             : -1;
+
+    private static string? ReadPhysicalInterconnect(uint entry)
+    {
+        using CFScope cfKey = new(CoreFoundation.CFStringCreate("Protocol Characteristics"));
+
+        using CFScope dictRef = new(IOKit.IORegistryEntrySearchCFProperty(
+            entry,
+            IOServicePlane,
+            cfKey,
+            nint.Zero,
+            IterateRecursively | IterateParents));
+
+        if (dictRef.IsNull ||
+            !CoreFoundation.ToDictionary(dictRef).TryGetValue("Physical Interconnect", out nint value)) {
+
+            return null;
+        }
+
+        string? text = CoreFoundation.GetString(value)?.Trim();
+        return string.IsNullOrEmpty(text) ? null : text;
+    }
 
     private static bool SearchNumberProperty(
         uint     entry, 

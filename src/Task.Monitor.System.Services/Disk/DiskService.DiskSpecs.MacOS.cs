@@ -14,6 +14,12 @@ public partial class DiskService
             return null;
         }
 
+        string? interconnect = ReadPhysicalInterconnect(entry);
+
+        if (IsVirtualInterconnect(interconnect)) {
+            return null;
+        }
+
         DiskDevice device = new();
         device.Index = index;
 
@@ -22,7 +28,7 @@ public partial class DiskService
         }
 
         ReadDeviceCharacteristics(entry, device);
-        ReadProtocolCharacteristics(entry, device);
+        device.BusType = interconnect ?? device.BusType;
 
         return device;
     }
@@ -117,25 +123,6 @@ public partial class DiskService
                 _             => string.IsNullOrEmpty(mediumType) ? device.MediaType : mediumType
             };
         }
-    }
-
-    private static void ReadProtocolCharacteristics(uint entry, DiskDevice device)
-    {
-        using CFScope cfKey = new(CoreFoundation.CFStringCreate("Protocol Characteristics"));
-        
-        using CFScope dictRef = new(IOKit.IORegistryEntrySearchCFProperty(
-            entry, 
-            IOServicePlane, 
-            cfKey, 
-            nint.Zero, 
-            IterateRecursively | IterateParents));
-
-        if (dictRef.IsNull) {
-            return;
-        }
-
-        Dictionary<string, nint> dict = CoreFoundation.ToDictionary(dictRef);
-        device.BusType = ReadTrimmedString(dict, "Physical Interconnect") ?? device.BusType;
     }
 
     private static string? ReadTrimmedString(Dictionary<string, nint> dict, string key)

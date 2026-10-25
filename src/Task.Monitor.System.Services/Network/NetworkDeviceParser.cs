@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Task.Monitor.Interop.Win32;
 
@@ -102,8 +103,24 @@ public static class NetworkDeviceParser
         return builder.ToString();
     }
 
+    public static bool HasRoutableAddress(IEnumerable<IPAddress> addresses) =>
+        addresses.Any(address => !IPAddress.IsLoopback(address) && address.AddressFamily switch {
+            AddressFamily.InterNetwork   => !IsIPv4LinkLocal(address),
+            AddressFamily.InterNetworkV6 => !address.IsIPv6LinkLocal,
+                                       _ => false
+        });
+
     public static bool IsActiveAdapter(uint ifType, uint operStatus, int addressCount) =>
         operStatus == NetIoApi.IfOperStatusUp &&
         ifType != NetIoApi.IF_TYPE_SOFTWARE_LOOPBACK &&
         addressCount > 0;
+
+    private static bool IsIPv4LinkLocal(IPAddress address)
+    {
+        Span<byte> bytes = stackalloc byte[4];
+
+        return address.TryWriteBytes(bytes, out _) && 
+               bytes[0] == 169 && 
+               bytes[1] == 254;
+    }
 }

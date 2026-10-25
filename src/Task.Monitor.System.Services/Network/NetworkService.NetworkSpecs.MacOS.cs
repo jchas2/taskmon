@@ -1,12 +1,18 @@
 #if __APPLE__
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Network;
 
 public partial class NetworkService
 {
-    private static NetworkDevice? BuildNetworkDevice(NetworkInterface nic)
+    private static NetworkDevice? BuildNetworkDevice(
+        NetworkInterface                    nic,
+        IReadOnlyDictionary<string, string> displayNames,
+        string?                             primaryInterface)
     {
         uint index = GetInterfaceIndex(nic);
 
@@ -15,12 +21,8 @@ public partial class NetworkService
         }
 
         NetworkInterfaceType type = nic.NetworkInterfaceType;
-        bool isUp     = nic.OperationalStatus == OperationalStatus.Up;
-        bool isActive = isUp && type != NetworkInterfaceType.Loopback;
+        bool isUp = nic.OperationalStatus == OperationalStatus.Up;
 
-        // Only real wired/wireless links count toward the headline throughput. macOS reports tunnels
-        // (utun*) as Unknown, and awdl0/llw0 (AirDrop/peer links) as Wi-Fi, so both a type filter and
-        // a name filter are needed to avoid double-counting VPN/peer traffic against en0.
         bool isPhysicalType =
             type is NetworkInterfaceType.Ethernet
                  or NetworkInterfaceType.GigabitEthernet
@@ -31,10 +33,13 @@ public partial class NetworkService
         bool isPeerLink = nic.Name.StartsWith("awdl", StringComparison.Ordinal) ||
                           nic.Name.StartsWith("llw", StringComparison.Ordinal);
 
-        List<string> ipv4 = new();
-        List<string> ipv6 = new();
+        List<string>    ipv4      = new();
+        List<string>    ipv6      = new();
+        List<IPAddress> addresses = new();
 
         foreach (UnicastIPAddressInformation addr in nic.GetIPProperties().UnicastAddresses) {
+            addresses.Add(addr.Address);
+
             if (addr.Address.AddressFamily == AddressFamily.InterNetwork) {
                 ipv4.Add(addr.Address.ToString());
             }
@@ -45,12 +50,19 @@ public partial class NetworkService
 
         string connectionType = DecodeConnectionType(type);
 
+        bool isActive = IsVisibleAdapter(
+            isUp,
+            type == NetworkInterfaceType.Loopback,
+            isPeerLink,
+            isPhysicalType,
+            addresses);
+
         NetworkDevice device = new();
         // Not inline declared to assist with debugging.
         device.InterfaceIndex        = index;
         device.InterfaceLuid         = index; // macOS keys on the BSD index; no LUID exists.
         device.Name                  = nic.Name;
-        device.FriendlyName          = nic.Name;
+        device.FriendlyName          = displayNames.GetValueOrDefault(nic.Name, nic.Name);
         device.Description           = nic.Description;
         device.ConnectionType        = connectionType;
         device.PhysicalMedium        = connectionType;
@@ -62,9 +74,16 @@ public partial class NetworkService
         device.OperationalStatus     = nic.OperationalStatus.ToString();
         device.IsActive              = isActive;
         device.CountsTowardAggregate = isActive && isPhysicalType && !isPeerLink;
+        device.IsPrimary             = nic.Name == primaryInterface;
 
         return device;
     }
+
+    // Primary adapter first, then by interface index.
+    internal static int CompareAdapters(NetworkDevice left, NetworkDevice right) =>
+        left.IsPrimary != right.IsPrimary
+            ? left.IsPrimary ? -1 : 1
+            : left.InterfaceIndex.CompareTo(right.InterfaceIndex);
 
     private static string DecodeConnectionType(NetworkInterfaceType type) => type switch
     {
@@ -97,6 +116,17 @@ public partial class NetworkService
 
         return 0;
     }
+
+    internal static bool IsVisibleAdapter(
+        bool                     isUp,
+        bool                     isLoopback,
+        bool                     isPeerLink,
+        bool                     isPhysicalType,
+        IReadOnlyList<IPAddress> addresses) =>
+        isUp &&
+        !isLoopback &&
+        !isPeerLink &&
+        (NetworkDeviceParser.HasRoutableAddress(addresses) || (isPhysicalType && addresses.Count > 0));
 
     private static ulong NormaliseSpeed(long speed) => speed > 0 ? (ulong)speed : 0;
 
@@ -145,7 +175,7 @@ public partial class NetworkService
             metrics.ReceivePacketsPerSecond += state.ReceivePacketsPerSecond;
         }
 
-        metrics.Devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
+        metrics.Devices.Sort((left, right) => CompareAdapters(devices[left.InterfaceIndex], devices[right.InterfaceIndex]));
         metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
         metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
     }
@@ -154,26 +184,33 @@ public partial class NetworkService
     {
         NetworkSpecs specs = new();
 
+        Dictionary<string, string> displayNames = SystemConfiguration.GetInterfaceDisplayNames();
+        string? primaryInterface                = SystemConfiguration.GetPrimaryInterface();
+
         try {
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces()) {
                 try {
-                    NetworkDevice? device = BuildNetworkDevice(nic);
+                    NetworkDevice? device = BuildNetworkDevice(nic, displayNames, primaryInterface);
 
                     if (device != null) {
                         specs.Devices.Add(device);
                     }
                 }
-                catch (NetworkInformationException) {
-                    // A single adapter failing to report shouldn't drop the whole list.
+                // A single adapter failing to report shouldn't drop the whole list.
+                catch (NetworkInformationException nie) {
+                    ExceptionHelper.LogException(nie);
                 }
-                catch (PlatformNotSupportedException) {
+                catch (PlatformNotSupportedException pnse) {
+                    ExceptionHelper.LogException(pnse);
                 }
             }
         }
-        catch (NetworkInformationException) {
+        catch (NetworkInformationException nie) {
+            ExceptionHelper.LogException(nie);
             return null;
         }
 
+        specs.Devices.Sort(CompareAdapters);
         return specs;
     }
 
