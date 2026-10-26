@@ -30,9 +30,8 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - Process deep dive (`F5`) to view live thread times and loaded libraries (system and user).
 - **Module Analysis**: Full dynamic and static library enumeration for selected process.
 - Customize update interval (default 1500ms).
-- Customize top number of processes to display (default unlimited).
 - Customize number of process iteration loops.
-- Freeze process list updates (`f` or `z`).
+- Filter the process list (`f`) and freeze process list updates (`z`).
 - **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
 - Multiple process selection (`x` toggle show checkboxes, `spacebar` for selection, `u` to uncheck all selections)
 - Select and terminate multiple processes simultaneously (`F6`).
@@ -125,7 +124,6 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --sort <column>` | Automatically sort by <column> on startup. |
 | `taskmon --sort-help` | Show the list of columns available for the `--sort` option. |
 | `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
-| `taskmon --nprocs <nprocs>` | Only display the top number of processes. Eg: `taskmon --nprocs 10` |
 | `taskmon --theme <theme>` | Load a theme <theme> from the available themes. Eg: `taskmon --theme "Dracula Official"` |
 | `taskmon --theme-help` | Show the list of theme names available for the `--theme` option. |
 | `taskmon --debug` | Signal a debug break on startup and wait for a debugger to attach. |

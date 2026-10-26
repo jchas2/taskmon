@@ -93,7 +93,6 @@ public sealed class ProcessesControl : Control
             CommonControl.ThemeDefaults(ctrl, appConfig.Theme);
         }
 
-        processControl.NumberOfProcesses = -1;
         processControl.SelectedProcessIdChanged += OnSelectedProcessIdChanged;
 
         base.OnLoad();

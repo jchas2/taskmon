@@ -118,7 +118,7 @@ public sealed class SummaryControl2 : Control
                 continue;
             }
 
-            processControl.HeaderText = ProcessHeaderText(appConfig.SortColumn, processControl.NumberOfProcesses, processCount);
+            processControl.HeaderText = ProcessHeaderText(appConfig.SortColumn, processCount);
         }
     }
 
@@ -203,10 +203,6 @@ public sealed class SummaryControl2 : Control
 
     internal IReadOnlyDictionary<int, Control> PaneControls => paneControls;
 
-    internal static string ProcessHeaderText(Statistics sortColumn, int numberOfProcesses, int processCount)
-    {
-        string shown = numberOfProcesses > -1 ? $" ({numberOfProcesses})" : string.Empty;
-
-        return $"Top {sortColumn.ToString().ToUpper()} Processes{shown}    {processCount} Total";
-    }
+    internal static string ProcessHeaderText(Statistics sortColumn, int processCount) =>
+        $"Top {sortColumn.ToString().ToUpper()} Processes    {processCount} Total";
 }

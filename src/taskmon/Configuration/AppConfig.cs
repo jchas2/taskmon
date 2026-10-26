@@ -377,8 +377,7 @@ public sealed class AppConfig
 
         statsSection
             .AddIfMissing(Constants.Keys.Cols, DefaultVisibleColumns.ToString())
-            .AddIfMissing(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds.ToString())
-            .AddIfMissing(Constants.Keys.NProcs, "-1");
+            .AddIfMissing(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds.ToString());
 
         if (!iniConfig.ContainsSection(statsSection.Name)) {
             iniConfig.AddConfigSection(statsSection);
@@ -499,12 +498,6 @@ public sealed class AppConfig
     {
         get => uxSection?.GetBool(Constants.Keys.MultiSelectProcesses, false) ?? false;
         set => uxSection?.Add(Constants.Keys.MultiSelectProcesses, value.ToString());
-    }
-
-    public int NumberOfProcesses
-    {
-        get => statsSection?.GetInt(Constants.Keys.NProcs, -1) ?? -1;
-        set => statsSection?.Add(Constants.Keys.NProcs, value.ToString());
     }
 
     public bool SaveLayout(SummaryControlLayout layout)

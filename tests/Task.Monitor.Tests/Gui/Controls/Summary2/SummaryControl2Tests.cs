@@ -364,16 +364,9 @@ public sealed class SummaryControl2Tests
         return (Control?)method!.Invoke(ctrl, null);
     }
 
-    // Regression test: only Left/Right should cycle between panes. Up/Down go to the focused
-    // pane's own handling (e.g. a Process pane's list scrolling) and must never move focus to
-    // another pane, and Right must reach every pane - including stepping down out of the chart
-    // row into the Process pane underneath it, which a spatial (rather than tree-order) search
-    // previously failed to do.
-    [Theory]
-    [InlineData(-1, "Top GPU Processes    460 Total")]
-    [InlineData(20, "Top GPU Processes (20)    460 Total")]
-    public void Process_Header_Shows_The_Count_Only_When_The_List_Is_Limited(int numberOfProcesses, string expected) =>
-        Assert.Equal(expected, SummaryControl2.ProcessHeaderText(Statistics.Gpu, numberOfProcesses, 460));
+    [Fact]
+    public void Process_Header_Shows_The_Sort_Column_And_The_Total() =>
+        Assert.Equal("Top GPU Processes    460 Total", SummaryControl2.ProcessHeaderText(Statistics.Gpu, 460));
 
     // A Process pane's rows come from ProcessControl's own snapshot subscription, wired in its
     // OnLoad - which runs via SummaryControl2's base.OnLoad() (Control.OnLoad loads every child).
@@ -456,6 +449,11 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
+    // Regression test: only Left/Right should cycle between panes. Up/Down go to the focused
+    // pane's own handling (e.g. a Process pane's list scrolling) and must never move focus to
+    // another pane, and Right must reach every pane - including stepping down out of the chart
+    // row into the Process pane underneath it, which a spatial (rather than tree-order) search
+    // previously failed to do.
     [Fact]
     public void Right_Arrow_Cycles_Through_Every_Pane_In_Tree_Order_And_Then_Stops()
     {

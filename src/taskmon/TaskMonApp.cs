@@ -87,7 +87,6 @@ public sealed class TaskMonApp(RunContext runContext)
         string? processArg = ExtractArg(arg => arg == "-p" || arg == "--process");
         string? sortArg    = ExtractArg(arg => arg == "-s" || arg == "--sort");
         string? delayArg   = ExtractArg(arg => arg == "-d" || arg == "--delay");
-        string? nprocsArg  = ExtractArg(arg => arg == "--nprocs");
         string? themeArg   = ExtractArg(arg => arg == "-t" || arg == "--theme");
 
         if (!string.IsNullOrEmpty(pidArg)) {
@@ -129,15 +128,6 @@ public sealed class TaskMonApp(RunContext runContext)
             }
         }
 
-        if (!string.IsNullOrEmpty(nprocsArg)) {
-            if (int.TryParse(nprocsArg, out int nprocs) && nprocs > 0) {
-                runContext.AppConfig.NumberOfProcesses = nprocs;
-            }
-            else {
-                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad nprocs arg: {nprocsArg}");
-                result = false;
-            }
-        }
 
         if (!string.IsNullOrEmpty(themeArg)) {
             Theme? defaultTheme =

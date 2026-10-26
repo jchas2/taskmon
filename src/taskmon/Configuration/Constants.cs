@@ -36,9 +36,8 @@ public sealed class Constants
         public const string Col = "col";
 
         // Stats keys.
-        public const string Cols   = "cols";
-        public const string Delay  = "delay";
-        public const string NProcs = "nprocs";
+        public const string Cols  = "cols";
+        public const string Delay = "delay";
 
         // UX Keys.
         public const string ColourMode                  = "colour-mode";

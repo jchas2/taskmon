@@ -25,9 +25,6 @@ public class TaskMonAppTests
             { "--delay", "!#@$%^#$@", $"{Constants.AppName}: bad delay arg: !#@$%^#$@" },
             { "--delay", "200", $"{Constants.AppName}: bad delay arg: 200" },
             { "--delay", "-1500", $"{Constants.AppName}: bad delay arg: -1500" },
-            { "--nprocs", "4g77h", $"{Constants.AppName}: bad nprocs arg: 4g77h" },
-            { "--nprocs", "0", $"{Constants.AppName}: bad nprocs arg: 0" },
-            { "--nprocs", "-12", $"{Constants.AppName}: bad nprocs arg: -12" },
             { "--theme", "bad_theme_976GJG", $"{Constants.AppName}: bad theme arg: bad_theme_976GJG" }
         };
 

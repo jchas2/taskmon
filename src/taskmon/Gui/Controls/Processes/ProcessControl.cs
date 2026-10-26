@@ -37,10 +37,9 @@ public sealed partial class ProcessControl : Control
     
     private Columns sortColumn;
     
-    private bool freezeUpdates    = false;
-    private int numberOfProcesses = 0;
-    private int filterMatchCount  = 0;
-    private int processTotalCount = 0;
+    private bool freezeUpdates     = false;
+    private int  filterMatchCount  = 0;
+    private int  processTotalCount = 0;
 
     private ulong totalPhysicalMemory;
 
@@ -53,8 +52,7 @@ public sealed partial class ProcessControl : Control
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
         
-        numberOfProcesses = appConfig.NumberOfProcesses;
-        allProcessesLock  = new Lock();
+        allProcessesLock = new Lock();
 
         sortColumn = appConfig.SortColumn switch {
             Statistics.Pid     => Columns.Pid,
@@ -215,12 +213,6 @@ public sealed partial class ProcessControl : Control
         }
     }
 
-    public int NumberOfProcesses
-    {
-        get => numberOfProcesses; 
-        set => numberOfProcesses = value;
-    }
-    
     protected override void OnDraw()
     {
         UpdateListViewItems();
@@ -665,12 +657,6 @@ public sealed partial class ProcessControl : Control
 
             filterMatchCount  = sortedProcesses.Count;
             processTotalCount = allProcesses.Count;
-
-            if (numberOfProcesses > -1) {
-                sortedProcesses = sortedProcesses
-                    .Take(numberOfProcesses)
-                    .ToList();
-            }
 
             if (sortedProcesses.Count == 0) {
                 processView.Items.Clear();

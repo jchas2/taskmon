@@ -35,7 +35,6 @@ public class SetupScreen : Screen
     private readonly ListView          layoutView;
     private readonly ListView          metreView;
     private readonly ListView          delayView;
-    private readonly ListView          numProcsView;
     private readonly List<ListView>    tabControls = [];
     
     private readonly Dictionary<ListView, Func<SummaryLayoutTree>> previewLayouts;
@@ -166,17 +165,6 @@ public class SetupScreen : Screen
 
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("Time between updates"));
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("ms"));
-        
-        numProcsView = new(runContext.Terminal) {
-            Name              = nameof(numProcsView),
-            EnableScroll      = true,
-            ShowColumnHeaders = true,
-            TabIndex          = 6,
-            TabStop           = true,
-            Visible           = false
-        };
-
-        numProcsView.ColumnHeaders.Add(new ListViewColumnHeader("Number of processes to display, -1 for all"));
 
         Controls
             .Add(headerView)
@@ -186,8 +174,7 @@ public class SetupScreen : Screen
             .Add(themeView)
             .Add(layoutView)
             .Add(metreView)
-            .Add(delayView)
-            .Add(numProcsView);
+            .Add(delayView);
         
         tabControls.AddRange(new [] {
             generalView,
@@ -195,8 +182,7 @@ public class SetupScreen : Screen
             themeView,
             layoutView,
             metreView,
-            delayView, 
-            numProcsView
+            delayView
         });
 
         previewTheme = runContext.AppConfig.Theme;
@@ -379,31 +365,6 @@ public class SetupScreen : Screen
             new MenuListViewItem(
                 delayView,
                 "DELAY"));
-
-        menuView.Items.Add(
-            new MenuListViewItem(
-                numProcsView,
-                "PROCESSES"));
-    }
-
-    private void LoadSectionConfigListView<T>(
-        ListView listView,
-        List<T>  values,
-        T        value)
-    {
-        int index = values.BinarySearch(value);
-
-        if (index < 0) {
-            values.Insert(-index, value);
-        }
-        
-        for (int i = 0; i < values.Count; i++) {
-            listView.Items.Add(new ListViewItem(values[i]?.ToString() ?? string.Empty));
-            
-            if (values[i]!.Equals(value)) {
-                listView.SelectedIndex = i;
-            }
-        }
     }
 
     private void LoadUxSection()
@@ -447,13 +408,6 @@ public class SetupScreen : Screen
 
     private void MapControlsToConfig()
     {
-        void UpdateConfigValue(ListViewItem? sourceItem, Action<int> action)
-        {
-            if (sourceItem?.Text != null) {
-                action(int.Parse(sourceItem.Text));
-            }
-        }
-
         ListViewItem GetItemValueByKey(string key) => generalView.Items.Single(lvi => lvi.SubItems[1].Text == key);
 
         runContext.AppConfig.ConfirmTaskDelete               = GetItemValueByKey(Constants.Keys.ConfirmTaskDelete).Checked;
@@ -503,8 +457,6 @@ public class SetupScreen : Screen
             runContext.AppConfig.DelayInMilliseconds = int.Parse(delay);
         }
 
-        UpdateConfigValue(numProcsView.SelectedItem, val => runContext.AppConfig.NumberOfProcesses = val);
-        
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
         runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
     }
@@ -653,11 +605,6 @@ public class SetupScreen : Screen
         LoadUxSection();
         
         LoadDelaySection();
-
-        LoadSectionConfigListView(
-            numProcsView,
-            [ -1, 5, 10, 20, 50, 100, 500, 1000 ],
-            runContext.AppConfig.NumberOfProcesses);        
 
         previewTheme         = runContext.AppConfig.Theme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;

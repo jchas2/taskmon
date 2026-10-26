@@ -613,7 +613,6 @@ control.foreground=#abcdef
         Assert.True(appConfig.HighlightDaemons);
         Assert.Equal(MetreControlStyle.Dots, appConfig.MetreStyle);
         Assert.False(appConfig.MultiSelectProcesses);
-        Assert.Equal(-1, appConfig.NumberOfProcesses);
         Assert.Equal(Statistics.Cpu, appConfig.SortColumn);
         Assert.False(appConfig.SortAscending);
         Assert.True(appConfig.ShowMetreCpuNumerically);
@@ -683,7 +682,6 @@ control.foreground=#abcdef
         Assert.False(appConfig.HighlightDaemons);
         Assert.Equal(MetreControlStyle.Bars, appConfig.MetreStyle);
         Assert.True(appConfig.MultiSelectProcesses);
-        Assert.Equal(5, appConfig.NumberOfProcesses);
         Assert.Equal(Statistics.Mem, appConfig.SortColumn);
         Assert.True(appConfig.SortAscending);
         Assert.False(appConfig.ShowMetreCpuNumerically);

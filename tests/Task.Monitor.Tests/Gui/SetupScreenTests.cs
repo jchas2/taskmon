@@ -31,7 +31,7 @@ public sealed class SetupScreenTests
     {
         foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
             .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
+                or "layoutView" or "metreView" or "delayView")) {
             tab.Visible = tab.Name == "layoutView";
         }
 
@@ -46,6 +46,21 @@ public sealed class SetupScreenTests
                 && invocation.Arguments.Count == 1
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
+
+    [Fact]
+    public void Categories_Menu_Ends_At_Delay_With_No_Process_Limit()
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView menuView = setupScreen.Controls.OfType<ListView>().Single(c => c.Name == "menuView");
+
+        Assert.Equal(
+            ["GENERAL", "COLUMNS", "THEMES", "LAYOUTS", "METRES", "DELAY"],
+            menuView.Items.Select(item => item.Text));
+
+        setupScreen.Unload();
+    }
 
     [Fact]
     public void Constructor_With_Null_RunContext_Throws_NullReferenceException() =>
@@ -67,7 +82,6 @@ public sealed class SetupScreenTests
             { "METRES",                                            "menuView" },
             { "DELAY",                                             "menuView" },
             { "LAYOUTS",                                           "menuView" },
-            { "PROCESSES",                                         "menuView" },
 
             { "CPU %",                                             "columnsView" },
             { "Average CPU %",                                     "columnsView" },
@@ -122,15 +136,6 @@ public sealed class SetupScreenTests
             { "High (1000 ms)",                                    "delayView" },
             { "Normal (1500 ms)",                                  "delayView" },
             { "Slow (3000 ms)",                                    "delayView" },
-
-            { "-1",                                                "numProcsView" },
-            { "5",                                                 "numProcsView" },
-            { "10",                                                "numProcsView" },
-            { "20",                                                "numProcsView" },
-            { "50",                                                "numProcsView" },
-            { "100",                                               "numProcsView" },
-            { "500",                                               "numProcsView" },
-            { "1000",                                              "numProcsView" },
         };
 
     [Fact]
@@ -589,7 +594,7 @@ public sealed class SetupScreenTests
 
         foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
             .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView" or "numProcsView")) {
+                or "layoutView" or "metreView" or "delayView")) {
             tab.Visible = tab.Name == "layoutView";
         }
 
