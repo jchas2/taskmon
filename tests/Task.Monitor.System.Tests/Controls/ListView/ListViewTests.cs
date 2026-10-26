@@ -358,7 +358,7 @@ public sealed class ListViewTests
 
     [Fact]
     public void ListView_Canary_Test() =>
-        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<ListViewControl>());
+        Assert.Equal(36, CanaryTestHelper.GetPropertyCount<ListViewControl>());
 
         [Fact]
     public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
@@ -469,6 +469,25 @@ public sealed class ListViewTests
 
         // The rows keep the list's own background.
         Assert.Contains(Bg(ConsolePalette.Black), output);
+    }
+
+    [Fact]
+    public void OnDraw_Paints_The_Header_Highlight_Text_In_The_Highlight_Colours_Before_The_Header_Text()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.HeaderHighlightText       = "Frozen";
+        listView.HeaderText                = "TITLE";
+        listView.ForegroundColour          = ConsolePalette.White;
+        listView.BorderBackgroundColour    = ConsolePalette.DarkBlue;
+        listView.ForegroundHighlightColour = ConsolePalette.Black;
+        listView.BackgroundHighlightColour = ConsolePalette.Cyan;
+
+        listView.Draw();
+
+        string output = terminal.Output;
+        string label  = Bg(ConsolePalette.DarkBlue) + Fg(ConsolePalette.White);
+
+        Assert.Contains(Bg(ConsolePalette.Cyan) + Fg(ConsolePalette.Black) + " Frozen " + label + " TITLE ", output);
     }
 
     [Fact]

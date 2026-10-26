@@ -101,6 +101,8 @@ public partial class Screen : Control
 
     private bool IsActive { get; set; } = false;
     
+    protected bool IsDialogVisible => messageBox.Visible || inputBox.Visible;
+
     protected override void OnDraw()
     {
         base.OnDraw();

@@ -100,8 +100,7 @@ public sealed class SummaryControl2 : Control
                 continue;
             }
 
-            processControl.HeaderText =
-                $"Top {appConfig.SortColumn.ToString().ToUpper()} Processes ({processControl.NumberOfProcesses})    {processCount} Total";
+            processControl.HeaderText = ProcessHeaderText(appConfig.SortColumn, processControl.NumberOfProcesses, processCount);
         }
     }
 
@@ -176,5 +175,12 @@ public sealed class SummaryControl2 : Control
 
         // Unloads every pane.
         base.OnUnload();
+    }
+
+    internal static string ProcessHeaderText(Statistics sortColumn, int numberOfProcesses, int processCount)
+    {
+        string shown = numberOfProcesses > -1 ? $" ({numberOfProcesses})" : string.Empty;
+
+        return $"Top {sortColumn.ToString().ToUpper()} Processes{shown}    {processCount} Total";
     }
 }

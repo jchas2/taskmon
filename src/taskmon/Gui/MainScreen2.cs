@@ -224,6 +224,12 @@ public sealed class MainScreen2 : Screen
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        // A control showing its own dialog turns redraws off and needs every key, Tab and F2 included.
+        if (!Control.RedrawEnabled && !IsDialogVisible) {
+            focusedControl.KeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         base.OnKeyPressed(keyInfo, ref handled);
         
         if (handled) {

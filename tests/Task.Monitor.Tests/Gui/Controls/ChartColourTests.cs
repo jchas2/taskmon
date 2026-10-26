@@ -50,6 +50,21 @@ public sealed class ChartColourTests
         host.Unload();
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(10, 5)]
+    public void Cpu_Panel_Resizes_Narrower_Than_One_Core_Chart_Without_Throwing(int width, int height)
+    {
+        CpuPerformanceControl panel = new(Terminal, runContext.AppConfig) {
+            Width  = width,
+            Height = height
+        };
+
+        panel.Load();
+        panel.Resize();
+        panel.Unload();
+    }
+
     private static T Loaded<T>(T control) where T : Control
     {
         control.Width = 160;

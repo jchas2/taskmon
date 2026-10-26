@@ -56,7 +56,7 @@ public sealed class ProcessesControl : Control
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         switch (keyInfo.Key) {
-            case ConsoleKey.RightArrow when processControl.HasFocus && !processControl.IsSortSelectionActive:
+            case ConsoleKey.RightArrow when processControl.HasFocus && !processControl.IsModalActive:
                 processInfoControl.SetFocus();
                 handled = true;
                 Draw();

@@ -112,13 +112,13 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "\u2190:", "Move left to next screen component",  "\u2191:", "Arrow to scroll up" }));
         helpView.Items.Add(new ListViewItem(new[] { "\u2192:", "Move right to next screen component", "\u2193:", "Arrow to scroll down" }));
         helpView.Items.Add(new ListViewItem(new[] { "Pg Up:", "Move up one page in list",             "\u21B5:", "ENTER to select item" }));
-        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Exit current screen or dialog" }));
+        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Close dialog or clear process filter" }));
         helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort processes ascending",                 "d:", "Sort processes descending" }));
-        helpView.Items.Add(new ListViewItem(new[] { "F3:", "Select sort column",                      "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
-        helpView.Items.Add(new ListViewItem(new[] { "F4:", "Filter by Process, User, Pid, Path",      "x:", "Toggle multiple process selection" }));
+        helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
+        helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter by Process, User, Pid, Path",       "x:", "Toggle multiple process selection" }));
         helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
         helpView.Items.Add(new ListViewItem(new[] { "F6:", "Kill process/selected processes",         "F5:", "Show process info" }));
-        helpView.Items.Add(new ListViewItem(new[] { "f z:", "Freeze process updates",                 "i:", "Toggle Irix mode CPU reporting" }));
+        helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));
         
         for (int i = 0; i < helpView.Items.Count; i++) {
             helpView.Items[i].SubItems[0].ForegroundColor = keyColour;
@@ -130,8 +130,6 @@ public class HelpScreen : Screen
         functionHelpText.AppendLine(
             @$"Function Keys:
 {"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
-{"F3:".ToColour(theme.RangeLowBackground, bg)}{"  Prompt to sort process list by one of the visible columns. Press ENTER to accept selection or ESC to abandon.".ToColour(fg, bg)}
-{"F4:".ToColour(theme.RangeLowBackground, bg)}{"  Filter the current process list: Enter a partial name and processes with partial matching names, paths, PIDs or user names will show. To cancel filtering, enter F4 again and clear or ESC. If --pid, --username or --process used on start, filter is applied to existing filters.".ToColour(fg, bg)}
 {"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Show detailed process info, including threads, cpu time, loaded modules and handles (OS specific).".ToColour(fg, bg)}
 {"F6:".ToColour(theme.RangeLowBackground, bg)}{"  Terminate the selected task in the process list. If checkboxes are enabled in F2 Setup, all checked processes will be terminated.".ToColour(fg, bg)}
 {"F7:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between themes.".ToColour(fg, bg)}

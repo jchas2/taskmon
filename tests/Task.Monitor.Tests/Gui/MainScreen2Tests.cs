@@ -2,6 +2,7 @@ using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -10,7 +11,7 @@ using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.Tests.Gui;
 
-public sealed class MainScreen2Tests
+public sealed class MainScreen2Tests : IDisposable
 {
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
@@ -29,6 +30,36 @@ public sealed class MainScreen2Tests
                 && invocation.Arguments.Count == 1
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void F2_And_Tab_Reach_A_Process_Filter_Dialog_Instead_Of_The_Screen()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        ProcessControl   processControl   = processesControl.ProcessControl;
+        bool             handled          = false;
+
+        mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        mainScreen.KeyPressed(new ConsoleKeyInfo('f', ConsoleKey.F, false, false, false), ref handled);
+
+        Assert.True(processControl.IsFilterDialogVisible);
+
+        runContextHelper.terminal.Invocations.Clear();
+        mainScreen.KeyPressed(Key(ConsoleKey.F2), ref handled);
+
+        Assert.DoesNotContain("TASK MONITOR SETUP", CapturedOutput());
+        Assert.True(processControl.IsFilterDialogVisible);
+
+        mainScreen.KeyPressed(new ConsoleKeyInfo('x', 0, false, false, false), ref handled);
+        mainScreen.KeyPressed(new ConsoleKeyInfo('\t', ConsoleKey.Tab, false, false, false), ref handled);
+        mainScreen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.False(processControl.IsFilterDialogVisible);
+        Assert.Empty(processControl.FilterText);
+    }
 
     // Regression test: MainScreen2's constructor has always taken a ScreenApplication, and
     // SetupScreen/HelpScreen/AboutScreen have always been registered in RunAppAction, but nothing

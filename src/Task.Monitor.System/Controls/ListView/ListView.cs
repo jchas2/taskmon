@@ -185,15 +185,23 @@ public class ListView : Control
         }
 
         int innerWidth        = Width - 2;
+        string highlightLabel = string.IsNullOrEmpty(HeaderHighlightText) ? string.Empty : $" {HeaderHighlightText} ";
         string headerLabel    = string.IsNullOrEmpty(HeaderText) ? string.Empty : $" {HeaderText} ";
-        int headerLabelLen    = Math.Min(headerLabel.Length, innerWidth);
-        int headerLeftDashes  = (innerWidth - headerLabelLen) / 2;
-        int headerRightDashes = innerWidth - headerLabelLen - headerLeftDashes;
+        int highlightLabelLen = Math.Min(highlightLabel.Length, innerWidth);
+        int headerLabelLen    = Math.Min(headerLabel.Length, innerWidth - highlightLabelLen);
+        int headerLeftDashes  = (innerWidth - highlightLabelLen - headerLabelLen) / 2;
+        int headerRightDashes = innerWidth - highlightLabelLen - headerLabelLen - headerLeftDashes;
 
         frame.MoveTo(X, Y);
         SetBorderColour();
         frame.Append('\u256D');
         frame.Append('\u2500', headerLeftDashes);
+
+        if (highlightLabelLen > 0) {
+            frame.SetColour(ForegroundHighlightColour, BackgroundHighlightColour);
+            frame.Append(highlightLabelLen < highlightLabel.Length ? highlightLabel[..highlightLabelLen] : highlightLabel);
+        }
+
         frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(headerLabelLen < headerLabel.Length ? headerLabel[..headerLabelLen] : headerLabel);
         SetBorderColour();
@@ -508,6 +516,8 @@ public class ListView : Control
     public Color HeaderBackgroundColour { get; set; } = ConsolePalette.Black;
     
     public Color HeaderForegroundColour { get; set; } = ConsolePalette.White;
+
+    public string HeaderHighlightText { get; set; } = string.Empty;
 
     public string HeaderText { get; set; } = string.Empty;
 

@@ -2,6 +2,7 @@ using System.Reflection;
 using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
@@ -11,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class ProcessesControlTests
+public sealed class ProcessesControlTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -73,6 +74,13 @@ public sealed class ProcessesControlTests
             },
         };
 
+    private string CapturedOutput() =>
+        string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write"
+                && invocation.Arguments.Count == 1
+                && invocation.Arguments[0] is string)
+            .Select(invocation => (string)invocation.Arguments[0]!));
+
     [Fact]
     public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
         Assert.Throws<ArgumentNullException>(() =>
@@ -115,6 +123,8 @@ public sealed class ProcessesControlTests
         return ctrl;
     }
 
+    public void Dispose() => Control.RedrawEnabled = true;
+
     // Regression test for a real bug: ProcessInfoControl's own menuView.ColumnHeaders[0].Width
     // was set to the outer control width instead of the inner content width (border columns
     // excluded), which made ListView.DrawItem's columnWidth-vs-viewport guard trip on every row
@@ -151,6 +161,28 @@ public sealed class ProcessesControlTests
     }
 
     [Fact]
+    public void Enter_In_The_Filter_Dialog_Applies_The_Filter()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        Press(ctrl, FilterKey);
+
+        Assert.True(ctrl.ProcessControl.IsFilterDialogVisible);
+        Assert.False(Control.RedrawEnabled);
+
+        Type(ctrl, "proc2222");
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
+
+        Assert.False(ctrl.ProcessControl.IsFilterDialogVisible);
+        Assert.True(Control.RedrawEnabled);
+        Assert.Equal("proc2222", ctrl.ProcessControl.FilterText);
+        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Enter_On_Sort_Menu_Changes_Sort_And_Closes_Menu()
     {
         ProcessesControl ctrl = CreateFocusableControl();
@@ -174,6 +206,86 @@ public sealed class ProcessesControlTests
     }
 
     [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.FilterText = "proc2222";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        bool handled = Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
+
+        Assert.True(handled);
+        Assert.Empty(ctrl.ProcessControl.FilterText);
+        Assert.Equal(1111, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_In_The_Filter_Dialog_Keeps_The_Previous_Filter()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.FilterText = "proc2222";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        Press(ctrl, FilterKey);
+        Type(ctrl, "x");
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
+
+        Assert.False(ctrl.ProcessControl.IsFilterDialogVisible);
+        Assert.Equal("proc2222", ctrl.ProcessControl.FilterText);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_With_The_Sort_Menu_Open_Closes_The_Menu_And_Keeps_The_Filter()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.FilterText = "proc2222";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        Press(ctrl, SortKey);
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
+
+        Assert.False(ctrl.ProcessControl.IsSortSelectionActive);
+        Assert.Equal("proc2222", ctrl.ProcessControl.FilterText);
+
+        ctrl.Unload();
+    }
+
+    private static ConsoleKeyInfo FilterKey => new('f', ConsoleKey.F, false, false, false);
+
+    [Fact]
+    public void Filter_Matches_A_Process_Id()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, new SystemSnapshot {
+            Processes = new ProcessInfo {
+                Metrics = new ProcessMetrics {
+                    Entries = [
+                        new ProcessEntry { Pid = 1111, ProcessName = "alpha", FileDescription = "Alpha", CpuTimePercent = 0.9 },
+                        new ProcessEntry { Pid = 2222, ProcessName = "beta",  FileDescription = "Beta",  CpuTimePercent = 0.1 },
+                    ],
+                },
+            },
+        });
+
+        ctrl.ProcessControl.FilterText = "2222";
+        ctrl.Draw();
+
+        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.ProcessControl.FilterText = "222";
+        ctrl.Draw();
+
+        Assert.Equal(-1, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Footer_Shows_Sort_And_Scroll_Hints()
     {
         ProcessesControl ctrl = CreateFocusableControl();
@@ -184,6 +296,42 @@ public sealed class ProcessesControlTests
 
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(ProcessControl.DefaultFooterText))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Sort Asc: a"))), Times.Never);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Draw();
+
+        Assert.Contains(ProcessControl.DefaultFooterText, CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        ctrl.ProcessControl.FilterText = "proc";
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains(ProcessControl.FilteredFooterText, CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void F_Key_No_Longer_Freezes_The_List()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        Press(ctrl, FilterKey);
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.1), (2222, 0.9)));
+
+        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
 
         ctrl.Unload();
     }
@@ -302,6 +450,13 @@ public sealed class ProcessesControlTests
         ctrl.Unload();
     }
 
+    private static bool Press(ProcessesControl ctrl, ConsoleKeyInfo keyInfo)
+    {
+        bool handled = false;
+        ctrl.KeyPressed(keyInfo, ref handled);
+        return handled;
+    }
+
     // Reflection is the only way to raise this from a test: ServiceController only ever raises it
     // itself, from inside its real worker loop.
     private static void RaiseSnapshotUpdated(ServiceController serviceController, SystemSnapshot snapshot)
@@ -355,6 +510,23 @@ public sealed class ProcessesControlTests
 
         Assert.True(handled);
         Assert.True(ctrl.ProcessInfoControl.HasFocus);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Right_Arrow_With_The_Filter_Dialog_Open_Stays_In_The_Dialog()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+
+        Press(ctrl, FilterKey);
+        bool handled = Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow));
+
+        Assert.True(handled);
+        Assert.True(ctrl.ProcessControl.IsFilterDialogVisible);
+        Assert.True(ctrl.ProcessControl.HasFocus);
+        Assert.False(ctrl.ProcessInfoControl.HasFocus);
 
         ctrl.Unload();
     }
@@ -432,6 +604,67 @@ public sealed class ProcessesControlTests
 
         Assert.True(handled);
         Assert.False(ctrl.ProcessControl.IsSortSelectionActive);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Title_Puts_The_Filter_Before_A_Hosts_Header_Text()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.HeaderText = "Top CPU Processes";
+        ctrl.ProcessControl.FilterText = "proc2222";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        int filterAt  = output.IndexOf(" Filter: proc2222 (1) ", StringComparison.Ordinal);
+
+        Assert.True(filterAt >= 0);
+        Assert.True(filterAt < output.IndexOf(" Top CPU Processes ", StringComparison.Ordinal));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Title_Shows_The_Filter_With_The_Match_Count()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.FilterText = "proc2222";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        ctrl.Draw();
+
+        Assert.Contains(" Filter: proc2222 (1 of 2) ", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    private static void Type(ProcessesControl ctrl, string text)
+    {
+        foreach (char ch in text) {
+            Press(ctrl, new ConsoleKeyInfo(ch, 0, false, false, false));
+        }
+    }
+
+    [Fact]
+    public void Z_Key_Shows_Frozen_In_The_Title_Alongside_The_Filter()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        ctrl.ProcessControl.FilterText = "proc";
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        runContextHelper.terminal.Invocations.Clear();
+
+        Press(ctrl, new ConsoleKeyInfo('z', ConsoleKey.Z, false, false, false));
+
+        Assert.Contains(" Frozen · Filter: proc (2 of 2) ", CapturedOutput());
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.1), (2222, 0.9)));
+
+        Assert.Equal(1111, ctrl.ProcessControl.SelectedProcessId);
 
         ctrl.Unload();
     }

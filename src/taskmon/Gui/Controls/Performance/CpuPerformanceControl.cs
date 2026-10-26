@@ -181,8 +181,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         const int MetricsHeight = 4;
         const int SpecsHeight   = 11;
 
-        int numCols  = Width / ChartWidth;
-        int numRows  = Height / ChartHeight;
+        int numCols  = Math.Max(1, Width / ChartWidth);
+        int numRows  = Math.Max(1, Height / ChartHeight);
         int rowCount = 0;
         int colCount = 0;
         int yTop     = 0;
