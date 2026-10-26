@@ -7,6 +7,35 @@ public sealed class SummaryLayoutRenderer
 {
     private readonly Dictionary<int, Rectangle> paneBounds = new();
 
+    // The nearest split whose ratio changes the pane's size. A stacked split with a fixed-height side
+    // ignores its ratio, and no stacked split can change a fixed-height pane, but a side-by-side split
+    // above either still sets the width.
+    public static (int SplitId, bool InFirst)? FindResizableSplit(
+        SummaryLayoutTree                 tree,
+        IReadOnlyDictionary<int, Control> paneControls,
+        int                               paneId)
+    {
+        bool paneIsFixed = FixedHeight(tree, paneControls, paneId) is not null;
+        int  childId     = paneId;
+
+        while (tree.FindParentSplitId(childId) is { } parentId) {
+            SummaryLayoutNode parent = tree.Nodes[parentId];
+
+            bool ratioApplies = parent.Orientation == Orientation.Row ||
+                (!paneIsFixed &&
+                 FixedHeight(tree, paneControls, parent.FirstId) is null &&
+                 FixedHeight(tree, paneControls, parent.SecondId) is null);
+
+            if (ratioApplies) {
+                return (parentId, parent.FirstId == childId);
+            }
+
+            childId = parentId;
+        }
+
+        return null;
+    }
+
     private static int FirstHeight(
         SummaryLayoutTree                 tree,
         IReadOnlyDictionary<int, Control> paneControls,

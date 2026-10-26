@@ -123,11 +123,64 @@ public sealed class SummaryLayoutRendererTests
         AssertBounds(renderer, tree, PaneControlType.Process, 0, 24, 120, 16);
     }
 
+    [Fact]
+    public void FindResizableSplit_Gives_A_Stacked_Metre_The_Side_By_Side_Split_Above_It()
+    {
+        // Row(Pane, Column(Metre, Process)): the metre's height is fixed but its width is not.
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            Split(0, Orientation.Row, 0.5f, 1, 2), Pane(1),
+            Split(2, Orientation.Column, 0.5f, 3, 4), Pane(3), Pane(4),
+        ], rootId: 0);
+        Dictionary<int, Control> panes = PaneControls(tree, [3]);
+
+        Assert.Equal((0, false), SummaryLayoutRenderer.FindResizableSplit(tree, panes, 3));
+        Assert.Equal((0, false), SummaryLayoutRenderer.FindResizableSplit(tree, panes, 4));
+    }
+
+    [Fact]
+    public void FindResizableSplit_Moves_The_Split_Above_A_Pane_Sitting_On_A_Metre_Row()
+    {
+        // Pane over (Memory over a row of metres), as in Dashboard.
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            Split(0, Orientation.Column, 0.5f, 1, 2), Pane(1),
+            Split(2, Orientation.Column, 0.5f, 3, 4), Pane(3),
+            Split(4, Orientation.Row,    0.5f, 5, 6), Pane(5), Pane(6),
+        ], rootId: 0);
+        Dictionary<int, Control> panes = PaneControls(tree, [5, 6]);
+
+        Assert.Equal((0, false), SummaryLayoutRenderer.FindResizableSplit(tree, panes, 3));
+        Assert.Equal((4, true),  SummaryLayoutRenderer.FindResizableSplit(tree, panes, 5));
+    }
+
+    [Fact]
+    public void FindResizableSplit_Skips_The_Metre_Splits_Above_A_Pane()
+    {
+        // CpuCores over a metre chain over Process, as in HTop Modern.
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            Split(0, Orientation.Column, 0.2f,  1, 2), Pane(1),
+            Split(2, Orientation.Column, 0.1f,  3, 4), Pane(3),
+            Split(4, Orientation.Column, 0.25f, 5, 6), Pane(5), Pane(6),
+        ], rootId: 0);
+        Dictionary<int, Control> panes = PaneControls(tree, [3, 5]);
+
+        Assert.Equal((0, false), SummaryLayoutRenderer.FindResizableSplit(tree, panes, 6));
+        Assert.Equal((0, true),  SummaryLayoutRenderer.FindResizableSplit(tree, panes, 1));
+        Assert.Null(SummaryLayoutRenderer.FindResizableSplit(tree, panes, 3));
+    }
+
+    [Fact]
+    public void FindResizableSplit_Uses_The_Parent_Of_A_Plain_Split()
+    {
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([Split(0, Orientation.Column, 0.5f, 1, 2), Pane(1), Pane(2)], rootId: 0);
+        Dictionary<int, Control> panes = PaneControls(tree, []);
+
+        Assert.Equal((0, true),  SummaryLayoutRenderer.FindResizableSplit(tree, panes, 1));
+        Assert.Equal((0, false), SummaryLayoutRenderer.FindResizableSplit(tree, panes, 2));
+    }
+
     private Dictionary<int, Rectangle> LayoutWithFixed(SummaryLayoutTree tree, int[] fixedIds, int height)
     {
-        Dictionary<int, Control> paneControls = tree.Panes().ToDictionary(
-            pane => pane.Id,
-            pane => fixedIds.Contains(pane.Id) ? new FixedPane(runContext.Terminal, MetreHeight) : new Control(runContext.Terminal));
+        Dictionary<int, Control> paneControls = PaneControls(tree, fixedIds);
 
         SummaryLayoutRenderer renderer = new();
         renderer.Layout(tree, paneControls, x: 0, y: 0, width: 120, height: height);
@@ -136,6 +189,11 @@ public sealed class SummaryLayoutRendererTests
     }
 
     private static SummaryLayoutNode Pane(int id) => new() { Id = id, ControlType = PaneControlType.Empty };
+
+    private Dictionary<int, Control> PaneControls(SummaryLayoutTree tree, int[] fixedIds) =>
+        tree.Panes().ToDictionary(
+            pane => pane.Id,
+            pane => fixedIds.Contains(pane.Id) ? new FixedPane(runContext.Terminal, MetreHeight) : new Control(runContext.Terminal));
 
     [Fact]
     public void Sets_The_Pane_Controls_Own_Bounds_To_Match()

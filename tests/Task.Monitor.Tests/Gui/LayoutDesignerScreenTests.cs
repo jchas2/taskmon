@@ -600,6 +600,53 @@ public sealed class LayoutDesignerScreenTests
     }
 
     [Fact]
+    public void Plus_On_A_Pane_Under_A_Metre_Resizes_The_Split_Above_The_Metre()
+    {
+        // CpuCores over (Metre over Process): the inner split's ratio is ignored, so the outer one moves.
+        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
+            new SummaryLayoutNode { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.3f, FirstId = 1, SecondId = 2 },
+            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.CpuCores },
+            new SummaryLayoutNode { Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.1f, FirstId = 3, SecondId = 4 },
+            new SummaryLayoutNode { Id = 3, ControlType = PaneControlType.CpuMetre },
+            new SummaryLayoutNode { Id = 4, ControlType = PaneControlType.Process },
+        ], rootId: 0);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+
+        Assert.Equal(4, screen.SelectedNodeId);
+
+        screen.KeyPressed(Key(ConsoleKey.Add), ref handled);
+
+        Assert.Equal(0.25f, screen.Tree.Nodes[0].Ratio, precision: 3);
+        Assert.Equal(0.1f,  screen.Tree.Nodes[2].Ratio, precision: 3);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void Plus_On_The_Equals_Key_Resizes_Like_Plus()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        int parentId = screen.Tree.FindParentSplitId(screen.SelectedNodeId)!.Value;
+        float ratioBefore = screen.Tree.Nodes[parentId].Ratio;
+
+        bool handled = false;
+        screen.KeyPressed(new ConsoleKeyInfo('=', 0, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.NotEqual(ratioBefore, screen.Tree.Nodes[parentId].Ratio);
+
+        screen.Unload();
+    }
+
+    [Fact]
     public void Power_Can_Be_Assigned_To_A_Pane()
     {
         SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();

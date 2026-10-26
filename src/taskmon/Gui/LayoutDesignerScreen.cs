@@ -99,23 +99,11 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void AdjustSelectedRatio(float delta)
     {
-        int? parentId = tree.FindParentSplitId(selectedNodeId);
-
-        if (parentId is not { } pid) {
+        if (SummaryLayoutRenderer.FindResizableSplit(tree, paneControls, selectedNodeId) is not { } split) {
             return;
         }
 
-        SummaryLayoutNode parent = tree.Nodes[pid];
-
-        if (parent.Orientation == Orientation.Column &&
-            (SummaryLayoutRenderer.FixedHeight(tree, paneControls, parent.FirstId) is not null ||
-             SummaryLayoutRenderer.FixedHeight(tree, paneControls, parent.SecondId) is not null)) {
-            return;
-        }
-        
-        float signedDelta = parent.FirstId == selectedNodeId ? delta : -delta;
-
-        if (!tree.AdjustRatio(pid, signedDelta)) {
+        if (!tree.AdjustRatio(split.SplitId, split.InFirst ? delta : -delta)) {
             return;
         }
 
@@ -288,6 +276,13 @@ public sealed class LayoutDesignerScreen : Screen
         base.OnKeyPressed(keyInfo, ref handled);
 
         if (handled) {
+            return;
+        }
+
+        // On macOS the unshifted +/= key arrives as '=' with no ConsoleKey.
+        if (keyInfo.KeyChar == '=') {
+            AdjustSelectedRatio(RatioStep);
+            handled = true;
             return;
         }
 
