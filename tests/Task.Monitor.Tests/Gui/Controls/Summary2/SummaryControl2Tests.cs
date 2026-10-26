@@ -84,6 +84,27 @@ public sealed class SummaryControl2Tests
     }
 
     [Fact]
+    public void A_Fixed_Tree_Ignores_The_Default_Layout()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig,
+            SummaryLayoutTree.CreateThemePreview()) {
+            Width  = 60,
+            Height = 30
+        };
+
+        ctrl.Load();
+
+        Assert.Single(ctrl.Controls.OfType<CpuMetreControl>());
+        Assert.Single(ctrl.Controls.OfType<Task.Monitor.Gui.Controls.Processes.ProcessControl>());
+        Assert.Equal(5, ctrl.PaneControls.Count);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Builds_A_Cpu_Metre_Pane()
     {
         SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
@@ -401,6 +422,38 @@ public sealed class SummaryControl2Tests
 
         MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
         handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
+    }
+
+    [Fact]
+    public void Reloading_Shows_The_Last_Snapshot_In_The_Metres()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig,
+            SummaryLayoutTree.CreateThemePreview()) {
+            Width  = 60,
+            Height = 30
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, new SystemSnapshot {
+            Cpu = new CpuInfo {
+                Metrics = new CpuMetrics {
+                    CpuPercentKernelTime = 0.1,
+                    CpuPercentUserTime   = 0.2,
+                }
+            }
+        });
+
+        ctrl.Unload();
+        ctrl.Load();
+
+        Assert.StartsWith("CPU% 30", ctrl.Controls.OfType<CpuMetreControl>().Single().Metre.Text);
+
+        ctrl.Unload();
     }
 
     [Fact]

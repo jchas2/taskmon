@@ -64,12 +64,27 @@ public sealed class AppConfig
         LoadThemes();
         LoadLayouts();
     }
-    
+
+    private AppConfig(AppConfig source)
+    {
+        fileSystem = source.fileSystem;
+        iniConfig  = Config.FromString(source.ToString()) ?? new();
+        LoadSections();
+
+        allThemes.AddRange(source.allThemes);
+        allLayouts.AddRange(source.allLayouts);
+
+        defaultLayout = source.defaultLayout;
+        defaultTheme  = source.defaultTheme;
+    }
+
     public bool ConfirmTaskDelete
     {
         get => uxSection?.GetBool(Constants.Keys.ConfirmTaskDelete, true) ?? true;
         set => uxSection?.Add(Constants.Keys.ConfirmTaskDelete, value.ToString());
     }
+
+    public AppConfig CreatePreview() => new(this);
 
     public string? DefaultConfigFilePath
     {

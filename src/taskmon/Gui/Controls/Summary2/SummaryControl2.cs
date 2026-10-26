@@ -21,6 +21,7 @@ public sealed class SummaryControl2 : Control
     private SystemSnapshot?       snapshot;
     
     private int? focusedPaneId;
+    private bool isFixedTree;
 
     public SummaryControl2(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
@@ -31,11 +32,20 @@ public sealed class SummaryControl2 : Control
         BuildPanes();
     }
 
-    private void BuildPanes()
+    public SummaryControl2(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig, SummaryLayoutTree fixedTree)
+        : base(terminal)
     {
-        builtFrom = appConfig.DefaultLayout;
-        tree      = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
+        this.serviceController = serviceController;
+        this.appConfig         = appConfig;
 
+        tree        = fixedTree;
+        isFixedTree = true;
+
+        BuildPaneControls();
+    }
+
+    private void BuildPaneControls()
+    {
         Controls.Clear();
         paneControls.Clear();
         focusedPaneId = null;
@@ -45,6 +55,14 @@ public sealed class SummaryControl2 : Control
             paneControls[pane.Id] = control;
             Controls.Add(control);
         }
+    }
+
+    private void BuildPanes()
+    {
+        builtFrom = appConfig.DefaultLayout;
+        tree      = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
+
+        BuildPaneControls();
     }
 
     private int? FindAdjacentPane(int step)
@@ -140,7 +158,7 @@ public sealed class SummaryControl2 : Control
 
     protected override void OnLoad()
     {
-        if (appConfig.DefaultLayout != builtFrom) {
+        if (!isFixedTree && appConfig.DefaultLayout != builtFrom) {
             BuildPanes();
         }
 
@@ -154,6 +172,12 @@ public sealed class SummaryControl2 : Control
 
         // Loads every pane. 
         base.OnLoad();
+
+        if (snapshot != null) {
+            foreach (SnapshotMetreControl metre in paneControls.Values.OfType<SnapshotMetreControl>()) {
+                metre.Sample(snapshot);
+            }
+        }
     }
 
     protected override void OnResize() =>
@@ -176,6 +200,8 @@ public sealed class SummaryControl2 : Control
         // Unloads every pane.
         base.OnUnload();
     }
+
+    internal IReadOnlyDictionary<int, Control> PaneControls => paneControls;
 
     internal static string ProcessHeaderText(Statistics sortColumn, int numberOfProcesses, int processCount)
     {

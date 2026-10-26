@@ -3,10 +3,13 @@ using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.Tests.Common;
+
 namespace Task.Monitor.Tests.Gui;
 
 public sealed class SetupScreenTests
@@ -325,6 +328,60 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
+    public void Highlighting_A_Metre_Style_Restyles_The_Preview_But_Not_The_Saved_Style()
+    {
+        MetreControlStyle saved = runContext.AppConfig.MetreStyle;
+        SetupScreen setupScreen = ShowTab("metreView", width: 130);
+        ListView metreView      = TabView(setupScreen, "metreView");
+        string otherName        = metreView.Items.Take(2).Select(item => item.Text).First(name => name != saved.ToString());
+        MetreControlStyle other = Enum.Parse<MetreControlStyle>(otherName);
+
+        SelectRow(metreView, otherName);
+        metreView.SetFocus();
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
+
+        Chart chart = setupScreen.Preview!.PaneControls.Values.OfType<Chart>().First();
+
+        Assert.Equal(other, chart.MetreStyle);
+        Assert.Equal(saved, runContext.AppConfig.MetreStyle);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Highlighting_A_Theme_Recolours_The_Preview_But_Not_The_Saved_Theme()
+    {
+        Theme saved        = runContext.AppConfig.Theme;
+        bool preferIndexed = ConsolePalette.PreferIndexedColours;
+
+        SetupScreen setupScreen = ShowThemesTab(width: 130);
+        ListView themeView      = TabView(setupScreen, "themeView");
+        string otherName        = themeView.Items.Take(2).Select(item => item.Text).First(name => name != saved.Name);
+        Theme other             = runContext.AppConfig.Themes.First(t => t.Name == otherName);
+
+        try {
+            SelectRow(themeView, other.Name);
+            themeView.SetFocus();
+
+            bool handled = false;
+            setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+            setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
+
+            Chart chart = setupScreen.Preview!.PaneControls.Values.OfType<Chart>().First();
+
+            Assert.Equal(other.ChartBorderForeground, chart.BorderForegroundColour);
+            Assert.Same(saved, runContext.AppConfig.Theme);
+        }
+        finally {
+            ConsolePalette.PreferIndexedColours = preferIndexed;
+            setupScreen.Unload();
+        }
+    }
+
+    [Fact]
     public void Layouts_Tab_Lists_New_Layout_Then_The_Summary_Layouts_With_The_Default_Highlighted()
     {
         SetupScreen setupScreen = new(runContext, screenApp);
@@ -338,6 +395,20 @@ public sealed class SetupScreenTests
             runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n),
             rows.Skip(1));
         Assert.Equal("All Charts", layoutView.SelectedItem?.Text);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Leaving_The_Themes_Tab_Unloads_The_Preview()
+    {
+        SetupScreen setupScreen = ShowThemesTab(width: 130);
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.Null(setupScreen.Preview);
+        Assert.True(TabView(setupScreen, "layoutView").Visible);
 
         setupScreen.Unload();
     }
@@ -379,8 +450,13 @@ public sealed class SetupScreenTests
     [Fact]
     public void Load_Initialises_Header_Table()
     {
-        string header = "Changes are saved to the following config file:";
+        runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        string configFile = runContext.AppConfig.DefaultConfigFilePath!;
+        string header     = $"Config file: {configFile}";
         SetupScreen setupScreen = new(runContext, screenApp);
+
+        Assert.True(Path.IsPathRooted(configFile));
         setupScreen.Load();
 
         Assert.NotNull(setupScreen.Controls);
@@ -390,7 +466,7 @@ public sealed class SetupScreenTests
             .OfType<ListView>()
             .Single(c => c.Name == nameof(headerView));
         
-        Assert.True(headerView.Items[0].Text == header);
+        Assert.Equal(header, Assert.Single(headerView.Items).Text);
         
         setupScreen.Unload();
     }
@@ -407,6 +483,18 @@ public sealed class SetupScreenTests
             .Single(c => c.Name == nameof(generalView));
 
         Assert.True(generalView.Visible);
+    }
+
+    [Fact]
+    public void Metres_Tab_Shares_Its_Width_With_A_Charts_And_Cores_Preview()
+    {
+        SetupScreen setupScreen = ShowTab("metreView", width: 130);
+
+        Assert.NotNull(setupScreen.Preview);
+        Assert.Single(setupScreen.Preview!.PaneControls.Values.OfType<CpuCoresControl>());
+        Assert.Equal((130 - 23) / 2, TabView(setupScreen, "metreView").Width);
+
+        setupScreen.Unload();
     }
 
     [Fact]
@@ -456,6 +544,13 @@ public sealed class SetupScreenTests
 
         setupScreen.Unload();
     }
+
+    [Theory]
+    [InlineData(45, Statistics.Process | Statistics.Pid | Statistics.Cpu)]
+    [InlineData(56, Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem)]
+    [InlineData(72, Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem | Statistics.User)]
+    public void Preview_Process_Columns_Grow_With_The_Width(int innerWidth, Statistics expected) =>
+        Assert.Equal(expected, SetupScreen.PreviewProcessColumns(innerWidth));
 
     // Coming back from the designer (its Esc pops back to this screen, which is Show()n again)
     // lands on the LAYOUTS tab with the list focused, not reset to GENERAL.
@@ -507,8 +602,51 @@ public sealed class SetupScreenTests
     public void SetupScreen_Canary_Test() =>
         Assert.Equal(21, CanaryTestHelper.GetPropertyCount<SetupScreen>());
 
+    private SetupScreen ShowTab(string tabName, int width)
+    {
+        SetupScreen setupScreen = new(runContext, screenApp) { Width = width, Height = 34 };
+        setupScreen.Load();
+        setupScreen.Resize();
+
+        bool handled = false;
+
+        while (!TabView(setupScreen, tabName).Visible) {
+            setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        }
+
+        return setupScreen;
+    }
+
+    private SetupScreen ShowThemesTab(int width) => ShowTab("themeView", width);
+
     private static ListView TabView(SetupScreen setupScreen, string name) =>
         setupScreen.Controls.OfType<ListView>().Single(c => c.Name == name);
+
+    [Fact]
+    public void Themes_Tab_Shares_Its_Width_With_A_Live_Preview()
+    {
+        SetupScreen setupScreen = ShowThemesTab(width: 130);
+        ListView themeView      = TabView(setupScreen, "themeView");
+        int tabWidth            = 130 - 23;
+
+        Assert.NotNull(setupScreen.Preview);
+        Assert.Equal(tabWidth / 2, themeView.Width);
+        Assert.Equal(themeView.X + themeView.Width + 1, setupScreen.Preview!.X);
+        Assert.Equal(tabWidth - tabWidth / 2 - 1, setupScreen.Preview.Width);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Themes_Tab_Takes_The_Full_Width_When_The_Preview_Does_Not_Fit()
+    {
+        SetupScreen setupScreen = ShowThemesTab(width: 100);
+
+        Assert.Null(setupScreen.Preview);
+        Assert.Equal(100 - 23, TabView(setupScreen, "themeView").Width);
+
+        setupScreen.Unload();
+    }
 
     [Fact]
     public void Unload_Calls_OnUnload_Sets_CursorVisible_True()

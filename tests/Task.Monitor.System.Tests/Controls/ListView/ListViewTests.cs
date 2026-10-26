@@ -49,6 +49,22 @@ public sealed class ListViewTests
             { ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), 4, 4 },
         };
 
+    [Fact]
+    public void A_Headerless_List_Uses_Every_Row_Inside_The_Border()
+    {
+        ListViewControl listView = BuildOverflowingListView(terminal, itemCount: 8);
+        listView.Height = 3;
+        listView.Draw();
+
+        Assert.Contains("Item 0", terminal.Output);
+
+        terminal.Reset();
+        listView.Height = 10;
+        listView.Draw();
+
+        Assert.Contains("Item 7", terminal.Output);
+    }
+
     private static string Bg(Color c) => ConsolePalette.BackgroundSgr(c);
 
     [Fact]
@@ -865,7 +881,7 @@ public sealed class ListViewTests
         listView.Draw(); // establishes viewPort.RowCount before any key-driven paging
 
         bool handled = false;
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 8; i++) {
             listView.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
         }
 

@@ -46,6 +46,29 @@ public sealed class AppConfigTests
         Assert.NotNull(appConfig.Themes);
     }
 
+    [Fact]
+    public void CreatePreview_Copies_Settings_And_Keeps_Theme_Changes_To_Itself()
+    {
+        AppConfig appConfig = new(fileSystem.Object) { MetreStyle = MetreControlStyle.Blocks };
+        Theme original      = appConfig.Theme;
+        Theme other         = appConfig.Themes.First(t => t.Name == "MS-DOS");
+        bool preferIndexed  = ConsolePalette.PreferIndexedColours;
+
+        AppConfig preview = appConfig.CreatePreview();
+
+        try {
+            preview.Theme = other;
+        }
+        finally {
+            ConsolePalette.PreferIndexedColours = preferIndexed;
+        }
+
+        Assert.Equal(MetreControlStyle.Blocks, preview.MetreStyle);
+        Assert.Same(other, preview.Theme);
+        Assert.Same(original, appConfig.Theme);
+        Assert.Contains($"default-theme={original.Name}", appConfig.ToString());
+    }
+
     internal static string CustomIniFile => @"
 [filter]
 pid=123456

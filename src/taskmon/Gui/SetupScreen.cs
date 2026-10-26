@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Processes;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -14,9 +16,11 @@ namespace Task.Monitor.Gui;
 
 public class SetupScreen : Screen
 {
-    private const int ControlGutter = 1;
-    private const int MenuViewWidth = 22;
-    private const int CommandLength = 10;
+    private const int ControlGutter         = 1;
+    private const int MenuViewWidth         = 22;
+    private const int CommandLength         = 10;
+    private const int PreviewMinWidth       = 40;
+    private const int PreviewMinHeight      = 14;
 
     private const string NewLayoutRow = "+ New Layout";
 
@@ -33,10 +37,16 @@ public class SetupScreen : Screen
     private readonly ListView          numProcsView;
     private readonly List<ListView>    tabControls = [];
     
-    private Theme previewTheme;
+    private readonly Dictionary<ListView, Func<SummaryLayoutTree>> previewLayouts;
+    private readonly Dictionary<ListView, SummaryControl2>         previews = new();
+
+    private Theme      previewTheme;
+    private AppConfig? previewConfig;
+    private ListView?  previewTab;
 
     private bool preferIndexedColours;
     private bool returnToLayoutsTab;
+    private bool previewFits;
     
     private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
     [
@@ -188,7 +198,17 @@ public class SetupScreen : Screen
         });
 
         previewTheme = runContext.AppConfig.Theme;
+
+        previewLayouts = new() {
+            [themeView] = SummaryLayoutTree.CreateThemePreview,
+            [metreView] = SummaryLayoutTree.CreateMetrePreview
+        };
     }
+
+    private string ConfigFileDisplayPath =>
+        runContext.AppConfig.DefaultConfigFilePath is { Length: > 0 } path
+            ? Path.GetFullPath(path)
+            : "N/A";
 
     private void LoadColumnsSection()
     {
@@ -301,9 +321,7 @@ public class SetupScreen : Screen
 
     private void LoadHeaderView()
     {
-        headerView.Items.AddRange(
-            new ListViewItem("Changes are saved to the following config file:"),
-            new ListViewItem(runContext.AppConfig.DefaultConfigFilePath ?? string.Empty));
+        headerView.Items.Add(new ListViewItem($"Config file: {ConfigFileDisplayPath}"));
     }
 
     private void LoadMenuItems()
@@ -470,8 +488,24 @@ public class SetupScreen : Screen
         
         var menuListViewItem = e.Item as MenuListViewItem;
         menuListViewItem!.AssociatedControl.Visible = true;
-        
+
+        if (UpdatePreviewLoaded()) {
+            Clear();
+        }
+
         Draw();
+    }
+
+    private void MetreViewOnItemClicked(object? sender, ListViewItemEventArgs e)
+    {
+        if (previewConfig == null || !Enum.TryParse(e.Item.Text, out MetreControlStyle style)) {
+            return;
+        }
+
+        previewConfig.MetreStyle = style;
+
+        ReloadPreview();
+        Preview?.Draw();
     }
 
     protected override void OnDraw()
@@ -493,6 +527,8 @@ public class SetupScreen : Screen
         
         ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
         activeControl.Draw();
+
+        Preview?.Draw();
 
         KeyBindControl.Draw(
             "F10",
@@ -601,6 +637,7 @@ public class SetupScreen : Screen
 
         previewTheme         = runContext.AppConfig.Theme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;
+        previewConfig        = runContext.AppConfig.CreatePreview();
 
         if (returnToLayoutsTab) {
             layoutView.Visible = true;
@@ -613,6 +650,7 @@ public class SetupScreen : Screen
         
         menuView.ItemClicked  += MenuViewOnItemClicked;
         themeView.ItemClicked += ThemeViewOnItemClicked;
+        metreView.ItemClicked += MetreViewOnItemClicked;
         
         base.OnLoad();
     }
@@ -644,7 +682,11 @@ public class SetupScreen : Screen
         generalView.ColumnHeaders[1].Width = 0;
         columnsView.ColumnHeaders[1].Width = 0;
 
+        ResizePreview();
+
         base.OnResize();
+
+        UpdatePreviewLoaded();
     }
 
     protected override void OnShown()
@@ -661,6 +703,11 @@ public class SetupScreen : Screen
     {
         menuView.ItemClicked  -= MenuViewOnItemClicked;
         themeView.ItemClicked -= ThemeViewOnItemClicked;
+        metreView.ItemClicked -= MetreViewOnItemClicked;
+
+        Preview?.Unload();
+        previewTab = null;
+        previews.Clear();
 
         headerView.Items.Clear();
         menuView.Items.Clear();
@@ -685,6 +732,70 @@ public class SetupScreen : Screen
 
         returnToLayoutsTab = true;
         screenApp.ShowScreen<LayoutDesignerScreen>();
+    }
+
+    internal SummaryControl2? Preview => previewTab != null ? previews[previewTab] : null;
+
+    internal static Statistics PreviewProcessColumns(int innerWidth)
+    {
+        const int Base = ProcessControl.ColumnProcessWidth + ProcessControl.ColumnPidWidth;
+
+        const Statistics Narrow = Statistics.Process | Statistics.Pid | Statistics.Cpu;
+        const Statistics Medium = Narrow | Statistics.Mem;
+        const Statistics Wide   = Medium | Statistics.User;
+
+        return innerWidth switch {
+            >= Base + ProcessControl.ColumnUserWidth + ProcessControl.ColumnCpuWidth + ProcessControl.ColumnMemoryWidth => Wide,
+            >= Base + ProcessControl.ColumnCpuWidth + ProcessControl.ColumnMemoryWidth                                    => Medium,
+                                                                                                                          _ => Narrow
+        };
+    }
+
+    private void ReloadPreview()
+    {
+        if (Preview is not { } preview) {
+            return;
+        }
+
+        lock (DrawingLock) {
+            preview.Unload();
+            preview.Load();
+            preview.Resize();
+        }
+    }
+
+    private void ResizePreview()
+    {
+        int tabWidth     = Width - (menuView.Width + ControlGutter);
+        int listWidth    = tabWidth / 2;
+        int previewWidth = tabWidth - listWidth - ControlGutter;
+
+        previewFits = previewWidth >= PreviewMinWidth &&
+                      menuView.Height >= PreviewMinHeight;
+
+        if (!previewFits) {
+            return;
+        }
+
+        foreach (ListView tab in previewLayouts.Keys) {
+            tab.Width = listWidth;
+            tab.ColumnHeaders[0].Width = Math.Max(0, listWidth - BorderInset);
+        }
+
+        if (Preview is not { } preview) {
+            return;
+        }
+
+        preview.X      = menuView.X + menuView.Width + ControlGutter + listWidth + ControlGutter;
+        preview.Y      = menuView.Y;
+        preview.Width  = previewWidth;
+        preview.Height = menuView.Height;
+
+        foreach (ProcessControl processes in preview.PaneControls.Values.OfType<ProcessControl>()) {
+            processes.VisibleColumnsOverride = PreviewProcessColumns(previewWidth - BorderInset);
+        }
+
+        preview.Resize();
     }
 
     private bool SaveConfig()
@@ -716,13 +827,46 @@ public class SetupScreen : Screen
             .First();
         
         previewTheme = theme;
+
+        if (previewConfig != null) {
+            previewConfig.Theme = theme;
+        }
         
         ConsolePalette.PreferIndexedColours = 
             TerminalCapabilities.ResolvePreferIndexed(previewTheme.ColourMode, Environment.GetEnvironmentVariable);
 
+        ReloadPreview();
         UpdateTheme();
         Clear();
         Draw();
+    }
+
+    private bool UpdatePreviewLoaded()
+    {
+        ListView? wanted = previewConfig != null && previewFits
+            ? previewLayouts.Keys.FirstOrDefault(tab => tab.Visible)
+            : null;
+
+        if (wanted == previewTab) {
+            return false;
+        }
+
+        lock (DrawingLock) {
+            Preview?.Unload();
+            previewTab = wanted;
+
+            if (wanted != null) {
+                if (!previews.TryGetValue(wanted, out SummaryControl2? preview)) {
+                    preview = new SummaryControl2(runContext.ServiceController, Terminal, previewConfig!, previewLayouts[wanted]());
+                    previews[wanted] = preview;
+                }
+
+                preview.Load();
+                ResizePreview();
+            }
+        }
+
+        return true;
     }
 
     private void UpdateTheme()

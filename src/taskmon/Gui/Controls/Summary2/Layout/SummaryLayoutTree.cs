@@ -66,6 +66,68 @@ public sealed class SummaryLayoutTree
         return tree;
     }
 
+    public static SummaryLayoutTree CreateMetrePreview()
+    {
+        SummaryLayoutTree tree = new();
+
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 3, ControlType = PaneControlType.Cpu
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 4, ControlType = PaneControlType.Memory
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 2, ControlType = PaneControlType.CpuCores
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.5f, FirstId = 1, SecondId = 2
+        });
+
+        tree.RootId = 0;
+
+        return tree;
+    }
+
+    public static SummaryLayoutTree CreateThemePreview()
+    {
+        SummaryLayoutTree tree = new();
+
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 3, ControlType = PaneControlType.CpuMetre
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 4, ControlType = PaneControlType.MemoryMetre
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 6, ControlType = PaneControlType.Cpu
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 7, ControlType = PaneControlType.Memory
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 8, ControlType = PaneControlType.Process, ProcessColumns = Statistics.Process | Statistics.Pid | Statistics.Cpu
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 5, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 6, SecondId = 7
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.4f, FirstId = 5, SecondId = 8
+        });
+        tree.AddNode(new SummaryLayoutNode {
+            Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.2f, FirstId = 1, SecondId = 2
+        });
+
+        tree.RootId = 0;
+
+        return tree;
+    }
+
     public int? FindParentSplitId(int nodeId) =>
         Nodes
             .Where(kv => kv.Value.IsSplit && (kv.Value.FirstId == nodeId || kv.Value.SecondId == nodeId))

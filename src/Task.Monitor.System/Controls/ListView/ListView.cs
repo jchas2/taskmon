@@ -77,7 +77,9 @@ public class ListView : Control
             Width - inset * 2,
             Height - inset * 2);
 
-        viewPort.RowCount = viewPort.Bounds.Height - 1;
+        viewPort.RowCount = ShowColumnHeaders
+            ? viewPort.Bounds.Height - 1
+            : viewPort.Bounds.Height;
 
         if (viewPort.SelectedIndex >= items.Count) {
             viewPort.SelectedIndex = Math.Max(0, items.Count - 1); 
@@ -119,7 +121,7 @@ public class ListView : Control
                     viewPort.SelectedIndex++;
                     
                     if (viewPort.SelectedIndex - viewPort.CurrentPageIndex >= viewPort.RowCount) {
-                        if (viewPort.CurrentPageIndex <= items.Count - viewPort.Bounds.Height + 1) {
+                        if (viewPort.CurrentPageIndex <= items.Count - viewPort.RowCount) {
                             viewPort.CurrentPageIndex++;
                             redrawAllItems = true;
                         }
@@ -243,7 +245,7 @@ public class ListView : Control
 
     private void DrawEmptyListView()
     {
-        for (int i = 0; i < viewPort.Bounds.Height - 1; i++) {
+        for (int i = 0; i < viewPort.RowCount; i++) {
             frame.MoveTo(viewPort.Bounds.X, viewPort.Bounds.Y + i);
             frame.SetColour(ForegroundColour, BackgroundColour);
             frame.Append(' ', viewPort.Bounds.Width);
