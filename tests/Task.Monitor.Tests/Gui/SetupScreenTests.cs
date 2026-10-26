@@ -118,11 +118,10 @@ public sealed class SetupScreenTests
             { "Bars",                                              "metreView" },
             { "Dots",                                              "metreView" },
             
-            { "1000",                                              "delayView" },
-            { "1500",                                              "delayView" },
-            { "2000",                                              "delayView" },
-            { "5000",                                              "delayView" },
-            { "10000",                                             "delayView" },
+            { "Fast (500 ms)",                                     "delayView" },
+            { "High (1000 ms)",                                    "delayView" },
+            { "Normal (1500 ms)",                                  "delayView" },
+            { "Slow (3000 ms)",                                    "delayView" },
 
             { "-1",                                                "numProcsView" },
             { "5",                                                 "numProcsView" },
@@ -157,6 +156,46 @@ public sealed class SetupScreenTests
         Assert.Equal(0, setupScreen.Width);
         Assert.Equal(0, setupScreen.X);
         Assert.Equal(0, setupScreen.Y);
+    }
+
+    [Fact]
+    public void Delay_Tab_Keeps_An_Unlisted_Delay_As_A_Selected_Custom_Row()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.AppConfig.DelayInMilliseconds = 2000;
+
+        SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
+        setupScreen.Load();
+
+        ListView delayView = TabView(setupScreen, "delayView");
+
+        Assert.Equal(
+            ["Fast (500 ms)", "High (1000 ms)", "Normal (1500 ms)", "Custom (2000 ms)", "Slow (3000 ms)"],
+            delayView.Items.Select(item => item.Text));
+        Assert.Equal("Custom (2000 ms)", delayView.SelectedItem?.Text);
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
+
+        Assert.Equal(2000, runContext.AppConfig.DelayInMilliseconds);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Delay_Tab_Selects_The_Option_Matching_The_Configured_Delay()
+    {
+        runContext.AppConfig.DelayInMilliseconds = 1500;
+
+        SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
+        setupScreen.Load();
+
+        ListView delayView = TabView(setupScreen, "delayView");
+
+        Assert.Equal(4, delayView.Items.Count);
+        Assert.Equal("Normal (1500 ms)", delayView.SelectedItem?.Text);
+
+        setupScreen.Unload();
     }
 
     // Regression test: every list here defaults to ShowBorder = true, which insets the actual
@@ -304,6 +343,25 @@ public sealed class SetupScreenTests
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
 
         Assert.Equal("Disk Read and Write Bytes", runContext.AppConfig.DefaultLayout?.Name);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void F10_Saves_And_Applies_The_Highlighted_Delay()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+
+        SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
+        setupScreen.Load();
+
+        SelectRow(TabView(setupScreen, "delayView"), "Fast (500 ms)");
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
+
+        Assert.Equal(500, runContext.AppConfig.DelayInMilliseconds);
+        Assert.Equal(500, runContext.ServiceController.Delay);
 
         setupScreen.Unload();
     }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
@@ -163,7 +164,8 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        delayView.ColumnHeaders.Add(new ListViewColumnHeader("Delay between updates, in milliseconds"));
+        delayView.ColumnHeaders.Add(new ListViewColumnHeader("Time between updates"));
+        delayView.ColumnHeaders.Add(new ListViewColumnHeader("ms"));
         
         numProcsView = new(runContext.Terminal) {
             Name              = nameof(numProcsView),
@@ -217,6 +219,28 @@ public class SetupScreen : Screen
         foreach ((Statistics statistic, string label) in ToggleableColumns) {
             columnsView.Items.Add(new ListViewItem([label, statistic.ToString()]));
             columnsView.Items[^1].Checked = (visibleColumns & statistic) != 0;
+        }
+    }
+
+    private void LoadDelaySection()
+    {
+        int configured = runContext.AppConfig.DelayInMilliseconds;
+
+        List<(string Text, int Milliseconds)> rows = Enum.GetValues<UpdateInterval>()
+            .Select(interval => (interval.ToDisplayText(), (int)interval))
+            .ToList();
+
+        if (UpdateIntervalExtensions.FromMilliseconds(configured) is null) {
+            rows.Add((UpdateIntervalExtensions.CustomDisplayText(configured), configured));
+            rows.Sort((a, b) => a.Milliseconds.CompareTo(b.Milliseconds));
+        }
+
+        for (int i = 0; i < rows.Count; i++) {
+            delayView.Items.Add(new ListViewItem([rows[i].Text, rows[i].Milliseconds.ToString()]));
+
+            if (rows[i].Milliseconds == configured) {
+                delayView.SelectedIndex = i;
+            }
         }
     }
 
@@ -475,7 +499,10 @@ public class SetupScreen : Screen
         runContext.AppConfig.MetreStyle = Enum.GetValues<MetreControlStyle>()
             .Single(c => c.ToString() == metreView.SelectedItem?.Text);
 
-        UpdateConfigValue(delayView.SelectedItem,    val => runContext.AppConfig.DelayInMilliseconds = val);
+        if (delayView.SelectedItem?.SubItems[1].Text is { } delay) {
+            runContext.AppConfig.DelayInMilliseconds = int.Parse(delay);
+        }
+
         UpdateConfigValue(numProcsView.SelectedItem, val => runContext.AppConfig.NumberOfProcesses = val);
         
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
@@ -625,10 +652,7 @@ public class SetupScreen : Screen
         LoadColumnsSection();
         LoadUxSection();
         
-        LoadSectionConfigListView(
-            delayView,
-            [ 1000, 1500, 2000, 5000, 10000 ],
-            runContext.AppConfig.DelayInMilliseconds);        
+        LoadDelaySection();
 
         LoadSectionConfigListView(
             numProcsView,
@@ -680,6 +704,7 @@ public class SetupScreen : Screen
         }
 
         generalView.ColumnHeaders[1].Width = 0;
+        delayView.ColumnHeaders[1].Width   = 0;
         columnsView.ColumnHeaders[1].Width = 0;
 
         ResizePreview();
