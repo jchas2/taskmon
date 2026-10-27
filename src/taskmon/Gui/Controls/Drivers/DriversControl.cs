@@ -19,11 +19,12 @@ public sealed partial class DriversControl : Control
 
     private const string GatheringText = "Gathering drivers…";
 
-    private readonly ServiceController serviceController;
-    private readonly AppConfig         appConfig;
-    private readonly ListView          driversView;
-    private readonly ListView          detailView;
-    private readonly ListFilter        filter;
+    private readonly ServiceController      serviceController;
+    private readonly AppConfig              appConfig;
+    private readonly ListView               driversView;
+    private readonly ListView               detailView;
+    private readonly ListFilter             filter;
+    private readonly ListSorter<DriverInfo> sorter;
 
     private DriversInfo? drivers;
     
@@ -71,9 +72,11 @@ public sealed partial class DriversControl : Control
             .Add(new ListViewColumnHeader("VALUE"));
 
         filter = new ListFilter(this, terminal, "Filter Drivers");
+        sorter = new ListSorter<DriverInfo>(terminal, driversView, SortColumns, defaultColumn: 0);
 
         Controls.Add(driversView);
         Controls.Add(detailView);
+        Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
     }
 
@@ -84,7 +87,7 @@ public sealed partial class DriversControl : Control
 
     private void EnsureRows(DriversInfo info)
     {
-        string signature = BuildSignature(info.Specs.Drivers) + "|" + filter.Text;
+        string signature = BuildSignature(info.Specs.Drivers) + "|" + filter.Text + "|" + sorter.Signature;
 
         if (signature == lastSignature) {
             return;
@@ -104,15 +107,28 @@ public sealed partial class DriversControl : Control
 
         RefreshDetailPane();
 
+        sorter.DecorateHeaders();
+
         driversView.Draw();
         detailView.Draw();
+        sorter.Draw();
         filter.Draw();
     }
 
-    protected override void OnGotFocus() => driversView.SetFocus();
+    protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
+            Clear();
+            Resize();
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         if (filter.KeyPressed(keyInfo, ref handled)) {
             Draw();
         }
@@ -143,6 +159,7 @@ public sealed partial class DriversControl : Control
         CommonControl.Theme(driversView, appConfig.Theme);
         CommonControl.Theme(detailView,  appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
+        sorter.ApplyTheme(appConfig.Theme);
         
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -153,10 +170,12 @@ public sealed partial class DriversControl : Control
     {
         int driversViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        driversView.X      = X;
+        driversView.X      = X + sorter.PickerWidth;
         driversView.Y      = Y;
-        driversView.Width  = Width;
+        driversView.Width  = Width - sorter.PickerWidth;
         driversView.Height = driversViewHeight;
+
+        sorter.Layout(X, Y, driversViewHeight);
 
         int fixedWidth = NameColumnWidth + VersionColumnWidth + StatusColumnWidth + StartupTypeColumnWidth;
 
@@ -164,7 +183,7 @@ public sealed partial class DriversControl : Control
         driversView.ColumnHeaders[1].Width = VersionColumnWidth;
         driversView.ColumnHeaders[2].Width = StatusColumnWidth;
         driversView.ColumnHeaders[3].Width = StartupTypeColumnWidth;
-        driversView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
+        driversView.ColumnHeaders[4].Width = Math.Max(1, driversView.Width - fixedWidth - 3);
 
         detailView.X      = X;
         detailView.Y      = Y + driversViewHeight;

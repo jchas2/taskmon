@@ -8,12 +8,19 @@ public sealed partial class DriversControl
 {
     private const string NotAvailable = "N/A";
 
+    private static readonly ListSortColumn<DriverInfo>[] SortColumns = [
+        ListSortColumn<DriverInfo>.ByText("NAME", 0, driver => driver.DisplayName),
+        ListSortColumn<DriverInfo>.ByVersion("VERSION", 1, driver => driver.Version),
+        ListSortColumn<DriverInfo>.ByText("STATUS", 2, driver => DescribeStatus(driver.Status)),
+        ListSortColumn<DriverInfo>.ByText("START TYPE", 3, DescribeStartType),
+        ListSortColumn<DriverInfo>.ByText("PATH", 4, driver => driver.ImagePath)
+    ];
+
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeStartType(DriverInfo driver) => driver.StartType switch {
-        DriverStartType.AutomaticStart =>
-            driver.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
+        DriverStartType.AutomaticStart => driver.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
         DriverStartType.ManualStart    => "Manual",
         DriverStartType.Disabled       => "Disabled",
         DriverStartType.BootStart      => "Boot Start",
@@ -35,7 +42,6 @@ public sealed partial class DriversControl
                                    _ => status.ToString()
     };
 
-    // A running Windows driver or a loaded kext; anything else draws in the stopped colour.
     private static bool IsActive(DriverStatus status) =>
         status is DriverStatus.Running or DriverStatus.Loaded;
 
@@ -74,7 +80,7 @@ public sealed partial class DriversControl
     {
         driversView.Items.Clear();
 
-        visibleDrivers = drivers.Where(MatchesFilter).ToList();
+        visibleDrivers = sorter.Sort(drivers.Where(MatchesFilter));
 
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
@@ -100,6 +106,6 @@ public sealed partial class DriversControl
         driversView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         driversView.HeaderHighlightText = filter.BuildHeaderText(visibleDrivers.Count, drivers.Count);
         driversView.FooterText          =
-            $"{running} running / {drivers.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+            $"{running} running / {drivers.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

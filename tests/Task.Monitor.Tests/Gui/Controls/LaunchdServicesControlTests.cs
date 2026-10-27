@@ -50,6 +50,47 @@ public sealed class LaunchdServicesControlTests : IDisposable
     }
 
     [Fact]
+    public void Default_Sort_Is_By_Group_Like_The_Service_Order()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Service("com.alpha.agent")));
+        ctrl.Draw();
+
+        Assert.Contains("GROUP\u2191", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent"),
+            Service("com.bravo.agent")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.S);
+        ListKeys.Press(ctrl, ConsoleKey.UpArrow);
+        ListKeys.Press(ctrl, ConsoleKey.Enter);
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.D));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("LABEL\u2193", output);
+        Assert.True(output.IndexOf("com.bravo.agent", StringComparison.Ordinal) < output.IndexOf("com.alpha.agent", StringComparison.Ordinal));
+        Assert.Contains("com.bravo.agent", detail);
+        Assert.DoesNotContain("com.alpha.agent", detail);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Describes_A_Signal_And_An_Exit_Code_In_The_Last_Exit_Row()
     {
         LaunchdServicesControl ctrl = CreateControl();
@@ -76,7 +117,7 @@ public sealed class LaunchdServicesControlTests : IDisposable
             Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "charlie");
+        ListKeys.ApplyFilter(ctrl, "charlie");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -159,9 +200,9 @@ public sealed class LaunchdServicesControlTests : IDisposable
             Service("com.bravo.agent", status: LaunchdServiceStatus.Waiting, programPath: "/usr/libexec/bravo"),
             Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
         ctrl.Draw();
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
 
-        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
 
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
@@ -183,7 +224,7 @@ public sealed class LaunchdServicesControlTests : IDisposable
             Service("com.bravo.agent", pid: 999)));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "4321");
+        ListKeys.ApplyFilter(ctrl, "4321");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -203,7 +244,7 @@ public sealed class LaunchdServicesControlTests : IDisposable
             Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -226,15 +267,15 @@ public sealed class LaunchdServicesControlTests : IDisposable
             Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
         Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+        Assert.Contains("2 running / 3 total     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

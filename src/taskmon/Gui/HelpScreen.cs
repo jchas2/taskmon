@@ -113,7 +113,7 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "\u2192:", "Move right to next screen component", "\u2193:", "Arrow to scroll down" }));
         helpView.Items.Add(new ListViewItem(new[] { "Pg Up:", "Move up one page in list",             "\u21B5:", "ENTER to select item" }));
         helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Close dialog or clear the filter" }));
-        helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort processes ascending",                 "d:", "Sort processes descending" }));
+        helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort ascending",                           "d:", "Sort descending" }));
         helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
         helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter the list in the current view",      "x:", "Toggle multiple process selection" }));
         helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));

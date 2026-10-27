@@ -8,6 +8,14 @@ public sealed partial class ServicesControl
 {
     private const string NotAvailable = "N/A";
 
+    private static readonly ListSortColumn<WindowsServiceInfo>[] SortColumns = [
+        ListSortColumn<WindowsServiceInfo>.ByText("NAME", 0, service => service.DisplayName),
+        ListSortColumn<WindowsServiceInfo>.ByText("STATUS", 1, service => DescribeStatus(service.Status)),
+        ListSortColumn<WindowsServiceInfo>.ByText("STARTUP TYPE", 2, DescribeStartType),
+        ListSortColumn<WindowsServiceInfo>.ByText("LOG ON AS", 3, service => DescribeLogOnAs(service.LogOnAs)),
+        ListSortColumn<WindowsServiceInfo>.ByText("DESCRIPTION", 4, service => service.Description)
+    ];
+
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
@@ -86,7 +94,7 @@ public sealed partial class ServicesControl
     {
         servicesView.Items.Clear();
 
-        visibleServices = services.Where(MatchesFilter).ToList();
+        visibleServices = sorter.Sort(services.Where(MatchesFilter));
 
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
@@ -112,6 +120,6 @@ public sealed partial class ServicesControl
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, services.Count);
         servicesView.FooterText          =
-            $"{running} running / {services.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+            $"{running} running / {services.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

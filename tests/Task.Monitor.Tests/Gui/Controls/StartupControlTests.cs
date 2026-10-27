@@ -53,6 +53,48 @@ public sealed class StartupControlTests : IDisposable
     }
 
     [Fact]
+    public void Default_Sort_Is_By_Type_Like_The_Service_Order()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Entry("Alpha App")));
+        ctrl.Draw();
+
+        Assert.Contains("TYPE\u2191", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App"),
+            Entry("Bravo App")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.S);
+        ListKeys.Press(ctrl, ConsoleKey.UpArrow);
+        ListKeys.Press(ctrl, ConsoleKey.UpArrow);
+        ListKeys.Press(ctrl, ConsoleKey.Enter);
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.D));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("NAME\u2193", output);
+        Assert.True(output.IndexOf("Bravo App", StringComparison.Ordinal) < output.IndexOf("Alpha App", StringComparison.Ordinal));
+        Assert.Contains("Bravo App", detail);
+        Assert.DoesNotContain("Alpha App", detail);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
     {
         StartupControl ctrl = CreateControl();
@@ -62,7 +104,7 @@ public sealed class StartupControlTests : IDisposable
             Entry("Charlie App", command: "charlie.exe")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "charlie");
+        ListKeys.ApplyFilter(ctrl, "charlie");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -164,9 +206,9 @@ public sealed class StartupControlTests : IDisposable
             Entry("Bravo App", state: StartupEntryState.Disabled, command: "bravo.exe"),
             Entry("Charlie App", command: "charlie.exe")));
         ctrl.Draw();
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
 
-        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
 
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
@@ -188,15 +230,15 @@ public sealed class StartupControlTests : IDisposable
             Entry("Bravo App", source: StartupTestSources.Secondary, scope: StartupEntryScope.Machine)));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, StartupTestSources.SecondaryText);
+        ListKeys.ApplyFilter(ctrl, StartupTestSources.SecondaryText);
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         Assert.Contains("(1 of 2)", CapturedOutput());
         Assert.DoesNotContain("Alpha App", CapturedOutput());
 
-        FilterKeys.Press(ctrl, ConsoleKey.Escape);
-        FilterKeys.Apply(ctrl, "machine");
+        ListKeys.Press(ctrl, ConsoleKey.Escape);
+        ListKeys.ApplyFilter(ctrl, "machine");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -216,7 +258,7 @@ public sealed class StartupControlTests : IDisposable
             Entry("Charlie App", command: "charlie.exe")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -239,15 +281,15 @@ public sealed class StartupControlTests : IDisposable
             Entry("Charlie App", command: "charlie.exe")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
         Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("2 enabled / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+        Assert.Contains("2 enabled / 3 total     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

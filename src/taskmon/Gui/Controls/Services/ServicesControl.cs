@@ -19,11 +19,12 @@ public sealed partial class ServicesControl : Control
 
     private const string GatheringText = "Gathering Windows services…";
 
-    private readonly ServiceController serviceController;
-    private readonly AppConfig         appConfig;
-    private readonly ListView          servicesView;
-    private readonly ListView          detailView;
-    private readonly ListFilter        filter;
+    private readonly ServiceController              serviceController;
+    private readonly AppConfig                      appConfig;
+    private readonly ListView                       servicesView;
+    private readonly ListView                       detailView;
+    private readonly ListFilter                     filter;
+    private readonly ListSorter<WindowsServiceInfo> sorter;
 
     private WindowsServicesInfo? services;
     
@@ -73,9 +74,11 @@ public sealed partial class ServicesControl : Control
             .Add(new ListViewColumnHeader("VALUE"));
 
         filter = new ListFilter(this, terminal, "Filter Services");
+        sorter = new ListSorter<WindowsServiceInfo>(terminal, servicesView, SortColumns, defaultColumn: 0);
 
         Controls.Add(servicesView);
         Controls.Add(detailView);
+        Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
     }
 
@@ -86,7 +89,7 @@ public sealed partial class ServicesControl : Control
 
     private void EnsureRows(WindowsServicesInfo info)
     {
-        string signature = BuildSignature(info.Specs.Services) + "|" + filter.Text;
+        string signature = BuildSignature(info.Specs.Services) + "|" + filter.Text + "|" + sorter.Signature;
 
         if (signature == lastSignature) {
             return;
@@ -106,15 +109,28 @@ public sealed partial class ServicesControl : Control
 
         RefreshDetailPane();
 
+        sorter.DecorateHeaders();
+
         servicesView.Draw();
         detailView.Draw();
+        sorter.Draw();
         filter.Draw();
     }
 
-    protected override void OnGotFocus() => servicesView.SetFocus();
+    protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
+            Clear();
+            Resize();
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         if (filter.KeyPressed(keyInfo, ref handled)) {
             Draw();
         }
@@ -145,6 +161,7 @@ public sealed partial class ServicesControl : Control
         CommonControl.Theme(servicesView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);        
         filter.ApplyTheme(appConfig.Theme);
+        sorter.ApplyTheme(appConfig.Theme);
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -155,10 +172,12 @@ public sealed partial class ServicesControl : Control
     {
         int servicesViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        servicesView.X      = X;
+        servicesView.X      = X + sorter.PickerWidth;
         servicesView.Y      = Y;
-        servicesView.Width  = Width;
+        servicesView.Width  = Width - sorter.PickerWidth;
         servicesView.Height = servicesViewHeight;
+
+        sorter.Layout(X, Y, servicesViewHeight);
 
         int fixedWidth = NameColumnWidth + StatusColumnWidth + StartupTypeColumnWidth + LogOnAsColumnWidth;
 
@@ -166,7 +185,7 @@ public sealed partial class ServicesControl : Control
         servicesView.ColumnHeaders[1].Width = StatusColumnWidth;
         servicesView.ColumnHeaders[2].Width = StartupTypeColumnWidth;
         servicesView.ColumnHeaders[3].Width = LogOnAsColumnWidth;
-        servicesView.ColumnHeaders[4].Width = Math.Max(1, Width - fixedWidth - 3);
+        servicesView.ColumnHeaders[4].Width = Math.Max(1, servicesView.Width - fixedWidth - 3);
 
         detailView.X      = X;
         detailView.Y      = Y + servicesViewHeight;

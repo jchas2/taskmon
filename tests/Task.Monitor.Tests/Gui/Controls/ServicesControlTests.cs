@@ -52,6 +52,31 @@ public sealed class ServicesControlTests : IDisposable
         return ctrl;
     }
 
+    [Fact]
+    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("Alpha Service"),
+            Service("Bravo Service")));
+        ctrl.Draw();
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.D));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("NAME\u2193", output);
+        Assert.True(output.IndexOf("Bravo Service", StringComparison.Ordinal) < output.IndexOf("Alpha Service", StringComparison.Ordinal));
+        Assert.Contains("Bravo Service", detail);
+        Assert.DoesNotContain("Alpha Service", detail);
+
+        ctrl.Unload();
+    }
+
     // The Service Control Manager is inconsistent about casing for these well-known accounts - real
     // services on the same machine have returned both "NT AUTHORITY\LocalService" and
     // "NT Authority\LocalService" - so the friendly name must not depend on exact casing.
@@ -81,7 +106,7 @@ public sealed class ServicesControlTests : IDisposable
             Service("Charlie Service", description: "Charlie description.")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "charlie");
+        ListKeys.ApplyFilter(ctrl, "charlie");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -104,7 +129,7 @@ public sealed class ServicesControlTests : IDisposable
 
         ctrl.Sample(SnapshotWith(
             Service("Windows Update", description: longDescription),
-            Service("Fax")));
+            Service("Xbox Live Auth Manager")));
         ctrl.Draw();
 
         string output = CapturedOutput();
@@ -170,9 +195,9 @@ public sealed class ServicesControlTests : IDisposable
             Service("Bravo Service", status: WindowsServiceStatus.Stopped, description: "Bravo description."),
             Service("Charlie Service", description: "Charlie description.")));
         ctrl.Draw();
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
 
-        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
 
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
@@ -195,7 +220,7 @@ public sealed class ServicesControlTests : IDisposable
             Service("Charlie Service", description: "Charlie description.")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -218,15 +243,15 @@ public sealed class ServicesControlTests : IDisposable
             Service("Charlie Service", description: "Charlie description.")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
         Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+        Assert.Contains("2 running / 3 total     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

@@ -3,9 +3,9 @@ using Task.Monitor.System.Tests.Controls;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-internal static class FilterKeys
+internal static class ListKeys
 {
-    public static void Apply(Control ctrl, string text)
+    public static void ApplyFilter(Control ctrl, string text)
     {
         Press(ctrl, new ConsoleKeyInfo('f', ConsoleKey.F, false, false, false));
 

@@ -24,11 +24,12 @@ public sealed partial class InstalledAppsControl : Control
 
     private const string GatheringText = "Gathering installed applications…";
     
-    private readonly ServiceController serviceController;
-    private readonly AppConfig         appConfig;
-    private readonly ListView          installedAppsView;
-    private readonly ListView          detailView;
-    private readonly ListFilter        filter;
+    private readonly ServiceController        serviceController;
+    private readonly AppConfig                appConfig;
+    private readonly ListView                 installedAppsView;
+    private readonly ListView                 detailView;
+    private readonly ListFilter               filter;
+    private readonly ListSorter<InstalledApp> sorter;
 
     private InstalledAppsInfo? installedApps;
     
@@ -78,9 +79,11 @@ public sealed partial class InstalledAppsControl : Control
             .Add(new ListViewColumnHeader("VALUE"));
 
         filter = new ListFilter(this, terminal, "Filter Apps");
+        sorter = new ListSorter<InstalledApp>(terminal, installedAppsView, SortColumns, defaultColumn: 0);
 
         Controls.Add(installedAppsView);
         Controls.Add(detailView);
+        Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
     }
 
@@ -92,7 +95,7 @@ public sealed partial class InstalledAppsControl : Control
 
     private void EnsureRows(InstalledAppsInfo info)
     {
-        string signature = BuildSignature(info.Specs.Apps) + "|" + filter.Text;
+        string signature = BuildSignature(info.Specs.Apps) + "|" + filter.Text + "|" + sorter.Signature;
 
         if (signature == lastSignature) {
             return;
@@ -113,15 +116,28 @@ public sealed partial class InstalledAppsControl : Control
 
         RefreshDetailPane();
 
+        sorter.DecorateHeaders();
+
         installedAppsView.Draw();
         detailView.Draw();
+        sorter.Draw();
         filter.Draw();
     }
 
-    protected override void OnGotFocus() => installedAppsView.SetFocus();
+    protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
+            Clear();
+            Resize();
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         if (filter.KeyPressed(keyInfo, ref handled)) {
             Draw();
         }
@@ -152,6 +168,7 @@ public sealed partial class InstalledAppsControl : Control
         CommonControl.Theme(installedAppsView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
+        sorter.ApplyTheme(appConfig.Theme);
         
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -162,10 +179,12 @@ public sealed partial class InstalledAppsControl : Control
     {
         int installedAppsViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        installedAppsView.X      = X;
+        installedAppsView.X      = X + sorter.PickerWidth;
         installedAppsView.Y      = Y;
-        installedAppsView.Width  = Width;
+        installedAppsView.Width  = Width - sorter.PickerWidth;
         installedAppsView.Height = installedAppsViewHeight;
+
+        sorter.Layout(X, Y, installedAppsViewHeight);
 
         int fixedWidth = 
             NameColumnWidth + 
@@ -181,7 +200,7 @@ public sealed partial class InstalledAppsControl : Control
         installedAppsView.ColumnHeaders[3].Width = ScopeColumnWidth;
         installedAppsView.ColumnHeaders[4].Width = InstallDateColumnWidth;
         installedAppsView.ColumnHeaders[5].Width = SizeColumnWidth;
-        installedAppsView.ColumnHeaders[6].Width = Math.Max(1, Width - fixedWidth - 3);
+        installedAppsView.ColumnHeaders[6].Width = Math.Max(1, installedAppsView.Width - fixedWidth - 3);
 
         installedAppsView.ColumnHeaders[1].RightAligned = true;
         installedAppsView.ColumnHeaders[5].RightAligned = true;

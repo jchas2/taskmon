@@ -8,6 +8,15 @@ public sealed partial class StartupControl
 {
     private const string NotAvailable = "N/A";
 
+    private static readonly ListSortColumn<StartupEntry>[] SortColumns = [
+        ListSortColumn<StartupEntry>.ByText("NAME", 0, entry => entry.Name),
+        ListSortColumn<StartupEntry>.ByText("PUBLISHER", 1, entry => entry.Publisher),
+        ListSortColumn<StartupEntry>.ByValue<StartupEntrySource>("TYPE", 2, entry => entry.Source),
+        ListSortColumn<StartupEntry>.ByText("SCOPE", 3, entry => DescribeScope(entry.Scope)),
+        ListSortColumn<StartupEntry>.ByText("STATUS", 4, entry => DescribeState(entry.State)),
+        ListSortColumn<StartupEntry>.ByText("COMMAND", 5, entry => entry.Command)
+    ];
+
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
@@ -74,7 +83,7 @@ public sealed partial class StartupControl
     {
         startupView.Items.Clear();
 
-        visibleEntries = entries.Where(MatchesFilter).ToList();
+        visibleEntries = sorter.Sort(entries.Where(MatchesFilter));
 
         Color background         = appConfig.Theme.ListViewBackground;
         Color foreground         = appConfig.Theme.ListViewForeground;
@@ -103,6 +112,6 @@ public sealed partial class StartupControl
         startupView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         startupView.HeaderHighlightText = filter.BuildHeaderText(visibleEntries.Count, entries.Count);
         startupView.FooterText          =
-            $"{enabled} enabled / {entries.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
+            $"{enabled} enabled / {entries.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
     }
 }   

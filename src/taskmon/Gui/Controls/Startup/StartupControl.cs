@@ -20,11 +20,12 @@ public sealed partial class StartupControl : Control
 
     private const string GatheringText = "Gathering startup applications…";
 
-    private readonly ServiceController serviceController;
-    private readonly AppConfig         appConfig;
-    private readonly ListView          startupView;
-    private readonly ListView          detailView;
-    private readonly ListFilter        filter;
+    private readonly ServiceController        serviceController;
+    private readonly AppConfig                appConfig;
+    private readonly ListView                 startupView;
+    private readonly ListView                 detailView;
+    private readonly ListFilter               filter;
+    private readonly ListSorter<StartupEntry> sorter;
 
     private StartupInfo? startup;
     
@@ -72,9 +73,11 @@ public sealed partial class StartupControl : Control
             .Add(new ListViewColumnHeader("VALUE"));
 
         filter = new ListFilter(this, terminal, "Filter Startup");
+        sorter = new ListSorter<StartupEntry>(terminal, startupView, SortColumns, defaultColumn: 2);
 
         Controls.Add(startupView);
         Controls.Add(detailView);
+        Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
     }
 
@@ -85,7 +88,7 @@ public sealed partial class StartupControl : Control
     private void EnsureRows(StartupInfo info)
     {
         string signature =
-            BuildSignature(info.Specs.Entries) + "|" + string.Join("|", info.Specs.Notes) + "|" + filter.Text;
+            BuildSignature(info.Specs.Entries) + "|" + string.Join("|", info.Specs.Notes) + "|" + filter.Text + "|" + sorter.Signature;
 
         if (signature == lastSignature) {
             return;
@@ -105,15 +108,28 @@ public sealed partial class StartupControl : Control
 
         RefreshDetailPane();
 
+        sorter.DecorateHeaders();
+
         startupView.Draw();
         detailView.Draw();
+        sorter.Draw();
         filter.Draw();
     }
 
-    protected override void OnGotFocus() => startupView.SetFocus();
+    protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
+            Clear();
+            Resize();
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         if (filter.KeyPressed(keyInfo, ref handled)) {
             Draw();
         }
@@ -144,6 +160,7 @@ public sealed partial class StartupControl : Control
         CommonControl.Theme(startupView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
+        sorter.ApplyTheme(appConfig.Theme);
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -154,10 +171,12 @@ public sealed partial class StartupControl : Control
     {
         int startupViewHeight = Math.Max(1, Height - DetailViewHeight);
 
-        startupView.X      = X;
+        startupView.X      = X + sorter.PickerWidth;
         startupView.Y      = Y;
-        startupView.Width  = Width;
+        startupView.Width  = Width - sorter.PickerWidth;
         startupView.Height = startupViewHeight;
+
+        sorter.Layout(X, Y, startupViewHeight);
 
         int fixedWidth = 
             NameColumnWidth      + 
@@ -171,7 +190,7 @@ public sealed partial class StartupControl : Control
         startupView.ColumnHeaders[2].Width = TypeColumnWidth;
         startupView.ColumnHeaders[3].Width = ScopeColumnWidth;
         startupView.ColumnHeaders[4].Width = StatusColumnWidth;
-        startupView.ColumnHeaders[5].Width = Math.Max(1, Width - fixedWidth - 3);
+        startupView.ColumnHeaders[5].Width = Math.Max(1, startupView.Width - fixedWidth - 3);
 
         detailView.X      = X;
         detailView.Y      = Y + startupViewHeight;

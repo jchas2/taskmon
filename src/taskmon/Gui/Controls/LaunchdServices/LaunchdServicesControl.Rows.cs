@@ -8,6 +8,15 @@ public sealed partial class LaunchdServicesControl
 {
     private const string NotAvailable = "N/A";
 
+    private static readonly ListSortColumn<LaunchdServiceInfo>[] SortColumns = [
+        ListSortColumn<LaunchdServiceInfo>.ByText("LABEL", 0, service => service.Label),
+        ListSortColumn<LaunchdServiceInfo>.ByText("GROUP", 1, service => service.Group),
+        ListSortColumn<LaunchdServiceInfo>.ByText("STATUS", 2, DescribeStatus),
+        ListSortColumn<LaunchdServiceInfo>.ByText("START", 3, service => DescribeStartType(service.StartType)),
+        ListSortColumn<LaunchdServiceInfo>.ByText("ENABLED", 4, service => service.Disabled ? "No" : "Yes"),
+        ListSortColumn<LaunchdServiceInfo>.ByText("PATH", 5, service => service.ProgramPath)
+    ];
+
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
@@ -80,7 +89,7 @@ public sealed partial class LaunchdServicesControl
     {
         servicesView.Items.Clear();
 
-        visibleServices = entries.Where(MatchesFilter).ToList();
+        visibleServices = sorter.Sort(entries.Where(MatchesFilter));
 
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
@@ -103,7 +112,7 @@ public sealed partial class LaunchdServicesControl
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, entries.Count);
         servicesView.FooterText          =
-            $"{running} running / {entries.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+            $"{running} running / {entries.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 
     private Color StatusForeground(LaunchdServiceInfo service) => service.Status switch {

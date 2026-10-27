@@ -8,6 +8,16 @@ namespace Task.Monitor.Gui.Controls.InstalledApps;
 public sealed partial class InstalledAppsControl
 {
     private const string NotAvailable = "N/A";
+
+    private static readonly ListSortColumn<InstalledApp>[] SortColumns = [
+        ListSortColumn<InstalledApp>.ByText("NAME", 0, app => app.Name),
+        ListSortColumn<InstalledApp>.ByVersion("VERSION", 1, app => app.Version),
+        ListSortColumn<InstalledApp>.ByText("PUBLISHER", 2, app => app.Publisher),
+        ListSortColumn<InstalledApp>.ByText("SCOPE", 3, app => DescribeScope(app.Scope)),
+        ListSortColumn<InstalledApp>.ByValue<DateTime>("INSTALLED", 4, app => app.InstallDate),
+        ListSortColumn<InstalledApp>.ByValue<long>("SIZE", 5, app => app.EstimatedSizeKb),
+        ListSortColumn<InstalledApp>.ByText("LOCATION", 6, app => app.InstallLocation)
+    ];
     private const string Measuring    = "...";
 
     private static string Cell(string? value) =>
@@ -59,7 +69,7 @@ public sealed partial class InstalledAppsControl
     {
         installedAppsView.Items.Clear();
 
-        visibleApps = apps.Where(MatchesFilter).ToList();
+        visibleApps = sorter.Sort(apps.Where(MatchesFilter));
 
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
@@ -81,6 +91,6 @@ public sealed partial class InstalledAppsControl
         installedAppsView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         installedAppsView.HeaderHighlightText = filter.BuildHeaderText(visibleApps.Count, apps.Count);
         installedAppsView.FooterText          =
-            $"{apps.Count} installed     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+            $"{apps.Count} installed     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

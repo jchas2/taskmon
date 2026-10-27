@@ -1,5 +1,6 @@
 using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Drivers;
@@ -54,6 +55,31 @@ public sealed class DriversControlTests : IDisposable
     }
 
     [Fact]
+    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver"),
+            Driver("Bravo Driver")));
+        ctrl.Draw();
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.D));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("NAME\u2193", output);
+        Assert.True(output.IndexOf("Bravo Driver", StringComparison.Ordinal) < output.IndexOf("Alpha Driver", StringComparison.Ordinal));
+        Assert.Contains("Bravo Driver", detail);
+        Assert.DoesNotContain("Alpha Driver", detail);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
     {
         DriversControl ctrl = CreateControl();
@@ -63,7 +89,7 @@ public sealed class DriversControlTests : IDisposable
             Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "charlie");
+        ListKeys.ApplyFilter(ctrl, "charlie");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -86,7 +112,7 @@ public sealed class DriversControlTests : IDisposable
 
         ctrl.Sample(SnapshotWith(
             Driver("ACPI Processor Aggregator Driver", imagePath: longPath, publisher: "Microsoft Corporation"),
-            Driver("3ware")));
+            Driver("Volume Manager Driver")));
         ctrl.Draw();
 
         string output = CapturedOutput();
@@ -194,9 +220,9 @@ public sealed class DriversControlTests : IDisposable
             Driver("Bravo Driver", imagePath: @"C:\b\bravo.sys", status: DriverStatus.Stopped),
             Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
         ctrl.Draw();
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
 
-        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
 
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
@@ -205,6 +231,66 @@ public sealed class DriversControlTests : IDisposable
         Assert.Contains("Alpha Driver", output);
         Assert.Contains("Charlie Driver", output);
         Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_Closes_The_Sort_Picker_Before_Clearing_The_Filter()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Alpha Driver"), Driver("Bravo Driver")));
+        ctrl.Draw();
+        ListKeys.ApplyFilter(ctrl, "alpha");
+
+        ListKeys.Press(ctrl, ConsoleKey.S);
+        Assert.Contains("SORT BY", CapturedOutput());
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.DoesNotContain("SORT BY", CapturedOutput());
+        Assert.Contains("Filter: alpha (1 of 2)", CapturedOutput());
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.DoesNotContain("Filter:", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_And_Sort_Combine()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver", version: "9.1"),
+            Driver("Bravo Driver", version: "10.0"),
+            Driver("Charlie Driver", version: "9.10"),
+            Driver("Delta Filter", version: "11.0", imagePath: @"C:\Windows\System32\delta.sys")));
+        ctrl.Draw();
+
+        ListKeys.ApplyFilter(ctrl, "driver");
+        ListKeys.Press(ctrl, ConsoleKey.S);
+        ListKeys.Press(ctrl, ConsoleKey.DownArrow);
+        ListKeys.Press(ctrl, ConsoleKey.Enter);
+        ListKeys.Press(ctrl, ConsoleKey.D);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        int bravo   = output.IndexOf("Bravo Driver", StringComparison.Ordinal);
+        int charlie = output.IndexOf("Charlie Driver", StringComparison.Ordinal);
+        int alpha   = output.IndexOf("Alpha Driver", StringComparison.Ordinal);
+
+        Assert.Contains("Filter: driver (3 of 4)", output);
+        Assert.Contains("VERSION\u2193", output);
+        Assert.DoesNotContain("Delta Filter", output);
+        Assert.True(bravo < charlie && charlie < alpha);
 
         ctrl.Unload();
     }
@@ -219,7 +305,7 @@ public sealed class DriversControlTests : IDisposable
             Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -239,7 +325,7 @@ public sealed class DriversControlTests : IDisposable
         ctrl.Sample(SnapshotWith(Driver("Alpha Driver")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "zzz");
+        ListKeys.ApplyFilter(ctrl, "zzz");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -259,15 +345,15 @@ public sealed class DriversControlTests : IDisposable
             Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
         Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+        Assert.Contains("2 running / 3 total     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }
@@ -375,6 +461,26 @@ public sealed class DriversControlTests : IDisposable
 
     private static SystemSnapshot SnapshotWith(params DriverInfo[] drivers) =>
         new() { Drivers = new DriversInfo { Specs = new DriversSpecs { Drivers = [.. drivers] } } };
+
+    [Fact]
+    public void Sort_Picker_Narrows_The_List_And_Keeps_The_Detail_Pane_Full_Width()
+    {
+        DriversControl ctrl = CreateControl(width: 160);
+        ctrl.Sample(SnapshotWith(Driver("Alpha Driver")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.S);
+
+        ListView driversView = ctrl.Controls.OfType<ListView>().First();
+        ListView detailView  = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+
+        Assert.Equal(21,  driversView.X);
+        Assert.Equal(139, driversView.Width);
+        Assert.Equal(0,   detailView.X);
+        Assert.Equal(160, detailView.Width);
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Updates_The_Detail_Pane_When_The_Selection_Moves()

@@ -73,6 +73,31 @@ public sealed class InstalledAppsControlTests : IDisposable
     }
 
     [Fact]
+    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            App("Alpha App"),
+            App("Bravo App")));
+        ctrl.Draw();
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.D));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("NAME\u2193", output);
+        Assert.True(output.IndexOf("Bravo App", StringComparison.Ordinal) < output.IndexOf("Alpha App", StringComparison.Ordinal));
+        Assert.Contains("Bravo App", detail);
+        Assert.DoesNotContain("Alpha App", detail);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
     {
         InstalledAppsControl ctrl = CreateControl();
@@ -82,7 +107,7 @@ public sealed class InstalledAppsControlTests : IDisposable
             App("Charlie App", installLocation: "/Applications/Charlie.app")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "charlie");
+        ListKeys.ApplyFilter(ctrl, "charlie");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -171,9 +196,9 @@ public sealed class InstalledAppsControlTests : IDisposable
             App("Bravo App", installLocation: "/Applications/Bravo.app"),
             App("Charlie App", installLocation: "/Applications/Charlie.app")));
         ctrl.Draw();
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
 
-        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Escape));
 
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
@@ -196,7 +221,7 @@ public sealed class InstalledAppsControlTests : IDisposable
             App("Charlie App", installLocation: "/Applications/Charlie.app")));
         ctrl.Draw();
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
@@ -219,15 +244,15 @@ public sealed class InstalledAppsControlTests : IDisposable
             App("Charlie App", installLocation: "/Applications/Charlie.app")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
         Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
 
-        FilterKeys.Apply(ctrl, "bravo");
+        ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("3 installed     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+        Assert.Contains("3 installed     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }
