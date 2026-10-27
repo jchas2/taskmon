@@ -21,9 +21,20 @@ public class FooterControl : Control
     private int                   missedCycles;
     private bool                  loaded;
 
+    private const string ErroredStatusText         = " Service status: Errored ";
+    private const int    GlyphWidth                = 3;
     private const int    MissedCyclesBeforeUnknown = 3;
+    private const int    RxTextWidth               = 11;
+    private const string RunningStatusText         = " Services: Running ";
     private const char   StatusGlyph               = '●';
+    private const string StoppingStatusText        = " Service status: Stopping ";
     private const string UnknownStatusText         = " Service status: Unknown ";
+
+    private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
+
+    private static readonly int KeyHintsWidth   = KeyHints.Sum(hint => 2 + hint.Key.Length + 1 + hint.Label.Length);
+    private static readonly int StatusTextWidth = new[] {
+        ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
 
     public FooterControl(
         ServiceController serviceController,
@@ -34,27 +45,39 @@ public class FooterControl : Control
         this.appConfig         = appConfig;
     }
 
+    private void AppendKeyHints(Color foreground, Color background)
+    {
+        foreach ((string key, string label) in KeyHints) {
+            frame.SetColour(Color.DeepSkyBlue, background);
+            frame.Append($"  {key} ");
+            frame.SetColour(foreground, background);
+            frame.Append(label);
+        }
+    }
+
     private void AppendServiceStatus(SystemSnapshot current)
     {
         if (current.Services.Count == current.Services.Count(s => s.Status == ServiceStatus.Running)) {
-            frame.SetColour(Color.Black, Color.Green);
-            frame.Append(" Services: Running ");
+            AppendStatus(Color.Green, RunningStatusText);
         }
         else if (current.Services.Any(s => s.Status == ServiceStatus.Errored)) {
-            frame.SetColour(Color.Black, Color.OrangeRed);
-            frame.Append(" Service status: Errored ");
+            AppendStatus(Color.OrangeRed, ErroredStatusText);
         }
         else if (current.Services.Any(s => s.Status
                      is ServiceStatus.Stopping
                      or ServiceStatus.Stopped
                      or ServiceStatus.None)) {
-            frame.SetColour(Color.Black, Color.Orange);
-            frame.Append(" Service status: Stopping ");
+            AppendStatus(Color.Orange, StoppingStatusText);
         }
         else {
-            frame.SetColour(Color.Black, Color.Orange);
-            frame.Append(UnknownStatusText);
+            AppendStatus(Color.Orange, UnknownStatusText);
         }
+    }
+
+    private void AppendStatus(Color statusColour, string text)
+    {
+        frame.SetColour(Color.Black, statusColour);
+        frame.Append(text.PadRight(StatusTextWidth));
     }
 
     private bool IsStale => missedCycles >= MissedCyclesBeforeUnknown;
@@ -73,8 +96,7 @@ public class FooterControl : Control
 
         lock (@lock) {
             if (IsStale) {
-                frame.SetColour(Color.Black, Color.Orange);
-                frame.Append(UnknownStatusText);
+                AppendStatus(Color.Orange, UnknownStatusText);
                 frame.SetColour(Color.Orange, background);
                 frame.Append($"  {StatusGlyph}");
             }
@@ -92,10 +114,20 @@ public class FooterControl : Control
                     frame.Append($"   ");
                 }
             }
+            else {
+                frame.SetColour(background, background);
+                frame.Append(' ', StatusTextWidth + GlyphWidth);
+            }
 
-            if (snapshot != null) {
-                frame.SetColour(foreground, background);
-                frame.Append($" {snapshot.Sequence} Rx");
+            string rxText = snapshot != null
+                ? $" {snapshot.Sequence} Rx".PadRight(RxTextWidth)
+                : new string(' ', RxTextWidth);
+
+            frame.SetColour(foreground, background);
+            frame.Append(rxText);
+
+            if (banner.Length + StatusTextWidth + GlyphWidth + rxText.Length + KeyHintsWidth <= Width) {
+                AppendKeyHints(foreground, background);
             }
         }
 

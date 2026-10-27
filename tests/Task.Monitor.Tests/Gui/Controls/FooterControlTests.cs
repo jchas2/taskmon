@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Tests.Controls;
@@ -15,7 +16,8 @@ public sealed class FooterControlTests : IDisposable
 
     private FooterControl? control;
 
-    private const string OrangeGlyph = "38;2;255;165;0m  ●";
+    private const string KeyHintsText = "F1 Help  F2 Setup  F10 Exit";
+    private const string OrangeGlyph  = "38;2;255;165;0m  ●";
 
     public FooterControlTests(ITestOutputHelper outputHelper)
     {
@@ -78,6 +80,19 @@ public sealed class FooterControlTests : IDisposable
     public void Dispose() => control?.Unload();
 
     [Fact]
+    public void Draws_The_Key_Hints_After_The_Status_And_Rx_Count()
+    {
+        CreateControl();
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+
+        string text = VisibleText();
+
+        Assert.Contains(KeyHintsText, text);
+        Assert.True(text.IndexOf("Services: Running", StringComparison.Ordinal) < text.IndexOf(" Rx", StringComparison.Ordinal));
+        Assert.True(text.IndexOf(" Rx", StringComparison.Ordinal) < text.IndexOf(KeyHintsText, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Draws_The_Version_Banner_Without_A_Snapshot()
     {
         FooterControl ctrl = CreateControl();
@@ -86,6 +101,67 @@ public sealed class FooterControlTests : IDisposable
         Assert.Contains("Task Monitor v", CapturedOutput());
 
         ctrl.Unload();
+    }
+
+    [Fact]
+    public void Key_Hints_Are_Dropped_When_The_Footer_Is_Too_Narrow()
+    {
+        CreateControl(width: 80);
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+
+        string text = VisibleText();
+
+        Assert.DoesNotContain("F1 Help", text);
+        Assert.True(text.Length <= 80);
+    }
+
+    [Fact]
+    public void Key_Hints_Keep_Their_Column_Without_A_Snapshot_Or_When_The_Status_Changes()
+    {
+        FooterControl ctrl = CreateControl();
+        ctrl.Draw();
+        int withoutSnapshot = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
+
+        ClearOutput();
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        int running = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
+
+        ClearOutput();
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Sequence = 1_234_567,
+            Services = [new ServiceHealth("Cpu", ServiceStatus.Stopping)]
+        });
+        int stopping = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
+
+        ClearOutput();
+        Tick(ctrl, 3);
+        int unknown = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
+
+        Assert.True(withoutSnapshot > 0);
+        Assert.Equal(withoutSnapshot, running);
+        Assert.Equal(withoutSnapshot, stopping);
+        Assert.Equal(withoutSnapshot, unknown);
+    }
+
+    [Fact]
+    public void Key_Hints_Move_Right_Once_The_Rx_Count_Passes_Seven_Digits()
+    {
+        CreateControl();
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Sequence = 9_999_999,
+            Services = [new ServiceHealth("Cpu", ServiceStatus.Running)]
+        });
+        int sevenDigits = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
+
+        ClearOutput();
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Sequence = 10_000_000,
+            Services = [new ServiceHealth("Cpu", ServiceStatus.Running)]
+        });
+        string text = VisibleText();
+
+        Assert.Contains(" 10000000 Rx  F1 Help", text);
+        Assert.Equal(sevenDigits + 1, text.IndexOf(KeyHintsText, StringComparison.Ordinal));
     }
 
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
@@ -162,4 +238,7 @@ public sealed class FooterControlTests : IDisposable
         Assert.Contains("Service status: Unknown", output);
         Assert.DoesNotContain("Errored", output);
     }
+
+    private string VisibleText() =>
+        Regex.Replace(CapturedOutput(), @"\x1b\[[0-9;]*[A-Za-z]", string.Empty);
 }

@@ -237,6 +237,11 @@ public sealed class MainScreen2 : Screen
         }
         
         switch (keyInfo.Key) {
+            case ConsoleKey.F1:
+                screenApp.ShowScreen<HelpScreen>();
+                handled = true;
+                break;
+
             case ConsoleKey.F2:
                 screenApp.ShowScreen<SetupScreen>();
                 handled = true;

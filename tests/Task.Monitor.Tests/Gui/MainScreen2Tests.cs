@@ -34,6 +34,39 @@ public sealed class MainScreen2Tests : IDisposable
     public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
+    public void F10_Is_Left_Unhandled_So_The_App_Exits()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        bool handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.F10), ref handled);
+
+        Assert.False(handled);
+    }
+
+    [Fact]
+    public void F1_Shows_The_Help_Screen()
+    {
+        MainScreen2 mainScreen = new(runContext, screenApp) {
+            Width = 120,
+            Height = 40
+        };
+
+        screenApp
+            .RegisterScreen(mainScreen)
+            .RegisterScreen(new HelpScreen(runContext));
+
+        screenApp.ShowScreen<MainScreen2>();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.F1), ref handled);
+
+        Assert.True(handled);
+        Assert.Contains("TASK MONITOR HELP", CapturedOutput());
+    }
+
+    [Fact]
     public void F2_And_Tab_Reach_A_Process_Filter_Dialog_Instead_Of_The_Screen()
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();

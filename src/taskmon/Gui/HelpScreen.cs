@@ -129,12 +129,14 @@ public class HelpScreen : Screen
 
         functionHelpText.AppendLine(
             @$"Function Keys:
+{"F1:".ToColour(theme.RangeLowBackground, bg)}{"  Show this help screen.".ToColour(fg, bg)}
 {"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
 {"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Show detailed process info, including threads, cpu time, loaded modules and handles (OS specific).".ToColour(fg, bg)}
 {"F6:".ToColour(theme.RangeLowBackground, bg)}{"  Terminate the selected task in the process list. If checkboxes are enabled in F2 Setup, all checked processes will be terminated.".ToColour(fg, bg)}
 {"F7:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between themes.".ToColour(fg, bg)}
 {"F8:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between layouts.".ToColour(fg, bg)}
-{"F9:".ToColour(theme.RangeLowBackground, bg)}{"  Show information about this app and the system.".ToColour(fg, bg)}");
+{"F9:".ToColour(theme.RangeLowBackground, bg)}{"  Show information about this app and the system.".ToColour(fg, bg)}
+{"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}");
 
         base.OnLoad();
     }
