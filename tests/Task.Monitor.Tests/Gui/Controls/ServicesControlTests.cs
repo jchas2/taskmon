@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Services;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.WindowsServices;
 using Task.Monitor.System.Tests.Controls;
@@ -7,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class ServicesControlTests
+public sealed class ServicesControlTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -69,6 +70,29 @@ public sealed class ServicesControlTests
 
         ctrl.Unload();
     }
+
+    [Fact]
+    public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("Alpha Service", description: "Alpha description."),
+            Service("Bravo Service", status: WindowsServiceStatus.Stopped, description: "Bravo description."),
+            Service("Charlie Service", description: "Charlie description.")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "charlie");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Charlie description.", output);
+        Assert.DoesNotContain("Alpha description.", output);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Service()
@@ -133,6 +157,76 @@ public sealed class ServicesControlTests
         ctrl.Draw();
 
         Assert.Contains("Gathering Windows services", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("Alpha Service", description: "Alpha description."),
+            Service("Bravo Service", status: WindowsServiceStatus.Stopped, description: "Bravo description."),
+            Service("Charlie Service", description: "Charlie description.")));
+        ctrl.Draw();
+        FilterKeys.Apply(ctrl, "bravo");
+
+        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Alpha Service", output);
+        Assert.Contains("Charlie Service", output);
+        Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Shows_Only_Matching_Rows_And_The_Match_Count_In_The_Title()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("Alpha Service", description: "Alpha description."),
+            Service("Bravo Service", status: WindowsServiceStatus.Stopped, description: "Bravo description."),
+            Service("Charlie Service", description: "Charlie description.")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Filter: bravo (1 of 3)", output);
+        Assert.Contains("Bravo Service", output);
+        Assert.DoesNotContain("Alpha Service", output);
+        Assert.DoesNotContain("Charlie Service", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered_And_Counts_All_Entries()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("Alpha Service", description: "Alpha description."),
+            Service("Bravo Service", status: WindowsServiceStatus.Stopped, description: "Bravo description."),
+            Service("Charlie Service", description: "Charlie description.")));
+        ctrl.Draw();
+
+        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

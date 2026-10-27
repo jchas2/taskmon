@@ -18,14 +18,19 @@ public sealed partial class StartupControl : Control
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 9;
 
+    private const string GatheringText = "Gathering startup applications…";
+
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          startupView;
     private readonly ListView          detailView;
+    private readonly ListFilter        filter;
 
     private StartupInfo? startup;
     
     private string lastSignature = string.Empty;
+
+    private IReadOnlyList<StartupEntry> visibleEntries = [];
 
 
     public StartupControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
@@ -41,7 +46,7 @@ public sealed partial class StartupControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering startup applications…"
+            EmptyListViewText = GatheringText
         };
 
         startupView.ColumnHeaders
@@ -66,8 +71,11 @@ public sealed partial class StartupControl : Control
             .Add(new ListViewColumnHeader("FIELD"))
             .Add(new ListViewColumnHeader("VALUE"));
 
+        filter = new ListFilter(this, terminal, "Filter Startup");
+
         Controls.Add(startupView);
         Controls.Add(detailView);
+        Controls.Add(filter.Dialog);
     }
 
     private static string BuildSignature(IReadOnlyList<StartupEntry> entries) =>
@@ -76,7 +84,8 @@ public sealed partial class StartupControl : Control
 
     private void EnsureRows(StartupInfo info)
     {
-        string signature = BuildSignature(info.Specs.Entries) + "|" + string.Join("|", info.Specs.Notes);
+        string signature =
+            BuildSignature(info.Specs.Entries) + "|" + string.Join("|", info.Specs.Notes) + "|" + filter.Text;
 
         if (signature == lastSignature) {
             return;
@@ -98,12 +107,21 @@ public sealed partial class StartupControl : Control
 
         startupView.Draw();
         detailView.Draw();
+        filter.Draw();
     }
 
     protected override void OnGotFocus() => startupView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         switch (keyInfo.Key) {
             case ConsoleKey.R:
             case ConsoleKey.F5:
@@ -125,6 +143,7 @@ public sealed partial class StartupControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(startupView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);
+        filter.ApplyTheme(appConfig.Theme);
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -174,6 +193,7 @@ public sealed partial class StartupControl : Control
         startupView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
+        filter.Close();
 
         base.OnUnload();
     }
@@ -182,7 +202,7 @@ public sealed partial class StartupControl : Control
     {
         int index = startupView.SelectedIndex;
         
-        IReadOnlyList<StartupEntry> entries = startup?.Specs.Entries ?? [];
+        IReadOnlyList<StartupEntry> entries = visibleEntries;
 
         StartupEntry? selected = index >= 0 && index < entries.Count ? entries[index] : null;
 

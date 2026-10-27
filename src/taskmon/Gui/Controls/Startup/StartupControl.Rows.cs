@@ -38,6 +38,10 @@ public sealed partial class StartupControl
                                       _ => source.ToString()
     };
 
+    private bool MatchesFilter(StartupEntry entry) =>
+        filter.Matches(
+            entry.Name, entry.Publisher, entry.Command, entry.Origin, DescribeType(entry.Source), DescribeScope(entry.Scope));
+
     private void RebuildDetailRows(StartupEntry? entry)
     {
         detailView.Items.Clear();
@@ -70,17 +74,15 @@ public sealed partial class StartupControl
     {
         startupView.Items.Clear();
 
+        visibleEntries = entries.Where(MatchesFilter).ToList();
+
         Color background         = appConfig.Theme.ListViewBackground;
         Color foreground         = appConfig.Theme.ListViewForeground;
         Color disabledForeground = appConfig.Theme.RangeMidForeground;
 
-        int enabled = 0;
+        int enabled = entries.Count(entry => entry.State != StartupEntryState.Disabled);
 
-        foreach (StartupEntry entry in entries) {
-            if (entry.State != StartupEntryState.Disabled) {
-                enabled++;
-            }
-
+        foreach (StartupEntry entry in visibleEntries) {
             Color statusForeground =
                 entry.State == StartupEntryState.Disabled ? disabledForeground : foreground;
 
@@ -98,7 +100,9 @@ public sealed partial class StartupControl
 
         string footerNotes = notes.Count > 0 ? $"     {string.Join("  ", notes)}" : string.Empty;
 
-        startupView.FooterText =
-            $"{enabled} enabled / {entries.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
+        startupView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
+        startupView.HeaderHighlightText = filter.BuildHeaderText(visibleEntries.Count, entries.Count);
+        startupView.FooterText          =
+            $"{enabled} enabled / {entries.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
     }
 }   

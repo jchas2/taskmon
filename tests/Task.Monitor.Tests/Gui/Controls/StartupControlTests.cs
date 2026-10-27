@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Startup;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Tests.Controls;
@@ -7,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class StartupControlTests
+public sealed class StartupControlTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -50,6 +51,29 @@ public sealed class StartupControlTests
         ctrl.Resize();
         return ctrl;
     }
+
+    [Fact]
+    public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", state: StartupEntryState.Disabled, command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "charlie");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("charlie.exe", output);
+        Assert.DoesNotContain("alpha.exe", output);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Row()
@@ -130,6 +154,103 @@ public sealed class StartupControlTests
             Publisher = publisher,
             Command = command
         };
+
+    [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", state: StartupEntryState.Disabled, command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+        FilterKeys.Apply(ctrl, "bravo");
+
+        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Alpha App", output);
+        Assert.Contains("Charlie App", output);
+        Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Matches_The_Type_And_Scope_Text()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", source: StartupTestSources.Primary, scope: StartupEntryScope.User),
+            Entry("Bravo App", source: StartupTestSources.Secondary, scope: StartupEntryScope.Machine)));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, StartupTestSources.SecondaryText);
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("(1 of 2)", CapturedOutput());
+        Assert.DoesNotContain("Alpha App", CapturedOutput());
+
+        FilterKeys.Press(ctrl, ConsoleKey.Escape);
+        FilterKeys.Apply(ctrl, "machine");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("Bravo App", CapturedOutput());
+        Assert.DoesNotContain("Alpha App", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Shows_Only_Matching_Rows_And_The_Match_Count_In_The_Title()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", state: StartupEntryState.Disabled, command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Filter: bravo (1 of 3)", output);
+        Assert.Contains("Bravo App", output);
+        Assert.DoesNotContain("Alpha App", output);
+        Assert.DoesNotContain("Charlie App", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered_And_Counts_All_Entries()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", state: StartupEntryState.Disabled, command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+
+        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("2 enabled / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Ignores_A_Snapshot_With_No_Startup_Info()

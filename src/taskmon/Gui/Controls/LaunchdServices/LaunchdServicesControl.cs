@@ -18,14 +18,19 @@ public sealed partial class LaunchdServicesControl : Control
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 14;  // border (2) + column headers (1) + 11 field rows
 
+    private const string GatheringText = "Gathering launchd services…";
+
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          servicesView;
     private readonly ListView          detailView;
+    private readonly ListFilter        filter;
 
     private LaunchdServicesInfo? services;
 
     private string lastSignature = string.Empty;
+
+    private IReadOnlyList<LaunchdServiceInfo> visibleServices = [];
 
     public LaunchdServicesControl(
         ServiceController serviceController,
@@ -43,7 +48,7 @@ public sealed partial class LaunchdServicesControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering launchd services…"
+            EmptyListViewText = GatheringText
         };
 
         servicesView.ColumnHeaders
@@ -68,8 +73,11 @@ public sealed partial class LaunchdServicesControl : Control
             .Add(new ListViewColumnHeader("FIELD"))
             .Add(new ListViewColumnHeader("VALUE"));
 
+        filter = new ListFilter(this, terminal, "Filter Services");
+
         Controls.Add(servicesView);
         Controls.Add(detailView);
+        Controls.Add(filter.Dialog);
     }
 
     private static string BuildSignature(IReadOnlyList<LaunchdServiceInfo> entries) =>
@@ -79,7 +87,7 @@ public sealed partial class LaunchdServicesControl : Control
 
     private void EnsureRows(LaunchdServicesInfo info)
     {
-        string signature = BuildSignature(info.Specs.Services);
+        string signature = BuildSignature(info.Specs.Services) + "|" + filter.Text;
 
         if (signature == lastSignature) {
             return;
@@ -101,12 +109,21 @@ public sealed partial class LaunchdServicesControl : Control
 
         servicesView.Draw();
         detailView.Draw();
+        filter.Draw();
     }
 
     protected override void OnGotFocus() => servicesView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         switch (keyInfo.Key) {
             case ConsoleKey.R:
             case ConsoleKey.F5:
@@ -128,6 +145,7 @@ public sealed partial class LaunchdServicesControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(servicesView, appConfig.Theme);
         CommonControl.Theme(detailView,   appConfig.Theme);
+        filter.ApplyTheme(appConfig.Theme);
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -172,6 +190,7 @@ public sealed partial class LaunchdServicesControl : Control
         servicesView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
+        filter.Close();
 
         base.OnUnload();
     }
@@ -180,7 +199,7 @@ public sealed partial class LaunchdServicesControl : Control
     {
         int index = servicesView.SelectedIndex;
 
-        IReadOnlyList<LaunchdServiceInfo> entries = services?.Specs.Services ?? [];
+        IReadOnlyList<LaunchdServiceInfo> entries = visibleServices;
         LaunchdServiceInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
 
         RebuildDetailRows(selected);

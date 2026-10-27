@@ -38,6 +38,10 @@ public sealed partial class LaunchdServicesControl
         (status & 0x7F) == 0 &&
         (status >> 8) != 0;
 
+    private bool MatchesFilter(LaunchdServiceInfo service) =>
+        (int.TryParse(filter.Text, out int pid) && service.Pid == pid) ||
+        filter.Matches(service.Label, service.Group, service.ProgramPath, service.Publisher);
+
     private void RebuildDetailRows(LaunchdServiceInfo? service)
     {
         detailView.Items.Clear();
@@ -76,16 +80,14 @@ public sealed partial class LaunchdServicesControl
     {
         servicesView.Items.Clear();
 
+        visibleServices = entries.Where(MatchesFilter).ToList();
+
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
 
-        int running = 0;
+        int running = entries.Count(service => service.Status == LaunchdServiceStatus.Running);
 
-        foreach (LaunchdServiceInfo service in entries) {
-            if (service.Status == LaunchdServiceStatus.Running) {
-                running++;
-            }
-
+        foreach (LaunchdServiceInfo service in visibleServices) {
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, service.Label,                         background, foreground),
                 new ListViewSubItem(null!, service.Group,                         background, foreground),
@@ -98,8 +100,10 @@ public sealed partial class LaunchdServicesControl
             servicesView.Items.Add(row);
         }
 
-        servicesView.FooterText =
-            $"{running} running / {entries.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll";
+        servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
+        servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, entries.Count);
+        servicesView.FooterText          =
+            $"{running} running / {entries.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 
     private Color StatusForeground(LaunchdServiceInfo service) => service.Status switch {

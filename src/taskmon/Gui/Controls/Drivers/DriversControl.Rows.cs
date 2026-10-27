@@ -39,6 +39,9 @@ public sealed partial class DriversControl
     private static bool IsActive(DriverStatus status) =>
         status is DriverStatus.Running or DriverStatus.Loaded;
 
+    private bool MatchesFilter(DriverInfo driver) =>
+        filter.Matches(driver.Name, driver.DisplayName, driver.Publisher, driver.ImagePath);
+
     private void RebuildDetailRows(DriverInfo? driver)
     {
         detailView.Items.Clear();
@@ -71,17 +74,15 @@ public sealed partial class DriversControl
     {
         driversView.Items.Clear();
 
+        visibleDrivers = drivers.Where(MatchesFilter).ToList();
+
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
-        int running = 0;
+        int running = drivers.Count(driver => IsActive(driver.Status));
 
-        foreach (DriverInfo driver in drivers) {
-            if (IsActive(driver.Status)) {
-                running++;
-            }
-
+        foreach (DriverInfo driver in visibleDrivers) {
             Color statusForeground =
                 IsActive(driver.Status) ? foreground : stoppedForeground;
 
@@ -96,7 +97,9 @@ public sealed partial class DriversControl
             driversView.Items.Add(row);
         }
 
-        driversView.FooterText =
-            $"{running} running / {drivers.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll";
+        driversView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
+        driversView.HeaderHighlightText = filter.BuildHeaderText(visibleDrivers.Count, drivers.Count);
+        driversView.FooterText          =
+            $"{running} running / {drivers.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

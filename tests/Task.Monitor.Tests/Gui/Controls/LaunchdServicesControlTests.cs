@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.LaunchdServices;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.LaunchdServices;
@@ -7,7 +8,7 @@ using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class LaunchdServicesControlTests
+public sealed class LaunchdServicesControlTests : IDisposable
 {
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext       runContext;
@@ -66,6 +67,29 @@ public sealed class LaunchdServicesControlTests
     }
 
     [Fact]
+    public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent", programPath: "/usr/libexec/alpha"),
+            Service("com.bravo.agent", status: LaunchdServiceStatus.Waiting, programPath: "/usr/libexec/bravo"),
+            Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "charlie");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("/usr/libexec/charlie", output);
+        Assert.DoesNotContain("/usr/libexec/alpha", output);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Service()
     {
         LaunchdServicesControl ctrl = CreateControl();
@@ -122,6 +146,95 @@ public sealed class LaunchdServicesControlTests
         ctrl.Draw();
 
         Assert.Contains("Gathering launchd services", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent", programPath: "/usr/libexec/alpha"),
+            Service("com.bravo.agent", status: LaunchdServiceStatus.Waiting, programPath: "/usr/libexec/bravo"),
+            Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
+        ctrl.Draw();
+        FilterKeys.Apply(ctrl, "bravo");
+
+        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("com.alpha.agent", output);
+        Assert.Contains("com.charlie.agent", output);
+        Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Matches_A_Process_Id()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent", pid: 4321),
+            Service("com.bravo.agent", pid: 999)));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "4321");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("com.alpha.agent", CapturedOutput());
+        Assert.DoesNotContain("com.bravo.agent", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Shows_Only_Matching_Rows_And_The_Match_Count_In_The_Title()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent", programPath: "/usr/libexec/alpha"),
+            Service("com.bravo.agent", status: LaunchdServiceStatus.Waiting, programPath: "/usr/libexec/bravo"),
+            Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Filter: bravo (1 of 3)", output);
+        Assert.Contains("com.bravo.agent", output);
+        Assert.DoesNotContain("com.alpha.agent", output);
+        Assert.DoesNotContain("com.charlie.agent", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered_And_Counts_All_Entries()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Service("com.alpha.agent", programPath: "/usr/libexec/alpha"),
+            Service("com.bravo.agent", status: LaunchdServiceStatus.Waiting, programPath: "/usr/libexec/bravo"),
+            Service("com.charlie.agent", programPath: "/usr/libexec/charlie")));
+        ctrl.Draw();
+
+        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

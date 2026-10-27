@@ -21,15 +21,20 @@ public sealed partial class InstalledAppsControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 10; // border (2) + column headers (1) + 7 field rows
+
+    private const string GatheringText = "Gathering installed applications…";
     
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          installedAppsView;
     private readonly ListView          detailView;
+    private readonly ListFilter        filter;
 
     private InstalledAppsInfo? installedApps;
     
     private string lastSignature = string.Empty;
+
+    private IReadOnlyList<InstalledApp> visibleApps = [];
 
 
     public InstalledAppsControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
@@ -46,7 +51,7 @@ public sealed partial class InstalledAppsControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering installed applications…"
+            EmptyListViewText = GatheringText
         };
 
         installedAppsView.ColumnHeaders
@@ -72,8 +77,11 @@ public sealed partial class InstalledAppsControl : Control
             .Add(new ListViewColumnHeader("FIELD"))
             .Add(new ListViewColumnHeader("VALUE"));
 
+        filter = new ListFilter(this, terminal, "Filter Apps");
+
         Controls.Add(installedAppsView);
         Controls.Add(detailView);
+        Controls.Add(filter.Dialog);
     }
 
     // Includes sizes, which on macOS arrive after the rows as each bundle is measured.
@@ -84,7 +92,7 @@ public sealed partial class InstalledAppsControl : Control
 
     private void EnsureRows(InstalledAppsInfo info)
     {
-        string signature = BuildSignature(info.Specs.Apps);
+        string signature = BuildSignature(info.Specs.Apps) + "|" + filter.Text;
 
         if (signature == lastSignature) {
             return;
@@ -107,12 +115,21 @@ public sealed partial class InstalledAppsControl : Control
 
         installedAppsView.Draw();
         detailView.Draw();
+        filter.Draw();
     }
 
     protected override void OnGotFocus() => installedAppsView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         switch (keyInfo.Key) {
             case ConsoleKey.R:
             case ConsoleKey.F5:
@@ -134,6 +151,7 @@ public sealed partial class InstalledAppsControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(installedAppsView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);
+        filter.ApplyTheme(appConfig.Theme);
         
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -188,6 +206,7 @@ public sealed partial class InstalledAppsControl : Control
         installedAppsView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
+        filter.Close();
 
         base.OnUnload();
     }
@@ -196,7 +215,7 @@ public sealed partial class InstalledAppsControl : Control
     {
         int index = installedAppsView.SelectedIndex;
         
-        IReadOnlyList<InstalledApp> apps     = installedApps?.Specs.Apps ?? [];
+        IReadOnlyList<InstalledApp> apps     = visibleApps;
         InstalledApp?               selected = index >= 0 && index < apps.Count ? apps[index] : null;
         
         RebuildDetailRows(selected);

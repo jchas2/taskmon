@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.InstalledApps;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Tests.Controls;
@@ -7,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class InstalledAppsControlTests
+public sealed class InstalledAppsControlTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -72,6 +73,29 @@ public sealed class InstalledAppsControlTests
     }
 
     [Fact]
+    public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            App("Alpha App", installLocation: "/Applications/Alpha.app"),
+            App("Bravo App", installLocation: "/Applications/Bravo.app"),
+            App("Charlie App", installLocation: "/Applications/Charlie.app")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "charlie");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Charlie.app", output);
+        Assert.DoesNotContain("Alpha.app", output);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_App()
     {
         InstalledAppsControl ctrl = CreateControl();
@@ -134,6 +158,76 @@ public sealed class InstalledAppsControlTests
         ctrl.Draw();
 
         Assert.Contains("Gathering installed applications", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            App("Alpha App", installLocation: "/Applications/Alpha.app"),
+            App("Bravo App", installLocation: "/Applications/Bravo.app"),
+            App("Charlie App", installLocation: "/Applications/Charlie.app")));
+        ctrl.Draw();
+        FilterKeys.Apply(ctrl, "bravo");
+
+        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Alpha App", output);
+        Assert.Contains("Charlie App", output);
+        Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Shows_Only_Matching_Rows_And_The_Match_Count_In_The_Title()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            App("Alpha App", installLocation: "/Applications/Alpha.app"),
+            App("Bravo App", installLocation: "/Applications/Bravo.app"),
+            App("Charlie App", installLocation: "/Applications/Charlie.app")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Filter: bravo (1 of 3)", output);
+        Assert.Contains("Bravo App", output);
+        Assert.DoesNotContain("Alpha App", output);
+        Assert.DoesNotContain("Charlie App", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered_And_Counts_All_Entries()
+    {
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            App("Alpha App", installLocation: "/Applications/Alpha.app"),
+            App("Bravo App", installLocation: "/Applications/Bravo.app"),
+            App("Charlie App", installLocation: "/Applications/Charlie.app")));
+        ctrl.Draw();
+
+        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("3 installed     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
 
         ctrl.Unload();
     }

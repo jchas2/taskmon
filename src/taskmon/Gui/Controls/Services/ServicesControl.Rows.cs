@@ -52,6 +52,9 @@ public sealed partial class ServicesControl
                                            _ => status.ToString()
     };
 
+    private bool MatchesFilter(WindowsServiceInfo service) =>
+        filter.Matches(service.ServiceName, service.DisplayName, service.Description, service.LogOnAs);
+
     private void RebuildDetailRows(WindowsServiceInfo? service)
     {
         detailView.Items.Clear();
@@ -83,17 +86,15 @@ public sealed partial class ServicesControl
     {
         servicesView.Items.Clear();
 
+        visibleServices = services.Where(MatchesFilter).ToList();
+
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
         Color stoppedForeground = appConfig.Theme.RangeMidForeground;
 
-        int running = 0;
+        int running = services.Count(service => service.Status == WindowsServiceStatus.Running);
 
-        foreach (WindowsServiceInfo service in services) {
-            if (service.Status == WindowsServiceStatus.Running) {
-                running++;
-            }
-
+        foreach (WindowsServiceInfo service in visibleServices) {
             Color statusForeground =
                 service.Status == WindowsServiceStatus.Running ? foreground : stoppedForeground;
 
@@ -108,7 +109,9 @@ public sealed partial class ServicesControl
             servicesView.Items.Add(row);
         }
 
-        servicesView.FooterText =
-            $"{running} running / {services.Count} total     r Refresh     ↑ ↓ PgUp PgDn Scroll";
+        servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
+        servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, services.Count);
+        servicesView.FooterText          =
+            $"{running} running / {services.Count} total     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

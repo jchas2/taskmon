@@ -112,10 +112,10 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "\u2190:", "Move left to next screen component",  "\u2191:", "Arrow to scroll up" }));
         helpView.Items.Add(new ListViewItem(new[] { "\u2192:", "Move right to next screen component", "\u2193:", "Arrow to scroll down" }));
         helpView.Items.Add(new ListViewItem(new[] { "Pg Up:", "Move up one page in list",             "\u21B5:", "ENTER to select item" }));
-        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Close dialog or clear process filter" }));
+        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Close dialog or clear the filter" }));
         helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort processes ascending",                 "d:", "Sort processes descending" }));
         helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
-        helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter by Process, User, Pid, Path",       "x:", "Toggle multiple process selection" }));
+        helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter the list in the current view",      "x:", "Toggle multiple process selection" }));
         helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
         helpView.Items.Add(new ListViewItem(new[] { "F6:", "Kill process/selected processes",         "F5:", "Show process info" }));
         helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));

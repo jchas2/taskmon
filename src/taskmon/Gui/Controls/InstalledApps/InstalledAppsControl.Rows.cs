@@ -32,6 +32,9 @@ public sealed partial class InstalledAppsControl
                                       _ => NotAvailable
     };
 
+    private bool MatchesFilter(InstalledApp app) =>
+        filter.Matches(app.Name, app.Publisher, app.Version, app.InstallLocation);
+
     private void RebuildDetailRows(InstalledApp? app)
     {
         detailView.Items.Clear();
@@ -56,10 +59,12 @@ public sealed partial class InstalledAppsControl
     {
         installedAppsView.Items.Clear();
 
+        visibleApps = apps.Where(MatchesFilter).ToList();
+
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
 
-        foreach (InstalledApp app in apps) {
+        foreach (InstalledApp app in visibleApps) {
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, Cell(app.Name),                       background, foreground),
                 new ListViewSubItem(null!, Cell(app.Version),                    background, foreground),
@@ -73,7 +78,9 @@ public sealed partial class InstalledAppsControl
             installedAppsView.Items.Add(row);
         }
 
-        installedAppsView.FooterText =
-            $"{apps.Count} installed     r Refresh     ↑ ↓ PgUp PgDn Scroll";
+        installedAppsView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
+        installedAppsView.HeaderHighlightText = filter.BuildHeaderText(visibleApps.Count, apps.Count);
+        installedAppsView.FooterText          =
+            $"{apps.Count} installed     r Refresh     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
     }
 }

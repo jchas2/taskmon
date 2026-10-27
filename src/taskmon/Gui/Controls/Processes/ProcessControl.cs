@@ -4,10 +4,8 @@ using Task.Monitor.Extensions;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
-using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
-using TextInputDialogControl = Task.Monitor.System.Controls.TextInputDialog.TextInputDialog;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 
@@ -16,8 +14,6 @@ public sealed partial class ProcessControl : Control
     private const int SortControlWidth         = 20;
     private const int ControlGutter            = 1;
     private const int InvalidSelectedItemIndex = -1;
-    private const int FilterDialogMinWidth     = 30;
-    private const int FilterDialogMaxWidth     = 50;
 
     private int lastKnownProcessId = InvalidSelectedItemIndex;
     
@@ -25,12 +21,12 @@ public sealed partial class ProcessControl : Control
     public const string DefaultFooterText  = "s Sort     f Filter     ↑ ↓ PgUp PgDn Scroll";
     public const string FilteredFooterText = "s Sort     f Filter     Esc Clear Filter     ↑ ↓ PgUp PgDn Scroll";
 
-    private readonly ServiceController      serviceController;
-    private readonly AppConfig              appConfig;
-    private readonly ListView               sortView;
-    private readonly ListView               processView;
-    private readonly TextInputDialogControl filterDialog;
-    private readonly Lock                   allProcessesLock;
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          sortView;
+    private readonly ListView          processView;
+    private readonly ListFilter        filter;
+    private readonly Lock              allProcessesLock;
 
     private List<ProcessEntry> allProcesses = [];
     private ControlMode        mode         = ControlMode.None;
@@ -112,15 +108,12 @@ public sealed partial class ProcessControl : Control
             .Add(new ListViewColumnHeader(Columns.Power.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.CommandLine.GetTitle()));
 
-        filterDialog = new TextInputDialogControl(terminal) {
-            Visible = false,
-            Title   = "Filter Processes"
-        };
+        filter = new ListFilter(this, terminal, "Filter Processes");
 
         Controls
             .Add(sortView)
             .Add(processView)
-            .Add(filterDialog);
+            .Add(filter.Dialog);
     }
 
     private string BuildHeaderHighlightText()
@@ -132,9 +125,7 @@ public sealed partial class ProcessControl : Control
         }
 
         if (IsFiltered) {
-            parts.Add(string.IsNullOrEmpty(HeaderText)
-                ? $"Filter: {FilterText} ({filterMatchCount} of {processTotalCount})"
-                : $"Filter: {FilterText} ({filterMatchCount})");
+            parts.Add(filter.BuildHeaderText(filterMatchCount, processTotalCount, showTotal: string.IsNullOrEmpty(HeaderText)));
         }
 
         return string.Join(" · ", parts);
@@ -168,7 +159,11 @@ public sealed partial class ProcessControl : Control
         }
     }
 
-    public string FilterText { get; set; } = string.Empty;
+    public string FilterText
+    {
+        get => filter.Text;
+        set => filter.Text = value;
+    }
 
     private string FooterText => IsFiltered ? FilteredFooterText : DefaultFooterText;
 
@@ -192,9 +187,9 @@ public sealed partial class ProcessControl : Control
         column is Columns.Process or Columns.Pid ||
         ((VisibleColumnsOverride ?? appConfig.VisibleColumns) & ToStatistic(column)) != 0;
 
-    public bool IsFilterDialogVisible => filterDialog.Visible;
+    public bool IsFilterDialogVisible => filter.IsDialogVisible;
 
-    public bool IsFiltered => !string.IsNullOrEmpty(FilterText);
+    public bool IsFiltered => filter.IsActive;
 
     public bool IsModalActive => IsSortSelectionActive || IsFilterDialogVisible;
 
@@ -221,55 +216,30 @@ public sealed partial class ProcessControl : Control
         sortView.Draw();
         processView.Draw();
 
-        if (filterDialog.Visible) {
-            filterDialog.Draw();
-        }
+        filter.Draw();
 
         RaiseSelectedProcessIdChangedIfNeeded();
-    }
-
-    private void OnFilterDialogKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
-    {
-        filterDialog.KeyPressed(keyInfo, ref handled);
-
-        if (filterDialog.Result == TextInputDialogResult.None) {
-            return;
-        }
-
-        filterDialog.Visible  = false;
-        Control.RedrawEnabled = true;
-
-        if (filterDialog.Result == TextInputDialogResult.Ok) {
-            FilterText = filterDialog.Text.Trim();
-        }
-
-        Draw();
     }
 
     protected override void OnGotFocus() => GetTargetControl()?.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)    
     {
-        if (filterDialog.Visible) {
-            OnFilterDialogKeyPressed(keyInfo, ref handled);
+        if (keyInfo.Key == ConsoleKey.Escape && mode == ControlMode.SortSelection && !filter.IsDialogVisible) {
+            SetMode(ControlMode.None);
+            handled = true;
+            return;
+        }
+
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
             return;
         }
 
         switch (keyInfo.Key) {
-            case ConsoleKey.Escape:
-                if (mode == ControlMode.SortSelection) {
-                    SetMode(ControlMode.None);
-                    handled = true;
-                    return;
-                }
-
-                if (IsFiltered) {
-                    FilterText = string.Empty;
-                    Draw();
-                    handled = true;
-                    return;
-                }
-                break;
             // Consume arrow keys when modal sort menu is active.
             case ConsoleKey.LeftArrow or ConsoleKey.RightArrow when mode == ControlMode.SortSelection:
                 handled = true;
@@ -311,10 +281,6 @@ public sealed partial class ProcessControl : Control
                 Draw();
                 handled = true;
                 return;
-            case ConsoleKey.F:
-                ShowFilterDialog();
-                handled = true;
-                return;
             case ConsoleKey.Z:
                 freezeUpdates = !freezeUpdates;
                 Draw();
@@ -331,7 +297,7 @@ public sealed partial class ProcessControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(sortView, appConfig.Theme);
         CommonControl.Theme(processView, appConfig.Theme);
-        CommonControl.Theme(filterDialog, appConfig.Theme);
+        filter.ApplyTheme(appConfig.Theme);
         
         UpdateColumnHeaderSort(decorate: true);
         
@@ -438,10 +404,7 @@ public sealed partial class ProcessControl : Control
         processView.ItemSelected                -= ProcessViewOnItemSelected;
         processView.ItemClicked                 -= ProcessViewOnItemClicked;
 
-        if (filterDialog.Visible) {
-            filterDialog.Visible  = false;
-            Control.RedrawEnabled = true;
-        }
+        filter.Close();
 
         base.OnUnload();
     }
@@ -500,20 +463,6 @@ public sealed partial class ProcessControl : Control
         Clear();
         Resize();
         Draw();
-    }
-
-    private void ShowFilterDialog()
-    {
-        Control.RedrawEnabled = false;
-
-        filterDialog.Width  = Math.Clamp(Width - 4, FilterDialogMinWidth, FilterDialogMaxWidth);
-        filterDialog.Height = TextInputDialogControl.PreferredHeight;
-        filterDialog.X      = Math.Clamp(X + (Width - filterDialog.Width) / 2, 0, Math.Max(0, Terminal.WindowWidth - filterDialog.Width));
-        filterDialog.Y      = Math.Clamp(Y + (Height - filterDialog.Height) / 2, 0, Math.Max(0, Terminal.WindowHeight - filterDialog.Height));
-
-        filterDialog.SetText(FilterText);
-        filterDialog.Visible = true;
-        filterDialog.ShowTextInputDialog();
     }
 
     private void SortSelectionChanged(Columns column)
@@ -621,10 +570,7 @@ public sealed partial class ProcessControl : Control
 
                 filteredProcesses = filteredProcesses
                     .Where(p => p.Pid == filterPid ||
-                                p.ProcessName.Contains(FilterText, StringComparison.CurrentCultureIgnoreCase) ||
-                                p.FileDescription.Contains(FilterText, StringComparison.CurrentCultureIgnoreCase) ||
-                                p.CmdLine.Contains(FilterText, StringComparison.CurrentCultureIgnoreCase) ||
-                                p.UserName.Contains(FilterText, StringComparison.CurrentCultureIgnoreCase));
+                                filter.Matches(p.ProcessName, p.FileDescription, p.CmdLine, p.UserName));
             }
 
             IOrderedEnumerable<ProcessEntry> Sort<TKey>(Func<ProcessEntry, TKey> key) =>

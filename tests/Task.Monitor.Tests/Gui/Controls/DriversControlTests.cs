@@ -1,4 +1,5 @@
 using Task.Monitor.Gui.Controls.Drivers;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Drivers;
@@ -8,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
-public sealed class DriversControlTests
+public sealed class DriversControlTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -51,6 +52,29 @@ public sealed class DriversControlTests
         ctrl.Resize();
         return ctrl;
     }
+
+    [Fact]
+    public void Detail_Pane_Follows_The_Selection_In_The_Filtered_List()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver", imagePath: @"C:\a\alpha.sys", status: DriverStatus.Running),
+            Driver("Bravo Driver", imagePath: @"C:\b\bravo.sys", status: DriverStatus.Stopped),
+            Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "charlie");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("charlie.sys", output);
+        Assert.DoesNotContain("alpha.sys", output);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Driver()
@@ -160,6 +184,93 @@ public sealed class DriversControlTests
             Version = version,
             Publisher = publisher
         };
+
+    [Fact]
+    public void Escape_Clears_The_Filter()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver", imagePath: @"C:\a\alpha.sys", status: DriverStatus.Running),
+            Driver("Bravo Driver", imagePath: @"C:\b\bravo.sys", status: DriverStatus.Stopped),
+            Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
+        ctrl.Draw();
+        FilterKeys.Apply(ctrl, "bravo");
+
+        Assert.True(FilterKeys.Press(ctrl, ConsoleKey.Escape));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Alpha Driver", output);
+        Assert.Contains("Charlie Driver", output);
+        Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_Shows_Only_Matching_Rows_And_The_Match_Count_In_The_Title()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver", imagePath: @"C:\a\alpha.sys", status: DriverStatus.Running),
+            Driver("Bravo Driver", imagePath: @"C:\b\bravo.sys", status: DriverStatus.Stopped),
+            Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("Filter: bravo (1 of 3)", output);
+        Assert.Contains("Bravo Driver", output);
+        Assert.DoesNotContain("Alpha Driver", output);
+        Assert.DoesNotContain("Charlie Driver", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Filter_With_No_Matches_Shows_No_Matches_Instead_Of_Gathering()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Alpha Driver")));
+        ctrl.Draw();
+
+        FilterKeys.Apply(ctrl, "zzz");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("No matches", CapturedOutput());
+        Assert.DoesNotContain("Gathering drivers", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Footer_Shows_The_Clear_Hint_Only_While_Filtered_And_Counts_All_Entries()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Driver("Alpha Driver", imagePath: @"C:\a\alpha.sys", status: DriverStatus.Running),
+            Driver("Bravo Driver", imagePath: @"C:\b\bravo.sys", status: DriverStatus.Stopped),
+            Driver("Charlie Driver", imagePath: @"C:\c\charlie.sys", status: DriverStatus.Running)));
+        ctrl.Draw();
+
+        Assert.Contains("r Refresh     f Filter     ↑ ↓", CapturedOutput());
+        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+
+        FilterKeys.Apply(ctrl, "bravo");
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        Assert.Contains("2 running / 3 total     r Refresh     f Filter     Esc Clear Filter     ↑ ↓", output);
+
+        ctrl.Unload();
+    }
 
     // Regression test: OnGotFocus redirects focus down to driversView, which makes this
     // control's own Focused flip back to false the instant that happens (see

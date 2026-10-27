@@ -17,14 +17,19 @@ public sealed partial class DriversControl : Control
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 9;   // border (2) + column headers (1) + 6 field rows
 
+    private const string GatheringText = "Gathering drivers…";
+
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          driversView;
     private readonly ListView          detailView;
+    private readonly ListFilter        filter;
 
     private DriversInfo? drivers;
     
     private string lastSignature = string.Empty;
+
+    private IReadOnlyList<DriverInfo> visibleDrivers = [];
 
 
     public DriversControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig) 
@@ -41,7 +46,7 @@ public sealed partial class DriversControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering drivers…"
+            EmptyListViewText = GatheringText
         };
 
         driversView.ColumnHeaders
@@ -65,8 +70,11 @@ public sealed partial class DriversControl : Control
             .Add(new ListViewColumnHeader("FIELD"))
             .Add(new ListViewColumnHeader("VALUE"));
 
+        filter = new ListFilter(this, terminal, "Filter Drivers");
+
         Controls.Add(driversView);
         Controls.Add(detailView);
+        Controls.Add(filter.Dialog);
     }
 
     private static string BuildSignature(IReadOnlyList<DriverInfo> entries) =>
@@ -76,7 +84,7 @@ public sealed partial class DriversControl : Control
 
     private void EnsureRows(DriversInfo info)
     {
-        string signature = BuildSignature(info.Specs.Drivers);
+        string signature = BuildSignature(info.Specs.Drivers) + "|" + filter.Text;
 
         if (signature == lastSignature) {
             return;
@@ -98,12 +106,21 @@ public sealed partial class DriversControl : Control
 
         driversView.Draw();
         detailView.Draw();
+        filter.Draw();
     }
 
     protected override void OnGotFocus() => driversView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         switch (keyInfo.Key) {
             case ConsoleKey.R:
             case ConsoleKey.F5:
@@ -125,6 +142,7 @@ public sealed partial class DriversControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(driversView, appConfig.Theme);
         CommonControl.Theme(detailView,  appConfig.Theme);
+        filter.ApplyTheme(appConfig.Theme);
         
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -168,6 +186,7 @@ public sealed partial class DriversControl : Control
         driversView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
+        filter.Close();
 
         base.OnUnload();
     }
@@ -176,7 +195,7 @@ public sealed partial class DriversControl : Control
     {
         int index = driversView.SelectedIndex;
 
-        IReadOnlyList<DriverInfo> entries = drivers?.Specs.Drivers ?? [];
+        IReadOnlyList<DriverInfo> entries = visibleDrivers;
         DriverInfo? selected = index >= 0 && index < entries.Count ? entries[index] : null;
         
         RebuildDetailRows(selected);

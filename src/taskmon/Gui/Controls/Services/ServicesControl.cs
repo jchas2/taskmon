@@ -17,14 +17,19 @@ public sealed partial class ServicesControl : Control
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 8; 
 
+    private const string GatheringText = "Gathering Windows services…";
+
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          servicesView;
     private readonly ListView          detailView;
+    private readonly ListFilter        filter;
 
     private WindowsServicesInfo? services;
     
     private string lastSignature = string.Empty;
+
+    private IReadOnlyList<WindowsServiceInfo> visibleServices = [];
 
 
     public ServicesControl(
@@ -43,7 +48,7 @@ public sealed partial class ServicesControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering Windows services…"
+            EmptyListViewText = GatheringText
         };
 
         servicesView.ColumnHeaders
@@ -67,8 +72,11 @@ public sealed partial class ServicesControl : Control
             .Add(new ListViewColumnHeader("FIELD"))
             .Add(new ListViewColumnHeader("VALUE"));
 
+        filter = new ListFilter(this, terminal, "Filter Services");
+
         Controls.Add(servicesView);
         Controls.Add(detailView);
+        Controls.Add(filter.Dialog);
     }
 
     private static string BuildSignature(IReadOnlyList<WindowsServiceInfo> entries) =>
@@ -78,7 +86,7 @@ public sealed partial class ServicesControl : Control
 
     private void EnsureRows(WindowsServicesInfo info)
     {
-        string signature = BuildSignature(info.Specs.Services);
+        string signature = BuildSignature(info.Specs.Services) + "|" + filter.Text;
 
         if (signature == lastSignature) {
             return;
@@ -100,12 +108,21 @@ public sealed partial class ServicesControl : Control
 
         servicesView.Draw();
         detailView.Draw();
+        filter.Draw();
     }
 
     protected override void OnGotFocus() => servicesView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (filter.KeyPressed(keyInfo, ref handled)) {
+            Draw();
+        }
+
+        if (handled) {
+            return;
+        }
+
         switch (keyInfo.Key) {
             case ConsoleKey.R:
             case ConsoleKey.F5:
@@ -127,6 +144,7 @@ public sealed partial class ServicesControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(servicesView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);        
+        filter.ApplyTheme(appConfig.Theme);
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -170,6 +188,7 @@ public sealed partial class ServicesControl : Control
         servicesView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
+        filter.Close();
 
         base.OnUnload();
     }
@@ -178,7 +197,7 @@ public sealed partial class ServicesControl : Control
     {
         int index = servicesView.SelectedIndex;
         
-        IReadOnlyList<WindowsServiceInfo> entries = services?.Specs.Services ?? [];
+        IReadOnlyList<WindowsServiceInfo> entries = visibleServices;
 
         WindowsServiceInfo? selected = index >= 0 && index < entries.Count 
             ? entries[index] 
