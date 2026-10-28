@@ -49,6 +49,21 @@ public sealed class SummaryPaneThemeTests
         Assert.Equal(ChartYAxis.ToArgb(), chart.YAxisColour.ToArgb());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Chart_Pane_Takes_The_Grid_From_ShowLargeMetreGrid_Not_ShowSmallMetreGrid(bool showGrid)
+    {
+        runContext.AppConfig.ShowLargeMetreGrid = showGrid;
+        runContext.AppConfig.ShowSmallMetreGrid = !showGrid;
+
+        Chart chart = new(runContext.Terminal) { ShowGrid = !showGrid };
+
+        SummaryPaneTheme.Apply(chart, runContext.AppConfig);
+
+        Assert.Equal(showGrid, chart.ShowGrid);
+    }
+
     [Fact]
     public void CpuCores_Pane_Border_Takes_The_Chart_Border_Colour()
     {

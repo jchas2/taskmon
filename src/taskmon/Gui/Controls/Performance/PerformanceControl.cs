@@ -296,6 +296,7 @@ public sealed class PerformanceControl : Control
         CommonControl.Theme(chart, appConfig.Theme);
         
         chart.MetreStyle     = appConfig.MetreStyle;
+        chart.ShowGrid       = appConfig.ShowSmallMetreGrid;
         chart.ShowYAxisScale = appConfig.ShowYAxisScale;
     }
 
@@ -429,7 +430,6 @@ public sealed class PerformanceControl : Control
         chart = new Chart(Terminal) {
             Text           = string.Empty,
             LabelSeries    = string.Empty,
-            ShowGrid       = false,
             ShowYAxisScale = false,
             AutoScale      = autoScale,
             CustomYAxisScaleFormatter = formatter,

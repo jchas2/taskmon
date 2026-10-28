@@ -319,6 +319,16 @@ public class SetupScreen : Screen
             runContext.AppConfig.ShowYAxisScale);
 
         AddGeneralItem(
+            "Show grid on large charts", 
+            Constants.Keys.ShowLargeMetreGrid,
+            runContext.AppConfig.ShowLargeMetreGrid);
+
+        AddGeneralItem(
+            "Show grid on small charts (Cpu cores, Performance panels)", 
+            Constants.Keys.ShowSmallMetreGrid,
+            runContext.AppConfig.ShowSmallMetreGrid);
+
+        AddGeneralItem(
 #if __WIN32__
             "Use Irix mode for per-process CPU% (individual core saturation)",
 #endif
@@ -425,6 +435,8 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowMetreNpuNumerically         = GetItemValueByKey(Constants.Keys.ShowMetreNpuNumerically).Checked;
 #endif
         runContext.AppConfig.ShowYAxisScale                  = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
+        runContext.AppConfig.ShowLargeMetreGrid              = GetItemValueByKey(Constants.Keys.ShowLargeMetreGrid).Checked;
+        runContext.AppConfig.ShowSmallMetreGrid              = GetItemValueByKey(Constants.Keys.ShowSmallMetreGrid).Checked;
         runContext.AppConfig.UseIrixReporting                = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 
         Statistics visibleColumns = Statistics.Process | Statistics.Pid;

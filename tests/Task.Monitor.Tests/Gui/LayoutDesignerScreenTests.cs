@@ -49,6 +49,23 @@ public sealed class LayoutDesignerScreenTests
     }
 
     [Fact]
+    public void A_Chart_Pane_Added_In_The_Designer_Follows_ShowLargeMetreGrid()
+    {
+        runContext.AppConfig.ShowLargeMetreGrid = false;
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(SummaryLayoutTree.CreateEmpty(), null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Memory);
+
+        Assert.False(screen.Controls.OfType<Chart>().Single().ShowGrid);
+
+        screen.Unload();
+    }
+
+    [Fact]
     public void A_Freshly_Split_Empty_Pane_Is_Selected_And_Highlighted()
     {
         LayoutDesignerScreen screen = CreateScreen();

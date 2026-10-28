@@ -31,6 +31,26 @@ public sealed class ThermalsControlTests
             .Select(invocation => (string)invocation.Arguments[0]!));
 
     [Fact]
+    public void Charts_Pick_Up_Changed_Grid_And_Y_Axis_Settings_On_The_Next_Load()
+    {
+        ThermalsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Sensor(ThermalComponent.Gpu, "111", "GPU", 40)));
+
+        Chart chart = Assert.Single(ctrl.Charts.Values);
+        Assert.Equal(runContext.AppConfig.ShowLargeMetreGrid, chart.ShowGrid);
+
+        ctrl.Unload();
+        runContext.AppConfig.ShowLargeMetreGrid = !chart.ShowGrid;
+        runContext.AppConfig.ShowYAxisScale     = false;
+        ctrl.Load();
+
+        Assert.Equal(runContext.AppConfig.ShowLargeMetreGrid, chart.ShowGrid);
+        Assert.False(chart.ShowYAxisScale);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Collapses_A_Multi_Sensor_Drive_To_A_Single_Chart()
     {
         ThermalsControl ctrl = CreateControl();

@@ -136,11 +136,12 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         
         foreach (Chart chart in coreCharts) {
             OnLoadChart(chart);
-        };
+            chart.ShowGrid = appConfig.ShowSmallMetreGrid;
+        }
         
         OnLoadChart(cpuChart);
-        cpuChart.ShowGrid = true;
-        cpuChart.ShowYAxisScale = true;
+        cpuChart.ShowGrid       = appConfig.ShowLargeMetreGrid;
+        cpuChart.ShowYAxisScale = appConfig.ShowYAxisScale;
 
         cpuMetre.MetreStyle = appConfig.MetreStyle;
         cpuMetre.Border     = true;

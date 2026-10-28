@@ -160,9 +160,9 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         chart.AutoScale                 = autoScale;
         chart.CustomYAxisScaleFormatter = yAxisScaleFormatter;
         chart.LabelSeries               = string.Empty;
-        chart.ShowYAxisScale            = true;
+        chart.ShowYAxisScale            = appConfig.ShowYAxisScale;
         chart.MetreStyle                = appConfig.MetreStyle;
-        chart.ShowGrid                  = true;
+        chart.ShowGrid                  = appConfig.ShowLargeMetreGrid;
     }
 
     protected override void OnResize()

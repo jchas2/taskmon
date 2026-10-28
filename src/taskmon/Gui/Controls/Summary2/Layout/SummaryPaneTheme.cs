@@ -14,6 +14,7 @@ public static class SummaryPaneTheme
         if (control is Chart chart) {
             CommonControl.Theme((Chart)control, appConfig.Theme);
             chart.MetreStyle     = appConfig.MetreStyle;
+            chart.ShowGrid       = appConfig.ShowLargeMetreGrid;
             chart.ShowYAxisScale = appConfig.ShowYAxisScale;
         }
         else if (control is EmptyPaneControl or CpuCoresControl) {

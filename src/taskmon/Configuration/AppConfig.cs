@@ -597,7 +597,7 @@ public sealed class AppConfig
 
     public bool ShowSmallMetreGrid
     {
-        get => uxSection?.GetBool(Constants.Keys.ShowSmallMetreGrid, true) ?? true;
+        get => uxSection?.GetBool(Constants.Keys.ShowSmallMetreGrid, false) ?? false;
         set => uxSection?.Add(Constants.Keys.ShowSmallMetreGrid, value.ToString());
     }
 

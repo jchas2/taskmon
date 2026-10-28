@@ -174,9 +174,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         chart.AutoScale                 = false;
         chart.CustomYAxisScaleFormatter = Chart.FormatYScalePercentage;
         chart.LabelSeries               = string.Empty;
-        chart.ShowYAxisScale            = true;
+        chart.ShowYAxisScale            = appConfig.ShowYAxisScale;
         chart.MetreStyle                = appConfig.MetreStyle;
-        chart.ShowGrid                  = true;
+        chart.ShowGrid                  = appConfig.ShowLargeMetreGrid;
     }
     
     protected override void OnResize()

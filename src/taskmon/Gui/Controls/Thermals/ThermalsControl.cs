@@ -83,7 +83,9 @@ public sealed class ThermalsControl : Control
     private void ConfigureChart(Chart chart)
     {
         CommonControl.Theme(chart, appConfig.Theme);
-        chart.MetreStyle = appConfig.MetreStyle;
+        chart.MetreStyle     = appConfig.MetreStyle;
+        chart.ShowGrid       = appConfig.ShowLargeMetreGrid;
+        chart.ShowYAxisScale = appConfig.ShowYAxisScale;
     }
 
     private FansControl? CreateFansControl()
@@ -203,8 +205,6 @@ public sealed class ThermalsControl : Control
         Chart chart = new(Terminal) {
             AutoScale                 = false,
             LabelSeries               = string.Empty,
-            ShowGrid                  = true,
-            ShowYAxisScale            = true,
             CustomYAxisScaleFormatter = value => $"{(int)Math.Round(value * FixedScaleCelsius)}°C",
         };
 

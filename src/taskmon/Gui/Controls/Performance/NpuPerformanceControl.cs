@@ -124,9 +124,9 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
         chart.AutoScale                 = autoScale;
         chart.CustomYAxisScaleFormatter = formatter;
         chart.LabelSeries               = string.Empty;
-        chart.ShowYAxisScale            = true;
+        chart.ShowYAxisScale            = appConfig.ShowYAxisScale;
         chart.MetreStyle                = appConfig.MetreStyle;
-        chart.ShowGrid                  = true;
+        chart.ShowGrid                  = appConfig.ShowLargeMetreGrid;
     }
 
     protected override void OnResize()

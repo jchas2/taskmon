@@ -192,6 +192,32 @@ public sealed class SummaryControl2Tests
             .Select(invocation => (string)invocation.Arguments[0]!));
 
     [Fact]
+    public void Chart_Panes_Pick_Up_A_Changed_Grid_Setting_On_The_Next_Load()
+    {
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        runContext.AppConfig.ShowLargeMetreGrid = false;
+        ctrl.Load();
+
+        Assert.NotEmpty(ctrl.Controls.OfType<Chart>());
+        Assert.All(ctrl.Controls.OfType<Chart>(), chart => Assert.False(chart.ShowGrid));
+
+        ctrl.Unload();
+        runContext.AppConfig.ShowLargeMetreGrid = true;
+        ctrl.Load();
+
+        Assert.All(ctrl.Controls.OfType<Chart>(), chart => Assert.True(chart.ShowGrid));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Constructor_With_Valid_Args_Initialises_Successfully()
     {
         SummaryControl2 ctrl = new(
