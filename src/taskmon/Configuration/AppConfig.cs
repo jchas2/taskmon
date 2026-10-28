@@ -404,7 +404,7 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowMetreNpuNumerically,     true.ToString())
             .AddIfMissing(Constants.Keys.ShowMetreSwapNumerically,    true.ToString())
             .AddIfMissing(Constants.Keys.ShowSmallMetreGrid,          false.ToString())
-            .AddIfMissing(Constants.Keys.ShowLargeMetreGrid,          true.ToString())
+            .AddIfMissing(Constants.Keys.ShowLargeMetreGrid,          false.ToString())
             .AddIfMissing(Constants.Keys.ShowYAxisScale,              true.ToString())
             .AddIfMissing(Constants.Keys.UseIrixCpuReporting,         useIrixMode.ToString());
 
@@ -543,7 +543,7 @@ public sealed class AppConfig
 
     public bool ShowLargeMetreGrid
     {
-        get => uxSection?.GetBool(Constants.Keys.ShowLargeMetreGrid, true) ?? true;
+        get => uxSection?.GetBool(Constants.Keys.ShowLargeMetreGrid, false) ?? false;
         set => uxSection?.Add(Constants.Keys.ShowLargeMetreGrid, value.ToString());
     }
 

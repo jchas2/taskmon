@@ -16,6 +16,7 @@ public sealed class Chart : Control
     private static readonly char[] BrailleChars = ['\u2800', '\u28C0', '\u28E4', '\u28F6', '\u28FF'];
     private static readonly char   BarChar      = '|';
     private static readonly char   BlockChar    = ' ';
+    private static readonly char   GridChar     = '.';
 
     private const int DefaultScaleWidth = 5;
     
@@ -256,7 +257,7 @@ public sealed class Chart : Control
                     frame.SetColour(Color.DarkGray, BackgroundColour);
 
                     if (col % 2 == 0 && ShowGrid) {
-                        ch = '.';
+                        ch = GridChar;
                     }
                     else {
                         ch = '\u2800';
