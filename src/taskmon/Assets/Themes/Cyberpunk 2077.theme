@@ -72,9 +72,6 @@ process.list.user.system=#2CF6B3
 process.list.user.root=#2CF6B3
 process.list.deltahighlight=#6272A4
 
-heatmap.size.small=#6272A4
-heatmap.size.mid=#4CAEDB
-heatmap.size.large=#37EBF3
 heatmap.state.scanning=#222222
 heatmap.state.completed=#222222
 heatmap.state.faulted=#222222

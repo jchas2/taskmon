@@ -43,9 +43,6 @@ public sealed class Theme
         Constants.Keys.FocusSelectionColour,
         Constants.Keys.HeaderBackground,
         Constants.Keys.HeaderForeground,
-        Constants.Keys.HeatmapSizeSmall,
-        Constants.Keys.HeatmapSizeMid,
-        Constants.Keys.HeatmapSizeLarge,
         Constants.Keys.HeatmapStateScanning,
         Constants.Keys.HeatmapStateCompleted,
         Constants.Keys.HeatmapStateFaulted,
@@ -256,24 +253,6 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.HeaderForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.HeaderForeground, value);
-    }
-
-    public Color HeatmapSizeLarge
-    {
-        get => GetColour(Constants.Keys.HeatmapSizeLarge, ConsolePalette.Red);
-        set => SetColour(Constants.Keys.HeatmapSizeLarge, value);
-    }
-
-    public Color HeatmapSizeMid
-    {
-        get => GetColour(Constants.Keys.HeatmapSizeMid, ConsolePalette.Yellow);
-        set => SetColour(Constants.Keys.HeatmapSizeMid, value);
-    }
-
-    public Color HeatmapSizeSmall
-    {
-        get => GetColour(Constants.Keys.HeatmapSizeSmall, ConsolePalette.Green);
-        set => SetColour(Constants.Keys.HeatmapSizeSmall, value);
     }
 
     public Color HeatmapStateCompleted

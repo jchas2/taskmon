@@ -45,9 +45,6 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.ForegroundHighlightInactive);
         Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.HeaderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.HeaderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#303030"), theme.HeatmapSizeSmall);
-        Assert.Equal(ColorTranslator.FromHtml("#313131"), theme.HeatmapSizeMid);
-        Assert.Equal(ColorTranslator.FromHtml("#323232"), theme.HeatmapSizeLarge);
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
@@ -314,9 +311,6 @@ public sealed class ThemeTests
             ForegroundHighlightInactive        = ColorTranslator.FromHtml("#222222"),
             HeaderBackground                   = ColorTranslator.FromHtml("#121d18"),
             HeaderForeground                   = ColorTranslator.FromHtml("#717f24"),
-            HeatmapSizeSmall                   = ColorTranslator.FromHtml("#303030"),
-            HeatmapSizeMid                     = ColorTranslator.FromHtml("#313131"),
-            HeatmapSizeLarge                   = ColorTranslator.FromHtml("#323232"),
             HeatmapStateScanning               = ColorTranslator.FromHtml("#333333"),
             HeatmapStateCompleted              = ColorTranslator.FromHtml("#343434"),
             HeatmapStateFaulted                = ColorTranslator.FromHtml("#353535"),
@@ -391,9 +385,6 @@ public sealed class ThemeTests
         theme.ForegroundHighlightInactive = ColorTranslator.FromHtml("#222222");
         theme.HeaderBackground            = ColorTranslator.FromHtml("#121212");
         theme.HeaderForeground            = ColorTranslator.FromHtml("#131313");
-        theme.HeatmapSizeSmall            = ColorTranslator.FromHtml("#303030");
-        theme.HeatmapSizeMid              = ColorTranslator.FromHtml("#313131");
-        theme.HeatmapSizeLarge            = ColorTranslator.FromHtml("#323232");
         theme.HeatmapStateScanning        = ColorTranslator.FromHtml("#333333");
         theme.HeatmapStateCompleted       = ColorTranslator.FromHtml("#343434");
         theme.HeatmapStateFaulted         = ColorTranslator.FromHtml("#353535");
@@ -456,9 +447,6 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.ForegroundHighlightInactive);
         Assert.Equal(ColorTranslator.FromHtml("#121212"), theme.HeaderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#131313"), theme.HeaderForeground);
-        Assert.Equal(ColorTranslator.FromHtml("#303030"), theme.HeatmapSizeSmall);
-        Assert.Equal(ColorTranslator.FromHtml("#313131"), theme.HeatmapSizeMid);
-        Assert.Equal(ColorTranslator.FromHtml("#323232"), theme.HeatmapSizeLarge);
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
@@ -576,9 +564,6 @@ process.list.user.system=#73fa91
 process.list.user.root=#73fa91
 process.list.deltahighlight=#bda25c
 
-heatmap.size.small=#303030
-heatmap.size.mid=#313131
-heatmap.size.large=#323232
 heatmap.state.scanning=#333333
 heatmap.state.completed=#343434
 heatmap.state.faulted=#353535
@@ -594,5 +579,5 @@ command.background=#121d18
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(62, CanaryTestHelper.GetPropertyCount<Theme>());
 }

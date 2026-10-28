@@ -1,3 +1,6 @@
+using System.Drawing;
+using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -146,23 +149,6 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Draws_The_Root_Path_And_Progress_In_The_Heat_Map_Header()
-    {
-        DiskSpaceControl ctrl = CreateControl();
-
-        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
-        ctrl.Draw();
-
-        string output = CapturedOutput();
-
-        Assert.Contains(Root, output);
-        Assert.Contains("Scanning", output);
-
-        ctrl.Unload();
-        MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
-    }
-
-    [Fact]
     public void Draws_The_Scan_Hint_In_The_Heat_Maps_Border_Before_Any_Scan_Has_Started()
     {
         DiskSpaceControl ctrl = CreateControl();
@@ -211,6 +197,22 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.Escape, false, false, false), ref handled);
 
         Assert.True(handled);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Heat_Map_Has_No_Disk_Space_Title_Line()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.DoesNotContain("DISK SPACE", CapturedOutput());
+
+        ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
+        ctrl.Draw();
+
+        Assert.DoesNotContain("DISK SPACE", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -315,6 +317,14 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Unload();
     }
 
+    private static DiskSpaceSpecs ScanSpecs(DiskSpaceScanState state, string? errorMessage = null)
+    {
+        DiskSpaceAccumulator accumulator = new(Root);
+        accumulator.AddFile(UnderRoot("AppData"), UnderRoot("AppData", "big.bin"), 1_000_000);
+        accumulator.AddFile(UnderRoot("Documents"), UnderRoot("Documents", "small.txt"), 1_000);
+        return accumulator.Snapshot(state, elapsedMilliseconds: 1500, errorMessage);
+    }
+
     [Fact]
     public void Shows_Full_Progress_Once_The_Scan_Completes()
     {
@@ -391,6 +401,90 @@ public sealed class DiskSpaceControlTests : IDisposable
 
     private static SystemSnapshot SnapshotWith(DiskSpaceSpecs specs) =>
         new() { DiskSpace = new DiskSpaceInfo { Specs = specs } };
+
+    [Fact]
+    public void Status_Row_Is_Empty_Before_Any_Scan_Has_Started()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        foreach (string state in new[] { "Scanning", "Cancelling", "Completed", "Cancelled", "Failed" }) {
+            Assert.DoesNotContain(state, output);
+        }
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Status_Row_Shows_The_Error_When_A_Faulted_Scan_Still_Has_Folders()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(ScanSpecs(DiskSpaceScanState.Faulted, "Access denied")));
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+
+        Assert.Contains("Failed: Access denied", output);
+        Assert.Contains("AppData", output);
+
+        ctrl.Unload();
+    }
+
+    [Theory]
+    [InlineData(DiskSpaceScanState.Scanning,   "Scanning… 2 files / {0}")]
+    [InlineData(DiskSpaceScanState.Cancelling, "Cancelling… 2 files / {0}")]
+    [InlineData(DiskSpaceScanState.Completed,  "Completed - 2 files / {0} in 1.5s")]
+    [InlineData(DiskSpaceScanState.Cancelled,  "Cancelled - 2 files / {0}")]
+    public void Status_Row_Shows_The_Scan_State_Files_And_Bytes(DiskSpaceScanState state, string expected)
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(ScanSpecs(state)));
+        ctrl.Draw();
+
+        Assert.Contains(string.Format(expected, 1_001_000L.ToFormattedByteSize()), CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Theory]
+    [InlineData(DiskSpaceScanState.Scanning,   "Scanning… ")]
+    [InlineData(DiskSpaceScanState.Cancelling, "Cancelling… ")]
+    [InlineData(DiskSpaceScanState.Completed,  "Completed - ")]
+    [InlineData(DiskSpaceScanState.Cancelled,  "Cancelled - ")]
+    [InlineData(DiskSpaceScanState.Faulted,    "Failed: ")]
+    public void Status_Row_Uses_The_State_Colour(DiskSpaceScanState state, string prefix)
+    {
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(ScanSpecs(state, "Access denied")));
+        ctrl.Draw();
+
+        Color expected = state switch {
+            DiskSpaceScanState.Scanning or DiskSpaceScanState.Cancelling => runContext.AppConfig.Theme.HeatmapStateScanning,
+            DiskSpaceScanState.Completed                                 => runContext.AppConfig.Theme.HeatmapStateCompleted,
+            DiskSpaceScanState.Faulted                                   => runContext.AppConfig.Theme.HeatmapStateFaulted,
+                                                                       _ => runContext.AppConfig.Theme.Foreground
+        };
+
+        List<IInvocation> invocations = [.. runContextHelper.terminal.Invocations];
+        int statusWrite = invocations.FindIndex(invocation => invocation.Method.Name == "Write"
+            && invocation.Arguments[0] is string text
+            && text.StartsWith(prefix, StringComparison.Ordinal));
+
+        Assert.True(statusWrite >= 0);
+
+        IInvocation colourSet = invocations
+            .Take(statusWrite)
+            .Last(invocation => invocation.Method.Name == "set_ForegroundColor");
+
+        Assert.Equal(expected.ToArgb(), ((Color)colourSet.Arguments[0]).ToArgb());
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void S_Opens_A_Drive_Selection_Prompt_Listing_The_System_Drive()

@@ -121,9 +121,6 @@ public sealed class Constants
         public const string ColUserRoot           = "process.list.user.root";
         public const string DeltaHighlightColour  = "process.list.deltahighlight";
 
-        public const string HeatmapSizeSmall      = "heatmap.size.small";
-        public const string HeatmapSizeMid        = "heatmap.size.mid";
-        public const string HeatmapSizeLarge      = "heatmap.size.large";
         public const string HeatmapStateScanning  = "heatmap.state.scanning";
         public const string HeatmapStateCompleted = "heatmap.state.completed";
         public const string HeatmapStateFaulted   = "heatmap.state.faulted";

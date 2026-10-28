@@ -1,3 +1,4 @@
+using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
@@ -14,9 +15,9 @@ namespace Task.Monitor.Gui.Controls.DiskSpace;
 public sealed partial class DiskSpaceControl : Control
 {
     private const int FileColumnMinWidth        = 16;
-    private const int FileCountRowHeight        = 1;
-    private const int SizeColumnWidth           = 12;
     private const int PreferredVisibleDriveRows = 5;
+    private const int SizeColumnWidth           = 12;
+    private const int StatusRowHeight           = 1;
 
     private readonly ServiceController       serviceController;
     private readonly AppConfig               appConfig;
@@ -31,9 +32,9 @@ public sealed partial class DiskSpaceControl : Control
     
     private string lastFileListSignature = string.Empty;
     
-    private int fileCountRowX;
-    private int fileCountRowY;
-    private int fileCountRowWidth;    
+    private int statusRowX;
+    private int statusRowY;
+    private int statusRowWidth;
 
     public DiskSpaceControl(
         ServiceController serviceController,
@@ -87,23 +88,29 @@ public sealed partial class DiskSpaceControl : Control
         Controls.Add(filesView);
     }
 
-    private void DrawFileCountRow(DiskSpaceSpecs? specs)
-    {
-        string text = specs?.State switch {
-            null                              => string.Empty,
-            DiskSpaceScanState.Idle           => string.Empty,
-            DiskSpaceScanState.Scanning or 
-                DiskSpaceScanState.Cancelling => $"Processing {specs.FilesScanned:N0} files",
-                                            _ => $"Processed {specs.FilesScanned:N0} files"
-        };
+    private static string BuildStatusText(DiskSpaceSpecs? specs) => specs?.State switch {
+        DiskSpaceScanState.Scanning   => $"Scanning… {DescribeScanned(specs)}",
+        DiskSpaceScanState.Cancelling => $"Cancelling… {DescribeScanned(specs)}",
+        DiskSpaceScanState.Completed  => $"Completed - {DescribeScanned(specs)} in {specs.ElapsedMilliseconds / 1000.0:0.0}s",
+        DiskSpaceScanState.Cancelled  => $"Cancelled - {DescribeScanned(specs)}",
+        DiskSpaceScanState.Faulted    => $"Failed: {specs.ErrorMessage ?? "Scan failed."}",
+                                    _ => string.Empty
+    };
 
-        int charsToTake = text.TruncateToTerminalWidth(fileCountRowWidth, out int actualWidth);
+    private static string DescribeScanned(DiskSpaceSpecs specs) =>
+        $"{specs.FilesScanned:N0} files / {specs.TotalBytesScanned.ToFormattedByteSize()}";
+
+    private void DrawStatusRow(DiskSpaceSpecs? specs)
+    {
+        string text = BuildStatusText(specs);
+
+        int charsToTake = text.TruncateToTerminalWidth(statusRowWidth, out int actualWidth);
         
-        string padded   = text[..charsToTake] + new string(' ', fileCountRowWidth - actualWidth);
+        string padded   = text[..charsToTake] + new string(' ', statusRowWidth - actualWidth);
         
-        Terminal.SetCursorPosition(fileCountRowX, fileCountRowY);
+        Terminal.SetCursorPosition(statusRowX, statusRowY);
         Terminal.BackgroundColor = BackgroundColour;
-        Terminal.ForegroundColor = ForegroundColour;
+        Terminal.ForegroundColor = StatusColour(specs?.State);
         Terminal.Write(padded);
     }
 
@@ -130,7 +137,7 @@ public sealed partial class DiskSpaceControl : Control
 
         heatMap.Draw();
         UpdateProgressMetre(diskSpace?.Specs);
-        DrawFileCountRow(diskSpace?.Specs);
+        DrawStatusRow(diskSpace?.Specs);
         filesView.Draw();
 
         if (driveInputBox.Visible) {
@@ -227,7 +234,7 @@ public sealed partial class DiskSpaceControl : Control
     protected override void OnResize()
     {
         int progressMetreHeight = progressMetre.RequiredHeight;
-        int remainingHeight     = Math.Max(0, Height - progressMetreHeight - FileCountRowHeight);
+        int remainingHeight     = Math.Max(0, Height - progressMetreHeight - StatusRowHeight);
         int heatMapHeight       = Math.Max(3, remainingHeight / 2);
         int filesViewHeight     = Math.Max(1, remainingHeight - heatMapHeight);
 
@@ -243,12 +250,12 @@ public sealed partial class DiskSpaceControl : Control
         progressMetre.Height = progressMetreHeight;
         progressMetre.Resize();
         
-        fileCountRowX     = X;
-        fileCountRowY     = Y + heatMapHeight + progressMetreHeight;
-        fileCountRowWidth = Width;
+        statusRowX     = X;
+        statusRowY     = Y + heatMapHeight + progressMetreHeight;
+        statusRowWidth = Width;
 
         filesView.X      = X;
-        filesView.Y      = fileCountRowY + FileCountRowHeight;
+        filesView.Y      = statusRowY + StatusRowHeight;
         filesView.Width  = Width;
         filesView.Height = filesViewHeight;
 
@@ -348,6 +355,14 @@ public sealed partial class DiskSpaceControl : Control
         scanPathInputBox.SetText(defaultRoot);
         scanPathInputBox.ShowInputBox();
     }
+
+    private Color StatusColour(DiskSpaceScanState? state) => state switch {
+        DiskSpaceScanState.Scanning or 
+            DiskSpaceScanState.Cancelling => appConfig.Theme.HeatmapStateScanning,
+        DiskSpaceScanState.Completed      => appConfig.Theme.HeatmapStateCompleted,
+        DiskSpaceScanState.Faulted        => appConfig.Theme.HeatmapStateFaulted,
+                                        _ => ForegroundColour
+    };
 
     private void TryCancelScan()
     {

@@ -9,6 +9,18 @@ public sealed class DiskSpaceHeatMapControlTests
 {
     private readonly RunContext runContext = new RunContextHelper().GetRunContext();
 
+    [Fact]
+    public void A_Three_Row_Heat_Map_Draws_Its_Cells_On_The_Only_Inner_Row()
+    {
+        DiskSpaceHeatMapControl ctrl = CreateControl(40, 3);
+        ctrl.Sample(Specs(("Windows", 40_000), ("Users", 30_000)));
+        ctrl.Draw();
+
+        Assert.Equal(2, ctrl.HeatColoursForTests.Count);
+
+        ctrl.Unload();
+    }
+
     private static TreemapCell Cell(string id, int width, int height) =>
         new() { Id = id, Bounds = new Rectangle(0, 0, width, height) };
 
@@ -25,7 +37,7 @@ public sealed class DiskSpaceHeatMapControlTests
             ("tiny0", 1L), ("tiny1", 1L), ("tiny2", 1L)
         ];
 
-        DiskSpaceHeatMapControl ctrl = CreateControl(40, 12);
+        DiskSpaceHeatMapControl ctrl = CreateControl(40, 11);
         ctrl.Sample(Specs(folders));
         ctrl.Draw();
 

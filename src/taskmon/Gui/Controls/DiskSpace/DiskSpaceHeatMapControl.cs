@@ -39,15 +39,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         return Lerp(BackgroundColour, targetColour, t);
     }
 
-    private static string DescribeState(DiskSpaceSpecs specs) => specs.State switch {
-        DiskSpaceScanState.Scanning   => $"Scanning… {specs.FilesScanned:N0} files / {specs.TotalBytesScanned.ToFormattedByteSize()}",
-        DiskSpaceScanState.Cancelling => "Cancelling…",
-        DiskSpaceScanState.Completed  => $"Completed - {specs.TotalBytesScanned.ToFormattedByteSize()} in {specs.ElapsedMilliseconds / 1000.0:0.0}s",
-        DiskSpaceScanState.Cancelled  => $"Cancelled - {specs.TotalBytesScanned.ToFormattedByteSize()} scanned",
-        DiskSpaceScanState.Faulted    => $"Failed: {specs.ErrorMessage}",
-                                    _ => string.Empty
-    };
-
     private void DrawCell(
         TreemapCell         cell, 
         DiskSpaceFolderNode node, 
@@ -93,27 +84,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         }
     }
 
-    private void DrawHeader(int left, int top, int width)
-    {
-        Color stateColour = specs?.State switch {
-            DiskSpaceScanState.Scanning  => appConfig.Theme.HeatmapStateScanning,
-            DiskSpaceScanState.Completed => appConfig.Theme.HeatmapStateCompleted,
-            DiskSpaceScanState.Faulted   => appConfig.Theme.HeatmapStateFaulted,
-                                       _ => ForegroundColour
-        };
-
-        string text = specs is null or { State: DiskSpaceScanState.Idle }
-            ? "DISK SPACE"
-            : $"DISK SPACE  {specs.RootPath}  {DescribeState(specs)}";
-
-        WriteLine(
-            left, 
-            top, 
-            width, 
-            text, 
-            stateColour);
-    }
-
     private void DrawPlaceholder(
         int left, 
         int top, 
@@ -126,19 +96,6 @@ public sealed class DiskSpaceHeatMapControl : Control
             width, 
             height, 
             BackgroundColour);
-
-        if (specs?.State != DiskSpaceScanState.Faulted) {
-            return;
-        }
-
-        string message = specs.ErrorMessage ?? "Scan failed.";
-        
-        WriteLine(
-            left, 
-            top, 
-            width, 
-            message, 
-            ForegroundColour);
     }
 
     private void DrawTreemapBorder(int top, int height)
@@ -217,21 +174,12 @@ public sealed class DiskSpaceHeatMapControl : Control
             return;
         }
 
-        DrawHeader(innerLeft, innerTop, innerWidth);
-
-        int cellsTop    = innerTop + 1;
-        int cellsHeight = Math.Max(0, innerHeight - 1);
-
-        if (cellsHeight <= 0) {
-            return;
-        }
-
         if (specs?.RootNode is not { Children.Count: > 0 } root) {
             DrawPlaceholder(
                 innerLeft, 
-                cellsTop, 
+                innerTop, 
                 innerWidth, 
-                cellsHeight);
+                innerHeight);
             
             return;
         }
@@ -246,18 +194,18 @@ public sealed class DiskSpaceHeatMapControl : Control
         if (items.Length == 0) {
             DrawPlaceholder(
                 innerLeft, 
-                cellsTop, 
+                innerTop, 
                 innerWidth, 
-                cellsHeight);
+                innerHeight);
             
             return;
         }
 
         Rectangle bounds = new(
             innerLeft, 
-            cellsTop, 
+            innerTop, 
             innerWidth, 
-            cellsHeight);
+            innerHeight);
         
         IReadOnlyList<TreemapCell> cells = stableLayout.Layout(items, bounds);
         Dictionary<string, DiskSpaceFolderNode> nodesById = root.Children.ToDictionary(child => child.Path);
@@ -372,27 +320,4 @@ public sealed class DiskSpaceHeatMapControl : Control
         
         return lines;
     }    
-
-    private void WriteLine(
-        int    x, 
-        int    y, 
-        int    width, 
-        string text, 
-        Color  foreground)
-    {
-        if (width <= 0) {
-            return;
-        }
-
-        int charsToTake = text.TruncateToTerminalWidth(width, out int actualWidth);
-        
-        string padded = text[..charsToTake] + new string(' ', width - actualWidth);
-
-        frame.Clear();
-        frame.MoveTo(x, y);
-        frame.SetColour(foreground, BackgroundColour);
-        frame.Append(padded);
-        frame.ResetColour();
-        Terminal.Write(frame.AsSpan());
-    }
 }

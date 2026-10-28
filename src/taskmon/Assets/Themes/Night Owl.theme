@@ -72,9 +72,6 @@ process.list.user.system=#d9f5dd              ; tokenColors: punctuation.definit
 process.list.user.root=#d9f5dd                ; tokenColors: punctuation.definition.parameters
 process.list.deltahighlight=#ffcb8b      ; tokencolors: meta
 
-heatmap.size.small=#637777        ; tokenColors: comment
-heatmap.size.mid=#c792ea        ; tokenColors: keyword
-heatmap.size.large=#F78C6C       ; tokenColors: variable
 heatmap.state.scanning=#222222
 heatmap.state.completed=#222222
 heatmap.state.faulted=#222222
