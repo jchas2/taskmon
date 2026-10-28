@@ -6,8 +6,9 @@ namespace Task.Monitor.System.Controls.MessageBox;
 
 public sealed class MessageBox : Control
 {
+    public const int PreferredHeight = 11;
+
     private const int MinWidth     = 40;
-    private const int MinHeight    = 11;
     private const int MaxTextLines = 3;
     private const int ButtonWidth  = 10;
     private const int ButtonHeight = 1;
@@ -72,7 +73,7 @@ public sealed class MessageBox : Control
     
     protected override void OnDraw()
     {
-        if (Width < MinWidth || Height < MinHeight) {
+        if (Width < MinWidth || Height < PreferredHeight) {
             return;
         }
     

@@ -5,6 +5,7 @@ using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Controls.TextInputDialog;
+using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
 
 namespace Task.Monitor.Gui.Controls;
@@ -54,6 +55,15 @@ public static class CommonControl
             columnHeader.BackgroundColour = theme.HeaderBackground;
             columnHeader.ForegroundColour = theme.HeaderForeground;
         }
+    }
+
+    public static void Theme(MessageBoxControl control, Theme theme)
+    {
+        control.DialogBackgroundColour       = theme.HeaderBackground;
+        control.DialogBorderColour           = theme.HeaderForeground;
+        control.DialogForegroundColour       = theme.HeaderForeground;
+        control.DialogButtonBackgroundColour = theme.BackgroundHighlight;
+        control.DialogButtonForegroundColour = theme.ForegroundHighlight;
     }
 
     public static void Theme(MetreControl control, Theme theme)

@@ -17,14 +17,13 @@ public partial class Screen : Control
     Action?                         onMessageBoxResult;
 
     private const int MessageBoxWidth  = 48;
-    private const int MessageBoxHeight = 11;
     private const int InputBoxWidth    = 48;
 
     public Screen(ISystemTerminal systemTerminal) : base(systemTerminal)
     {
         messageBox = new MessageBox(systemTerminal) {
             Width   = MessageBoxWidth,
-            Height  = MessageBoxHeight,
+            Height  = MessageBox.PreferredHeight,
             Visible = false
         };
 

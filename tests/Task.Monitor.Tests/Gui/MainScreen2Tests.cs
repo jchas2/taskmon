@@ -1,3 +1,4 @@
+using System.Reflection;
 using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
@@ -7,7 +8,11 @@ using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
+using ServiceController = Task.Monitor.System.Services.ServiceController;
+using SystemSnapshot = Task.Monitor.System.Services.SystemSnapshot;
+using SystemSnapshotEventArgs = Task.Monitor.System.Services.SystemSnapshotEventArgs;
 
 namespace Task.Monitor.Tests.Gui;
 
@@ -125,6 +130,15 @@ public sealed class MainScreen2Tests : IDisposable
 
     private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
 
+    private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
+    {
+        FieldInfo? field = typeof(ServiceController).GetField(
+            "SystemSnapshotUpdated", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(runContext.ServiceController);
+        handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
+    }
+
     // Regression test: back from Setup, MainScreen2 reloads and re-themes its controls, which used
     // to overwrite the focus colour on the control that still held focus - so nothing looked
     // focused until the app was restarted.
@@ -201,4 +215,40 @@ public sealed class MainScreen2Tests : IDisposable
     // classes, running in parallel, read too.
     private static bool ShowsFocusBorder(Control control) =>
         control.DisplayBorderColour.ToArgb() == Control.FocusSelectionColour.ToArgb();
+
+    [Fact]
+    public void Tab_And_F2_Reach_The_End_Task_Confirmation_Instead_Of_The_Screen()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        ProcessControl   processControl   = processesControl.ProcessControl;
+        List<int>        ended            = [];
+        bool             handled          = false;
+
+        processControl.EndTask = ended.Add;
+        mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Processes = new ProcessInfo {
+                Metrics = new ProcessMetrics {
+                    Entries = [new ProcessEntry { Pid = 1111, ProcessName = "proc1111", CpuTimePercent = 1.0 }]
+                }
+            }
+        });
+
+        mainScreen.KeyPressed(new ConsoleKeyInfo('k', ConsoleKey.K, false, false, false), ref handled);
+        Assert.True(processControl.IsEndTaskDialogVisible);
+
+        runContextHelper.terminal.Invocations.Clear();
+        mainScreen.KeyPressed(Key(ConsoleKey.F2), ref handled);
+        mainScreen.KeyPressed(new ConsoleKeyInfo('\t', ConsoleKey.Tab, false, false, false), ref handled);
+
+        Assert.DoesNotContain("TASK MONITOR SETUP", CapturedOutput());
+        Assert.True(processControl.IsEndTaskDialogVisible);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
+
+        Assert.False(processControl.IsEndTaskDialogVisible);
+        Assert.Empty(ended);
+    }
 }

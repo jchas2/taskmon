@@ -117,7 +117,7 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
         helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter the list in the current view",      "x:", "Toggle multiple process selection" }));
         helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
-        helpView.Items.Add(new ListViewItem(new[] { "F6:", "Kill process/selected processes",         "F5:", "Show process info" }));
+        helpView.Items.Add(new ListViewItem(new[] { "k:", "End task (checked or selected)",           "r F5:", "Refresh the current list" }));
         helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));
         
         for (int i = 0; i < helpView.Items.Count; i++) {
@@ -131,12 +131,11 @@ public class HelpScreen : Screen
             @$"Function Keys:
 {"F1:".ToColour(theme.RangeLowBackground, bg)}{"  Show this help screen.".ToColour(fg, bg)}
 {"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
-{"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Show detailed process info, including threads, cpu time, loaded modules and handles (OS specific).".ToColour(fg, bg)}
-{"F6:".ToColour(theme.RangeLowBackground, bg)}{"  Terminate the selected task in the process list. If checkboxes are enabled in F2 Setup, all checked processes will be terminated.".ToColour(fg, bg)}
-{"F7:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between themes.".ToColour(fg, bg)}
-{"F8:".ToColour(theme.RangeLowBackground, bg)}{"  Cycle between layouts.".ToColour(fg, bg)}
-{"F9:".ToColour(theme.RangeLowBackground, bg)}{"  Show information about this app and the system.".ToColour(fg, bg)}
-{"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}");
+{"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Refresh the Startup, Apps, Services or Drivers list (same as r).".ToColour(fg, bg)}
+{"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}
+
+End Task:
+{"k:".ToColour(theme.RangeLowBackground, bg)}{"   End the selected process, or every checked process when multiple selection (x) is on. Child processes are also ended.".ToColour(fg, bg)}");
 
         base.OnLoad();
     }

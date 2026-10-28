@@ -6,6 +6,7 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
+using MessageBox = Task.Monitor.System.Controls.MessageBox.MessageBox;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 
@@ -18,14 +19,15 @@ public sealed partial class ProcessControl : Control
     private int lastKnownProcessId = InvalidSelectedItemIndex;
     
     // TODO: Refactor into common for sharing across all sortable, scrollable lists.
-    public const string DefaultFooterText  = "s Sort     f Filter     ↑ ↓ PgUp PgDn Scroll";
-    public const string FilteredFooterText = "s Sort     f Filter     Esc Clear Filter     ↑ ↓ PgUp PgDn Scroll";
+    public const string DefaultFooterText  = "s Sort     f Filter     k End Task     ↑ ↓ PgUp PgDn Scroll";
+    public const string FilteredFooterText = "s Sort     f Filter     Esc Clear Filter     k End Task     ↑ ↓ PgUp PgDn Scroll";
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          sortView;
     private readonly ListView          processView;
     private readonly ListFilter        filter;
+    private readonly MessageBox        endTaskDialog;
     private readonly Lock              allProcessesLock;
 
     private List<ProcessEntry> allProcesses = [];
@@ -110,10 +112,16 @@ public sealed partial class ProcessControl : Control
 
         filter = new ListFilter(this, terminal, "Filter Processes");
 
+        endTaskDialog = new MessageBox(terminal) {
+            Visible = false,
+            Height  = MessageBox.PreferredHeight
+        };
+
         Controls
             .Add(sortView)
             .Add(processView)
-            .Add(filter.Dialog);
+            .Add(filter.Dialog)
+            .Add(endTaskDialog);
     }
 
     private string BuildHeaderHighlightText()
@@ -191,7 +199,7 @@ public sealed partial class ProcessControl : Control
 
     public bool IsFiltered => filter.IsActive;
 
-    public bool IsModalActive => IsSortSelectionActive || IsFilterDialogVisible;
+    public bool IsModalActive => IsSortSelectionActive || IsFilterDialogVisible || IsEndTaskDialogVisible;
 
     public bool IsSortSelectionActive => mode == ControlMode.SortSelection;
 
@@ -218,6 +226,10 @@ public sealed partial class ProcessControl : Control
 
         filter.Draw();
 
+        if (endTaskDialog.Visible) {
+            endTaskDialog.Draw();
+        }
+
         RaiseSelectedProcessIdChangedIfNeeded();
     }
 
@@ -225,6 +237,11 @@ public sealed partial class ProcessControl : Control
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)    
     {
+        if (endTaskDialog.Visible) {
+            OnEndTaskDialogKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         if (keyInfo.Key == ConsoleKey.Escape && mode == ControlMode.SortSelection && !filter.IsDialogVisible) {
             SetMode(ControlMode.None);
             handled = true;
@@ -256,6 +273,10 @@ public sealed partial class ProcessControl : Control
                 return;
             case ConsoleKey.G:
                 SortSelectionChanged(Columns.Gpu);
+                handled = true;
+                return;
+            case ConsoleKey.K:
+                RequestEndTask();
                 handled = true;
                 return;
             case ConsoleKey.I:
@@ -297,6 +318,7 @@ public sealed partial class ProcessControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(sortView, appConfig.Theme);
         CommonControl.Theme(processView, appConfig.Theme);
+        CommonControl.Theme(endTaskDialog, appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
         
         UpdateColumnHeaderSort(decorate: true);
@@ -405,6 +427,7 @@ public sealed partial class ProcessControl : Control
         processView.ItemClicked                 -= ProcessViewOnItemClicked;
 
         filter.Close();
+        CloseEndTaskDialog();
 
         base.OnUnload();
     }

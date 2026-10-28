@@ -624,7 +624,7 @@ control.foreground=#abcdef
         Assert.True(appConfig.ShowMetreSwapNumerically);
         Assert.True(appConfig.ShowMetreNetworkNumerically);
         Assert.True(appConfig.ShowYAxisScale);
-        Assert.True(appConfig.ShowLargeMetreGrid);
+        Assert.False(appConfig.ShowLargeMetreGrid);
         Assert.False(appConfig.ShowSmallMetreGrid);
 
         if (!string.IsNullOrEmpty(iniFileData)) {

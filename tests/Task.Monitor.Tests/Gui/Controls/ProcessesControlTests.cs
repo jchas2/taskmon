@@ -160,6 +160,8 @@ public sealed class ProcessesControlTests : IDisposable
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
     }
 
+    private static ConsoleKeyInfo EndTaskKey => new('k', ConsoleKey.K, false, false, false);
+
     [Fact]
     public void Enter_In_The_Filter_Dialog_Applies_The_Filter()
     {
@@ -510,6 +512,28 @@ public sealed class ProcessesControlTests : IDisposable
 
         Assert.True(handled);
         Assert.True(ctrl.ProcessInfoControl.HasFocus);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Right_Arrow_With_The_Confirmation_Open_Stays_In_The_Dialog()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        List<int> ended = [];
+        ctrl.ProcessControl.EndTask = ended.Add;
+
+        Press(ctrl, EndTaskKey);
+        bool handled = Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow));
+
+        Assert.True(handled);
+        Assert.True(ctrl.ProcessControl.IsEndTaskDialogVisible);
+        Assert.False(ctrl.ProcessInfoControl.HasFocus);
+
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
+
+        Assert.Empty(ended);
 
         ctrl.Unload();
     }
