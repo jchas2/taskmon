@@ -20,6 +20,9 @@ public sealed partial class SystemInfoControl : Control
         Cpu, 
         Memory, 
         Gpu, 
+#if __APPLE__
+        Npu,
+#endif
         Disk, 
         Network
     }
@@ -102,6 +105,8 @@ public sealed partial class SystemInfoControl : Control
             $"{s.Cpu?.Specs.CpuName ?? "-"}|" +
             $"{s.Memory?.Specs.Devices.Count ?? -1}|" +
             $"{s.Gpu?.Specs.Devices.Count ?? -1}|" +
+            $"{s.Npu?.Specs.Devices.Count ?? -1}|" +
+            $"{s.Soc is not null}|" +
             $"{s.Disk?.Specs.Devices.Count ?? -1}|" +
             $"{volumeCount}|" +
             $"{unattachedCount}|" +
@@ -181,6 +186,9 @@ public sealed partial class SystemInfoControl : Control
             new MenuListViewItem(systemInfoView, "CPU")     { LoadItems = () => SelectSection(Section.Cpu)     },
             new MenuListViewItem(systemInfoView, "MEMORY")  { LoadItems = () => SelectSection(Section.Memory)  },
             new MenuListViewItem(systemInfoView, "GPU")     { LoadItems = () => SelectSection(Section.Gpu)     },
+#if __APPLE__
+            new MenuListViewItem(systemInfoView, "NPU")     { LoadItems = () => SelectSection(Section.Npu)     },
+#endif
             new MenuListViewItem(systemInfoView, "DISK")    { LoadItems = () => SelectSection(Section.Disk)    },
             new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
         };

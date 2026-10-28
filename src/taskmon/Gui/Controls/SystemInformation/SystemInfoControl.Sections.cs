@@ -9,12 +9,18 @@ using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+#if __APPLE__
+using Task.Monitor.System.Services.Npu;
+#endif
 
 namespace Task.Monitor.Gui.Controls.SystemInformation;
 
 public sealed partial class SystemInfoControl
 {
-    private const string NotAvailable = "N/A";
+#if __APPLE__
+    private const string NoNeuralEngineText = "No Neural Engine found";
+#endif
+    private const string NotAvailable       = "N/A";
 
     private void AddCpuSection(ListView target, SystemSnapshot s)
     {
@@ -87,18 +93,25 @@ public sealed partial class SystemInfoControl
         AddRow(target, "Installed Adapters:",     devices.Count.ToString());
         AddRow(target, "Total Dedicated Memory:", gpu.Specs.TotalGpuMemory.ToFormattedByteSize());
 
+#if __APPLE__
+        string cores = gpu.Specs.GpuCores > 0 ? gpu.Specs.GpuCores.ToString() : NotAvailable;
+#endif
+
         foreach (GpuDevice device in devices) {
             AddHeaderRow(target, $"GPU {device.Index}  {OrNotAvailable(device.Description)}", indent: 2);
 
-            AddRow(target, "Vendor:",                  OrNotAvailable(device.Vendor), indent: 4);
-            AddRow(target, "Description:",             OrNotAvailable(device.Description), indent: 4);
-            AddRow(target, "Adapter Type:",            OrNotAvailable(device.AdapterType), indent: 4);
-            AddRow(target, "Dedicated Video Memory:",  device.DedicatedVideoMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Dedicated System Memory:", device.DedicatedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Shared System Memory:",    device.SharedSystemMemory.ToFormattedByteSize(), indent: 4);
-            AddRow(target, "Vendor / Device ID:",      $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}", indent: 4);
-            AddRow(target, "Driver Version:",          OrNotAvailable(device.DriverVersion), indent: 4);
-            AddRow(target, "Driver Date:",             OrNotAvailable(device.DriverDate), indent: 4);
+            AddRow(target, "Vendor:",                  OrNotAvailable(device.Vendor),                       indent: 4);
+            AddRow(target, "Description:",             OrNotAvailable(device.Description),                  indent: 4);
+            AddRow(target, "Adapter Type:",            OrNotAvailable(device.AdapterType),                  indent: 4);
+#if __APPLE__
+            AddRow(target, "Cores:",                   cores,                                               indent: 4);
+#endif
+            AddRow(target, "Dedicated Video Memory:",  device.DedicatedVideoMemory.ToFormattedByteSize(),   indent: 4);
+            AddRow(target, "Dedicated System Memory:", device.DedicatedSystemMemory.ToFormattedByteSize(),  indent: 4);
+            AddRow(target, "Shared System Memory:",    device.SharedSystemMemory.ToFormattedByteSize(),     indent: 4);
+            AddRow(target, "Vendor / Device ID:",      $"0x{device.VendorId:X4} / 0x{device.DeviceId:X4}",  indent: 4);
+            AddRow(target, "Driver Version:",          OrNotAvailable(device.DriverVersion),                indent: 4);
+            AddRow(target, "Driver Date:",             OrNotAvailable(device.DriverDate),                   indent: 4);
         }
     }
 
@@ -163,6 +176,30 @@ public sealed partial class SystemInfoControl
         }
     }
 
+#if __APPLE__
+    private void AddNpuSection(ListView target, SystemSnapshot s)
+    {
+        if (s.Npu is not { } npu) {
+            AddRow(target, string.Empty, s.Soc is null ? GatheringText : NoNeuralEngineText);
+            return;
+        }
+
+        List<NpuDevice> devices = npu.Specs.Devices;
+        AddRow(target, "Neural Engines:", devices.Count.ToString());
+
+        foreach (NpuDevice device in devices) {
+            AddHeaderRow(target, device.ToDisplayName(), indent: 2);
+
+            AddRow(target, "Description:",  OrNotAvailable(device.Description),   indent: 4);
+            AddRow(target, "Vendor:",       OrNotAvailable(device.Vendor),        indent: 4);
+            AddRow(target, "Chip:",         OrNotAvailable(s.Cpu?.Specs.CpuName), indent: 4);
+            AddRow(target, "Cores:",        device.Cores.ToString(),              indent: 4);
+            AddRow(target, "Architecture:", OrNotAvailable(device.Architecture),  indent: 4);
+            AddRow(target, "Version:",      OrNotAvailable(device.Version),       indent: 4);
+        }
+    }
+#endif
+
     private void AddRow(
         ListView target, 
         string   label, 
@@ -226,6 +263,9 @@ public sealed partial class SystemInfoControl
             case Section.Cpu:     AddCpuSection(systemInfoView, s);     break;
             case Section.Memory:  AddMemorySection(systemInfoView, s);  break;
             case Section.Gpu:     AddGpuSection(systemInfoView, s);     break;
+#if __APPLE__
+            case Section.Npu:     AddNpuSection(systemInfoView, s);     break;
+#endif
             case Section.Disk:    AddDiskSection(systemInfoView, s);    break;
             case Section.Network: AddNetworkSection(systemInfoView, s); break;
         }

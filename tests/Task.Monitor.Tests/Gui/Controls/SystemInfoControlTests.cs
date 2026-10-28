@@ -11,6 +11,10 @@ using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
+using Task.Monitor.System.Services.Npu;
+#if __APPLE__
+using Task.Monitor.System.Services.Soc;
+#endif
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
@@ -23,8 +27,18 @@ public sealed class SystemInfoControlTests
     private const int Cpu = 0;
     private const int Memory = 1;
     private const int Gpu = 2;
+#if __APPLE__
+    private const int Npu = 3;
+    private const int Disk = 4;
+    private const int Network = 5;
+
+    private static readonly int[] AllSections = [Cpu, Memory, Gpu, Npu, Disk, Network];
+#else
     private const int Disk = 3;
     private const int Network = 4;
+
+    private static readonly int[] AllSections = [Cpu, Memory, Gpu, Disk, Network];
+#endif
 
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -101,6 +115,7 @@ public sealed class SystemInfoControlTests
             },
             Gpu = new GpuInfo {
                 Specs = new GpuSpecs {
+                    GpuCores = 18,
                     TotalGpuMemory = 16L * 1024 * 1024 * 1024,
                     Devices = [
                         new GpuDevice {
@@ -113,6 +128,16 @@ public sealed class SystemInfoControlTests
                             Index = 1, Vendor = "Intel", Description = "Intel UHD Graphics 770",
                             AdapterType = "Integrated", VendorId = 0x8086, DeviceId = 0x4680,
                             DriverVersion = "31.0.101.5333", DriverDate = "2024-03-15",
+                        },
+                    ],
+                },
+            },
+            Npu = new NpuInfo {
+                Specs = new NpuSpecs {
+                    Devices = [
+                        new NpuDevice {
+                            Index = 0, Description = "Apple Neural Engine", Vendor = "Apple",
+                            Cores = 16, Architecture = "h16g", Version = "1.4",
                         },
                     ],
                 },
@@ -285,6 +310,49 @@ public sealed class SystemInfoControlTests
         ctrl.Unload();
     }
 
+#if __APPLE__
+    [Fact]
+    public void Gpu_Section_Shows_NA_When_The_Core_Count_Is_Unknown()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        SystemSnapshot snapshot = BuildSnapshot();
+        snapshot.Gpu!.Specs.GpuCores = 0;
+        ctrl.Sample(snapshot);
+        ctrl.SelectSectionForTests(Gpu);
+        ctrl.Draw();
+
+        Assert.Equal(["N/A", "N/A"], ValuesOf(ctrl, "Cores:"));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Gpu_Section_Shows_The_Core_Count_For_Each_Adapter()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+        ctrl.SelectSectionForTests(Gpu);
+        ctrl.Draw();
+
+        Assert.Equal(["18", "18"], ValuesOf(ctrl, "Cores:"));
+
+        ctrl.Unload();
+    }
+#else
+    [Fact]
+    public void Gpu_Section_Has_No_Cores_Row()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+        ctrl.SelectSectionForTests(Gpu);
+        ctrl.Draw();
+
+        Assert.Empty(ValuesOf(ctrl, "Cores:"));
+
+        ctrl.Unload();
+    }
+#endif
+
     [Fact]
     public void Labels_And_Values_Take_The_Theme_Property_Colours_In_Every_Section()
     {
@@ -305,7 +373,7 @@ public sealed class SystemInfoControlTests
         SystemInfoControl ctrl = CreateControl();
         ctrl.Sample(BuildSnapshot());
 
-        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+        foreach (int navIndex in AllSections) {
             ctrl.SelectSectionForTests(navIndex);
             ctrl.Draw();
 
@@ -351,7 +419,7 @@ public sealed class SystemInfoControlTests
     }
 
     [Fact]
-    public void Nav_Shows_All_Five_Section_Labels_Regardless_Of_Selection()
+    public void Nav_Shows_Every_Section_Label_Regardless_Of_Selection()
     {
         SystemInfoControl ctrl = CreateControl();
         ctrl.Sample(BuildSnapshot());
@@ -363,9 +431,87 @@ public sealed class SystemInfoControlTests
             Assert.Contains(label, output);
         }
 
+#if __APPLE__
+        Assert.Contains("NPU", output);
+#else
+        Assert.DoesNotContain("NPU", output);
+#endif
+
         ctrl.Unload();
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
     }
+
+#if __APPLE__
+    [Fact]
+    public void Npu_Section_Says_No_Neural_Engine_When_The_Soc_Reports_Without_One()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot() with { Npu = null, Soc = new SocInfo() });
+
+        AssertSectionContains(ctrl, Npu, "No Neural Engine found");
+        Assert.DoesNotContain("Gathering", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Npu_Section_Shows_Gathering_Until_The_First_Npu_Snapshot_Then_The_Specs()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot() with { Npu = null });
+
+        AssertSectionContains(ctrl, Npu, "Gathering…");
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(BuildSnapshot());
+
+        string output = CapturedOutput();
+        Assert.Contains("h16g", output);
+        Assert.DoesNotContain("Gathering", output);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Npu_Section_Shows_NA_For_Missing_Architecture_And_Version()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot() with {
+            Npu = new NpuInfo {
+                Specs = new NpuSpecs {
+                    Devices = [ new NpuDevice { Index = 0, Description = "Apple Neural Engine", Vendor = "Apple", Cores = 16 } ],
+                },
+            },
+        });
+        ctrl.SelectSectionForTests(Npu);
+        ctrl.Draw();
+
+        Assert.Equal("N/A", ValueOf(ctrl, "Architecture:"));
+        Assert.Equal("N/A", ValueOf(ctrl, "Version:"));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Npu_Section_Shows_The_Neural_Engine_Specs()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        ctrl.Sample(BuildSnapshot());
+        ctrl.SelectSectionForTests(Npu);
+        ctrl.Draw();
+
+        Assert.Equal("1", ValueOf(ctrl, "Neural Engines:"));
+        Assert.Contains(ctrl.SectionItemsForTests, item => item.SubItems[0].Text.Trim() == "NPU 0  Apple Neural Engine");
+        Assert.Equal("Apple Neural Engine", ValueOf(ctrl, "Description:"));
+        Assert.Equal("Apple", ValueOf(ctrl, "Vendor:"));
+        Assert.Equal("AMD Ryzen 9 7950X", ValueOf(ctrl, "Chip:"));
+        Assert.Equal("16", ValueOf(ctrl, "Cores:"));
+        Assert.Equal("h16g", ValueOf(ctrl, "Architecture:"));
+        Assert.Equal("1.4", ValueOf(ctrl, "Version:"));
+
+        ctrl.Unload();
+    }
+#endif
 
     [Fact]
     public void Rebuilds_The_Rows_When_The_Device_Count_Changes()
@@ -461,7 +607,7 @@ public sealed class SystemInfoControlTests
         SystemInfoControl ctrl = CreateControl();
         ctrl.Sample(BuildSnapshot());
 
-        foreach (int navIndex in new[] { Cpu, Memory, Gpu, Disk, Network }) {
+        foreach (int navIndex in AllSections) {
             runContextHelper.terminal.Invocations.Clear();
 
             ctrl.SelectSectionForTests(navIndex);
@@ -472,4 +618,15 @@ public sealed class SystemInfoControlTests
 
         ctrl.Unload();
     }
+
+#if __APPLE__
+    private static string ValueOf(SystemInfoControl ctrl, string label) =>
+        ctrl.SectionItemsForTests.Single(item => item.SubItems[0].Text.Trim() == label).SubItems[1].Text;
+#endif
+
+    private static List<string> ValuesOf(SystemInfoControl ctrl, string label) =>
+        ctrl.SectionItemsForTests
+            .Where(item => item.SubItems[0].Text.Trim() == label)
+            .Select(item => item.SubItems[1].Text)
+            .ToList();
 }

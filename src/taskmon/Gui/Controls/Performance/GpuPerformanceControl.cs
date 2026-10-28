@@ -16,7 +16,11 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 {
+#if __APPLE__
+    private const int SpecsRowCount = 6;
+#else
     private const int SpecsRowCount = 5;
+#endif
 
     private readonly AppConfig appConfig;
 
@@ -137,8 +141,14 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuSpecsListView.Items[0].SubItems[1].Text = specRows?.Vendor        ?? GpuDeviceParser.NotAvailable;
             gpuSpecsListView.Items[1].SubItems[1].Text = specRows?.Description   ?? GpuDeviceParser.NotAvailable;
             gpuSpecsListView.Items[2].SubItems[1].Text = specRows?.AdapterType   ?? GpuDeviceParser.NotAvailable;
+#if __APPLE__
+            gpuSpecsListView.Items[3].SubItems[1].Text = gpuInfo.Specs.GpuCores > 0 ? gpuInfo.Specs.GpuCores.ToString() : GpuDeviceParser.NotAvailable;
+            gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
+            gpuSpecsListView.Items[5].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+#else
             gpuSpecsListView.Items[3].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
             gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+#endif
             gpuSpecsListView.Draw();
         }
     }
@@ -163,6 +173,9 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Vendor:",         GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Description:",    GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Adapter Type:",   GpuDeviceParser.NotAvailable }));
+#if __APPLE__
+        gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Cores:",          GpuDeviceParser.NotAvailable }));
+#endif
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Version:", GpuDeviceParser.NotAvailable }));
         gpuSpecsListView.Items.Add(new ListViewItem(new[] { "Driver Date:",    GpuDeviceParser.NotAvailable }));
     }

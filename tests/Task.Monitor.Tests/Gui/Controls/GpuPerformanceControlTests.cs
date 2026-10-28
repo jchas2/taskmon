@@ -68,6 +68,31 @@ public sealed class GpuPerformanceControlTests
 
 #if __APPLE__
     [Fact]
+    public void Draws_The_Gpu_Core_Count_In_The_Specs_Rows()
+    {
+        GpuPerformanceControl ctrl = new(
+            new ForwardingTerminal(runContext.Terminal),
+            runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        GpuInfo gpuInfo = BuildGpuInfoWithDevices();
+        gpuInfo.Specs.GpuCores = 18;
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Sample(new SystemSnapshot { Gpu = gpuInfo });
+        ctrl.Draw();
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Cores:"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("18"))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("560.94"))), Times.AtLeastOnce);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Draws_The_Gpu_Frequency_And_Throttling()
     {
         GpuPerformanceControl ctrl = new(
