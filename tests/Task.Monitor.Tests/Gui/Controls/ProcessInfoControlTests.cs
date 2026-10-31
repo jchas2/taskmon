@@ -83,6 +83,19 @@ public sealed class ProcessInfoControlTests
     }
 
     [Fact]
+    public void LoadProcess_After_No_Selection_Loads_The_Process()
+    {
+        (int pid, string processName) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+
+        Assert.Equal([pid], processServiceFake.RequestedPids);
+        Assert.Equal([pid], threadServiceFake.RequestedPids);
+        Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
+    }
+
+    [Fact]
     public void LoadProcess_Clears_Title_When_Process_Not_Found()
     {
         (int pid, _) = AddCurrentProcess();
@@ -95,6 +108,22 @@ public sealed class ProcessInfoControlTests
     }
 
     [Fact]
+    public void LoadProcess_Restores_The_Load_Errors_Once_A_Process_Is_Selected()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.LoadProcess(pid);
+
+        // The fakes return no threads or modules, so a selected process shows the load errors.
+        ctrl.SelectMenuItemForTests(1);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Threads could not be loaded"))), Times.AtLeastOnce);
+
+        ctrl.SelectMenuItemForTests(2);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Modules could not be loaded"))), Times.AtLeastOnce);
+    }
+
+    [Fact]
     public void LoadProcess_Shows_Process_Name_In_Top_Border()
     {
         (int pid, string processName) = AddCurrentProcess();
@@ -104,6 +133,32 @@ public sealed class ProcessInfoControlTests
 
         Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public void Load_Without_A_Selected_Process_Asks_No_Service_About_It()
+    {
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.SelectMenuItemForTests(1);
+        ctrl.SelectMenuItemForTests(2);
+
+        // PROCESSES opens before ProcessControl has selected a row. Asking for pid -1 threw and
+        // logged an exception on every open.
+        Assert.Empty(processServiceFake.RequestedPids);
+        Assert.Empty(threadServiceFake.RequestedPids);
+        Assert.Empty(moduleServiceFake.RequestedPids);
+        Assert.Equal(string.Empty, ctrl.ProcessTitle);
+    }
+
+    [Fact]
+    public void Load_Without_A_Selected_Process_Shows_No_Load_Errors()
+    {
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        ctrl.SelectMenuItemForTests(1);
+        ctrl.SelectMenuItemForTests(2);
+
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Threads could not be loaded"))), Times.Never);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Modules could not be loaded"))), Times.Never);
     }
 
     [Fact]

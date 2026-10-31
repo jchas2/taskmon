@@ -9,8 +9,13 @@ public sealed class ProcessServiceFake : IProcessService
     public void AddProcessInfo(ProcessInfo processInfo) =>
         processInfos.Add(processInfo);
 
-    public ProcessInfo? GetProcessById(int pid) =>
-        processInfos.SingleOrDefault(p => p.Pid == pid);
+    public ProcessInfo? GetProcessById(int pid)
+    {
+        RequestedPids.Add(pid);
+        return processInfos.SingleOrDefault(p => p.Pid == pid);
+    }
 
     public List<ProcessInfo> GetProcesses() => processInfos;
+
+    public List<int> RequestedPids { get; } = [];
 }

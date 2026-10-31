@@ -12,6 +12,7 @@ namespace Task.Monitor.Gui.Controls.Processes;
 public partial class ProcessInfoControl : Control
 {
     private const int MenuViewWidth = 10;
+    private const int NoProcessId   = -1;
 
     private const string MsgNotYetImplemented = "Not yet implemented on this OS";
     private const string MsgThreadsNotLoaded  = "Threads could not be loaded";
@@ -126,6 +127,8 @@ public partial class ProcessInfoControl : Control
     public bool AutoRefresh { get; set; } = true;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
+    private bool HasProcess => SelectedProcessId >= 0;
 
     internal bool IsDetailActiveForTests => processInfoView.Visible;
 
@@ -323,7 +326,6 @@ public partial class ProcessInfoControl : Control
         base.OnUnload();
     }
 
-    // Test-only seam: the process name and pid shown centred in the top border of every tab view.
     internal string ProcessTitle => processInfoView.HeaderText;
 
     public void ResetToDetailPane()
@@ -332,7 +334,6 @@ public partial class ProcessInfoControl : Control
         menuView.SelectedIndex = 0;
     }
 
-    // "chrome.exe (1234)" - the pid disambiguates processes sharing a name.
     private static string ResolveProcessTitle(ProcessInfo processInfo)
     {
         string name = !string.IsNullOrWhiteSpace(processInfo.ProcessName) ? processInfo.ProcessName
@@ -346,7 +347,7 @@ public partial class ProcessInfoControl : Control
 
     internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
 
-    public int SelectedProcessId { get; set; } = -1;
+    public int SelectedProcessId { get; set; } = NoProcessId;
 
     internal void SelectMenuItemForTests(int index) =>
         MenuViewOnItemClicked(this, new ListViewItemEventArgs(menuView.Items[index]));
@@ -357,14 +358,17 @@ public partial class ProcessInfoControl : Control
         activeControl.Visible = true;
     }
 
-    // ProcessInfoControl draws no border of its own, so the title goes on every tab view's
-    // HeaderText (ListView.DrawBorder centres it) - set on all four so it survives tab switches.
-    // menuView is left alone: at MenuViewWidth it has no room for a name.
     private void SetProcessTitle(string title) =>
         tabControls.ForEach(ctrl => ctrl.HeaderText = title);
 
     private void TryLoadProcessInfo()
     {
+        if (!HasProcess) {
+            processInfoView.Items.Clear();
+            SetProcessTitle(string.Empty);
+            return;
+        }
+
         try {
             ProcessInfo? processInfo = processService.GetProcessById(SelectedProcessId);
             if (processInfo == null) {
@@ -373,8 +377,6 @@ public partial class ProcessInfoControl : Control
                 return;
             }
 
-            // Set before the FileInfo/FileVersionInfo calls below, which throw for protected or
-            // system processes - the title should still say what's selected when detail can't load.
             SetProcessTitle(ResolveProcessTitle(processInfo));
 
             FileInfo finfo = new(processInfo.FileName);
@@ -426,12 +428,16 @@ public partial class ProcessInfoControl : Control
     
     private void TryUpdateListViewModuleItems()
     {
+        if (!HasProcess) {
+            modulesView.Items.Clear();
+            modulesView.EmptyListViewText = string.Empty;
+            return;
+        }
+
         if (modulesLoaded) {
             return;
         }
 
-        string prevEmptyText = modulesView.EmptyListViewText;
-        
         lock (DrawingLock) {
             try {
                 modulesView.EmptyListViewText = MsgLoading;
@@ -457,7 +463,7 @@ public partial class ProcessInfoControl : Control
                 ExceptionHelper.LogException(ex, $"Error loading ModuleInfos for pid {SelectedProcessId}.");
             }
             finally {
-                modulesView.EmptyListViewText = prevEmptyText;
+                modulesView.EmptyListViewText = MsgModulesNotLoaded;
             }
         }
     }
@@ -465,6 +471,14 @@ public partial class ProcessInfoControl : Control
     private void TryUpdateListViewThreadItems()
     {
         lock (DrawingLock) {
+            if (!HasProcess) {
+                threadsView.Items.Clear();
+                threadsView.EmptyListViewText = string.Empty;
+                return;
+            }
+
+            threadsView.EmptyListViewText = MsgThreadsNotLoaded;
+
             try {
                 List<ThreadInfo> threads = threadService.GetThreads(SelectedProcessId)
                     .OrderByDescending(t => t.CpuTotalTime.Ticks)

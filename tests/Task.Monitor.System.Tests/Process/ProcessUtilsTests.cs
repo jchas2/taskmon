@@ -54,4 +54,13 @@ public partial class ProcessUtilsTests
         
         process.Dispose();
     }
+
+    [Fact]
+    public void Should_Not_Get_Process_For_A_Negative_Pid()
+    {
+        bool result = ProcessUtils.TryGetProcessByPid(-1, out SysDiag::Process? process);
+
+        Assert.False(result);
+        Assert.Null(process);
+    }
 }

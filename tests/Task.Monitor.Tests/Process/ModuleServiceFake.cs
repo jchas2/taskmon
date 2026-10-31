@@ -15,8 +15,11 @@ public sealed class ModuleServiceFake : IModuleService
     public List<ModuleInfo> GetModules(int pid)
     {
         GetModulesCallCount++;
+        RequestedPids.Add(pid);
         return moduleInfos;
     }
 
     public int GetModulesCallCount { get; private set; }
+
+    public List<int> RequestedPids { get; } = [];
 }

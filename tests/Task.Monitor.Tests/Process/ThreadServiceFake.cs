@@ -12,5 +12,11 @@ public sealed class ThreadServiceFake : IThreadService
         return this;
     }
 
-    public List<ThreadInfo> GetThreads(int pid) => threadInfos;
+    public List<ThreadInfo> GetThreads(int pid)
+    {
+        RequestedPids.Add(pid);
+        return threadInfos;
+    }
+
+    public List<int> RequestedPids { get; } = [];
 }

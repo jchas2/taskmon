@@ -28,6 +28,11 @@ public static class ProcessUtils
     
     internal static bool TryGetProcessByPid(int pid, out SysDiag::Process? process)
     {
+        if (pid < 0) {
+            process = null;
+            return false;
+        }
+
         try {
             process = SysDiag::Process.GetProcessById(pid);
             return true;
