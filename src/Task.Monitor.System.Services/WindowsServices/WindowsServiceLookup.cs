@@ -1,8 +1,8 @@
 namespace Task.Monitor.System.Services.WindowsServices;
 
-internal static class WindowsServiceMap
+internal static partial class WindowsServiceLookup
 {
-    public static Dictionary<int, WindowsServiceInfo> Build(IEnumerable<(int ProcessId, WindowsServiceInfo Service)> services)
+    internal static Dictionary<int, WindowsServiceInfo> BuildServiceMap(IEnumerable<(int ProcessId, WindowsServiceInfo Service)> services)
     {
         Dictionary<int, WindowsServiceInfo> map = new();
 
@@ -17,7 +17,7 @@ internal static class WindowsServiceMap
         return map;
     }
 
-    public static bool HasProcess(WindowsServiceStatus status) => status
+    private static bool HasProcess(WindowsServiceStatus status) => status
         is WindowsServiceStatus.Running
         or WindowsServiceStatus.StartPending
         or WindowsServiceStatus.StopPending

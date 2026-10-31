@@ -4,14 +4,14 @@ using Task.Monitor.System.Services.WindowsServices;
 namespace Task.Monitor.System.Services.Tests.WindowsServices;
 
 [Collection(WindowsServiceLookupCollection.Name)]
-public sealed class WindowsServiceLookupTests
+public sealed partial class WindowsServiceLookupTests
 {
     [Fact]
     public void GetService_Maps_Each_Active_Process_To_Its_Last_Enumerated_Service()
     {
         SyncToIntervalStart();
 
-        Dictionary<int, WindowsServiceInfo> expected = WindowsServiceMap.Build(WindowsServiceEnumerator.GetServiceProcesses());
+        Dictionary<int, WindowsServiceInfo> expected = WindowsServiceLookup.BuildServiceMap(WindowsServiceEnumerator.GetServiceProcesses());
 
         // Services can start and stop between the two enumerations, so compare only the processes
         // both saw.

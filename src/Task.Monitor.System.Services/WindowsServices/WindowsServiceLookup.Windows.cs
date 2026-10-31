@@ -5,7 +5,7 @@ namespace Task.Monitor.System.Services.WindowsServices;
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-internal static class WindowsServiceLookup
+internal static partial class WindowsServiceLookup
 {
 #if __WIN32__
     private static Dictionary<int, WindowsServiceInfo> serviceMap = new();
@@ -99,7 +99,7 @@ internal static class WindowsServiceLookup
 
         return services.Length == 0
             ? null
-            : WindowsServiceMap.Build(services);
+            : BuildServiceMap(services);
     }
 #endif
 }
