@@ -357,7 +357,7 @@ control.background=#123456
 control.foreground=#abcdef
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/themes/My Custom Theme.theme"]);
+        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>())).Returns(["/fake/path/themes/My Custom Theme.theme"]);
         fileSystem.Setup(fs => fs.ReadAllText("/fake/path/themes/My Custom Theme.theme")).Returns(customThemeIni);
 
         AppConfig appConfig = new(fileSystem.Object);

@@ -112,21 +112,10 @@ public sealed class AppConfig
                         Constants.AppName);
                 }
 
-                if (fileSystem.DirectoryExists(userPath) || fileSystem.TryCreateDirectory(userPath)) {
-                    PathPermissions.EnsureUserOwnership(userPath);
-                    return userPath;
-                }
-
-                string tempPath = Path.GetTempPath();
-                
-                if (fileSystem.DirectoryExists(tempPath) || fileSystem.TryCreateDirectory(tempPath)) {
-                    PathPermissions.EnsureUserOwnership(tempPath);
-                    return tempPath;
-                }
-                
-                return null;
+                return DefaultPath(userPath);
             }
-            catch {
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex);
                 return null;
             }
         }
@@ -160,23 +149,36 @@ public sealed class AppConfig
                         Constants.AppName, "Logs");
                 }
 
-                if (fileSystem.DirectoryExists(logPath) || fileSystem.TryCreateDirectory(logPath)) {
-                    PathPermissions.EnsureUserOwnership(logPath);
-                    return logPath;
-                }
-                
-                string tempPath = Path.GetTempPath();
-                
-                if (fileSystem.DirectoryExists(tempPath) || fileSystem.TryCreateDirectory(tempPath)) {
-                    PathPermissions.EnsureUserOwnership(tempPath);
-                    return tempPath;
-                }
-                
+                return DefaultPath(logPath);
+            }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex);
                 return null;
             }
-            catch {
-                return null;
+        }
+    }
+
+    private string? DefaultPath(string desiredPath)
+    {
+        try {
+            if (fileSystem.DirectoryExists(desiredPath) || fileSystem.TryCreateDirectory(desiredPath)) {
+                PathPermissions.EnsureUserOwnership(desiredPath);
+                return desiredPath;
             }
+                
+            string tempPath = Path.GetTempPath();
+                
+            if (fileSystem.DirectoryExists(tempPath) || fileSystem.TryCreateDirectory(tempPath)) {
+                PathPermissions.EnsureUserOwnership(tempPath);
+                return tempPath;
+            }
+                
+            return null;
+            
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex);
+            return null;
         }
     }
 
@@ -447,7 +449,7 @@ public sealed class AppConfig
 
         if (themePath != null) {
             // Load custom theme files from disk into allThemes array.
-            string[] themeFiles = fileSystem.GetFiles(themePath);
+            string[] themeFiles = fileSystem.GetFiles(themePath, "*.theme");
             
             foreach (string themeFile in themeFiles) {
                 string themeName = Path.GetFileNameWithoutExtension(themeFile);

@@ -31,6 +31,17 @@ public sealed partial class FileSystem : IFileSystem
         }
     }
 
+    public string[] GetFiles(string path, string searchPattern)
+    {
+        try {
+            return Directory.GetFiles(path, searchPattern);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on GetFiles '{path}'");
+            return [];
+        }
+    }
+
     public string ReadAllText(string path)
     {
         try {
