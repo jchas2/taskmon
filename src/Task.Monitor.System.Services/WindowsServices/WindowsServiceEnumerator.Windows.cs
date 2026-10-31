@@ -3,10 +3,21 @@ using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.WindowsServices;
 
-// Every Win32 service with its configuration read - the list the Services view shows, and the
-// source WindowsServiceLookup builds its process id map from.
+// Every Win32 service: with its configuration read for the Services view, or straight from the
+// enumeration with its process id for WindowsServiceLookup's map.
 internal static class WindowsServiceEnumerator
 {
+    // One enumeration and no per-service handles. Only the name, display name and status are
+    // filled in; the configuration fields are left at their defaults.
+    internal static (int ProcessId, WindowsServiceInfo Service)[] GetServiceProcesses() =>
+        ServiceControlManager.EnumerateServices(WinService.SERVICE_WIN32, nameof(GetServiceProcesses), (_, entry) => (
+            entry.ProcessId,
+            new WindowsServiceInfo {
+                ServiceName = entry.ServiceName,
+                DisplayName = entry.DisplayName,
+                Status      = entry.Status
+            }));
+
     internal static WindowsServiceInfo[] GetServices() =>
         ServiceControlManager.EnumerateServices(WinService.SERVICE_WIN32, nameof(GetServices), (hSCM, entry) => {
             WindowsServiceInfo service = new() {

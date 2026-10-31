@@ -8,6 +8,26 @@ namespace Task.Monitor.System.Services.Tests.WindowsServices;
 public sealed class WindowsServiceEnumeratorTests
 {
     [Fact]
+    public void GetServiceProcesses_Reports_No_Process_Id_For_A_Stopped_Service()
+    {
+        Assert.All(
+            WindowsServiceEnumerator.GetServiceProcesses().Where(entry => entry.Service.Status == WindowsServiceStatus.Stopped),
+            entry => Assert.Equal(0, entry.ProcessId));
+    }
+
+    [Fact]
+    public void GetServiceProcesses_Reports_The_Process_Id_Of_A_Running_Service()
+    {
+        (int processId, WindowsServiceInfo eventLog) = Assert.Single(
+            WindowsServiceEnumerator.GetServiceProcesses(),
+            entry => string.Equals(entry.Service.ServiceName, "EventLog", StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(WindowsServiceStatus.Running, eventLog.Status);
+        Assert.False(string.IsNullOrWhiteSpace(eventLog.DisplayName));
+        Assert.True(processId > 0);
+    }
+
+    [Fact]
     public void GetServices_Leaves_Out_Drivers()
     {
         Assert.DoesNotContain(

@@ -7,6 +7,28 @@ namespace Task.Monitor.System.Services.Tests.WindowsServices;
 public sealed class WindowsServiceLookupTests
 {
     [Fact]
+    public void GetService_Maps_Each_Active_Process_To_Its_Last_Enumerated_Service()
+    {
+        SyncToIntervalStart();
+
+        Dictionary<int, WindowsServiceInfo> expected = WindowsServiceMap.Build(WindowsServiceEnumerator.GetServiceProcesses());
+
+        // Services can start and stop between the two enumerations, so compare only the processes
+        // both saw.
+        int compared = 0;
+
+        foreach ((int pid, WindowsServiceInfo service) in expected) {
+            if (WindowsServiceLookup.GetService(pid, out WindowsServiceInfo? mapped)) {
+                Assert.Equal(service.ServiceName, mapped!.ServiceName);
+                compared++;
+            }
+        }
+
+        Assert.True(compared > 0);
+        Assert.False(WindowsServiceLookup.GetService(pid: 0, out _));
+    }
+
+    [Fact]
     public void RefreshIfDue_Rebuilds_Only_Once_The_Interval_Elapses()
     {
         SyncToIntervalStart();

@@ -15,7 +15,8 @@ internal static class ServiceControlManager
     public readonly record struct ServiceEntry(
         string               ServiceName,
         string               DisplayName,
-        WindowsServiceStatus Status);
+        WindowsServiceStatus Status,
+        int                  ProcessId);
 
     public static unsafe T[] EnumerateServices<T>(uint serviceType, string caller, Func<nint, ServiceEntry, T> map)
     {
@@ -92,7 +93,8 @@ internal static class ServiceControlManager
                 ServiceEntry entry = new(
                     status.lpServiceName,
                     status.lpDisplayName,
-                    MapStatus((WinService.ServiceCurrentState)status.dwCurrentState));
+                    MapStatus((WinService.ServiceCurrentState)status.dwCurrentState),
+                    status.dwProcessId);
 
                 results[i] = map(hSCM, entry);
                 currentPtr = nint.Add(currentPtr, structSize);

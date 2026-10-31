@@ -1,7 +1,5 @@
-using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using Task.Monitor.Cli.Utils;
-using Task.Monitor.Interop.Win32;
 
 namespace Task.Monitor.System.Services.WindowsServices;
 
@@ -20,6 +18,8 @@ internal static class WindowsServiceLookup
     private static bool refreshRequested;
     private static bool attempted;
 
+    // Only ServiceName, DisplayName and Status are filled in on the returned service; the map is
+    // built from the enumeration alone, so the configuration fields are left at their defaults.
     public static bool GetService(int pid, out WindowsServiceInfo? service)
     {
         lock (CriticalSection) {
@@ -44,39 +44,6 @@ internal static class WindowsServiceLookup
         }
 
         return key?.GetValue("ImagePath")?.ToString() ?? null;
-    }
-
-    private static unsafe int GetServiceProcessId(nint hService)
-    {
-        int pid          = 0;
-        nint pss         = Marshal.AllocHGlobal(Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>());
-        uint bytesNeeded = 0;
-
-        if (!WinService.QueryServiceStatusEx(
-            hService,
-            WinService.SC_ENUM_PROCESS_INFO,
-            pss,
-            (uint)Marshal.SizeOf<WinService.SERVICE_STATUS_PROCESS>(),
-            &bytesNeeded)) {
-
-            PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.QueryServiceStatusEx)} {hService}");
-            Marshal.FreeHGlobal(pss);
-            return 0;
-        }
-
-        WinService.SERVICE_STATUS_PROCESS ssp = Marshal.PtrToStructure<WinService.SERVICE_STATUS_PROCESS>(pss);
-
-        if (ssp.dwCurrentState == (int)WinService.ServiceCurrentState.SERVICE_RUNNING ||
-            ssp.dwCurrentState == (int)WinService.ServiceCurrentState.SERVICE_PAUSE_PENDING ||
-            ssp.dwCurrentState == (int)WinService.ServiceCurrentState.SERVICE_PAUSED ||
-            ssp.dwCurrentState == (int)WinService.ServiceCurrentState.SERVICE_START_PENDING ||
-            ssp.dwCurrentState == (int)WinService.ServiceCurrentState.SERVICE_STOP_PENDING) {
-
-            pid = ssp.dwProcessId;
-        }
-
-        Marshal.FreeHGlobal(pss);
-        return pid;
     }
 
     internal static int MappedServiceCount
@@ -130,49 +97,16 @@ internal static class WindowsServiceLookup
         }
     }
 
+    // The enumeration already carries each service's process id and state, so a rebuild is one
+    // enumeration with no per-service handles. An empty one means the service control manager
+    // could not be read, and null keeps the previous map.
     private static Dictionary<int, WindowsServiceInfo>? TryBuildServiceMap()
     {
-        nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
+        (int ProcessId, WindowsServiceInfo Service)[] services = WindowsServiceEnumerator.GetServiceProcesses();
 
-        if (hSCM == nint.Zero) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(WinService.SC_MANAGER_CONNECT));
-            return null;
-        }
-
-        WindowsServiceInfo[] services = WindowsServiceEnumerator.GetServices();
-
-        if (services.Length == 0) {
-            WinService.CloseServiceHandle(hSCM);
-            return null;
-        }
-
-        Dictionary<int, WindowsServiceInfo> map = new();
-
-        for (int i = 0; i < services.Length; i++) {
-            WindowsServiceInfo service = services[i];
-
-            nint hService = WinService.OpenService(
-                hSCM,
-                service.ServiceName,
-                WinService.SERVICE_QUERY_STATUS);
-
-            if (hService == nint.Zero) {
-                PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)} {service.ServiceName}");
-                continue;
-            }
-
-            int pid = GetServiceProcessId(hService);
-            WinService.CloseServiceHandle(hService);
-
-            if (pid == 0) {
-                continue;
-            }
-
-            map[pid] = service;
-        }
-
-        WinService.CloseServiceHandle(hSCM);
-        return map;
+        return services.Length == 0
+            ? null
+            : WindowsServiceMap.Build(services);
     }
 #endif
 }
