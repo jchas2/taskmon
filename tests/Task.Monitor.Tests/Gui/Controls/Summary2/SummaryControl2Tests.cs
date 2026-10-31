@@ -191,6 +191,10 @@ public sealed class SummaryControl2Tests
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
 
+    // Only the Cpu chart has data in a Cpu-only snapshot, so the total is the Cpu chart's count.
+    private static int ChartSampleCount(SummaryControl2 ctrl) =>
+        ctrl.PaneControls.Values.OfType<Chart>().Sum(chart => chart.DataCount);
+
     [Fact]
     public void Chart_Panes_Pick_Up_A_Changed_Grid_Setting_On_The_Next_Load()
     {
@@ -264,6 +268,15 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
+    private static SystemSnapshot CpuSnapshot() => new() {
+        Cpu = new CpuInfo {
+            Metrics = new CpuMetrics {
+                CpuPercentKernelTime = 0.1,
+                CpuPercentUserTime   = 0.2
+            }
+        }
+    };
+
     [Fact]
     public void Draws_The_Example_Trees_Chart_Titles_And_Process_Header()
     {
@@ -319,6 +332,28 @@ public sealed class SummaryControl2Tests
             .GetValue(runContext.ServiceController);
 
         Assert.Equal(0, handler?.GetInvocationList().Count(d => d.Target?.GetType().Name == "ProcessControl") ?? 0);
+    }
+
+    [Fact]
+    public void Each_Snapshot_Adds_One_Chart_Sample()
+    {
+        runContext.AppConfig.DefaultLayout = null;
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, runContext.Terminal, runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        for (int i = 0; i < 3; i++) {
+            RaiseSnapshotUpdated(runContext.ServiceController, CpuSnapshot());
+        }
+
+        Assert.Equal(3, ChartSampleCount(ctrl));
+
+        ctrl.Unload();
     }
 
     [Fact]
@@ -441,6 +476,42 @@ public sealed class SummaryControl2Tests
 
         MulticastDelegate? handler = (MulticastDelegate?)field!.GetValue(serviceController);
         handler?.DynamicInvoke(serviceController, new SystemSnapshotEventArgs(snapshot));
+    }
+
+    // Regression test: OnDraw used to feed the last snapshot into every chart, so each redraw (a
+    // held arrow key, a focus change) added a copy of the latest value and sped the charts up.
+    [Fact]
+    public void Redraws_And_Pane_Navigation_Add_No_Chart_Samples()
+    {
+        runContext.AppConfig.DefaultLayout = null;
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 40 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
+            Width = 120,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, CpuSnapshot());
+        Assert.Equal(1, ChartSampleCount(ctrl));
+
+        for (int i = 0; i < 5; i++) {
+            ctrl.Draw();
+        }
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false), ref handled);
+
+        Assert.Equal(1, ChartSampleCount(ctrl));
+
+        ctrl.Unload();
     }
 
     [Fact]

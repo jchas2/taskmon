@@ -323,8 +323,16 @@ public sealed class MainScreen2 : Screen
         menuControl.MenuItemClicked += OnMenuItemClicked;
     }
 
-    private void OnMenuItemClicked(object? sender, MenuItemEventArgs e) =>
-        SetActiveControl(e.Item!);        
+    // The menu raises a click on every arrow key, even when the selection can't move (Up on the
+    // first item, Down on the last). Reloading the view each time redraws it on every key repeat.
+    private void OnMenuItemClicked(object? sender, MenuItemEventArgs e)
+    {
+        if (e.Item!.AssociatedControl == activeControl) {
+            return;
+        }
+
+        SetActiveControl(e.Item);
+    }
 
     protected override void OnResize()
     {

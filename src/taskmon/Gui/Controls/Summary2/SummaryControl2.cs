@@ -32,8 +32,11 @@ public sealed class SummaryControl2 : Control
         BuildPanes();
     }
 
-    public SummaryControl2(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig, SummaryLayoutTree fixedTree)
-        : base(terminal)
+    public SummaryControl2(
+        ServiceController serviceController, 
+        ISystemTerminal   terminal, 
+        AppConfig         appConfig, 
+        SummaryLayoutTree fixedTree) : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
@@ -88,25 +91,12 @@ public sealed class SummaryControl2 : Control
 
     protected override void OnDraw()
     {
-        OnDrawCharts();
+        // Note: Charts are updated when a new snapshot arrives.
         OnDrawProcesses();
 
         foreach (Control control in paneControls.Values) {
             control.Draw();
         }
-    }
-
-    private void OnDrawCharts()
-    {
-        if (snapshot == null) {
-            return;
-        }
-
-        SummaryChartFeeder.Feed(
-            tree, 
-            paneControls, 
-            snapshot, 
-            appConfig);
     }
 
     private void OnDrawProcesses()
@@ -188,7 +178,7 @@ public sealed class SummaryControl2 : Control
         snapshot = e.Snapshot;
 
         lock (DrawingLock) {
-            OnDrawCharts();
+            SummaryChartFeeder.Feed(tree, paneControls, e.Snapshot, appConfig);
             OnDrawProcesses();
         }
     }

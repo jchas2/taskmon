@@ -22,6 +22,9 @@ public sealed class MainScreen2Tests : IDisposable
     private readonly RunContext runContext;
     private readonly ScreenApplication screenApp;
 
+    // The top of a SUMMARY chart's scale, drawn only when SUMMARY itself is drawn.
+    private const string SummaryChartScale = "100%┤";
+
     public MainScreen2Tests()
     {
         runContextHelper = new RunContextHelper();
@@ -128,7 +131,44 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.Contains("TASK MONITOR SETUP", CapturedOutput());
     }
 
+    // Regression test: the menu raises a click on every arrow key, even when Up can't move off the
+    // first item, and each one reloaded and redrew SUMMARY - so holding Up redrew it on every repeat.
+    [Fact]
+    public void Holding_Up_On_The_First_Menu_Item_Does_Not_Reload_The_View()
+    {
+        // The built-in example tree's percentage charts draw the scale this looks for.
+        runContext.AppConfig.DefaultLayout = null;
+
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        runContextHelper.terminal.Invocations.Clear();
+
+        for (int i = 0; i < 3; i++) {
+            bool handled = false;
+            mainScreen.KeyPressed(Key(ConsoleKey.UpArrow), ref handled);
+        }
+
+        Assert.DoesNotContain(SummaryChartScale, CapturedOutput());
+    }
+
     private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
+
+    [Fact]
+    public void Moving_Back_Up_To_Summary_Still_Shows_It()
+    {
+        // The built-in example tree's percentage charts draw the scale this looks for.
+        runContext.AppConfig.DefaultLayout = null;
+
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        bool handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        runContextHelper.terminal.Invocations.Clear();
+
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.UpArrow), ref handled);
+
+        Assert.Contains(SummaryChartScale, CapturedOutput());
+    }
 
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
     {

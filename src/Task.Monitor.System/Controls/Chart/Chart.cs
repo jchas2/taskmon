@@ -117,6 +117,15 @@ public sealed class Chart : Control
 
     private int DataCapacity => Math.Max(0, Width - 2 - ScaleWidth);
 
+    public int DataCount
+    {
+        get {
+            lock (dataLock) {
+                return dataCount;
+            }
+        }
+    }
+
     private string FormatScaleValue(double value, double maxVal)
     {
         if (CustomYAxisScaleFormatter == null) {
