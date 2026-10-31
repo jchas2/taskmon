@@ -1,7 +1,5 @@
 namespace Task.Monitor.System.Services.WindowsServices;
 
-// The Service Control Manager's current-state value for a service, mirroring the Services
-// snap-in's Status column.
 public enum WindowsServiceStatus
 {
     Stopped,
