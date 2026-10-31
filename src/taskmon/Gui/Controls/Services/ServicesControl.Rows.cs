@@ -119,7 +119,9 @@ public sealed partial class ServicesControl
 
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, services.Count);
-        servicesView.FooterText          =
-            $"{running} running / {services.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+        servicesView.HeaderText          = $"{running} running / {services.Count} total";
+        servicesView.FooterText          = CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 }

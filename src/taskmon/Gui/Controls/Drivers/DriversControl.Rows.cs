@@ -105,7 +105,9 @@ public sealed partial class DriversControl
 
         driversView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         driversView.HeaderHighlightText = filter.BuildHeaderText(visibleDrivers.Count, drivers.Count);
-        driversView.FooterText          =
-            $"{running} running / {drivers.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+        driversView.HeaderText          = $"{running} running / {drivers.Count} total";
+        driversView.FooterText          = CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 }

@@ -7,7 +7,8 @@ namespace Task.Monitor.System.Services.Disk;
 
 public static class DiskDeviceParser
 {
-    public const string NotAvailable = "N/A";
+    // DiskDevice defaults to Constants.NotAvailable; share it so a bare device and a parsed one agree.
+    public const string NotAvailable = Constants.NotAvailable;
 
     public static string DecodeBusType(uint busType) => busType switch
     {

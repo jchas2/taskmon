@@ -32,7 +32,9 @@ public class FooterControl : Control
 
     private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
 
-    private static readonly int KeyHintsWidth   = KeyHints.Sum(hint => 2 + hint.Key.Length + 1 + hint.Label.Length);
+    private static readonly int KeyHintsWidth   = KeyHints.Sum(hint =>
+        CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
+    
     private static readonly int StatusTextWidth = new[] {
         ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
 
@@ -43,16 +45,6 @@ public class FooterControl : Control
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
-    }
-
-    private void AppendKeyHints(Color foreground, Color background)
-    {
-        foreach ((string key, string label) in KeyHints) {
-            frame.SetColour(Color.DeepSkyBlue, background);
-            frame.Append($"  {key} ");
-            frame.SetColour(foreground, background);
-            frame.Append(label);
-        }
     }
 
     private void AppendServiceStatus(SystemSnapshot current)
@@ -103,8 +95,6 @@ public class FooterControl : Control
             else if (snapshot != null) {
                 AppendServiceStatus(snapshot);
 
-                //Color ledColour = snapshot.Sequence % 2 == 0 ? Color.DeepSkyBlue : background;
-
                 if (snapshot.Sequence % 2 == 0) {
                     frame.SetColour(Color.DeepSkyBlue, background);
                     frame.Append($"  {StatusGlyph}");
@@ -127,7 +117,9 @@ public class FooterControl : Control
             frame.Append(rxText);
 
             if (banner.Length + StatusTextWidth + GlyphWidth + rxText.Length + KeyHintsWidth <= Width) {
-                AppendKeyHints(foreground, background);
+                frame.Append(CommonControl.FooterSeparator);
+                frame.Append(CommonControl.FooterText(appConfig.Theme, KeyHints));
+                frame.ResetColour();
             }
         }
 

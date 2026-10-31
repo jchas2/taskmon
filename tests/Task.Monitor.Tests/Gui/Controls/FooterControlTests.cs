@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Tests.Controls;
@@ -16,7 +18,7 @@ public sealed class FooterControlTests : IDisposable
 
     private FooterControl? control;
 
-    private const string KeyHintsText = "F1 Help  F2 Setup  F10 Exit";
+    private const string KeyHintsText = "F1 Help   F2 Setup   F10 Exit";
     private const string OrangeGlyph  = "38;2;255;165;0m  ●";
 
     public FooterControlTests(ITestOutputHelper outputHelper)
@@ -104,6 +106,18 @@ public sealed class FooterControlTests : IDisposable
     }
 
     [Fact]
+    public void Key_Hints_Are_Coloured_With_The_Theme_HotKey_Colours()
+    {
+        CreateControl();
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+
+        Theme theme = runContext.AppConfig.Theme;
+        string hint = ConsolePalette.ForegroundSgr(theme.HotKey) + "F1" + ConsolePalette.ForegroundSgr(theme.HotKeyName) + " Help";
+
+        Assert.Contains(hint, CapturedOutput());
+    }
+
+    [Fact]
     public void Key_Hints_Are_Dropped_When_The_Footer_Is_Too_Narrow()
     {
         CreateControl(width: 80);
@@ -160,7 +174,7 @@ public sealed class FooterControlTests : IDisposable
         });
         string text = VisibleText();
 
-        Assert.Contains(" 10000000 Rx  F1 Help", text);
+        Assert.Contains(" 10000000 Rx   F1 Help", text);
         Assert.Equal(sevenDigits + 1, text.IndexOf(KeyHintsText, StringComparison.Ordinal));
     }
 

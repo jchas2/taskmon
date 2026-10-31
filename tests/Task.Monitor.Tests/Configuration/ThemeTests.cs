@@ -48,6 +48,8 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
+        Assert.Equal(ColorTranslator.FromHtml("#454545"), theme.HotKey);
+        Assert.Equal(ColorTranslator.FromHtml("#464646"), theme.HotKeyName);
         Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
@@ -134,6 +136,32 @@ public sealed class ThemeTests
         Theme theme = new(parser.Sections[0]);
         
         AssertThemeColours(theme);
+    }
+
+    [Fact]
+    public void HotKey_Colours_Fall_Back_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(Color.DeepSkyBlue.ToArgb(), theme.HotKey.ToArgb());
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.HotKeyName);
+    }
+
+    [Fact]
+    public void HotKey_Colours_Override_The_Fallbacks_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+        section.Add(Constants.Keys.HotKey, "#123abc");
+        section.Add(Constants.Keys.HotKeyName, "#fedcba");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.HotKey);
+        Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.HotKeyName);
     }
 
     [Fact]
@@ -314,6 +342,8 @@ public sealed class ThemeTests
             HeatmapStateScanning               = ColorTranslator.FromHtml("#333333"),
             HeatmapStateCompleted              = ColorTranslator.FromHtml("#343434"),
             HeatmapStateFaulted                = ColorTranslator.FromHtml("#353535"),
+            HotKey                             = ColorTranslator.FromHtml("#454545"),
+            HotKeyName                         = ColorTranslator.FromHtml("#464646"),
             ListViewBorderForeground           = ColorTranslator.FromHtml("#232323"),
             ListViewBorderBackground           = ColorTranslator.FromHtml("#393939"),
             ListViewBackground                 = ColorTranslator.FromHtml("#242424"),
@@ -388,6 +418,8 @@ public sealed class ThemeTests
         theme.HeatmapStateScanning        = ColorTranslator.FromHtml("#333333");
         theme.HeatmapStateCompleted       = ColorTranslator.FromHtml("#343434");
         theme.HeatmapStateFaulted         = ColorTranslator.FromHtml("#353535");
+        theme.HotKey                      = ColorTranslator.FromHtml("#474747");
+        theme.HotKeyName                  = ColorTranslator.FromHtml("#484848");
         theme.ListViewBorderForeground    = ColorTranslator.FromHtml("#232323");
         theme.ListViewBorderBackground    = ColorTranslator.FromHtml("#393939");
         theme.ListViewBackground          = ColorTranslator.FromHtml("#242424");
@@ -450,6 +482,8 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.HeatmapStateScanning);
         Assert.Equal(ColorTranslator.FromHtml("#343434"), theme.HeatmapStateCompleted);
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
+        Assert.Equal(ColorTranslator.FromHtml("#474747"), theme.HotKey);
+        Assert.Equal(ColorTranslator.FromHtml("#484848"), theme.HotKeyName);
         Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
@@ -481,7 +515,7 @@ public sealed class ThemeTests
     }
 
     [Fact]
-    public void Shipped_Themes_Define_Property_Colours()
+    public void Shipped_Themes_Define_Property_And_HotKey_Colours()
     {
         Assembly asm = typeof(Theme).Assembly;
         string[] themeNames = asm.GetManifestResourceNames()
@@ -498,6 +532,8 @@ public sealed class ThemeTests
 
             Assert.True(section.Contains(Constants.Keys.PropertyKey), $"{name} is missing {Constants.Keys.PropertyKey}");
             Assert.True(section.Contains(Constants.Keys.PropertyValue), $"{name} is missing {Constants.Keys.PropertyValue}");
+            Assert.True(section.Contains(Constants.Keys.HotKey), $"{name} is missing {Constants.Keys.HotKey}");
+            Assert.True(section.Contains(Constants.Keys.HotKeyName), $"{name} is missing {Constants.Keys.HotKeyName}");
         }
     }
 
@@ -568,6 +604,9 @@ heatmap.state.scanning=#333333
 heatmap.state.completed=#343434
 heatmap.state.faulted=#353535
 
+hotkey.key=#454545
+hotkey.name=#464646
+
 app.error=#a6423f
 
 menubar.foreground=#717f24
@@ -579,5 +618,5 @@ command.background=#121d18
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(62, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(64, CanaryTestHelper.GetPropertyCount<Theme>());
 }

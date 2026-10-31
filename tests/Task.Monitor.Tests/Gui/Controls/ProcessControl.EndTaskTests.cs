@@ -127,7 +127,7 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         ProcessControl ctrl = CreateControl(width: 160);
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
 
-        Assert.Contains("f Filter     k End Task", CapturedOutput());
+        Assert.Contains("k End Task   f Filter", AnsiTestHelper.StripColours(CapturedOutput()));
 
         ctrl.Unload();
     }

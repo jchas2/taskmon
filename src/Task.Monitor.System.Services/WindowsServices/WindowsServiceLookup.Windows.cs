@@ -14,7 +14,7 @@ internal static class WindowsServiceLookup
 #if __WIN32__
     private static Dictionary<int, WindowsServiceInfo> serviceMap = new();
     
-    private static readonly Lock criticalSection = new();
+    private static readonly Lock CriticalSection = new();
 
     private static int   cyclesSinceRefresh;
     private static bool refreshRequested;
@@ -22,7 +22,7 @@ internal static class WindowsServiceLookup
 
     public static bool GetService(int pid, out WindowsServiceInfo? service)
     {
-        lock (criticalSection) {
+        lock (CriticalSection) {
             if (!attempted) {
                 RebuildServiceMap();
             }
@@ -82,7 +82,7 @@ internal static class WindowsServiceLookup
     internal static int MappedServiceCount
     {
         get {
-            lock (criticalSection) {
+            lock (CriticalSection) {
                 return serviceMap.Count;
             }
         }
@@ -105,7 +105,7 @@ internal static class WindowsServiceLookup
 
     internal static void RefreshIfDue()
     {
-        lock (criticalSection) {
+        lock (CriticalSection) {
             if (!attempted) {
                 return;
             }
@@ -121,7 +121,7 @@ internal static class WindowsServiceLookup
 
     internal static void RequestRefreshIfStale(ICollection<int> livePids)
     {
-        lock (criticalSection) {
+        lock (CriticalSection) {
             if (!attempted || refreshRequested) {
                 return;
             }

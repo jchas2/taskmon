@@ -127,6 +127,9 @@ public sealed class Constants
 
         public const string Error = "app.error";
 
+        public const string HotKey     = "hotkey.key";
+        public const string HotKeyName = "hotkey.name";
+
         public const string MenubarForeground = "menubar.foreground";
         public const string MenubarBackground = "menubar.background";
 

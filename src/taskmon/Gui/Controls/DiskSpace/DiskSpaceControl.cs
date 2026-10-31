@@ -19,6 +19,8 @@ public sealed partial class DiskSpaceControl : Control
     private const int SizeColumnWidth           = 12;
     private const int StatusRowHeight           = 1;
 
+    private const string FilesViewTitle = "LARGEST FILES";
+
     private readonly ServiceController       serviceController;
     private readonly AppConfig               appConfig;
     private readonly DiskSpaceHeatMapControl heatMap;
@@ -65,7 +67,7 @@ public sealed partial class DiskSpaceControl : Control
             TabIndex          = 2,
             Visible           = true,
             EmptyListViewText = "No files scanned yet - press s to start a scan.",
-            HeaderText        = "LARGEST FILES"
+            HeaderText        = FilesViewTitle
         };
 
         filesView.ColumnHeaders

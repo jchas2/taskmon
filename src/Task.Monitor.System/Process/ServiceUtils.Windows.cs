@@ -13,12 +13,12 @@ namespace Task.Monitor.System.Process;
 public static partial class ServiceUtils
 {
 #if __WIN32__
-    private static readonly Dictionary<int, ServiceInfo> serviceMap = new();
-    private static readonly Lock criticalSection = new();
+    private static readonly Dictionary<int, ServiceInfo> ServiceMap = new();
+    private static readonly Lock CriticalSection = new();
 
     private static void BuildServiceMap()
     {
-        serviceMap.Clear();
+        ServiceMap.Clear();
 
         nint hSCM = WinService.OpenSCManager(null!, null!, WinService.SC_MANAGER_CONNECT);
 
@@ -48,7 +48,7 @@ public static partial class ServiceUtils
                 continue;
             }
 
-            serviceMap[pid] = service;
+            ServiceMap[pid] = service;
         }
 
         WinService.CloseServiceHandle(hSCM);
@@ -56,12 +56,12 @@ public static partial class ServiceUtils
 
     public static bool GetService(int pid, out ServiceInfo? service)
     {
-        lock (criticalSection) {
-            if (serviceMap.Count == 0) {
+        lock (CriticalSection) {
+            if (ServiceMap.Count == 0) {
                 BuildServiceMap();
             }
 
-            if (serviceMap.TryGetValue(pid, out service)) {
+            if (ServiceMap.TryGetValue(pid, out service)) {
                 return true;
             }
 

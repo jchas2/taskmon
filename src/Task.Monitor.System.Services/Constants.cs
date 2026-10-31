@@ -2,5 +2,5 @@
 
 public sealed class Constants
 {
-    public const string NotAvailable = "Not Available";
+    public const string NotAvailable = "N/A";
 }

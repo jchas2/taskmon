@@ -111,8 +111,10 @@ public sealed partial class LaunchdServicesControl
 
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, entries.Count);
-        servicesView.FooterText          =
-            $"{running} running / {entries.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+        servicesView.HeaderText          = $"{running} running / {entries.Count} total";
+        servicesView.FooterText          = CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 
     private Color StatusForeground(LaunchdServiceInfo service) => service.Status switch {

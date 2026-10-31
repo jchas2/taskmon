@@ -62,8 +62,7 @@ public sealed partial class SystemInfoControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering system information…",
-            FooterText        = "↑ ↓ PgUp PgDn Scroll"
+            EmptyListViewText = "Gathering system information…"
         };
 
         systemInfoView.ColumnHeaders
@@ -195,6 +194,8 @@ public sealed partial class SystemInfoControl : Control
 
         CommonControl.Theme(systemInfoView, appConfig.Theme);
         CommonControl.Theme(systemSummaryView, appConfig.Theme);
+
+        systemInfoView.FooterText = CommonControl.FooterText(appConfig.Theme, CommonControl.ScrollHotKey);
 
         logoControl.BackgroundColour = appConfig.Theme.Background;
 

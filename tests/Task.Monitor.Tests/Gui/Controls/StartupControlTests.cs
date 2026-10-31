@@ -281,15 +281,16 @@ public sealed class StartupControlTests : IDisposable
             Entry("Charlie App", command: "charlie.exe")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
-        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+        Assert.Contains("r Refresh   s Sort   f Filter   ↑ ↓", VisibleOutput());
+        Assert.DoesNotContain("esc Clear Filter", VisibleOutput());
 
         ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
-        string output = CapturedOutput();
-        Assert.Contains("2 enabled / 3 total     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
+        string output = VisibleOutput();
+        Assert.Contains("2 enabled / 3 total", output);
+        Assert.Contains("r Refresh   s Sort   f Filter   esc Clear Filter   ↑ ↓", output);
 
         ctrl.Unload();
     }
@@ -325,7 +326,7 @@ public sealed class StartupControlTests : IDisposable
     }
 
     [Fact]
-    public void Shows_The_Enabled_And_Total_Counts_In_The_Footer()
+    public void Shows_The_Enabled_And_Total_Counts_In_The_Header()
     {
         StartupControl ctrl = CreateControl();
 
@@ -361,4 +362,6 @@ public sealed class StartupControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    private string VisibleOutput() => AnsiTestHelper.StripColours(CapturedOutput());
 }

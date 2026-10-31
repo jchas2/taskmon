@@ -34,7 +34,7 @@ public sealed partial class DiskSpaceControl
     {
         if (files.Count == 0) {
             filesView.Items.Clear();
-            SetFilesViewFooterText(files);
+            SetFilesViewBorderText(files);
             return;
         }
 
@@ -70,11 +70,12 @@ public sealed partial class DiskSpaceControl
             }
         }
         
-        SetFilesViewFooterText(files);
+        SetFilesViewBorderText(files);
     }
     
-    private void SetFilesViewFooterText(IReadOnlyList<DiskSpaceFileEntry> files) =>
-        filesView.FooterText =
-            $"{files.Count} of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files     " +
-            "↑ ↓ PgUp PgDn Scroll";
+    private void SetFilesViewBorderText(IReadOnlyList<DiskSpaceFileEntry> files)
+    {
+        filesView.HeaderText = $"{FilesViewTitle} ({files.Count} of top {DiskSpaceAccumulator.MaxTrackedFiles})";
+        filesView.FooterText = CommonControl.FooterText(appConfig.Theme, CommonControl.ScrollHotKey);
+    }
 }

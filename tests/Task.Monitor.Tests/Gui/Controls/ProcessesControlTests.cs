@@ -14,6 +14,9 @@ namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class ProcessesControlTests : IDisposable
 {
+    private const string DefaultFooterText  = "s Sort   k End Task   f Filter   ↑ ↓ pgup pgdn Scroll";
+    private const string FilteredFooterText = "s Sort   k End Task   f Filter   esc Clear Filter   ↑ ↓ pgup pgdn Scroll";
+
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
@@ -296,7 +299,7 @@ public sealed class ProcessesControlTests : IDisposable
 
         ctrl.Draw();
 
-        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(ProcessControl.DefaultFooterText))), Times.AtLeastOnce);
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => AnsiTestHelper.StripColours(s).Contains(DefaultFooterText))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Sort Asc: a"))), Times.Never);
 
         ctrl.Unload();
@@ -311,14 +314,14 @@ public sealed class ProcessesControlTests : IDisposable
 
         ctrl.Draw();
 
-        Assert.Contains(ProcessControl.DefaultFooterText, CapturedOutput());
-        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+        Assert.Contains(DefaultFooterText, VisibleOutput());
+        Assert.DoesNotContain("esc Clear Filter", VisibleOutput());
 
         ctrl.ProcessControl.FilterText = "proc";
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
-        Assert.Contains(ProcessControl.FilteredFooterText, CapturedOutput());
+        Assert.Contains(FilteredFooterText, VisibleOutput());
 
         ctrl.Unload();
     }
@@ -673,6 +676,8 @@ public sealed class ProcessesControlTests : IDisposable
             Press(ctrl, new ConsoleKeyInfo(ch, 0, false, false, false));
         }
     }
+
+    private string VisibleOutput() => AnsiTestHelper.StripColours(CapturedOutput());
 
     [Fact]
     public void Z_Key_Shows_Frozen_In_The_Title_Alongside_The_Filter()

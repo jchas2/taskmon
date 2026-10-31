@@ -141,7 +141,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Summary layouts - ↵ create/edit, highlighted is used on F10 Done"));
+        layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Summary layouts - highlighted is used on F10 Done"));
         
         metreView = new(runContext.Terminal) {
             Name              = nameof(metreView),
@@ -867,5 +867,8 @@ public class SetupScreen : Screen
         foreach (ListView ctrl in tabControls) {
             CommonControl.Theme(ctrl, previewTheme);
         }
+
+        // Rebuilt with the theme so the hotkey colours follow the theme being previewed.
+        layoutView.FooterText = CommonControl.FooterText(previewTheme, ("↵", "Create/Edit"));
     }
 }

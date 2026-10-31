@@ -388,6 +388,18 @@ public sealed class ListViewTests
         Assert.Equal(0, terminal.WriteStringCalls);
     }
 
+    [Fact]
+    public void OnDraw_Centres_A_Coloured_Footer_By_Its_Visible_Width()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.FooterText = Fg(ConsolePalette.Cyan) + "k" + Fg(ConsolePalette.White) + " Kill";
+
+        listView.Draw();
+
+        // " k Kill " is 8 visible columns, leaving 35 dashes either side of the 78 column inner width.
+        Assert.Equal("╰" + new string('─', 35) + " k Kill " + new string('─', 35) + "╯", VisibleBottomBorder());
+    }
+
     // Bold is deliberately not used for the header: terminals commonly desaturate a bold
     // foreground colour, which can make it unreadable against some header colour pairs.
     [Fact]
@@ -526,6 +538,35 @@ public sealed class ListViewTests
         // Header and footer labels are drawn into the border.
         Assert.Contains("Processes", output);
         Assert.Contains("2 items", output);
+    }
+
+    [Fact]
+    public void OnDraw_Restores_The_Border_Colour_After_A_Coloured_Footer()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.ForegroundColour       = ConsolePalette.White;
+        listView.BorderForegroundColour = ConsolePalette.White;
+        listView.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        listView.FooterText             = Fg(ConsolePalette.Cyan) + "k";
+
+        listView.Draw();
+
+        // The border shares the label's colours, so without the reset the frame would skip writing
+        // them and the dashes would be drawn in the footer's last colour.
+        string border = Bg(ConsolePalette.DarkBlue) + Fg(ConsolePalette.White);
+        Assert.Contains("k " + AnsiConsoleStringExtensions.Reset + border + "─", terminal.Output);
+    }
+
+    [Fact]
+    public void OnDraw_Truncates_A_Coloured_Footer_By_Its_Visible_Width()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Width      = 12;
+        listView.FooterText = Fg(ConsolePalette.Cyan) + "abcdef" + Fg(ConsolePalette.White) + "ghijkl";
+
+        listView.Draw();
+
+        Assert.Equal("╰ abcdefghi╯", VisibleBottomBorder());
     }
 
     [Fact]
@@ -960,6 +1001,24 @@ public sealed class ListViewTests
         Assert.DoesNotContain(Down, output);
     }
 
+    [Theory]
+    [InlineData("abc", 10, 3, 3)]
+    [InlineData("abc", 2, 2, 2)]
+    [InlineData("\u001b[31mab\u001b[0mcd", 3, 12, 3)]
+    [InlineData("\u001b[31mab\u001b[0mcd", 10, 13, 4)]
+    [InlineData("\u001b[31mabc", 0, 5, 0)]
+    public void TruncateToVisibleWidth_Counts_Only_The_Visible_Columns(
+        string text,
+        int    maxWidth,
+        int    expectedLength,
+        int    expectedWidth)
+    {
+        int length = ListViewControl.TruncateToVisibleWidth(text, maxWidth, out int width);
+
+        Assert.Equal(expectedLength, length);
+        Assert.Equal(expectedWidth, width);
+    }
+
     [Fact]
     public void Unselected_Row_Is_Never_Highlighted_Even_With_A_Custom_Cell()
     {
@@ -971,5 +1030,12 @@ public sealed class ListViewTests
 
         Assert.Contains(Bg(CellBackground), row);
         Assert.DoesNotContain(Bg(ConsolePalette.Gray), row);
+    }
+
+    // The bottom border row as the terminal shows it, colour sequences removed.
+    private string VisibleBottomBorder()
+    {
+        string row = Assert.Single(MoveToEscape.Split(terminal.Output), segment => segment.Contains('╰'));
+        return AnsiEscape.Replace(row, string.Empty);
     }
 }

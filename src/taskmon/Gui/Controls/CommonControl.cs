@@ -1,4 +1,6 @@
-﻿using Task.Monitor.Configuration;
+﻿using System.Text;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.DriveInputBox;
@@ -12,6 +14,51 @@ namespace Task.Monitor.Gui.Controls;
 
 public static class CommonControl
 {
+    public const string FooterSeparator = "   ";
+
+    public static readonly (string Key, string Label) ClearFilterHotKey = ("Esc", "Clear Filter");
+    public static readonly (string Key, string Label) FilterHotKey      = ("f", "Filter");
+    public static readonly (string Key, string Label) RefreshHotKey     = ("r", "Refresh");
+    public static readonly (string Key, string Label) ScrollHotKey      = ("↑ ↓ PgUp PgDn", "Scroll");
+    public static readonly (string Key, string Label) SortHotKey        = ("s", "Sort");
+
+    public static string FooterText(Theme theme, params (string Key, string Label)[] hotKeys)
+    {
+        if (hotKeys.Length == 0) {
+            return string.Empty;
+        }
+
+        string keyColour  = ConsolePalette.ForegroundSgr(theme.HotKey);
+        string nameColour = ConsolePalette.ForegroundSgr(theme.HotKeyName);
+
+        StringBuilder text = new(ConsolePalette.BackgroundSgr(theme.ListViewBorderBackground));
+
+        for (int i = 0; i < hotKeys.Length; i++) {
+            if (i > 0) {
+                text.Append(FooterSeparator);
+            }
+
+            text.Append(keyColour)
+                .Append(FormatHotKey(hotKeys[i].Key))
+                .Append(nameColour)
+                .Append(' ')
+                .Append(hotKeys[i].Label);
+        }
+
+        return text.ToString();
+    }
+
+    public static string FormatHotKey(string key) =>
+        IsFunctionKey(key)
+            ? key.ToUpperInvariant()
+            : key.ToLowerInvariant();
+
+    private static bool IsFunctionKey(string key) =>
+        key.Length is 2 or 3 &&
+        key[0] is 'F' or 'f' &&
+        int.TryParse(key.AsSpan(1), out int number) &&
+        number is >= 1 and <= 24;
+
     public static void Theme(Chart control, Theme theme)
     {
         control.BackgroundColour       = theme.ChartBackground;

@@ -107,11 +107,13 @@ public sealed partial class StartupControl
             startupView.Items.Add(row);
         }
 
-        string footerNotes = notes.Count > 0 ? $"     {string.Join("  ", notes)}" : string.Empty;
+        string headerNotes = notes.Count > 0 ? $"   {string.Join("  ", notes)}" : string.Empty;
 
         startupView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         startupView.HeaderHighlightText = filter.BuildHeaderText(visibleEntries.Count, entries.Count);
-        startupView.FooterText          =
-            $"{enabled} enabled / {entries.Count} total     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll{footerNotes}";
+        startupView.HeaderText          = $"{enabled} enabled / {entries.Count} total{headerNotes}";
+        startupView.FooterText          = CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 }   

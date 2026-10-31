@@ -359,14 +359,14 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Fact]
-    public void Shows_The_File_Count_In_The_Footer()
+    public void Shows_The_File_Count_In_The_Header()
     {
         DiskSpaceControl ctrl = CreateControl();
 
         ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
         ctrl.Draw();
 
-        Assert.Contains($"2 of top {DiskSpaceAccumulator.MaxTrackedFiles} largest files", CapturedOutput());
+        Assert.Contains($"LARGEST FILES (2 of top {DiskSpaceAccumulator.MaxTrackedFiles})", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -515,12 +515,12 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Sample(SnapshotWith(BuildScanningSpecs()));
         ctrl.Draw();
 
-        string output = CapturedOutput();
+        string output = AnsiTestHelper.StripColours(CapturedOutput());
 
         // The heat map's own border carries these now (see the earlier "before any scan" test) -
         // the file list's footer should be about the list itself only.
-        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
-        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ PgUp PgDn Scroll", output);
+        Assert.Contains("↑ ↓ pgup pgdn Scroll", output);
+        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ pgup pgdn Scroll", output);
 
         ctrl.Unload();
     }

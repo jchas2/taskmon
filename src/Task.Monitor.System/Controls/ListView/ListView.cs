@@ -23,6 +23,8 @@ public class ListView : Control
     private const int DefaultColumnWidth = 30;
     private const int DefaultHeaderWidth = 80;
 
+    private const char AnsiEscape = '\u001b';
+
     private const string CheckedText   = "[x] ";
     private const string UnCheckedText = "[ ] ";
 
@@ -227,17 +229,26 @@ public class ListView : Control
                     : '\u2502');
         }
 
+        // FooterText may carry SGR colour sequences, which take no columns: centre and truncate the
+        // label by its visible width rather than its length.
         string footerLabel    = string.IsNullOrEmpty(FooterText) ? string.Empty : $" {FooterText} ";
-        int footerLabelLen    = Math.Min(footerLabel.Length, innerWidth);
-        int footerLeftDashes  = (innerWidth - footerLabelLen) / 2;
-        int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
+        int footerLabelLen    = TruncateToVisibleWidth(footerLabel, innerWidth, out int footerLabelWidth);
+        int footerLeftDashes  = (innerWidth - footerLabelWidth) / 2;
+        int footerRightDashes = innerWidth - footerLabelWidth - footerLeftDashes;
 
         frame.MoveTo(X, Y + Height - 1);
         SetBorderColour();
         frame.Append('\u2570');
         frame.Append('\u2500', footerLeftDashes);
         frame.SetColour(ForegroundColour, BorderBackgroundColour);
-        frame.Append(footerLabelLen < footerLabel.Length ? footerLabel[..footerLabelLen] : footerLabel);
+        frame.Append(footerLabel.AsSpan(0, footerLabelLen));
+
+        // Colours embedded in the label changed the terminal behind the frame's back; reset so the
+        // border colour below is always written rather than skipped as unchanged.
+        if (footerLabel.Contains(AnsiEscape)) {
+            frame.ResetColour();
+        }
+
         SetBorderColour();
         frame.Append('\u2500', footerRightDashes);
         frame.Append('\u256F');
@@ -749,4 +760,46 @@ public class ListView : Control
     public bool ShowCheckboxes { get; set; }
 
     public bool ShowColumnHeaders { get; set; }
+
+    // The number of chars, from the start of text, that fit within maxWidth terminal columns. ANSI
+    // escape sequences (ESC [ ... final byte) are kept but occupy no columns. visibleWidth is the
+    // columns those chars occupy.
+    internal static int TruncateToVisibleWidth(string text, int maxWidth, out int visibleWidth)
+    {
+        int index = 0;
+        visibleWidth = 0;
+
+        while (index < text.Length) {
+            if (text[index] == AnsiEscape) {
+                int end = index + 1;
+
+                if (end < text.Length && text[end] == '[') {
+                    end++;
+
+                    while (end < text.Length && text[end] is < '@' or > '~') {
+                        end++;
+                    }
+                }
+
+                index = Math.Min(end + 1, text.Length);
+                continue;
+            }
+
+            int next = text.IndexOf(AnsiEscape, index);
+
+            if (next < 0) {
+                next = text.Length;
+            }
+
+            int taken = text.AsSpan(index, next - index).TruncateToTerminalWidth(maxWidth - visibleWidth, out int width);
+            visibleWidth += width;
+            index        += taken;
+
+            if (index < next) {
+                break;
+            }
+        }
+
+        return index;
+    }
 }

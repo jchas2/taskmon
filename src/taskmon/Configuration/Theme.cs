@@ -46,6 +46,8 @@ public sealed class Theme
         Constants.Keys.HeatmapStateScanning,
         Constants.Keys.HeatmapStateCompleted,
         Constants.Keys.HeatmapStateFaulted,
+        Constants.Keys.HotKey,
+        Constants.Keys.HotKeyName,
         Constants.Keys.ListViewBackground,
         Constants.Keys.ListViewForeground,
         Constants.Keys.ListViewBorderForeground,
@@ -271,6 +273,18 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.HeatmapStateScanning, ConsolePalette.Yellow);
         set => SetColour(Constants.Keys.HeatmapStateScanning, value);
+    }
+
+    public Color HotKey
+    {
+        get => GetColour(Constants.Keys.HotKey, Color.DeepSkyBlue);
+        set => SetColour(Constants.Keys.HotKey, value);
+    }
+
+    public Color HotKeyName
+    {
+        get => GetColour(Constants.Keys.HotKeyName, Foreground);
+        set => SetColour(Constants.Keys.HotKeyName, value);
     }
 
     public Color ListViewBackground

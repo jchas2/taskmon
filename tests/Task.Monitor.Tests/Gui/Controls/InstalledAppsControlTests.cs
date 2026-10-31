@@ -244,15 +244,16 @@ public sealed class InstalledAppsControlTests : IDisposable
             App("Charlie App", installLocation: "/Applications/Charlie.app")));
         ctrl.Draw();
 
-        Assert.Contains("r Refresh     s Sort     f Filter     ↑ ↓", CapturedOutput());
-        Assert.DoesNotContain("Esc Clear Filter", CapturedOutput());
+        Assert.Contains("r Refresh   s Sort   f Filter   ↑ ↓", VisibleOutput());
+        Assert.DoesNotContain("esc Clear Filter", VisibleOutput());
 
         ListKeys.ApplyFilter(ctrl, "bravo");
         runContextHelper.terminal.Invocations.Clear();
         ctrl.Draw();
 
-        string output = CapturedOutput();
-        Assert.Contains("3 installed     r Refresh     s Sort     f Filter     Esc Clear Filter     ↑ ↓", output);
+        string output = VisibleOutput();
+        Assert.Contains("3 installed", output);
+        Assert.Contains("r Refresh   s Sort   f Filter   esc Clear Filter   ↑ ↓", output);
 
         ctrl.Unload();
     }
@@ -320,7 +321,7 @@ public sealed class InstalledAppsControlTests : IDisposable
     }
 
     [Fact]
-    public void Shows_The_Total_Count_In_The_Footer()
+    public void Shows_The_Total_Count_In_The_Header()
     {
         InstalledAppsControl ctrl = CreateControl();
 
@@ -353,4 +354,6 @@ public sealed class InstalledAppsControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    private string VisibleOutput() => AnsiTestHelper.StripColours(CapturedOutput());
 }

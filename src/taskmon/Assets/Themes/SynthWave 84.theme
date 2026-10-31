@@ -83,3 +83,6 @@ menubar.background=#262335          ; tab.activeBackground
 
 command.foreground=#f97e72          ; tab.activeForeground
 command.background=#262335          ; tab.activeBackground
+
+hotkey.key=#00BFFF
+hotkey.name=#ff7edb

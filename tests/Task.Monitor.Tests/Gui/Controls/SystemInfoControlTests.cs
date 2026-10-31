@@ -271,9 +271,9 @@ public sealed class SystemInfoControlTests
         SystemInfoControl ctrl = CreateControl();
         ctrl.Draw();
 
-        string output = CapturedOutput();
+        string output = AnsiTestHelper.StripColours(CapturedOutput());
 
-        Assert.Contains("↑ ↓ PgUp PgDn Scroll", output);
+        Assert.Contains("↑ ↓ pgup pgdn Scroll", output);
         Assert.Contains(Environment.MachineName.ToUpper(), output);
 
         ctrl.Unload();

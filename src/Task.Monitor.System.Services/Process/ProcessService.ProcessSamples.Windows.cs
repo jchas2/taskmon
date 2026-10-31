@@ -14,7 +14,7 @@ namespace Task.Monitor.System.Services.Process;
 public partial class ProcessService
 {
 #if __WIN32__
-    private static readonly Dictionary<string, string> userMap = new();
+    private static readonly Dictionary<string, string> UserMap = new();
 
     private static unsafe ProcessSample? CreateProcessSample(Kernel32.PROCESSENTRY32W* entry)
     {
@@ -347,7 +347,7 @@ public partial class ProcessService
         IdentityReference identityRef = sid.Translate(typeof(NTAccount));
         string userName = identityRef.ToString();
 
-        if (userMap.TryGetValue(userName, out string? name)) {
+        if (UserMap.TryGetValue(userName, out string? name)) {
             return name;
         }
 
@@ -355,7 +355,7 @@ public partial class ProcessService
 
         if (domainIndex != -1) {
             string abbrevUserName = userName.Substring(domainIndex + 1);
-            userMap.Add(userName, abbrevUserName);
+            UserMap.Add(userName, abbrevUserName);
         }
 
         return userName;

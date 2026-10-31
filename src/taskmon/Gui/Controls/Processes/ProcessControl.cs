@@ -17,10 +17,8 @@ public sealed partial class ProcessControl : Control
     private const int InvalidSelectedItemIndex = -1;
 
     private int lastKnownProcessId = InvalidSelectedItemIndex;
-    
-    // TODO: Refactor into common for sharing across all sortable, scrollable lists.
-    public const string DefaultFooterText  = "s Sort     f Filter     k End Task     ↑ ↓ PgUp PgDn Scroll";
-    public const string FilteredFooterText = "s Sort     f Filter     Esc Clear Filter     k End Task     ↑ ↓ PgUp PgDn Scroll";
+
+    public static readonly (string Key, string Label) EndTaskHotKey = ("k", "End Task");
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
@@ -173,7 +171,10 @@ public sealed partial class ProcessControl : Control
         set => filter.Text = value;
     }
 
-    private string FooterText => IsFiltered ? FilteredFooterText : DefaultFooterText;
+    private string FooterText =>
+        CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.SortHotKey, EndTaskHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
 
     private ListView? GetTargetControl()
     {

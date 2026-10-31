@@ -8,10 +8,8 @@ namespace Task.Monitor.Gui.Controls;
 
 internal sealed class ListFilter
 {
-    private const string ActiveFooterHint  = "f Filter     Esc Clear Filter";
-    private const string DefaultFooterHint = "f Filter";
-    private const int    DialogMaxWidth    = 50;
-    private const int    DialogMinWidth    = 30;
+    private const int DialogMaxWidth = 50;
+    private const int DialogMinWidth = 30;
 
     public const string NoMatchesText = "No matches";
 
@@ -61,7 +59,11 @@ internal sealed class ListFilter
         }
     }
 
-    public string FooterHint => IsActive ? ActiveFooterHint : DefaultFooterHint;
+    // The filter's footer hotkeys; Esc to clear only appears while a filter is applied.
+    public (string Key, string Label)[] FooterHotKeys =>
+        IsActive
+            ? [CommonControl.FilterHotKey, CommonControl.ClearFilterHotKey]
+            : [CommonControl.FilterHotKey];
 
     public bool IsActive => !string.IsNullOrEmpty(Text);
 

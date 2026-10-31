@@ -103,13 +103,13 @@ public sealed class ListFilterTests : IDisposable
     }
 
     [Fact]
-    public void FooterHint_Adds_The_Clear_Hint_While_Filtered()
+    public void FooterHotKeys_Adds_The_Clear_Hotkey_While_Filtered()
     {
-        Assert.Equal("f Filter", filter.FooterHint);
+        Assert.Equal([CommonControl.FilterHotKey], filter.FooterHotKeys);
 
         filter.Text = "abc";
 
-        Assert.Equal("f Filter     Esc Clear Filter", filter.FooterHint);
+        Assert.Equal([CommonControl.FilterHotKey, CommonControl.ClearFilterHotKey], filter.FooterHotKeys);
     }
 
     [Fact]

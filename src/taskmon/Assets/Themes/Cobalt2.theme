@@ -83,3 +83,6 @@ menubar.background=#193549
 
 command.foreground=#e1efff
 command.background=#193549
+
+hotkey.key=#00BFFF
+hotkey.name=#ffc600

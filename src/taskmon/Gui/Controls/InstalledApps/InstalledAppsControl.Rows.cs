@@ -90,7 +90,9 @@ public sealed partial class InstalledAppsControl
 
         installedAppsView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         installedAppsView.HeaderHighlightText = filter.BuildHeaderText(visibleApps.Count, apps.Count);
-        installedAppsView.FooterText          =
-            $"{apps.Count} installed     r Refresh     s Sort     {filter.FooterHint}     ↑ ↓ PgUp PgDn Scroll";
+        installedAppsView.HeaderText          = $"{apps.Count} installed";
+        installedAppsView.FooterText          = CommonControl.FooterText(
+            appConfig.Theme,
+            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 }

@@ -12,8 +12,8 @@ public static partial class GpuService
 
     private const string GpuEngineCounterPath = @"\GPU Engine(*)\Running Time";
 
-    private static readonly Dictionary<string, long> prevEngineValues = new();
-    private static readonly Dictionary<int, long> cumulativeEngineValues = new();
+    private static readonly Dictionary<string, long> PrevEngineValues = new();
+    private static readonly Dictionary<int, long> CumulativeEngineValues = new();
 
     private static unsafe Dictionary<int, long> GetProcessStatsInternal()
     {
@@ -31,7 +31,7 @@ public static partial class GpuService
                 $"Failed {nameof(GetProcessStatsInternal)}", 
                 pdhResult);
             
-            return new Dictionary<int, long>(cumulativeEngineValues);
+            return new Dictionary<int, long>(CumulativeEngineValues);
         }
 
         if ((pdhResult = Pdh.PdhAddEnglishCounter(
@@ -46,7 +46,7 @@ public static partial class GpuService
                 pdhResult);
 
             Pdh.PdhCloseQuery(hQuery);
-            return new Dictionary<int, long>(cumulativeEngineValues);
+            return new Dictionary<int, long>(CumulativeEngineValues);
         }
 
         if ((pdhResult = Pdh.PdhCollectQueryData(hQuery)) != Pdh.ERROR_SUCCESS) {
@@ -56,7 +56,7 @@ public static partial class GpuService
                 pdhResult);
 
             Pdh.PdhCloseQuery(hQuery);
-            return new Dictionary<int, long>(cumulativeEngineValues);
+            return new Dictionary<int, long>(CumulativeEngineValues);
         }
 
         uint bufferSize = 0;
@@ -74,7 +74,7 @@ public static partial class GpuService
                 $"{nameof(Pdh.PdhGetRawCounterArray)} failed to calculate {nameof(bufferSize)} ");
             
             Pdh.PdhCloseQuery(hQuery);
-            return new Dictionary<int, long>(cumulativeEngineValues);
+            return new Dictionary<int, long>(CumulativeEngineValues);
         }
 
         nint buffer = Marshal.AllocHGlobal((int)bufferSize);
@@ -108,10 +108,10 @@ public static partial class GpuService
                 }
 
                 long current = item.RawValue.FirstValue;
-                long prev = prevEngineValues.GetValueOrDefault(item.szName, current);
+                long prev = PrevEngineValues.GetValueOrDefault(item.szName, current);
                 long delta = current - prev;
                 
-                prevEngineValues[item.szName] = current;
+                PrevEngineValues[item.szName] = current;
 
                 if (delta > 0) {
                     maxDeltas[pid] = Math.Max(maxDeltas.GetValueOrDefault(pid, 0), delta);
@@ -119,7 +119,7 @@ public static partial class GpuService
             }
 
             foreach (var (pid, maxDelta) in maxDeltas) {
-                cumulativeEngineValues[pid] = cumulativeEngineValues.GetValueOrDefault(pid, 0) + maxDelta;
+                CumulativeEngineValues[pid] = CumulativeEngineValues.GetValueOrDefault(pid, 0) + maxDelta;
             }
         }
         else {                            
@@ -132,7 +132,7 @@ public static partial class GpuService
         Marshal.FreeHGlobal(buffer);
         Pdh.PdhCloseQuery(hQuery);
 
-        return new Dictionary<int, long>(cumulativeEngineValues);
+        return new Dictionary<int, long>(CumulativeEngineValues);
     }
 
     private static bool IsTrackedEngineType(string instanceName) =>
