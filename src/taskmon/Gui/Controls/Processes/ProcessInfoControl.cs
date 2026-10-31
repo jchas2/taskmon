@@ -126,6 +126,8 @@ public partial class ProcessInfoControl : Control
 
     public bool AutoRefresh { get; set; } = true;
 
+    internal static Lock DrawingLockForTests => DrawingLock;
+
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     private bool HasProcess => SelectedProcessId >= 0;
@@ -257,9 +259,10 @@ public partial class ProcessInfoControl : Control
         workerTask              = null;
 
         if (AutoRefresh) {
-            cancellationTokenSource = new CancellationTokenSource();
-            workerTask              = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(cancellationTokenSource.Token));
-            
+            CancellationTokenSource workerTokenSource = new();
+            cancellationTokenSource = workerTokenSource;
+            workerTask              = WorkerTask.Run(() => UpdateListViewThreadItemsLoop(workerTokenSource));
+
             Trace.WriteLine($"ProcessInfoControl worker task {nameof(workerTask)} spawned with id {workerTask.Id}.");
         }
         
@@ -305,24 +308,22 @@ public partial class ProcessInfoControl : Control
 
     protected override void OnUnload()
     {
-        try {
+        lock (DrawingLock) {
+            // Just cancel the token and don't wait; it could deadlock under KeyPressed (which can call Unload).
             cancellationTokenSource?.Cancel();
-            workerTask?.Wait();
-        }
-        catch (AggregateException aggEx) {
-            ExceptionHelper.HandleWaitAllException(aggEx);
-        }
-        
-        processInfoView.Items.Clear();
-        menuView.Items.Clear();
-        modulesView.Items.Clear();
-        threadsView.Items.Clear();
-        handlesView.Items.Clear();
+            cancellationTokenSource = null;
 
-        modulesLoaded = false;
-        
+            processInfoView.Items.Clear();
+            menuView.Items.Clear();
+            modulesView.Items.Clear();
+            threadsView.Items.Clear();
+            handlesView.Items.Clear();
+
+            modulesLoaded = false;
+        }
+
         menuView.ItemClicked -= MenuViewOnItemClicked;
-        
+
         base.OnUnload();
     }
 
@@ -360,6 +361,8 @@ public partial class ProcessInfoControl : Control
 
     private void SetProcessTitle(string title) =>
         tabControls.ForEach(ctrl => ctrl.HeaderText = title);
+
+    internal TimeSpan ThreadRefreshInterval { get; set; } = TimeSpan.FromSeconds(1);
 
     private void TryLoadProcessInfo()
     {
@@ -532,17 +535,34 @@ public partial class ProcessInfoControl : Control
             }
         }
     }
-    
-    private void UpdateListViewThreadItemsLoop(CancellationToken token)
+
+    private void UpdateListViewThreadItemsLoop(CancellationTokenSource tokenSource)
     {
-        while (!token.IsCancellationRequested) {
-            if (threadsView.Visible) {
-                TryUpdateListViewThreadItems();
-                Draw();
+        CancellationToken token = tokenSource.Token;
+
+        try {
+            while (!token.WaitHandle.WaitOne(ThreadRefreshInterval)) {
+                lock (DrawingLock) {
+                    if (token.IsCancellationRequested) {
+                        break;
+                    }
+
+                    if (threadsView.Visible) {
+                        TryUpdateListViewThreadItems();
+                        Draw();
+                    }
+                }
             }
-            Thread.Sleep(1000);
         }
-        
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, "ProcessInfoControl worker task failed.");
+        }
+        finally {
+            tokenSource.Dispose();
+        }
+
         Trace.WriteLine("ProcessInfoControl CancellationToken signalled.");
     }
+
+    internal WorkerTask? WorkerTaskForTests => workerTask;
 }

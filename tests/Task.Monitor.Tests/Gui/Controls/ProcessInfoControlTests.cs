@@ -5,6 +5,7 @@ using Task.Monitor.Tests.Common;
 using Task.Monitor.Tests.Process;
 using Xunit.Abstractions;
 using SysDiag = System.Diagnostics;
+using WorkerTask = System.Threading.Tasks.Task;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
@@ -63,7 +64,8 @@ public sealed class ProcessInfoControlTests
         Assert.NotNull(ctrl);
     }
 
-    private ProcessInfoControl CreateLoadedControl()
+    // A refresh interval starts the thread refresh worker; without one there is no worker.
+    private ProcessInfoControl CreateLoadedControl(TimeSpan? refreshInterval = null)
     {
         ProcessInfoControl ctrl = new(
             processServiceFake,
@@ -75,7 +77,8 @@ public sealed class ProcessInfoControlTests
             Height = 32
         };
 
-        ctrl.AutoRefresh = false;
+        ctrl.AutoRefresh = refreshInterval != null;
+        ctrl.ThreadRefreshInterval = refreshInterval ?? ctrl.ThreadRefreshInterval;
         ctrl.Load();
         ctrl.Resize();
 
@@ -173,6 +176,25 @@ public sealed class ProcessInfoControlTests
         ctrl.SelectMenuItemForTests(1);
 
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($" {processName} ({pid}) "))), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async WorkerTask Reloading_Starts_A_New_Worker_While_The_Old_One_Exits()
+    {
+        ProcessInfoControl ctrl = CreateLoadedControl(refreshInterval: TimeSpan.FromMilliseconds(10));
+        WorkerTask first = ctrl.WorkerTaskForTests!;
+
+        ctrl.Unload();
+        ctrl.Load();
+        WorkerTask second = ctrl.WorkerTaskForTests!;
+
+        Assert.NotSame(first, second);
+        await first.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(second.IsCompleted);
+
+        ctrl.Unload();
+
+        await second.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -303,5 +325,73 @@ public sealed class ProcessInfoControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("00:09:41"))), Times.Once);
 
         MockInvocationsHelper.WriteInvocations(runContextHelper.terminal.Invocations, outputHelper);
+    }
+
+    [Fact]
+    public async WorkerTask The_Worker_Stops_Refreshing_Threads_Once_Unloaded()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl(refreshInterval: TimeSpan.FromMilliseconds(10));
+        ctrl.LoadProcess(pid);
+        ctrl.SelectMenuItemForTests(1);
+        WorkerTask worker = ctrl.WorkerTaskForTests!;
+
+        // LoadProcess asks once; anything more is the worker refreshing the THREADS tab.
+        Assert.True(SpinWait.SpinUntil(() => ThreadRequestCount() > 1, TimeSpan.FromSeconds(5)));
+
+        ctrl.Unload();
+        int requestsAtUnload = ThreadRequestCount();
+
+        await worker.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(requestsAtUnload, ThreadRequestCount());
+    }
+
+    // The worker asks the thread service while holding DrawingLock.
+    private int ThreadRequestCount()
+    {
+        lock (ProcessInfoControl.DrawingLockForTests) {
+            return threadServiceFake.RequestedPids.Count;
+        }
+    }
+
+    [Fact]
+    public async WorkerTask Unload_Does_Not_Wait_Out_The_Refresh_Interval()
+    {
+        ProcessInfoControl ctrl = CreateLoadedControl(refreshInterval: TimeSpan.FromSeconds(30));
+        WorkerTask worker = ctrl.WorkerTaskForTests!;
+
+        SysDiag::Stopwatch stopwatch = SysDiag::Stopwatch.StartNew();
+        ctrl.Unload();
+        stopwatch.Stop();
+
+        // Unload used to wait for the worker to sleep out its interval, which held the next key
+        // for up to a second after leaving PROCESSES. The cancelled wait now ends at once too.
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1));
+        await worker.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async WorkerTask Unload_Inside_The_Drawing_Lock_Does_Not_Deadlock_With_The_Worker()
+    {
+        (int pid, _) = AddCurrentProcess();
+
+        ProcessInfoControl ctrl = CreateLoadedControl(refreshInterval: TimeSpan.FromMilliseconds(10));
+        ctrl.LoadProcess(pid);
+        ctrl.SelectMenuItemForTests(1);
+        WorkerTask worker = ctrl.WorkerTaskForTests!;
+
+        // A menu key unloads PROCESSES from inside KeyPressed, which holds DrawingLock. Holding it
+        // past a refresh interval leaves the worker blocked on the lock, as a refresh falling due
+        // mid-key would. Waiting for the worker from inside the lock never returned.
+        WorkerTask unload = WorkerTask.Run(() => {
+            lock (ProcessInfoControl.DrawingLockForTests) {
+                Thread.Sleep(100);
+                ctrl.Unload();
+            }
+        });
+
+        await unload.WaitAsync(TimeSpan.FromSeconds(5));
+        await worker.WaitAsync(TimeSpan.FromSeconds(5));
     }
 }
