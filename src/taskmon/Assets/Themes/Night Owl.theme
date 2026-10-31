@@ -86,3 +86,5 @@ command.background=#0b2942          ; tab.activeBackground
 
 hotkey.key=#00BFFF
 hotkey.name=#c792ea
+
+tip.glyph=#FFA500

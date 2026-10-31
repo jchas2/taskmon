@@ -329,6 +329,11 @@ public class SetupScreen : Screen
             runContext.AppConfig.ShowSmallMetreGrid);
 
         AddGeneralItem(
+            "Show tips in the footer",
+            Constants.Keys.ShowTips,
+            runContext.AppConfig.ShowTips);
+
+        AddGeneralItem(
 #if __WIN32__
             "Use Irix mode for per-process CPU% (individual core saturation)",
 #endif
@@ -437,6 +442,7 @@ public class SetupScreen : Screen
         runContext.AppConfig.ShowYAxisScale                  = GetItemValueByKey(Constants.Keys.ShowYAxisScale).Checked;
         runContext.AppConfig.ShowLargeMetreGrid              = GetItemValueByKey(Constants.Keys.ShowLargeMetreGrid).Checked;
         runContext.AppConfig.ShowSmallMetreGrid              = GetItemValueByKey(Constants.Keys.ShowSmallMetreGrid).Checked;
+        runContext.AppConfig.ShowTips                        = GetItemValueByKey(Constants.Keys.ShowTips).Checked;
         runContext.AppConfig.UseIrixReporting                = GetItemValueByKey(Constants.Keys.UseIrixCpuReporting).Checked;
 
         Statistics visibleColumns = Statistics.Process | Statistics.Pid;

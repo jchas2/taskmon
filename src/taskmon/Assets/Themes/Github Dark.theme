@@ -86,3 +86,5 @@ command.background=#0d1117
 
 hotkey.key=#00BFFF
 hotkey.name=#a5d6ff
+
+tip.glyph=#FFA500

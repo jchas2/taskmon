@@ -50,6 +50,7 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
         Assert.Equal(ColorTranslator.FromHtml("#454545"), theme.HotKey);
         Assert.Equal(ColorTranslator.FromHtml("#464646"), theme.HotKeyName);
+        Assert.Equal(ColorTranslator.FromHtml("#494949"), theme.TipGlyph);
         Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
@@ -344,6 +345,7 @@ public sealed class ThemeTests
             HeatmapStateFaulted                = ColorTranslator.FromHtml("#353535"),
             HotKey                             = ColorTranslator.FromHtml("#454545"),
             HotKeyName                         = ColorTranslator.FromHtml("#464646"),
+            TipGlyph                           = ColorTranslator.FromHtml("#494949"),
             ListViewBorderForeground           = ColorTranslator.FromHtml("#232323"),
             ListViewBorderBackground           = ColorTranslator.FromHtml("#393939"),
             ListViewBackground                 = ColorTranslator.FromHtml("#242424"),
@@ -420,6 +422,7 @@ public sealed class ThemeTests
         theme.HeatmapStateFaulted         = ColorTranslator.FromHtml("#353535");
         theme.HotKey                      = ColorTranslator.FromHtml("#474747");
         theme.HotKeyName                  = ColorTranslator.FromHtml("#484848");
+        theme.TipGlyph                    = ColorTranslator.FromHtml("#4a4a4a");
         theme.ListViewBorderForeground    = ColorTranslator.FromHtml("#232323");
         theme.ListViewBorderBackground    = ColorTranslator.FromHtml("#393939");
         theme.ListViewBackground          = ColorTranslator.FromHtml("#242424");
@@ -484,6 +487,7 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#353535"), theme.HeatmapStateFaulted);
         Assert.Equal(ColorTranslator.FromHtml("#474747"), theme.HotKey);
         Assert.Equal(ColorTranslator.FromHtml("#484848"), theme.HotKeyName);
+        Assert.Equal(ColorTranslator.FromHtml("#4a4a4a"), theme.TipGlyph);
         Assert.Equal(ColorTranslator.FromHtml("#232323"), theme.ListViewBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#393939"), theme.ListViewBorderBackground);
         Assert.Equal(ColorTranslator.FromHtml("#242424"), theme.ListViewBackground);
@@ -515,7 +519,7 @@ public sealed class ThemeTests
     }
 
     [Fact]
-    public void Shipped_Themes_Define_Property_And_HotKey_Colours()
+    public void Shipped_Themes_Define_Property_HotKey_And_Tip_Colours()
     {
         Assembly asm = typeof(Theme).Assembly;
         string[] themeNames = asm.GetManifestResourceNames()
@@ -534,6 +538,7 @@ public sealed class ThemeTests
             Assert.True(section.Contains(Constants.Keys.PropertyValue), $"{name} is missing {Constants.Keys.PropertyValue}");
             Assert.True(section.Contains(Constants.Keys.HotKey), $"{name} is missing {Constants.Keys.HotKey}");
             Assert.True(section.Contains(Constants.Keys.HotKeyName), $"{name} is missing {Constants.Keys.HotKeyName}");
+            Assert.True(section.Contains(Constants.Keys.TipGlyph), $"{name} is missing {Constants.Keys.TipGlyph}");
         }
     }
 
@@ -606,6 +611,7 @@ heatmap.state.faulted=#353535
 
 hotkey.key=#454545
 hotkey.name=#464646
+tip.glyph=#494949
 
 app.error=#a6423f
 
@@ -618,5 +624,13 @@ command.background=#121d18
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(64, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
+
+    [Fact]
+    public void TipGlyph_Falls_Back_To_Orange_When_Not_Set()
+    {
+        Theme theme = new(new ConfigSection("theme-test"));
+
+        Assert.Equal(Color.Orange.ToArgb(), theme.TipGlyph.ToArgb());
+    }
 }

@@ -121,6 +121,7 @@ public sealed class SetupScreenTests
             { "Show chart Y axis scale",                           "generalView" },
             { "Show grid on large charts",                         "generalView" },
             { "Show grid on small charts (Cpu cores, Performance panels)", "generalView" },
+            { "Show tips in the footer",                           "generalView" },
 #if __WIN32__
             { "Use Irix mode for per-process CPU% (individual core saturation)",     "generalView" },
 #endif

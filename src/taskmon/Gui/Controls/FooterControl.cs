@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Net;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Tips;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -16,11 +17,16 @@ public class FooterControl : Control
     private readonly AnsiScreenBuffer  frame = new();
     private readonly Lock              @lock = new();
 
+    private readonly IReadOnlyList<string> tips = TipCatalogue.Tips;
+
     private SystemSnapshot?       snapshot = null;
     private SysThreading::Timer?  watchdogTimer;
     private int                   missedCycles;
     private bool                  loaded;
+    private int                   tipIndex = Random.Shared.Next(TipCatalogue.Tips.Count);
+    private DateTime?             tipShownAt;
 
+    private const char   Ellipsis                  = '…';
     private const string ErroredStatusText         = " Service status: Errored ";
     private const int    GlyphWidth                = 3;
     private const int    MissedCyclesBeforeUnknown = 3;
@@ -28,9 +34,15 @@ public class FooterControl : Control
     private const string RunningStatusText         = " Services: Running ";
     private const char   StatusGlyph               = '●';
     private const string StoppingStatusText        = " Service status: Stopping ";
+    private const string TipLabel                  = " Tip: ";
+    private const int    TipRows                   = 2;
     private const string UnknownStatusText         = " Service status: Unknown ";
 
     private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
+
+    public static readonly (string Key, string Label) NextTipHotKey = ("t", "Next Tip");
+
+    internal static readonly TimeSpan TipRotationInterval = TimeSpan.FromMinutes(5);
 
     private static readonly int KeyHintsWidth   = KeyHints.Sum(hint =>
         CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
@@ -72,7 +84,86 @@ public class FooterControl : Control
         frame.Append(text.PadRight(StatusTextWidth));
     }
 
+    // "● Tip: <tip>" with the next-tip hint right-aligned when the whole tip and the hint fit;
+    // otherwise the hint is dropped and the tip cut short with an ellipsis.
+    private void AppendTipRow(Color foreground, Color background)
+    {
+        Theme theme       = appConfig.Theme;
+        int   prefixWidth = 1 + TipLabel.Length;
+
+        if (Width <= prefixWidth) {
+            return;
+        }
+
+        RotateTipIfDue();
+
+        string tip        = tips[tipIndex];
+        int    tipWidth   = TipCatalogue.VisibleText(tip).Length;
+        int    hintWidth  = CommonControl.FormatHotKey(NextTipHotKey.Key).Length + 1 + NextTipHotKey.Label.Length;
+        bool   showHint   = prefixWidth + tipWidth + CommonControl.FooterSeparator.Length + hintWidth <= Width;
+        int    tipBudget  = Width - prefixWidth - (showHint ? hintWidth : 0);
+
+        frame.MoveTo(X, Y);
+        frame.SetColour(theme.TipGlyph, background);
+        frame.Append(StatusGlyph);
+        frame.SetColour(foreground, background);
+        frame.Append(TipLabel);
+
+        int written = AppendTipText(tip, tipBudget, theme.HotKey, foreground, background);
+
+        frame.SetColour(foreground, background);
+        frame.Append(' ', tipBudget - written);
+
+        if (showHint) {
+            frame.Append(CommonControl.FooterText(theme, NextTipHotKey));
+        }
+
+        frame.ResetColour();
+    }
+
+    private int AppendTipText(string tip, int budget, Color keyColour, Color foreground, Color background)
+    {
+        bool truncate  = TipCatalogue.VisibleText(tip).Length > budget;
+        int  remaining = truncate ? Math.Max(0, budget - 1) : budget;
+        int  written   = 0;
+
+        foreach ((string text, bool isKey) in TipCatalogue.Segments(tip)) {
+            if (remaining == 0) {
+                break;
+            }
+
+            string part = text.Length <= remaining ? text : text[..remaining];
+
+            frame.SetColour(isKey ? keyColour : foreground, background);
+            frame.Append(part);
+
+            remaining -= part.Length;
+            written   += part.Length;
+        }
+
+        if (truncate && budget > 0) {
+            frame.SetColour(foreground, background);
+            frame.Append(Ellipsis);
+            written++;
+        }
+
+        return written;
+    }
+
+    internal string CurrentTip => tips[tipIndex];
+
     private bool IsStale => missedCycles >= MissedCyclesBeforeUnknown;
+
+    // Shows the next tip and restarts the rotation interval, so it isn't replaced moments later.
+    public void NextTip()
+    {
+        lock (DrawingLock) {
+            tipIndex   = (tipIndex + 1) % tips.Count;
+            tipShownAt = UtcNow();
+        }
+
+        Draw();
+    }
 
     protected override void OnDraw()
     {
@@ -82,7 +173,13 @@ public class FooterControl : Control
         string banner = $" Task Monitor v{AssemblyVersionInfo.GetVersion()} ";
 
         frame.Clear();
-        frame.MoveTo(X, Y);
+
+        if (Height >= TipRows) {
+            AppendTipRow(foreground, background);
+        }
+
+        // The status row is always the bottom row, with the tip row above it when there is one.
+        frame.MoveTo(X, Y + Height - 1);
         frame.SetColour(Color.Black, Color.DeepSkyBlue);
         frame.Append(banner);
 
@@ -191,4 +288,32 @@ public class FooterControl : Control
             Draw();
         }
     }
+
+    // Called while drawing, under DrawingLock: the footer redraws on every snapshot, so this
+    // needs no timer of its own.
+    private void RotateTipIfDue()
+    {
+        DateTime now = UtcNow();
+
+        if (tipShownAt is not { } shownAt) {
+            tipShownAt = now;
+            return;
+        }
+
+        if (now - shownAt >= TipRotationInterval) {
+            tipIndex   = (tipIndex + 1) % tips.Count;
+            tipShownAt = now;
+        }
+    }
+
+    // The footer's height: a tip row above the status row when tips are on.
+    public int Rows => appConfig.ShowTips ? TipRows : 1;
+
+    internal int TipIndex
+    {
+        get => tipIndex;
+        set => tipIndex = value;
+    }
+
+    internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
 }

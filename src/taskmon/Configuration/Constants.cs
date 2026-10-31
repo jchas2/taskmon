@@ -58,6 +58,7 @@ public sealed class Constants
         public const string ShowMetreGpuMemNumerically  = "show-metre-gpu-mem-numerically";
         public const string ShowMetreNetworkNumerically = "show-metre-network-numerically";
         public const string ShowMetreNpuNumerically     = "show-metre-npu-numerically";
+        public const string ShowTips                    = "show-tips";
         public const string ShowYAxisScale              = "show-y-axis-scale";
         public const string UseIrixCpuReporting         = "use-irix-cpu-reporting";
 
@@ -129,6 +130,8 @@ public sealed class Constants
 
         public const string HotKey     = "hotkey.key";
         public const string HotKeyName = "hotkey.name";
+
+        public const string TipGlyph = "tip.glyph";
 
         public const string MenubarForeground = "menubar.foreground";
         public const string MenubarBackground = "menubar.background";

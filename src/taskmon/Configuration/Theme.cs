@@ -48,6 +48,7 @@ public sealed class Theme
         Constants.Keys.HeatmapStateFaulted,
         Constants.Keys.HotKey,
         Constants.Keys.HotKeyName,
+        Constants.Keys.TipGlyph,
         Constants.Keys.ListViewBackground,
         Constants.Keys.ListViewForeground,
         Constants.Keys.ListViewBorderForeground,
@@ -475,6 +476,12 @@ public sealed class Theme
 
     private void SetColour(string key, Color value) =>
         themeSection?.Add(key, ConsolePalette.ToHex(value));
+
+    public Color TipGlyph
+    {
+        get => GetColour(Constants.Keys.TipGlyph, Color.Orange);
+        set => SetColour(Constants.Keys.TipGlyph, value);
+    }
 
     public void Update(ConfigSection configSection) => themeSection = configSection;
 }

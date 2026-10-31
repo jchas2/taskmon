@@ -4,6 +4,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -290,5 +291,59 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.False(processControl.IsEndTaskDialogVisible);
         Assert.Empty(ended);
+    }
+
+    [Fact]
+    public void The_Footer_Takes_A_Second_Row_For_Tips_From_The_Active_View()
+    {
+        runContext.AppConfig.ShowTips = true;
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        FooterControl footer     = mainScreen.GetControl<FooterControl>();
+        Control       activeView = mainScreen.GetControl<SummaryControl2>();
+        int           withTips   = activeView.Height;
+
+        Assert.Equal(2, footer.Height);
+        Assert.Equal(mainScreen.Height - 2, footer.Y);
+
+        // What returning from Setup does: show this screen again, which lays it out afresh.
+        runContext.AppConfig.ShowTips = false;
+        mainScreen.Show();
+
+        Assert.Equal(1, footer.Height);
+        Assert.Equal(mainScreen.Height - 1, footer.Y);
+        Assert.Equal(withTips + 1, activeView.Height);
+    }
+
+    [Fact]
+    public void T_Is_Left_Alone_When_Tips_Are_Off()
+    {
+        runContext.AppConfig.ShowTips = false;
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        FooterControl footer = mainScreen.GetControl<FooterControl>();
+        footer.TipIndex      = 0;
+
+        bool handled = false;
+        mainScreen.KeyPressed(new ConsoleKeyInfo('t', ConsoleKey.T, false, false, false), ref handled);
+
+        Assert.False(handled);
+        Assert.Equal(0, footer.TipIndex);
+    }
+
+    [Fact]
+    public void T_Shows_The_Next_Tip()
+    {
+        runContext.AppConfig.ShowTips = true;
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        FooterControl footer = mainScreen.GetControl<FooterControl>();
+        footer.TipIndex      = 0;
+
+        bool handled = false;
+        mainScreen.KeyPressed(new ConsoleKeyInfo('t', ConsoleKey.T, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(1, footer.TipIndex);
     }
 }

@@ -99,6 +99,7 @@ show-metre-gpu-numerically=False
 show-metre-npu-numerically=False
 show-metre-gpu-mem-numerically=False
 show-metre-network-numerically=False
+show-tips=False
 show-y-axis-scale=False
 use-irix-cpu-reporting=False
 ";
@@ -623,6 +624,7 @@ control.foreground=#abcdef
         Assert.True(appConfig.ShowMetreGpuMemNumerically);
         Assert.True(appConfig.ShowMetreSwapNumerically);
         Assert.True(appConfig.ShowMetreNetworkNumerically);
+        Assert.True(appConfig.ShowTips);
         Assert.True(appConfig.ShowYAxisScale);
         Assert.False(appConfig.ShowLargeMetreGrid);
         Assert.False(appConfig.ShowSmallMetreGrid);
@@ -694,6 +696,7 @@ control.foreground=#abcdef
         Assert.False(appConfig.ShowMetreGpuMemNumerically);
         Assert.False(appConfig.ShowMetreNetworkNumerically);
         Assert.False(appConfig.ShowMetreNpuNumerically);
+        Assert.False(appConfig.ShowTips);
         Assert.False(appConfig.ShowYAxisScale);
         Assert.False(appConfig.UseIrixReporting);
     }

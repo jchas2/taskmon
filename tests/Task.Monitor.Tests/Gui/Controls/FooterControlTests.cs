@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Tips;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
@@ -30,6 +31,19 @@ public sealed class FooterControlTests : IDisposable
     }
 
     [Fact]
+    public void A_Narrow_Footer_Drops_The_Hint_And_Cuts_The_Tip_Short()
+    {
+        FooterControl ctrl = CreateTipControl(width: 40);
+        ctrl.Draw();
+
+        string row = VisibleRow(0);
+
+        Assert.Equal(40, row.Length);
+        Assert.EndsWith("…", row);
+        Assert.DoesNotContain("Next Tip", row);
+    }
+
+    [Fact]
     public void A_Snapshot_After_Unknown_Resets_The_Status()
     {
         FooterControl ctrl = CreateControl();
@@ -44,6 +58,18 @@ public sealed class FooterControlTests : IDisposable
         string output = CapturedOutput();
         Assert.Contains("Services: Running", output);
         Assert.DoesNotContain("Service status: Unknown", output);
+    }
+
+    [Fact]
+    public void A_Wide_Footer_Shows_The_Next_Tip_Hint_At_The_Right_Edge()
+    {
+        FooterControl ctrl = CreateTipControl(width: 160);
+        ctrl.Draw();
+
+        string row = VisibleRow(0);
+
+        Assert.Equal(160, row.Length);
+        Assert.EndsWith("t Next Tip", row);
     }
 
     private string CapturedOutput() =>
@@ -64,18 +90,26 @@ public sealed class FooterControlTests : IDisposable
         Assert.NotNull(ctrl);
     }
 
-    private FooterControl CreateControl(int width = 160)
+    private FooterControl CreateControl(int width = 160, int height = 1)
     {
         FooterControl ctrl = control = new(
             runContext.ServiceController,
             new ForwardingTerminal(runContext.Terminal),
             runContext.AppConfig) {
             Width = width,
-            Height = 1
+            Height = height
         };
 
         ctrl.Load();
         ctrl.Resize();
+        return ctrl;
+    }
+
+    private FooterControl CreateTipControl(int width = 160, DateTime? now = null)
+    {
+        FooterControl ctrl = CreateControl(width, height: 2);
+        ctrl.TipIndex = TipIndexOf("{z}");
+        ctrl.UtcNow = () => now ?? DateTime.UnixEpoch;
         return ctrl;
     }
 
@@ -178,6 +212,46 @@ public sealed class FooterControlTests : IDisposable
         Assert.Equal(sevenDigits + 1, text.IndexOf(KeyHintsText, StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void NextTip_Moves_On_And_Restarts_The_Rotation_Interval()
+    {
+        DateTime now  = DateTime.UnixEpoch;
+        FooterControl ctrl = CreateTipControl();
+        ctrl.UtcNow = () => now;
+
+        int first = ctrl.TipIndex;
+        ctrl.Draw();
+
+        now += TimeSpan.FromMinutes(4);
+        ctrl.NextTip();
+        Assert.Equal((first + 1) % TipCatalogue.Tips.Count, ctrl.TipIndex);
+
+        // Five minutes from the start, but only one since the key press: no rotation yet.
+        now += TimeSpan.FromMinutes(1);
+        ctrl.Draw();
+        Assert.Equal((first + 1) % TipCatalogue.Tips.Count, ctrl.TipIndex);
+    }
+
+    [Fact]
+    public void NextTip_Wraps_From_The_Last_Tip_To_The_First()
+    {
+        FooterControl ctrl = CreateTipControl();
+        ctrl.TipIndex = TipCatalogue.Tips.Count - 1;
+
+        ctrl.NextTip();
+
+        Assert.Equal(0, ctrl.TipIndex);
+    }
+
+    [Fact]
+    public void One_Row_Draws_No_Tip()
+    {
+        FooterControl ctrl = CreateControl();
+        ctrl.Draw();
+
+        Assert.DoesNotContain("Tip:", VisibleText());
+    }
+
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
     {
         FieldInfo? field = typeof(ServiceController).GetField(
@@ -187,8 +261,53 @@ public sealed class FooterControlTests : IDisposable
         handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
     }
 
+    [Fact]
+    public void Rows_Is_Two_With_Tips_On_And_One_With_Them_Off()
+    {
+        FooterControl ctrl = CreateControl();
+
+        runContext.AppConfig.ShowTips = true;
+        Assert.Equal(2, ctrl.Rows);
+
+        runContext.AppConfig.ShowTips = false;
+        Assert.Equal(1, ctrl.Rows);
+    }
+
     private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
         new() { Services = services };
+
+    [Fact]
+    public void The_Tip_Changes_Once_The_Rotation_Interval_Passes()
+    {
+        DateTime now  = DateTime.UnixEpoch;
+        FooterControl ctrl = CreateTipControl();
+        ctrl.UtcNow = () => now;
+
+        int first = ctrl.TipIndex;
+        ctrl.Draw();
+
+        now += FooterControl.TipRotationInterval - TimeSpan.FromSeconds(1);
+        ctrl.Draw();
+        Assert.Equal(first, ctrl.TipIndex);
+
+        now += TimeSpan.FromSeconds(1);
+        ctrl.Draw();
+        Assert.Equal((first + 1) % TipCatalogue.Tips.Count, ctrl.TipIndex);
+    }
+
+    [Fact]
+    public void The_Tip_Glyph_Takes_The_Theme_Tip_Colour_And_Keys_The_HotKey_Colour()
+    {
+        FooterControl ctrl = CreateTipControl();
+        ctrl.Draw();
+
+        Theme  theme  = runContext.AppConfig.Theme;
+        string output = CapturedOutput();
+
+        Assert.Contains(ConsolePalette.ForegroundSgr(theme.TipGlyph) + "●", output);
+        Assert.Contains(ConsolePalette.ForegroundSgr(theme.HotKey) + "z", output);
+        Assert.Contains(ConsolePalette.ForegroundSgr(theme.Foreground) + " in a process list", output);
+    }
 
     [Fact]
     public void Three_Missed_Cycles_Show_Unknown_With_An_Orange_Glyph()
@@ -224,6 +343,9 @@ public sealed class FooterControlTests : IDisposable
         }
     }
 
+    private static int TipIndexOf(string marker) =>
+        TipCatalogue.Tips.ToList().FindIndex(tip => tip.Contains(marker));
+
     [Fact]
     public void Two_Missed_Cycles_Keep_The_Normal_Status()
     {
@@ -240,6 +362,17 @@ public sealed class FooterControlTests : IDisposable
     }
 
     [Fact]
+    public void Two_Rows_Draw_The_Tip_Above_The_Status_Row()
+    {
+        FooterControl ctrl = CreateTipControl();
+        ctrl.Y = 10;
+        ctrl.Draw();
+
+        Assert.StartsWith("● Tip: Press z in a process list to freeze updates", VisibleRow(10));
+        Assert.StartsWith(" Task Monitor v", VisibleRow(11));
+    }
+
+    [Fact]
     public void Unknown_Overrides_An_Errored_Service_In_A_Stale_Snapshot()
     {
         FooterControl ctrl = CreateControl();
@@ -251,6 +384,15 @@ public sealed class FooterControlTests : IDisposable
         string output = CapturedOutput();
         Assert.Contains("Service status: Unknown", output);
         Assert.DoesNotContain("Errored", output);
+    }
+
+    // The visible text written after the cursor moves to the given row, up to the next move.
+    private string VisibleRow(int row)
+    {
+        Match match = Regex.Match(CapturedOutput(), $@"\x1b\[{row + 1};1H(.*?)(?=\x1b\[\d+;\d+H|$)", RegexOptions.Singleline);
+        Assert.True(match.Success, $"Nothing was drawn on row {row}.");
+
+        return Regex.Replace(match.Groups[1].Value, @"\x1b\[[0-9;]*[A-Za-z]", string.Empty);
     }
 
     private string VisibleText() =>

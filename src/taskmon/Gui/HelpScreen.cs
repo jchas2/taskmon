@@ -119,6 +119,7 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
         helpView.Items.Add(new ListViewItem(new[] { "k:", "End task (checked or selected)",           "r F5:", "Refresh the current list" }));
         helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));
+        helpView.Items.Add(new ListViewItem(new[] { "t:", "Show the next tip in the footer",          "", "" }));
         
         for (int i = 0; i < helpView.Items.Count; i++) {
             helpView.Items[i].SubItems[0].ForegroundColor = keyColour;

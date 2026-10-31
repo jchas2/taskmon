@@ -45,7 +45,6 @@ public sealed class MainScreen2 : Screen
     private List<Control> menuControls;
     
     private const int HeaderHeight     = HeaderControl2.HeaderRows;
-    private const int FooterHeight     = 1;
     private const int BannerHeight     = 1;
     private const int MenuWidth        = 16;
     private const int ActiveControlTop = HeaderHeight;
@@ -206,6 +205,10 @@ public sealed class MainScreen2 : Screen
         focusedControl = menuControl;
     } 
 
+    // Two rows when tips are on. Read on every resize, so a change in Setup takes effect when
+    // this screen is shown again.
+    private int FooterHeight => footerControl.Rows;
+
     internal Control? GetActiveControl => activeControl;
 
     internal T GetControl<T>() where T : Control => (T)Controls.Single(ctrl => ctrl is T);
@@ -268,8 +271,15 @@ public sealed class MainScreen2 : Screen
                 focusedControl.KeyPressed(keyInfo, ref handled);
                 break;
         }
-        
+
         if (handled) {
+            return;
+        }
+
+        // Last, so a view that ever claims t keeps it.
+        if (keyInfo.Key == ConsoleKey.T && runContext.AppConfig.ShowTips) {
+            footerControl.NextTip();
+            handled = true;
             return;
         }
 
