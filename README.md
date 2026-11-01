@@ -402,6 +402,30 @@ It runs two checks and reports every problem before failing:
 
 To fix member ordering, run `dotnet run eng/tools/reorder-members.cs -- <file-or-directory>`.
 
+### Stress Testing
+
+The scripts in `eng/tools` put the machine under real load, for trying the `HEALTH` view. Each one stops by itself after 120 seconds, which is long enough to see a Warning, then a Critical, then the status clear. `--seconds` or `-Seconds` changes that, and Ctrl+C stops one early.
+
+**Windows:**
+| Command | What it tries |
+| :--- | :--- |
+| `.\eng\tools\stress-cpu.ps1` | CPU reaches Critical, and the run queue rises. Runs below normal priority. |
+| `.\eng\tools\stress-cpu.ps1 -Percent 93` | CPU reaches Warning but not Critical. |
+| `.\eng\tools\stress-memory.ps1 -AvailablePercent 8` | Memory reaches Warning. Use `4` for Critical. |
+| `.\eng\tools\stress-memory.ps1 -CommitPercent 92` | Commit reaches Warning without using physical memory. Other programs can fail to start close to the limit. |
+| `.\eng\tools\stress-memory.ps1 -Gb 40 -Churn` | Hard faults, with a `-Gb` above the size of physical memory. The machine will be slow. |
+| `.\eng\tools\stress-disk.ps1` | Disk latency reaches Warning on a fast SSD. `-Threads 256` goes further, and a slower disk reaches it sooner. |
+
+**macOS:**
+| Command | What it tries |
+| :--- | :--- |
+| `./eng/tools/stress-cpu.sh` | CPU reaches Critical, and the load average rises. Runs at a lower priority. |
+| `./eng/tools/stress-cpu.sh --percent 93` | CPU reaches Warning but not Critical. |
+| `./eng/tools/stress-memory.sh --level warn` | Memory reaches Warning, using the `memory_pressure` tool, which may need `sudo`. Use `critical` for Critical, or add `--simulate` to report the level without using any memory. |
+| `./eng/tools/stress-disk.sh` | Disk writes only, as shell tools can't bypass the file cache for reads. |
+
+In `HEALTH`, the likely cause shows as `powershell` on Windows. On macOS it shows as `yes` for the CPU script and `dd` for the disk script.
+
 ### Publishing
 
 To build self-contained, Native AOT-compiled binaries for release:
