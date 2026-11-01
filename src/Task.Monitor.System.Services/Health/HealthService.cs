@@ -28,6 +28,9 @@ public sealed partial class HealthService : WorkerService
     private IReadOnlyList<HealthVolume> volumes = [];
     private DateTime                    nextReportReadUtc;
     private DateTime                    nextVolumeReadUtc;
+    private bool                        eventsRestored;
+
+    public HealthEventStore? EventStore { get; set; }
 
     private static bool IsSystemVolume(string name) =>
         name is MacRootVolume or MacDataVolume ||
@@ -68,7 +71,22 @@ public sealed partial class HealthService : WorkerService
         };
 
         Publish(evaluator.Evaluate(sample, thresholds, utcNow));
+        SaveEvents(evaluator.TakeChanges());
     }
+
+    protected override void OnStart()
+    {
+        if (eventsRestored || EventStore is not { } store || thresholds.EventHistorySize == 0) {
+            return;
+        }
+
+        eventsRestored = true;
+
+        evaluator.Restore(store.Load(thresholds.EventHistorySize));
+        store.Prune(thresholds.EventHistorySize);
+    }
+
+    protected override void OnStop() => SaveEvents(evaluator.Finish(DateTime.UtcNow));
 
     private static string ProcessName(ProcessInfo? processes, int pid) =>
         processes?.Metrics.Entries.FirstOrDefault(entry => entry.Pid == pid)?.ProcessName ?? $"Process {pid}";
@@ -95,6 +113,24 @@ public sealed partial class HealthService : WorkerService
         }
 
         return volumes;
+    }
+
+    private void SaveEvents(IReadOnlyList<HealthEvent> events)
+    {
+        if (events.Count == 0 || EventStore is not { } store || thresholds.EventHistorySize == 0) {
+            return;
+        }
+
+        try {
+            foreach (HealthEvent healthEvent in events) {
+                store.Save(healthEvent);
+            }
+
+            store.Prune(thresholds.EventHistorySize);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            TraceEx.WriteLineOnce(nameof(SaveEvents), $"Skipping saving health events: {ex.Message}");
+        }
     }
 
     public HealthThresholds Thresholds

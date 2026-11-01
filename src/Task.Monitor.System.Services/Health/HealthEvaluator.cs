@@ -15,6 +15,7 @@ public sealed class HealthEvaluator
         new AppsHealthRule()
     ];
 
+    private readonly List<HealthEvent> changedEvents = new();
     private readonly List<HealthEvent> closedEvents = new();
     private readonly HealthCulpritFinder culprits = new();
 
@@ -52,11 +53,17 @@ public sealed class HealthEvaluator
         IReadOnlyList<HealthCulprit> found = [.. hung, .. culprits.Find(pressured)];
 
         foreach (HealthReading reading in readings) {
-            HealthTracker tracker = trackers[reading.Resource];
-            HealthEvent?  closed  = tracker.Update(reading, thresholds, utcNow, NamesFor(found, reading.Resource));
+            HealthTracker tracker  = trackers[reading.Resource];
+            HealthEvent?  previous = tracker.OpenEvent;
+            HealthEvent?  closed   = tracker.Update(reading, thresholds, utcNow, NamesFor(found, reading.Resource));
 
             if (closed != null) {
                 closedEvents.Add(closed);
+                changedEvents.Add(closed);
+            }
+
+            if (tracker.OpenEvent is { } open && open.Level != previous?.Level) {
+                changedEvents.Add(open);
             }
         }
 
@@ -78,6 +85,13 @@ public sealed class HealthEvaluator
         };
     }
 
+    public IReadOnlyList<HealthEvent> Finish(DateTime utcNow) =>
+        trackers.Values
+            .Select(tracker => tracker.OpenEvent)
+            .OfType<HealthEvent>()
+            .Select(open => open with { EndUtc = utcNow })
+            .ToList();
+
     // A hung app is its own cause, as it may be using little resources, if any.
     private static IReadOnlyList<HealthCulprit> HungCulprits(HealthSample sample, HealthThresholds thresholds) =>
         sample.HungApps
@@ -96,6 +110,16 @@ public sealed class HealthEvaluator
             .Select(tracker => tracker.OpenEvent?.StartUtc)
             .Where(start => start != null)
             .Min();
+
+    public void Restore(IEnumerable<HealthEvent> saved) => closedEvents.AddRange(saved);
+
+    public IReadOnlyList<HealthEvent> TakeChanges()
+    {
+        List<HealthEvent> changes = [.. changedEvents];
+
+        changedEvents.Clear();
+        return changes;
+    }
 
     private void Trim(HealthThresholds thresholds)
     {

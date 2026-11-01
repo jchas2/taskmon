@@ -2,11 +2,12 @@ namespace Task.Monitor.System.Services.Health;
 
 public sealed record HealthEvent
 {
-    public required HealthResource Resource   { get; init; }
-    public required HealthLevel    Level      { get; init; }
-    public required DateTime       StartUtc   { get; init; }
-    public DateTime?               EndUtc     { get; init; }
-    public string                  PeakReason { get; init; } = string.Empty;
-    public double                  PeakValue  { get; init; }
-    public IReadOnlyList<string>   Culprits   { get; init; } = [];
+    public required HealthResource Resource      { get; init; }
+    public required HealthLevel    Level         { get; init; }
+    public required DateTime       StartUtc      { get; init; }
+    public DateTime?               EndUtc        { get; init; }
+    public bool                    IsInterrupted { get; init; }
+    public string                  PeakReason    { get; init; } = string.Empty;
+    public double                  PeakValue     { get; init; }
+    public IReadOnlyList<string>   Culprits      { get; init; } = [];
 }

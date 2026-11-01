@@ -10,6 +10,19 @@ Line1
 Line2";
 
     [Fact]
+    public void DeleteFile_Removes_The_File()
+    {
+        using FileCleanupHelper cleanupHelper = new();
+        string fileName = cleanupHelper.GetTempFile(".ini");
+
+        FileSystem fileSystem = new();
+        fileSystem.WriteAllText(fileName, "text");
+        fileSystem.DeleteFile(fileName);
+
+        Assert.False(fileSystem.FileExists(fileName));
+    }
+
+    [Fact]
     public void ReplaceAllText_Replaces_The_Text_And_Keeps_A_Backup()
     {
         using FileCleanupHelper cleanupHelper = new();
@@ -72,5 +85,34 @@ Line2";
         string readText = fileSystem.ReadAllText(fileName);
         
         Assert.Equal(FileText, readText);
+    }
+
+    [Fact]
+    public void WriteAllTextAtomic_Creates_A_New_File()
+    {
+        using FileCleanupHelper cleanupHelper = new();
+        string fileName = $"{cleanupHelper.GetTempFile(".ini")}.new";
+
+        FileSystem fileSystem = new();
+        fileSystem.WriteAllTextAtomic(fileName, "new");
+
+        Assert.Equal("new", fileSystem.ReadAllText(fileName));
+        Assert.False(fileSystem.FileExists($"{fileName}.tmp"));
+        fileSystem.DeleteFile(fileName);
+    }
+
+    [Fact]
+    public void WriteAllTextAtomic_Overwrites_And_Leaves_No_Backup()
+    {
+        using FileCleanupHelper cleanupHelper = new();
+        string fileName = cleanupHelper.GetTempFile(".ini");
+
+        FileSystem fileSystem = new();
+        fileSystem.WriteAllText(fileName, "old");
+        fileSystem.WriteAllTextAtomic(fileName, "new");
+
+        Assert.Equal("new", fileSystem.ReadAllText(fileName));
+        Assert.False(fileSystem.FileExists($"{fileName}.bak"));
+        Assert.False(fileSystem.FileExists($"{fileName}.tmp"));
     }
 }

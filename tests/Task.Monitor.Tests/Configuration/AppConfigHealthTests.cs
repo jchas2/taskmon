@@ -59,6 +59,17 @@ public sealed class AppConfigHealthTests
         Assert.Equal(90, Load("cpu-warning-percent=lots").HealthThresholds.CpuWarningPercent);
     }
 
+    // Regression test: the other default paths fall back to the temp folder, where pruning old
+    // event files could delete another program's .ini files.
+    [Fact]
+    public void The_Events_Path_Does_Not_Fall_Back_To_The_Temp_Folder()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string?>())).Returns(false);
+        fileSystem.Setup(fs => fs.TryCreateDirectory(It.IsAny<string>())).Returns(false);
+
+        Assert.Null(new AppConfig(fileSystem.Object).DefaultEventsPath);
+    }
+
     [Fact]
     public void Thresholds_From_The_File_Are_Applied()
     {

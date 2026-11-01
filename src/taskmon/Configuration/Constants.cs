@@ -3,6 +3,7 @@ namespace Task.Monitor.Configuration;
 public sealed class Constants
 {
     public const string AppName         = "taskmon";
+    public const string EventsFolder    = "Events";
     public const string ThemeDirectory  = "themes";
     public const string ThemeExtension  = ".theme";
     public const string LayoutDirectory = "summary-layouts";

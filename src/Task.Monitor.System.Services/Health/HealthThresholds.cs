@@ -17,7 +17,7 @@ public sealed record HealthThresholds
     public int             DiskLatencyCriticalMs          { get; init; } = 100;
     public int             DiskLatencyWarningMs           { get; init; } = 20;
     public int             DriverTimeWarningPercent       { get; init; } = 15;
-    public int             EventHistorySize               { get; init; } = 50;
+    public int             EventHistorySize               { get; init; } = 100;
     public int             GpuMemoryFreeWarningPercent    { get; init; } = 10;
     public int             HardFaultsAvailablePercent     { get; init; } = 25;
     public int             HardFaultsWarningPerSecond     { get; init; } = 500;

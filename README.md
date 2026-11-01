@@ -141,6 +141,7 @@ Task Monitor stores configuration and log files in the following system director
 | Theme files | One config file per theme. |
 | Layout files | One layout file per TUI layout. Controls size and types of charts on display. | 
 | Log files | One log file per session; logs are rotated > 2MB and routinely deleted. |
+| Event files | One .ini file per `HEALTH` event, reloaded into Recent events at startup. The oldest are deleted once there are more than `event-history-size`. |
 
 ### MacOS
 
@@ -150,6 +151,7 @@ Task Monitor stores configuration and log files in the following system director
 | Theme files |  `~\.config\taskmon\themes` |
 | Layout files | `~\.config\taskmon\layouts` | 
 | Log files | `~\Library\Logs\taskmon` |
+| Event files | `~\Library\Logs\taskmon\Events` |
 
 ### Windows
 
@@ -159,6 +161,7 @@ Task Monitor stores configuration and log files in the following system director
 | Theme files |  `~\AppData\Roaming\taskmon\themes` |
 | Layout files | `~\AppData\Roaming\taskmon\layouts` | 
 | Log files | `~\AppData\Local\taskmon\Logs` | 
+| Event files | `~\AppData\Local\taskmon\Events` | 
 
 ### Editing taskmon.ini
 
@@ -178,7 +181,7 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `critical-sustain-seconds` | 60 | How long a value must stay over a critical threshold. |
 | `sustain-grace-seconds` | 5 | How long in total a value can spend the wrong side of a threshold before the sustain or clear period restarts. |
 | `clear-seconds` | 30 | How long a value must stay back under a threshold before the status clears. |
-| `event-history-size` | 50 | Number of recent events to keep. |
+| `event-history-size` | 100 | Number of recent events to keep, in the `HEALTH` view and on disk. `0` turns saving them off. |
 | `cpu-warning-percent` | 90 | CPU busy time. |
 | `cpu-critical-percent` | 98 | CPU busy time. |
 | `run-queue-warning-per-core` | 2 | Threads waiting per core on Windows, load average per core on macOS. |

@@ -17,7 +17,7 @@ public sealed partial class HealthControl : Control
     private const int MinPaneHeight = 4;
 
     private const int BorderWidth                = 3;
-    private const int EventTimeColumnWidth       = 10;
+    private const int EventTimeColumnWidth       = 13;
     private const int EventTitleColumnWidth      = 20;
     private const int ExtraColumnsMinWidth       = 84;
     private const int MaxCauseProcessColumnWidth = 28;

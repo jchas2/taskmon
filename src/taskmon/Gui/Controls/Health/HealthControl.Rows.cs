@@ -7,6 +7,7 @@ namespace Task.Monitor.Gui.Controls.Health;
 
 public sealed partial class HealthControl
 {
+    private const int    DaysPerWeek = 7;
     private const string EmptyCell   = "—";
     private const char   StatusGlyph = '●';
 
@@ -27,9 +28,9 @@ public sealed partial class HealthControl
 
     private static string DescribeEvent(HealthEvent healthEvent)
     {
-        string duration = healthEvent.EndUtc is { } end
-            ? DescribeDuration(end - healthEvent.StartUtc)
-            : "ongoing";
+        string duration = healthEvent.EndUtc is { } end ? DescribeDuration(end - healthEvent.StartUtc)
+                        : healthEvent.IsInterrupted     ? "interrupted"
+                                                        : "ongoing";
 
         return string.IsNullOrEmpty(healthEvent.PeakReason)
             ? duration
@@ -59,11 +60,14 @@ public sealed partial class HealthControl
 
     internal static string DescribeTime(DateTime timeUtc, DateTime nowUtc)
     {
-        DateTime time = timeUtc.ToLocalTime();
+        DateTime time  = timeUtc.ToLocalTime();
+        DateTime today = nowUtc.ToLocalTime().Date;
 
-        return time.Date == nowUtc.ToLocalTime().Date
-            ? time.ToString("HH:mm:ss", CultureInfo.CurrentCulture)
-            : time.ToString("ddd HH:mm", CultureInfo.CurrentCulture);
+        string format = time.Date == today                         ? "HH:mm:ss"
+                      : (today - time.Date).TotalDays < DaysPerWeek ? "ddd HH:mm"
+                                                                    : "dd MMM HH:mm";
+
+        return time.ToString(format, CultureInfo.CurrentCulture);
     }
 
     private ListViewItem EventRow(HealthEvent healthEvent)

@@ -14,6 +14,7 @@
       <ProjectReference Include="..\Task.Monitor.Cli.Utils\Task.Monitor.Cli.Utils.csproj" />
       <ProjectReference Include="..\Task.Monitor.Interop.Mach\Task.Monitor.Interop.Mach.csproj" />
       <ProjectReference Include="..\Task.Monitor.Interop.Win32\Task.Monitor.Interop.Win32.csproj" />
+      <ProjectReference Include="..\Task.Monitor.System\Task.Monitor.System.csproj" />
     </ItemGroup>
 
     <ItemGroup>

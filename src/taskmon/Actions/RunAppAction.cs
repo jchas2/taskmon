@@ -53,6 +53,9 @@ public sealed class RunAppAction(RunContext runContext) : IAction
 
         runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
         runContext.ServiceController.GetService<HealthService>().Thresholds = runContext.AppConfig.HealthThresholds;
+        runContext.ServiceController.GetService<HealthService>().EventStore = runContext.AppConfig.DefaultEventsPath is { } eventsPath
+            ? new HealthEventStore(runContext.FileSystem, eventsPath)
+            : null;
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
 
         ScreenApplication screenApp = new(runContext.Terminal);

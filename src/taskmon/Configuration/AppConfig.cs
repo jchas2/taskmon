@@ -133,6 +133,38 @@ public sealed class AppConfig
         }
     }
 
+    // No fallback, unlike the other paths, as old event files are deleted from this folder.
+    public string? DefaultEventsPath
+    {
+        get {
+            try {
+                string eventsPath = string.Empty;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    eventsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library",
+                        "Logs", Constants.AppName, Constants.EventsFolder);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    eventsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        Constants.AppName, Constants.EventsFolder);
+                }
+
+                if (eventsPath.Length == 0 ||
+                    !(fileSystem.DirectoryExists(eventsPath) || fileSystem.TryCreateDirectory(eventsPath))) {
+
+                    return null;
+                }
+
+                PathPermissions.EnsureUserOwnership(eventsPath);
+                return eventsPath;
+            }
+            catch (Exception ex) {
+                ExceptionHelper.LogException(ex);
+                return null;
+            }
+        }
+    }
+
     public SummaryControlLayout? DefaultLayout
     {
         get => defaultLayout;

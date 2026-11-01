@@ -315,6 +315,34 @@ public sealed class HealthEvaluatorTests
     }
 
     [Fact]
+    public void Each_Change_To_An_Event_Is_Reported_Once()
+    {
+        Run(Busy(0.99), from: 0, to: 35);
+
+        HealthEvent opened = Assert.Single(evaluator.TakeChanges());
+
+        Assert.Equal(HealthLevel.Warning, opened.Level);
+        Assert.Null(opened.EndUtc);
+
+        Run(Busy(0.99), from: 40, to: 55);
+        Assert.Empty(evaluator.TakeChanges());
+
+        Run(Busy(0.99), from: 60, to: 65);
+
+        HealthEvent raised = Assert.Single(evaluator.TakeChanges());
+
+        Assert.Equal(HealthLevel.Critical, raised.Level);
+        Assert.Null(raised.EndUtc);
+
+        Run(Busy(0.20), from: 70, to: 105);
+
+        HealthEvent closed = Assert.Single(evaluator.TakeChanges());
+
+        Assert.Equal(HealthLevel.Critical, closed.Level);
+        Assert.NotNull(closed.EndUtc);
+    }
+
+    [Fact]
     public void Event_History_Keeps_The_Newest_And_Drops_The_Oldest()
     {
         HealthThresholds small = new() { EventHistorySize = 2 };
@@ -336,6 +364,16 @@ public sealed class HealthEvaluatorTests
         Assert.Equal(2, info.Events.Count);
         Assert.Equal(Start.AddSeconds(400), info.Events[0].StartUtc);
         Assert.Equal(Start.AddSeconds(200), info.Events[1].StartUtc);
+    }
+
+    [Fact]
+    public void Finish_Ends_The_Open_Events()
+    {
+        Run(Busy(0.95), from: 0, to: 35);
+
+        HealthEvent finished = Assert.Single(evaluator.Finish(Start.AddSeconds(40)));
+
+        Assert.Equal(Start.AddSeconds(40), finished.EndUtc);
     }
 
     // Regression test: the clear timer started when the value left Critical, so a disk that then
@@ -417,6 +455,25 @@ public sealed class HealthEvaluatorTests
 
         Assert.Equal(HealthLevel.Ok, info.Level);
         Assert.Equal([report], info.Reports);
+    }
+
+    [Fact]
+    public void Restored_Events_Are_Listed_And_Trimmed_With_The_New_Ones()
+    {
+        HealthEvent Saved(int minutesAgo) => new() {
+            Resource = HealthResource.Disk,
+            Level    = HealthLevel.Warning,
+            StartUtc = Start.AddMinutes(-minutesAgo),
+            EndUtc   = Start.AddMinutes(-minutesAgo + 1)
+        };
+
+        HealthThresholds small = new() { EventHistorySize = 2 };
+
+        evaluator.Restore([Saved(30), Saved(20), Saved(10)]);
+
+        HealthInfo info = evaluator.Evaluate(Busy(0.20), small, Start);
+
+        Assert.Equal([Start.AddMinutes(-10), Start.AddMinutes(-20)], info.Events.Select(healthEvent => healthEvent.StartUtc));
     }
 
     private HealthInfo Run(HealthSample sample, int from, int to, int step = 5)

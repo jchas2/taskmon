@@ -20,6 +20,41 @@ public sealed class HealthControlTests
         runContext       = runContextHelper.GetRunContext();
     }
 
+    [Fact]
+    public void An_Event_Older_Than_A_Week_Shows_Its_Date()
+    {
+        DateTime noonToday = DateTime.Today.AddHours(12).ToUniversalTime();
+
+        Assert.Equal(
+            noonToday.AddDays(-7).ToLocalTime().ToString("dd MMM HH:mm"),
+            HealthControl.DescribeTime(noonToday.AddDays(-7), noonToday));
+    }
+
+    [Fact]
+    public void An_Interrupted_Event_Does_Not_Say_It_Is_Ongoing()
+    {
+        HealthControl ctrl = CreateControl();
+
+        HealthInfo info = new() {
+            Level     = HealthLevel.Ok,
+            Resources = [new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Ok }],
+            Events    = [new HealthEvent {
+                Resource      = HealthResource.Cpu,
+                Level         = HealthLevel.Critical,
+                StartUtc      = Now,
+                IsInterrupted = true,
+                PeakReason    = "100% busy"
+            }]
+        };
+
+        ctrl.Sample(Snapshot(info));
+
+        string text = VisibleText();
+
+        Assert.Contains("interrupted, peak 100% busy", text);
+        Assert.DoesNotContain("ongoing", text);
+    }
+
     // The view is 64 wide on an 80 column terminal, and the reason for a warning has to survive that.
     [Fact]
     public void A_Narrow_Terminal_Keeps_The_Reason_For_A_Warning()

@@ -2,6 +2,7 @@
 
 public interface IFileSystem
 {
+    public void   DeleteFile(string path);
     public bool   DirectoryExists(string? path);
     public bool   FileExists(string? path);
     public long GetFileLength(string path);
@@ -14,4 +15,6 @@ public interface IFileSystem
     public bool   TryCreateDirectory(string path);
 
     public void   WriteAllText(string path, string? contents);
+
+    public void   WriteAllTextAtomic(string path, string? contents);
 }

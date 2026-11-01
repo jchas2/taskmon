@@ -7,6 +7,17 @@ public sealed partial class FileSystem : IFileSystem
     private const string BackupExtension = ".bak";
     private const string TempExtension   = ".tmp";
 
+    public void DeleteFile(string path)
+    {
+        try {
+            File.Delete(path);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on DeleteFile '{path}'");
+            throw;
+        }
+    }
+
     public bool DirectoryExists(string? path) => Directory.Exists(path);
 
     public bool FileExists(string? path) => File.Exists(path);
@@ -98,5 +109,23 @@ public sealed partial class FileSystem : IFileSystem
             throw;
         }
     } 
+
+    // Unlike ReplaceAllText, the file need not exist yet and no backup is kept.
+    public void WriteAllTextAtomic(string path, string? contents)
+    {
+        string tempPath = $"{path}{TempExtension}";
+
+        try {
+            File.WriteAllText(tempPath, contents);
+            File.Move(tempPath, path, overwrite: true);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on WriteAllTextAtomic '{path}'");
+            throw;
+        }
+        finally {
+            File.Delete(tempPath);
+        }
+    }
 }
 #pragma warning restore CA1416
