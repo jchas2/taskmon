@@ -21,6 +21,7 @@ public sealed class AppConfig
     private readonly List<SummaryControlLayout> allLayouts = new();
     
     private Config                iniConfig;
+    private Config                savedConfig;
     private SummaryControlLayout? defaultLayout;
     private Theme                 defaultTheme = new();
     
@@ -54,6 +55,7 @@ public sealed class AppConfig
         LoadSections();
         LoadThemes();
         LoadLayouts();
+        savedConfig = CopyConfig();
     }
 
     public AppConfig(IFileSystem fileSystem, Config iniConfig)
@@ -63,12 +65,13 @@ public sealed class AppConfig
         LoadSections();
         LoadThemes();
         LoadLayouts();
+        savedConfig = CopyConfig();
     }
 
     private AppConfig(AppConfig source)
     {
         fileSystem = source.fileSystem;
-        iniConfig  = Config.FromString(source.ToString()) ?? new();
+        iniConfig  = source.CopyConfig();
         LoadSections();
 
         allThemes.AddRange(source.allThemes);
@@ -76,6 +79,7 @@ public sealed class AppConfig
 
         defaultLayout = source.defaultLayout;
         defaultTheme  = source.defaultTheme;
+        savedConfig   = CopyConfig();
     }
 
     public bool ConfirmTaskDelete
@@ -83,6 +87,8 @@ public sealed class AppConfig
         get => uxSection?.GetBool(Constants.Keys.ConfirmTaskDelete, true) ?? true;
         set => uxSection?.Add(Constants.Keys.ConfirmTaskDelete, value.ToString());
     }
+
+    private Config CopyConfig() => Config.FromString(ToString()) ?? new();
 
     public AppConfig CreatePreview() => new(this);
 
@@ -260,6 +266,8 @@ public sealed class AppConfig
     private bool IsLayoutNameTaken(string name) =>
         allLayouts.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
 
+    public string? LastSaveError { get; private set; }
+
     public List<SummaryControlLayout> Layouts => allLayouts;
 
     private void LoadLayouts()
@@ -360,7 +368,7 @@ public sealed class AppConfig
         if (!iniConfig.ContainsSection(filterSection.Name)) {
             iniConfig.AddConfigSection(filterSection);
         }
-        
+
         sortSection = iniConfig.ContainsSection(Constants.Sections.Sort)
             ? iniConfig.GetConfigSection(Constants.Sections.Sort)
             : new ConfigSection(Constants.Sections.Sort);
@@ -475,9 +483,8 @@ public sealed class AppConfig
         uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
 
         if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
-            Theme = allThemes
-                .Where(t => t.Name == uxSection.GetString(Constants.Keys.DefaultTheme))
-                .First();
+            Theme = allThemes.First(t => t.Name.Equals(
+                uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase));
         }
         else {
             // Handle the case where the config file has been edited with a default-theme name that has not been loaded.
@@ -665,6 +672,7 @@ public sealed class AppConfig
             LoadSections();
             LoadThemes();
             LoadLayouts();
+            savedConfig = CopyConfig();
             return true;
         }
         catch (Exception ex) {
@@ -726,10 +734,30 @@ public sealed class AppConfig
 
     public bool TrySave(string path)
     {
+        LastSaveError = null;
+
         try {
-            Config.ToFile(fileSystem, path, iniConfig);
-            PathPermissions.EnsureUserOwnership(path);
+            bool   fileExists = fileSystem.FileExists(path);
+            string fileText   = fileExists ? fileSystem.ReadAllText(path) : string.Empty;
+
+            // A file that doesn't parse is left alone. It holds settings that couldn't be read,
+            // usually one hand-edited typo away from working again.
+            _ = Config.FromString(fileText);
+
+            string merged = ConfigFileMerger.Merge(fileText, savedConfig, iniConfig);
+            _ = Config.FromString(merged);
+
+            if (merged != fileText) {
+                WriteConfigFile(path, merged, fileExists);
+            }
+
+            savedConfig = CopyConfig();
             return true;
+        }
+        catch (ConfigParseException ex) {
+            LastSaveError = $"{ConfigFile} has an error and was not saved.\n{ex.Message}";
+            ExceptionHelper.LogException(ex, LastSaveError);
+            return false;
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error saving config: {ex.Message} to path {path}");
@@ -747,5 +775,17 @@ public sealed class AppConfig
     {
         get => statsSection?.GetEnum(Constants.Keys.Cols, DefaultVisibleColumns) ?? DefaultVisibleColumns;
         set => statsSection?.Add(Constants.Keys.Cols, value.ToString());
+    }
+
+    private void WriteConfigFile(string path, string text, bool fileExists)
+    {
+        if (fileExists) {
+            fileSystem.ReplaceAllText(path, text);
+        }
+        else {
+            fileSystem.WriteAllText(path, text);
+        }
+
+        PathPermissions.EnsureUserOwnership(path);
     }
 }

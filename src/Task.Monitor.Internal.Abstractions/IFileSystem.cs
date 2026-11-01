@@ -8,6 +8,10 @@ public interface IFileSystem
     string[]      GetFiles(string path);
     string[]      GetFiles(string path, string searchPattern);
     public string ReadAllText(string path);
+
+    public void   ReplaceAllText(string path, string? contents);
+
     public bool   TryCreateDirectory(string path);
+
     public void   WriteAllText(string path, string? contents);
 }

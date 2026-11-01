@@ -35,7 +35,12 @@ public sealed class ConfigSection
         return this;
     }
 
+    // Written above the section when it is first added to an existing file. See ConfigFileMerger.
+    public string Comment { get; set; } = string.Empty;
+
     public bool Contains(string key) => keys.ContainsKey(key);
+
+    public IReadOnlyDictionary<string, string> Entries => keys;
 
     public bool GetBool(string key) => GetBool(key, false);
 

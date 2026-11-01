@@ -56,7 +56,11 @@ public sealed class TaskMonApp(RunContext runContext)
         if (!string.IsNullOrEmpty(configPath)) {
             if (runContext.FileSystem.FileExists(configPath)) {
                 Trace.WriteLine($"Loading config from {configPath}.");
-                _ = runContext.AppConfig.TryLoad(configPath);
+
+                // Nothing has changed yet, so this save can only add keys the file doesn't have.
+                if (runContext.AppConfig.TryLoad(configPath)) {
+                    _ = runContext.AppConfig.TrySave(configPath);
+                }
             }
             else {
                 Trace.WriteLine($"Saving initial config to {configPath}.");

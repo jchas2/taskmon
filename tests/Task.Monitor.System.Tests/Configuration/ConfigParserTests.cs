@@ -56,6 +56,41 @@ process.list.user.currentnonroot=#00FF00";
         Assert.Throws<ConfigParseException>(() => configParser.Parse());
     }
 
+    [Theory]
+    [InlineData("[ux]\nshow-tips\n", "Line 2:")]
+    [InlineData("[ux]\r\nshow-tips\r\n", "Line 2:")]
+    [InlineData("[ux]\na=1\n\n1b=2\n", "Line 4:")]
+    [InlineData("key=1\n[ux]\n", "Line 1:")]
+    [InlineData("[ux]\na=1\n[UX]\nb=2\n", "Line 3:")]
+    public void Errors_Name_The_Line(string text, string expected)
+    {
+        ConfigParser configParser = new(text);
+
+        ConfigParseException ex = Assert.Throws<ConfigParseException>(() => configParser.Parse());
+
+        Assert.StartsWith(expected, ex.Message);
+    }
+
+    [Fact]
+    public void Hash_Comments_Do_Not_Stop_The_Parse()
+    {
+        ConfigParser configParser = new("[ux]\na=1\n# a note\nb=2\n[stats]\nc=3\n");
+        configParser.Parse();
+
+        Assert.Equal(2, configParser.Sections.Count);
+        Assert.Equal("2", configParser.Sections[0].GetString("b"));
+        Assert.Equal("3", configParser.Sections[1].GetString("c"));
+    }
+
+    [Fact]
+    public void Hash_Inside_A_Value_Is_Kept()
+    {
+        ConfigParser configParser = new("[theme]\nbackground=#000080\n");
+        configParser.Parse();
+
+        Assert.Equal("#000080", configParser.Sections[0].GetString("background"));
+    }
+
     [Fact]
     public void Invalid_Config_File_Name_Should_Throw_FileNotFoundException()
     {
@@ -126,5 +161,17 @@ key2=value2";
         Assert.Equal(ConsolePalette.Magenta.ToArgb(), configParser.Sections[0].GetColour("console-color-magenta").ToArgb());
         Assert.Equal(ConsolePalette.Yellow.ToArgb(), configParser.Sections[0].GetColour("console-color-yellow").ToArgb());
         Assert.Equal(ConsolePalette.White.ToArgb(), configParser.Sections[0].GetColour("console-color-white").ToArgb());
+    }
+
+    [Theory]
+    [InlineData("[ux]\ndefault-theme=Nord ; favourite\n")]
+    [InlineData("[ux]\ndefault-theme = Nord\n")]
+    [InlineData("[ux]\ndefault-theme=  Nord  \r\n")]
+    public void Values_Are_Trimmed(string text)
+    {
+        ConfigParser configParser = new(text);
+        configParser.Parse();
+
+        Assert.Equal("Nord", configParser.Sections[0].GetString("default-theme"));
     }
 }

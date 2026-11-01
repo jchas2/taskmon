@@ -12,6 +12,9 @@ public class ConfigParser : IDisposable
     
     private readonly TextReader           reader;
     private readonly IList<ConfigSection> sections;
+
+    private int line = 1;
+    private int previous;
     
     public ConfigParser(string str)
     {
@@ -39,13 +42,16 @@ public class ConfigParser : IDisposable
         // even though ctor guarantees non-null.
         reader?.Dispose();  
 
+    private bool IsDuplicateSection(string name) =>
+        sections.Any(s => s.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+
     public void Parse()
     {
         bool           inComment = false;
         ConfigSection? section = null;
 
         while (true) {
-            int character = reader.Read();
+            int character = Read();
 
             if (character == EndOfFile) {
                 break;
@@ -61,12 +67,12 @@ public class ConfigParser : IDisposable
             if (inComment) {
                 continue;
             }
-            
+
             if (char.IsWhiteSpace(ch)) {
                 continue;
             }
 
-            if (ch == ';') {
+            if (ch == ';' || ch == '#') {
                 inComment = true;
                 continue;
             }
@@ -74,24 +80,24 @@ public class ConfigParser : IDisposable
             if (ch == '[') {
                 section = new ConfigSection();
                 ParseSection(ref section);
+
+                if (IsDuplicateSection(section.Name)) {
+                    throw ParseError($"Section {section.Name} appears more than once.");
+                }
+
                 sections.Add(section);
                 continue;
             }
 
-            if (false == char.IsLetter(ch)) {
-                break;
+            if (section == null || false == char.IsLetter(ch)) {
+                throw ParseError($"Unexpected '{ch}'. Expected a section, a key or a comment.");
             }
 
-            if (section != null) {
-                ParseKey(ref section, ch);
-                continue;
-            }
-
-            if (section == null) {
-                break;
-            }
+            ParseKey(ref section, ch);
         }
     }
+
+    private ConfigParseException ParseError(string message) => new($"Line {line}: {message}");
 
     private void ParseKey(ref ConfigSection section, char initChar)
     {
@@ -101,12 +107,12 @@ public class ConfigParser : IDisposable
         char ch;
         
         while (true) {
-            int character = reader.Read();
+            int character = Read();
             
             ch = (char)character;
             
             if (character == EndOfFile) {
-                throw new ConfigParseException($"End-of-file found reading key name {keyBuffer}.");
+                throw ParseError($"End-of-file found reading key name {keyBuffer}.");
             }
             
             if (!(char.IsLetterOrDigit(ch) || ch == '-' || ch == '.')) {
@@ -117,23 +123,23 @@ public class ConfigParser : IDisposable
         }
 
         while (ch == ' ' || ch == '\t') {
-            ch = (char)(reader.Read());
+            ch = (char)Read();
         }
 
         if (ch != '=') {
-            throw new ConfigParseException($"Expected '=' after key {keyBuffer}.");
+            throw ParseError($"Expected '=' after key {keyBuffer}.");
         }
 
         // Keys are mandatory, values are not.
         if (keyBuffer.Length == 0) {
-            throw new ConfigParseException("Key name cannot be empty.");
+            throw ParseError("Key name cannot be empty.");
         }
 
         StringBuilder valueBuffer = new(InitialStringSize);
         ParseValue(ref valueBuffer);
 
         string key = keyBuffer.ToString().ToLower();
-        string val = valueBuffer.ToString();
+        string val = valueBuffer.ToString().Trim();
 
         if (false == section.Contains(key)) {
             section.Add(key, val);
@@ -145,11 +151,11 @@ public class ConfigParser : IDisposable
         StringBuilder buffer = new(InitialStringSize);
         
         while (true) {
-            int character = reader.Read();
+            int character = Read();
             char ch       = (char)character;
             
             if (character == EndOfFile) {
-                throw new ConfigParseException($"End-of-file found reading section name {buffer} before closing ']'.");
+                throw ParseError($"End-of-file found reading section name {buffer} before closing ']'.");
             }
 
             if (ch == ']') {
@@ -166,11 +172,11 @@ public class ConfigParser : IDisposable
                 continue;
             }
 
-            throw new ConfigParseException($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
+            throw ParseError($"Unexpected char in section name {buffer}. Must be alpha-numeric.");
         }
 
         if (buffer.Length == 0) {
-            throw new ConfigParseException("Section name cannot be empty.");
+            throw ParseError("Section name cannot be empty.");
         }
         
         section.Name = buffer.ToString();
@@ -181,7 +187,7 @@ public class ConfigParser : IDisposable
         bool inComment = false;
 
         while (true) {
-            int character = reader.Read();
+            int character = Read();
 
             if (character == EndOfFile) {
                 return;
@@ -209,6 +215,18 @@ public class ConfigParser : IDisposable
 
             valueBuffer.Append(ch);
         }
+    }
+
+    // Counts a line when moving past its newline, so an error reported on reading the newline
+    // still names the line it ends.
+    private int Read()
+    {
+        if (previous == '\n') {
+            line++;
+        }
+
+        previous = reader.Read();
+        return previous;
     }
 
     public IList<ConfigSection> Sections => sections;

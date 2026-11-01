@@ -22,6 +22,7 @@ public class SetupScreen : Screen
     private const int CommandLength         = 10;
     private const int PreviewMinWidth       = 40;
     private const int PreviewMinHeight      = 14;
+    private const int SaveErrorWidth        = 72;
 
     private const string NewLayoutRow = "+ New Layout";
 
@@ -594,9 +595,10 @@ public class SetupScreen : Screen
                     handled = true;
                     ShowMessageBox(
                         "Save Failed",
-                        "An error occurred saving config.",
+                        runContext.AppConfig.LastSaveError ?? "An error occurred saving config.",
                         MessageBoxButtons.Ok,
-                        () => { });
+                        () => { },
+                        SaveErrorWidth);
                 } 
                 break;
         }

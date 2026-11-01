@@ -1,4 +1,3 @@
-using System.Text;
 using Task.Monitor.Internal.Abstractions;
 
 namespace Task.Monitor.System.Configuration;
@@ -56,16 +55,5 @@ public class Config
         parser.Parse(); 
         config.ConfigSections = parser.Sections;
         return config;
-    }
-
-    public static void ToFile(IFileSystem fileSys, string path, Config config)
-    {
-        StringBuilder buffer = new(1024 * 16);
-        
-        foreach (ConfigSection configSection in config.ConfigSections) {
-            buffer.AppendLine(configSection.ToString());
-        }        
-
-        fileSys.WriteAllText(path, buffer.ToString());
     }
 }

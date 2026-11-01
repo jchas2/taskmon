@@ -4,6 +4,9 @@ namespace Task.Monitor.Internal.Abstractions;
 
 public sealed partial class FileSystem : IFileSystem
 {
+    private const string BackupExtension = ".bak";
+    private const string TempExtension   = ".tmp";
+
     public bool DirectoryExists(string? path) => Directory.Exists(path);
 
     public bool FileExists(string? path) => File.Exists(path);
@@ -52,6 +55,27 @@ public sealed partial class FileSystem : IFileSystem
             throw;
         }
     } 
+
+    // Swaps the new text in whole, so a failed write can't leave a damaged file, and keeps the old
+    // text beside it with a .bak extension. Symlinks are resolved first, as swapping over the link
+    // would replace it with a plain file.
+    public void ReplaceAllText(string path, string? contents)
+    {
+        string target   = File.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName ?? path;
+        string tempPath = $"{target}{TempExtension}";
+
+        try {
+            File.WriteAllText(tempPath, contents);
+            File.Replace(tempPath, target, $"{target}{BackupExtension}");
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex, $"Error on ReplaceAllText '{path}'");
+            throw;
+        }
+        finally {
+            File.Delete(tempPath);
+        }
+    }
 
     public bool TryCreateDirectory(string path)
     {

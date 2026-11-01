@@ -159,6 +159,12 @@ Task Monitor stores configuration and log files in the following system director
 | Layout files | `~\AppData\Roaming\taskmon\layouts` | 
 | Log files | `~\AppData\Local\taskmon\Logs` | 
 
+### Editing taskmon.ini
+
+`taskmon.ini` can be edited by hand. Saving from Setup (`F2`) only changes the settings changed there, so comments (lines starting with `;` or `#`), blank lines, ordering and edits made while Task Monitor is running are all kept. Settings added by a new version are added to the end of their section the next time Task Monitor starts, and the previous file is kept as `taskmon.ini.bak`.
+
+If the file can't be read, Task Monitor starts with its default settings and leaves the file alone. Saving from Setup then shows the line at fault, and works again once that line is fixed.
+
 ## Theme Files
 
 Theme files control the color palette behavior for color desaturation, background opacity, and the colors applied to the TUI screen elements.
