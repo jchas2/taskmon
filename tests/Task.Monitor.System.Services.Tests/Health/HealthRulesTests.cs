@@ -41,7 +41,7 @@ public sealed class HealthRulesTests
         HealthReading reading = new AppsHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Unknown, reading.Level);
-        Assert.Equal("1 app faults", reading.Errors);
+        Assert.Equal("1 app fault", reading.Errors);
     }
 
     [Fact]
@@ -80,6 +80,14 @@ public sealed class HealthRulesTests
         Assert.Equal("100% busy", reading.Reason);
     }
 
+    [Fact]
+    public void Cpu_Driver_Time_Raises_A_Warning_On_An_Otherwise_Quiet_Cpu()
+    {
+        CpuHealthRule rule = new();
+
+        Assert.Equal(HealthLevel.Warning, rule.Evaluate(Cpu(new CpuMetrics { DriverTimePercent = 20.0 }), thresholds).Level);
+    }
+
     [Theory]
     [InlineData(0.50, HealthLevel.Ok)]
     [InlineData(0.90, HealthLevel.Warning)]
@@ -92,12 +100,32 @@ public sealed class HealthRulesTests
     }
 
     [Fact]
-    public void Cpu_Queue_And_Driver_Time_Raise_A_Warning_On_An_Otherwise_Quiet_Cpu()
+    public void Cpu_Queue_Follows_The_Busy_Setting()
     {
-        CpuHealthRule rule = new();
+        HealthThresholds relaxed = new() { RunQueueBusyPercent = 10 };
 
-        Assert.Equal(HealthLevel.Warning, rule.Evaluate(Cpu(new CpuMetrics { RunQueuePerCore = 2.5 }), thresholds).Level);
-        Assert.Equal(HealthLevel.Warning, rule.Evaluate(Cpu(new CpuMetrics { DriverTimePercent = 20.0 }), thresholds).Level);
+        HealthSample sample = Cpu(new CpuMetrics { CpuTotalTime = 0.16, RunQueuePerCore = 2.5 });
+
+        Assert.Equal(HealthLevel.Warning, new CpuHealthRule().Evaluate(sample, relaxed).Level);
+    }
+
+    // Regression test: the macOS load average keeps falling for over a minute after work ends, which
+    // held CPU at Warning with the machine 16% busy.
+    [Fact]
+    public void Cpu_Queue_Is_Ignored_On_A_Quiet_Cpu()
+    {
+        HealthReading reading = new CpuHealthRule().Evaluate(Cpu(new CpuMetrics { CpuTotalTime = 0.16, RunQueuePerCore = 2.5 }), thresholds);
+
+        Assert.Equal(HealthLevel.Ok, reading.Level);
+        Assert.Equal("Queue 2.5 per core", reading.Saturation);
+    }
+
+    [Fact]
+    public void Cpu_Queue_Raises_A_Warning_Once_The_Cpu_Is_Busy()
+    {
+        HealthSample sample = Cpu(new CpuMetrics { CpuTotalTime = 0.60, RunQueuePerCore = 2.5 });
+
+        Assert.Equal(HealthLevel.Warning, new CpuHealthRule().Evaluate(sample, thresholds).Level);
     }
 
     private static HealthSample Disk(DiskMetrics metrics) =>

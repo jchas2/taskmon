@@ -66,6 +66,7 @@ public sealed record HealthThresholds
 
     public int             PerformanceLimitWarningPercent { get; init; } = 80;
     public int             ReportLookbackHours            { get; init; } = 24;
+    public int             RunQueueBusyPercent            { get; init; } = 50;
     public int             RunQueueWarningPerCore         { get; init; } = 2;
     public int             SensorCriticalMarginCelsius    { get; init; } = 3;
     public int             SensorWarningMarginCelsius     { get; init; } = 10;
@@ -144,6 +145,7 @@ public sealed record HealthThresholds
             NvmeWearWarningPercent         = Percent(nameof(NvmeWearWarningPercent), NvmeWearWarningPercent, defaults.NvmeWearWarningPercent),
             PerformanceLimitWarningPercent = Percent(nameof(PerformanceLimitWarningPercent), PerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent),
             ReportLookbackHours            = NonNegative(nameof(ReportLookbackHours), ReportLookbackHours, defaults.ReportLookbackHours),
+            RunQueueBusyPercent            = Percent(nameof(RunQueueBusyPercent), RunQueueBusyPercent, defaults.RunQueueBusyPercent),
             RunQueueWarningPerCore         = NonNegative(nameof(RunQueueWarningPerCore), RunQueueWarningPerCore, defaults.RunQueueWarningPerCore),
             SensorCriticalMarginCelsius    = sensorCritical,
             SensorWarningMarginCelsius     = sensorWarning,

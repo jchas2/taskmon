@@ -4,15 +4,28 @@ namespace Task.Monitor.System.Services.Health;
 
 internal static partial class DiagnosticReportParser
 {
+    private const string CpuEvent          = "cpu usage";
+    private const string DiskWritesEvent   = "disk writes";
+    private const string JetsamEventPrefix = "JetsamEvent";
+
     [GeneratedRegex(@"^(?<app>.+?)[-_]\d{4}-\d{2}-\d{2}-\d{6}")]
     private static partial Regex AppName();
 
-    public static HealthReport? Parse(string fileName, DateTime timeUtc)
+    public static HealthReport? Parse(string fileName, DateTime timeUtc, string? diagEvent = null)
     {
+        if (fileName.StartsWith(JetsamEventPrefix, StringComparison.OrdinalIgnoreCase)) {
+            return new HealthReport(
+                timeUtc,
+                HealthReportKind.LowMemory,
+                "Low memory",
+                "macOS stopped processes to free memory",
+                string.Empty);
+        }
+
         (HealthReportKind Kind, string Title, string Detail)? report = fileName switch {
-            _ when fileName.EndsWith(".cpu_resource.diag", StringComparison.OrdinalIgnoreCase)
+            _ when fileName.EndsWith(".cpu_resource.diag", StringComparison.OrdinalIgnoreCase) || diagEvent == CpuEvent
                 => (HealthReportKind.ResourceLimit, "CPU limit", "Used too much CPU"),
-            _ when fileName.EndsWith(".diskwrites_resource.diag", StringComparison.OrdinalIgnoreCase)
+            _ when fileName.EndsWith(".diskwrites_resource.diag", StringComparison.OrdinalIgnoreCase) || diagEvent == DiskWritesEvent
                 => (HealthReportKind.ResourceLimit, "Disk write limit", "Wrote too much to disk"),
             _ when fileName.EndsWith(".hang", StringComparison.OrdinalIgnoreCase)
                 => (HealthReportKind.AppHang, "App hang", "Stopped responding"),

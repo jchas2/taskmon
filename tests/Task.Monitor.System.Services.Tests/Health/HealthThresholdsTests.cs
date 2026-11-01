@@ -31,10 +31,15 @@ public sealed class HealthThresholdsTests
     [Fact]
     public void A_Percentage_Above_100_Falls_Back_To_Its_Default()
     {
-        HealthThresholds thresholds = new HealthThresholds { DiskActiveWarningPercent = 150, HardFaultsAvailablePercent = 150 }.Validated();
+        HealthThresholds thresholds = new HealthThresholds {
+            DiskActiveWarningPercent   = 150,
+            HardFaultsAvailablePercent = 150,
+            RunQueueBusyPercent        = 150
+        }.Validated();
 
         Assert.Equal(Defaults.DiskActiveWarningPercent, thresholds.DiskActiveWarningPercent);
         Assert.Equal(Defaults.HardFaultsAvailablePercent, thresholds.HardFaultsAvailablePercent);
+        Assert.Equal(Defaults.RunQueueBusyPercent, thresholds.RunQueueBusyPercent);
     }
 
     [Fact]

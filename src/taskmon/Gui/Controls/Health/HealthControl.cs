@@ -9,9 +9,10 @@ namespace Task.Monitor.Gui.Controls.Health;
 
 public sealed partial class HealthControl : Control
 {
-    private const string NoCausesText = "Nothing under pressure.";
-    private const string NoEventsText = "No events recorded yet.";
-    private const string WaitingText  = "Gathering metrics…";
+    private const string NoCausesText  = "Nothing under pressure.";
+    private const string NoEventsText  = "No events recorded yet.";
+    private const string NoProcessText = "No process stands out.";
+    private const string WaitingText   = "Gathering metrics…";
 
     private const int MinPaneHeight = 4;
 

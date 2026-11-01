@@ -85,7 +85,7 @@ public sealed partial class HealthService : WorkerService
 
                 bool isSystem = IsSystemVolume(drive.Name);
 
-                if (drive.AvailableFreeSpace > 0 || isSystem) {
+                if (isSystem || (drive.AvailableFreeSpace > 0 && !IsReadOnlyVolume(drive.Name))) {
                     volumes.Add(new HealthVolume(drive.Name, drive.AvailableFreeSpace, drive.TotalSize, isSystem));
                 }
             }

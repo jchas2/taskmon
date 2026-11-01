@@ -182,6 +182,7 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `cpu-warning-percent` | 90 | CPU busy time. |
 | `cpu-critical-percent` | 98 | CPU busy time. |
 | `run-queue-warning-per-core` | 2 | Threads waiting per core on Windows, load average per core on macOS. |
+| `run-queue-busy-percent` | 50 | The queue only counts with the CPU at least this busy, as the macOS load average keeps falling for over a minute after work ends. |
 | `driver-time-warning-percent` | 15 | CPU time in drivers (Windows, DPC and interrupt time). |
 | `memory-available-warning-percent` | 10 | Memory available (Windows). macOS uses the kernel's own pressure level. |
 | `memory-available-critical-percent` | 5 | Memory available (Windows). |
@@ -427,11 +428,14 @@ The scripts in `eng/tools` put the machine under real load, for trying the `HEAL
 | :--- | :--- |
 | `./eng/tools/stress-cpu.sh` | CPU reaches Critical, and the load average rises. Runs at a lower priority. |
 | `./eng/tools/stress-cpu.sh --percent 93` | CPU reaches Warning but not Critical. |
-| `./eng/tools/stress-memory.sh --level warn` | Memory reaches Warning, using the `memory_pressure` tool, which may need `sudo`. Use `critical` for Critical, or add `--simulate` to report the level without using any memory. |
-| `./eng/tools/stress-disk.sh` | Disk writes only, as shell tools can't bypass the file cache for reads. |
+| `./eng/tools/stress-memory.sh --level warn` | Memory reaches Warning, using the `memory_pressure` tool. |
+| `sudo ./eng/tools/stress-memory.sh --level critical --simulate` | Memory reaches Critical without using any memory. `--simulate` needs `sudo`. |
+| `./eng/tools/stress-memory.sh --level critical` | Real pressure up to the critical level. macOS can stop the tool and other apps to free memory, so Memory may only reach Warning. |
+| `./eng/tools/stress-disk.sh` | Disk writes only, as shell tools can't bypass the file cache for reads. A fast SSD can stay under the latency Warning. |
+| `./eng/tools/stress-disk.sh --threads 64` | Disk latency reaches Warning on a fast SSD. |
 | `./eng/tools/stress-crash.sh` | A real crash report appears under Recent events within a minute, and stays for the lookback period. |
 
-In `HEALTH`, the likely cause shows as `powershell` on Windows. On macOS it shows as `yes` for the CPU script and `dd` for the disk script.
+In `HEALTH`, the likely cause shows as `powershell` on Windows. On macOS it shows as `yes` for the CPU script, `dd` for the disk script and `memory_pressure` for the memory script. A tool started with `sudo` only shows if Task Monitor is too.
 
 ### Publishing
 

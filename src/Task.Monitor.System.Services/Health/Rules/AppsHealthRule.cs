@@ -6,7 +6,11 @@ internal sealed class AppsHealthRule : IHealthRule
     {
         int reported = sample.Reports.Count(report => report.Kind is HealthReportKind.AppCrash or HealthReportKind.AppHang);
 
-        string errors = reported > 0 ? $"{reported} app faults" : string.Empty;
+        string errors = reported switch {
+            0 => string.Empty,
+            1 => "1 app fault",
+            _ => $"{reported} app faults"
+        };
 
         if (!sample.CanDetectHungApps) {
             return new HealthReading { Resource = Resource, Errors = errors };

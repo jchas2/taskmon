@@ -85,6 +85,8 @@ public sealed partial class HealthControl
 
         visibleCauses = info.Culprits;
 
+        causesView.EmptyListViewText = info.Level >= HealthLevel.Warning ? NoProcessText : NoCausesText;
+
         if (signature == lastCausesSignature) {
             return;
         }

@@ -7,7 +7,8 @@ internal sealed class HealthTracker
     private readonly ConditionTimer critical      = new();
     private readonly ConditionTimer warning       = new();
 
-    private DateTime? lastUpdateUtc;
+    private DateTime?   lastUpdateUtc;
+    private HealthLevel peakLevel;
 
     private sealed class ConditionTimer
     {
@@ -42,6 +43,10 @@ internal sealed class HealthTracker
             }
         }
     }
+
+    public bool IsUnderPressure(HealthReading reading, HealthThresholds thresholds, DateTime utcNow) =>
+        Level >= HealthLevel.Warning &&
+        (reading.Level >= HealthLevel.Warning || !belowWarning.HasHeld(thresholds.SustainGraceSeconds, utcNow));
 
     public HealthLevel Level { get; private set; } = HealthLevel.Unknown;
 
@@ -164,20 +169,24 @@ internal sealed class HealthTracker
 
     private void UpdateOpenEvent(HealthReading reading, DateTime utcNow, IReadOnlyList<string> culprits)
     {
-        OpenEvent ??= new HealthEvent {
-            Resource   = reading.Resource,
-            Level      = Level,
-            StartUtc   = warning.Since ?? utcNow,
-            PeakReason = Reason,
-            PeakValue  = reading.Severity,
-            Culprits   = culprits
-        };
+        if (OpenEvent == null) {
+            peakLevel = reading.Level;
+            OpenEvent = new HealthEvent {
+                Resource   = reading.Resource,
+                Level      = Level,
+                StartUtc   = warning.Since ?? utcNow,
+                PeakReason = Reason,
+                PeakValue  = reading.Severity,
+                Culprits   = culprits
+            };
+        }
 
         if (Level > OpenEvent.Level) {
             OpenEvent = OpenEvent with { Level = Level };
         }
 
-        if (reading.Severity > OpenEvent.PeakValue) {
+        if (reading.Level > peakLevel || (reading.Level == peakLevel && reading.Severity > OpenEvent.PeakValue)) {
+            peakLevel = reading.Level;
             OpenEvent = OpenEvent with {
                 PeakReason = reading.Reason,
                 PeakValue  = reading.Severity,

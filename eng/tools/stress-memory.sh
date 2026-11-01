@@ -3,7 +3,7 @@
 # Puts macOS under memory pressure, for trying the Memory rules in the HEALTH view, using the
 # memory_pressure tool that ships with macOS. See "Stress Testing" in README.md.
 #
-# The tool may need sudo. The memory is released when the time is up or on Ctrl+C.
+# --simulate needs sudo. The memory is released when the time is up or on Ctrl+C.
 
 set -e
 set -o pipefail
@@ -18,7 +18,7 @@ usage() {
     echo "Options:"
     echo "  --level <level>   The pressure level to reach: warn or critical. Default: warn"
     echo "  --seconds <n>     How long to hold it. Default: 120"
-    echo "  --simulate        Have the kernel report the level without using any memory."
+    echo "  --simulate        Have the kernel report the level without using any memory. Needs sudo."
     echo "  -h, --help        Display this help message."
     exit 1
 }
@@ -47,7 +47,7 @@ fi
 arguments=(-l "$level")
 
 if [[ "$simulate" == true ]]; then
-    arguments=(-S -l "$level")
+    arguments=(-S -l "$level" -s "$seconds")
 fi
 
 worker=""
@@ -55,6 +55,11 @@ worker=""
 stop_worker() {
     if [[ -n "$worker" ]]; then
         kill "$worker" 2>/dev/null || true
+    fi
+
+    # A simulated level stays set if the tool is stopped before it resets it.
+    if [[ "$simulate" == true ]]; then
+        memory_pressure -S -l normal -s 1 > /dev/null 2>&1 || true
     fi
 
     echo "Stopped."
@@ -77,6 +82,11 @@ while [[ "$SECONDS" -lt "$seconds" ]]; do
         status=0
         wait "$worker" || status=$?
         worker=""
+
+        if [[ "$status" -eq 137 ]]; then
+            echo "memory_pressure was killed, most likely by macOS to free memory."
+            exit "$status"
+        fi
 
         if [[ "$status" -ne 0 ]]; then
             echo "memory_pressure exited with status $status. It may need sudo."

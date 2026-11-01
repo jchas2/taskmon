@@ -10,6 +10,7 @@ internal sealed class HealthCulpritFinder
     private const double MinCpuRatio      = 0.01;
     private const double MinDiskBytes     = BytesPerMegabyte;
     private const double MinGpuRatio      = 0.01;
+    private const double MinShareOfTop    = 0.25;
     private const int    PerResource      = 3;
     private const double SecondsPerMinute = 60.0;
     private const double SmoothingSeconds = 20.0;
@@ -66,26 +67,35 @@ internal sealed class HealthCulpritFinder
     public IReadOnlyList<HealthCulprit> Find(IEnumerable<HealthResource> underPressure)
     {
         Dictionary<string, List<HealthResource>> found = new();
+        Dictionary<string, double> shares = new();
 
         foreach (HealthResource resource in underPressure) {
-            IEnumerable<string> top = trends
+            List<(string Name, double Usage)> top = trends
                 .Where(entry => IsUsing(entry.Value, resource))
                 .OrderByDescending(entry => Usage(entry.Value, resource))
                 .Take(PerResource)
-                .Select(entry => entry.Key);
+                .Select(entry => (entry.Key, Usage(entry.Value, resource)))
+                .ToList();
 
-            foreach (string name in top) {
+            foreach ((string name, double usage) in top) {
+                double share = usage / top[0].Usage;
+
+                if (share < MinShareOfTop) {
+                    continue;
+                }
+
                 if (!found.TryGetValue(name, out List<HealthResource>? resources)) {
                     resources = found[name] = new();
                 }
 
                 resources.Add(resource);
+                shares[name] = Math.Max(shares.GetValueOrDefault(name), share);
             }
         }
 
         return found
-            .OrderByDescending(entry => entry.Value.Count)
-            .ThenByDescending(entry => entry.Value.Max(resource => Usage(trends[entry.Key], resource)))
+            .OrderByDescending(entry => shares[entry.Key])
+            .ThenByDescending(entry => entry.Value.Count)
             .Take(MaxCulprits)
             .Select(entry => new HealthCulprit(
                 entry.Key,
@@ -137,6 +147,10 @@ internal sealed class HealthCulpritFinder
         Dictionary<string, (double Cpu, double Gpu, double Disk, long Memory)> totals = new();
 
         foreach (ProcessEntry entry in processes.Metrics.Entries) {
+            if (entry.Pid == Environment.ProcessId) {
+                continue;
+            }
+
             Merge(entry, totals);
 
             if (!trends.TryGetValue(entry.ProcessName, out ProcessTrend? trend)) {

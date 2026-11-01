@@ -11,6 +11,16 @@ public sealed class HealthCulpritFinderTests
 
     private readonly HealthCulpritFinder finder = new();
 
+    // Regression test: 36 yes processes used 996% CPU between them, and a browser at 84% was named
+    // alongside them as if it shared the blame.
+    [Fact]
+    public void A_Process_Far_Behind_The_Top_User_Is_Not_Named()
+    {
+        finder.Update(Processes(Entry("yes", 1, cpu: 9.96), Entry("browser", 2, cpu: 0.84)), Start);
+
+        Assert.Equal(["yes"], Names(HealthResource.Cpu));
+    }
+
     [Fact]
     public void A_Process_That_Has_Gone_Is_Not_Named()
     {
@@ -126,6 +136,14 @@ public sealed class HealthCulpritFinderTests
     }
 
     [Fact]
+    public void Task_Monitor_Does_Not_Name_Itself()
+    {
+        finder.Update(Processes(Entry("taskmon", Environment.ProcessId, cpu: 0.2), Entry("miner", 1, cpu: 0.9)), Start);
+
+        Assert.Equal(["miner"], Names(HealthResource.Cpu));
+    }
+
+    [Fact]
     public void The_List_Is_Capped()
     {
         ProcessEntry[] entries = Enumerable.Range(1, 20)
@@ -135,6 +153,23 @@ public sealed class HealthCulpritFinderTests
         finder.Update(Processes(entries), Start);
 
         Assert.True(finder.Find([HealthResource.Cpu, HealthResource.Memory, HealthResource.Disk]).Count <= 5);
+    }
+
+    // Regression test: a process using a little of both CPU and disk was listed ahead of yes and dd,
+    // the processes doing the work, for being behind two resources.
+    [Fact]
+    public void The_Top_User_Of_Each_Resource_Comes_Before_A_Lesser_User_Of_Both()
+    {
+        finder.Update(Processes(
+            Entry("yes", 1, cpu: 9.0),
+            Entry("dd", 2, disk: 100.0 * Megabyte),
+            Entry("browser", 3, cpu: 3.0, disk: 30.0 * Megabyte)), Start);
+
+        string[] names = finder.Find([HealthResource.Cpu, HealthResource.Disk])
+            .Select(culprit => culprit.ProcessName)
+            .ToArray();
+
+        Assert.Equal(["yes", "dd", "browser"], names);
     }
 
     [Fact]

@@ -70,8 +70,8 @@ public sealed class HealthEvaluator
             Level     = settled.Max(reading => reading.Level),
             SinceUtc  = OverallSince(),
             Resources = settled,
-            Culprits  = [.. hung, .. culprits.Find(settled
-                .Where(reading => reading.Level >= HealthLevel.Warning)
+            Culprits  = [.. hung, .. culprits.Find(readings
+                .Where(reading => trackers[reading.Resource].IsUnderPressure(reading, thresholds, utcNow))
                 .Select(reading => reading.Resource))],
             Events    = BuildEvents(thresholds),
             Reports   = sample.Reports

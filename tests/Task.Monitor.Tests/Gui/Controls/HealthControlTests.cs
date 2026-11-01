@@ -183,6 +183,24 @@ public sealed class HealthControlTests
     }
 
     [Fact]
+    public void Pressure_With_No_Cause_Does_Not_Say_Nothing_Is_Under_Pressure()
+    {
+        HealthControl ctrl = CreateControl();
+
+        HealthInfo info = new() {
+            Level     = HealthLevel.Warning,
+            Resources = [new HealthReading { Resource = HealthResource.Disk, Level = HealthLevel.Warning, Reason = "latency 30 ms" }]
+        };
+
+        ctrl.Sample(Snapshot(info));
+
+        string text = VisibleText();
+
+        Assert.Contains("No process stands out.", text);
+        Assert.DoesNotContain("Nothing under pressure.", text);
+    }
+
+    [Fact]
     public void Reports_Are_Listed_With_The_Events_Newest_First()
     {
         HealthControl ctrl = CreateControl();

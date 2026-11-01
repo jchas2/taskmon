@@ -34,6 +34,18 @@ public sealed class HealthEvaluatorTests
     }
 
     [Fact]
+    public void A_Brief_Dip_Keeps_The_Culprits()
+    {
+        ProcessInfo processes = Processes(new ProcessEntry { ProcessName = "miner", Pid = 1, CpuTimePercent = 0.9 });
+
+        Run(Busy(0.95, processes), from: 0, to: 40);
+
+        HealthInfo info = evaluator.Evaluate(Busy(0.20, processes), thresholds, Start.AddSeconds(42));
+
+        Assert.Equal("miner", Assert.Single(info.Culprits).ProcessName);
+    }
+
+    [Fact]
     public void A_Change_To_The_Update_Interval_Does_Not_Change_The_Timing()
     {
         HealthEvaluator slower = new();
@@ -58,6 +70,20 @@ public sealed class HealthEvaluatorTests
         Assert.Equal(HealthLevel.Ok, CpuLevel(info));
         Assert.Equal(HealthResource.Cpu, healthEvent.Resource);
         Assert.NotNull(healthEvent.EndUtc);
+    }
+
+    [Fact]
+    public void A_Critical_Reading_Replaces_A_Warning_Peak_Of_Higher_Severity()
+    {
+        HealthSample queued = new() {
+            Cpu = new CpuInfo { Metrics = new CpuMetrics { CpuTotalTime = 0.6, RunQueuePerCore = 4.0 } }
+        };
+
+        Run(queued, from: 0, to: 35);
+
+        HealthInfo info = Run(Busy(0.99), from: 40, to: 105);
+
+        Assert.Contains("99%", Assert.Single(info.Events).PeakReason);
     }
 
     [Fact]
@@ -228,6 +254,26 @@ public sealed class HealthEvaluatorTests
         Assert.Equal(HealthLevel.Ok, CpuLevel(Run(Busy(0.20), from: 105, to: 105)));
     }
 
+    // Regression test: on macOS the load average peaks after the work has finished, which replaced
+    // the process that did the work with whatever was still running.
+    [Fact]
+    public void A_Warning_Reading_Does_Not_Replace_A_Critical_Peak()
+    {
+        HealthSample busy = Busy(1.0, Processes(new ProcessEntry { ProcessName = "yes", Pid = 1, CpuTimePercent = 0.9 }));
+
+        HealthSample lagging = new() {
+            Cpu       = new CpuInfo { Metrics = new CpuMetrics { CpuTotalTime = 0.6, RunQueuePerCore = 4.0 } },
+            Processes = Processes(new ProcessEntry { ProcessName = "editor", Pid = 2, CpuTimePercent = 0.1 })
+        };
+
+        Run(busy, from: 0, to: 65);
+
+        HealthEvent healthEvent = Assert.Single(Run(lagging, from: 70, to: 75).Events);
+
+        Assert.Contains("100%", healthEvent.PeakReason);
+        Assert.Equal(["yes"], healthEvent.Culprits);
+    }
+
     private static HealthSample Busy(double ratio, ProcessInfo? processes = null) =>
         new() {
             Cpu       = new CpuInfo { Metrics = new CpuMetrics { CpuTotalTime = ratio } },
@@ -307,6 +353,21 @@ public sealed class HealthEvaluatorTests
 
     private static HealthLevel Level(HealthInfo info, HealthResource resource) =>
         info.Resources.Single(reading => reading.Resource == resource).Level;
+
+    // Regression test: a status stays raised for its clear period after the work ends, and the list
+    // named whichever process was left running.
+    [Fact]
+    public void Nobody_Is_Named_Once_The_Value_Has_Stayed_Back_Under_The_Threshold()
+    {
+        ProcessInfo processes = Processes(new ProcessEntry { ProcessName = "editor", Pid = 1, CpuTimePercent = 0.9 });
+
+        Run(Busy(0.95, processes), from: 0, to: 40);
+
+        HealthInfo info = Run(Busy(0.20, processes), from: 45, to: 55);
+
+        Assert.Equal(HealthLevel.Warning, CpuLevel(info));
+        Assert.Empty(info.Culprits);
+    }
 
     [Fact]
     public void Nothing_Reported_Is_Unknown()

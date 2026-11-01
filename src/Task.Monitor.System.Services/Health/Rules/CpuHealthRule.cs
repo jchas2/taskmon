@@ -22,12 +22,12 @@ internal sealed class CpuHealthRule : IHealthRule
                 $"{busyPercent:0}% busy")
         ];
 
-        if (metrics.RunQueuePerCore is { } queue) {
+        if (metrics.RunQueuePerCore is { } queue && busyPercent >= thresholds.RunQueueBusyPercent) {
             conditions.Add(HealthCondition.Rising(
                 queue,
                 thresholds.RunQueueWarningPerCore,
                 double.PositiveInfinity,
-                $"{queue:0.0} threads waiting per core"));
+                $"queue {queue:0.0} per core"));
         }
 
         if (metrics.DriverTimePercent is { } driverTime) {

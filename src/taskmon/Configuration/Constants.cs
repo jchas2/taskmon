@@ -5,7 +5,6 @@ public sealed class Constants
     public const string AppName         = "taskmon";
     public const string ThemeDirectory  = "themes";
     public const string ThemeExtension  = ".theme";
-    // Not "layouts": that is version 1's folder of fixed-grid layouts, which this version leaves alone.
     public const string LayoutDirectory = "summary-layouts";
     public const string LayoutExtension = ".layout";
     
@@ -88,6 +87,7 @@ public sealed class Constants
         public const string HealthHardFaultsWarningPerSecond     = "hard-faults-warning-per-second";
         public const string HealthHardFaultsAvailablePercent     = "hard-faults-available-percent";
         public const string HealthRunQueueWarningPerCore         = "run-queue-warning-per-core";
+        public const string HealthRunQueueBusyPercent            = "run-queue-busy-percent";
         public const string HealthPerformanceLimitWarningPercent = "performance-limit-warning-percent";
         public const string HealthDriverTimeWarningPercent       = "driver-time-warning-percent";
         public const string HealthDiskLatencyWarningMs           = "disk-latency-warning-ms";

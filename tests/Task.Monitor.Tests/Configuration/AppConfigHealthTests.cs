@@ -68,6 +68,7 @@ public sealed class AppConfigHealthTests
             "warning-sustain-seconds=10\n" +
             "sustain-grace-seconds=8\n" +
             "hard-faults-available-percent=40\n" +
+            "run-queue-busy-percent=70\n" +
             "report-lookback-hours=48\n" +
             "not-responding-warning-seconds=7\n" +
             "not-responding-critical-seconds=70\n" +
@@ -82,6 +83,7 @@ public sealed class AppConfigHealthTests
         Assert.Equal(10, thresholds.WarningSustainSeconds);
         Assert.Equal(8, thresholds.SustainGraceSeconds);
         Assert.Equal(40, thresholds.HardFaultsAvailablePercent);
+        Assert.Equal(70, thresholds.RunQueueBusyPercent);
         Assert.Equal(48, thresholds.ReportLookbackHours);
         Assert.Equal(7, thresholds.NotRespondingWarningSeconds);
         Assert.Equal(70, thresholds.NotRespondingCriticalSeconds);

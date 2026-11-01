@@ -32,6 +32,8 @@ public partial class HealthService
 
     private static bool CanDetectHungApps => true;
 
+    internal static bool IsReadOnlyVolume(string name) => false;
+
     private static IReadOnlyList<DriveHealth> ReadDrives(DiskInfo? disks)
     {
         List<DriveHealth> drives = [];

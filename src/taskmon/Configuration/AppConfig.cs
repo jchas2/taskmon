@@ -283,6 +283,7 @@ public sealed class AppConfig
                 NvmeWearWarningPercent         = section.GetInt(Constants.Keys.HealthNvmeWearWarningPercent,         defaults.NvmeWearWarningPercent),
                 PerformanceLimitWarningPercent = section.GetInt(Constants.Keys.HealthPerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent),
                 ReportLookbackHours            = section.GetInt(Constants.Keys.HealthReportLookbackHours,            defaults.ReportLookbackHours),
+                RunQueueBusyPercent            = section.GetInt(Constants.Keys.HealthRunQueueBusyPercent,            defaults.RunQueueBusyPercent),
                 RunQueueWarningPerCore         = section.GetInt(Constants.Keys.HealthRunQueueWarningPerCore,         defaults.RunQueueWarningPerCore),
                 SensorCriticalMarginCelsius    = section.GetInt(Constants.Keys.HealthSensorCriticalMarginCelsius,    defaults.SensorCriticalMarginCelsius),
                 SensorWarningMarginCelsius     = section.GetInt(Constants.Keys.HealthSensorWarningMarginCelsius,     defaults.SensorWarningMarginCelsius),
@@ -452,6 +453,7 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.HealthHardFaultsWarningPerSecond,     defaults.HardFaultsWarningPerSecond.ToString())
             .AddIfMissing(Constants.Keys.HealthHardFaultsAvailablePercent,     defaults.HardFaultsAvailablePercent.ToString())
             .AddIfMissing(Constants.Keys.HealthRunQueueWarningPerCore,         defaults.RunQueueWarningPerCore.ToString())
+            .AddIfMissing(Constants.Keys.HealthRunQueueBusyPercent,            defaults.RunQueueBusyPercent.ToString())
             .AddIfMissing(Constants.Keys.HealthPerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent.ToString())
             .AddIfMissing(Constants.Keys.HealthDriverTimeWarningPercent,       defaults.DriverTimeWarningPercent.ToString())
             .AddIfMissing(Constants.Keys.HealthDiskLatencyWarningMs,           defaults.DiskLatencyWarningMs.ToString())
