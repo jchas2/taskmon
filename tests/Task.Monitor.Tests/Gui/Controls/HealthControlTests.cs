@@ -78,6 +78,17 @@ public sealed class HealthControlTests
     }
 
     [Fact]
+    public void Earlier_Days_Show_The_Day_As_Well_As_The_Time()
+    {
+        DateTime noonToday = DateTime.Today.AddHours(12).ToUniversalTime();
+
+        Assert.Equal(noonToday.ToLocalTime().ToString("HH:mm:ss"), HealthControl.DescribeTime(noonToday, noonToday));
+        Assert.Equal(
+            noonToday.AddDays(-1).ToLocalTime().ToString("ddd HH:mm"),
+            HealthControl.DescribeTime(noonToday.AddDays(-1), noonToday));
+    }
+
+    [Fact]
     public void Enter_On_A_Cause_Requests_That_Process()
     {
         HealthControl ctrl = CreateControl();
@@ -169,6 +180,34 @@ public sealed class HealthControlTests
         Assert.Contains("6 GB memory", text);
         Assert.Contains("Memory → Warning", text);
         Assert.Contains("ongoing, peak commit 96%", text);
+    }
+
+    [Fact]
+    public void Reports_Are_Listed_With_The_Events_Newest_First()
+    {
+        HealthControl ctrl = CreateControl();
+
+        DateTime nowUtc = DateTime.UtcNow;
+
+        ctrl.Sample(Snapshot(new HealthInfo {
+            Level     = HealthLevel.Ok,
+            Resources = [new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Ok }],
+            Events    = [new HealthEvent {
+                Resource = HealthResource.Cpu,
+                Level    = HealthLevel.Warning,
+                StartUtc = nowUtc.AddMinutes(-5),
+                EndUtc   = nowUtc.AddMinutes(-2)
+            }],
+            Reports = [
+                new HealthReport(nowUtc.AddMinutes(-1), HealthReportKind.AppCrash, "App crash", "chrome.exe, in ntdll.dll", "chrome.exe"),
+                new HealthReport(nowUtc.AddMinutes(-9), HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty)
+            ]
+        }));
+
+        Assert.Equal(3, ctrl.EventsView.Items.Count);
+        Assert.Equal("App crash", ctrl.EventsView.Items[0].SubItems[1].Text);
+        Assert.Equal("CPU → Warning", ctrl.EventsView.Items[1].SubItems[1].Text);
+        Assert.Equal("Disk error", ctrl.EventsView.Items[2].SubItems[1].Text);
     }
 
     private static SystemSnapshot Snapshot(HealthInfo info) => new() { Health = info };

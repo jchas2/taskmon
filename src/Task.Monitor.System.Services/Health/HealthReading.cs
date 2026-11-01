@@ -1,6 +1,5 @@
 namespace Task.Monitor.System.Services.Health;
 
-// One resource's row: what its rule read, and in a published HealthInfo the level it has settled at.
 public sealed record HealthReading
 {
     public required HealthResource Resource    { get; init; }

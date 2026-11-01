@@ -12,7 +12,6 @@ internal sealed class NetworkHealthRule : IHealthRule
 
         double errors = metrics.ErrorsPerSecond;
 
-        // Any rise counts, so this one has no threshold: a healthy link doesn't lose packets.
         HealthCondition condition = errors > 0.0
             ? new HealthCondition(HealthLevel.Warning, $"{errors:0.#} errors/s", 1.0 + errors)
             : HealthCondition.Clear;

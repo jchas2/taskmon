@@ -3,9 +3,6 @@ using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.Health;
 
-// Works out which processes are behind a resource under pressure. It keeps its own short rolling
-// view of each process: the averages on ProcessEntry cover the whole run, so a process that was
-// busy at startup would otherwise outrank the one causing trouble now.
 internal sealed class HealthCulpritFinder
 {
     private const double BytesPerMegabyte = 1024.0 * 1024.0;

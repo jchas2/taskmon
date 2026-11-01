@@ -252,7 +252,6 @@ public sealed class AppConfig
         return path;
     }
 
-    // Read once at startup, so a change to the file takes effect the next time taskmon starts.
     public HealthThresholds HealthThresholds
     {
         get {
@@ -279,7 +278,11 @@ public sealed class AppConfig
                 HardFaultsWarningPerSecond     = section.GetInt(Constants.Keys.HealthHardFaultsWarningPerSecond,     defaults.HardFaultsWarningPerSecond),
                 MemoryAvailableCriticalPercent = section.GetInt(Constants.Keys.HealthMemoryAvailableCriticalPercent, defaults.MemoryAvailableCriticalPercent),
                 MemoryAvailableWarningPercent  = section.GetInt(Constants.Keys.HealthMemoryAvailableWarningPercent,  defaults.MemoryAvailableWarningPercent),
+                NotRespondingCriticalSeconds   = section.GetInt(Constants.Keys.HealthNotRespondingCriticalSeconds,   defaults.NotRespondingCriticalSeconds),
+                NotRespondingWarningSeconds    = section.GetInt(Constants.Keys.HealthNotRespondingWarningSeconds,    defaults.NotRespondingWarningSeconds),
+                NvmeWearWarningPercent         = section.GetInt(Constants.Keys.HealthNvmeWearWarningPercent,         defaults.NvmeWearWarningPercent),
                 PerformanceLimitWarningPercent = section.GetInt(Constants.Keys.HealthPerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent),
+                ReportLookbackHours            = section.GetInt(Constants.Keys.HealthReportLookbackHours,            defaults.ReportLookbackHours),
                 RunQueueWarningPerCore         = section.GetInt(Constants.Keys.HealthRunQueueWarningPerCore,         defaults.RunQueueWarningPerCore),
                 SensorCriticalMarginCelsius    = section.GetInt(Constants.Keys.HealthSensorCriticalMarginCelsius,    defaults.SensorCriticalMarginCelsius),
                 SensorWarningMarginCelsius     = section.GetInt(Constants.Keys.HealthSensorWarningMarginCelsius,     defaults.SensorWarningMarginCelsius),
@@ -318,49 +321,6 @@ public sealed class AppConfig
     public string? LastSaveError { get; private set; }
 
     public List<SummaryControlLayout> Layouts => allLayouts;
-
-    private void LoadHealthSection()
-    {
-        healthSection = iniConfig.ContainsSection(Constants.Sections.Health)
-            ? iniConfig.GetConfigSection(Constants.Sections.Health)
-            : new ConfigSection(Constants.Sections.Health) { Comment = HealthSectionComment };
-
-        HealthThresholds defaults = new();
-
-        healthSection
-            .AddIfMissing(Constants.Keys.HealthWarningSustainSeconds,          defaults.WarningSustainSeconds.ToString())
-            .AddIfMissing(Constants.Keys.HealthCriticalSustainSeconds,         defaults.CriticalSustainSeconds.ToString())
-            .AddIfMissing(Constants.Keys.HealthSustainGraceSeconds,            defaults.SustainGraceSeconds.ToString())
-            .AddIfMissing(Constants.Keys.HealthClearSeconds,                   defaults.ClearSeconds.ToString())
-            .AddIfMissing(Constants.Keys.HealthEventHistorySize,               defaults.EventHistorySize.ToString())
-            .AddIfMissing(Constants.Keys.HealthCpuWarningPercent,              defaults.CpuWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthCpuCriticalPercent,             defaults.CpuCriticalPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthMemoryAvailableWarningPercent,  defaults.MemoryAvailableWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthMemoryAvailableCriticalPercent, defaults.MemoryAvailableCriticalPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthSwapOutWarningMbPerSecond,      defaults.SwapOutWarningMbPerSecond.ToString())
-            .AddIfMissing(Constants.Keys.HealthDiskActiveWarningPercent,       defaults.DiskActiveWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthVolumeFreeWarningPercent,       defaults.VolumeFreeWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthVolumeFreeCriticalPercent,      defaults.VolumeFreeCriticalPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthSystemVolumeFreeCriticalGb,     defaults.SystemVolumeFreeCriticalGb.ToString())
-            .AddIfMissing(Constants.Keys.HealthSensorWarningMarginCelsius,     defaults.SensorWarningMarginCelsius.ToString())
-            .AddIfMissing(Constants.Keys.HealthSensorCriticalMarginCelsius,    defaults.SensorCriticalMarginCelsius.ToString())
-            .AddIfMissing(Constants.Keys.HealthThermalPressureWarning,         defaults.ThermalPressureWarning.ToString())
-            .AddIfMissing(Constants.Keys.HealthThermalPressureCritical,        defaults.ThermalPressureCritical.ToString())
-            .AddIfMissing(Constants.Keys.HealthGpuMemoryFreeWarningPercent,    defaults.GpuMemoryFreeWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthCommitWarningPercent,           defaults.CommitWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthCommitCriticalPercent,          defaults.CommitCriticalPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthHardFaultsWarningPerSecond,     defaults.HardFaultsWarningPerSecond.ToString())
-            .AddIfMissing(Constants.Keys.HealthHardFaultsAvailablePercent,     defaults.HardFaultsAvailablePercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthRunQueueWarningPerCore,         defaults.RunQueueWarningPerCore.ToString())
-            .AddIfMissing(Constants.Keys.HealthPerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthDriverTimeWarningPercent,       defaults.DriverTimeWarningPercent.ToString())
-            .AddIfMissing(Constants.Keys.HealthDiskLatencyWarningMs,           defaults.DiskLatencyWarningMs.ToString())
-            .AddIfMissing(Constants.Keys.HealthDiskLatencyCriticalMs,          defaults.DiskLatencyCriticalMs.ToString());
-
-        if (!iniConfig.ContainsSection(healthSection.Name)) {
-            iniConfig.AddConfigSection(healthSection);
-        }
-    }
 
     private void LoadLayouts()
     {
@@ -461,7 +421,49 @@ public sealed class AppConfig
             iniConfig.AddConfigSection(filterSection);
         }
 
-        LoadHealthSection();
+        healthSection = iniConfig.ContainsSection(Constants.Sections.Health)
+            ? iniConfig.GetConfigSection(Constants.Sections.Health)
+            : new ConfigSection(Constants.Sections.Health) { Comment = HealthSectionComment };
+
+        HealthThresholds defaults = new();
+
+        healthSection
+            .AddIfMissing(Constants.Keys.HealthWarningSustainSeconds,          defaults.WarningSustainSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthCriticalSustainSeconds,         defaults.CriticalSustainSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthSustainGraceSeconds,            defaults.SustainGraceSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthClearSeconds,                   defaults.ClearSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthEventHistorySize,               defaults.EventHistorySize.ToString())
+            .AddIfMissing(Constants.Keys.HealthCpuWarningPercent,              defaults.CpuWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthCpuCriticalPercent,             defaults.CpuCriticalPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthMemoryAvailableWarningPercent,  defaults.MemoryAvailableWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthMemoryAvailableCriticalPercent, defaults.MemoryAvailableCriticalPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthSwapOutWarningMbPerSecond,      defaults.SwapOutWarningMbPerSecond.ToString())
+            .AddIfMissing(Constants.Keys.HealthDiskActiveWarningPercent,       defaults.DiskActiveWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthVolumeFreeWarningPercent,       defaults.VolumeFreeWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthVolumeFreeCriticalPercent,      defaults.VolumeFreeCriticalPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthSystemVolumeFreeCriticalGb,     defaults.SystemVolumeFreeCriticalGb.ToString())
+            .AddIfMissing(Constants.Keys.HealthSensorWarningMarginCelsius,     defaults.SensorWarningMarginCelsius.ToString())
+            .AddIfMissing(Constants.Keys.HealthSensorCriticalMarginCelsius,    defaults.SensorCriticalMarginCelsius.ToString())
+            .AddIfMissing(Constants.Keys.HealthThermalPressureWarning,         defaults.ThermalPressureWarning.ToString())
+            .AddIfMissing(Constants.Keys.HealthThermalPressureCritical,        defaults.ThermalPressureCritical.ToString())
+            .AddIfMissing(Constants.Keys.HealthGpuMemoryFreeWarningPercent,    defaults.GpuMemoryFreeWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthCommitWarningPercent,           defaults.CommitWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthCommitCriticalPercent,          defaults.CommitCriticalPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthHardFaultsWarningPerSecond,     defaults.HardFaultsWarningPerSecond.ToString())
+            .AddIfMissing(Constants.Keys.HealthHardFaultsAvailablePercent,     defaults.HardFaultsAvailablePercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthRunQueueWarningPerCore,         defaults.RunQueueWarningPerCore.ToString())
+            .AddIfMissing(Constants.Keys.HealthPerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthDriverTimeWarningPercent,       defaults.DriverTimeWarningPercent.ToString())
+            .AddIfMissing(Constants.Keys.HealthDiskLatencyWarningMs,           defaults.DiskLatencyWarningMs.ToString())
+            .AddIfMissing(Constants.Keys.HealthDiskLatencyCriticalMs,          defaults.DiskLatencyCriticalMs.ToString())
+            .AddIfMissing(Constants.Keys.HealthReportLookbackHours,            defaults.ReportLookbackHours.ToString())
+            .AddIfMissing(Constants.Keys.HealthNotRespondingWarningSeconds,    defaults.NotRespondingWarningSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthNotRespondingCriticalSeconds,   defaults.NotRespondingCriticalSeconds.ToString())
+            .AddIfMissing(Constants.Keys.HealthNvmeWearWarningPercent,         defaults.NvmeWearWarningPercent.ToString());
+
+        if (!iniConfig.ContainsSection(healthSection.Name)) {
+            iniConfig.AddConfigSection(healthSection);
+        }
 
         sortSection = iniConfig.ContainsSection(Constants.Sections.Sort)
             ? iniConfig.GetConfigSection(Constants.Sections.Sort)

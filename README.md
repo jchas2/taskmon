@@ -49,7 +49,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Thermals**: Live temperature charts for every sensor the machine reports without a kernel driver - NVMe / SATA drives (SMART), NVIDIA (NVAPI) and AMD (ADL) GPUs, and the ACPI thermal zones - on a dedicated `THERMALS` screen, with the current reading also shown on the CPU, GPU and Disk performance panels. Accurate CPU die temperature needs a signed kernel helper driver and is not read.
 - **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
 - **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
-- **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
+- **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Windows that stop responding are shown as they happen, and crashes, hangs and hardware errors the system recorded in the last 24 hours are listed alongside. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -202,6 +202,10 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `thermal-pressure-warning` | Moderate | Thermal pressure level (macOS): Nominal, Moderate, Heavy, Trapping or Sleeping. |
 | `thermal-pressure-critical` | Heavy | Thermal pressure level (macOS). |
 | `performance-limit-warning-percent` | 80 | The share of normal CPU performance the machine is allowed (Windows). Falls when heat, power or a battery setting holds the CPU back. |
+| `not-responding-warning-seconds` | 5 | How long a window has been not responding (Windows). Windows takes about 5 seconds to call a window hung, and this counts from there. |
+| `not-responding-critical-seconds` | 30 | How long a window has been not responding (Windows). |
+| `nvme-wear-warning-percent` | 90 | How much of an NVMe drive's rated life is used (Windows). A drive reporting a critical warning is always Critical. |
+| `report-lookback-hours` | 24 | How far back to list crashes, hangs and hardware errors the system recorded. These are listed under Recent events and never change a status. |
 
 ## Theme Files
 
@@ -415,6 +419,8 @@ The scripts in `eng/tools` put the machine under real load, for trying the `HEAL
 | `.\eng\tools\stress-memory.ps1 -CommitPercent 92` | Commit reaches Warning without using physical memory. Other programs can fail to start close to the limit. |
 | `.\eng\tools\stress-memory.ps1 -Gb 40 -Churn` | Hard faults, with a `-Gb` above the size of physical memory. The machine will be slow. |
 | `.\eng\tools\stress-disk.ps1` | Disk latency reaches Warning on a fast SSD. `-Threads 256` goes further, and a slower disk reaches it sooner. |
+| `.\eng\tools\stress-hang.ps1` | Apps reaches Warning, then Critical, with the window's process named as the cause. |
+| `.\eng\tools\stress-crash.ps1` | A real crash report appears under Recent events within a minute, and stays for the lookback period. |
 
 **macOS:**
 | Command | What it tries |
@@ -423,6 +429,7 @@ The scripts in `eng/tools` put the machine under real load, for trying the `HEAL
 | `./eng/tools/stress-cpu.sh --percent 93` | CPU reaches Warning but not Critical. |
 | `./eng/tools/stress-memory.sh --level warn` | Memory reaches Warning, using the `memory_pressure` tool, which may need `sudo`. Use `critical` for Critical, or add `--simulate` to report the level without using any memory. |
 | `./eng/tools/stress-disk.sh` | Disk writes only, as shell tools can't bypass the file cache for reads. |
+| `./eng/tools/stress-crash.sh` | A real crash report appears under Recent events within a minute, and stays for the lookback period. |
 
 In `HEALTH`, the likely cause shows as `powershell` on Windows. On macOS it shows as `yes` for the CPU script and `dd` for the disk script.
 

@@ -68,6 +68,10 @@ public sealed class AppConfigHealthTests
             "warning-sustain-seconds=10\n" +
             "sustain-grace-seconds=8\n" +
             "hard-faults-available-percent=40\n" +
+            "report-lookback-hours=48\n" +
+            "not-responding-warning-seconds=7\n" +
+            "not-responding-critical-seconds=70\n" +
+            "nvme-wear-warning-percent=80\n" +
             "disk-latency-warning-ms=40\n" +
             "disk-latency-critical-ms=200\n" +
             "thermal-pressure-warning=Heavy\n" +
@@ -78,6 +82,10 @@ public sealed class AppConfigHealthTests
         Assert.Equal(10, thresholds.WarningSustainSeconds);
         Assert.Equal(8, thresholds.SustainGraceSeconds);
         Assert.Equal(40, thresholds.HardFaultsAvailablePercent);
+        Assert.Equal(48, thresholds.ReportLookbackHours);
+        Assert.Equal(7, thresholds.NotRespondingWarningSeconds);
+        Assert.Equal(70, thresholds.NotRespondingCriticalSeconds);
+        Assert.Equal(80, thresholds.NvmeWearWarningPercent);
         Assert.Equal(40, thresholds.DiskLatencyWarningMs);
         Assert.Equal(200, thresholds.DiskLatencyCriticalMs);
         Assert.Equal(ThermalPressure.Heavy, thresholds.ThermalPressureWarning);

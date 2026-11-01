@@ -9,7 +9,6 @@ using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.System.Services.Health;
 
-// The latest metrics a health evaluation reads. A null means that service has nothing to report yet.
 public sealed record HealthSample
 {
     public CpuInfo?                    Cpu       { get; init; }
@@ -21,4 +20,9 @@ public sealed record HealthSample
     public ThermalInfo?                Thermal   { get; init; }
     public SocInfo?                    Soc       { get; init; }
     public IReadOnlyList<HealthVolume> Volumes   { get; init; } = [];
+
+    public bool                        CanDetectHungApps { get; init; }
+    public IReadOnlyList<HungApp>      HungApps          { get; init; } = [];
+    public IReadOnlyList<DriveHealth>  Drives            { get; init; } = [];
+    public IReadOnlyList<HealthReport> Reports           { get; init; } = [];
 }

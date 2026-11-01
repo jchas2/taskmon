@@ -10,20 +10,23 @@ using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.System.Services.Health;
 
-// Runs the evaluator on the latest published metrics. A service rather than part of the view, so
-// the status and its history keep building while another view is open.
-public sealed class HealthService : WorkerService
+public sealed partial class HealthService : WorkerService
 {
     private const string MacDataVolume = "/System/Volumes/Data";
     private const string MacRootVolume = "/";
 
+    private static readonly TimeSpan ReportReadInterval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan VolumeReadInterval = TimeSpan.FromSeconds(30);
 
-    private readonly HealthEvaluator evaluator = new();
+    private readonly HealthEvaluator evaluator      = new();
+    private readonly HungAppTracker  hungAppTracker = new();
 
     private volatile HealthThresholds thresholds = new();
 
+    private IReadOnlyList<DriveHealth>  drives  = [];
+    private IReadOnlyList<HealthReport> reports = [];
     private IReadOnlyList<HealthVolume> volumes = [];
+    private DateTime                    nextReportReadUtc;
     private DateTime                    nextVolumeReadUtc;
 
     private static bool IsSystemVolume(string name) =>
@@ -39,24 +42,37 @@ public sealed class HealthService : WorkerService
             nextVolumeReadUtc = utcNow + VolumeReadInterval;
         }
 
+        DiskInfo?    disks     = GetLatest<DiskInfo>();
+        ProcessInfo? processes = GetLatest<ProcessInfo>();
+
+        if (utcNow >= nextReportReadUtc) {
+            reports           = ReadReports(thresholds.ReportLookbackHours, thresholds.EventHistorySize);
+            drives            = ReadDrives(disks);
+            nextReportReadUtc = utcNow + ReportReadInterval;
+        }
+
         HealthSample sample = new() {
-            Cpu       = GetLatest<CpuInfo>(),
-            Memory    = GetLatest<MemoryInfo>(),
-            Gpu       = GetLatest<GpuInfo>(),
-            Disk      = GetLatest<DiskInfo>(),
-            Network   = GetLatest<NetworkInfo>(),
-            Processes = GetLatest<ProcessInfo>(),
-            Thermal   = GetLatest<ThermalInfo>(),
-            Soc       = GetLatest<SocInfo>(),
-            Volumes   = volumes
+            Cpu               = GetLatest<CpuInfo>(),
+            Memory            = GetLatest<MemoryInfo>(),
+            Gpu               = GetLatest<GpuInfo>(),
+            Disk              = disks,
+            Network           = GetLatest<NetworkInfo>(),
+            Processes         = processes,
+            Thermal           = GetLatest<ThermalInfo>(),
+            Soc               = GetLatest<SocInfo>(),
+            Volumes           = volumes,
+            CanDetectHungApps = CanDetectHungApps,
+            HungApps          = hungAppTracker.Update(ReadHungProcessIds(), pid => ProcessName(processes, pid), utcNow),
+            Drives            = drives,
+            Reports           = reports
         };
 
         Publish(evaluator.Evaluate(sample, thresholds, utcNow));
     }
 
-    // Read here because the free space on DiskVolume is only taken when the disks are enumerated.
-    // A volume with nothing free is skipped unless it's the system volume, as that's what a mounted
-    // read-only image looks like.
+    private static string ProcessName(ProcessInfo? processes, int pid) =>
+        processes?.Metrics.Entries.FirstOrDefault(entry => entry.Pid == pid)?.ProcessName ?? $"Process {pid}";
+
     internal static IReadOnlyList<HealthVolume> ReadVolumes()
     {
         List<HealthVolume> volumes = [];
@@ -74,7 +90,6 @@ public sealed class HealthService : WorkerService
                 }
             }
             catch (Exception ex) {
-                // Some special mounts throw on property access; skip them.
                 TraceEx.WriteLineOnce(drive.Name, $"Skipping volume {drive.Name}: {ex.Message}");
             }
         }

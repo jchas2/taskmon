@@ -1,6 +1,5 @@
 namespace Task.Monitor.System.Services.Health;
 
-// One episode of a resource under pressure, from when the condition began until it cleared.
 public sealed record HealthEvent
 {
     public required HealthResource Resource   { get; init; }

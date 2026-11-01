@@ -16,16 +16,16 @@ public sealed partial class HealthControl : Control
     private const int MinPaneHeight = 4;
 
     private const int BorderWidth                = 3;
-    private const int EventTimeColumnWidth       = 9;
+    private const int EventTimeColumnWidth       = 10;
     private const int EventTitleColumnWidth      = 20;
-    private const int ExtraColumnsMinWidth       = 80;
+    private const int ExtraColumnsMinWidth       = 84;
     private const int MaxCauseProcessColumnWidth = 28;
     private const int MaxCauseBehindColumnWidth  = 22;
     private const int MaxEventProcessesWidth     = 26;
     private const int MaxUtilisationColumnWidth  = 24;
     private const int MinCauseBehindColumnWidth  = 12;
     private const int MinCauseProcessColumnWidth = 16;
-    private const int ResourceErrorsColumnWidth  = 16;
+    private const int ResourceErrorsColumnWidth  = 20;
     private const int ResourceNameColumnWidth    = 10;
     private const int ResourceStatusColumnWidth  = 12;
 
@@ -242,8 +242,6 @@ public sealed partial class HealthControl : Control
         Draw();
     }
 
-    // Scales to fit an 80 column terminal, where the view is only 64 wide. The saturation column
-    // holds the reason for a warning, so it keeps its room and the extra columns go first.
     private void SizeColumns()
     {
         bool showExtras  = Width >= ExtraColumnsMinWidth;

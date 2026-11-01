@@ -80,6 +80,21 @@ public sealed class HealthEvaluatorTests
     }
 
     [Fact]
+    public void A_Hung_App_Is_Named_As_A_Cause_And_Recorded_As_An_Event()
+    {
+        HealthSample sample = new() { CanDetectHungApps = true, HungApps = [new HungApp(42, "notepad", 12.0)] };
+
+        HealthInfo info = evaluator.Evaluate(sample, thresholds, Start);
+
+        HealthCulprit culprit = Assert.Single(info.Culprits);
+
+        Assert.Equal(42, culprit.Pid);
+        Assert.Equal("Not responding for 12 s", culprit.Detail);
+        Assert.Equal(HealthLevel.Warning, Level(info, HealthResource.Apps));
+        Assert.Equal(["notepad"], Assert.Single(info.Events).Culprits);
+    }
+
+    [Fact]
     public void A_New_Peak_Replaces_The_Events_Peak_And_Culprits()
     {
         Run(Busy(0.92), from: 0, to: 40);
@@ -126,6 +141,14 @@ public sealed class HealthEvaluatorTests
 
         Assert.Equal(HealthLevel.Ok, info.Level);
         Assert.Equal(HealthLevel.Unknown, Level(info, HealthResource.Gpu));
+    }
+
+    [Fact]
+    public void A_Short_Hang_Is_Not_Named()
+    {
+        HealthSample sample = new() { CanDetectHungApps = true, HungApps = [new HungApp(42, "notepad", 2.0)] };
+
+        Assert.Empty(evaluator.Evaluate(sample, thresholds, Start).Culprits);
     }
 
     [Fact]
@@ -322,6 +345,17 @@ public sealed class HealthEvaluatorTests
 
             Assert.Equal(HealthLevel.Ok, CpuLevel(evaluator.Evaluate(sample, thresholds, Start.AddSeconds(seconds))));
         }
+    }
+
+    [Fact]
+    public void Reports_Are_Passed_Through_Without_Changing_The_Overall_Level()
+    {
+        HealthReport report = new(Start, HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty);
+
+        HealthInfo info = evaluator.Evaluate(Busy(0.10) with { Reports = [report] }, thresholds, Start);
+
+        Assert.Equal(HealthLevel.Ok, info.Level);
+        Assert.Equal([report], info.Reports);
     }
 
     private HealthInfo Run(HealthSample sample, int from, int to, int step = 5)

@@ -5,8 +5,6 @@ namespace Task.Monitor.System.Services.Health.Rules;
 
 internal sealed class GpuHealthRule : IHealthRule
 {
-    // The share of samples a limit must hold the GPU back before it counts, matching the 1% the
-    // performance views start showing it at.
     private const double LimitThreshold  = 0.01;
     private const double PercentPerRatio = 100.0;
 
@@ -52,7 +50,10 @@ internal sealed class GpuHealthRule : IHealthRule
             return HealthCondition.Clear;
         }
 
-        string cause = thermal >= power ? "heat" : "power";
+        string cause = thermal >= power 
+            ? "heat" 
+            : "power";
+        
         return new HealthCondition(HealthLevel.Warning, $"held back by {cause} {limit * PercentPerRatio:0}%", 1.0 + limit);
     }
 

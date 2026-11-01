@@ -71,8 +71,8 @@ internal sealed class MemoryHealthRule : IHealthRule
         return HealthCondition.Worst(conditions);
     }
 
-    // On macOS memory is judged by the kernel's own pressure level. Available memory is low by
-    // design there, as the system fills spare memory with cache.
+    // macOS memory is judged by the kernel's own pressure level. Available memory is low by
+    // design, as the system fills spare memory with cache.
     private static HealthCondition PressureCondition(
         MemoryPressure   pressure,
         MemoryMetrics    metrics,

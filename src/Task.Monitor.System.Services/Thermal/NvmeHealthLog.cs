@@ -2,10 +2,13 @@ using System.Buffers.Binary;
 
 namespace Task.Monitor.System.Services.Thermal;
 
-// Reads temperatures out of a 512-byte NVMe SMART / Health Information log page (log page 0x02).
+// Reads a 512-byte NVMe SMART / Health Information log page (log page 0x02).
 public static class NvmeHealthLog
 {
     private const int CompositeTemperatureOffset = 1;
+    private const int CriticalWarningOffset      = 0;
+    private const int MediaErrorsOffset          = 160;
+    private const int PercentUsedOffset          = 5;
     private const int TemperatureSensorOffset    = 200;
     private const int TemperatureSensorCount     = 8;
 
@@ -19,6 +22,19 @@ public static class NvmeHealthLog
 
         return ToCelsius(BinaryPrimitives.ReadUInt16LittleEndian(healthLog[CompositeTemperatureOffset..]));
     }
+
+    public static byte? CriticalWarning(ReadOnlySpan<byte> healthLog) =>
+        healthLog.Length > CriticalWarningOffset ? healthLog[CriticalWarningOffset] : null;
+
+    // The field is 16 bytes, but no drive will ever fill the lower 8.
+    public static ulong? MediaErrors(ReadOnlySpan<byte> healthLog) =>
+        healthLog.Length >= MediaErrorsOffset + sizeof(ulong)
+            ? BinaryPrimitives.ReadUInt64LittleEndian(healthLog[MediaErrorsOffset..])
+            : null;
+
+    // Can pass 100 on a drive used beyond its rated life.
+    public static int? PercentUsed(ReadOnlySpan<byte> healthLog) =>
+        healthLog.Length > PercentUsedOffset ? healthLog[PercentUsedOffset] : null;
 
     public static IReadOnlyList<(int Index, double Celsius)> Sensors(ReadOnlySpan<byte> healthLog)
     {

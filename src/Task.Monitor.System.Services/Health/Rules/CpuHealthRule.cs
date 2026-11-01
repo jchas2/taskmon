@@ -12,7 +12,6 @@ internal sealed class CpuHealthRule : IHealthRule
             return new HealthReading { Resource = Resource };
         }
 
-        // Clamped as sample timing can put this a little over 100%.
         double busyPercent = Math.Min(metrics.CpuTotalTime * PercentPerRatio, PercentPerRatio);
 
         List<HealthCondition> conditions = [

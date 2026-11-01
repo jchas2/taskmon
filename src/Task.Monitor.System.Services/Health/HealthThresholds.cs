@@ -3,8 +3,6 @@ using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.System.Services.Health;
 
-// The [health] ini section. The initial values here are the defaults AppConfig writes to the file,
-// and all are whole numbers because ConfigSection parses floats with the current locale.
 public sealed record HealthThresholds
 {
     private const int MaxPercent = 100;
@@ -36,9 +34,19 @@ public sealed record HealthThresholds
         return defaultValue;
     }
 
-    private static (int Low, int High) Ordered(string name, int low, int high, int defaultLow, int defaultHigh)
+    public int             NotRespondingCriticalSeconds   { get; init; } = 30;
+    public int             NotRespondingWarningSeconds    { get; init; } = 5;
+    public int             NvmeWearWarningPercent         { get; init; } = 90;
+
+    private static (int Low, int High) Ordered(
+        string name, 
+        int    low, 
+        int    high, 
+        int    defaultLow, 
+        int    defaultHigh, 
+        int    max = MaxPercent)
     {
-        if (low >= 0 && low <= high && high <= MaxPercent) {
+        if (low >= 0 && low <= high && high <= max) {
             return (low, high);
         }
 
@@ -57,6 +65,7 @@ public sealed record HealthThresholds
     }
 
     public int             PerformanceLimitWarningPercent { get; init; } = 80;
+    public int             ReportLookbackHours            { get; init; } = 24;
     public int             RunQueueWarningPerCore         { get; init; } = 2;
     public int             SensorCriticalMarginCelsius    { get; init; } = 3;
     public int             SensorWarningMarginCelsius     { get; init; } = 10;
@@ -66,8 +75,6 @@ public sealed record HealthThresholds
     public ThermalPressure ThermalPressureCritical        { get; init; } = ThermalPressure.Heavy;
     public ThermalPressure ThermalPressureWarning         { get; init; } = ThermalPressure.Moderate;
 
-    // A value from a hand-edited file can be anything, so anything unusable falls back to its
-    // default, and a warning/critical pair is judged as a pair.
     public HealthThresholds Validated()
     {
         HealthThresholds defaults = new();
@@ -97,14 +104,17 @@ public sealed record HealthThresholds
             SensorCriticalMarginCelsius, SensorWarningMarginCelsius,
             defaults.SensorCriticalMarginCelsius, defaults.SensorWarningMarginCelsius);
 
-        int latencyWarning  = NonNegative(nameof(DiskLatencyWarningMs), DiskLatencyWarningMs, defaults.DiskLatencyWarningMs);
-        int latencyCritical = NonNegative(nameof(DiskLatencyCriticalMs), DiskLatencyCriticalMs, defaults.DiskLatencyCriticalMs);
+        (int latencyWarning, int latencyCritical) = Ordered(
+            nameof(DiskLatencyWarningMs),
+            DiskLatencyWarningMs, DiskLatencyCriticalMs,
+            defaults.DiskLatencyWarningMs, defaults.DiskLatencyCriticalMs,
+            int.MaxValue);
 
-        if (latencyWarning > latencyCritical) {
-            Trace.WriteLine($"[health] {nameof(DiskLatencyWarningMs)} is above {nameof(DiskLatencyCriticalMs)}, using the defaults.");
-            latencyWarning  = defaults.DiskLatencyWarningMs;
-            latencyCritical = defaults.DiskLatencyCriticalMs;
-        }
+        (int hangWarning, int hangCritical) = Ordered(
+            nameof(NotRespondingWarningSeconds),
+            NotRespondingWarningSeconds, NotRespondingCriticalSeconds,
+            defaults.NotRespondingWarningSeconds, defaults.NotRespondingCriticalSeconds,
+            int.MaxValue);
 
         bool pressureInOrder = ThermalPressureWarning <= ThermalPressureCritical;
 
@@ -129,7 +139,11 @@ public sealed record HealthThresholds
             HardFaultsWarningPerSecond     = NonNegative(nameof(HardFaultsWarningPerSecond), HardFaultsWarningPerSecond, defaults.HardFaultsWarningPerSecond),
             MemoryAvailableCriticalPercent = memoryCritical,
             MemoryAvailableWarningPercent  = memoryWarning,
+            NotRespondingCriticalSeconds   = hangCritical,
+            NotRespondingWarningSeconds    = hangWarning,
+            NvmeWearWarningPercent         = Percent(nameof(NvmeWearWarningPercent), NvmeWearWarningPercent, defaults.NvmeWearWarningPercent),
             PerformanceLimitWarningPercent = Percent(nameof(PerformanceLimitWarningPercent), PerformanceLimitWarningPercent, defaults.PerformanceLimitWarningPercent),
+            ReportLookbackHours            = NonNegative(nameof(ReportLookbackHours), ReportLookbackHours, defaults.ReportLookbackHours),
             RunQueueWarningPerCore         = NonNegative(nameof(RunQueueWarningPerCore), RunQueueWarningPerCore, defaults.RunQueueWarningPerCore),
             SensorCriticalMarginCelsius    = sensorCritical,
             SensorWarningMarginCelsius     = sensorWarning,

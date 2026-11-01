@@ -2,8 +2,6 @@ using Task.Monitor.System.Services.Health.Rules;
 
 namespace Task.Monitor.System.Services.Health;
 
-// Turns the latest metrics into a status for each resource, the likely causes and a short history.
-// Pure apart from its own timers, with the clock passed in, so it can be tested with built samples.
 public sealed class HealthEvaluator
 {
     private static readonly IHealthRule[] Rules = [
@@ -13,7 +11,8 @@ public sealed class HealthEvaluator
         new VolumesHealthRule(),
         new GpuHealthRule(),
         new NetworkHealthRule(),
-        new ThermalHealthRule()
+        new ThermalHealthRule(),
+        new AppsHealthRule()
     ];
 
     private readonly List<HealthEvent> closedEvents = new();
@@ -49,7 +48,8 @@ public sealed class HealthEvaluator
             .Select(reading => reading.Resource)
             .ToArray();
 
-        IReadOnlyList<HealthCulprit> found = culprits.Find(pressured);
+        IReadOnlyList<HealthCulprit> hung  = HungCulprits(sample, thresholds);
+        IReadOnlyList<HealthCulprit> found = [.. hung, .. culprits.Find(pressured)];
 
         foreach (HealthReading reading in readings) {
             HealthTracker tracker = trackers[reading.Resource];
@@ -70,12 +70,20 @@ public sealed class HealthEvaluator
             Level     = settled.Max(reading => reading.Level),
             SinceUtc  = OverallSince(),
             Resources = settled,
-            Culprits  = culprits.Find(settled
+            Culprits  = [.. hung, .. culprits.Find(settled
                 .Where(reading => reading.Level >= HealthLevel.Warning)
-                .Select(reading => reading.Resource)),
-            Events    = BuildEvents(thresholds)
+                .Select(reading => reading.Resource))],
+            Events    = BuildEvents(thresholds),
+            Reports   = sample.Reports
         };
     }
+
+    // A hung app is its own cause, as it may be using little resources, if any.
+    private static IReadOnlyList<HealthCulprit> HungCulprits(HealthSample sample, HealthThresholds thresholds) =>
+        sample.HungApps
+            .Where(app => app.Seconds >= thresholds.NotRespondingWarningSeconds)
+            .Select(app => new HealthCulprit(app.Name, 1, app.Pid, $"Not responding for {app.Seconds:0} s", [HealthResource.Apps]))
+            .ToList();
 
     private static IReadOnlyList<string> NamesFor(IReadOnlyList<HealthCulprit> found, HealthResource resource) =>
         found

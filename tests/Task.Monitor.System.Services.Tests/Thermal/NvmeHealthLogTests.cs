@@ -5,6 +5,14 @@ namespace Task.Monitor.System.Services.Tests.Thermal;
 
 public sealed class NvmeHealthLogTests
 {
+    [Fact]
+    public void A_Short_Page_Has_No_Health_Fields()
+    {
+        Assert.Null(NvmeHealthLog.CriticalWarning([]));
+        Assert.Null(NvmeHealthLog.PercentUsed(new byte[5]));
+        Assert.Null(NvmeHealthLog.MediaErrors(new byte[100]));
+    }
+
     private static byte[] Page(ushort compositeKelvin, params ushort[] sensorKelvin)
     {
         byte[] page = new byte[512];
@@ -38,6 +46,19 @@ public sealed class NvmeHealthLogTests
 
         Assert.NotNull(celsius);
         Assert.Equal(39.85, celsius!.Value, precision: 2);
+    }
+
+    [Fact]
+    public void Reads_The_Health_Fields()
+    {
+        byte[] page = new byte[512];
+        page[0] = 0x04;
+        page[5] = 37;
+        BinaryPrimitives.WriteUInt64LittleEndian(page.AsSpan(160), 12);
+
+        Assert.Equal((byte)0x04, NvmeHealthLog.CriticalWarning(page));
+        Assert.Equal(37, NvmeHealthLog.PercentUsed(page));
+        Assert.Equal(12UL, NvmeHealthLog.MediaErrors(page));
     }
 
     [Fact]

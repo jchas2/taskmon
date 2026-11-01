@@ -1,8 +1,5 @@
 namespace Task.Monitor.System.Services.Health;
 
-// Settles one resource's raw readings into a level, so a short spike doesn't raise a status and a
-// value hovering around a threshold doesn't flicker. Timed in seconds rather than samples because
-// the update interval is configurable. Also records the current episode as a HealthEvent.
 internal sealed class HealthTracker
 {
     private readonly ConditionTimer belowCritical = new();
@@ -12,10 +9,6 @@ internal sealed class HealthTracker
 
     private DateTime? lastUpdateUtc;
 
-    // Times how long a condition has held. It keeps running through brief lapses, as a value sitting
-    // near a threshold spends some samples either side of it and would otherwise never hold. The
-    // grace is a total for the whole hold rather than per lapse, so regular spikes can't keep a
-    // timer alive on their own.
     private sealed class ConditionTimer
     {
         private double lapsedSeconds;
@@ -64,8 +57,6 @@ internal sealed class HealthTracker
         warning.Reset();
     }
 
-    // Checks the reading as well as the timer, so a spike that has already ended can't raise a
-    // status during its grace period.
     private HealthLevel Target(HealthReading reading, HealthThresholds thresholds, DateTime utcNow)
     {
         if (reading.IsImmediate) {
@@ -81,7 +72,6 @@ internal sealed class HealthTracker
             : HealthLevel.Ok;
     }
 
-    // Returns the episode this update closed, if it closed one.
     public HealthEvent? Update(
         HealthReading         reading,
         HealthThresholds      thresholds,
@@ -104,10 +94,29 @@ internal sealed class HealthTracker
 
         int graceSeconds = thresholds.SustainGraceSeconds;
 
-        warning.Update(reading.Level >= HealthLevel.Warning, elapsedSeconds, graceSeconds, utcNow);
-        critical.Update(reading.Level == HealthLevel.Critical, elapsedSeconds, graceSeconds, utcNow);
-        belowWarning.Update(reading.Level < HealthLevel.Warning, elapsedSeconds, graceSeconds, utcNow);
-        belowCritical.Update(reading.Level < HealthLevel.Critical, elapsedSeconds, graceSeconds, utcNow);
+        warning.Update(
+            reading.Level >= HealthLevel.Warning, 
+            elapsedSeconds, 
+            graceSeconds, 
+            utcNow);
+        
+        critical.Update(
+            reading.Level == HealthLevel.Critical, 
+            elapsedSeconds, 
+            graceSeconds, 
+            utcNow);
+        
+        belowWarning.Update(
+            reading.Level < HealthLevel.Warning, 
+            elapsedSeconds, 
+            graceSeconds, 
+            utcNow);
+        
+        belowCritical.Update(
+            reading.Level < HealthLevel.Critical, 
+            elapsedSeconds, 
+            graceSeconds, 
+            utcNow);
 
         if (reading.Level >= HealthLevel.Warning) {
             Reason = reading.Reason;
@@ -126,9 +135,6 @@ internal sealed class HealthTracker
         return finished;
     }
 
-    // Each level clears on its own timer, so a value that has only just left Warning can't clear on
-    // the back of the time it spent below Critical. The reading is checked as well, as a timer keeps
-    // running through a brief lapse and a value back over the threshold shouldn't clear.
     private void UpdateLevel(HealthReading reading, HealthThresholds thresholds, DateTime utcNow)
     {
         HealthLevel target = Target(reading, thresholds, utcNow);

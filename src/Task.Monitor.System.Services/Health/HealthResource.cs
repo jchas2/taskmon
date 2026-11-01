@@ -8,5 +8,6 @@ public enum HealthResource
     Volumes,
     Gpu,
     Network,
-    Thermal
+    Thermal,
+    Apps
 }

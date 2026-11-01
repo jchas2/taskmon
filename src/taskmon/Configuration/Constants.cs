@@ -92,6 +92,10 @@ public sealed class Constants
         public const string HealthDriverTimeWarningPercent       = "driver-time-warning-percent";
         public const string HealthDiskLatencyWarningMs           = "disk-latency-warning-ms";
         public const string HealthDiskLatencyCriticalMs          = "disk-latency-critical-ms";
+        public const string HealthReportLookbackHours            = "report-lookback-hours";
+        public const string HealthNotRespondingWarningSeconds    = "not-responding-warning-seconds";
+        public const string HealthNotRespondingCriticalSeconds   = "not-responding-critical-seconds";
+        public const string HealthNvmeWearWarningPercent         = "nvme-wear-warning-percent";
 
         // Theme keys.
         public const string Background                  = "control.background";

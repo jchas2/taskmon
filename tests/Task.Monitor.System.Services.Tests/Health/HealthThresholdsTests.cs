@@ -58,6 +58,17 @@ public sealed class HealthThresholdsTests
     }
 
     [Fact]
+    public void Not_Responding_Seconds_May_Exceed_100_But_Must_Stay_In_Order()
+    {
+        Assert.Equal(300, new HealthThresholds { NotRespondingCriticalSeconds = 300 }.Validated().NotRespondingCriticalSeconds);
+
+        HealthThresholds reversed = new HealthThresholds { NotRespondingWarningSeconds = 60, NotRespondingCriticalSeconds = 10 }.Validated();
+
+        Assert.Equal(Defaults.NotRespondingWarningSeconds, reversed.NotRespondingWarningSeconds);
+        Assert.Equal(Defaults.NotRespondingCriticalSeconds, reversed.NotRespondingCriticalSeconds);
+    }
+
+    [Fact]
     public void Thermal_Pressure_Levels_Must_Stay_In_Order()
     {
         HealthThresholds thresholds = new HealthThresholds {

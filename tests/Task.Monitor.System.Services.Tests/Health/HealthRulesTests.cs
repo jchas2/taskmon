@@ -16,6 +16,57 @@ public sealed class HealthRulesTests
 
     private readonly HealthThresholds thresholds = new();
 
+    private static HealthSample Apps(params HungApp[] hung) =>
+        new() { CanDetectHungApps = true, HungApps = hung };
+
+    [Theory]
+    [InlineData(3.0, HealthLevel.Ok)]
+    [InlineData(5.0, HealthLevel.Warning)]
+    [InlineData(30.0, HealthLevel.Critical)]
+    public void Apps_Are_Judged_On_How_Long_They_Have_Hung(double seconds, HealthLevel expected)
+    {
+        HealthReading reading = new AppsHealthRule().Evaluate(Apps(new HungApp(1, "notepad", seconds)), thresholds);
+
+        Assert.Equal(expected, reading.Level);
+        Assert.True(reading.IsImmediate);
+    }
+
+    [Fact]
+    public void Apps_Are_Unknown_Where_Hangs_Cannot_Be_Detected_But_Still_Count_Reports()
+    {
+        HealthSample sample = new() {
+            Reports = [new HealthReport(DateTime.UtcNow, HealthReportKind.AppCrash, "App crash", "x", "x")]
+        };
+
+        HealthReading reading = new AppsHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Unknown, reading.Level);
+        Assert.Equal("1 app faults", reading.Errors);
+    }
+
+    [Fact]
+    public void Apps_Name_The_One_Hung_Longest()
+    {
+        HealthReading reading = new AppsHealthRule().Evaluate(
+            Apps(new HungApp(1, "short", 6.0), new HungApp(2, "long", 12.0)),
+            thresholds);
+
+        Assert.Equal("long not responding for 12 s", reading.Reason);
+        Assert.Equal("2 not responding", reading.Utilisation);
+    }
+
+    [Theory]
+    [InlineData(HealthReportKind.AppCrash)]
+    [InlineData(HealthReportKind.AppHang)]
+    public void Apps_Reports_Never_Change_The_Status(HealthReportKind kind)
+    {
+        HealthSample sample = Apps() with {
+            Reports = Enumerable.Repeat(new HealthReport(DateTime.UtcNow, kind, "x", "x", "x"), 50).ToList()
+        };
+
+        Assert.Equal(HealthLevel.Ok, new AppsHealthRule().Evaluate(sample, thresholds).Level);
+    }
+
     private static HealthSample Cpu(CpuMetrics metrics) =>
         new() { Cpu = new CpuInfo { Metrics = metrics } };
 
@@ -58,6 +109,41 @@ public sealed class HealthRulesTests
         HealthSample sample = Disk(new DiskMetrics { PercentActiveTime = 100.0, LatencyMs = 2.0 });
 
         Assert.Equal(HealthLevel.Ok, new DiskHealthRule().Evaluate(sample, thresholds).Level);
+    }
+
+    [Fact]
+    public void Disk_Drive_Critical_Warning_Is_Critical_And_Named()
+    {
+        HealthSample sample = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0x05, 10, 0)] };
+
+        HealthReading reading = new DiskHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Critical, reading.Level);
+        Assert.Equal("Disk 0: spare space low, reliability degraded", reading.Reason);
+    }
+
+    [Fact]
+    public void Disk_Drive_Wear_Raises_A_Warning_At_Its_Setting()
+    {
+        HealthSample worn = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0, 91, 0)] };
+        HealthSample fine = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0, 40, 0)] };
+
+        Assert.Equal(HealthLevel.Warning, new DiskHealthRule().Evaluate(worn, thresholds).Level);
+        Assert.Equal(HealthLevel.Ok, new DiskHealthRule().Evaluate(fine, thresholds).Level);
+    }
+
+    [Fact]
+    public void Disk_Errors_Are_Listed_But_Never_Change_The_Status()
+    {
+        HealthSample sample = Disk(new DiskMetrics()) with {
+            Drives  = [new DriveHealth("Disk 0", 0, 3, 12)],
+            Reports = [new HealthReport(DateTime.UtcNow, HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty)]
+        };
+
+        HealthReading reading = new DiskHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Ok, reading.Level);
+        Assert.Equal("3% worn, 12 media, 1 logged", reading.Errors);
     }
 
     [Fact]
@@ -245,7 +331,8 @@ public sealed class HealthRulesTests
             new VolumesHealthRule(),
             new GpuHealthRule(),
             new NetworkHealthRule(),
-            new ThermalHealthRule()
+            new ThermalHealthRule(),
+            new AppsHealthRule()
         ];
 
         foreach (IHealthRule rule in rules) {
