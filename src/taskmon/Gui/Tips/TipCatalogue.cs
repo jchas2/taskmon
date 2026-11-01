@@ -48,6 +48,8 @@ public static class TipCatalogue
         "Press {F2} to change the theme, visible columns, metre style and update speed.",
         "In {F2} Setup, LAYOUTS lets you choose or design the SUMMARY layout.",
         "Press {F1} for every key and what the colours mean.",
+        "HEALTH shows which resource is under pressure and the processes behind it.",
+        "On HEALTH, press {Enter} on a likely cause to open that process in PROCESSES.",
         "Press {t} to show the next tip.",
         "Hide these tips by unticking Show tips in the footer in {F2} Setup.",
 #if __WIN32__

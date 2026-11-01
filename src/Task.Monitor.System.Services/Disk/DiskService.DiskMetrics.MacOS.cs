@@ -7,8 +7,9 @@ namespace Task.Monitor.System.Services.Disk;
 
 public partial class DiskService
 {
-    private const double BytesPerMegabyte     = 1024.0 * 1024.0;
-    private const double NanosecondsPerSecond = 1_000_000_000.0;
+    private const double BytesPerMegabyte          = 1024.0 * 1024.0;
+    private const double NanosecondsPerMillisecond = 1_000_000.0;
+    private const double NanosecondsPerSecond      = 1_000_000_000.0;
 
     private sealed class DiskDeviceState : IMissedSampleCounter
     {
@@ -17,6 +18,7 @@ public partial class DiskService
         public long   PrevWriteBytes;
         public long   PrevReadTimeNanos;
         public long   PrevWriteTimeNanos;
+        public long   PrevOperations;
         public long   PrevTimestamp;
         public bool   Primed;
         public int    ConsecutiveMisses { get; set; }
@@ -26,6 +28,7 @@ public partial class DiskService
         public double ReadBytesPerSecond;
         public double WriteBytesPerSecond;
         public double PercentActiveTime;
+        public double LatencyMs;
     }
 
     private readonly Dictionary<string, DiskDeviceState> diskStates         = new();
@@ -37,7 +40,8 @@ public partial class DiskService
         long   readBytes,
         long   writeBytes,
         long   readTime,
-        long   writeTime)
+        long   writeTime,
+        long   operations)
     {
         if (!diskStates.TryGetValue(bsdName, out DiskDeviceState? state)) {
             state = new DiskDeviceState();
@@ -53,7 +57,8 @@ public partial class DiskService
                 readBytes, 
                 writeBytes, 
                 readTime, 
-                writeTime, 
+                writeTime,
+                operations,
                 now);
             
             state.Primed = true;
@@ -88,12 +93,19 @@ public partial class DiskService
             ? Math.Clamp(100.0 * busyNanos / elapsedNanos, 0.0, 100.0)
             : 0.0;
 
+        long operationsDelta = operations - state.PrevOperations;
+
+        state.LatencyMs = operationsDelta > 0
+            ? busyNanos / operationsDelta / NanosecondsPerMillisecond
+            : 0.0;
+
         RebaseDisk(
             state, 
             readBytes, 
             writeBytes, 
             readTime, 
-            writeTime, 
+            writeTime,
+            operations,
             now);
     }
 
@@ -104,6 +116,7 @@ public partial class DiskService
         double totalReadPerSec = 0.0;
         double totalWritePerSec = 0.0;
         double busiest = 0.0;
+        double slowest = 0.0;
 
         foreach ((string name, DiskDeviceState state) in diskStates) {
             DiskDeviceMetrics device = new();
@@ -117,6 +130,7 @@ public partial class DiskService
             device.ReadMegabytesPerSecond  = state.ReadBytesPerSecond / BytesPerMegabyte;
             device.WriteMegabytesPerSecond = state.WriteBytesPerSecond / BytesPerMegabyte;
             device.PercentActiveTime       = state.PercentActiveTime;
+            device.LatencyMs               = state.LatencyMs;
 
             metrics.Devices.Add(device);
 
@@ -126,6 +140,7 @@ public partial class DiskService
             totalWritePerSec += state.WriteBytesPerSecond;
             
             busiest = Math.Max(busiest, state.PercentActiveTime);
+            slowest = Math.Max(slowest, state.LatencyMs);
         }
 
         metrics.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
@@ -137,6 +152,7 @@ public partial class DiskService
         metrics.ReadMegabytesPerSecond  = totalReadPerSec / BytesPerMegabyte;
         metrics.WriteMegabytesPerSecond = totalWritePerSec / BytesPerMegabyte;
         metrics.PercentActiveTime       = busiest;
+        metrics.LatencyMs               = slowest;
     }
 
     private bool IsVirtualDisk(uint entry, HashSet<ulong> seenEntries)
@@ -202,6 +218,7 @@ public partial class DiskService
         long writeBytes = ReadStat(stats, "Bytes (Write)");
         long readTime   = ReadStat(stats, "Total Time (Read)");
         long writeTime  = ReadStat(stats, "Total Time (Write)");
+        long operations = ReadStat(stats, "Operations (Read)") + ReadStat(stats, "Operations (Write)");
 
         live.Add(bsdName);
         
@@ -211,7 +228,8 @@ public partial class DiskService
             readBytes, 
             writeBytes, 
             readTime, 
-            writeTime);
+            writeTime,
+            operations);
     }
 
     private static long ReadStat(Dictionary<string, nint> stats, string key)
@@ -230,12 +248,14 @@ public partial class DiskService
         long writeBytes,
         long readTime,
         long writeTime,
+        long operations,
         long now)
     {
         state.PrevReadBytes      = readBytes;
         state.PrevWriteBytes     = writeBytes;
         state.PrevReadTimeNanos  = readTime;
         state.PrevWriteTimeNanos = writeTime;
+        state.PrevOperations     = operations;
         state.PrevTimestamp      = now;
     }
 

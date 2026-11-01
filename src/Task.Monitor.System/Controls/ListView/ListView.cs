@@ -724,6 +724,16 @@ public class ListView : Control
 
     private static bool SameColour(Color left, Color right) => left.ToArgb() == right.ToArgb();
 
+    public void ScrollSelectedIntoView()
+    {
+        if (viewPort.SelectedIndex < viewPort.CurrentPageIndex) {
+            viewPort.CurrentPageIndex = viewPort.SelectedIndex;
+        }
+        else if (viewPort.RowCount > 0 && viewPort.SelectedIndex >= viewPort.CurrentPageIndex + viewPort.RowCount) {
+            viewPort.CurrentPageIndex = viewPort.SelectedIndex - viewPort.RowCount + 1;
+        }
+    }
+
     public int SelectedIndex
     {
         get => viewPort.SelectedIndex;

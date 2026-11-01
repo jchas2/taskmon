@@ -19,6 +19,8 @@ public sealed class MemoryMetrics
     public double KernelPagedPool        { get; set; }
     
     public double PageFaultsPerSecond    { get; set; }
+    public double? HardFaultsPerSecond   { get; set; }
+    public MemoryPressure? Pressure      { get; set; }
     public double? SwapInBytesPerSecond  { get; set; }
     public double? SwapOutBytesPerSecond { get; set; }
     

@@ -12,6 +12,7 @@ public sealed class Constants
     public sealed class Sections
     {
         public const string Filter                     = "filter";
+        public const string Health                     = "health";
         public const string UX                         = "ux";
         public const string Stats                      = "stats";
         public const string Sort                       = "sort";
@@ -61,6 +62,36 @@ public sealed class Constants
         public const string ShowTips                    = "show-tips";
         public const string ShowYAxisScale              = "show-y-axis-scale";
         public const string UseIrixCpuReporting         = "use-irix-cpu-reporting";
+
+        // Health keys.
+        public const string HealthWarningSustainSeconds          = "warning-sustain-seconds";
+        public const string HealthCriticalSustainSeconds         = "critical-sustain-seconds";
+        public const string HealthSustainGraceSeconds            = "sustain-grace-seconds";
+        public const string HealthClearSeconds                   = "clear-seconds";
+        public const string HealthEventHistorySize               = "event-history-size";
+        public const string HealthCpuWarningPercent              = "cpu-warning-percent";
+        public const string HealthCpuCriticalPercent             = "cpu-critical-percent";
+        public const string HealthMemoryAvailableWarningPercent  = "memory-available-warning-percent";
+        public const string HealthMemoryAvailableCriticalPercent = "memory-available-critical-percent";
+        public const string HealthSwapOutWarningMbPerSecond      = "swap-out-warning-mb-per-second";
+        public const string HealthDiskActiveWarningPercent       = "disk-active-warning-percent";
+        public const string HealthVolumeFreeWarningPercent       = "volume-free-warning-percent";
+        public const string HealthVolumeFreeCriticalPercent      = "volume-free-critical-percent";
+        public const string HealthSystemVolumeFreeCriticalGb     = "system-volume-free-critical-gb";
+        public const string HealthSensorWarningMarginCelsius     = "sensor-warning-margin-celsius";
+        public const string HealthSensorCriticalMarginCelsius    = "sensor-critical-margin-celsius";
+        public const string HealthThermalPressureWarning         = "thermal-pressure-warning";
+        public const string HealthThermalPressureCritical        = "thermal-pressure-critical";
+        public const string HealthGpuMemoryFreeWarningPercent    = "gpu-memory-free-warning-percent";
+        public const string HealthCommitWarningPercent           = "commit-warning-percent";
+        public const string HealthCommitCriticalPercent          = "commit-critical-percent";
+        public const string HealthHardFaultsWarningPerSecond     = "hard-faults-warning-per-second";
+        public const string HealthHardFaultsAvailablePercent     = "hard-faults-available-percent";
+        public const string HealthRunQueueWarningPerCore         = "run-queue-warning-per-core";
+        public const string HealthPerformanceLimitWarningPercent = "performance-limit-warning-percent";
+        public const string HealthDriverTimeWarningPercent       = "driver-time-warning-percent";
+        public const string HealthDiskLatencyWarningMs           = "disk-latency-warning-ms";
+        public const string HealthDiskLatencyCriticalMs          = "disk-latency-critical-ms";
 
         // Theme keys.
         public const string Background                  = "control.background";

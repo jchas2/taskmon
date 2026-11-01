@@ -25,16 +25,19 @@ public partial class NetworkService
         public ulong  PreviousBytesReceived;
         public ulong  PreviousPacketsSent;
         public ulong  PreviousPacketsReceived;
+        public ulong  PreviousErrors;
         public bool   Primed;
 
         public ulong  TotalBytesSent;
         public ulong  TotalBytesReceived;
         public ulong  TotalPacketsSent;
         public ulong  TotalPacketsReceived;
+        public ulong  TotalErrors;
         public double SendBytesPerSecond;
         public double ReceiveBytesPerSecond;
         public double SendPacketsPerSecond;
         public double ReceivePacketsPerSecond;
+        public double ErrorsPerSecond;
     }
 
     private readonly struct InterfaceSample
@@ -44,13 +47,15 @@ public partial class NetworkService
             ulong bytesSent,
             ulong bytesReceived,
             ulong packetsSent,
-            ulong packetsReceived)
+            ulong packetsReceived,
+            ulong errors)
         {
             InterfaceIndex  = interfaceIndex;
             BytesSent       = bytesSent;
             BytesReceived   = bytesReceived;
             PacketsSent     = packetsSent;
             PacketsReceived = packetsReceived;
+            Errors          = errors;
         }
 
         public uint  InterfaceIndex  { get; }
@@ -58,6 +63,7 @@ public partial class NetworkService
         public ulong BytesReceived   { get; }
         public ulong PacketsSent     { get; }
         public ulong PacketsReceived { get; }
+        public ulong Errors          { get; }
     }
 
     private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
@@ -88,6 +94,7 @@ public partial class NetworkService
             deviceMetrics.ReceivePacketsPerSecond   = state.ReceivePacketsPerSecond;
             deviceMetrics.SendMegabytesPerSecond    = state.SendBytesPerSecond / BytesPerMegabyte;
             deviceMetrics.ReceiveMegabytesPerSecond = state.ReceiveBytesPerSecond / BytesPerMegabyte;
+            deviceMetrics.ErrorsPerSecond           = state.ErrorsPerSecond;
 
             metrics.Devices.Add(deviceMetrics);
 
@@ -103,6 +110,7 @@ public partial class NetworkService
             metrics.ReceiveBytesPerSecond   += state.ReceiveBytesPerSecond;
             metrics.SendPacketsPerSecond    += state.SendPacketsPerSecond;
             metrics.ReceivePacketsPerSecond += state.ReceivePacketsPerSecond;
+            metrics.ErrorsPerSecond         += state.ErrorsPerSecond;
         }
 
         metrics.Devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
@@ -163,10 +171,17 @@ public partial class NetworkService
         state.PreviousBytesReceived   = sample.BytesReceived;
         state.PreviousPacketsSent     = sample.PacketsSent;
         state.PreviousPacketsReceived = sample.PacketsReceived;
+        state.PreviousErrors          = sample.Errors;
         state.Primed                  = true;
 
         instanceStates[interfaceLuid] = state;
     }
+
+    private static unsafe ulong ReadErrorCount(byte* row) =>
+        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InErrorsOffset) +
+        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutErrorsOffset) +
+        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InDiscardsOffset) +
+        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutDiscardsOffset);
 
     private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
     {
@@ -216,7 +231,8 @@ public partial class NetworkService
                     InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutOctetsOffset),
                     InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InOctetsOffset),
                     InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutUcastPktsOffset),
-                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InUcastPktsOffset));
+                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InUcastPktsOffset),
+                    ReadErrorCount(row));
             }
             
             return true;
@@ -287,9 +303,15 @@ public partial class NetworkService
             elapsedSeconds);
 
         state.ReceivePacketsPerSecond = CounterRate.Accumulate(
-            sample.PacketsReceived, 
-            ref state.PreviousPacketsReceived, 
-            ref state.TotalPacketsReceived, 
+            sample.PacketsReceived,
+            ref state.PreviousPacketsReceived,
+            ref state.TotalPacketsReceived,
+            elapsedSeconds);
+
+        state.ErrorsPerSecond = CounterRate.Accumulate(
+            sample.Errors,
+            ref state.PreviousErrors,
+            ref state.TotalErrors,
             elapsedSeconds);
     }
 #endif

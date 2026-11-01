@@ -94,6 +94,7 @@ public partial class ProcessService
             UserName        = sample.UserName,
             CmdLine         = sample.CmdLine,
             UsedMemory      = sample.UsedMemory,
+            CommittedMemory = sample.CommittedMemory,
             DiskReadBytes   = sample.DiskReadBytes,
             DiskWriteBytes  = sample.DiskWriteBytes
         };

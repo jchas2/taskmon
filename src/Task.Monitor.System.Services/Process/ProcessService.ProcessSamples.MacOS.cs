@@ -75,6 +75,7 @@ public partial class ProcessService
         sample.HandleCount     = 0;
         sample.BasePriority    = procBsdInfo.pbi_nice;
         sample.UsedMemory      = (long)procTaskInfo.ptinfo.pti_resident_size;
+        sample.CommittedMemory = (long)usage.ri_phys_footprint;
         sample.KernelTime      = CalculateSystemTime(usage.ri_system_time).Ticks;
         sample.UserTime        = CalculateSystemTime(usage.ri_user_time).Ticks;
         sample.DiskReadBytes   = usage.ri_diskio_bytesread;

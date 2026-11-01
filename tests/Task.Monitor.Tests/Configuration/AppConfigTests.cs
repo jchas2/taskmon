@@ -414,6 +414,7 @@ control.foreground=#abcdef
         string iniConfig = appConfig.ToString();
         List<string> expectedSections = new() {
             "[filter]",
+            "[health]",
             "[sort]",
             "[stats]",
             "[ux]",

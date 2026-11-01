@@ -3,12 +3,14 @@ using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
+using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
 using ServiceController = Task.Monitor.System.Services.ServiceController;
@@ -41,6 +43,44 @@ public sealed class MainScreen2Tests : IDisposable
             .Select(invocation => (string)invocation.Arguments[0]!));
 
     public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void Enter_On_A_Health_Cause_Opens_That_Process_In_Processes()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        HealthControl    healthControl    = mainScreen.GetControl<HealthControl>();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        bool             handled          = false;
+
+        ProcessInfo processes = new() {
+            Metrics = new ProcessMetrics {
+                Entries = [
+                    new ProcessEntry { Pid = 1111, ProcessName = "first",  CpuTimePercent = 0.9 },
+                    new ProcessEntry { Pid = 2222, ProcessName = "second", CpuTimePercent = 0.1 }
+                ]
+            }
+        };
+
+        mainScreen.SetActiveControl(new MenuListViewItem(healthControl, "HEALTH"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Processes = processes,
+            Health    = new HealthInfo {
+                Level     = HealthLevel.Warning,
+                Resources = [new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Warning }],
+                Culprits  = [new HealthCulprit("second", 1, 2222, "10% CPU", [HealthResource.Cpu])]
+            }
+        });
+
+        mainScreen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Same(processesControl, mainScreen.GetActiveControl);
+
+        RaiseSnapshotUpdated(new SystemSnapshot { Processes = processes });
+
+        Assert.Equal(2222, processesControl.ProcessControl.SelectedProcessId);
+    }
 
     [Fact]
     public void F10_Is_Left_Unhandled_So_The_App_Exits()
@@ -132,6 +172,18 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.Contains("TASK MONITOR SETUP", CapturedOutput());
     }
 
+    [Fact]
+    public void Health_Is_Listed_Directly_Under_Summary()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+
+        List<MenuListViewItem> items = mainScreen.GetControl<MenuControl>().MenuItems!;
+
+        Assert.Equal("SUMMARY", items[0].Text);
+        Assert.Equal("HEALTH", items[1].Text);
+        Assert.IsType<HealthControl>(items[1].AssociatedControl);
+    }
+
     // Regression test: the menu raises a click on every arrow key, even when Up can't move off the
     // first item, and each one reloaded and redrew SUMMARY - so holding Up redrew it on every repeat.
     [Fact]
@@ -152,6 +204,27 @@ public sealed class MainScreen2Tests : IDisposable
     }
 
     private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
+
+    [Fact]
+    public void Left_And_Right_Move_Between_The_Health_Panes_Then_Back_To_The_Menu()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        HealthControl healthControl = mainScreen.GetControl<HealthControl>();
+        bool          handled       = false;
+
+        mainScreen.SetActiveControl(new MenuListViewItem(healthControl, "HEALTH"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(healthControl.CausesView.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(healthControl.EventsView.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);
+        Assert.True(healthControl.CausesView.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);
+        Assert.True(mainScreen.GetControl<MenuControl>().Focused);
+    }
 
     [Fact]
     public void Moving_Back_Up_To_Summary_Still_Shows_It()

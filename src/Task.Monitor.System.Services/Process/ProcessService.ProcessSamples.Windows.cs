@@ -62,7 +62,8 @@ public partial class ProcessService
 
         PsApi.PROCESS_MEMORY_COUNTERS memCounters = new();
         GetProcessMemCounters(hProcess, &memCounters);
-        sample.UsedMemory = (long)memCounters.WorkingSetSize;
+        sample.UsedMemory      = (long)memCounters.WorkingSetSize;
+        sample.CommittedMemory = (long)memCounters.PagefileUsage;
 
         GetProcessorTimes(
             hProcess,

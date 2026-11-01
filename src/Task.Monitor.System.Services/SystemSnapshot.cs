@@ -3,6 +3,7 @@ using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
 using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Gpu;
+using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
@@ -37,5 +38,6 @@ public sealed record SystemSnapshot
     public WindowsServicesInfo? WindowsServices { get; init; }
     public LaunchdServicesInfo? LaunchdServices { get; init; }
     public DriversInfo?         Drivers         { get; init; }
+    public HealthInfo?          Health          { get; init; }
     public IReadOnlyList<ServiceHealth> Services { get; init; } = [];
 }

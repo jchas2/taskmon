@@ -17,6 +17,7 @@ public partial class CpuService
     private long previousTimestamp;
     private bool primed;
 
+    private PdhQuery? pressureQuery;
     private PdhQuery? processorQuery;
 
     private unsafe void OnDoWorkCpuCore(CpuInfo cpuInfo)
@@ -100,6 +101,27 @@ public partial class CpuService
         Rebase(now);
     }
 
+    private void OnDoWorkPressureMetrics(CpuInfo cpuInfo)
+    {
+        if (pressureQuery is null || !pressureQuery.Collect()) {
+            return;
+        }
+
+        if (pressureQuery.TryReadFormattedDouble(pressureQuery.Counters[0], out double queueLength)) {
+            cpuInfo.Metrics.RunQueuePerCore = queueLength / Environment.ProcessorCount;
+        }
+
+        if (pressureQuery.TryReadFormattedDouble(pressureQuery.Counters[1], out double performanceLimit)) {
+            cpuInfo.Metrics.PerformanceLimitPercent = performanceLimit;
+        }
+
+        if (pressureQuery.TryReadFormattedDouble(pressureQuery.Counters[2], out double dpcTime) &&
+            pressureQuery.TryReadFormattedDouble(pressureQuery.Counters[3], out double interruptTime)) {
+
+            cpuInfo.Metrics.DriverTimePercent = dpcTime + interruptTime;
+        }
+    }
+
     private void OnStartCpuCore()
     {
         const string ProcessorTimeCounterPath = @"\Processor(*)\% Processor Time";
@@ -110,12 +132,25 @@ public partial class CpuService
         if (processorQuery is null || !processorQuery.Collect()) {
             serviceStatus = ServiceStatus.Errored;
         }
+
+        // A query of its own, so a machine missing one of these only loses the health signals.
+        pressureQuery = PdhQuery.Open(
+            nameof(CpuService),
+            @"\System\Processor Queue Length",
+            @"\Processor Information(_Total)\% Performance Limit",
+            @"\Processor(_Total)\% DPC Time",
+            @"\Processor(_Total)\% Interrupt Time");
+
+        pressureQuery?.Collect();
     }
 
     private void OnStopCpuCore()
     {
         processorQuery?.Dispose();
         processorQuery = null;
+
+        pressureQuery?.Dispose();
+        pressureQuery = null;
     }
 
     private void Rebase(long now)

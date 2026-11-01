@@ -2,12 +2,15 @@
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Memory;
 
 public partial class MemoryService
 {
 #if __WIN32__
+    private PdhQuery? pagingQuery;
+
     private unsafe void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
         if (!QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION memListInfo, out int status)) {
@@ -100,6 +103,30 @@ public partial class MemoryService
             : 0.0;
     }
 
+    private void OnDoWorkPressureMetrics(MemoryInfo memoryInfo)
+    {
+        ReadPerformanceInfo(memoryInfo);
+        ReadPagingRates(memoryInfo);
+    }
+
+    private void OnStartPressureMetrics()
+    {
+        // Collected once up front: a rate counter needs two samples before it reports a value.
+        pagingQuery = PdhQuery.Open(
+            nameof(MemoryService),
+            @"\Memory\Pages Input/sec",
+            @"\Memory\Pages Output/sec",
+            @"\Memory\Page Faults/sec");
+
+        pagingQuery?.Collect();
+    }
+
+    private void OnStopPressureMetrics()
+    {
+        pagingQuery?.Dispose();
+        pagingQuery = null;
+    }
+
     private static unsafe bool QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION info, out int status)
     {
         info = new();
@@ -138,6 +165,47 @@ public partial class MemoryService
         info = Unsafe.ReadUnaligned<Winternl.SYSTEM_MEMORY_LIST_INFORMATION>(buffer);
         NativeMemory.Free(buffer);
         return true;
+    }
+
+    private void ReadPagingRates(MemoryInfo memoryInfo)
+    {
+        if (pagingQuery is null || !pagingQuery.Collect()) {
+            return;
+        }
+
+        if (pagingQuery.TryReadFormattedDouble(pagingQuery.Counters[0], out double pagesInput)) {
+            memoryInfo.Metrics.HardFaultsPerSecond  = pagesInput;
+            memoryInfo.Metrics.SwapInBytesPerSecond = pagesInput * Environment.SystemPageSize;
+        }
+
+        if (pagingQuery.TryReadFormattedDouble(pagingQuery.Counters[1], out double pagesOutput)) {
+            memoryInfo.Metrics.SwapOutBytesPerSecond = pagesOutput * Environment.SystemPageSize;
+        }
+
+        if (pagingQuery.TryReadFormattedDouble(pagingQuery.Counters[2], out double pageFaults)) {
+            memoryInfo.Metrics.PageFaultsPerSecond = pageFaults;
+        }
+    }
+
+    private static unsafe void ReadPerformanceInfo(MemoryInfo memoryInfo)
+    {
+        PsApi.PERFORMANCE_INFORMATION info = new();
+        uint size = (uint)sizeof(PsApi.PERFORMANCE_INFORMATION);
+
+        info.cb = size;
+
+        if (!PsApi.GetPerformanceInfo(&info, size)) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(PsApi.GetPerformanceInfo));
+            return;
+        }
+
+        double pageSize = info.PageSize;
+
+        memoryInfo.Metrics.CommitLimit        = info.CommitLimit * pageSize;
+        memoryInfo.Metrics.CommitTotal        = info.CommitTotal * pageSize;
+        memoryInfo.Metrics.KernelNonPagedPool = info.KernelNonpaged * pageSize;
+        memoryInfo.Metrics.KernelPagedPool    = info.KernelPaged * pageSize;
+        memoryInfo.Metrics.SystemCache        = info.SystemCache * pageSize;
     }
 #endif
 }

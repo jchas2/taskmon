@@ -68,6 +68,10 @@ public static class NetIoApi
     public const int IfRow2ReceiveLinkSpeedOffset    = 1200;
     public const int IfRow2InOctetsOffset            = 1208;
     public const int IfRow2InUcastPktsOffset         = 1216;
+    public const int IfRow2InDiscardsOffset          = 1232;
+    public const int IfRow2InErrorsOffset            = 1240;
     public const int IfRow2OutOctetsOffset           = 1280;
     public const int IfRow2OutUcastPktsOffset        = 1288;
+    public const int IfRow2OutDiscardsOffset         = 1304;
+    public const int IfRow2OutErrorsOffset           = 1312;
 }

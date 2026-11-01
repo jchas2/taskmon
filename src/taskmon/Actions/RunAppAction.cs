@@ -7,6 +7,7 @@ using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.DiskSpace;
 using Task.Monitor.System.Services.Drivers;
 using Task.Monitor.System.Services.Gpu;
+using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
@@ -47,9 +48,11 @@ public sealed class RunAppAction(RunContext runContext) : IAction
             .AddService(() => new SocService())
 #endif
             .AddService(() => new ThermalService())
-            .AddService(() => new PowerService());
+            .AddService(() => new PowerService())
+            .AddService(() => new HealthService());
 
         runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
+        runContext.ServiceController.GetService<HealthService>().Thresholds = runContext.AppConfig.HealthThresholds;
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
 
         ScreenApplication screenApp = new(runContext.Terminal);

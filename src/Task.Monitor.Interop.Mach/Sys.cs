@@ -110,6 +110,9 @@ public static unsafe class Sys
         Sys.Free(ptr);
     }
 
+    [DllImport(Libraries.LibC)]
+    public static extern int getloadavg([Out] double[] loadavg, int nelem);
+
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
     private static extern unsafe int Sysctl(
         int*    name,

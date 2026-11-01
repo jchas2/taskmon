@@ -17,6 +17,7 @@ public sealed class ProcessSample
     public uint   HandleCount     { get; internal set; }
     public long   BasePriority    { get; internal set; }
     public long   UsedMemory      { get; internal set; }
+    public long   CommittedMemory { get; internal set; }
     public long   KernelTime      { get; internal set; }
     public long   UserTime        { get; internal set; }
     public ulong  DiskReadBytes   { get; internal set; }

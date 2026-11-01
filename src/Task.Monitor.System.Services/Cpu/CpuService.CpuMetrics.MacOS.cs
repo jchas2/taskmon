@@ -119,6 +119,16 @@ public partial class CpuService
             cpuInfo.Metrics.CpuPercentKernelTime + cpuInfo.Metrics.CpuPercentUserTime;
     }
 
+    private static void OnDoWorkPressureMetrics(CpuInfo cpuInfo)
+    {
+        double[] loadAverage = new double[1];
+
+        // Unlike the Windows queue this counts running threads too, so it reads higher.
+        if (Sys.getloadavg(loadAverage, loadAverage.Length) == loadAverage.Length) {
+            cpuInfo.Metrics.RunQueuePerCore = loadAverage[0] / Environment.ProcessorCount;
+        }
+    }
+
     private void OnStartCpuCore() => ResetCpuState();
 
     private void OnStopCpuCore() => ResetCpuState();

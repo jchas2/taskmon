@@ -11,6 +11,7 @@ public sealed partial class CpuService : WorkerService
 
         OnDoWorkCpuCore(cpuInfo);
         OnDoWorkCpuMetrics(cpuInfo);
+        OnDoWorkPressureMetrics(cpuInfo);
         Publish(cpuInfo);
     }
 

@@ -13,5 +13,9 @@ public sealed class DiskMetrics
 
     public double PercentActiveTime       { get; set; }
 
+    // The slowest disk rather than an average of them. Null where the platform does not report it.
+    public double? LatencyMs              { get; set; }
+    public double? QueueLength            { get; set; }
+
     public List<DiskDeviceMetrics> Devices { get; set; } = new();
 }

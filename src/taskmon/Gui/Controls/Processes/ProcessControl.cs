@@ -38,6 +38,7 @@ public sealed partial class ProcessControl : Control
     private int  processTotalCount = 0;
 
     private ulong totalPhysicalMemory;
+    private int?  pendingSelectionPid;
 
     public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
     public event EventHandler<int>?                   SelectedProcessIdChanged;
@@ -120,6 +121,23 @@ public sealed partial class ProcessControl : Control
             .Add(processView)
             .Add(filter.Dialog)
             .Add(endTaskDialog);
+    }
+
+    private void ApplyPendingSelection()
+    {
+        if (pendingSelectionPid is not { } pid) {
+            return;
+        }
+
+        pendingSelectionPid = null;
+
+        for (int i = 0; i < processView.Items.Count; i++) {
+            if (((ProcessListViewItem)processView.Items[i]).Pid == pid) {
+                processView.SelectedIndex = i;
+                processView.ScrollSelectedIntoView();
+                return;
+            }
+        }
     }
 
     private string BuildHeaderHighlightText()
@@ -468,6 +486,17 @@ public sealed partial class ProcessControl : Control
         }
     }
 
+    // Applied when the list is next built, as it may have no rows yet. A process that has gone, or
+    // that the filter hides, leaves the selection where it was.
+    public void SelectProcess(int pid)
+    {
+        lock (DrawingLock) {
+            pendingSelectionPid = pid;
+        }
+
+        Draw();
+    }
+
     public void SetMode(ControlMode mode)
     {
         if (mode == this.mode) {
@@ -668,6 +697,8 @@ public sealed partial class ProcessControl : Control
                 processView.SelectedIndex = selectedIndex >= 0 && selectedIndex < processView.Items.Count
                     ? selectedIndex
                     : 0;
+
+                ApplyPendingSelection();
             }
         }
     }

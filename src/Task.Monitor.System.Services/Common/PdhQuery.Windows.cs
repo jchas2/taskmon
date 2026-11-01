@@ -134,6 +134,25 @@ internal sealed unsafe class PdhQuery : IDisposable
         return false;
     }
 
+    // For a counter with a single instance, such as \System\Processor Queue Length.
+    public bool TryReadFormattedDouble(nint counter, out double value)
+    {
+        value = 0.0;
+
+        if (!TryReadFormattedDoubles(counter, out uint itemCount) || itemCount == 0) {
+            return false;
+        }
+
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = *(Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)buffer;
+
+        if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA && item.CStatus != Pdh.PDH_CSTATUS_NEW_DATA) {
+            return false;
+        }
+
+        value = item.doubleValue;
+        return true;
+    }
+
     public bool TryReadFormattedDoubles(nint counter, out uint itemCount) =>
         TryRead(
             counter,

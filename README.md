@@ -49,6 +49,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Thermals**: Live temperature charts for every sensor the machine reports without a kernel driver - NVMe / SATA drives (SMART), NVIDIA (NVAPI) and AMD (ADL) GPUs, and the ACPI thermal zones - on a dedicated `THERMALS` screen, with the current reading also shown on the CPU, GPU and Disk performance panels. Accurate CPU die temperature needs a signed kernel helper driver and is not read.
 - **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
 - **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
+- **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -164,6 +165,43 @@ Task Monitor stores configuration and log files in the following system director
 `taskmon.ini` can be edited by hand. Saving from Setup (`F2`) only changes the settings changed there, so comments (lines starting with `;` or `#`), blank lines, ordering and edits made while Task Monitor is running are all kept. Settings added by a new version are added to the end of their section the next time Task Monitor starts, and the previous file is kept as `taskmon.ini.bak`.
 
 If the file can't be read, Task Monitor starts with its default settings and leaves the file alone. Saving from Setup then shows the line at fault, and works again once that line is fixed.
+
+### Health Settings
+
+The `[health]` section of `taskmon.ini` holds the thresholds behind the `HEALTH` view, as whole numbers. Changes take effect the next time Task Monitor starts. A value that isn't usable, or a warning and critical pair the wrong way round, falls back to its default.
+
+A resource moves to Warning or Critical after staying over its threshold for the sustain period, so a short spike doesn't raise a status. Brief dips back under the threshold don't restart that period, as a value sitting near a threshold spends some samples either side of it.
+
+| Setting | Default | Description |
+| :--- | :--- | :--- |
+| `warning-sustain-seconds` | 30 | How long a value must stay over a warning threshold. |
+| `critical-sustain-seconds` | 60 | How long a value must stay over a critical threshold. |
+| `sustain-grace-seconds` | 5 | How long in total a value can spend the wrong side of a threshold before the sustain or clear period restarts. |
+| `clear-seconds` | 30 | How long a value must stay back under a threshold before the status clears. |
+| `event-history-size` | 50 | Number of recent events to keep. |
+| `cpu-warning-percent` | 90 | CPU busy time. |
+| `cpu-critical-percent` | 98 | CPU busy time. |
+| `run-queue-warning-per-core` | 2 | Threads waiting per core on Windows, load average per core on macOS. |
+| `driver-time-warning-percent` | 15 | CPU time in drivers (Windows, DPC and interrupt time). |
+| `memory-available-warning-percent` | 10 | Memory available (Windows). macOS uses the kernel's own pressure level. |
+| `memory-available-critical-percent` | 5 | Memory available (Windows). |
+| `commit-warning-percent` | 90 | Commit charge against the commit limit (Windows). |
+| `commit-critical-percent` | 97 | Commit charge against the commit limit (Windows). |
+| `hard-faults-warning-per-second` | 500 | Pages read from disk per second (Windows). |
+| `hard-faults-available-percent` | 25 | Hard faults only count with this much memory available or less, as Windows also reads pages back in when memory is plentiful. |
+| `swap-out-warning-mb-per-second` | 0 | Swap-out rate that counts as a warning (macOS). |
+| `disk-latency-warning-ms` | 20 | Time for a disk transfer, on the slowest disk. |
+| `disk-latency-critical-ms` | 100 | Time for a disk transfer, on the slowest disk. |
+| `disk-active-warning-percent` | 90 | Disk active time, used only when latency can't be read. |
+| `volume-free-warning-percent` | 10 | Free space on a volume. |
+| `volume-free-critical-percent` | 5 | Free space on a volume. |
+| `system-volume-free-critical-gb` | 2 | Free space on the system volume, whatever its size. |
+| `gpu-memory-free-warning-percent` | 10 | GPU memory free. |
+| `sensor-warning-margin-celsius` | 10 | Distance from a sensor's critical limit, for sensors that report one. |
+| `sensor-critical-margin-celsius` | 3 | Distance from a sensor's critical limit. |
+| `thermal-pressure-warning` | Moderate | Thermal pressure level (macOS): Nominal, Moderate, Heavy, Trapping or Sleeping. |
+| `thermal-pressure-critical` | Heavy | Thermal pressure level (macOS). |
+| `performance-limit-warning-percent` | 80 | The share of normal CPU performance the machine is allowed (Windows). Falls when heat, power or a battery setting holds the CPU back. |
 
 ## Theme Files
 

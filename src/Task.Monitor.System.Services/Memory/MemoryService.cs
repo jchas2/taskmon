@@ -11,11 +11,16 @@ public sealed partial class MemoryService : WorkerService
         
         OnDoWorkMemoryMetrics(memoryInfo);
         OnDoWorkMemoryCompressionMetrics(memoryInfo);
+        OnDoWorkPressureMetrics(memoryInfo);
         Publish(memoryInfo);
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         OnStartMemorySpecs(memorySpecs);
+        OnStartPressureMetrics();
+    }
 
-    protected override void OnStop() { }
+    protected override void OnStop() =>
+        OnStopPressureMetrics();
 }

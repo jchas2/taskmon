@@ -14,4 +14,6 @@ public sealed class DiskDeviceMetrics
     public double WriteMegabytesPerSecond { get; set; }
 
     public double PercentActiveTime       { get; set; }
+    public double? LatencyMs              { get; set; }
+    public double? QueueLength            { get; set; }
 }

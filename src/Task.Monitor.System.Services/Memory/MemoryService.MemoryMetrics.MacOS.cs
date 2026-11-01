@@ -13,9 +13,14 @@ public partial class MemoryService
     private ulong totalPhysical;
     private long  pageSize;
 
+    private ulong previousFaults;
     private ulong previousSwapIns;
     private ulong previousSwapOuts;
     private long  previousSwapTimestamp;
+
+    private const string MemoryPressureLevelKey = "kern.memorystatus_vm_pressure_level";
+    private const int    PressureLevelWarning   = 2;
+    private const int    PressureLevelCritical  = 4;
 
     private void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
@@ -79,6 +84,17 @@ public partial class MemoryService
         memoryInfo.Metrics.AvailableVirtualRatio = 0.0;
     }
 
+    private void OnDoWorkPressureMetrics(MemoryInfo memoryInfo)
+    {
+        if (Sys.SysctlByNameInt(MemoryPressureLevelKey, out int level)) {
+            memoryInfo.Metrics.Pressure = ToMemoryPressure(level);
+        }
+    }
+
+    private void OnStartPressureMetrics() { }
+
+    private void OnStopPressureMetrics() { }
+
     internal static double? PagesPerSecondInBytes(ulong previous, ulong current, double seconds, long pageSize) =>
         seconds > 0 && current >= previous
             ? (current - previous) * (double)pageSize / seconds
@@ -93,8 +109,10 @@ public partial class MemoryService
 
             memoryInfo.Metrics.SwapInBytesPerSecond  = PagesPerSecondInBytes(previousSwapIns,  vmStats.swapins,  seconds, pageSize);
             memoryInfo.Metrics.SwapOutBytesPerSecond = PagesPerSecondInBytes(previousSwapOuts, vmStats.swapouts, seconds, pageSize);
+            memoryInfo.Metrics.PageFaultsPerSecond   = PagesPerSecondInBytes(previousFaults, vmStats.faults, seconds, 1) ?? 0.0;
         }
 
+        previousFaults        = vmStats.faults;
         previousSwapIns       = vmStats.swapins;
         previousSwapOuts      = vmStats.swapouts;
         previousSwapTimestamp = timestamp;
@@ -119,6 +137,12 @@ public partial class MemoryService
         memoryInfo.Metrics.TotalPageFile     = xsw->total;
         memoryInfo.Metrics.AvailablePageFile = xsw->avail;
     }
+
+    internal static MemoryPressure ToMemoryPressure(int level) => level switch {
+        PressureLevelCritical => MemoryPressure.Critical,
+        PressureLevelWarning  => MemoryPressure.Warning,
+                            _ => MemoryPressure.Normal
+    };
 
     private static bool TryReadVmStatistics(out MachHost.VmStatistics64 info)
     {

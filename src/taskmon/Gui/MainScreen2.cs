@@ -3,6 +3,7 @@ using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
+using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Performance;
@@ -29,6 +30,7 @@ public sealed class MainScreen2 : Screen
     private readonly BannerControl        bannerControl;
     private readonly HeaderControl2       headerControl;
     private readonly SummaryControl2      summaryControl;
+    private readonly HealthControl        healthControl;
     private readonly PerformanceControl   performanceControl;
     private readonly ProcessesControl     processesControl;
     private readonly ThermalsControl      thermalsControl;
@@ -80,6 +82,14 @@ public sealed class MainScreen2 : Screen
         };
 
         summaryControl = new SummaryControl2(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            TabStop  = true,
+            TabIndex = 2
+        };
+
+        healthControl = new HealthControl(
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
@@ -177,6 +187,7 @@ public sealed class MainScreen2 : Screen
             .Add(bannerControl)
             .Add(headerControl)
             .Add(summaryControl)
+            .Add(healthControl)
             .Add(performanceControl)
             .Add(processesControl)
             .Add(thermalsControl)
@@ -190,6 +201,7 @@ public sealed class MainScreen2 : Screen
 
         menuControls = new List<Control> {
             summaryControl,
+            healthControl,
             performanceControl,
             processesControl,
             thermalsControl,
@@ -223,6 +235,18 @@ public sealed class MainScreen2 : Screen
         bannerControl.Draw();
         activeControl.Draw();
         footerControl.Draw();
+    }
+
+    // Enter on a likely cause in HEALTH opens that process in PROCESSES.
+    private void OnHealthProcessRequested(object? sender, int pid)
+    {
+        MenuListViewItem item = menuControl.Select(processesControl);
+
+        SetActiveControl(item);
+        focusedControl = processesControl;
+        processesControl.SetFocus();
+        processesControl.ProcessControl.SelectProcess(pid);
+        Draw();
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -307,6 +331,7 @@ public sealed class MainScreen2 : Screen
 
         menuControl.MenuItems = new() {
             new MenuListViewItem(summaryControl,       "SUMMARY"),
+            new MenuListViewItem(healthControl,        "HEALTH"),
             new MenuListViewItem(performanceControl,   "PERFORMANCE"),
             new MenuListViewItem(processesControl,     "PROCESSES"),
             new MenuListViewItem(thermalsControl,      "THERMALS"),
@@ -331,6 +356,7 @@ public sealed class MainScreen2 : Screen
         
         menuControl.SetFocus();
         menuControl.MenuItemClicked += OnMenuItemClicked;
+        healthControl.ProcessRequested += OnHealthProcessRequested;
     }
 
     // The menu raises a click on every arrow key, even when the selection can't move (Up on the
@@ -387,6 +413,7 @@ public sealed class MainScreen2 : Screen
     {
         base.OnUnload();
         menuControl.MenuItemClicked -= OnMenuItemClicked;
+        healthControl.ProcessRequested -= OnHealthProcessRequested;
         Terminal.CursorVisible = true;
     }
 

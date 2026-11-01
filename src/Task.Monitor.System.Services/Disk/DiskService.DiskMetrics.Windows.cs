@@ -12,9 +12,14 @@ public partial class DiskService
     private const string DiskWriteBytesCounterPath = @"\PhysicalDisk(*)\Disk Write Bytes/sec";
     private const string DiskIdleTimeCounterPath   = @"\PhysicalDisk(*)\% Idle Time";
 
-    private const double BytesPerMegabyte = 1024.0 * 1024.0;
+    private const string DiskLatencyCounterPath     = @"\PhysicalDisk(*)\Avg. Disk sec/Transfer";
+    private const string DiskQueueLengthCounterPath = @"\PhysicalDisk(*)\Current Disk Queue Length";
+
+    private const double BytesPerMegabyte      = 1024.0 * 1024.0;
+    private const double MillisecondsPerSecond = 1000.0;
 
     private PdhQuery? diskQuery;
+    private PdhQuery? pressureQuery;
 
     private nint readBytesCounter;
     private nint writeBytesCounter;
@@ -116,10 +121,16 @@ public partial class DiskService
 
         UpdateInstanceStates();
         BuildMetrics(diskInfo.Metrics);
+        ReadPressureMetrics(diskInfo.Metrics);
     }
 
     private void OnStartDiskMetrics()
     {
+        // A query of its own, so a machine missing one of these only loses the health signals.
+        // Collected once up front: a rate counter needs two samples before it reports a value.
+        pressureQuery = PdhQuery.Open(nameof(DiskService), DiskLatencyCounterPath, DiskQueueLengthCounterPath);
+        pressureQuery?.Collect();
+
         diskQuery = PdhQuery.Open(
             nameof(DiskService),
             DiskReadBytesCounterPath,
@@ -140,6 +151,9 @@ public partial class DiskService
         diskQuery?.Dispose();
         diskQuery = null;
 
+        pressureQuery?.Dispose();
+        pressureQuery = null;
+
         instanceStates.Clear();
     }
 
@@ -158,6 +172,47 @@ public partial class DiskService
         return int.TryParse(indexSpan, out int index) 
             ? index 
             : -1;
+    }
+
+    private unsafe Dictionary<string, double> ReadInstanceValues(nint counter)
+    {
+        Dictionary<string, double> values = new();
+
+        if (pressureQuery is null || !pressureQuery.TryReadFormattedDoubles(counter, out uint itemCount)) {
+            return values;
+        }
+
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)pressureQuery.Buffer;
+
+        for (uint i = 0; i < itemCount; i++) {
+            if (items[i].CStatus == Pdh.PDH_CSTATUS_VALID_DATA || items[i].CStatus == Pdh.PDH_CSTATUS_NEW_DATA) {
+                values[Marshal.PtrToStringUni(items[i].szName) ?? string.Empty] = items[i].doubleValue;
+            }
+        }
+
+        return values;
+    }
+
+    private void ReadPressureMetrics(DiskMetrics metrics)
+    {
+        if (pressureQuery is null || !pressureQuery.Collect()) {
+            return;
+        }
+
+        Dictionary<string, double> latencies    = ReadInstanceValues(pressureQuery.Counters[0]);
+        Dictionary<string, double> queueLengths = ReadInstanceValues(pressureQuery.Counters[1]);
+
+        foreach (DiskDeviceMetrics device in metrics.Devices) {
+            if (latencies.TryGetValue(device.InstanceName, out double seconds)) {
+                device.LatencyMs = seconds * MillisecondsPerSecond;
+                metrics.LatencyMs = Math.Max(metrics.LatencyMs ?? 0.0, device.LatencyMs.Value);
+            }
+
+            if (queueLengths.TryGetValue(device.InstanceName, out double queueLength)) {
+                device.QueueLength  = queueLength;
+                metrics.QueueLength = Math.Max(metrics.QueueLength ?? 0.0, queueLength);
+            }
+        }
     }
 
     private bool TryReadRawCounterArray(nint counter, Dictionary<string, RawSample> samples)
