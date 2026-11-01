@@ -62,4 +62,14 @@ public sealed class ModuleServiceTests
         
         Assert.InRange(modules.Count, 1, int.MaxValue);
     }
+
+    // Regression test: run as root, reading kernel_task's memory map logged an EXC_GUARD crash report.
+    [SkippableFact]
+    [SupportedOSPlatform("macos")]
+    public void Should_Return_No_Modules_For_Kernel_Task_MacOS()
+    {
+        Skip.IfNot(OperatingSystem.IsMacOS());
+
+        Assert.Empty(new ModuleService().GetModules(0));
+    }
 }

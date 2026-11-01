@@ -7,9 +7,13 @@ internal static partial class DiagnosticReportParser
     private const string CpuEvent          = "cpu usage";
     private const string DiskWritesEvent   = "disk writes";
     private const string JetsamEventPrefix = "JetsamEvent";
+    private const string SimulatedMarker   = "\"is_simulated\":1";
 
     [GeneratedRegex(@"^(?<app>.+?)[-_]\d{4}-\d{2}-\d{2}-\d{6}")]
     private static partial Regex AppName();
+
+    public static bool IsSimulated(string? header) =>
+        header?.Contains(SimulatedMarker, StringComparison.Ordinal) == true;
 
     public static HealthReport? Parse(string fileName, DateTime timeUtc, string? diagEvent = null)
     {

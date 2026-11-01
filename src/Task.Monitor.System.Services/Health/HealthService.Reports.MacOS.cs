@@ -10,12 +10,28 @@ public partial class HealthService
     private const string DiagEventLabel  = "Event:";
     private const string DiagExtension   = ".diag";
     private const int    DiagHeaderLines = 32;
+    private const string IpsExtension    = ".ips";
     private const string ReportsFolder   = "Library/Logs/DiagnosticReports";
 
     private static bool CanDetectHungApps => false;
 
     internal static bool IsReadOnlyVolume(string name) =>
         Libc.statvfs(name, out Libc.StatVfs stats) == 0 && (stats.f_flag & Libc.ST_RDONLY) != 0;
+
+    internal static bool IsSimulatedReport(string file)
+    {
+        if (!file.EndsWith(IpsExtension, StringComparison.OrdinalIgnoreCase)) {
+            return false;
+        }
+
+        try {
+            return DiagnosticReportParser.IsSimulated(File.ReadLines(file).FirstOrDefault());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+            TraceEx.WriteLineOnce(file, $"Skipping {file}: {ex.Message}");
+            return false;
+        }
+    }
 
     private static string? ReadDiagEvent(string file)
     {
@@ -47,7 +63,10 @@ public partial class HealthService
             foreach (string file in Directory.EnumerateFiles(folder)) {
                 DateTime timeUtc = File.GetLastWriteTimeUtc(file);
 
-                if (timeUtc >= cutoffUtc && DiagnosticReportParser.Parse(Path.GetFileName(file), timeUtc, ReadDiagEvent(file)) is { } report) {
+                if (timeUtc >= cutoffUtc &&
+                    !IsSimulatedReport(file) &&
+                    DiagnosticReportParser.Parse(Path.GetFileName(file), timeUtc, ReadDiagEvent(file)) is { } report) {
+
                     reports.Add(report);
                 }
             }

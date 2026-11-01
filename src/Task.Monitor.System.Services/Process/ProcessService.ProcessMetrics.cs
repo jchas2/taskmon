@@ -13,7 +13,9 @@ public partial class ProcessService
     private readonly Dictionary<int, ProcessSampleState> sampleStates = new(InitialCapacity);
     private readonly List<int>                           stalePids    = new(InitialCapacity);
     
-    private int generation;
+    private int      generation;
+    private DateTime previousSampleUtc;
+    private long     previousSampleTicks;
 
     private static void ApplyAverages(ProcessEntry entry, ProcessEntryAverage average)
     {
@@ -30,7 +32,7 @@ public partial class ProcessService
         entry.DiskBytesPerSecondMax = average.DiskBytesPerSecondMax;
     }
 
-    private static void ApplyRates(
+    private void ApplyRates(
         ProcessEntry       entry,
         ProcessSampleState state,
         ProcessSample      sample,
@@ -38,6 +40,11 @@ public partial class ProcessService
         ProcessSpecs       specs)
     {
         if (!state.Primed) {
+            entry.DiskBytesPerSecond = FirstDiskBytesPerSecond(
+                sample,
+                previousSampleUtc,
+                ProcessEntryCalculator.ElapsedSeconds(previousSampleTicks, now));
+
             Rebase(state, sample, now);
             state.Primed = true;
             return;
@@ -105,7 +112,8 @@ public partial class ProcessService
         List<ProcessSample>     samples,
         Dictionary<int, double> gpuPercentByPid)
     {
-        long now = Stopwatch.GetTimestamp();
+        long     now    = Stopwatch.GetTimestamp();
+        DateTime utcNow = DateTime.UtcNow;
 
         generation++;
 
@@ -150,6 +158,9 @@ public partial class ProcessService
             metrics.Entries.Add(entry);
         }
 
+        previousSampleTicks = now;
+        previousSampleUtc   = utcNow;
+
         if (sampleStates.Count == 0) {
             return;
         }
@@ -167,11 +178,20 @@ public partial class ProcessService
         }
     }
 
+    internal static double FirstDiskBytesPerSecond(
+        ProcessSample sample,
+        DateTime      previousSampleUtc,
+        double        elapsedSeconds) =>
+        previousSampleUtc != default && sample.StartTimeUtc >= previousSampleUtc
+            ? CounterRate.PerSecond(sample.DiskReadBytes + sample.DiskWriteBytes, elapsedSeconds)
+            : 0.0;
+
     private void OnStopProcessMetrics()
     {
         sampleStates.Clear();
         stalePids.Clear();
-        generation = 0;
+        generation        = 0;
+        previousSampleUtc = default;
     }
     
     private static void Rebase(ProcessSampleState state, ProcessSample sample, long now)

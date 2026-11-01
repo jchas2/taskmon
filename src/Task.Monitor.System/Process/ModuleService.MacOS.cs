@@ -8,6 +8,8 @@ namespace Task.Monitor.System.Process;
 public partial class ModuleService
 {
 #if __APPLE__
+    private const int KernelTaskPid = 0;
+
     private static bool GetCurrentProcessModules(List<ModuleInfo> moduleInfos)
     {
         HashSet<string> seen = new(StringComparer.Ordinal);
@@ -81,6 +83,11 @@ public partial class ModuleService
     private bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
     {
         moduleInfos = new List<ModuleInfo>();
+
+        // macOS rejects this read of kernel_task, even as root, and logs a crash report for it.
+        if (process.Id == KernelTaskPid) {
+            return false;
+        }
 
         if (process.Id == Environment.ProcessId) {
             return GetCurrentProcessModules(moduleInfos);

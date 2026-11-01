@@ -80,6 +80,9 @@ public partial class ProcessService
         sample.UserTime        = CalculateSystemTime(usage.ri_user_time).Ticks;
         sample.DiskReadBytes   = usage.ri_diskio_bytesread;
         sample.DiskWriteBytes  = usage.ri_diskio_byteswritten;
+        sample.StartTimeUtc    = DateTime.UnixEpoch.AddTicks(
+            (long)procBsdInfo.pbi_start_tvsec * TimeSpan.TicksPerSecond +
+            (long)procBsdInfo.pbi_start_tvusec * TimeSpan.TicksPerMicrosecond);
 
         return sample;
     }

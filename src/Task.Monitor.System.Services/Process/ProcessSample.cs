@@ -22,4 +22,5 @@ public sealed class ProcessSample
     public long   UserTime        { get; internal set; }
     public ulong  DiskReadBytes   { get; internal set; }
     public ulong  DiskWriteBytes  { get; internal set; }
+    public DateTime StartTimeUtc    { get; internal set; }
 }

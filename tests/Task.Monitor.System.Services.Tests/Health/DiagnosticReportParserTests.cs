@@ -33,6 +33,24 @@ public sealed class DiagnosticReportParserTests
         Assert.Null(DiagnosticReportParser.Parse("dd_2026-11-01-161053_MacBook.diag", Time, "wakeups"));
     }
 
+    // Regression test: macOS logged this when taskmon read kernel_task's memory map. taskmon kept
+    // running, but the report read as a crash under Recent events.
+    [Fact]
+    public void A_Report_Marked_As_Simulated_Is_Recognised()
+    {
+        Assert.True(DiagnosticReportParser.IsSimulated("{\"is_simulated\":1,\"app_name\":\"taskmon\",\"bug_type\":\"309\"}"));
+    }
+
+    [Theory]
+    [InlineData("{\"app_name\":\"bash\",\"bug_type\":\"309\"}")]
+    [InlineData("{\"is_simulated\":0,\"app_name\":\"bash\"}")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void A_Report_Not_Marked_As_Simulated_Is_Not(string? header)
+    {
+        Assert.False(DiagnosticReportParser.IsSimulated(header));
+    }
+
     [Fact]
     public void A_Report_With_An_Unusual_Name_Still_Names_Something()
     {
