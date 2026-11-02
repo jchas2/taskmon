@@ -16,6 +16,8 @@ public static class FileApi
     public const uint DRIVE_CDROM       = 5;
     public const uint DRIVE_RAMDISK     = 6;
 
+    public const uint FILE_READ_ONLY_VOLUME = 0x00080000;
+
     public const int ERROR_MORE_DATA     = 234;
     public const int ERROR_NO_MORE_FILES = 18;
 

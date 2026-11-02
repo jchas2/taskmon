@@ -32,7 +32,13 @@ public partial class HealthService
 
     private static bool CanDetectHungApps => true;
 
-    internal static bool IsReadOnlyVolume(string name) => false;
+    internal static unsafe bool IsReadOnlyVolume(string name)
+    {
+        uint flags = 0;
+
+        return FileApi.GetVolumeInformationW(name, null, 0, null, null, &flags, null, 0) &&
+               (flags & FileApi.FILE_READ_ONLY_VOLUME) != 0;
+    }
 
     private static IReadOnlyList<DriveHealth> ReadDrives(DiskInfo? disks)
     {

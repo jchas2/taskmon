@@ -438,6 +438,18 @@ public sealed class HealthRulesTests
         Assert.Equal(expected, new VolumesHealthRule().Evaluate(sample, thresholds).Level);
     }
 
+    // Regression test: a volume with nothing free used to be skipped as if it were a read-only image.
+    [Fact]
+    public void Volumes_A_Completely_Full_Volume_Is_Critical()
+    {
+        HealthSample sample = new() { Volumes = [new HealthVolume("D:\\", 0, 100, false)] };
+
+        HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Critical, reading.Level);
+        Assert.Equal("D:\\ 100% full", reading.Reason);
+    }
+
     [Fact]
     public void Volumes_Report_The_Fullest_One()
     {

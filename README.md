@@ -197,7 +197,7 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `disk-latency-warning-ms` | 20 | Time for a disk transfer, on the slowest disk. |
 | `disk-latency-critical-ms` | 100 | Time for a disk transfer, on the slowest disk. |
 | `disk-active-warning-percent` | 90 | Disk active time, used only when latency can't be read. |
-| `volume-free-warning-percent` | 10 | Free space on a volume. |
+| `volume-free-warning-percent` | 10 | Free space on a volume. Read-only volumes are ignored, as they can't be cleaned up. |
 | `volume-free-critical-percent` | 5 | Free space on a volume. |
 | `system-volume-free-critical-gb` | 2 | Free space on the system volume, whatever its size. |
 | `gpu-memory-free-warning-percent` | 10 | GPU memory free. |
@@ -425,6 +425,7 @@ The scripts in `eng/tools` put the machine under real load, for trying the `HEAL
 | `.\eng\tools\stress-disk.ps1` | Disk latency reaches Warning on a fast SSD. `-Threads 256` goes further, and a slower disk reaches it sooner. |
 | `.\eng\tools\stress-hang.ps1` | Apps reaches Warning, then Critical, with the window's process named as the cause. |
 | `.\eng\tools\stress-crash.ps1` | A real crash report appears under Recent events within a minute, and stays for the lookback period. |
+| `.\eng\tools\stress-readonly-volume.ps1` | Mounts a nearly full read-only VHD, which HEALTH should ignore. Add `-Writable` to mount it writable, which HEALTH should flag as Critical. Needs an elevated PowerShell. |
 
 **macOS:**
 | Command | What it tries |

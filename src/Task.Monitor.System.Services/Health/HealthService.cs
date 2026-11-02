@@ -36,6 +36,10 @@ public sealed partial class HealthService : WorkerService
         name is MacRootVolume or MacDataVolume ||
         string.Equals(Path.GetPathRoot(Environment.SystemDirectory), name, StringComparison.OrdinalIgnoreCase);
 
+    // A read-only volume can't be cleaned up, so how full it is says nothing useful. The system
+    // volume stays in regardless, as macOS seals it read-only and it still shares its free space.
+    internal static bool IsTracked(bool isSystem, bool isReadOnly) => isSystem || !isReadOnly;
+
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         DateTime utcNow = DateTime.UtcNow;
@@ -103,7 +107,7 @@ public sealed partial class HealthService : WorkerService
 
                 bool isSystem = IsSystemVolume(drive.Name);
 
-                if (isSystem || (drive.AvailableFreeSpace > 0 && !IsReadOnlyVolume(drive.Name))) {
+                if (IsTracked(isSystem, IsReadOnlyVolume(drive.Name))) {
                     volumes.Add(new HealthVolume(drive.Name, drive.AvailableFreeSpace, drive.TotalSize, isSystem));
                 }
             }
