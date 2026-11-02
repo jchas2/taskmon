@@ -81,6 +81,26 @@ public sealed class HealthControlTests
     }
 
     [Fact]
+    public void A_Volume_Under_Pressure_Keeps_Showing_Its_Trend()
+    {
+        HealthControl ctrl = CreateControl();
+
+        ctrl.Sample(Snapshot(new HealthInfo {
+            Level     = HealthLevel.Warning,
+            Resources = [new HealthReading {
+                Resource                 = HealthResource.Volumes,
+                Level                    = HealthLevel.Warning,
+                Reason                   = "E:\\ 95% full",
+                Utilisation              = "E:\\ 95% full",
+                Saturation               = "Not changing",
+                IsExplainedByUtilisation = true
+            }]
+        }));
+
+        Assert.Contains("Not changing", VisibleText());
+    }
+
+    [Fact]
     public void A_Wide_Terminal_Shows_The_Errors_Column()
     {
         HealthControl ctrl = CreateControl(width: 104);

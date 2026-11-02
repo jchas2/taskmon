@@ -120,6 +120,22 @@ public sealed class HealthEvaluatorTests
         Assert.Equal(["notepad"], Assert.Single(info.Events).Culprits);
     }
 
+    // Regression test: any process with high disk I/O was named behind a nearly full USB drive,
+    // when nothing says that I/O was going to that drive, and the name was saved with the event.
+    [Fact]
+    public void A_Nearly_Full_Volume_Blames_Nobody_However_Busy_The_Disks_Are()
+    {
+        HealthSample sample = Busy(0.10, Processes(new ProcessEntry {
+            Pid = 7, ProcessName = "writer", DiskBytesPerSecond = 500.0 * 1024 * 1024
+        })) with { Volumes = [new HealthVolume("E:\\", 8, 100, false)] };
+
+        HealthInfo info = evaluator.Evaluate(sample, thresholds, Start);
+
+        Assert.Equal(HealthLevel.Warning, Level(info, HealthResource.Volumes));
+        Assert.Empty(info.Culprits);
+        Assert.Empty(Assert.Single(info.Events).Culprits);
+    }
+
     [Fact]
     public void A_New_Peak_Replaces_The_Events_Peak_And_Culprits()
     {

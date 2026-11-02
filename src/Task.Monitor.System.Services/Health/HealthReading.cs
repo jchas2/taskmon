@@ -10,4 +10,5 @@ public sealed record HealthReading
     public string                  Utilisation { get; init; } = string.Empty;
     public string                  Saturation  { get; init; } = string.Empty;
     public string                  Errors      { get; init; } = string.Empty;
+    public bool                    IsExplainedByUtilisation { get; init; }
 }

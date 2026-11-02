@@ -181,7 +181,7 @@ public sealed partial class HealthControl
             row.SubItems[1].Text            = StatusText(reading.Level);
             row.SubItems[1].ForegroundColor = StatusColour(reading.Level);
             row.SubItems[2].Text            = Cell(reading.Utilisation);
-            row.SubItems[3].Text            = Cell(reading.Level >= HealthLevel.Warning ? reading.Reason : reading.Saturation);
+            row.SubItems[3].Text            = Cell(reading.Level >= HealthLevel.Warning && !reading.IsExplainedByUtilisation ? reading.Reason : reading.Saturation);
             row.SubItems[4].Text            = Cell(reading.Errors);
         }
     }

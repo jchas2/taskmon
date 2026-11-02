@@ -173,10 +173,10 @@ public sealed class HealthCulpritFinderTests
     }
 
     [Fact]
-    public void Volumes_Are_Blamed_On_Disk_Writers()
+    public void Volume_Pressure_Names_Nobody_As_There_Is_No_Per_Volume_Figure()
     {
         finder.Update(Processes(Entry("logger", 1, disk: 80.0 * Megabyte)), Start);
 
-        Assert.Contains("MB/s disk", Assert.Single(finder.Find([HealthResource.Volumes])).Detail);
+        Assert.Empty(finder.Find([HealthResource.Volumes]));
     }
 }

@@ -18,8 +18,9 @@ public sealed partial class HealthService : WorkerService
     private static readonly TimeSpan ReportReadInterval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan VolumeReadInterval = TimeSpan.FromSeconds(30);
 
-    private readonly HealthEvaluator evaluator      = new();
-    private readonly HungAppTracker  hungAppTracker = new();
+    private readonly HealthEvaluator    evaluator      = new();
+    private readonly HungAppTracker     hungAppTracker = new();
+    private readonly VolumeTrendTracker volumeTrends   = new();
 
     private volatile HealthThresholds thresholds = new();
 
@@ -36,8 +37,6 @@ public sealed partial class HealthService : WorkerService
         name is MacRootVolume or MacDataVolume ||
         string.Equals(Path.GetPathRoot(Environment.SystemDirectory), name, StringComparison.OrdinalIgnoreCase);
 
-    // A read-only volume can't be cleaned up, so how full it is says nothing useful. The system
-    // volume stays in regardless, as macOS seals it read-only and it still shares its free space.
     internal static bool IsTracked(bool isSystem, bool isReadOnly) => isSystem || !isReadOnly;
 
     protected override void OnDoWork(CancellationToken cancellationToken)
@@ -45,7 +44,7 @@ public sealed partial class HealthService : WorkerService
         DateTime utcNow = DateTime.UtcNow;
 
         if (utcNow >= nextVolumeReadUtc) {
-            volumes           = ReadVolumes();
+            volumes           = volumeTrends.Update(ReadVolumes(), utcNow);
             nextVolumeReadUtc = utcNow + VolumeReadInterval;
         }
 

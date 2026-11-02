@@ -13,6 +13,7 @@ namespace Task.Monitor.System.Services.Tests.Health;
 public sealed class HealthRulesTests
 {
     private const ulong Gigabyte = 1024UL * 1024UL * 1024UL;
+    private const double Megabyte = 1024.0 * 1024.0;
 
     private readonly HealthThresholds thresholds = new();
 
@@ -450,17 +451,85 @@ public sealed class HealthRulesTests
         Assert.Equal("D:\\ 100% full", reading.Reason);
     }
 
+    [Theory]
+    [InlineData(0.0, "Not changing")]
+    [InlineData(512.0 * 1024, "Not changing")]
+    [InlineData(-512.0 * 1024, "Not changing")]
+    [InlineData(-40.0 * Megabyte, "Freeing 40.0 MB/min")]
+    [InlineData(120.0 * Megabyte, "Filling 120.0 MB/min, about 6 h left")]
+    [InlineData(1440.0 * Megabyte, "Filling 1.4 GB/min, about 30 min left")]
+    [InlineData(10.0 * Megabyte, "Filling 10.0 MB/min, about 3 days left")]
+    public void Volumes_Describe_Their_Trend(double rate, string expected)
+    {
+        HealthSample sample = new() {
+            Volumes = [new HealthVolume("E:\\", 43200L * (long)Megabyte, 100 * (long)Gigabyte, false, rate)]
+        };
+
+        Assert.Equal(expected, new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+    }
+
+    [Fact]
+    public void Volumes_Have_No_Trend_Until_There_Is_Enough_History()
+    {
+        HealthSample sample = new() { Volumes = [new HealthVolume("E:\\", 50, 100, false)] };
+
+        Assert.Equal(string.Empty, new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+    }
+
+    [Fact]
+    public void Volumes_Keep_Their_Trend_Visible_Under_Pressure()
+    {
+        HealthSample sample = new() { Volumes = [new HealthVolume("E:\\", 5, 100, false, 0.0)] };
+
+        HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds);
+
+        Assert.True(reading.IsExplainedByUtilisation);
+        Assert.Equal("Not changing", reading.Saturation);
+    }
+
+    [Fact]
+    public void Volumes_Leave_Out_A_Time_Left_Too_Far_Off_To_Mean_Anything()
+    {
+        HealthSample sample = new() {
+            Volumes = [new HealthVolume("E:\\", 432_000L * (long)Megabyte, 1000 * (long)Gigabyte, false, 2.0 * Megabyte)]
+        };
+
+        Assert.Equal("Filling 2.0 MB/min", new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+    }
+
     [Fact]
     public void Volumes_Report_The_Fullest_One()
     {
         HealthSample sample = new() {
             Volumes = [
-                new HealthVolume("C:\\", 50, 100, true),
-                new HealthVolume("D:\\", 20, 100, false)
+                new HealthVolume("C:\\", 500 * (long)Gigabyte, 1000 * (long)Gigabyte, true),
+                new HealthVolume("D:\\", 200 * (long)Gigabyte, 1000 * (long)Gigabyte, false)
             ]
         };
 
         Assert.Equal("D:\\ 80% full", new VolumesHealthRule().Evaluate(sample, thresholds).Utilisation);
+    }
+
+    // Regression test: the row showed the fullest volume beside a reason naming another, which would
+    // now also pair one volume's percentage with the other's trend.
+    [Fact]
+    public void Volumes_Show_The_One_Behind_The_Status_Not_Just_The_Fullest()
+    {
+        long total = 40 * (long)Gigabyte;
+
+        HealthSample sample = new() {
+            Volumes = [
+                new HealthVolume("C:\\", 1 * (long)Gigabyte, total, true, 0.0),
+                new HealthVolume("D:\\", 5, 100, false, 500.0 * Megabyte)
+            ]
+        };
+
+        HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds with { VolumeFreeCriticalPercent = 1 });
+
+        Assert.Equal(HealthLevel.Critical, reading.Level);
+        Assert.Equal("C:\\ 98% full", reading.Reason);
+        Assert.Equal("C:\\ 98% full", reading.Utilisation);
+        Assert.Equal("Not changing", reading.Saturation);
     }
 
     [Fact]

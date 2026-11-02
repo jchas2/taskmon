@@ -53,7 +53,7 @@ internal sealed class HealthCulpritFinder
             }
         }
 
-        if (resources.Contains(HealthResource.Disk) || resources.Contains(HealthResource.Volumes)) {
+        if (resources.Contains(HealthResource.Disk)) {
             parts.Add($"{trend.Disk / BytesPerMegabyte:0} MB/s disk");
         }
 
@@ -110,7 +110,6 @@ internal sealed class HealthCulpritFinder
         HealthResource.Cpu     => trend.Cpu >= MinCpuRatio,
         HealthResource.Memory  => trend.Memory > 0,
         HealthResource.Disk    => trend.Disk >= MinDiskBytes,
-        HealthResource.Volumes => trend.Disk >= MinDiskBytes,
         HealthResource.Gpu     => trend.Gpu >= MinGpuRatio,
         HealthResource.Thermal => trend.Cpu >= MinCpuRatio || trend.Gpu >= MinGpuRatio,
                              _ => false
@@ -211,7 +210,6 @@ internal sealed class HealthCulpritFinder
         HealthResource.Cpu     => trend.Cpu,
         HealthResource.Memory  => trend.Memory,
         HealthResource.Disk    => trend.Disk,
-        HealthResource.Volumes => trend.Disk,
         HealthResource.Gpu     => trend.Gpu,
         HealthResource.Thermal => trend.Cpu + trend.Gpu,
                              _ => 0.0
