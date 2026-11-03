@@ -4,6 +4,8 @@ namespace Task.Monitor.System.Services.Health.Rules;
 
 internal sealed class ThermalHealthRule : IHealthRule
 {
+    private const double NoLimitPercent = 100.0;
+
     public HealthReading Evaluate(HealthSample sample, HealthThresholds thresholds)
     {
         ThermalMetrics? metrics = sample.Thermal?.Metrics;
@@ -71,7 +73,13 @@ internal sealed class ThermalHealthRule : IHealthRule
             return $"Pressure {level}";
         }
 
-        return limit is { } percent ? $"CPU limit {percent:0}%" : string.Empty;
+        if (limit is not { } percent) {
+            return string.Empty;
+        }
+
+        return Math.Round(percent) >= NoLimitPercent
+            ? "CPU not limited"
+            : $"CPU limited to {percent:0}%";
     }
 
     private static string SensorText(ThermalSensor sensor)

@@ -29,17 +29,20 @@ public partial class NetworkService
         public ulong  PreviousPacketsSent;
         public ulong  PreviousPacketsReceived;
         public ulong  PreviousErrors;
+        public ulong  PreviousDiscards;
 
         public ulong  TotalBytesSent;
         public ulong  TotalBytesReceived;
         public ulong  TotalPacketsSent;
         public ulong  TotalPacketsReceived;
         public ulong  TotalErrors;
+        public ulong  TotalDiscards;
         public double SendBytesPerSecond;
         public double ReceiveBytesPerSecond;
         public double SendPacketsPerSecond;
         public double ReceivePacketsPerSecond;
         public double ErrorsPerSecond;
+        public double DiscardsPerSecond;
     }
 
     private readonly struct InterfaceSample(
@@ -48,7 +51,8 @@ public partial class NetworkService
         ulong bytesReceived,
         ulong packetsSent,
         ulong packetsReceived,
-        ulong errors)
+        ulong errors,
+        ulong discards)
     {
         public uint  InterfaceIndex  { get; } = interfaceIndex;
         public ulong BytesSent       { get; } = bytesSent;
@@ -56,6 +60,7 @@ public partial class NetworkService
         public ulong PacketsSent     { get; } = packetsSent;
         public ulong PacketsReceived { get; } = packetsReceived;
         public ulong Errors          { get; } = errors;
+        public ulong Discards        { get; } = discards;
     }
 
     private void OnDoWorkNetworkSample()
@@ -111,6 +116,7 @@ public partial class NetworkService
         state.PreviousPacketsSent     = sample.PacketsSent;
         state.PreviousPacketsReceived = sample.PacketsReceived;
         state.PreviousErrors          = sample.Errors;
+        state.PreviousDiscards        = sample.Discards;
 
         instanceStates[interfaceIndex] = state;
     }
@@ -164,7 +170,8 @@ public partial class NetworkService
                     ifMsg->ifm_data.ifi_ibytes,
                     ifMsg->ifm_data.ifi_opackets,
                     ifMsg->ifm_data.ifi_ipackets,
-                    ifMsg->ifm_data.ifi_ierrors + ifMsg->ifm_data.ifi_oerrors + ifMsg->ifm_data.ifi_iqdrops);
+                    ifMsg->ifm_data.ifi_ierrors + ifMsg->ifm_data.ifi_oerrors,
+                    ifMsg->ifm_data.ifi_iqdrops);
             }
 
             current += msgLen;
@@ -209,6 +216,12 @@ public partial class NetworkService
             sample.Errors,
             ref state.PreviousErrors,
             ref state.TotalErrors,
+            elapsedSeconds);
+
+        state.DiscardsPerSecond = CounterRate.Accumulate(
+            sample.Discards,
+            ref state.PreviousDiscards,
+            ref state.TotalDiscards,
             elapsedSeconds);
     }
 }

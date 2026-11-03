@@ -13,5 +13,6 @@ public sealed class NetworkMetrics
     public double SendMegabytesPerSecond      { get; set; }
     public double ReceiveMegabytesPerSecond   { get; set; }
     public double ErrorsPerSecond             { get; set; }
+    public double DiscardsPerSecond           { get; set; }
     public List<NetworkDeviceMetrics> Devices { get; set; } = new();
 }

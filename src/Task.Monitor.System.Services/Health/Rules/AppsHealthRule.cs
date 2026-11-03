@@ -32,7 +32,7 @@ internal sealed class AppsHealthRule : IHealthRule
             Reason      = condition.Reason,
             Severity    = condition.Severity,
             IsImmediate = true,
-            Utilisation = $"{sample.HungApps.Count} not responding",
+            Saturation  = $"{sample.HungApps.Count} not responding",
             Errors      = errors
         };
     }

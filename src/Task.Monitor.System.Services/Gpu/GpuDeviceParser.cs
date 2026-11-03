@@ -5,8 +5,9 @@ namespace Task.Monitor.System.Services.Gpu;
 
 public static class GpuDeviceParser
 {
-    public const string NotAvailable = "N/A";
-    
+    public const string DiscreteAdapterType = "Discrete";
+    public const string NotAvailable        = "N/A";
+
     private const uint DxgiAdapterFlagSoftware = 2;
 
     // An adapter reporting less dedicated VRAM than this is taken to be an integrated GPU carving a
@@ -24,7 +25,7 @@ public static class GpuDeviceParser
         }
 
         return dedicatedVideoMemory >= IntegratedVramThreshold 
-            ? "Discrete" 
+            ? DiscreteAdapterType
             : "Integrated";
     }
 

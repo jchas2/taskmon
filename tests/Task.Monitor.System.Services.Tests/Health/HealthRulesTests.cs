@@ -53,7 +53,8 @@ public sealed class HealthRulesTests
             thresholds);
 
         Assert.Equal("long not responding for 12 s", reading.Reason);
-        Assert.Equal("2 not responding", reading.Utilisation);
+        Assert.Equal("2 not responding", reading.Saturation);
+        Assert.Empty(reading.Utilisation);
     }
 
     [Theory]
@@ -194,6 +195,53 @@ public sealed class HealthRulesTests
         Assert.Equal(expected, reading.Level);
     }
 
+    private static HealthSample Gpu(GpuDevice[] specs, params GpuDeviceMetrics[] cards)
+    {
+        GpuInfo info = new();
+
+        info.Specs.Devices.AddRange(specs);
+        info.Metrics.Devices.AddRange(cards);
+
+        return new HealthSample { Gpu = info };
+    }
+
+    private static GpuDeviceMetrics GpuCard(long luid, ulong vramTotal, ulong vramFree, ulong sharedTotal, ulong sharedFree) =>
+        new() {
+            AdapterLuid                = luid,
+            TotalGpuMemory             = (long)vramTotal,
+            AvailableGpuMemory         = (long)vramFree,
+            TotalCombinedGpuMemory     = (long)(vramTotal + sharedTotal),
+            AvailableCombinedGpuMemory = (long)(vramFree + sharedFree)
+        };
+
+    [Fact]
+    public void Gpu_An_Integrated_Gpu_Is_Judged_On_All_Its_Memory()
+    {
+        HealthSample sample = Gpu(
+            [new GpuDevice { AdapterLuid = 1, AdapterType = "Integrated" }],
+            GpuCard(1, Gigabyte / 8, 0, 8 * Gigabyte, 6 * Gigabyte));
+
+        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Ok, reading.Level);
+        Assert.Equal("Memory 26% used", reading.Saturation);
+    }
+
+    // Regression test: with shared memory counted in, a full 12 GB card read 42% and never warned.
+    [Fact]
+    public void Gpu_A_Discrete_Card_Is_Judged_On_Its_Own_Memory()
+    {
+        HealthSample sample = Gpu(
+            [new GpuDevice { AdapterLuid = 1, AdapterType = GpuDeviceParser.DiscreteAdapterType }],
+            GpuCard(1, 12 * Gigabyte, Gigabyte / 2, 16 * Gigabyte, 16 * Gigabyte));
+
+        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal("VRAM 4% free", reading.Reason);
+        Assert.Equal("VRAM 96% used", reading.Saturation);
+    }
+
     [Fact]
     public void Gpu_Held_Back_By_A_Limit_Is_A_Warning()
     {
@@ -209,11 +257,24 @@ public sealed class HealthRulesTests
     }
 
     [Fact]
+    public void Gpu_Reports_The_Fullest_Card()
+    {
+        HealthSample sample = Gpu(
+            [new GpuDevice { AdapterLuid = 1, AdapterType = "Integrated" },
+             new GpuDevice { AdapterLuid = 2, AdapterType = GpuDeviceParser.DiscreteAdapterType }],
+            GpuCard(1, Gigabyte / 8, Gigabyte / 8, 8 * Gigabyte, 8 * Gigabyte),
+            GpuCard(2, 12 * Gigabyte, Gigabyte / 2, 16 * Gigabyte, 16 * Gigabyte));
+
+        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal("VRAM 96% used", reading.Saturation);
+    }
+
+    [Fact]
     public void Gpu_With_Low_Memory_Is_A_Warning()
     {
-        HealthSample sample = new() {
-            Gpu = new GpuInfo { Metrics = new GpuMetrics { TotalCombinedGpuMemory = 100, AvailableCombinedGpuMemory = 5 } }
-        };
+        HealthSample sample = Gpu([], GpuCard(0, 0, 0, 100, 5));
 
         Assert.Equal(HealthLevel.Warning, new GpuHealthRule().Evaluate(sample, thresholds).Level);
     }
@@ -339,6 +400,19 @@ public sealed class HealthRulesTests
     }
 
     [Fact]
+    public void Network_Discards_Are_Saturation_And_Raise_A_Warning()
+    {
+        HealthSample sample = new() { Network = new NetworkInfo { Metrics = new NetworkMetrics { DiscardsPerSecond = 2.5 } } };
+
+        HealthReading reading = new NetworkHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal("2.5 discards/s", reading.Reason);
+        Assert.Equal("Discards 2.5/s", reading.Saturation);
+        Assert.Equal("0 errors/s", reading.Errors);
+    }
+
+    [Fact]
     public void Network_Errors_Raise_A_Warning()
     {
         NetworkHealthRule rule = new();
@@ -426,6 +500,18 @@ public sealed class HealthRulesTests
         metrics.Sensors.Add(new ThermalSensor { Component = ThermalComponent.Cpu, Celsius = celsius, CriticalCelsius = 100.0 });
 
         Assert.Equal(expected, new ThermalHealthRule().Evaluate(Thermal(metrics), thresholds).Level);
+    }
+
+    // Regression test: "CPU limit 100%" read as fully limited, when 100 means nothing is held back.
+    [Theory]
+    [InlineData(100.0, "CPU not limited")]
+    [InlineData(99.7, "CPU not limited")]
+    [InlineData(94.0, "CPU limited to 94%")]
+    public void Thermal_Says_Whether_The_Cpu_Is_Limited(double limit, string expected)
+    {
+        HealthReading reading = new ThermalHealthRule().Evaluate(Cpu(new CpuMetrics { PerformanceLimitPercent = limit }), thresholds);
+
+        Assert.Equal(expected, reading.Saturation);
     }
 
     [Theory]

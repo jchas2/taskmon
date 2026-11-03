@@ -200,7 +200,7 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `volume-free-warning-percent` | 10 | Free space on a volume. Read-only volumes are ignored, as they can't be cleaned up. |
 | `volume-free-critical-percent` | 5 | Free space on a volume. |
 | `system-volume-free-critical-gb` | 2 | Free space on the system volume, whatever its size. |
-| `gpu-memory-free-warning-percent` | 10 | GPU memory free. |
+| `gpu-memory-free-warning-percent` | 10 | Memory free on the fullest GPU: a discrete card's own VRAM, or an integrated GPU's dedicated and shared memory together. |
 | `sensor-warning-margin-celsius` | 10 | Distance from a sensor's critical limit, for sensors that report one. |
 | `sensor-critical-margin-celsius` | 3 | Distance from a sensor's critical limit. |
 | `thermal-pressure-warning` | Moderate | Thermal pressure level (macOS): Nominal, Moderate, Heavy, Trapping or Sleeping. |

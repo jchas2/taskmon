@@ -19,4 +19,6 @@ public sealed class GpuDevice
 
     public string DriverVersion         { get; set; } = GpuDeviceParser.NotAvailable;
     public string DriverDate            { get; set; } = GpuDeviceParser.NotAvailable;
+
+    public bool IsDiscrete => AdapterType == GpuDeviceParser.DiscreteAdapterType;
 }

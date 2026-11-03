@@ -159,6 +159,7 @@ public partial class NetworkService
             deviceMetrics.SendMegabytesPerSecond    = state.SendBytesPerSecond / BytesPerMegabyte;
             deviceMetrics.ReceiveMegabytesPerSecond = state.ReceiveBytesPerSecond / BytesPerMegabyte;
             deviceMetrics.ErrorsPerSecond           = state.ErrorsPerSecond;
+            deviceMetrics.DiscardsPerSecond         = state.DiscardsPerSecond;
 
             metrics.Devices.Add(deviceMetrics);
 
@@ -175,6 +176,7 @@ public partial class NetworkService
             metrics.SendPacketsPerSecond    += state.SendPacketsPerSecond;
             metrics.ReceivePacketsPerSecond += state.ReceivePacketsPerSecond;
             metrics.ErrorsPerSecond         += state.ErrorsPerSecond;
+            metrics.DiscardsPerSecond       += state.DiscardsPerSecond;
         }
 
         metrics.Devices.Sort((left, right) => CompareAdapters(devices[left.InterfaceIndex], devices[right.InterfaceIndex]));
