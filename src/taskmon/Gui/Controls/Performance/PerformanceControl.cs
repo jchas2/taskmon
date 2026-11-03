@@ -143,7 +143,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "net", "NETWORK", autoScaleChart: true, Chart.FormatYScaleCompact,
+                "net", "NETWORK", autoScaleChart: true, Chart.FormatYScaleByteRate,
                 (panel, s) => {
                     if (s.Network is not { } network) {
                         return;
@@ -164,7 +164,7 @@ public sealed class PerformanceControl : Control
             string title = spec?.ToDisplayName() ?? device.ToDisplayName();
 
             panels.Add(MakePanel(
-                $"net:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleCompact,
+                $"net:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleByteRate,
                 (panel, s) => {
                     NetworkDeviceMetrics? match = s.Network?.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
 

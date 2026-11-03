@@ -94,4 +94,21 @@ public sealed class SummaryPaneControlFactoryTests
         Assert.IsType(expected, control);
         Assert.False(control.TabStop);
     }
+
+    [Theory]
+    [InlineData(PaneControlType.Disk)]
+    [InlineData(PaneControlType.NetworkReceived)]
+    [InlineData(PaneControlType.NetworkSent)]
+    public void Create_Gives_Byte_Rate_Charts_A_Byte_Rate_Axis(PaneControlType type)
+    {
+        RunContext runContext = new RunContextHelper().GetRunContext();
+
+        Chart chart = Assert.IsType<Chart>(SummaryPaneControlFactory.Create(
+            new SummaryLayoutNode { Id = 0, ControlType = type },
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig));
+
+        Assert.Equal("3G", chart.CustomYAxisScaleFormatter!(3.0 * 1024 * 1024 * 1024));
+    }
 }

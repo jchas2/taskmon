@@ -136,7 +136,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         CommonControl.Theme(diskSpecsListView, appConfig.Theme);
         
         OnLoadChart(activeTimeChart, autoScale: false, Chart.FormatYScalePercentage);
-        OnLoadChart(transferRateChart, autoScale: true, PerformanceChartFormatters.FormatYScaleByteRate);
+        OnLoadChart(transferRateChart, autoScale: true, Chart.FormatYScaleByteRate);
 
         ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
         diskMetricsListView.Items.Add(diskMetricsItem);

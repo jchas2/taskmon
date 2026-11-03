@@ -1,4 +1,3 @@
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.System.Controls;
@@ -92,14 +91,11 @@ public static class SummaryChartFeeder
                 }
 
                 case PaneControlType.Disk when snapshot.Disk is { } disk: {
-                    double diskMbps = disk.Metrics.ToDiskTransferBytesPerSecond().ToMbpsFromBytes();
-
-                    // TODO: SystemSnapshotExtensions?
                     chart.LabelSeries = appConfig.ShowMetreDiskNumerically
-                        ? $"{diskMbps} MB/s"
+                        ? disk.Metrics.ToDiskTransferRate()
                         : string.Empty;
 
-                    chart.Add(diskMbps);
+                    chart.Add(disk.Metrics.ToDiskTransferBytesPerSecond());
                     break;
                 }
 

@@ -18,7 +18,7 @@ public sealed class Chart : Control
     private static readonly char   BlockChar    = ' ';
     private static readonly char   GridChar     = '.';
 
-    private const int DefaultScaleWidth = 5;
+    internal const int DefaultScaleWidth = 5;
     
     private double[] data           = [];
     private int      dataHead       = 0;
@@ -135,18 +135,23 @@ public sealed class Chart : Control
         return CustomYAxisScaleFormatter(value);
     }
 
+    public static string FormatYScaleByteRate(double bytesPerSecond)
+    {
+        if (bytesPerSecond < 1.0) {
+            return "0";
+        }
+
+        return FormatYScaleScaled(bytesPerSecond, 1024.0, ["", "K", "M", "G", "T"]);
+    }
+
     public static string FormatYScaleCompact(double value)
     {
         if (Math.Abs(value) < 1e-9) {
             return "0";
         }
 
-        if (value >= 1000000) {
-            return $"{value / 1000000.0:0.#}M";
-        }
-
         if (value >= 1000) {
-            return $"{value / 1000.0:0.#}k";
+            return FormatYScaleScaled(value, 1000.0, ["", "k", "M", "G", "T"]);
         }
 
         if (value >= 100) {
@@ -164,6 +169,20 @@ public sealed class Chart : Control
     {
         int pct = (int)Math.Round(value * 100.0);
         return $"{pct}%";
+    }
+
+    private static string FormatYScaleScaled(double value, double step, string[] units)
+    {
+        int index = 0;
+
+        while (value >= step && index < units.Length - 1) {
+            index++;
+            value /= step;
+        }
+
+        return index == 0 || value >= 100.0
+            ? $"{value:0}{units[index]}"
+            : $"{value:0.#}{units[index]}";
     }
 
     private bool IsYAxisScaleVisible => ShowYAxisScale && (Height - 2) > 6;

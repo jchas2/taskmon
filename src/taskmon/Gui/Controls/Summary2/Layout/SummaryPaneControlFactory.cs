@@ -53,7 +53,7 @@ public static class SummaryPaneControlFactory
             PaneControlType.Disk => new Chart(terminal) {
                 Text                      = "Disk",
                 AutoScale                 = true,
-                CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
+                CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
             PaneControlType.Gpu => new Chart(terminal) {
                 Text                      = "Gpu",
@@ -68,12 +68,12 @@ public static class SummaryPaneControlFactory
             PaneControlType.NetworkReceived => new Chart(terminal) {
                 Text                      = "Net Rec",
                 AutoScale                 = true,
-                CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
+                CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
             PaneControlType.NetworkSent => new Chart(terminal) {
                 Text                      = "Net Sent",
                 AutoScale                 = true,
-                CustomYAxisScaleFormatter = Chart.FormatYScaleCompact
+                CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
 #if __APPLE__
             PaneControlType.Npu => new Chart(terminal) {

@@ -110,6 +110,24 @@ public sealed class ChartTests
         return chart;
     }
 
+    [Theory]
+    [InlineData(0.5, "0")]
+    [InlineData(512.0, "512")]
+    [InlineData(150.0 * 1024, "150K")]
+    [InlineData(2.0 * 1024 * 1024, "2M")]
+    [InlineData(1.5 * 1024 * 1024 * 1024, "1.5G")]
+    public void FormatYScaleByteRate_Counts_In_1024s(double bytesPerSecond, string expected) =>
+        Assert.Equal(expected, ChartControl.FormatYScaleByteRate(bytesPerSecond));
+
+    [Theory]
+    [InlineData(0.0, "0")]
+    [InlineData(2.5, "2.5")]
+    [InlineData(2800.0, "2.8k")]
+    [InlineData(150_400.0, "150k")]
+    [InlineData(3_500_000_000.0, "3.5G")]
+    public void FormatYScaleCompact_Counts_In_1000s(double value, string expected) =>
+        Assert.Equal(expected, ChartControl.FormatYScaleCompact(value));
+
     [Fact]
     public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
     {
@@ -279,5 +297,18 @@ public sealed class ChartTests
         string output = terminal.Output;
         Assert.Contains("10v", output);
         Assert.Contains("0v", output);
+    }
+
+    // Regression test: a label longer than the scale is cut short, so "150.5k" showed as "150.5".
+    [Fact]
+    public void Y_Axis_Formatters_Fit_The_Scale_Width()
+    {
+        for (double value = 1.0; value <= 1e12; value *= 1.01) {
+            string byteRate = ChartControl.FormatYScaleByteRate(value);
+            string compact  = ChartControl.FormatYScaleCompact(value);
+
+            Assert.True(byteRate.Length <= ChartControl.DefaultScaleWidth, $"{value} formatted as {byteRate}");
+            Assert.True(compact.Length <= ChartControl.DefaultScaleWidth, $"{value} formatted as {compact}");
+        }
     }
 }

@@ -165,7 +165,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         CommonControl.Theme(chart, appConfig.Theme);
         
         chart.AutoScale                 = true;
-        chart.CustomYAxisScaleFormatter = PerformanceChartFormatters.FormatYScaleByteRate;
+        chart.CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate;
         chart.LabelSeries               = string.Empty;
         chart.ShowYAxisScale            = appConfig.ShowYAxisScale;
         chart.MetreStyle                = appConfig.MetreStyle;
