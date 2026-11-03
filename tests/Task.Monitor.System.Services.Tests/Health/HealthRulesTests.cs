@@ -296,9 +296,9 @@ public sealed class HealthRulesTests
     public void Memory_Hard_Faults_Do_Not_Count_With_Plenty_Available()
     {
         HealthSample sample = Memory(new MemoryMetrics {
-            TotalPhysical       = 100 * Gigabyte,
-            AvailablePhysical   = 85 * Gigabyte,
-            HardFaultsPerSecond = 36000.0
+            TotalPhysical     = 100 * Gigabyte,
+            AvailablePhysical = 85 * Gigabyte,
+            PagesInPerSecond  = 36000.0
         });
 
         Assert.Equal(HealthLevel.Ok, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
@@ -310,9 +310,9 @@ public sealed class HealthRulesTests
         HealthThresholds relaxed = new() { HardFaultsAvailablePercent = 90 };
 
         HealthSample sample = Memory(new MemoryMetrics {
-            TotalPhysical       = 100 * Gigabyte,
-            AvailablePhysical   = 85 * Gigabyte,
-            HardFaultsPerSecond = 800.0
+            TotalPhysical     = 100 * Gigabyte,
+            AvailablePhysical = 85 * Gigabyte,
+            PagesInPerSecond  = 800.0
         });
 
         Assert.Equal(HealthLevel.Warning, new MemoryHealthRule().Evaluate(sample, relaxed).Level);
@@ -322,9 +322,9 @@ public sealed class HealthRulesTests
     public void Memory_Hard_Faults_Raise_A_Warning_When_Memory_Is_Short()
     {
         HealthSample sample = Memory(new MemoryMetrics {
-            TotalPhysical       = 100 * Gigabyte,
-            AvailablePhysical   = 20 * Gigabyte,
-            HardFaultsPerSecond = 800.0
+            TotalPhysical     = 100 * Gigabyte,
+            AvailablePhysical = 20 * Gigabyte,
+            PagesInPerSecond  = 800.0
         });
 
         Assert.Equal(HealthLevel.Warning, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
@@ -360,6 +360,26 @@ public sealed class HealthRulesTests
         Assert.Equal(expected, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
     }
 
+    // Regression test: pages read from disk were shown as "hard faults/s", overstating the faults
+    // as each one usually reads several pages.
+    [Fact]
+    public void Memory_Names_Pages_Read_In_As_Pages()
+    {
+        HealthSample sample = Memory(new MemoryMetrics {
+            TotalPhysical     = 100 * Gigabyte,
+            AvailablePhysical = 20 * Gigabyte,
+            CommitLimit       = 100.0,
+            CommitTotal       = 31.0,
+            PagesInPerSecond  = 600.0
+        });
+
+        HealthReading reading = new MemoryHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal("600 pages in/s", reading.Reason);
+        Assert.Equal("Commit 31%, 600 pages in/s", reading.Saturation);
+    }
+
     [Fact]
     public void Memory_Prefers_The_Kernel_Pressure_Level_To_Available_Memory()
     {
@@ -380,6 +400,18 @@ public sealed class HealthRulesTests
         HealthSample sample = Memory(new MemoryMetrics { TotalPhysical = Gigabyte, Pressure = pressure });
 
         Assert.Equal(expected, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
+    }
+
+    [Fact]
+    public void Memory_Shows_Pages_Read_In_Without_A_Commit_Figure()
+    {
+        HealthSample sample = Memory(new MemoryMetrics {
+            TotalPhysical     = 100 * Gigabyte,
+            AvailablePhysical = 50 * Gigabyte,
+            PagesInPerSecond  = 0.0
+        });
+
+        Assert.Equal("0 pages in/s", new MemoryHealthRule().Evaluate(sample, thresholds).Saturation);
     }
 
     [Fact]

@@ -191,7 +191,7 @@ A resource moves to Warning or Critical after staying over its threshold for the
 | `memory-available-critical-percent` | 5 | Memory available (Windows). |
 | `commit-warning-percent` | 90 | Commit charge against the commit limit (Windows). |
 | `commit-critical-percent` | 97 | Commit charge against the commit limit (Windows). |
-| `hard-faults-warning-per-second` | 500 | Pages read from disk per second (Windows). |
+| `hard-faults-warning-per-second` | 500 | Pages read from disk per second to resolve hard faults (Windows), shown as pages in/s. |
 | `hard-faults-available-percent` | 25 | Hard faults only count with this much memory available or less, as Windows also reads pages back in when memory is plentiful. |
 | `swap-out-warning-mb-per-second` | 0 | Swap-out rate that counts as a warning (macOS). |
 | `disk-latency-warning-ms` | 20 | Time for a disk transfer, on the slowest disk. |

@@ -60,16 +60,19 @@ internal sealed class MemoryHealthRule : IHealthRule
 
         // Windows reads pages back in after memory comes free, and programs starting up read their
         // files the same way, so hard faults only point at a shortage when memory is short.
-        if (metrics.HardFaultsPerSecond is { } hardFaults && availablePercent <= thresholds.HardFaultsAvailablePercent) {
+        if (metrics.PagesInPerSecond is { } pagesIn && availablePercent <= thresholds.HardFaultsAvailablePercent) {
             conditions.Add(HealthCondition.Rising(
-                hardFaults,
+                pagesIn,
                 thresholds.HardFaultsWarningPerSecond,
                 double.PositiveInfinity,
-                $"{hardFaults:0} hard faults/s"));
+                PagesInText(pagesIn)));
         }
 
         return HealthCondition.Worst(conditions);
     }
+
+    // Pages read from disk, not hard faults: one hard fault usually reads several pages at once.
+    private static string PagesInText(double pagesIn) => $"{pagesIn:0} pages in/s";
 
     // macOS memory is judged by the kernel's own pressure level. Available memory is low by
     // design, as the system fills spare memory with cache.
@@ -101,12 +104,12 @@ internal sealed class MemoryHealthRule : IHealthRule
             return $"Pressure {pressure}";
         }
 
-        if (metrics.HardFaultsPerSecond is not { } hardFaults) {
+        if (metrics.PagesInPerSecond is not { } pagesIn) {
             return commitPercent is { } commit ? $"Commit {commit:0}%" : string.Empty;
         }
 
         return commitPercent is { } percent
-            ? $"Commit {percent:0}%, {hardFaults:0} faults/s"
-            : $"Hard faults {hardFaults:0}/s";
+            ? $"Commit {percent:0}%, {PagesInText(pagesIn)}"
+            : PagesInText(pagesIn);
     }
 }

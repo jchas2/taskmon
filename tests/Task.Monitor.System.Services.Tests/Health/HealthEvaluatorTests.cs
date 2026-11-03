@@ -204,7 +204,7 @@ public sealed class HealthEvaluatorTests
         Assert.Empty(info.Events);
     }
 
-    // Regression test: one sample of 6,206 hard faults/s restarted the clear timer.
+    // Regression test: one sample of 6,206 pages in/s restarted the clear timer.
     [Fact]
     public void A_Single_Spike_Does_Not_Restart_The_Clear_Timer()
     {

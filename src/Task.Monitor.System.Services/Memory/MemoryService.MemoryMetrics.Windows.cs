@@ -174,7 +174,7 @@ public partial class MemoryService
         }
 
         if (pagingQuery.TryReadFormattedDouble(pagingQuery.Counters[0], out double pagesInput)) {
-            memoryInfo.Metrics.HardFaultsPerSecond  = pagesInput;
+            memoryInfo.Metrics.PagesInPerSecond     = pagesInput;
             memoryInfo.Metrics.SwapInBytesPerSecond = pagesInput * Environment.SystemPageSize;
         }
 
