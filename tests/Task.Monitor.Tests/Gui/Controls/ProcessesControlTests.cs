@@ -57,6 +57,24 @@ public sealed class ProcessesControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // Regression test: the selection was kept by row, so the next re-sort put another process in
+    // the row a jump from HEALTH had selected.
+    [Fact]
+    public void A_Process_Requested_From_Health_Stays_Selected_After_A_Re_Sort()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.9), (2222, 0.5), (3333, 0.1)));
+        ctrl.ProcessControl.SelectProcess(3333);
+        Assert.Equal(3333, ctrl.ProcessControl.SelectedProcessId);
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((3333, 0.9), (1111, 0.5), (2222, 0.1)));
+
+        Assert.Equal(3333, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
     private static SystemSnapshot BuildSnapshot(params int[] pids) =>
         BuildSnapshot(pids.Select((pid, i) => (pid, cpu: 1.0 - i * 0.1)).ToArray());
 
@@ -217,11 +235,15 @@ public sealed class ProcessesControlTests : IDisposable
         ctrl.ProcessControl.FilterText = "proc2222";
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
 
+        runContextHelper.terminal.Invocations.Clear();
         bool handled = Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
 
         Assert.True(handled);
         Assert.Empty(ctrl.ProcessControl.FilterText);
-        Assert.Equal(1111, ctrl.ProcessControl.SelectedProcessId);
+        Assert.Contains("Process 1111", CapturedOutput());
+
+        // The process the filter found stays selected.
+        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
 
         ctrl.Unload();
     }
@@ -334,9 +356,11 @@ public sealed class ProcessesControlTests : IDisposable
 
         Press(ctrl, FilterKey);
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
-        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.1), (2222, 0.9)));
 
-        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
+        runContextHelper.terminal.Invocations.Clear();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222, 3333));
+
+        Assert.Contains("Process 3333", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -568,7 +592,8 @@ public sealed class ProcessesControlTests : IDisposable
         bool handled = false;
         ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
 
-        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((2222, 0.9), (1111, 0.1)));
+        // 1111 exits, so the grid's selection falls back to its row, now 2222.
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((2222, 0.9), (3333, 0.1)));
         Assert.Equal(1111, ctrl.ProcessInfoControl.SelectedProcessId);
 
         // Walk back out: first LeftArrow only steps ProcessInfoControl's own menu <-> tab focus,
@@ -585,7 +610,7 @@ public sealed class ProcessesControlTests : IDisposable
     }
 
     // Usability fix: while the user is scrolling one of ProcessInfoControl's own lists, a
-    // background snapshot re-publish that reorders the pid grid (nothing the user did) must not
+    // background snapshot that moves the pid grid's selection (nothing the user did) must not
     // yank them onto a different pid mid-scroll.
     [Fact]
     public void Selection_Change_Is_Ignored_While_ProcessInfoControl_Has_Focus()
@@ -599,12 +624,65 @@ public sealed class ProcessesControlTests : IDisposable
         ctrl.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow), ref handled);
         Assert.True(ctrl.ProcessInfoControl.HasFocus);
 
-        // 2222 now outranks 1111 on cpu - a resort that would move the pid grid's SelectedIndex=0
-        // onto a different process, with no key press involved.
-        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((2222, 0.9), (1111, 0.1)));
+        // 1111 exits, so the grid's selection falls back to its row, now 2222, with no key press
+        // involved.
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((2222, 0.9), (3333, 0.1)));
 
         Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
         Assert.Equal(1111, ctrl.ProcessInfoControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Selection_Falls_Back_To_Its_Row_When_The_Process_Exits()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.9), (2222, 0.5), (3333, 0.1)));
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow));
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.9), (3333, 0.5), (4444, 0.1)));
+
+        Assert.Equal(3333, ctrl.ProcessControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Selection_Follows_Its_Process_When_The_List_Re_Sorts()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((1111, 0.9), (2222, 0.5), (3333, 0.1)));
+        Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow));
+        Assert.Equal(2222, ctrl.ProcessInfoControl.SelectedProcessId);
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot((3333, 0.9), (1111, 0.5), (2222, 0.1)));
+
+        // The details pane stays on the same process too, rather than reloading another.
+        Assert.Equal(2222, ctrl.ProcessControl.SelectedProcessId);
+        Assert.Equal(2222, ctrl.ProcessInfoControl.SelectedProcessId);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Selection_Scrolls_Into_View_When_Its_Process_Moves_Off_Screen()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        (int pid, double cpu)[] entries = Enumerable.Range(0, 60).Select(i => (1000 + i, 1.0 - i * 0.01)).ToArray();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(entries));
+        Assert.Equal(1000, ctrl.ProcessControl.SelectedProcessId);
+
+        // 1000 drops from the top of the list to the bottom, well below the visible rows.
+        entries[0] = (1000, 0.0);
+        runContextHelper.terminal.Invocations.Clear();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(entries));
+
+        Assert.Equal(1000, ctrl.ProcessControl.SelectedProcessId);
+        Assert.Contains("Process 1000", CapturedOutput());
 
         ctrl.Unload();
     }

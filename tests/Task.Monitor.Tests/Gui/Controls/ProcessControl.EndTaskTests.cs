@@ -194,6 +194,25 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         ctrl.Unload();
     }
 
+    // Regression test: the selection was kept by row, so a re-sort just before the key press could
+    // end a process the user never chose.
+    [Fact]
+    public void K_Ends_The_Selected_Process_After_The_List_Re_Sorts()
+    {
+        runContext.AppConfig.ConfirmTaskDelete = false;
+        ProcessControl ctrl = CreateControl();
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
+        List<int> ended = [];
+        ctrl.EndTask = ended.Add;
+
+        RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(2222, 1111));
+        Press(ctrl, EndTaskKey);
+
+        Assert.Equal([1111], ended);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void K_Never_Ends_Task_Monitor_Itself()
     {

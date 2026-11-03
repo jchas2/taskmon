@@ -123,23 +123,6 @@ public sealed partial class ProcessControl : Control
             .Add(endTaskDialog);
     }
 
-    private void ApplyPendingSelection()
-    {
-        if (pendingSelectionPid is not { } pid) {
-            return;
-        }
-
-        pendingSelectionPid = null;
-
-        for (int i = 0; i < processView.Items.Count; i++) {
-            if (((ProcessListViewItem)processView.Items[i]).Pid == pid) {
-                processView.SelectedIndex = i;
-                processView.ScrollSelectedIntoView();
-                return;
-            }
-        }
-    }
-
     private string BuildHeaderHighlightText()
     {
         List<string> parts = [];
@@ -208,6 +191,17 @@ public sealed partial class ProcessControl : Control
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     public string HeaderText { get; set; } = string.Empty;
+
+    private int IndexOfPid(int? pid)
+    {
+        for (int i = 0; pid != null && i < processView.Items.Count; i++) {
+            if (((ProcessListViewItem)processView.Items[i]).Pid == pid) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 
     // Process and Pid are always shown.
     private bool IsColumnVisible(Columns column) =>
@@ -486,6 +480,29 @@ public sealed partial class ProcessControl : Control
         }
     }
 
+    // The selection stays on its process as the list re-sorts, not on its row, so a re-sort never
+    // moves it onto another process. A process that has gone, or that the filter hides, leaves the
+    // selection on the same row.
+    private void SelectFollowedProcess(int? selectedPid, int selectedIndex)
+    {
+        int index = IndexOfPid(pendingSelectionPid);
+
+        pendingSelectionPid = null;
+
+        if (index < 0) {
+            index = IndexOfPid(selectedPid);
+        }
+
+        if (index < 0) {
+            index = selectedIndex >= 0 && selectedIndex < processView.Items.Count
+                ? selectedIndex
+                : 0;
+        }
+
+        processView.SelectedIndex = index;
+        processView.ScrollSelectedIntoView();
+    }
+
     // Applied when the list is next built, as it may have no rows yet. A process that has gone, or
     // that the filter hides, leaves the selection where it was.
     public void SelectProcess(int pid)
@@ -662,7 +679,8 @@ public sealed partial class ProcessControl : Control
                 return;
             }
 
-            int selectedIndex = processView.SelectedIndex;
+            int  selectedIndex = processView.SelectedIndex;
+            int? selectedPid   = (processView.SelectedItem as ProcessListViewItem)?.Pid;
 
             HashSet<int> sortedPids = new(sortedProcesses.Count);
 
@@ -694,11 +712,7 @@ public sealed partial class ProcessControl : Control
             }
 
             if (processView.Items.Count > 0) {
-                processView.SelectedIndex = selectedIndex >= 0 && selectedIndex < processView.Items.Count
-                    ? selectedIndex
-                    : 0;
-
-                ApplyPendingSelection();
+                SelectFollowedProcess(selectedPid, selectedIndex);
             }
         }
     }
