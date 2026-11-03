@@ -93,7 +93,8 @@ public sealed class HelpScreenTests
         {
             "Chart Colours",
             "Process and Path Colours",
-            "Function Keys"
+            "Function Keys",
+            "Switch to the next colour theme"
         };
 
     [Fact]

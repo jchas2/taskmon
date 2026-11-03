@@ -19,7 +19,7 @@ public sealed class FooterControlTests : IDisposable
 
     private FooterControl? control;
 
-    private const string KeyHintsText = "F1 Help   F2 Setup   F10 Exit";
+    private const string KeyHintsText = "F1 Help   F2 Setup   F3 Theme   F10 Exit";
     private const string OrangeGlyph  = "38;2;255;165;0m  ●";
 
     public FooterControlTests(ITestOutputHelper outputHelper)

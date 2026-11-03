@@ -173,6 +173,102 @@ public sealed class MainScreen2Tests : IDisposable
     }
 
     [Fact]
+    public void F3_Does_Nothing_While_A_Dialog_Is_Open()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        Theme            theme            = runContext.AppConfig.Theme;
+        bool             handled          = false;
+
+        mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        mainScreen.KeyPressed(new ConsoleKeyInfo('f', ConsoleKey.F, false, false, false), ref handled);
+        Assert.True(processesControl.ProcessControl.IsFilterDialogVisible);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+
+        Assert.Same(theme, runContext.AppConfig.Theme);
+        Assert.True(processesControl.ProcessControl.IsFilterDialogVisible);
+    }
+
+    // PROCESSES moves focus to its details pane when it loads, which F3's reload must not keep.
+    [Fact]
+    public void F3_Keeps_Focus_On_The_Menu()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        bool             handled          = false;
+
+        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        Assert.True(menuControl.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+
+        Assert.True(menuControl.Focused);
+        Assert.False(processesControl.HasFocus);
+    }
+
+    [Fact]
+    public void F3_Keeps_The_Current_View_Its_Menu_Item_And_Focus()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        bool             handled          = false;
+
+        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(processesControl.ProcessControl.HasFocus);
+
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+
+        Assert.True(handled);
+        Assert.Same(processesControl, mainScreen.GetActiveControl);
+        Assert.Same(processesControl, menuControl.SelectedItem?.AssociatedControl);
+        Assert.True(processesControl.ProcessControl.HasFocus);
+        Assert.False(menuControl.Focused);
+    }
+
+    [Fact]
+    public void F3_Recolours_The_Controls_On_Screen()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        List<Theme>      themes           = ThemesInSetupOrder();
+        bool             handled          = false;
+
+        // Two neighbouring themes with different backgrounds, so the change can be seen.
+        int first = Enumerable.Range(0, themes.Count - 1)
+            .First(i => themes[i].Background.ToArgb() != themes[i + 1].Background.ToArgb());
+
+        runContext.AppConfig.Theme = themes[first];
+        mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+
+        // The process list takes its colours from its parent's load, not from the screen directly.
+        Assert.Equal(themes[first + 1].Background.ToArgb(), processesControl.ProcessControl.BackgroundColour.ToArgb());
+    }
+
+    [Fact]
+    public void F3_Switches_To_The_Next_Theme_In_Setup_Order_And_Wraps()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        List<Theme> themes  = ThemesInSetupOrder();
+        bool        handled = false;
+
+        runContext.AppConfig.Theme = themes[0];
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+        Assert.Same(themes[1], runContext.AppConfig.Theme);
+
+        runContext.AppConfig.Theme = themes[^1];
+        mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
+        Assert.Same(themes[0], runContext.AppConfig.Theme);
+    }
+
+    [Fact]
     public void Health_Is_Listed_Directly_Under_Summary()
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
@@ -365,6 +461,8 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.False(processControl.IsEndTaskDialogVisible);
         Assert.Empty(ended);
     }
+
+    private List<Theme> ThemesInSetupOrder() => runContext.AppConfig.Themes.OrderBy(t => t.Name).ToList();
 
     [Fact]
     public void The_Footer_Takes_A_Second_Row_For_Tips_From_The_Active_View()

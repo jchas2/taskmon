@@ -132,6 +132,7 @@ public class HelpScreen : Screen
             @$"Function Keys:
 {"F1:".ToColour(theme.RangeLowBackground, bg)}{"  Show this help screen.".ToColour(fg, bg)}
 {"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
+{"F3:".ToColour(theme.RangeLowBackground, bg)}{"  Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it.".ToColour(fg, bg)}
 {"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Refresh the Startup, Apps, Services or Drivers list (same as r).".ToColour(fg, bg)}
 {"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}
 

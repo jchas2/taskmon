@@ -218,6 +218,8 @@ Theme files use the ini file format (see example below). Any modifications to de
 taskmon updates. To create new, custom themes, simply copy an existing theme and modify the settings as required.
 These files will automatically be available next time Task Monitor starts.
 
+On the main screen, `F3` switches to the next theme, in the order Setup lists them. The change lasts until Task Monitor exits; to keep it, open Setup (`F2`), where it is already selected, and save.
+
 Below is an example theme file:
 ```
 ;=============================================================================

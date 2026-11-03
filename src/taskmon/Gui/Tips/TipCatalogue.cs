@@ -46,6 +46,7 @@ public static class TipCatalogue
         "Press {k} to end the selected process. Its child processes are ended too.",
         "Press {r} or {F5} to refresh the Startup, Apps, Services or Drivers list.",
         "Press {F2} to change the theme, visible columns, metre style and update speed.",
+        "Press {F3} to try the next theme, and save it from {F2} Setup.",
         "In {F2} Setup, LAYOUTS lets you choose or design the SUMMARY layout.",
         "Press {F1} for every key and what the colours mean.",
         "HEALTH shows which resource is under pressure and the processes behind it.",

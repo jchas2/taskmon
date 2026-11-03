@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
@@ -217,6 +218,21 @@ public sealed class MainScreen2 : Screen
         focusedControl = menuControl;
     } 
 
+    private void ApplyThemeDefaults()
+    {
+        DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
+        DialogBorderColour           = runContext.AppConfig.Theme.HeaderForeground;
+        DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
+        DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
+        DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
+
+        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
+
+        foreach (Control ctrl in Controls) {
+            CommonControl.ThemeDefaults(ctrl, runContext.AppConfig.Theme);
+        }
+    }
+
     // Two rows when tips are on. Read on every resize, so a change in Setup takes effect when
     // this screen is shown again.
     private int FooterHeight => footerControl.Rows;
@@ -274,6 +290,11 @@ public sealed class MainScreen2 : Screen
                 handled = true;
                 break;
 
+            case ConsoleKey.F3:
+                ShowNextTheme();
+                handled = true;
+                break;
+
             case ConsoleKey.RightArrow when focusedControl == menuControl:
                 focusedControl = activeControl;
                 activeControl.SetFocus();
@@ -317,17 +338,7 @@ public sealed class MainScreen2 : Screen
     {
         Terminal.CursorVisible = false;
 
-        DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour           = runContext.AppConfig.Theme.HeaderForeground;
-        DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
-        DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
-        DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
-
-        CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
-
-        foreach (Control ctrl in Controls) {
-            CommonControl.ThemeDefaults(ctrl, runContext.AppConfig.Theme);
-        }
+        ApplyThemeDefaults();
 
         menuControl.MenuItems = new() {
             new MenuListViewItem(summaryControl,       "SUMMARY"),
@@ -347,13 +358,10 @@ public sealed class MainScreen2 : Screen
         bannerControl.Text = menuControl.MenuItems[0].Text;
         focusedControl     = menuControl;
 
-        headerControl.Load();
-        menuControl.Load();
-        menuBannerControl.Load();
-        bannerControl.Load();
-        activeControl.Load();
-        footerControl.Load();
-        
+        foreach (Control control in ShownControls) {
+            control.Load();
+        }
+
         menuControl.SetFocus();
         menuControl.MenuItemClicked += OnMenuItemClicked;
         healthControl.ProcessRequested += OnHealthProcessRequested;
@@ -431,6 +439,40 @@ public sealed class MainScreen2 : Screen
         activeControl.Draw();
 
         menuControl.SetFocus();
+    }
+
+    private IEnumerable<Control> ShownControls =>
+        [headerControl, menuControl, menuBannerControl, bannerControl, activeControl, footerControl];
+
+    // F3 moves to the next theme in the order Setup lists them, for this session only; Setup saves
+    // it. Each control takes its colours when it loads, so only the controls on screen are
+    // reloaded, which keeps the current view.
+    private void ShowNextTheme()
+    {
+        List<Theme> themes = runContext.AppConfig.Themes.OrderBy(t => t.Name).ToList();
+
+        if (themes.Count < 2) {
+            return;
+        }
+
+        runContext.AppConfig.Theme = themes[(themes.IndexOf(runContext.AppConfig.Theme) + 1) % themes.Count];
+
+        Control? focus = CurrentFocus;
+
+        ApplyThemeDefaults();
+
+        foreach (Control control in ShownControls) {
+            control.Unload();
+            control.Load();
+        }
+
+        // Loading a view can move focus, as PROCESSES does to its details pane.
+        focus?.SetFocus();
+        menuControl.Select(activeControl);
+
+        Clear();
+        Resize();
+        Draw();
     }
 
     private void SizeControl(Control control)

@@ -100,4 +100,6 @@ public sealed class MenuControl : Control
 
         return MenuItems[index];
     }
+
+    internal MenuListViewItem? SelectedItem => menuControl.SelectedItem as MenuListViewItem;
 }

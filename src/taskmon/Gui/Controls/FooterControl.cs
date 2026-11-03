@@ -38,7 +38,7 @@ public class FooterControl : Control
     private const int    TipRows                   = 2;
     private const string UnknownStatusText         = " Service status: Unknown ";
 
-    private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
+    private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F3", "Theme"), ("F10", "Exit")];
 
     public static readonly (string Key, string Label) NextTipHotKey = ("t", "Next Tip");
 

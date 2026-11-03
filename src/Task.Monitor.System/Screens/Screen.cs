@@ -49,6 +49,9 @@ public partial class Screen : Control
         IsActive = false;
     }
 
+    // The control holding focus, however deeply it is nested.
+    protected Control? CurrentFocus => focusedControl;
+
     public bool CursorVisible { get; set; } = true;
 
     public Color DialogBackgroundColour { get => messageBox.DialogBackgroundColour; set => messageBox.DialogBackgroundColour = value; }
