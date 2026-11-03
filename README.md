@@ -320,6 +320,8 @@ Layout files control the number, sequence, rows and columns of the chart layouts
 These layouts are kept in .ini files and can be customized as required. Additionally, new layout
 files can be authored and copied to the layout files directory and will automatically be available next time Task Monitor starts.
 
+On the main screen, `F4` switches SUMMARY to the next layout, in the order Setup lists them, and opens SUMMARY if another view is showing. The change lasts until Task Monitor exits; to keep it, open Setup (`F2`), where it is already selected, and save.
+
 Below is an example Layout file:
 
 ```

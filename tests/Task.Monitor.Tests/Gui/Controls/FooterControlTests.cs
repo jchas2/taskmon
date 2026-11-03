@@ -19,7 +19,7 @@ public sealed class FooterControlTests : IDisposable
 
     private FooterControl? control;
 
-    private const string KeyHintsText = "F1 Help   F2 Setup   F3 Theme   F10 Exit";
+    private const string KeyHintsText = "F1 Help   F2 Setup   F3 Theme   F4 Layout   F10 Exit";
     private const string OrangeGlyph  = "38;2;255;165;0m  ●";
 
     public FooterControlTests(ITestOutputHelper outputHelper)
@@ -275,6 +275,22 @@ public sealed class FooterControlTests : IDisposable
 
     private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
         new() { Services = services };
+
+    // Regression test: the hints went as one block, so adding F3 hid F1, F2 and F10 as well on
+    // terminals narrower than about 107 columns.
+    [Fact]
+    public void Theme_And_Layout_Hints_Are_Dropped_First_On_A_Narrower_Footer()
+    {
+        CreateControl(width: 105);
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+
+        string text = VisibleText();
+
+        Assert.Contains("F1 Help   F2 Setup   F10 Exit", text);
+        Assert.DoesNotContain("F3 Theme", text);
+        Assert.DoesNotContain("F4 Layout", text);
+        Assert.True(text.Length <= 105);
+    }
 
     [Fact]
     public void The_Tip_Changes_Once_The_Rotation_Interval_Passes()

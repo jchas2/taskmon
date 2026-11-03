@@ -233,8 +233,6 @@ public sealed class MainScreen2 : Screen
         }
     }
 
-    // Two rows when tips are on. Read on every resize, so a change in Setup takes effect when
-    // this screen is shown again.
     private int FooterHeight => footerControl.Rows;
 
     internal Control? GetActiveControl => activeControl;
@@ -253,7 +251,6 @@ public sealed class MainScreen2 : Screen
         footerControl.Draw();
     }
 
-    // Enter on a likely cause in HEALTH opens that process in PROCESSES.
     private void OnHealthProcessRequested(object? sender, int pid)
     {
         MenuListViewItem item = menuControl.Select(processesControl);
@@ -292,6 +289,11 @@ public sealed class MainScreen2 : Screen
 
             case ConsoleKey.F3:
                 ShowNextTheme();
+                handled = true;
+                break;
+
+            case ConsoleKey.F4:
+                ShowNextLayout();
                 handled = true;
                 break;
 
@@ -367,8 +369,6 @@ public sealed class MainScreen2 : Screen
         healthControl.ProcessRequested += OnHealthProcessRequested;
     }
 
-    // The menu raises a click on every arrow key, even when the selection can't move (Up on the
-    // first item, Down on the last). Reloading the view each time redraws it on every key repeat.
     private void OnMenuItemClicked(object? sender, MenuItemEventArgs e)
     {
         if (e.Item!.AssociatedControl == activeControl) {
@@ -444,9 +444,40 @@ public sealed class MainScreen2 : Screen
     private IEnumerable<Control> ShownControls =>
         [headerControl, menuControl, menuBannerControl, bannerControl, activeControl, footerControl];
 
-    // F3 moves to the next theme in the order Setup lists them, for this session only; Setup saves
-    // it. Each control takes its colours when it loads, so only the controls on screen are
-    // reloaded, which keeps the current view.
+    private void ShowNextLayout()
+    {
+        List<SummaryControlLayout> layouts = runContext.AppConfig.Layouts.OrderBy(l => l.Name).ToList();
+
+        if (layouts.Count < 2) {
+            return;
+        }
+
+        int index = layouts.FindIndex(l => l == runContext.AppConfig.DefaultLayout);
+        runContext.AppConfig.DefaultLayout = layouts[(index + 1) % layouts.Count];
+
+        bool viewHadFocus = focusedControl == activeControl;
+
+        if (activeControl == summaryControl) {
+            summaryControl.Unload();
+            summaryControl.Load();
+        }
+        else {
+            SetActiveControl(menuControl.Select(summaryControl));
+        }
+
+        if (viewHadFocus) {
+            focusedControl = summaryControl;
+            summaryControl.SetFocus();
+        }
+        else {
+            menuControl.SetFocus();
+        }
+
+        Clear();
+        Resize();
+        Draw();
+    }
+
     private void ShowNextTheme()
     {
         List<Theme> themes = runContext.AppConfig.Themes.OrderBy(t => t.Name).ToList();
@@ -466,7 +497,6 @@ public sealed class MainScreen2 : Screen
             control.Load();
         }
 
-        // Loading a view can move focus, as PROCESSES does to its details pane.
         focus?.SetFocus();
         menuControl.Select(activeControl);
 

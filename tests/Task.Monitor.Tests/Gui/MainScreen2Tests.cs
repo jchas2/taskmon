@@ -269,6 +269,115 @@ public sealed class MainScreen2Tests : IDisposable
     }
 
     [Fact]
+    public void F4_Does_Nothing_While_A_Dialog_Is_Open()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl      processesControl = mainScreen.GetControl<ProcessesControl>();
+        SummaryControlLayout? layout           = runContext.AppConfig.DefaultLayout;
+        bool                  handled          = false;
+
+        mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        mainScreen.KeyPressed(new ConsoleKeyInfo('f', ConsoleKey.F, false, false, false), ref handled);
+        Assert.True(processesControl.ProcessControl.IsFilterDialogVisible);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Same(layout, runContext.AppConfig.DefaultLayout);
+        Assert.Same(processesControl, mainScreen.GetActiveControl);
+        Assert.True(processesControl.ProcessControl.IsFilterDialogVisible);
+    }
+
+    [Fact]
+    public void F4_Keeps_Focus_On_The_Menu()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        MenuControl menuControl = mainScreen.GetControl<MenuControl>();
+        bool        handled     = false;
+
+        Assert.True(menuControl.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Same(mainScreen.GetControl<SummaryControl2>(), mainScreen.GetActiveControl);
+        Assert.True(menuControl.Focused);
+    }
+
+    [Fact]
+    public void F4_Moves_Focus_From_A_View_To_The_First_Summary_Pane()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
+        SummaryControl2  summaryControl   = mainScreen.GetControl<SummaryControl2>();
+        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        bool             handled          = false;
+
+        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(processesControl.ProcessControl.HasFocus);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.True(summaryControl.PaneControls.Values.First().HasFocus);
+        Assert.False(menuControl.Focused);
+
+        // Keys now reach SUMMARY: Left from its first pane goes back to the menu.
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);
+        Assert.True(menuControl.Focused);
+    }
+
+    [Fact]
+    public void F4_On_Another_View_Opens_Summary()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
+        MenuControl     menuControl    = mainScreen.GetControl<MenuControl>();
+        bool            handled        = false;
+
+        mainScreen.SetActiveControl(menuControl.Select(mainScreen.GetControl<ProcessesControl>()));
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Same(summaryControl, mainScreen.GetActiveControl);
+        Assert.Same(summaryControl, menuControl.SelectedItem?.AssociatedControl);
+        Assert.True(menuControl.Focused);
+    }
+
+    [Fact]
+    public void F4_Rebuilds_The_Summary_Panes_For_The_New_Layout()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        SummaryControl2            summaryControl = mainScreen.GetControl<SummaryControl2>();
+        List<SummaryControlLayout> layouts        = LayoutsInSetupOrder();
+        List<Control>              before         = summaryControl.PaneControls.Values.ToList();
+        bool                       handled        = false;
+
+        SummaryControlLayout next = layouts[(layouts.FindIndex(l => l == runContext.AppConfig.DefaultLayout) + 1) % layouts.Count];
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Equal(next.ToTree().Panes().Count(), summaryControl.PaneControls.Count);
+        Assert.DoesNotContain(summaryControl.PaneControls.Values, before.Contains);
+    }
+
+    [Fact]
+    public void F4_Switches_To_The_Next_Layout_In_Setup_Order_And_Wraps()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        List<SummaryControlLayout> layouts = LayoutsInSetupOrder();
+        bool                       handled = false;
+
+        runContext.AppConfig.DefaultLayout = layouts[0];
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+        Assert.True(handled);
+        Assert.Same(layouts[1], runContext.AppConfig.DefaultLayout);
+
+        runContext.AppConfig.DefaultLayout = layouts[^1];
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+        Assert.Same(layouts[0], runContext.AppConfig.DefaultLayout);
+    }
+
+    [Fact]
     public void Health_Is_Listed_Directly_Under_Summary()
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
@@ -300,6 +409,8 @@ public sealed class MainScreen2Tests : IDisposable
     }
 
     private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
+
+    private List<SummaryControlLayout> LayoutsInSetupOrder() => runContext.AppConfig.Layouts.OrderBy(l => l.Name).ToList();
 
     [Fact]
     public void Left_And_Right_Move_Between_The_Health_Panes_Then_Back_To_The_Menu()

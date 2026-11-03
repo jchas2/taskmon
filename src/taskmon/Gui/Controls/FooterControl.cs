@@ -38,15 +38,20 @@ public class FooterControl : Control
     private const int    TipRows                   = 2;
     private const string UnknownStatusText         = " Service status: Unknown ";
 
-    private static readonly (string Key, string Label)[] KeyHints = [("F1", "Help"), ("F2", "Setup"), ("F3", "Theme"), ("F10", "Exit")];
+    // A footer too narrow for every hint drops F3 and F4 first, so it can still show how to get
+    // help and exit.
+    private static readonly (string Key, string Label)[] KeyHints =
+        [("F1", "Help"), ("F2", "Setup"), ("F3", "Theme"), ("F4", "Layout"), ("F10", "Exit")];
+
+    private static readonly (string Key, string Label)[] CoreKeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
 
     public static readonly (string Key, string Label) NextTipHotKey = ("t", "Next Tip");
 
     internal static readonly TimeSpan TipRotationInterval = TimeSpan.FromMinutes(5);
 
-    private static readonly int KeyHintsWidth   = KeyHints.Sum(hint =>
-        CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
-    
+    private static readonly int KeyHintsWidth     = HintsWidth(KeyHints);
+    private static readonly int CoreKeyHintsWidth = HintsWidth(CoreKeyHints);
+
     private static readonly int StatusTextWidth = new[] {
         ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
 
@@ -152,9 +157,12 @@ public class FooterControl : Control
 
     internal string CurrentTip => tips[tipIndex];
 
+    // Shows the next tip and restarts the rotation interval, so it isn't replaced moments later.
+    private static int HintsWidth((string Key, string Label)[] hints) =>
+        hints.Sum(hint => CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
+
     private bool IsStale => missedCycles >= MissedCyclesBeforeUnknown;
 
-    // Shows the next tip and restarts the rotation interval, so it isn't replaced moments later.
     public void NextTip()
     {
         lock (DrawingLock) {
@@ -213,9 +221,16 @@ public class FooterControl : Control
             frame.SetColour(foreground, background);
             frame.Append(rxText);
 
-            if (banner.Length + StatusTextWidth + GlyphWidth + rxText.Length + KeyHintsWidth <= Width) {
+            int statusWidth = banner.Length + StatusTextWidth + GlyphWidth + rxText.Length;
+
+            (string Key, string Label)[]? hints =
+                statusWidth + KeyHintsWidth <= Width     ? KeyHints :
+                statusWidth + CoreKeyHintsWidth <= Width ? CoreKeyHints :
+                                                           null;
+
+            if (hints != null) {
                 frame.Append(CommonControl.FooterSeparator);
-                frame.Append(CommonControl.FooterText(appConfig.Theme, KeyHints));
+                frame.Append(CommonControl.FooterText(appConfig.Theme, hints));
                 frame.ResetColour();
             }
         }
