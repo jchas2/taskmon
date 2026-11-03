@@ -9,6 +9,7 @@ using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Gui.Controls.Performance;
@@ -29,8 +30,9 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     private ListView     cpuSpecsListView;
     private CpuInfo?     cpuInfo;
     
-    private double? power;
-    private double? temperature;
+    private ProcessMetrics? processMetrics;
+    private double?         power;
+    private double?         temperature;
     
     public CpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
@@ -58,7 +60,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetricsListView.ColumnHeaders
             .Add(new ListViewColumnHeader("Utilization"))
             .Add(new ListViewColumnHeader("Speed"))
-            .Add(new ListViewColumnHeader("Processes"))
+            .Add(new ListViewColumnHeader("Tasks"))
             .Add(new ListViewColumnHeader("Threads"))
             .Add(new ListViewColumnHeader("Power Draw"));
         
@@ -110,8 +112,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
             cpuMetricsListView.Items[0].SubItems[0].Text = cpuInfo.Metrics.ToCpuPercentage();
             cpuMetricsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
-            cpuMetricsListView.Items[0].SubItems[2].Text = "0";
-            cpuMetricsListView.Items[0].SubItems[3].Text = "0";
+            cpuMetricsListView.Items[0].SubItems[2].Text = processMetrics?.ProcessCount.ToString() ?? "0";
+            cpuMetricsListView.Items[0].SubItems[3].Text = processMetrics?.ThreadCount.ToString() ?? "0";
             cpuMetricsListView.Items[0].SubItems[4].Text = power.ToWattText();
             cpuMetricsListView.Draw();
 
@@ -261,6 +263,10 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     public void Sample(SystemSnapshot snapshot)
     {
         lock (@lock) {
+            // There are no process counts until the process service's first sample, so the last
+            // ones are kept rather than dropping back to zero.
+            processMetrics = snapshot.Processes?.Metrics ?? processMetrics;
+
             if (snapshot.Cpu is not { } cpu || cpu.CoreMetrics.Length == 0) {
                 return;
             }
