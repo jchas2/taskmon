@@ -16,6 +16,11 @@ public static unsafe class ScheduledTasks
 
     private const int TASK_ENUM_EXCLUDE_HIDDEN = 0;
 
+    private const int E_FAIL = unchecked((int)0x80004005);
+
+    private const short VARIANT_FALSE = 0;
+    private const short VARIANT_TRUE  = -1;
+
     private const int VariantSize = 24;
 
     // ITaskService vtable slots.
@@ -25,6 +30,7 @@ public static unsafe class ScheduledTasks
     // ITaskFolder vtable slots.
     private const int SlotFolderPath = 8;
     private const int SlotFolderGetFolders = 10;
+    private const int SlotFolderGetTask = 13;
     private const int SlotFolderGetTasks = 14;
 
     // ITaskFolderCollection and IRegisteredTaskCollection share the same vtable slots.
@@ -34,6 +40,7 @@ public static unsafe class ScheduledTasks
     // IRegisteredTask vtable slots.
     private const int SlotTaskName = 7;
     private const int SlotTaskEnabled = 10;
+    private const int SlotTaskPutEnabled = 11;
     private const int SlotTaskXml = 20;
 
     public readonly record struct TaskRecord(
@@ -42,7 +49,7 @@ public static unsafe class ScheduledTasks
         bool Enabled, 
         string Xml);
 
-    private static bool Connect(nint taskService)
+    private static int Connect(nint taskService)
     {
         // Connect to the local machine as the current user.
         byte* server   = stackalloc byte[VariantSize]; 
@@ -63,7 +70,25 @@ public static unsafe class ScheduledTasks
                 (nint)domain, 
                 (nint)password);
 
-        return hr >= 0;
+        return hr;
+    }
+
+    // Creates the task service and connects it to the local machine as the current user.
+    private static int ConnectService(out nint taskService)
+    {
+        int hr = Ole32.CoCreateInstance(
+            in CLSID_TaskScheduler,
+            nint.Zero,
+            CLSCTX_INPROC_SERVER,
+            in IID_ITaskService,
+            out taskService);
+
+        if (hr < 0 || taskService == nint.Zero) {
+            taskService = nint.Zero;
+            return hr < 0 ? hr : E_FAIL;
+        }
+
+        return Connect(taskService);
     }
 
     public static IReadOnlyList<TaskRecord> EnumerateTasks()
@@ -74,23 +99,11 @@ public static unsafe class ScheduledTasks
 
         int hResult = Ole32.ComInitializeEx(Ole32.COINIT_MULTITHREADED);
 
-        if (Ole32.CoCreateInstance(
-            in CLSID_TaskScheduler, 
-            nint.Zero, 
-            CLSCTX_INPROC_SERVER,
-            in IID_ITaskService, 
-            out taskService) < 0 || taskService == nint.Zero) {
-
+        if (ConnectService(out taskService) < 0) {
             goto Finished;
         }
 
-        if (!Connect(taskService)) {
-            goto Finished;
-        }
-
-        rootFolder = GetFolder(taskService, "\\");
-
-        if (rootFolder == nint.Zero) {
+        if (GetFolder(taskService, "\\", out rootFolder) < 0) {
             goto Finished;
         }
 
@@ -115,6 +128,20 @@ public static unsafe class ScheduledTasks
         string value = InteropHelper.TryMarshalPtrToStringBSTR(bstr); 
         Marshal.FreeBSTR(bstr);
         return value;
+    }
+
+    // Calls a vtable method shaped HRESULT Method(BSTR path, IUnknown** result).
+    private static int GetByPath(nint obj, int slot, string path, out nint result)
+    {
+        nint pathBstr = Ole32.SysAllocString(path);
+        nint found;
+
+        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint*, int>)
+            Ole32.Vtbl(obj)[slot])(obj, pathBstr, &found);
+
+        Ole32.SysFreeString(pathBstr);
+        result = hr >= 0 ? found : nint.Zero;
+        return hr;
     }
 
     private static int GetCollectionCount(nint collection)
@@ -142,18 +169,11 @@ public static unsafe class ScheduledTasks
         return hr >= 0 ? item : nint.Zero;
     }
 
-    private static nint GetFolder(nint taskService, string path)
-    {
-        nint pathBstr = Ole32.SysAllocString(path);
-        nint folder;
+    private static int GetFolder(nint taskService, string path, out nint folder) =>
+        GetByPath(taskService, SlotServiceGetFolder, path, out folder);
 
-        int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint*, int>)
-            Ole32.Vtbl(taskService)[SlotServiceGetFolder])(taskService, pathBstr, &folder);
-
-        nint result = hr >= 0 ? folder : nint.Zero;
-        Ole32.SysFreeString(pathBstr);
-        return result;
-    }
+    private static int GetTask(nint folder, string name, out nint task) =>
+        GetByPath(folder, SlotFolderGetTask, name, out task);
 
     private static bool GetVariantBoolProperty(nint obj, int slot)
     {
@@ -185,6 +205,42 @@ public static unsafe class ScheduledTasks
             
             InteropHelper.MarshalRelease(ref task);
         }
+    }
+
+    public static int SetEnabled(string folderPath, string name, bool enabled)
+    {
+        nint taskService = nint.Zero;
+        nint folder      = nint.Zero;
+        nint task        = nint.Zero;
+
+        int hResult = Ole32.ComInitializeEx(Ole32.COINIT_MULTITHREADED);
+        int hr      = ConnectService(out taskService);
+
+        if (hr < 0) {
+            goto Finished;
+        }
+
+        hr = GetFolder(taskService, folderPath, out folder);
+
+        if (hr < 0) {
+            goto Finished;
+        }
+
+        hr = GetTask(folder, name, out task);
+
+        if (hr < 0) {
+            goto Finished;
+        }
+
+        hr = ((delegate* unmanaged[Stdcall]<nint, short, int>)
+            Ole32.Vtbl(task)[SlotTaskPutEnabled])(task, enabled ? VARIANT_TRUE : VARIANT_FALSE);
+
+        Finished:
+        InteropHelper.MarshalRelease(ref task);
+        InteropHelper.MarshalRelease(ref folder);
+        InteropHelper.MarshalRelease(ref taskService);
+        Ole32.ComUninitialize(hResult);
+        return hr;
     }
 
     private static void WalkFolder(nint folder, List<TaskRecord> records)

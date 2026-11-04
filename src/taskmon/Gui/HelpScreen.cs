@@ -10,6 +10,12 @@ namespace Task.Monitor.Gui;
 
 public class HelpScreen : Screen
 {
+#if __WIN32__
+    private const string SpaceHelpText = "Tick items; enable/disable in STARTUP";
+#else
+    private const string SpaceHelpText = "Space-bar to check/uncheck items";
+#endif
+
     private readonly RunContext runContext;
     private readonly ListView helpView;
     private StringBuilder colourHelpText = new();
@@ -116,7 +122,7 @@ public class HelpScreen : Screen
         helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort ascending",                           "d:", "Sort descending" }));
         helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
         helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter the list in the current view",      "x:", "Toggle multiple process selection" }));
-        helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", "Space-bar to check/uncheck items" }));
+        helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", SpaceHelpText }));
         helpView.Items.Add(new ListViewItem(new[] { "k:", "End task (checked or selected)",           "r F5:", "Refresh the current list" }));
         helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));
         helpView.Items.Add(new ListViewItem(new[] { "t:", "Show the next tip in the footer",          "", "" }));

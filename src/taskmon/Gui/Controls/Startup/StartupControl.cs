@@ -4,6 +4,7 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Startup;
+using MessageBox = Task.Monitor.System.Controls.MessageBox.MessageBox;
 
 namespace Task.Monitor.Gui.Controls.Startup;
 
@@ -26,6 +27,7 @@ public sealed partial class StartupControl : Control
     private readonly ListView                 detailView;
     private readonly ListFilter               filter;
     private readonly ListSorter<StartupEntry> sorter;
+    private readonly MessageBox               toggleDialog;
 
     private StartupInfo? startup;
     
@@ -42,6 +44,7 @@ public sealed partial class StartupControl : Control
         startupView = new ListView(terminal) {
             EnableScroll      = true,
             EnableRowSelect   = true,
+            ShowCheckboxes    = StartupService.SupportsSetEnabled,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = true,
@@ -75,10 +78,18 @@ public sealed partial class StartupControl : Control
         filter = new ListFilter(this, terminal, "Filter Startup");
         sorter = new ListSorter<StartupEntry>(terminal, startupView, SortColumns, defaultColumn: 2);
 
+        toggleDialog = new MessageBox(terminal) {
+            Visible = false,
+            Height  = MessageBox.PreferredHeight
+        };
+
         Controls.Add(startupView);
         Controls.Add(detailView);
         Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
+        Controls.Add(toggleDialog);
+
+        SetEntryEnabled = SetEnabledThroughService;
     }
 
     private static string BuildSignature(IReadOnlyList<StartupEntry> entries) =>
@@ -114,12 +125,21 @@ public sealed partial class StartupControl : Control
         detailView.Draw();
         sorter.Draw();
         filter.Draw();
+
+        if (toggleDialog.Visible) {
+            toggleDialog.Draw();
+        }
     }
 
     protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (toggleDialog.Visible) {
+            OnToggleDialogKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
             Clear();
             Resize();
@@ -144,6 +164,14 @@ public sealed partial class StartupControl : Control
                 TryRequestRefresh();
                 handled = true;
                 return;
+
+            case ConsoleKey.Spacebar when CanSetEnabled:
+                if (!sorter.IsSelectionActive) {
+                    ToggleSelectedEntry();
+                }
+
+                handled = true;
+                return;
         }
 
         startupView.KeyPressed(keyInfo, ref handled);
@@ -159,6 +187,7 @@ public sealed partial class StartupControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(startupView, appConfig.Theme);
         CommonControl.Theme(detailView, appConfig.Theme);
+        CommonControl.Theme(toggleDialog, appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
         sorter.ApplyTheme(appConfig.Theme);
 
@@ -178,11 +207,12 @@ public sealed partial class StartupControl : Control
 
         sorter.Layout(X, Y, startupViewHeight);
 
-        int fixedWidth = 
-            NameColumnWidth      + 
-            PublisherColumnWidth + 
-            TypeColumnWidth      + 
-            ScopeColumnWidth     + 
+        int fixedWidth =
+            (startupView.ShowCheckboxes ? ListView.CheckboxWidth : 0) +
+            NameColumnWidth                                          +
+            PublisherColumnWidth                                     +
+            TypeColumnWidth                                          +
+            ScopeColumnWidth                                         +
             StatusColumnWidth;
 
         startupView.ColumnHeaders[0].Width = NameColumnWidth;
@@ -213,6 +243,7 @@ public sealed partial class StartupControl : Control
         detailView.Items.Clear();
         lastSignature = string.Empty;
         filter.Close();
+        CloseToggleDialog();
 
         base.OnUnload();
     }

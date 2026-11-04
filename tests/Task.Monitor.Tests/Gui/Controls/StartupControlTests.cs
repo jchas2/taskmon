@@ -14,11 +14,76 @@ public sealed class StartupControlTests : IDisposable
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
 
+    private static readonly ConsoleKeyInfo Space = new(' ', ConsoleKey.Spacebar, false, false, false);
+
     public StartupControlTests(ITestOutputHelper outputHelper)
     {
         this.outputHelper = outputHelper;
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
+    }
+
+    [Fact]
+    public void A_Failed_Toggle_Keeps_The_Checkbox_And_Says_Why_Until_Dismissed()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls, StartupToggleResult.AccessDenied);
+        ctrl.Sample(SnapshotWith(Entry("Alpha App", scope: StartupEntryScope.Machine)));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        Assert.True(ListKeys.Press(ctrl, Space));
+
+        Assert.False(Control.RedrawEnabled);
+        Assert.Contains("Disable Startup App", CapturedOutput());
+        Assert.Contains("Couldn't disable Alpha App", CapturedOutput());
+
+        // The dialog takes every key while it is up.
+        Assert.True(ListKeys.Press(ctrl, Space));
+        Assert.Single(calls);
+
+        Assert.True(ListKeys.Press(ctrl, ConsoleKey.Enter));
+        Assert.True(Control.RedrawEnabled);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("[x] Alpha App", VisibleOutput());
+        Assert.DoesNotContain("Couldn't disable", VisibleOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void A_Toggle_Keeps_The_List_Scrolled_Where_It_Was()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(Enumerable.Range(0, 60).Select(i => Entry($"App {i:00}")).ToArray()));
+        ctrl.Draw();
+
+        // Down to the 41st row, scrolling the list, then back up 10 rows, which doesn't scroll it.
+        for (int i = 0; i < 40; i++) {
+            ListKeys.Press(ctrl, ConsoleKey.DownArrow);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ListKeys.Press(ctrl, ConsoleKey.UpArrow);
+        }
+
+        runContextHelper.terminal.Invocations.Clear();
+        Assert.True(ListKeys.Press(ctrl, Space));
+
+        string output = VisibleOutput();
+
+        Assert.Equal([("App 30", false)], calls);
+        Assert.Contains("[ ] App 30", output);
+        Assert.Contains("App 40", output);
+        Assert.DoesNotContain("App 05", output);
+
+        ctrl.Unload();
     }
 
     private string CapturedOutput() =>
@@ -37,7 +102,7 @@ public sealed class StartupControlTests : IDisposable
         Assert.NotNull(ctrl);
     }
 
-    private StartupControl CreateControl(int width = 160, int height = 40)
+    private StartupControl CreateControl(int width = 160, int height = 40, bool? canSetEnabled = null)
     {
         StartupControl ctrl = new(
             runContext.ServiceController,
@@ -46,6 +111,10 @@ public sealed class StartupControlTests : IDisposable
             Width = width,
             Height = height
         };
+
+        if (canSetEnabled is { } value) {
+            ctrl.CanSetEnabled = value;
+        }
 
         ctrl.Load();
         ctrl.Resize();
@@ -65,7 +134,7 @@ public sealed class StartupControlTests : IDisposable
     }
 
     [Fact]
-    public void Descending_Sort_Reverses_The_Rows_And_The_Detail_Pane_Follows_The_Selection()
+    public void Descending_Sort_Reverses_The_Rows_And_The_Selection_Stays_On_Its_Entry()
     {
         StartupControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(
@@ -86,10 +155,11 @@ public sealed class StartupControlTests : IDisposable
         string output = CapturedOutput();
         string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
 
+        // Alpha App was selected as the first row and is still selected as the last.
         Assert.Contains("NAME\u2193", output);
         Assert.True(output.IndexOf("Bravo App", StringComparison.Ordinal) < output.IndexOf("Alpha App", StringComparison.Ordinal));
-        Assert.Contains("Bravo App", detail);
-        Assert.DoesNotContain("Alpha App", detail);
+        Assert.Contains("Alpha App", detail);
+        Assert.DoesNotContain("Bravo App", detail);
 
         ctrl.Unload();
     }
@@ -116,6 +186,26 @@ public sealed class StartupControlTests : IDisposable
     }
 
     public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void Draws_A_Checkbox_Per_Row_From_The_Entry_State_And_Keeps_The_Command_Column()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App"),
+            Entry("Bravo App", state: StartupEntryState.Disabled),
+            Entry("Charlie App", state: StartupEntryState.Unknown)));
+        ctrl.Draw();
+
+        string output = VisibleOutput();
+
+        Assert.Contains("[x] Alpha App", output);
+        Assert.Contains("[ ] Bravo App", output);
+        Assert.Contains("[ ] Charlie App", output);
+        Assert.Contains("COMMAND", output);
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Row()
@@ -296,6 +386,28 @@ public sealed class StartupControlTests : IDisposable
     }
 
     [Fact]
+    public void Footer_Shows_The_Toggle_Hint_First_Only_Where_Entries_Can_Be_Changed()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        ctrl.Sample(SnapshotWith(Entry("Alpha App")));
+        ctrl.Draw();
+
+        Assert.Contains("space Enable/Disable   r Refresh   s Sort", VisibleOutput());
+
+        ctrl.Unload();
+
+        ctrl = CreateControl(canSetEnabled: false);
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(SnapshotWith(Entry("Alpha App")));
+        ctrl.Draw();
+
+        Assert.DoesNotContain("Enable/Disable", VisibleOutput());
+        Assert.DoesNotContain("[x]", VisibleOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void Ignores_A_Snapshot_With_No_Startup_Info()
     {
         StartupControl ctrl = CreateControl();
@@ -325,6 +437,48 @@ public sealed class StartupControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // Stands in for StartupService.SetEnabled, which updates the entry when the change takes.
+    private static Func<StartupEntry, bool, StartupToggleResult> RecordingToggle(
+        List<(string Name, bool Enable)> calls,
+        StartupToggleResult              result = StartupToggleResult.Succeeded) =>
+        (entry, enable) => {
+            calls.Add((entry.Name, enable));
+
+            if (result == StartupToggleResult.Succeeded) {
+                entry.State = enable ? StartupEntryState.Enabled : StartupEntryState.Disabled;
+            }
+
+            return result;
+        };
+
+    [Fact]
+    public void Selection_Stays_On_Its_Entry_When_A_Rescan_Adds_One_Above_It()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(
+            Entry("Bravo App", command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.DownArrow);
+
+        // A rescan builds new entries, so the selection is found again by the entry's identity.
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        string output = CapturedOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Contains("charlie.exe", detail);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Shows_The_Enabled_And_Total_Counts_In_The_Header()
     {
@@ -343,6 +497,151 @@ public sealed class StartupControlTests : IDisposable
 
     private static SystemSnapshot SnapshotWith(params StartupEntry[] entries) =>
         new() { Startup = new StartupInfo { Specs = new StartupSpecs { Entries = [.. entries] } } };
+
+    [Fact]
+    public void Space_Disables_The_Selected_Entry_At_Once_And_Keeps_It_Selected()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App", command: "alpha.exe"),
+            Entry("Bravo App", command: "bravo.exe"),
+            Entry("Charlie App", command: "charlie.exe")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.DownArrow);
+        runContextHelper.terminal.Invocations.Clear();
+
+        Assert.True(ListKeys.Press(ctrl, Space));
+
+        string output = VisibleOutput();
+        string detail = output[output.IndexOf("DETAIL", StringComparison.Ordinal)..];
+
+        Assert.Equal([("Bravo App", false)], calls);
+        Assert.Contains("[x] Alpha App", output);
+        Assert.Contains("[ ] Bravo App", output);
+        Assert.Contains("2 enabled / 3 total", output);
+        Assert.Contains("bravo.exe", detail);
+        Assert.Contains("Disabled", detail);
+        Assert.True(Control.RedrawEnabled);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Space_Does_Nothing_While_The_Sort_Picker_Is_Open()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(Entry("Alpha App")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.S);
+        Assert.True(ListKeys.Press(ctrl, Space));
+        ListKeys.Press(ctrl, ConsoleKey.Escape);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Empty(calls);
+        Assert.Contains("[x] Alpha App", VisibleOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Space_Enables_A_Disabled_Entry()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(Entry("Alpha App", state: StartupEntryState.Disabled)));
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        Assert.True(ListKeys.Press(ctrl, Space));
+
+        Assert.Equal([("Alpha App", true)], calls);
+        Assert.Contains("[x] Alpha App", VisibleOutput());
+        Assert.Contains("1 enabled / 1 total", VisibleOutput());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Space_Is_Left_Alone_Where_Entries_Cannot_Be_Changed()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: false);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(Entry("Alpha App")));
+        ctrl.Draw();
+
+        Assert.False(ListKeys.Press(ctrl, Space));
+        Assert.Empty(calls);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Space_Typed_Into_The_Filter_Is_Part_Of_The_Filter_Not_A_Toggle()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        List<(string Name, bool Enable)> calls = [];
+        ctrl.SetEntryEnabled = RecordingToggle(calls);
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App"),
+            Entry("Bravo App")));
+        ctrl.Draw();
+
+        ListKeys.Press(ctrl, ConsoleKey.F);
+
+        foreach (char ch in "bravo app") {
+            ListKeys.Press(ctrl, ch == ' ' ? Space : new ConsoleKeyInfo(ch, 0, false, false, false));
+        }
+
+        ListKeys.Press(ctrl, ConsoleKey.Enter);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Empty(calls);
+        Assert.Contains("Filter: bravo app (1 of 2)", VisibleOutput());
+
+        ctrl.Unload();
+    }
+
+    public static TheoryData<StartupToggleResult, bool, string> ToggleFailureData() => new() {
+        { StartupToggleResult.AccessDenied, false, "It needs administrator rights.\nRun taskmon as administrator." },
+        { StartupToggleResult.AccessDenied, true,  "Windows refused the change." },
+        { StartupToggleResult.NotFound,     false, "It no longer exists." },
+        { StartupToggleResult.NotSupported, false, $"{StartupTestSources.PrimaryText} items can't be disabled." },
+        { StartupToggleResult.Failed,       false, "Windows couldn't change it." }
+    };
+
+    [Fact]
+    public void Toggle_Failure_Text_Cuts_A_Long_Name_To_The_Dialog_Width()
+    {
+        string text = StartupControl.BuildToggleFailureText(
+            Entry(new string('A', 80)), enable: true, StartupToggleResult.NotFound, isElevated: false, width: 30);
+
+        string heading = text.Split('\n')[0];
+
+        Assert.Equal(30, heading.Length);
+        Assert.StartsWith("Couldn't enable AAA", heading);
+        Assert.EndsWith("…", heading);
+    }
+
+    [Theory]
+    [MemberData(nameof(ToggleFailureData))]
+    public void Toggle_Failure_Text_Names_The_Entry_And_The_Reason(StartupToggleResult result, bool isElevated, string reason)
+    {
+        string text = StartupControl.BuildToggleFailureText(Entry("Alpha App"), enable: false, result, isElevated, width: 56);
+
+        Assert.Equal($"Couldn't disable Alpha App\n{reason}", text);
+    }
 
     [Fact]
     public void Updates_The_Detail_Pane_When_The_Selection_Moves()

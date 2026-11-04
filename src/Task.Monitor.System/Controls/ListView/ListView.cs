@@ -243,8 +243,6 @@ public class ListView : Control
         frame.SetColour(ForegroundColour, BorderBackgroundColour);
         frame.Append(footerLabel.AsSpan(0, footerLabelLen));
 
-        // Colours embedded in the label changed the terminal behind the frame's back; reset so the
-        // border colour below is always written rather than skipped as unchanged.
         if (footerLabel.Contains(AnsiEscape)) {
             frame.ResetColour();
         }
@@ -277,8 +275,6 @@ public class ListView : Control
         frame.Append(EmptyListViewText);
     }
 
-    // Deliberately not bold: many terminals desaturate a bold foreground colour, which can make it
-    // unreadable against certain header background/foreground pairs (e.g. black-on-blue).
     private void DrawHeader()
     {
         frame.MoveTo(viewPort.Bounds.X, viewPort.Bounds.Y - 1);
@@ -726,6 +722,8 @@ public class ListView : Control
 
     public void ScrollSelectedIntoView()
     {
+        CalculateViewPortBounds();
+
         if (viewPort.SelectedIndex < viewPort.CurrentPageIndex) {
             viewPort.CurrentPageIndex = viewPort.SelectedIndex;
         }
@@ -771,9 +769,12 @@ public class ListView : Control
 
     public bool ShowColumnHeaders { get; set; }
 
-    // The number of chars, from the start of text, that fit within maxWidth terminal columns. ANSI
-    // escape sequences (ESC [ ... final byte) are kept but occupy no columns. visibleWidth is the
-    // columns those chars occupy.
+    public int TopIndex
+    {
+        get => viewPort.CurrentPageIndex;
+        set => viewPort.CurrentPageIndex = Math.Max(0, value);
+    }
+
     internal static int TruncateToVisibleWidth(string text, int maxWidth, out int visibleWidth)
     {
         int index = 0;
@@ -801,7 +802,10 @@ public class ListView : Control
                 next = text.Length;
             }
 
-            int taken = text.AsSpan(index, next - index).TruncateToTerminalWidth(maxWidth - visibleWidth, out int width);
+            int taken = text
+                .AsSpan(index, next - index)
+                .TruncateToTerminalWidth(maxWidth - visibleWidth, out int width);
+            
             visibleWidth += width;
             index        += taken;
 

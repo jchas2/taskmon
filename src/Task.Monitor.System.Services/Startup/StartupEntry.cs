@@ -12,4 +12,7 @@ public sealed class StartupEntry
     public StartupEntryState  State          { get; set; } = StartupEntryState.Unknown;
     public DateTime?          DisabledOnUtc  { get; set; }
     public string            Origin          { get; set; } = string.Empty;
+#if __WIN32__
+    internal StartupApproval? Approval       { get; set; }
+#endif
 }

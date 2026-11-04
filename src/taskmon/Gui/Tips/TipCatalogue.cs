@@ -56,6 +56,7 @@ public static class TipCatalogue
         "Hide these tips by unticking Show tips in the footer in {F2} Setup.",
 #if __WIN32__
         "Windows services are highlighted in process lists. Switch this off in {F2} Setup.",
+        "In STARTUP, press {Space} to enable or disable the selected app. It applies at once.",
 #elif __APPLE__
         "Daemons are highlighted in process lists. Switch this off in {F2} Setup.",
 #endif

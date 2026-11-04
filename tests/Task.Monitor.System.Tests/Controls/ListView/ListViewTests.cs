@@ -374,7 +374,7 @@ public sealed class ListViewTests
 
     [Fact]
     public void ListView_Canary_Test() =>
-        Assert.Equal(36, CanaryTestHelper.GetPropertyCount<ListViewControl>());
+        Assert.Equal(37, CanaryTestHelper.GetPropertyCount<ListViewControl>());
 
         [Fact]
     public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
@@ -608,6 +608,25 @@ public sealed class ListViewTests
 
         int next = output.IndexOf($"{Esc}[{screenRow + 2};", start, StringComparison.Ordinal);
         return next >= 0 ? output[start..next] : output[start..];
+    }
+
+    [Fact]
+    public void ScrollSelectedIntoView_Scrolls_Straight_After_The_Items_Are_Rebuilt()
+    {
+        ListViewControl listView = BuildOverflowingListView(terminal);
+        listView.Draw();
+
+        // Clearing the items empties the view port, which knew how many rows fit.
+        listView.Items.Clear();
+
+        for (int i = 0; i < 10; i++) {
+            listView.Items.Add(new ListViewItem($"Item {i}"));
+        }
+
+        listView.SelectedIndex = 9;
+        listView.ScrollSelectedIntoView();
+
+        Assert.Equal(2, listView.TopIndex);
     }
 
     [Fact]
@@ -999,6 +1018,46 @@ public sealed class ListViewTests
 
         Assert.Contains(Up, output);
         Assert.DoesNotContain(Down, output);
+    }
+
+    [Fact]
+    public void TopIndex_Follows_Scrolling_And_Resets_When_The_Items_Are_Cleared()
+    {
+        ListViewControl listView = BuildOverflowingListView(terminal);
+        listView.Draw();
+
+        bool handled = false;
+        for (int i = 0; i < 9; i++) {
+            listView.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        }
+
+        Assert.Equal(2, listView.TopIndex);
+
+        listView.Items.Clear();
+
+        Assert.Equal(0, listView.TopIndex);
+    }
+
+    [Fact]
+    public void TopIndex_Restored_After_A_Rebuild_Draws_From_That_Item_Within_The_Items()
+    {
+        ListViewControl listView = BuildOverflowingListView(terminal);
+        listView.Draw();
+        listView.Items.Clear();
+
+        for (int i = 0; i < 10; i++) {
+            listView.Items.Add(new ListViewItem($"Item {i}"));
+        }
+
+        listView.TopIndex = 50;
+
+        terminal.Reset();
+        listView.Draw();
+
+        // Eight rows fit, so the last page starts at the third item.
+        Assert.Equal(2, listView.TopIndex);
+        Assert.Contains("Item 2", terminal.Output);
+        Assert.DoesNotContain("Item 1 ", terminal.Output);
     }
 
     [Theory]

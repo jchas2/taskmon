@@ -24,6 +24,19 @@ public partial class StartupService
 
     private const string BuiltInWindowsTaskFolderPrefix = @"\Microsoft\Windows\";
 
+    private const string SoftwareKeyPrefix = @"SOFTWARE\";
+    private const string Wow64KeyPrefix    = @"SOFTWARE\WOW6432Node\";
+
+    internal static string? ApprovedRunPathFor(RegistryHive hive, RegistryView view, StartupEntrySource source) =>
+        source != StartupEntrySource.RunKey                                  ? null              :
+        hive == RegistryHive.LocalMachine && view == RegistryView.Registry32 ? ApprovedRun32Path :
+                                                                               ApprovedRunPath;
+
+    internal static RegistryHive ApprovedStartupFolderHive(StartupEntryScope scope) =>
+        scope == StartupEntryScope.Machine
+            ? RegistryHive.LocalMachine
+            : RegistryHive.CurrentUser;
+
     private static bool LooksLikeExistingFile(string path)
     {
         try {
@@ -34,10 +47,16 @@ public partial class StartupService
         }
     }
 
-    // Parses the binary value Explorer writes under
-    //   HK{CU,LM}\...\CurrentVersion\Explorer\StartupApproved\{Run, Run32, StartupFolder}
+    private static RegistryKey? OpenApprovedKey(RegistryHive hive, string approvedPath)
+    {
+        using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
+        return baseKey.OpenSubKey(approvedPath);
+    }
+
     internal static (StartupEntryState State, DateTime? DisabledOnUtc) ParseApprovedState(ReadOnlySpan<byte> blob)
     {
+        // Parses the binary value Explorer writes under
+        //   HK{CU,LM}\...\CurrentVersion\Explorer\StartupApproved\{Run, Run32, StartupFolder}
         if (blob.Length < 12) {
             return (StartupEntryState.Unknown, null);
         }
@@ -125,13 +144,23 @@ public partial class StartupService
             : StartupEntryScope.Machine;
     }
 
+    internal static string RunKeyOrigin(RegistryHive hive, RegistryView view, string keyPath)
+    {
+        string path = hive == RegistryHive.LocalMachine
+                      && view == RegistryView.Registry32
+                      && keyPath.StartsWith(SoftwareKeyPrefix, StringComparison.OrdinalIgnoreCase)
+            ? Wow64KeyPrefix + keyPath[SoftwareKeyPrefix.Length..]
+            : keyPath;
+
+        return $"{Win32StringHelper.HiveShortName(hive)}\\{path}";
+    }
+
     private void ScanRunKey(
         StartupSpecs       specs,
         RegistryHive       hive,
         RegistryView       view,
         StartupEntryScope  scope,
         string             keyPath,
-        string             approvedPath,
         StartupEntrySource source)
     {
         using RegistryKey baseKey = RegistryKey.OpenBaseKey(hive, view);
@@ -141,13 +170,16 @@ public partial class StartupService
             return;
         }
 
-        using RegistryKey? approvedKey = baseKey.OpenSubKey(approvedPath);
+        string? approvedPath = ApprovedRunPathFor(hive, view, source);
 
-        string origin = $"{Win32StringHelper.HiveShortName(hive)}\\{keyPath}";
+        using RegistryKey? approvedKey = approvedPath is null ? null : OpenApprovedKey(hive, approvedPath);
+
+        string origin = RunKeyOrigin(hive, view, keyPath);
 
         foreach (string valueName in runKey.GetValueNames()) {
             if (string.IsNullOrEmpty(valueName)) {
-                continue; // the (Default) value is not a startup entry
+                // the (Default) value is not a startup entry.
+                continue; 
             }
 
             string rawCommand = runKey.GetValue(
@@ -158,11 +190,12 @@ public partial class StartupService
             }
 
             StartupEntry entry = new() {
-                Name    = valueName,
-                Command = Environment.ExpandEnvironmentVariables(rawCommand),
-                Source  = source,
-                Scope   = scope,
-                Origin  = origin
+                Name     = valueName,
+                Command  = Environment.ExpandEnvironmentVariables(rawCommand),
+                Source   = source,
+                Scope    = scope,
+                Origin   = origin,
+                Approval = approvedPath is null ? null : new StartupApproval(hive, approvedPath, valueName)
             };
 
             (entry.State, entry.DisabledOnUtc) = ReadApprovedState(approvedKey, valueName);
@@ -180,7 +213,6 @@ public partial class StartupService
             RegistryView.Registry64,
             StartupEntryScope.Machine, 
             RunKeyPath, 
-            ApprovedRunPath, 
             StartupEntrySource.RunKey);
         
         ScanRunKey(
@@ -189,7 +221,6 @@ public partial class StartupService
             RegistryView.Registry64,
             StartupEntryScope.Machine, 
             RunOnceKeyPath, 
-            ApprovedRunPath, 
             StartupEntrySource.RunOnceKey);
 
         if (Environment.Is64BitOperatingSystem) {
@@ -199,7 +230,6 @@ public partial class StartupService
                 RegistryView.Registry32,
                 StartupEntryScope.Machine, 
                 RunKeyPath, 
-                ApprovedRun32Path, 
                 StartupEntrySource.RunKey);
             
             ScanRunKey(
@@ -208,7 +238,6 @@ public partial class StartupService
                 RegistryView.Registry32,
                 StartupEntryScope.Machine, 
                 RunOnceKeyPath, 
-                ApprovedRun32Path, 
                 StartupEntrySource.RunOnceKey);
         }
 
@@ -218,7 +247,6 @@ public partial class StartupService
             RegistryView.Default,
             StartupEntryScope.User, 
             RunKeyPath, 
-            ApprovedRunPath, 
             StartupEntrySource.RunKey);
         
         ScanRunKey(
@@ -227,7 +255,6 @@ public partial class StartupService
             RegistryView.Default,
             StartupEntryScope.User, 
             RunOnceKeyPath, 
-            ApprovedRunPath, 
             StartupEntrySource.RunOnceKey);
     }
 
@@ -284,14 +311,17 @@ public partial class StartupService
     private void ScanStartupFolder(
         StartupSpecs              specs,
         Environment.SpecialFolder folder,
-        StartupEntryScope         scope,
-        RegistryKey?              approvedKey)
+        StartupEntryScope         scope)
     {
         string folderPath = Environment.GetFolderPath(folder);
 
         if (folderPath.Length == 0 || !Directory.Exists(folderPath)) {
             return;
         }
+
+        RegistryHive approvedHive = ApprovedStartupFolderHive(scope);
+
+        using RegistryKey? approvedKey = OpenApprovedKey(approvedHive, ApprovedFolderPath);
 
         string[] files;
 
@@ -311,10 +341,11 @@ public partial class StartupService
             }
 
             StartupEntry entry = new() {
-                Name   = Path.GetFileNameWithoutExtension(file),
-                Source = StartupEntrySource.StartupFolder,
-                Scope  = scope,
-                Origin = folderPath
+                Name     = Path.GetFileNameWithoutExtension(file),
+                Source   = StartupEntrySource.StartupFolder,
+                Scope    = scope,
+                Origin   = folderPath,
+                Approval = new StartupApproval(approvedHive, ApprovedFolderPath, fileName)
             };
 
             if (Path.GetExtension(file).Equals(".lnk", StringComparison.OrdinalIgnoreCase)) {
@@ -333,19 +364,15 @@ public partial class StartupService
 
     private void ScanStartupFolders(StartupSpecs specs)
     {
-        using RegistryKey approvedBase = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
-        using RegistryKey? approvedKey = approvedBase.OpenSubKey(ApprovedFolderPath);
+        ScanStartupFolder(
+            specs,
+            Environment.SpecialFolder.CommonStartup,
+            StartupEntryScope.Machine);
 
         ScanStartupFolder(
-            specs, 
-            Environment.SpecialFolder.CommonStartup, 
-            StartupEntryScope.Machine, 
-            approvedKey);
-        
-        ScanStartupFolder(specs, 
-            Environment.SpecialFolder.Startup, 
-            StartupEntryScope.User, 
-            approvedKey);
+            specs,
+            Environment.SpecialFolder.Startup,
+            StartupEntryScope.User);
     }
 
     internal static (string Path, string Arguments) SplitCommandLine(string? command)
@@ -382,7 +409,6 @@ public partial class StartupService
             searchFrom = space + 1;
         }
 
-        // No prefix resolved: fall back to a plain first-space split.
         int firstSpace = expanded.IndexOf(' ');
 
         return firstSpace < 0
