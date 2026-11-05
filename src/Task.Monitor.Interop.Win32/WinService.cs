@@ -22,6 +22,11 @@ public static class WinService
     public const uint SERVICE_AUTO_START        = 0x00000002;
     public const int  SERVICE_QUERY_STATUS      = 0x0004;
     public const int  SERVICE_QUERY_CONFIG      = 0x0001;
+
+    public const int  SERVICE_ENUMERATE_DEPENDENTS = 0x0008;
+    public const int  SERVICE_START                = 0x0010;
+    public const uint SERVICE_ACTIVE               = 0x00000001;
+    public const uint SERVICE_CONTROL_STOP         = 0x00000001;
     public const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
     public const uint SERVICE_STOP              = 0x00000020;
     public const uint SERVICE_WIN32             = 0x00000030;
@@ -69,6 +74,26 @@ public static class WinService
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct SERVICE_STATUS
+    {
+        public int dwServiceType;
+        public int dwCurrentState;
+        public int dwControlsAccepted;
+        public int dwWin32ExitCode;
+        public int dwServiceSpecificExitCode;
+        public int dwCheckPoint;
+        public int dwWaitHint;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    public struct ENUM_SERVICE_STATUSW
+    {
+        public string         lpServiceName;
+        public string         lpDisplayName;
+        public SERVICE_STATUS ServiceStatus;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct SERVICE_STATUS_PROCESS
     {
         public int dwServiceType;
@@ -112,6 +137,23 @@ public static class WinService
     [DllImport(Libraries.Advapi32, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool CloseServiceHandle(nint hSCObject);
+
+    [DllImport(Libraries.Advapi32, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ControlService(
+        nint               hService,
+        uint               dwControl,
+        out SERVICE_STATUS lpServiceStatus);
+
+    [DllImport(Libraries.Advapi32, EntryPoint = "EnumDependentServicesW", SetLastError = true, CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumDependentServices(
+        nint     hService,
+        uint     dwServiceState,
+        nint     lpServices,
+        uint     cbBufSize,
+        out uint pcbBytesNeeded,
+        out uint lpServicesReturned);
 
     [DllImport(Libraries.Advapi32, EntryPoint = "EnumServicesStatusExW", SetLastError = true, CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -164,4 +206,11 @@ public static class WinService
         nint  lpBuffer,
         uint  cbBufSize,
         uint* pcbBytesNeeded);
+
+    [DllImport(Libraries.Advapi32, EntryPoint = "StartServiceW", SetLastError = true, CharSet = CharSet.Unicode)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool StartService(
+        nint hService,
+        uint dwNumServiceArgs,
+        nint lpServiceArgVectors);
 }

@@ -32,7 +32,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - Customize update interval (default 1500ms).
 - Customize number of process iteration loops.
 - Filter the process list (`f`) and freeze process list updates (`z`).
-- **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries.
+- **Windows Services**: Show service names and startup parameters, not just generic `svchost.exe` entries. In the `SERVICES` menu, `Space` starts a stopped service or stops a running one at once; there is nothing to save. A ticked service is running or starting, an unticked one stopped or stopping. Most services need taskmon running as administrator, and a service with running dependents, or one that refuses a stop request, is left running and the reason shown.
 - Multiple process selection (`x` toggle show checkboxes, `spacebar` for selection, `u` to uncheck all selections)
 - Select and terminate multiple processes simultaneously (`F6`).
 - Filter by process name, username, command path or PID (`F4`).

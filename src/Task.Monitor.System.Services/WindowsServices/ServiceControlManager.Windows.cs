@@ -7,6 +7,8 @@ namespace Task.Monitor.System.Services.WindowsServices;
 
 internal static class ServiceControlManager
 {
+    private const int ERROR_SUCCESS = 0;
+
     public readonly record struct ServiceConfig(
         WindowsServiceStartType StartType,
         string?                 BinaryPathName,
@@ -238,6 +240,104 @@ internal static class ServiceControlManager
         }
         finally {
             WinService.CloseServiceHandle(hService);
+        }
+    }
+
+    private static string[] ReadRunningDependents(nint hService)
+    {
+        WinService.EnumDependentServices(
+            hService,
+            WinService.SERVICE_ACTIVE,
+            nint.Zero,
+            0,
+            out uint bytesNeeded,
+            out _);
+
+        if (bytesNeeded == 0) {
+            return [];
+        }
+
+        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
+
+        try {
+            if (!WinService.EnumDependentServices(
+                hService,
+                WinService.SERVICE_ACTIVE,
+                buffer,
+                bytesNeeded,
+                out _,
+                out uint count)) {
+
+                return [];
+            }
+
+            int      structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUSW>();
+            string[] names      = new string[count];
+
+            for (int i = 0; i < count; i++) {
+                names[i] = Marshal.PtrToStructure<WinService.ENUM_SERVICE_STATUSW>(
+                    nint.Add(buffer, i * structSize)).lpDisplayName;
+            }
+
+            return names;
+        }
+        finally {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    public static string[] RunningDependents(string serviceName) =>
+        UseService(
+            serviceName,
+            WinService.SERVICE_ENUMERATE_DEPENDENTS,
+            ReadRunningDependents,
+            _ => []);
+
+    public static int StartService(string serviceName) =>
+        UseService(
+            serviceName,
+            WinService.SERVICE_START,
+            hService => WinService.StartService(hService, 0, nint.Zero)
+                ? ERROR_SUCCESS
+                : Marshal.GetLastPInvokeError(),
+            error => error);
+
+    public static int StopService(string serviceName) =>
+        UseService(
+            serviceName,
+            (int)WinService.SERVICE_STOP,
+            hService => WinService.ControlService(hService, WinService.SERVICE_CONTROL_STOP, out _)
+                ? ERROR_SUCCESS
+                : Marshal.GetLastPInvokeError(),
+            error => error);
+
+    private static T UseService<T>(string serviceName, int access, Func<nint, T> use, Func<int, T> failed)
+    {
+        nint hSCM = WinService.OpenSCManager(
+            lpMachineName:   null!,
+            lpDatabaseName:  null!,
+            dwDesiredAccess: WinService.SC_MANAGER_CONNECT);
+
+        if (hSCM == nint.Zero) {
+            return failed(Marshal.GetLastPInvokeError());
+        }
+
+        try {
+            nint hService = WinService.OpenService(hSCM, serviceName, access);
+
+            if (hService == nint.Zero) {
+                return failed(Marshal.GetLastPInvokeError());
+            }
+
+            try {
+                return use(hService);
+            }
+            finally {
+                WinService.CloseServiceHandle(hService);
+            }
+        }
+        finally {
+            WinService.CloseServiceHandle(hSCM);
         }
     }
 }

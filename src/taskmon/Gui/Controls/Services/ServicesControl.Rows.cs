@@ -83,7 +83,7 @@ public sealed partial class ServicesControl
 
         detailView.Items.Add(new ListViewItem(
             [new ListViewSubItem(null!, "Status", background, foreground),
-             new ListViewSubItem(null!, DescribeStatus(service.Status), background, statusForeground)]));
+             new ListViewSubItem(null!, StatusText(service), background, statusForeground)]));
 
         detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(service)],       background, foreground));
         detailView.Items.Add(new ListViewItem(["Log On As",    DescribeLogOnAs(service.LogOnAs)], background, foreground));
@@ -92,6 +92,12 @@ public sealed partial class ServicesControl
 
     private void RebuildRows(IReadOnlyList<WindowsServiceInfo> services)
     {
+        int     topIndex      = servicesView.TopIndex;
+        int     selectedIndex = servicesView.SelectedIndex;
+        string? selectedName  = selectedIndex >= 0 && selectedIndex < visibleServices.Count
+            ? visibleServices[selectedIndex].ServiceName
+            : null;
+
         servicesView.Items.Clear();
 
         visibleServices = sorter.Sort(services.Where(MatchesFilter));
@@ -108,20 +114,63 @@ public sealed partial class ServicesControl
 
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, Cell(service.DisplayName),        background, foreground),
-                new ListViewSubItem(null!, DescribeStatus(service.Status),   background, statusForeground),
+                new ListViewSubItem(null!, StatusText(service),              background, statusForeground),
                 new ListViewSubItem(null!, DescribeStartType(service),       background, foreground),
                 new ListViewSubItem(null!, DescribeLogOnAs(service.LogOnAs), background, foreground),
                 new ListViewSubItem(null!, Cell(service.Description),        background, foreground)
-            });
+            }) {
+                Checked = inFlight.TryGetValue(service.ServiceName, out bool start)
+                    ? start
+                    : ShowsAsRunning(service.Status)
+            };
 
             servicesView.Items.Add(row);
         }
+
+        SelectFollowedService(selectedName, selectedIndex, topIndex);
 
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, services.Count);
         servicesView.HeaderText          = $"{running} running / {services.Count} total";
         servicesView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
-            [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
+            [
+                .. CanControl ? [ToggleHotKey] : Array.Empty<(string, string)>(),
+                CommonControl.RefreshHotKey,
+                CommonControl.SortHotKey,
+                .. filter.FooterHotKeys,
+                CommonControl.ScrollHotKey
+            ]);
     }
+
+    private void SelectFollowedService(string? serviceName, int previousIndex, int topIndex)
+    {
+        if (visibleServices.Count == 0) {
+            return;
+        }
+
+        int index = -1;
+
+        if (serviceName is not null) {
+            for (int i = 0; i < visibleServices.Count; i++) {
+                if (string.Equals(visibleServices[i].ServiceName, serviceName, StringComparison.OrdinalIgnoreCase)) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+
+        if (index < 0) {
+            index = Math.Clamp(previousIndex, 0, visibleServices.Count - 1);
+        }
+
+        servicesView.TopIndex      = topIndex;
+        servicesView.SelectedIndex = index;
+        servicesView.ScrollSelectedIntoView();
+    }
+
+    private string StatusText(WindowsServiceInfo service) =>
+        inFlight.TryGetValue(service.ServiceName, out bool start)
+            ? start ? "Starting…" : "Stopping…"
+            : DescribeStatus(service.Status);
 }

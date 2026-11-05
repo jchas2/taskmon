@@ -11,7 +11,7 @@ namespace Task.Monitor.Gui;
 public class HelpScreen : Screen
 {
 #if __WIN32__
-    private const string SpaceHelpText = "Tick items; enable/disable in STARTUP";
+    private const string SpaceHelpText = "Tick items; toggle STARTUP or SERVICES";
 #else
     private const string SpaceHelpText = "Space-bar to check/uncheck items";
 #endif

@@ -31,6 +31,8 @@ public sealed class WorkerServiceTests
             CycleRan.Reset();
             return ran;
         }
+
+        public void WakeNow() => Wake();
     }
 
     [Fact]
@@ -79,6 +81,28 @@ public sealed class WorkerServiceTests
                 "RequestImmediateRefresh should end the wait long before the 10s delay");
 
             Assert.Contains(true, service.Snapshot());
+        }
+        finally {
+            service.Stop();
+        }
+    }
+
+    [Fact]
+    public void Wake_Runs_The_Next_Cycle_Early_Without_A_Refresh()
+    {
+        SpyWorkerService service = new();
+
+        // As above: a natural next cycle is 10s away, a woken one runs within milliseconds.
+        service.Delay = 10_000;
+        service.Start();
+
+        try {
+            Assert.True(service.WaitForCycle(5_000), "the first cycle should run immediately");
+
+            service.WakeNow();
+
+            Assert.True(service.WaitForCycle(5_000), "Wake should end the wait long before the 10s delay");
+            Assert.DoesNotContain(true, service.Snapshot());
         }
         finally {
             service.Stop();

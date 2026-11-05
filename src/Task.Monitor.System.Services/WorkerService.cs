@@ -135,4 +135,7 @@ public class WorkerService : ISystemService
             }
         }
     }
+
+    // Runs the next cycle now, without asking it to refresh.
+    protected void Wake() => wakeSignal.Set();
 }

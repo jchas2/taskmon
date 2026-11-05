@@ -9,4 +9,10 @@ public sealed class WindowsServiceInfo
     public WindowsServiceStartType StartType        { get; set; }
     public bool                    DelayedAutoStart { get; set; }
     public string?                 LogOnAs          { get; set; }
+
+    public bool IsPending => Status
+        is WindowsServiceStatus.StartPending
+        or WindowsServiceStatus.StopPending
+        or WindowsServiceStatus.ContinuePending
+        or WindowsServiceStatus.PausePending;
 }

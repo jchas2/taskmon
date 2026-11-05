@@ -4,6 +4,7 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.WindowsServices;
+using MessageBox = Task.Monitor.System.Controls.MessageBox.MessageBox;
 
 namespace Task.Monitor.Gui.Controls.Services;
 
@@ -25,8 +26,11 @@ public sealed partial class ServicesControl : Control
     private readonly ListView                       detailView;
     private readonly ListFilter                     filter;
     private readonly ListSorter<WindowsServiceInfo> sorter;
+    private readonly MessageBox                     toggleDialog;
 
     private WindowsServicesInfo? services;
+
+    private bool loaded;
     
     private string lastSignature = string.Empty;
 
@@ -44,6 +48,7 @@ public sealed partial class ServicesControl : Control
         servicesView = new ListView(terminal) {
             EnableScroll      = true,
             EnableRowSelect   = true,
+            ShowCheckboxes    = WindowsServicesService.SupportsControl,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = true,
@@ -76,20 +81,32 @@ public sealed partial class ServicesControl : Control
         filter = new ListFilter(this, terminal, "Filter Services");
         sorter = new ListSorter<WindowsServiceInfo>(terminal, servicesView, SortColumns, defaultColumn: 0);
 
+        toggleDialog = new MessageBox(terminal) {
+            Visible = false,
+            Height  = MessageBox.PreferredHeight
+        };
+
         Controls.Add(servicesView);
         Controls.Add(detailView);
         Controls.Add(sorter.SortView);
         Controls.Add(filter.Dialog);
+        Controls.Add(toggleDialog);
+
+        RequestControl = RequestControlThroughService;
     }
 
     private static string BuildSignature(IReadOnlyList<WindowsServiceInfo> entries) =>
-        entries.Count + "|" + 
+        entries.Count + "|" +
         string.Join("|", entries.Select(service =>
             $"{service.ServiceName}:{(int)service.Status}:{(int)service.StartType}:{service.DelayedAutoStart}"));
 
     private void EnsureRows(WindowsServicesInfo info)
     {
-        string signature = BuildSignature(info.Specs.Services) + "|" + filter.Text + "|" + sorter.Signature;
+        string signature =
+            BuildSignature(info.Specs.Services) + "|" +
+            string.Join(",", inFlight.Select(request => $"{request.Key}:{request.Value}")) + "|" +
+            filter.Text + "|" +
+            sorter.Signature;
 
         if (signature == lastSignature) {
             return;
@@ -115,12 +132,23 @@ public sealed partial class ServicesControl : Control
         detailView.Draw();
         sorter.Draw();
         filter.Draw();
+
+        if (toggleDialog.Visible) {
+            toggleDialog.Draw();
+        }
+
+        ShowPendingFailure();
     }
 
     protected override void OnGotFocus() => sorter.FocusTarget.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (toggleDialog.Visible) {
+            OnToggleDialogKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         if (!filter.IsDialogVisible && sorter.KeyPressed(keyInfo, ref handled)) {
             Clear();
             Resize();
@@ -145,6 +173,14 @@ public sealed partial class ServicesControl : Control
                 TryRequestRefresh();
                 handled = true;
                 return;
+
+            case ConsoleKey.Spacebar when CanControl:
+                if (!sorter.IsSelectionActive) {
+                    ToggleSelectedService();
+                }
+
+                handled = true;
+                return;
         }
 
         servicesView.KeyPressed(keyInfo, ref handled);
@@ -159,9 +195,14 @@ public sealed partial class ServicesControl : Control
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         CommonControl.Theme(servicesView, appConfig.Theme);
-        CommonControl.Theme(detailView, appConfig.Theme);        
+        CommonControl.Theme(detailView, appConfig.Theme);
+        CommonControl.Theme(toggleDialog, appConfig.Theme);
         filter.ApplyTheme(appConfig.Theme);
         sorter.ApplyTheme(appConfig.Theme);
+
+        lock (DrawingLock) {
+            loaded = true;
+        }
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
 
@@ -179,7 +220,12 @@ public sealed partial class ServicesControl : Control
 
         sorter.Layout(X, Y, servicesViewHeight);
 
-        int fixedWidth = NameColumnWidth + StatusColumnWidth + StartupTypeColumnWidth + LogOnAsColumnWidth;
+        int fixedWidth =
+            (servicesView.ShowCheckboxes ? ListView.CheckboxWidth : 0) +
+            NameColumnWidth                                           +
+            StatusColumnWidth                                         +
+            StartupTypeColumnWidth                                    +
+            LogOnAsColumnWidth;
 
         servicesView.ColumnHeaders[0].Width = NameColumnWidth;
         servicesView.ColumnHeaders[1].Width = StatusColumnWidth;
@@ -204,10 +250,18 @@ public sealed partial class ServicesControl : Control
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
+
+        lock (DrawingLock) {
+            loaded         = false;
+            pendingFailure = null;
+            inFlight.Clear();
+        }
+
         servicesView.Items.Clear();
         detailView.Items.Clear();
         lastSignature = string.Empty;
         filter.Close();
+        CloseToggleDialog();
 
         base.OnUnload();
     }
@@ -234,6 +288,8 @@ public sealed partial class ServicesControl : Control
         services = snapshot.WindowsServices;
         Draw();
     }
+
+    internal ListView ServicesView => servicesView;
 
     private void TryRequestRefresh()
     {
