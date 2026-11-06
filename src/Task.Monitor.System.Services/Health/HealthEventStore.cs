@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using Task.Monitor.Cli.Utils;
@@ -46,6 +47,7 @@ public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
         List<HealthEvent> events = [];
 
         foreach (string file in SortedFiles().TakeLast(limit)) {
+            Trace.WriteLine($"Loading event file {file}");
             if (Read(file) is { } healthEvent) {
                 events.Add(healthEvent);
             }
