@@ -34,6 +34,9 @@ public static unsafe class Sys
     public const int PF_ROUTE     = 17;     /* Protocol family for routing */
     public const int AF_UNSPEC    = 0;      /* Address family unspecified */
     public const int RTM_IFINFO2  = 0x12;   /* Interface info message type */
+
+    public const int KERN_ARGMAX    = 8;    /* Max bytes of exec arguments */
+    public const int KERN_PROCARGS2 = 49;   /* A process's argc, exec path and arguments */
     
     private enum Error
     {
@@ -110,8 +113,45 @@ public static unsafe class Sys
         Sys.Free(ptr);
     }
 
+    public static unsafe int? GetArgMax()
+    {
+        int*   name   = stackalloc int[] { (int)Selectors.CTL_KERN, KERN_ARGMAX };
+        int    value  = 0;
+        size_t length = sizeof(int);
+
+        return Sysctl(name, 2, &value, &length) == 0 && value > 0 ? value : null;
+    }
+
     [DllImport(Libraries.LibC)]
     public static extern int getloadavg([Out] double[] loadavg, int nelem);
+
+    public static unsafe string? GetProcessExecPath(int pid, byte[] buffer)
+    {
+        int*   name   = stackalloc int[] { (int)Selectors.CTL_KERN, KERN_PROCARGS2, pid };
+        size_t length = buffer.Length;
+
+        fixed (byte* value = buffer) {
+            if (Sysctl(name, 3, value, &length) != 0) {
+                return null;
+            }
+        }
+
+        return ParseExecPath(buffer.AsSpan(0, (int)length));
+    }
+
+    public static string? ParseExecPath(ReadOnlySpan<byte> procArgs)
+    {
+        if (procArgs.Length <= sizeof(int)) {
+            return null;
+        }
+
+        ReadOnlySpan<byte> path = procArgs[sizeof(int)..];
+        int                end  = path.IndexOf((byte)0);
+
+        return end > 0 
+            ? System.Text.Encoding.UTF8.GetString(path[..end]) 
+            : null;
+    }
 
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
     private static extern unsafe int Sysctl(

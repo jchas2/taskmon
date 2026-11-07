@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Process;
 
 namespace Task.Monitor.System.Services.Process;
 
@@ -11,6 +12,8 @@ public partial class ProcessService
 
     private static MachTime.mach_timebase_info_data_t cachedTimebase;
     private static bool timebaseInitialized;
+
+    private readonly ProcessNameResolver nameResolver = new();
 
     private static unsafe TimeSpan CalculateSystemTime(ulong systemTime)
     {
@@ -30,7 +33,7 @@ public partial class ProcessService
             (long)(systemTime / NanosecondsTo100NanosecondsFactor * cachedTimebase.numer / cachedTimebase.denom));
     }
 
-    private static unsafe ProcessSample? CreateProcessSample(int pid)
+    private static unsafe ProcessSample? CreateProcessSample(int pid, ProcessNameResolver nameResolver)
     {
         int size = sizeof(ProcInfo.proc_taskallinfo);
         ProcInfo.proc_taskallinfo procTaskInfo = default;
@@ -61,9 +64,17 @@ public partial class ProcessService
             Pid = pid
         };
 
-        sample.ProcessName     = Marshal.PtrToStringUTF8(pbiCommPtr) ?? string.Empty;
+        long startTicks =
+            (long)procBsdInfo.pbi_start_tvsec * TimeSpan.TicksPerSecond +
+            (long)procBsdInfo.pbi_start_tvusec * TimeSpan.TicksPerMicrosecond;
+
+        string kernelName = Marshal.PtrToStringUTF8(pbiNamePtr) is { Length: > 0 } longName
+            ? longName
+            : Marshal.PtrToStringUTF8(pbiCommPtr) ?? string.Empty;
+
         sample.FileName        = GetProcPidPath(pid);
-        sample.FileDescription = Marshal.PtrToStringUTF8(pbiNamePtr) ?? sample.ProcessName;
+        sample.ProcessName     = nameResolver.Resolve(pid, startTicks, sample.FileName, kernelName);
+        sample.FileDescription = sample.ProcessName;
         sample.ModuleName      = Path.GetFileName(sample.FileName);
         sample.ParentPid       = (int)procBsdInfo.pbi_ppid;
         sample.IsDaemon        = IsDaemon(pid, (int)procBsdInfo.pbi_ppid, procBsdInfo.pbi_uid);
@@ -80,9 +91,7 @@ public partial class ProcessService
         sample.UserTime        = CalculateSystemTime(usage.ri_user_time).Ticks;
         sample.DiskReadBytes   = usage.ri_diskio_bytesread;
         sample.DiskWriteBytes  = usage.ri_diskio_byteswritten;
-        sample.StartTimeUtc    = DateTime.UnixEpoch.AddTicks(
-            (long)procBsdInfo.pbi_start_tvsec * TimeSpan.TicksPerSecond +
-            (long)procBsdInfo.pbi_start_tvusec * TimeSpan.TicksPerMicrosecond);
+        sample.StartTimeUtc    = DateTime.UnixEpoch.AddTicks(startTicks);
 
         return sample;
     }
@@ -114,15 +123,15 @@ public partial class ProcessService
         return buffer;
     }
 
-    public static ProcessSample? GetProcessSample(int pid) => CreateProcessSample(pid);
+    public static ProcessSample? GetProcessSample(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
 
-    private static List<ProcessSample> GetProcessSamples()
+    private List<ProcessSample> GetProcessSamples()
     {
         int[] pids = GetPids();
         List<ProcessSample> samples = new(pids.Length);
 
         for (int i = 0; i < pids.Length; i++) {
-            ProcessSample? sample = CreateProcessSample(pids[i]);
+            ProcessSample? sample = CreateProcessSample(pids[i], nameResolver);
 
             if (sample != null) {
                 samples.Add(sample);

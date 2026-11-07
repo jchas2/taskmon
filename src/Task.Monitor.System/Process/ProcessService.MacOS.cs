@@ -8,6 +8,8 @@ namespace Task.Monitor.System.Process;
 public sealed partial class ProcessService
 {
 #if __APPLE__
+    private readonly ProcessNameResolver nameResolver = new();
+
     private unsafe ProcessInfo? CreateProcessInfo(int pid, long gpuTime)
     {
         const int KERNEL_TASK_PID = 0;
@@ -42,10 +44,18 @@ public sealed partial class ProcessService
         IntPtr pbiCommPtr = new((void*)procBsdInfo.pbi_comm);
         IntPtr pbiNamePtr = new((void*)procTaskInfo.pbsd.pbi_name);
         
+        long startTicks =
+            (long)procBsdInfo.pbi_start_tvsec * TimeSpan.TicksPerSecond +
+            (long)procBsdInfo.pbi_start_tvusec * TimeSpan.TicksPerMicrosecond;
+
+        string kernelName = Marshal.PtrToStringUTF8(pbiNamePtr) is { Length: > 0 } longName
+            ? longName
+            : Marshal.PtrToStringUTF8(pbiCommPtr) ?? string.Empty;
+
         processInfo.ParentPid = 0;
-        processInfo.ProcessName = Marshal.PtrToStringUTF8(pbiCommPtr) ?? string.Empty;
         processInfo.FileName = GetProcPidPath(pid);
-        processInfo.FileDescription = Marshal.PtrToStringUTF8(pbiNamePtr) ?? processInfo.ProcessName;
+        processInfo.ProcessName = nameResolver.Resolve(pid, startTicks, processInfo.FileName, kernelName);
+        processInfo.FileDescription = processInfo.ProcessName;
         processInfo.ModuleName = Path.GetFileName(processInfo.FileName);
         processInfo.IsDaemon = pid == LAUNCHD_PID || pid == KERNEL_TASK_PID ||
             (procTaskInfo.pbsd.pbi_ppid == LAUNCHD_PID && procBsdInfo.pbi_uid < 500);
