@@ -30,6 +30,24 @@ public class Control
         controlCollection = new ControlCollection(this);
     }
 
+    protected static void AppendHalfBlock(AnsiScreenBuffer frame, Color left, Color right, Color fallback)
+    {
+        if (!DrawingCapabilities.HasFlag(DrawingCapabilities.SeamlessBlockGlyphs)) {
+            frame.SetColour(fallback, fallback);
+            frame.Append(' ');
+            return;
+        }
+
+        if (right.IsTransparent()) {
+            frame.SetColour(left, right);
+            frame.Append(left.IsTransparent() ? ' ' : '▌');
+        }
+        else {
+            frame.SetColour(right, left);
+            frame.Append('▐');
+        }
+    }
+
     public virtual Color BackgroundColour { get; set; } = ConsolePalette.Black;
 
     public virtual Color BorderColour { get; set; } = ConsolePalette.White;

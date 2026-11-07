@@ -72,14 +72,16 @@ public sealed class MainScreen2 : Screen
         };
 
         menuBannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
-            Visible = true,
-            TabStop = false,
-            Text    = "VIEW MENU"
+            Visible       = true,
+            TabStop       = false,
+            HalfCellEdges = true,
+            Text          = "VIEW MENU"
         };
 
         bannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
-            Visible = true,
-            TabStop = false
+            Visible       = true,
+            TabStop       = false,
+            HalfCellEdges = true
         };
 
         summaryControl = new SummaryControl2(
@@ -400,9 +402,9 @@ public sealed class MainScreen2 : Screen
         menuBannerControl.Height = BannerHeight;
         menuBannerControl.Resize();
 
-        bannerControl.X      = MenuWidth + 1;
+        bannerControl.X      = MenuWidth;
         bannerControl.Y      = ActiveControlTop;
-        bannerControl.Width  = Width - (MenuWidth + 1);
+        bannerControl.Width  = Width - MenuWidth;
         bannerControl.Height = BannerHeight;
         bannerControl.Resize();
 
