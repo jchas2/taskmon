@@ -1,5 +1,6 @@
 ﻿using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui;
+using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services.Cpu;
@@ -26,7 +27,8 @@ public sealed class RunAppAction(RunContext runContext) : IAction
     public int Run()
     {
         ConsoleEx.SetAlternateScreenBuffer();
-        Control.FocusSelectionColour = runContext.AppConfig.Theme.FocusSelectionColour;
+        Control.FocusSelectionColour    = runContext.AppConfig.Theme.FocusSelectionColour;
+        Control.QuadrantGlyphsSupported = !SystemTerminal.IsLegacyConsoleHost;
 
         runContext.ServiceController
             .AddService(() => new CpuService())

@@ -49,5 +49,16 @@ public partial class SystemTerminal
             PInvokeErrorHelpers.TraceOnLastError(nameof(ConsoleApi.SetConsoleMode));
         }
     }
+
+    private static bool IsLegacyConsoleHostInternal()
+    {
+        // conhost.exe's WindowClass - it has trouble rendering some glyphs, used for fallback logic.
+        const string LegacyConsoleWindowClass = "ConsoleWindowClass";
+
+        nint window = ConsoleApi.GetConsoleWindow();
+
+        return window != 0 &&
+               WinUser.GetWindowClassName(window) == LegacyConsoleWindowClass;
+    }
 #endif
 }

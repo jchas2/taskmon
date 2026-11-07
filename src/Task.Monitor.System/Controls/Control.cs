@@ -18,8 +18,6 @@ public class Control
     private string? name           = null;
     private AnsiScreenBuffer frame = new();
 
-    // Row glyphs are staged in a scratch buffer so a row costs one cursor move and one
-    // append instead of one move per cell. Rows wider than this fall back to the heap.
     private const int MaxStackAllocChars = 512;
 
     protected static readonly SysThreading::Lock DrawingLock = new();
@@ -137,12 +135,14 @@ public class Control
 
         frame.Clear();
 
+        bool quadrants = QuadrantGlyphsSupported;
+
         if (width == 1) {
             frame.SetColour(colour, BackgroundColour);
 
             for (int row = y; row < y + height; row++) {
                 frame.MoveTo(x, row);
-                frame.Append('▞');
+                frame.Append(quadrants ? '▞' : '█');
             }
 
             frame.ResetColour();
@@ -157,9 +157,9 @@ public class Control
             : new char[width];
 
         line.Fill('▄');
-        
-        line[0]         = '▗';
-        line[width - 1] = '▖';
+
+        line[0]         = quadrants ? '▗' : ' ';
+        line[width - 1] = quadrants ? '▖' : ' ';
 
         frame.MoveTo(x, y);
         frame.SetColour(colour, BackgroundColour);
@@ -181,9 +181,9 @@ public class Control
 
         if (height > 1) {
             line.Fill('▀');
-            
-            line[0]         = '▝';
-            line[width - 1] = '▘';
+
+            line[0]         = quadrants ? '▝' : ' ';
+            line[width - 1] = quadrants ? '▘' : ' ';
 
             frame.MoveTo(x, bottom);
             frame.SetColour(colour, BackgroundColour);
@@ -383,6 +383,8 @@ public class Control
 
         return true;
     }
+
+    public static bool QuadrantGlyphsSupported { get; set; } = true;
 
     public static bool RedrawEnabled { get; set; } = true;
 

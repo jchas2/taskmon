@@ -40,6 +40,7 @@ public sealed class TaskMonApp(RunContext runContext)
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             Trace.WriteLine($"WT_SESSION = {Environment.GetEnvironmentVariable("WT_SESSION") ?? string.Empty}");
+            Trace.WriteLine($"Host is legacy conhost window = {SystemTerminal.IsLegacyConsoleHost}");
         }
         else {
             Trace.WriteLine($"TERM = {Environment.GetEnvironmentVariable("TERM") ?? string.Empty}");

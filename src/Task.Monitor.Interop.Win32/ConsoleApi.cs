@@ -11,6 +11,9 @@ public static class ConsoleApi
     [DllImport(Libraries.Kernel32, SetLastError = true)]
     public static extern bool GetConsoleMode(nint hConsoleHandle, out uint lpMode);
 
+    [DllImport(Libraries.Kernel32)]
+    public static extern nint GetConsoleWindow();
+
     [DllImport(Libraries.Kernel32, SetLastError = true)]
     public static extern bool SetConsoleMode(nint hConsoleHandle, uint dwMode);
 }

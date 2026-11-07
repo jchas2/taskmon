@@ -62,6 +62,8 @@ public partial class SystemTerminal : ISystemTerminal
         }
     }
 
+    public static bool IsLegacyConsoleHost => IsLegacyConsoleHostInternal();
+
     public bool KeyAvailable => Console.KeyAvailable;
 
     public ConsoleKeyInfo ReadKey() => Console.ReadKey(intercept: true);

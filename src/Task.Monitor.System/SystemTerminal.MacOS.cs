@@ -19,5 +19,7 @@ public partial class SystemTerminal : ISystemTerminal
     }
     
     private void EnableAnsiTerminalCodesInternal() { }
+
+    private static bool IsLegacyConsoleHostInternal() => false;
 #endif
 }

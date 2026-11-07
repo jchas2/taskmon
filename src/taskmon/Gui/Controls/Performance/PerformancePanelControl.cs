@@ -30,6 +30,18 @@ public sealed class PerformancePanelControl : Control
         Title = title;
     }
 
+    private void AppendHalfBlock(Color left, Color right)
+    {
+        if (right.IsTransparent()) {
+            Frame.SetColour(left, right);
+            Frame.Append(left.IsTransparent() ? ' ' : '▌');
+        }
+        else {
+            Frame.SetColour(right, left);
+            Frame.Append('▐');
+        }
+    }
+
     public Control AssociatedControl => associatedControl;
 
     public Action<SystemSnapshot>? Bind { get; set; }
@@ -102,12 +114,11 @@ public sealed class PerformancePanelControl : Control
 
         if (!IsSelected) {
             Frame.MoveTo(X, Y + 1);
+            AppendHalfBlock(left: BackgroundColour, right: bgMenuColour);
             Frame.SetColour(fgMenuColour, bgMenuColour);
-            Frame.Append('▌');
             Frame.Append(Title.PadOrTruncate(' ', textWidth - 2));
             Frame.MoveTo(X + textWidth - 1, Y + 1);
-            Frame.SetColour(fgMenuColour, bgMenuColour);
-            Frame.Append('▐');
+            AppendHalfBlock(left: bgMenuColour, right: BackgroundColour);
         }
         else {
             Frame.MoveTo(X + 1, Y + 1);
