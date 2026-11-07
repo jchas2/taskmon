@@ -49,6 +49,7 @@ public sealed class TaskMonApp(RunContext runContext)
         }
 
         Trace.WriteLine($"Host is modern terminal = {TerminalCapabilities.IsModernTerminal(Environment.GetEnvironmentVariable)}");
+        Trace.WriteLine($"Drawing capabilities = {SystemTerminal.DetectDrawingCapabilities()}");
         Trace.WriteLine(new string('-', 10));
             
         string? configPath = runContext.AppConfig.DefaultConfigFilePath;

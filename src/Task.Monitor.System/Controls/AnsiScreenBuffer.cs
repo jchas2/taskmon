@@ -5,9 +5,11 @@ namespace Task.Monitor.System.Controls;
 
 public sealed class AnsiScreenBuffer
 {
-    private const char   Escape  = '';
-    private const string BoldOn  = "[1m";
-    private const string BoldOff = "[22m";
+    private const char   Escape     = '';
+    private const string BoldOn     = "[1m";
+    private const string BoldOff    = "[22m";
+    private const string ReverseOn  = "[7m";
+    private const string ReverseOff = "[27m";
 
     private char[] buffer;
     private int   length;
@@ -16,6 +18,7 @@ public sealed class AnsiScreenBuffer
     private bool  foregroundSet;
     private bool  backgroundSet;
     private bool  bold;
+    private bool  reverse;
 
     public AnsiScreenBuffer(int capacity = 1024) =>
         buffer = new char[Math.Max(1, capacity)];
@@ -128,6 +131,7 @@ public sealed class AnsiScreenBuffer
         foregroundSet = false;
         backgroundSet = false;
         bold          = false;
+        reverse       = false;
     }
 
     private void EnsureCapacity(int required)
@@ -172,6 +176,7 @@ public sealed class AnsiScreenBuffer
         foregroundSet = false;
         backgroundSet = false;
         bold          = false;
+        reverse       = false;
     }
 
     public void SetBold(bool enabled)
@@ -194,5 +199,15 @@ public sealed class AnsiScreenBuffer
 
         AppendBackground(bg);
         AppendForeground(fg);
+    }
+
+    public void SetReverse(bool enabled)
+    {
+        if (reverse == enabled) {
+            return;
+        }
+
+        Append(enabled ? ReverseOn : ReverseOff);
+        reverse = enabled;
     }
 }

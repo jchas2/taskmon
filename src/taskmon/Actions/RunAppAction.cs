@@ -27,8 +27,8 @@ public sealed class RunAppAction(RunContext runContext) : IAction
     public int Run()
     {
         ConsoleEx.SetAlternateScreenBuffer();
-        Control.FocusSelectionColour    = runContext.AppConfig.Theme.FocusSelectionColour;
-        Control.QuadrantGlyphsSupported = !SystemTerminal.IsLegacyConsoleHost;
+        Control.FocusSelectionColour = runContext.AppConfig.Theme.FocusSelectionColour;
+        Control.DrawingCapabilities  = SystemTerminal.DetectDrawingCapabilities();
 
         runContext.ServiceController
             .AddService(() => new CpuService())

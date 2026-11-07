@@ -95,6 +95,8 @@ public class Control
         Terminal.Write(frame.AsSpan());
     }
 
+    public static DrawingCapabilities DrawingCapabilities { get; set; } = DrawingCapabilities.All;
+
     protected void DrawRectangle(
         int   x, 
         int   y, 
@@ -135,14 +137,15 @@ public class Control
 
         frame.Clear();
 
-        bool quadrants = QuadrantGlyphsSupported;
+        bool quadrants = DrawingCapabilities.HasFlag(DrawingCapabilities.QuadrantGlyphs);
+        bool seamless  = DrawingCapabilities.HasFlag(DrawingCapabilities.SeamlessBlockGlyphs);
 
         if (width == 1) {
-            frame.SetColour(colour, BackgroundColour);
+            frame.SetColour(colour, seamless ? BackgroundColour : colour);
 
             for (int row = y; row < y + height; row++) {
                 frame.MoveTo(x, row);
-                frame.Append(quadrants ? '▞' : '█');
+                frame.Append(!seamless ? ' ' : quadrants ? '▞' : '█');
             }
 
             frame.ResetColour();
@@ -158,8 +161,10 @@ public class Control
 
         line.Fill('▄');
 
-        line[0]         = quadrants ? '▗' : ' ';
-        line[width - 1] = quadrants ? '▖' : ' ';
+        if (seamless) {
+            line[0]         = quadrants ? '▗' : ' ';
+            line[width - 1] = quadrants ? '▖' : ' ';
+        }
 
         frame.MoveTo(x, y);
         frame.SetColour(colour, BackgroundColour);
@@ -167,8 +172,15 @@ public class Control
 
         for (int row = y + 1; row < bottom; row++) {
             frame.MoveTo(x, row);
+
+            if (!seamless) {
+                frame.SetColour(colour, colour);
+                frame.Append(' ', width);
+                continue;
+            }
+
             frame.SetColour(colour, BackgroundColour);
-            frame.Append('▐'); // \u2590
+            frame.Append('▐'); // ▐
 
             if (width > 2) {
                 frame.SetColour(colour, colour);
@@ -176,18 +188,28 @@ public class Control
             }
 
             frame.SetColour(colour, BackgroundColour);
-            frame.Append('▌'); // \u258C
+            frame.Append('▌'); // ▌
         }
 
         if (height > 1) {
-            line.Fill('▀');
-
-            line[0]         = quadrants ? '▝' : ' ';
-            line[width - 1] = quadrants ? '▘' : ' ';
-
             frame.MoveTo(x, bottom);
             frame.SetColour(colour, BackgroundColour);
-            frame.Append(line);
+
+            if (seamless) {
+                line.Fill('▀');
+
+                line[0]         = quadrants ? '▝' : ' ';
+                line[width - 1] = quadrants ? '▘' : ' ';
+
+                frame.Append(line);
+            }
+            else {
+                // Reversed, the cell's background is the bevel colour and '▄' takes the background:
+                // it looks like '▀' without a glyph reaching the top of the cell.
+                frame.SetReverse(true);
+                frame.Append('▄', width);
+                frame.SetReverse(false);
+            }
         }
 
         frame.ResetColour();
@@ -383,8 +405,6 @@ public class Control
 
         return true;
     }
-
-    public static bool QuadrantGlyphsSupported { get; set; } = true;
 
     public static bool RedrawEnabled { get; set; } = true;
 

@@ -6,7 +6,7 @@ namespace Task.Monitor.System.Tests.Controls;
 
 // Replays the ANSI stream a control writes (e.g. RecordingTerminal.Output) and records the
 // glyph and colours each cell ends up with. Understands only the sequences AnsiScreenBuffer
-// emits for truecolour: cursor moves, 24-bit colours, default colours and reset.
+// emits for truecolour: cursor moves, 24-bit colours, default colours, reverse video and reset.
 public sealed class AnsiScreen
 {
     // SGR 49: the terminal's own background, which shows through.
@@ -23,14 +23,17 @@ public sealed class AnsiScreen
 
     public AnsiScreen(string output)
     {
-        string fg  = DefaultForeground;
-        string bg  = Transparent;
-        int    row = 0;
-        int    col = 0;
+        string fg      = DefaultForeground;
+        string bg      = Transparent;
+        bool   reverse = false;
+        int    row     = 0;
+        int    col     = 0;
 
         foreach (Match token in Token.Matches(output)) {
             if (token.Groups[3].Success) {
-                cells[(col++, row)] = new Cell(token.Groups[3].Value[0], fg, bg);
+                cells[(col++, row)] = reverse
+                    ? new Cell(token.Groups[3].Value[0], bg, fg)
+                    : new Cell(token.Groups[3].Value[0], fg, bg);
                 continue;
             }
 
@@ -44,8 +47,17 @@ public sealed class AnsiScreen
                     break;
 
                 case "m" when args is "0":
-                    fg = DefaultForeground;
-                    bg = Transparent;
+                    fg      = DefaultForeground;
+                    bg      = Transparent;
+                    reverse = false;
+                    break;
+
+                case "m" when args is "7":
+                    reverse = true;
+                    break;
+
+                case "m" when args is "27":
+                    reverse = false;
                     break;
 
                 case "m" when args is "39":
@@ -70,8 +82,6 @@ public sealed class AnsiScreen
         }
     }
 
-    public Cell this[int x, int y] => cells[(x, y)];
-
     // The colours the left and right halves of a cell show, for glyphs split down the middle.
     public (string Left, string Right) HalvesAt(int x, int y)
     {
@@ -89,4 +99,20 @@ public sealed class AnsiScreen
     // How a colour appears in cells: Transparent, or "r;g;b".
     public static string Key(Color colour) =>
         colour.IsTransparent() ? Transparent : $"{colour.R};{colour.G};{colour.B}";
+
+    public Cell this[int x, int y] => cells[(x, y)];
+
+    // The colours the top and bottom halves of a cell show, for glyphs split across the middle.
+    public (string Top, string Bottom) TopAndBottomAt(int x, int y)
+    {
+        Cell cell = this[x, y];
+
+        return cell.Glyph switch {
+            '▄' => (cell.Background, cell.Foreground),
+            '▀' => (cell.Foreground, cell.Background),
+            ' ' => (cell.Background, cell.Background),
+            '█' => (cell.Foreground, cell.Foreground),
+            _   => throw new InvalidOperationException($"Cell ({x}, {y}) holds '{cell.Glyph}', not a half block")
+        };
+    }
 }

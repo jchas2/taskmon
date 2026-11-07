@@ -24,6 +24,11 @@ public partial class SystemTerminal
         }
     }
 
+    private static DrawingCapabilities DetectDrawingCapabilitiesInternal() =>
+        IsLegacyConsoleHostInternal()
+            ? DrawingCapabilities.All & ~DrawingCapabilities.QuadrantGlyphs
+            : DrawingCapabilities.All;
+
     private void EnableAnsiTerminalCodesInternal()
     {
         // Not all terminals on Windows platforms (conhost.exe as an example) support VT/ANSI escape codes.

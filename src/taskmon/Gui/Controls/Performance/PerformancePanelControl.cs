@@ -32,6 +32,14 @@ public sealed class PerformancePanelControl : Control
 
     private void AppendHalfBlock(Color left, Color right)
     {
+        if (!DrawingCapabilities.HasFlag(DrawingCapabilities.SeamlessBlockGlyphs)) {
+            Color fill = left.ToArgb() == BackgroundColour.ToArgb() ? right : left;
+
+            Frame.SetColour(fill, fill);
+            Frame.Append(' ');
+            return;
+        }
+
         if (right.IsTransparent()) {
             Frame.SetColour(left, right);
             Frame.Append(left.IsTransparent() ? ' ' : '▌');

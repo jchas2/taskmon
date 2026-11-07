@@ -50,6 +50,8 @@ public partial class SystemTerminal : ISystemTerminal
         set => CursorVisibleInternal = value;
     }
 
+    public static DrawingCapabilities DetectDrawingCapabilities() => DetectDrawingCapabilitiesInternal();
+
     public void EnableAnsiTerminalCodes() => EnableAnsiTerminalCodesInternal();
 
     public Color ForegroundColor

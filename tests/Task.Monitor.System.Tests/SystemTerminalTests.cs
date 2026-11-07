@@ -3,7 +3,7 @@ using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Tests;
 
-public sealed class SystemTerminalTests
+public sealed partial class SystemTerminalTests
 {
     [SkippableFact]
     [SupportedOSPlatform("macos")]
