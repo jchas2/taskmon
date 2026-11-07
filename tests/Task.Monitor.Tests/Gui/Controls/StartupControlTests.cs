@@ -614,11 +614,18 @@ public sealed class StartupControlTests : IDisposable
     }
 
     public static TheoryData<StartupToggleResult, bool, string> ToggleFailureData() => new() {
-        { StartupToggleResult.AccessDenied, false, "It needs administrator rights.\nRun taskmon as administrator." },
-        { StartupToggleResult.AccessDenied, true,  "Windows refused the change." },
-        { StartupToggleResult.NotFound,     false, "It no longer exists." },
-        { StartupToggleResult.NotSupported, false, $"{StartupTestSources.PrimaryText} items can't be disabled." },
-        { StartupToggleResult.Failed,       false, "Windows couldn't change it." }
+#if __APPLE__
+        { StartupToggleResult.AccessDenied,     false, "It needs root.\nRun taskmon with sudo." },
+        { StartupToggleResult.AccessDenied,     true,  "macOS refused the change." },
+        { StartupToggleResult.Failed,           false, "macOS couldn't change it." },
+#else
+        { StartupToggleResult.AccessDenied,     false, "It needs administrator rights.\nRun taskmon as administrator." },
+        { StartupToggleResult.AccessDenied,     true,  "Windows refused the change." },
+        { StartupToggleResult.NotSupported,     false, $"{StartupTestSources.PrimaryText} items can't be disabled." },
+        { StartupToggleResult.Failed,           false, "Windows couldn't change it." },
+#endif
+        { StartupToggleResult.NotFound,         false, "It no longer exists." },
+        { StartupToggleResult.RequiresApproval, false, "Allow it in System Settings,\nGeneral > Login Items." }
     };
 
     [Fact]
@@ -642,6 +649,26 @@ public sealed class StartupControlTests : IDisposable
 
         Assert.Equal($"Couldn't disable Alpha App\n{reason}", text);
     }
+
+    [Fact]
+    public void Toggle_Failure_Text_Says_An_Entry_In_An_Unknown_State_Cannot_Be_Read()
+    {
+        string text = StartupControl.BuildToggleFailureText(
+            Entry("Alpha App", state: StartupEntryState.Unknown), enable: true, StartupToggleResult.NotSupported, isElevated: false, width: 56);
+
+        Assert.Equal("Couldn't enable Alpha App\nIts current state can't be read.", text);
+    }
+
+#if __APPLE__
+    [Fact]
+    public void Toggle_Failure_Text_Sends_Open_At_Login_Items_To_System_Settings()
+    {
+        string text = StartupControl.BuildToggleFailureText(
+            Entry("Alpha App", StartupEntrySource.OpenAtLogin), enable: false, StartupToggleResult.NotSupported, isElevated: false, width: 56);
+
+        Assert.Equal("Couldn't disable Alpha App\nOpen at Login items can't be disabled.\nUse System Settings > Login Items.", text);
+    }
+#endif
 
     [Fact]
     public void Updates_The_Detail_Pane_When_The_Selection_Moves()

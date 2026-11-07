@@ -70,7 +70,7 @@ public sealed partial class StartupService : WorkerService
     }
 
     public static bool SupportsSetEnabled { get; } =
-#if __WIN32__
+#if __WIN32__ || __APPLE__
         true;
 #else
         false;

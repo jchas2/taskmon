@@ -12,6 +12,8 @@ public class HelpScreen : Screen
 {
 #if __WIN32__
     private const string SpaceHelpText = "Tick items; toggle STARTUP or SERVICES";
+#elif __APPLE__
+    private const string SpaceHelpText = "Tick items; enable/disable in STARTUP";
 #else
     private const string SpaceHelpText = "Space-bar to check/uncheck items";
 #endif

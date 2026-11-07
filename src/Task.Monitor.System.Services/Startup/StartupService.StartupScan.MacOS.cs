@@ -1,6 +1,7 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
 using Task.Monitor.System.Services.Common;
+using Task.Monitor.System.Services.LaunchdServices;
 
 namespace Task.Monitor.System.Services.Startup;
 
@@ -84,6 +85,7 @@ public partial class StartupService
         StartupSpecs         specs,
         BackgroundItems      background,
         BackgroundItemRecord record,
+        TargetUser           user,
         LaunchdOverrides     userOverrides,
         LaunchdOverrides     systemOverrides)
     {
@@ -114,6 +116,7 @@ public partial class StartupService
 
         entry.Publisher ??= background.FindDeveloperName(record);
         entry.State       = ToState(overrides.IsDisabled(label, definition.Disabled, record.IsApproved));
+        entry.Launchd     = ToLaunchdTarget(entry.Source, user.Uid, label, record.IsApproved);
 
         specs.Entries.Add(entry);
     }
@@ -122,6 +125,7 @@ public partial class StartupService
         StartupSpecs         specs,
         BackgroundItems      background,
         BackgroundItemRecord record,
+        TargetUser           user,
         LaunchdOverrides     userOverrides)
     {
         if (record.ResolvePath(background.FindParentPath(record)) is not { } helperPath) {
@@ -143,7 +147,8 @@ public partial class StartupService
             Source         = StartupEntrySource.LoginHelper,
             Scope          = StartupEntryScope.User,
             State          = ToState(userOverrides.IsDisabled(label, null, record.IsApproved)),
-            Origin         = helperPath
+            Origin         = helperPath,
+            Launchd        = ToLaunchdTarget(StartupEntrySource.LoginHelper, user.Uid, label, record.IsApproved)
         });
     }
 
@@ -220,6 +225,7 @@ public partial class StartupService
     private void ScanBackgroundItems(
         StartupSpecs     specs,
         BackgroundItems  background,
+        TargetUser       user,
         LaunchdOverrides userOverrides,
         LaunchdOverrides systemOverrides)
     {
@@ -235,10 +241,10 @@ public partial class StartupService
                 }
             }
             else if (record.Is(BackgroundItemType.LoginItem)) {
-                AddBackgroundLoginHelper(specs, background, record, userOverrides);
+                AddBackgroundLoginHelper(specs, background, record, user, userOverrides);
             }
             else if (record.Is(BackgroundItemType.Agent) || record.Is(BackgroundItemType.Daemon)) {
-                AddBackgroundLaunchdJob(specs, background, record, userOverrides, systemOverrides);
+                AddBackgroundLaunchdJob(specs, background, record, user, userOverrides, systemOverrides);
             }
         }
     }
@@ -249,6 +255,7 @@ public partial class StartupService
         string             folderPath,
         StartupEntrySource source,
         StartupEntryScope  scope,
+        TargetUser         user,
         LaunchdOverrides   overrides,
         Func<string, bool> isLoaded)
     {
@@ -266,7 +273,8 @@ public partial class StartupService
                 scope, 
                 file);
             
-            entry.State = ToState(overrides.IsDisabled(label, definition.Disabled));
+            entry.State   = ToState(overrides.IsDisabled(label, definition.Disabled));
+            entry.Launchd = ToLaunchdTarget(source, user.Uid, label, approved: null);
 
             specs.Entries.Add(entry);
         }
@@ -287,6 +295,7 @@ public partial class StartupService
             Path.Combine(libraryPath, "LaunchAgents"),
             StartupEntrySource.LaunchAgent,
             StartupEntryScope.User,
+            user,
             userOverrides,
             IsLoadedInUserDomain(user));
 
@@ -296,6 +305,7 @@ public partial class StartupService
             Path.Combine(libraryPath, "LaunchDaemons"),
             StartupEntrySource.LaunchDaemon,
             StartupEntryScope.Machine,
+            user,
             systemOverrides,
             ServiceManagement.IsLoadedInSystemDomain);
     }
@@ -305,6 +315,7 @@ public partial class StartupService
         string              folderPath,
         StartupEntrySource  source,
         StartupEntryScope   scope,
+        TargetUser          user,
         LaunchdOverrides    overrides,
         Func<string, bool?> getApproval)
     {
@@ -341,8 +352,11 @@ public partial class StartupService
                 source, 
                 scope, 
                 file);
-            
-            entry.State = ToState(overrides.IsDisabled(label, definition.Disabled, getApproval(file)));
+
+            bool? approved = getApproval(file);
+
+            entry.State   = ToState(overrides.IsDisabled(label, definition.Disabled, approved));
+            entry.Launchd = ToLaunchdTarget(source, user.Uid, label, approved);
 
             specs.Entries.Add(entry);
         }
@@ -375,7 +389,8 @@ public partial class StartupService
                 Source         = StartupEntrySource.LoginHelper,
                 Scope          = StartupEntryScope.User,
                 State          = ToState(userOverrides.IsDisabled(bundleId, null)),
-                Origin         = helperPath
+                Origin         = helperPath,
+                Launchd        = ToLaunchdTarget(StartupEntrySource.LoginHelper, user.Uid, bundleId, approved: null)
             });
         }
     }
@@ -416,9 +431,10 @@ public partial class StartupService
 
         if (background is not null) {
             ScanBackgroundItems(
-                specs, 
-                background, 
-                userOverrides, 
+                specs,
+                background,
+                user,
+                userOverrides,
                 systemOverrides);
         }
         else {
@@ -447,6 +463,7 @@ public partial class StartupService
             Path.Combine(user.HomeDirectory, UserLaunchAgentsFolder),
             StartupEntrySource.LaunchAgent,
             StartupEntryScope.User,
+            user,
             userOverrides,
             plistPath => background?.IsLegacyApproved(plistPath) ?? GetLegacyApproval(plistPath, user.IsSessionOwner));
 
@@ -455,6 +472,7 @@ public partial class StartupService
             MachineLaunchAgentsPath,
             StartupEntrySource.LaunchAgent,
             StartupEntryScope.Machine,
+            user,
             userOverrides,
             plistPath => background?.IsLegacyApproved(plistPath) ?? GetLegacyApproval(plistPath, user.IsSessionOwner));
 
@@ -463,11 +481,15 @@ public partial class StartupService
             MachineLaunchDaemonsPath,
             StartupEntrySource.LaunchDaemon,
             StartupEntryScope.Machine,
+            user,
             systemOverrides,
             plistPath => background?.IsLegacyApproved(plistPath) ?? GetLegacyApproval(plistPath, isAnswerable: true));
 
         return specs;
     }
+
+    internal static LaunchdTarget ToLaunchdTarget(StartupEntrySource source, uint uid, string label, bool? approved) =>
+        new(source == StartupEntrySource.LaunchDaemon ? LaunchdDomain.System : LaunchdDomain.User, uid, label, approved == false);
 
     private static StartupEntryState ToState(bool disabled) =>
         disabled ? StartupEntryState.Disabled : StartupEntryState.Enabled;

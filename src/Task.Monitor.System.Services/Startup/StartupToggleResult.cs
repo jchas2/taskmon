@@ -6,5 +6,6 @@ public enum StartupToggleResult
     AccessDenied,
     NotFound,
     NotSupported,
+    RequiresApproval,
     Failed
 }

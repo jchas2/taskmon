@@ -15,4 +15,7 @@ public sealed class StartupEntry
 #if __WIN32__
     internal StartupApproval? Approval       { get; set; }
 #endif
+#if __APPLE__
+    internal LaunchdTarget?   Launchd        { get; set; }
+#endif
 }

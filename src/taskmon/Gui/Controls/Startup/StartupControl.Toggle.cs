@@ -13,6 +13,18 @@ public sealed partial class StartupControl
 
     internal static readonly (string Key, string Label) ToggleHotKey = ("Space", "Enable/Disable");
 
+#if __APPLE__
+    private const string PlatformName = "macOS";
+
+    private static readonly string[] ElevationReason  = ["It needs root.", "Run taskmon with sudo."];
+    private static readonly string[] NotSupportedHint = ["Use System Settings > Login Items."];
+#else
+    private const string PlatformName = "Windows";
+
+    private static readonly string[] ElevationReason  = ["It needs administrator rights.", "Run taskmon as administrator."];
+    private static readonly string[] NotSupportedHint = [];
+#endif
+
     internal static string BuildToggleFailureText(
         StartupEntry        entry,
         bool                enable,
@@ -28,11 +40,14 @@ public sealed partial class StartupControl
         }
 
         string[] reason = result switch {
-            StartupToggleResult.AccessDenied when isElevated => ["Windows refused the change."],
-            StartupToggleResult.AccessDenied                 => ["It needs administrator rights.", "Run taskmon as administrator."],
+            StartupToggleResult.AccessDenied when isElevated => [$"{PlatformName} refused the change."],
+            StartupToggleResult.AccessDenied                 => ElevationReason,
             StartupToggleResult.NotFound                     => ["It no longer exists."],
-            StartupToggleResult.NotSupported                 => [$"{DescribeType(entry.Source)} items can't be {action}d."],
-                                                           _ => ["Windows couldn't change it."]
+            StartupToggleResult.NotSupported when entry.State == StartupEntryState.Unknown
+                                                             => ["Its current state can't be read."],
+            StartupToggleResult.NotSupported                 => [$"{DescribeType(entry.Source)} items can't be {action}d.", .. NotSupportedHint],
+            StartupToggleResult.RequiresApproval             => ["Allow it in System Settings,", "General > Login Items."],
+                                                           _ => [$"{PlatformName} couldn't change it."]
         };
 
         return string.Join('\n', [heading, .. reason]);
