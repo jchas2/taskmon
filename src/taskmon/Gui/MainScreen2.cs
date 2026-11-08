@@ -259,7 +259,6 @@ public sealed class MainScreen2 : Screen
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        // A control showing its own dialog turns redraws off and needs every key, Tab and F2 included.
         if (!Control.RedrawEnabled) {
             focusedControl.KeyPressed(keyInfo, ref handled);
             return;
@@ -292,6 +291,11 @@ public sealed class MainScreen2 : Screen
                 handled = true;
                 break;
 
+            case ConsoleKey.F12:
+                screenApp.ShowScreen<AboutScreen>();
+                handled = true;
+                break;
+
             case ConsoleKey.RightArrow when focusedControl == menuControl:
                 focusedControl = activeControl;
                 activeControl.SetFocus();
@@ -318,7 +322,6 @@ public sealed class MainScreen2 : Screen
             return;
         }
 
-        // Last, so a view that ever claims t keeps it.
         if (keyInfo.Key == ConsoleKey.T && runContext.AppConfig.ShowTips) {
             footerControl.NextTip();
             handled = true;

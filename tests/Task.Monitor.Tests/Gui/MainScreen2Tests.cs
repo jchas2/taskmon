@@ -95,6 +95,35 @@ public sealed class MainScreen2Tests : IDisposable
     }
 
     [Fact]
+    public void F12_Shows_The_About_Screen()
+    {
+        MainScreen2 mainScreen = new(runContext, screenApp) {
+            Width = 120,
+            Height = 40
+        };
+
+        AboutScreen aboutScreen = new(runContext);
+
+        screenApp
+            .RegisterScreen(mainScreen)
+            .RegisterScreen(aboutScreen);
+
+        screenApp.ShowScreen<MainScreen2>();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        mainScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F12, false, false, false), ref handled);
+
+        string output = CapturedOutput();
+
+        // Closing stops the mascot's animation timer.
+        aboutScreen.Close();
+
+        Assert.True(handled);
+        Assert.Contains("ABOUT TASK MONITOR", output);
+    }
+
+    [Fact]
     public void F1_Shows_The_Help_Screen()
     {
         MainScreen2 mainScreen = new(runContext, screenApp) {

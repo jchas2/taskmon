@@ -144,6 +144,7 @@ public class HelpScreen : Screen
 {"F4:".ToColour(theme.RangeLowBackground, bg)}{"  Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it.".ToColour(fg, bg)}
 {"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Refresh the Startup, Apps, Services or Drivers list (same as r).".ToColour(fg, bg)}
 {"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}
+{"F12:".ToColour(theme.RangeLowBackground, bg)}{" Show the about screen.".ToColour(fg, bg)}
 
 End Task:
 {"k:".ToColour(theme.RangeLowBackground, bg)}{"   End the selected process, or every checked process when multiple selection (x) is on. Child processes are also ended.".ToColour(fg, bg)}");

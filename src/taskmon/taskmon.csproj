@@ -16,6 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Remove="Assets\Mascot\Mascot.anim" />
+      <EmbeddedResource Include="Assets\Mascot\Mascot.anim" />
       <None Remove="Assets\Themes\Classic HTop.theme" />
       <None Remove="Assets\Themes\MSDOS.theme" />
       <EmbeddedResource Include="Assets\Themes\MSDOS.theme" />

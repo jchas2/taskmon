@@ -108,7 +108,6 @@ public sealed class ListViewColourTests
         nameof(ServicesControl),
         nameof(StartupControl),
         nameof(SystemInfoControl),
-        nameof(AboutScreen),
         nameof(HelpScreen),
         nameof(SetupScreen)
     };
@@ -133,7 +132,6 @@ public sealed class ListViewColourTests
             nameof(ServicesControl) => new ServicesControl(runContext.ServiceController, Terminal, runContext.AppConfig),
             nameof(StartupControl) => new StartupControl(runContext.ServiceController, Terminal, runContext.AppConfig),
             nameof(SystemInfoControl) => new SystemInfoControl(runContext.ServiceController, Terminal, runContext.AppConfig),
-            nameof(AboutScreen) => new AboutScreen(runContext),
             nameof(HelpScreen) => new HelpScreen(runContext),
             nameof(SetupScreen) => new SetupScreen(runContext, new ScreenApplication(runContext.Terminal)),
             _ => throw new ArgumentOutOfRangeException(nameof(hostName))

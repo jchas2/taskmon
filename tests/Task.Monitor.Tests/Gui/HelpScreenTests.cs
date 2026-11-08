@@ -89,7 +89,8 @@ public sealed class HelpScreenTests
             "Process and Path Colours",
             "Function Keys",
             "Switch to the next colour theme",
-            "Switch SUMMARY to the next layout"
+            "Switch SUMMARY to the next layout",
+            "Show the about screen"
         };
 
     [Fact]
