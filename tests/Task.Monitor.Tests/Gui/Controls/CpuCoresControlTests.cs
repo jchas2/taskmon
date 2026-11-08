@@ -98,6 +98,23 @@ public sealed class CpuCoresControlTests
         ctrl.Unload();
     }
 
+    // Like the charts and metres, the title sits centred on the bottom border; the top border is bare.
+    [Fact]
+    public void Draws_The_Title_Centred_On_The_Bottom_Border()
+    {
+        CpuCoresControl ctrl = CreateControl(width: 42, height: 7);
+
+        ctrl.Sample(SnapshotWithCores(0.1, 0.2));
+
+        string output = AnsiTestHelper.StripColours(CapturedOutput());
+
+        // 40 inner columns: " Cpu Cores " takes 11, leaving 14 dashes to its left and 15 to its right.
+        Assert.Contains($"╰{new string('─', 14)} Cpu Cores {new string('─', 15)}╯", output);
+        Assert.Contains($"╭{new string('─', 40)}╮", output);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Draws_Title_And_Every_Core_That_Fits()
     {
@@ -107,7 +124,7 @@ public sealed class CpuCoresControlTests
 
         string output = CapturedOutput();
 
-        Assert.Contains("CPU CORES", output);
+        Assert.Contains("Cpu Cores", output);
 
         for (int core = 0; core < 8; core++) {
             Assert.Contains($"C{core}", output);
@@ -187,7 +204,7 @@ public sealed class CpuCoresControlTests
 
         string output = CapturedOutput();
 
-        Assert.Contains("CPU CORES", output);
+        Assert.Contains("Cpu Cores", output);
         Assert.Contains("not available", output);
 
         ctrl.Unload();

@@ -160,7 +160,7 @@ public sealed class LayoutDesignerScreenTests
         screen.Draw();
 
         Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
-        Assert.Contains("CPU CORES", CapturedOutput());
+        Assert.Contains("Cpu Cores", CapturedOutput());
 
         screen.Unload();
     }

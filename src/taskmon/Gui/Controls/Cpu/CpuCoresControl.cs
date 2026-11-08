@@ -11,7 +11,7 @@ namespace Task.Monitor.Gui.Controls.Cpu;
 
 public sealed class  CpuCoresControl : Control
 {
-    private const string Title         = "CPU CORES";
+    private const string Title         = "Cpu Cores";
     private const string MsgNoCoreData = "Per-core CPU data is not available on this OS";
 
     private const int MinBarWidth  = 6;
@@ -79,21 +79,13 @@ public sealed class  CpuCoresControl : Control
 
     private void DrawBorder()
     {
-        string titleLabel  = $" {Title} ";
-        int    innerWidth  = Width - 2;
-        int    titleLength = Math.Min(titleLabel.Length, innerWidth);
-        int    leftDashes  = (innerWidth - titleLength) / 2;
-        int    rightDashes = innerWidth - titleLength - leftDashes;
+        int innerWidth = Width - 2;
 
         frame.Clear();
         frame.MoveTo(X, Y);
         frame.SetColour(DisplayBorderColour, BackgroundColour);
         frame.Append('╭');
-        frame.Append('─', leftDashes);
-        frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append(titleLabel.AsSpan(0, titleLength));
-        frame.SetColour(DisplayBorderColour, BackgroundColour);
-        frame.Append('─', rightDashes);
+        frame.Append('─', innerWidth);
         frame.Append('╮');
 
         for (int row = 1; row < Height - 1; row++) {
@@ -105,10 +97,19 @@ public sealed class  CpuCoresControl : Control
             frame.Append('│');
         }
 
+        string titleLabel  = $" {Title} ";
+        int    titleLength = Math.Min(titleLabel.Length, innerWidth);
+        int    leftDashes  = (innerWidth - titleLength) / 2;
+        int    rightDashes = innerWidth - titleLength - leftDashes;
+
         frame.MoveTo(X, Y + Height - 1);
         frame.SetColour(DisplayBorderColour, BackgroundColour);
         frame.Append('╰');
-        frame.Append('─', innerWidth);
+        frame.Append('─', leftDashes);
+        frame.SetColour(ForegroundColour, BackgroundColour);
+        frame.Append(titleLabel.AsSpan(0, titleLength));
+        frame.SetColour(DisplayBorderColour, BackgroundColour);
+        frame.Append('─', rightDashes);
         frame.Append('╯');
 
         frame.ResetColour();
@@ -249,8 +250,6 @@ public sealed class  CpuCoresControl : Control
             int columnLeft = innerLeft + column * (grid.ColumnWidth + ColumnGutter);
 
             for (int row = 0; row < grid.Rows; row++) {
-                // Column-major: the first column holds the first grid.Rows cores, and so on, so a
-                // 5-high pane showing 8 cores reads C0-C4 then C5-C7.
                 int coreIndex = column * grid.Rows + row;
 
                 if (coreIndex >= coreValues.Length) {
@@ -269,8 +268,6 @@ public sealed class  CpuCoresControl : Control
 
     protected override void OnLoad()
     {
-        // Not ThemeDefaults: it would reset BorderColour, which the hosting summary or layout
-        // designer has already set through SummaryPaneTheme before loading its panes.
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
 
