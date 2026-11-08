@@ -64,7 +64,7 @@ performance.memory.modified=#FFFF00
 performance.memory.standby=#FFFF00
 performance.memory.free=#00FF00
 
-property.key=#808080
+property.key=#FFFF00
 property.value=#808080
 
 process.list.normaluserspace=#FFFF00

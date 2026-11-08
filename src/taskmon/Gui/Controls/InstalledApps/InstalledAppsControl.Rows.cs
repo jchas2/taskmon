@@ -1,5 +1,6 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.InstalledApps;
 
@@ -53,16 +54,15 @@ public sealed partial class InstalledAppsControl
             return;
         }
 
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
+        Theme theme = appConfig.Theme;
 
-        detailView.Items.Add(new ListViewItem(["Name",      Cell(app.Name)],                       background, foreground));
-        detailView.Items.Add(new ListViewItem(["Version",   Cell(app.Version)],                    background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher", Cell(app.Publisher)],                  background, foreground));
-        detailView.Items.Add(new ListViewItem(["Scope",     DescribeScope(app.Scope)],             background, foreground));
-        detailView.Items.Add(new ListViewItem(["Installed", DescribeInstallDate(app.InstallDate)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Size",      DescribeSize(app)],                    background, foreground));
-        detailView.Items.Add(new ListViewItem(["Location",  Cell(app.InstallLocation)],            background, foreground));
+        detailView.Items.Add(CommonControl.PropertyRow("Name",      Cell(app.Name),                       theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Version",   Cell(app.Version),                    theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Publisher", Cell(app.Publisher),                  theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Scope",     DescribeScope(app.Scope),             theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Installed", DescribeInstallDate(app.InstallDate), theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Size",      DescribeSize(app),                    theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Location",  Cell(app.InstallLocation),            theme));
     }
 
     private void RebuildRows(IReadOnlyList<InstalledApp> apps)

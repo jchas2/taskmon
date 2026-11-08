@@ -25,14 +25,14 @@ control.border.focused=#ba55d3
 chart.background=transparent
 chart.borderforeground=#228b22
 chart.borderbackground=transparent
-chart.yaxis=#FDFD96
+chart.yaxis=#e8f48c
 chart.title=#228b22
 chart.grid=#A9A9A9
 chart.range.low.background=#8dd06c
 chart.range.low.foreground=#000000
-chart.range.mid.background=#70c247
+chart.range.mid.background=#FFB347
 chart.range.mid.foreground=#000000
-chart.range.high.background=#4cbb17
+chart.range.high.background=#ba55d3
 chart.range.high.foreground=#000000
 
 metre.background=transparent
@@ -59,13 +59,13 @@ performance.panel.titlebar.background=#115d33
 performance.panel.titlebar.foreground=#ba55d3
 performance.cpu.kernel=#4cbb17
 performance.cpu.user=#FDFD96
-performance.memory.inuse=#4cbb17
+performance.memory.inuse=#FFB347
 performance.memory.modified=#FDFD96
-performance.memory.standby=#70c247
+performance.memory.standby=#ba55d3
 performance.memory.free=#8dd06c
 
-property.key=#228b22
-property.value=#228b22
+property.key=#FFB347
+property.value=#e8f48c
 
 process.list.normaluserspace=#FDFD96
 process.list.lowpriority=#115d33

@@ -157,14 +157,14 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", "N/A" });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Name:",                string.Empty }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Base speed:",          "0 GHz"      }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Sockets:",             "0"          }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Logical processors:",  "0"          }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "Virtualization:",      string.Empty }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L1 cache:",            "0 KB"       }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L2 cache:",            "0 KB"       }));
-        cpuSpecsListView.Items.Add(new ListViewItem(new[] { "L3 cache:",            "0 KB"       }));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Name:",                string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Base speed:",          "0 GHz", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Sockets:",             "0", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Logical processors:",  "0", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Virtualization:",      string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L1 cache:",            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L2 cache:",            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L3 cache:",            "0 KB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

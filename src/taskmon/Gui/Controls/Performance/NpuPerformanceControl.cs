@@ -109,12 +109,12 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
 
         metricsListView.Items.Add(new ListViewItem(new[] { NotAvailable, NotAvailable, NotAvailable }));
 
-        specsListView.Items.Add(new ListViewItem(new[] { "Name:",         NotAvailable }));
-        specsListView.Items.Add(new ListViewItem(new[] { "Vendor:",       NotAvailable }));
-        specsListView.Items.Add(new ListViewItem(new[] { "Chip:",         NotAvailable }));
-        specsListView.Items.Add(new ListViewItem(new[] { "Cores:",        NotAvailable }));
-        specsListView.Items.Add(new ListViewItem(new[] { "Architecture:", NotAvailable }));
-        specsListView.Items.Add(new ListViewItem(new[] { "Version:",      NotAvailable }));
+        specsListView.Items.Add(CommonControl.PropertyRow("Name:",         NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow("Vendor:",       NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow("Chip:",         NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow("Cores:",        NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow("Architecture:", NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow("Version:",      NotAvailable, appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> formatter)

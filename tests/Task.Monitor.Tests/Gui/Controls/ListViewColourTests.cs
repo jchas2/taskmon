@@ -151,6 +151,52 @@ public sealed class ListViewColourTests
         host.Unload();
     }
 
+    public static TheoryData<string> PerformanceHosts => new() {
+        nameof(CpuPerformanceControl),
+        nameof(DiskPerformanceControl),
+        nameof(GpuPerformanceControl),
+        nameof(MemoryPerformanceControl),
+        nameof(NetworkPerformanceControl),
+        nameof(NpuPerformanceControl)
+    };
+
+    // Each performance control's specs list (two columns, no headers) holds "Key:" / value rows,
+    // drawn like the header's labels and values: keys in property.key, values in property.value.
+    [Theory]
+    [MemberData(nameof(PerformanceHosts))]
+    public void Performance_Specs_Rows_Use_The_Property_Colours(string hostName)
+    {
+        Color propertyKey   = ConsolePalette.Cyan;
+        Color propertyValue = ConsolePalette.Yellow;
+
+        runContext.AppConfig.Theme.PropertyKey   = propertyKey;
+        runContext.AppConfig.Theme.PropertyValue = propertyValue;
+
+        Control host = hostName switch {
+            nameof(CpuPerformanceControl)     => new CpuPerformanceControl(Terminal, runContext.AppConfig),
+            nameof(DiskPerformanceControl)    => new DiskPerformanceControl(Terminal, runContext.AppConfig),
+            nameof(GpuPerformanceControl)     => new GpuPerformanceControl(Terminal, runContext.AppConfig),
+            nameof(MemoryPerformanceControl)  => new MemoryPerformanceControl(Terminal, runContext.AppConfig),
+            nameof(NetworkPerformanceControl) => new NetworkPerformanceControl(Terminal, runContext.AppConfig),
+            nameof(NpuPerformanceControl)     => new NpuPerformanceControl(Terminal, runContext.AppConfig),
+            _ => throw new ArgumentOutOfRangeException(nameof(hostName))
+        };
+
+        Loaded(host);
+
+        ListView specs = Assert.Single(
+            ThemedListViews(host),
+            listView => !listView.ShowColumnHeaders && listView.ColumnHeaders.Count() == 2);
+
+        Assert.NotEmpty(specs.Items);
+        Assert.All(specs.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(propertyKey, row.SubItems[0].ForegroundColor);
+            Assert.Equal(propertyValue, row.SubItems[1].ForegroundColor);
+        });
+
+        host.Unload();
+    }
+
     private static T Loaded<T>(T control) where T : Control
     {
         control.Width = 160;
@@ -162,6 +208,43 @@ public sealed class ListViewColourTests
 
     [Fact]
     public void ProcessInfoControl_ListViews_And_Rows_Use_The_ListView_Colours()
+    {
+        ProcessInfoControl control = LoadedProcessInfoControl();
+
+        AssertListViewsUseListViewColours(control);
+        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
+
+        Assert.Contains(rows, row => row.SubItems[0].Text == "DETAIL"
+            && row.SubItems[0].ForegroundColor == ListViewForeground);
+
+        control.Unload();
+    }
+
+    // DETAIL lists "Key:" / value rows, drawn like the performance specs lists.
+    [Fact]
+    public void ProcessInfoControl_Detail_Rows_Use_The_Property_Colours()
+    {
+        Color propertyKey   = ConsolePalette.Cyan;
+        Color propertyValue = ConsolePalette.Yellow;
+
+        runContext.AppConfig.Theme.PropertyKey   = propertyKey;
+        runContext.AppConfig.Theme.PropertyValue = propertyValue;
+
+        ProcessInfoControl control = LoadedProcessInfoControl();
+
+        ListView detail = Assert.Single(
+            ThemedListViews(control),
+            listView => listView.Items.Cast<ListViewItem>().Any(row => row.SubItems[0].Text == "File:"));
+
+        Assert.All(detail.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(propertyKey, row.SubItems[0].ForegroundColor);
+            Assert.Equal(propertyValue, row.SubItems[1].ForegroundColor);
+        });
+
+        control.Unload();
+    }
+
+    private ProcessInfoControl LoadedProcessInfoControl()
     {
         ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
         Assert.NotNull(sample);
@@ -178,15 +261,7 @@ public sealed class ListViewColourTests
             SelectedProcessId = sample.Pid
         };
 
-        Loaded(control);
-
-        AssertListViewsUseListViewColours(control);
-        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
-
-        Assert.Contains(rows, row => row.SubItems[0].Text == "DETAIL"
-            && row.SubItems[0].ForegroundColor == ListViewForeground);
-
-        control.Unload();
+        return Loaded(control);
     }
 
     [Fact]
@@ -213,11 +288,12 @@ public sealed class ListViewColourTests
 
         List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
 
-        // NAME cell of the main table and the "Name" field row of the detail pane.
+        // NAME cell of the main table uses the list colour; the "Name" field row of the detail pane
+        // is a property row, so its field takes property.key.
         Assert.Contains(rows, row => row.SubItems[0].Text == "OneDrive"
             && row.SubItems[0].ForegroundColor == ListViewForeground);
         Assert.Contains(rows, row => row.SubItems[0].Text == "Name"
-            && row.SubItems[0].ForegroundColor == ListViewForeground);
+            && row.SubItems[0].ForegroundColor == runContext.AppConfig.Theme.PropertyKey);
 
         control.Unload();
     }

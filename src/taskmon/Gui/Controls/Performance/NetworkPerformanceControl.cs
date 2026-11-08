@@ -156,7 +156,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             "Total Packets Sent:", 
             "Total Packets Received:" }) {
 
-            networkSpecsListView.Items.Add(new ListViewItem(new[] { label, NetworkDeviceParser.NotAvailable }));
+            networkSpecsListView.Items.Add(CommonControl.PropertyRow(label, NetworkDeviceParser.NotAvailable, appConfig.Theme));
         }
     }
 

@@ -1,4 +1,5 @@
 using System.Drawing;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Drivers;
 
@@ -56,24 +57,18 @@ public sealed partial class DriversControl
             return;
         }
 
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
-        Color stoppedForeground = appConfig.Theme.RangeMidForeground;
+        Theme theme = appConfig.Theme;
 
-        Color statusForeground = IsActive(driver.Status) 
-                ? foreground 
-                : stoppedForeground;
+        Color statusForeground = IsActive(driver.Status)
+            ? theme.PropertyValue
+            : theme.RangeMidForeground;
 
-        detailView.Items.Add(new ListViewItem(["Name", Cell(driver.DisplayName)], background, foreground));
-
-        detailView.Items.Add(new ListViewItem(
-            [new ListViewSubItem(null!, "Status",                      background, foreground),
-             new ListViewSubItem(null!, DescribeStatus(driver.Status), background, statusForeground)]));
-
-        detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(driver)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Version",      Cell(driver.Version)],      background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher",    Cell(driver.Publisher)],    background, foreground));
-        detailView.Items.Add(new ListViewItem(["Path",         Cell(driver.ImagePath)],    background, foreground));
+        detailView.Items.Add(CommonControl.PropertyRow("Name",         Cell(driver.DisplayName),      theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Status",       DescribeStatus(driver.Status), theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow("Startup Type", DescribeStartType(driver),     theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Version",      Cell(driver.Version),          theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Publisher",    Cell(driver.Publisher),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Path",         Cell(driver.ImagePath),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<DriverInfo> drivers)

@@ -1,5 +1,7 @@
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.WindowsServices;
 using Task.Monitor.System.Tests.Controls;
@@ -278,6 +280,34 @@ public sealed class ServicesControlTests : IDisposable
         Assert.Contains("[ ] Stop Service", output);
         Assert.Contains("[ ] Stopped Service", output);
         Assert.Contains("DESCRIPTION", output);
+
+        ctrl.Unload();
+    }
+
+    // DETAIL lists field / value rows like the other property lists: fields in property.key and
+    // values in property.value, except a stopped service's status, which keeps its highlight.
+    [Fact]
+    public void Detail_Rows_Use_The_Property_Colours()
+    {
+        runContext.AppConfig.Theme.PropertyKey   = ConsolePalette.Cyan;
+        runContext.AppConfig.Theme.PropertyValue = ConsolePalette.Yellow;
+
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Service("Print Spooler")));
+
+        ListView detail = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+
+        Assert.NotEmpty(detail.Items);
+        Assert.All(detail.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(ConsolePalette.Cyan,   row.SubItems[0].ForegroundColor);
+            Assert.Equal(ConsolePalette.Yellow, row.SubItems[1].ForegroundColor);
+        });
+
+        ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Stopped)));
+
+        ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
+        Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.RangeMidForeground, status.SubItems[1].ForegroundColor);
 
         ctrl.Unload();
     }

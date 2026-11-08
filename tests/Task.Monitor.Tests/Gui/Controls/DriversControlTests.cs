@@ -1,3 +1,4 @@
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -101,6 +102,34 @@ public sealed class DriversControlTests : IDisposable
     }
 
     public void Dispose() => Control.RedrawEnabled = true;
+
+    // DETAIL lists field / value rows like the other property lists: fields in property.key and
+    // values in property.value, except a stopped driver's status, which keeps its highlight.
+    [Fact]
+    public void Detail_Rows_Use_The_Property_Colours()
+    {
+        runContext.AppConfig.Theme.PropertyKey   = ConsolePalette.Cyan;
+        runContext.AppConfig.Theme.PropertyValue = ConsolePalette.Yellow;
+
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", publisher: "Microsoft Corporation")));
+
+        ListView detail = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+
+        Assert.NotEmpty(detail.Items);
+        Assert.All(detail.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(ConsolePalette.Cyan,   row.SubItems[0].ForegroundColor);
+            Assert.Equal(ConsolePalette.Yellow, row.SubItems[1].ForegroundColor);
+        });
+
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
+
+        ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
+        Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.RangeMidForeground, status.SubItems[1].ForegroundColor);
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Driver()

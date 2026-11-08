@@ -191,15 +191,15 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 #endif
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Memory:",            string.Empty }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Speed:",             "0 GHz"      }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Configured speed:",  "0 GHz"      }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Slots used:",        "0"          }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Form factor:",       string.Empty }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "In use:",            "0 MB"       }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Modified:",          "0 MB"       }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Standby (cached):",  "0 MB"       }));
-        memorySpecsListView.Items.Add(new ListViewItem(new[] { "Free:",              "0 MB"       }));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Memory:",            string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Speed:",             "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Configured speed:",  "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Slots used:",        "0", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Form factor:",       string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("In use:",            "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Modified:",          "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Standby (cached):",  "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Free:",              "0 MB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

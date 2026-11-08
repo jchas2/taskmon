@@ -1,5 +1,7 @@
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.LaunchdServices;
@@ -129,6 +131,38 @@ public sealed class LaunchdServicesControlTests : IDisposable
     }
 
     public void Dispose() => Control.RedrawEnabled = true;
+
+    // DETAIL lists field / value rows like the other property lists: fields in property.key and
+    // values in property.value, except a failed service's status and last exit, which keep their
+    // highlight.
+    [Fact]
+    public void Detail_Rows_Use_The_Property_Colours()
+    {
+        runContext.AppConfig.Theme.PropertyKey   = ConsolePalette.Cyan;
+        runContext.AppConfig.Theme.PropertyValue = ConsolePalette.Yellow;
+
+        LaunchdServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", publisher: "Apple Inc.", plistPath: "/System/example.plist")));
+
+        ListView detail = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+
+        Assert.NotEmpty(detail.Items);
+        Assert.All(detail.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(ConsolePalette.Cyan,   row.SubItems[0].ForegroundColor);
+            Assert.Equal(ConsolePalette.Yellow, row.SubItems[1].ForegroundColor);
+        });
+
+        // Exit code 1, and no longer running.
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 1 << 8)));
+
+        foreach (string field in new[] { "Status", "Last Exit" }) {
+            ListViewItem row = detail.Items.Cast<ListViewItem>().Single(item => item.SubItems[0].Text == field);
+            Assert.Equal(ConsolePalette.Cyan, row.SubItems[0].ForegroundColor);
+            Assert.Equal(runContext.AppConfig.Theme.RangeHighForeground, row.SubItems[1].ForegroundColor);
+        }
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Service()

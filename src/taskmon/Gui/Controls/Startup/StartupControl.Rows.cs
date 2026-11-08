@@ -1,4 +1,5 @@
 using System.Drawing;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Startup;
 
@@ -62,24 +63,18 @@ public sealed partial class StartupControl
             return;
         }
 
-        Color background         = appConfig.Theme.ListViewBackground;
-        Color foreground         = appConfig.Theme.ListViewForeground;
-        Color disabledForeground = appConfig.Theme.RangeMidForeground;
+        Theme theme = appConfig.Theme;
 
-        Color statusForeground   = entry.State == StartupEntryState.Disabled 
-            ? disabledForeground 
-            : foreground;
+        Color statusForeground = entry.State == StartupEntryState.Disabled
+            ? theme.RangeMidForeground
+            : theme.PropertyValue;
 
-        detailView.Items.Add(new ListViewItem(["Name",      Cell(entry.Name)],           background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher", Cell(entry.Publisher)],      background, foreground));
-        detailView.Items.Add(new ListViewItem(["Type",      DescribeType(entry.Source)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Scope",     DescribeScope(entry.Scope)], background, foreground));
-
-        detailView.Items.Add(new ListViewItem(
-            [new ListViewSubItem(null!, "Status",                   background, foreground),
-             new ListViewSubItem(null!, DescribeState(entry.State), background, statusForeground)]));
-
-        detailView.Items.Add(new ListViewItem(["Command", Cell(entry.Command)], background, foreground));
+        detailView.Items.Add(CommonControl.PropertyRow("Name",      Cell(entry.Name),           theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Publisher", Cell(entry.Publisher),      theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Type",      DescribeType(entry.Source), theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Scope",     DescribeScope(entry.Scope), theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Status",    DescribeState(entry.State), theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow("Command",   Cell(entry.Command),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<StartupEntry> entries, IReadOnlyList<string> notes)

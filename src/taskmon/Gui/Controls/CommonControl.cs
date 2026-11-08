@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Drawing;
+using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls;
@@ -58,6 +59,15 @@ public static class CommonControl
         key[0] is 'F' or 'f' &&
         int.TryParse(key.AsSpan(1), out int number) &&
         number is >= 1 and <= 24;
+
+    // A key/value list row: the key in the theme's property.key colour and the value in
+    // property.value, or in valueColour for a value that flags a state (stopped, failed, an error).
+    // Both sit on the list view background. Updating SubItems[1].Text later keeps the colours.
+    public static ListViewItem PropertyRow(string key, string value, Theme theme, Color? valueColour = null) =>
+        new([
+            new ListViewSubItem(null!, key,   theme.ListViewBackground, theme.PropertyKey),
+            new ListViewSubItem(null!, value, theme.ListViewBackground, valueColour ?? theme.PropertyValue)
+        ]);
 
     public static void Theme(Chart control, Theme theme)
     {

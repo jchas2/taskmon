@@ -386,51 +386,18 @@ public partial class ProcessInfoControl : Control
             processInfoView.ColumnHeaders[0].Text = "Pid:";
             processInfoView.ColumnHeaders[1].Text = SelectedProcessId.ToString();
             
-            processInfoView.Items.Add(
-                new(["File:", sample.ModuleName],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-
-            processInfoView.Items.Add(
-                new(["Description:", sample.FileDescription],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-
-            processInfoView.Items.Add(
-                new(["Path:", sample.CmdLine],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-
-            processInfoView.Items.Add(
-                new(["User:", sample.UserName],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-            
-            processInfoView.Items.Add(
-                new(["Version:", fvi.FileVersion ?? string.Empty],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-            
-            processInfoView.Items.Add(
-                new(["Size:", finfo.Length.ToFormattedByteSize()],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
-            
-            processInfoView.Items.Add(
-                new(["Size on disk:", $"{finfo.Length} bytes"],
-                    appConfig.Theme.ListViewBackground,
-                    appConfig.Theme.ListViewForeground));
+            processInfoView.Items.Add(CommonControl.PropertyRow("File:",         sample.ModuleName,                   appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("Description:",  sample.FileDescription,              appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("Path:",         sample.CmdLine,                      appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("User:",         sample.UserName,                     appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("Version:",      fvi.FileVersion ?? string.Empty,     appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("Size:",         finfo.Length.ToFormattedByteSize(),  appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow("Size on disk:", $"{finfo.Length} bytes",             appConfig.Theme));
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");
 
-            ListViewItem errorRow = new(
-                ["Error:", ex.Message],
-                appConfig.Theme.ListViewBackground,
-                appConfig.Theme.ListViewForeground);
-
-            errorRow.SubItems[(int)InfoColumns.Value].ForegroundColor = appConfig.Theme.Error;
-            processInfoView.Items.Add(errorRow);
+            processInfoView.Items.Add(CommonControl.PropertyRow("Error:", ex.Message, appConfig.Theme, appConfig.Theme.Error));
         }
     }
     

@@ -1,4 +1,5 @@
 using System.Drawing;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.WindowsServices;
 
@@ -71,23 +72,17 @@ public sealed partial class ServicesControl
             return;
         }
 
-        Color background        = appConfig.Theme.ListViewBackground;
-        Color foreground        = appConfig.Theme.ListViewForeground;
-        Color stoppedForeground = appConfig.Theme.RangeMidForeground;
-        
-        Color statusForeground  = service.Status == WindowsServiceStatus.Running 
-            ? foreground 
-            : stoppedForeground;
+        Theme theme = appConfig.Theme;
 
-        detailView.Items.Add(new ListViewItem(["Name", Cell(service.DisplayName)], background, foreground));
+        Color statusForeground = service.Status == WindowsServiceStatus.Running
+            ? theme.PropertyValue
+            : theme.RangeMidForeground;
 
-        detailView.Items.Add(new ListViewItem(
-            [new ListViewSubItem(null!, "Status", background, foreground),
-             new ListViewSubItem(null!, StatusText(service), background, statusForeground)]));
-
-        detailView.Items.Add(new ListViewItem(["Startup Type", DescribeStartType(service)],       background, foreground));
-        detailView.Items.Add(new ListViewItem(["Log On As",    DescribeLogOnAs(service.LogOnAs)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Description",  Cell(service.Description)],        background, foreground));
+        detailView.Items.Add(CommonControl.PropertyRow("Name",         Cell(service.DisplayName),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Status",       StatusText(service),              theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow("Startup Type", DescribeStartType(service),       theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Log On As",    DescribeLogOnAs(service.LogOnAs), theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Description",  Cell(service.Description),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<WindowsServiceInfo> services)

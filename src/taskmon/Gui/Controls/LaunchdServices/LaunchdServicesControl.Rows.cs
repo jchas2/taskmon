@@ -1,4 +1,5 @@
 using System.Drawing;
+using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.LaunchdServices;
 
@@ -59,30 +60,21 @@ public sealed partial class LaunchdServicesControl
             return;
         }
 
-        Color background = appConfig.Theme.ListViewBackground;
-        Color foreground = appConfig.Theme.ListViewForeground;
+        Theme theme = appConfig.Theme;
 
-        Color lastExitForeground = HasFailed(service) ? appConfig.Theme.RangeHighForeground : foreground;
+        Color lastExitForeground = HasFailed(service) ? theme.RangeHighForeground : theme.PropertyValue;
 
-        detailView.Items.Add(new ListViewItem(["Label",      service.Label],             background, foreground));
-        detailView.Items.Add(new ListViewItem(["Domain",     service.Domain.ToString()], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Group",      service.Group],             background, foreground));
-
-        detailView.Items.Add(new ListViewItem(
-            [new ListViewSubItem(null!, "Status",                 background, foreground),
-             new ListViewSubItem(null!, DescribeStatus(service),  background, StatusForeground(service))]));
-
-        detailView.Items.Add(new ListViewItem(["Start Type", DescribeStartType(service.StartType)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Enabled",    service.Disabled ? "No" : "Yes"],      background, foreground));
-
-        detailView.Items.Add(new ListViewItem(
-            [new ListViewSubItem(null!, "Last Exit",                              background, foreground),
-             new ListViewSubItem(null!, DescribeLastExit(service.LastExitStatus), background, lastExitForeground)]));
-
-        detailView.Items.Add(new ListViewItem(["Program",    Cell(service.ProgramPath)], background, foreground));
-        detailView.Items.Add(new ListViewItem(["Arguments",  Cell(service.Arguments)],   background, foreground));
-        detailView.Items.Add(new ListViewItem(["Publisher",  Cell(service.Publisher)],   background, foreground));
-        detailView.Items.Add(new ListViewItem(["Plist",      Cell(service.PlistPath)],   background, foreground));
+        detailView.Items.Add(CommonControl.PropertyRow("Label",      service.Label,                          theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Domain",     service.Domain.ToString(),              theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Group",      service.Group,                          theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Status",     DescribeStatus(service),                theme, StatusForeground(service, theme.PropertyValue)));
+        detailView.Items.Add(CommonControl.PropertyRow("Start Type", DescribeStartType(service.StartType),   theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Enabled",    service.Disabled ? "No" : "Yes",        theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Last Exit",  DescribeLastExit(service.LastExitStatus), theme, lastExitForeground));
+        detailView.Items.Add(CommonControl.PropertyRow("Program",    Cell(service.ProgramPath),              theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Arguments",  Cell(service.Arguments),                theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Publisher",  Cell(service.Publisher),                theme));
+        detailView.Items.Add(CommonControl.PropertyRow("Plist",      Cell(service.PlistPath),                theme));
     }
 
     private void RebuildRows(IReadOnlyList<LaunchdServiceInfo> entries)
@@ -100,7 +92,7 @@ public sealed partial class LaunchdServicesControl
             ListViewItem row = new(new[] {
                 new ListViewSubItem(null!, service.Label,                         background, foreground),
                 new ListViewSubItem(null!, service.Group,                         background, foreground),
-                new ListViewSubItem(null!, DescribeStatus(service),               background, StatusForeground(service)),
+                new ListViewSubItem(null!, DescribeStatus(service),               background, StatusForeground(service, foreground)),
                 new ListViewSubItem(null!, DescribeStartType(service.StartType),  background, foreground),
                 new ListViewSubItem(null!, service.Disabled ? "No" : "Yes",       background, foreground),
                 new ListViewSubItem(null!, Cell(service.ProgramPath),             background, foreground)
@@ -117,10 +109,12 @@ public sealed partial class LaunchdServicesControl
             [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
 
-    private Color StatusForeground(LaunchdServiceInfo service) => service.Status switch {
+    // normalForeground is the colour of a running or waiting service: the list foreground in the
+    // services list, property.value in the DETAIL list.
+    private Color StatusForeground(LaunchdServiceInfo service, Color normalForeground) => service.Status switch {
         _ when HasFailed(service)        => appConfig.Theme.RangeHighForeground,
         LaunchdServiceStatus.Running or
-        LaunchdServiceStatus.Waiting     => appConfig.Theme.ListViewForeground,
+        LaunchdServiceStatus.Waiting     => normalForeground,
                                        _ => appConfig.Theme.RangeMidForeground
     };
 }

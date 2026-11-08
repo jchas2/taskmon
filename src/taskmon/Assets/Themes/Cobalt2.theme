@@ -64,8 +64,8 @@ performance.memory.modified=#a5ff90
 performance.memory.standby=#ff9d00
 performance.memory.free=#0088ff
 
-property.key=#ffc600
-property.value=#ffc600
+property.key=#a5ff90
+property.value=#fdfd96
 
 process.list.normaluserspace=#a5ff90
 process.list.lowpriority=#ff628c

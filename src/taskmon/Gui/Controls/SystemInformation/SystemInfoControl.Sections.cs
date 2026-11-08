@@ -1,4 +1,3 @@
-using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Extensions;
 using Task.Monitor.System;
@@ -201,20 +200,11 @@ public sealed partial class SystemInfoControl
 #endif
 
     private void AddRow(
-        ListView target, 
-        string   label, 
-        string   value, 
-        int      indent = 0)
-    {
-        Color background = appConfig.Theme.ListViewBackground;
-
-        ListViewItem row = new(new[] {
-            new ListViewSubItem(null!, $"{new string(' ', indent)}{label}", background, appConfig.Theme.PropertyKey),
-            new ListViewSubItem(null!, value,                               background, appConfig.Theme.PropertyValue)
-        });
-
-        target.Items.Add(row);
-    }
+        ListView target,
+        string   label,
+        string   value,
+        int      indent = 0) =>
+        target.Items.Add(CommonControl.PropertyRow($"{new string(' ', indent)}{label}", value, appConfig.Theme));
 
     private void AddRow(ListView target) =>
         target.Items.Add(new ListViewItem(new[] { string.Empty, string.Empty }));

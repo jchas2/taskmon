@@ -141,16 +141,16 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
         diskMetricsListView.Items.Add(diskMetricsItem);
         
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Model:",               Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Manufacturer:",        Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Firmware Revision:",   Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Serial Number:",       Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Bus Type:",            Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Media Type:",          Constants.NotAvailable }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Capacity:",            "0.0 GB" }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Removable:",           "No"     }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Read:",    "0.0 GB" }));
-        diskSpecsListView.Items.Add(new ListViewItem(new[] { "Total Bytes Written:", "0.0 GB" }));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Model:",               Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Manufacturer:",        Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Firmware Revision:",   Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Serial Number:",       Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Bus Type:",            Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Media Type:",          Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Capacity:",            "0.0 GB", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Removable:",           "No", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Total Bytes Read:",    "0.0 GB", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Total Bytes Written:", "0.0 GB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)

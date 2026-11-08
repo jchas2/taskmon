@@ -41,7 +41,7 @@ metre.borderforeground=#ff7edb
 metre.borderbackground=transparent
 
 listview.background=transparent
-listview.foreground=#ff7edb                     ; tokenColors: entity
+listview.foreground=#ff8b39                     ; tokenColors: entity
 listview.borderforeground=#ff7edb
 listview.borderbackground=transparent
 listview.header.background=#262335              ; tab.activeBackground
@@ -64,7 +64,7 @@ performance.memory.modified=#ff8b39             ; tokenColors: string
 performance.memory.standby=#8080FF              ; tokenColors: keyword
 performance.memory.free=#ff7edb                 ; tokenColors: comment
 
-property.key=#ff7edb
+property.key=#ff8b39
 property.value=#ff7edb
 
 process.list.normaluserspace=#ff8b39            ; tokenColors: string

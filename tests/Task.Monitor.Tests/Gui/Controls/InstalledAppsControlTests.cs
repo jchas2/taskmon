@@ -1,5 +1,7 @@
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.InstalledApps;
 using Task.Monitor.System.Tests.Controls;
@@ -119,6 +121,28 @@ public sealed class InstalledAppsControlTests : IDisposable
     }
 
     public void Dispose() => Control.RedrawEnabled = true;
+
+    // DETAIL lists field / value rows like the other property lists: fields in property.key and
+    // values in property.value.
+    [Fact]
+    public void Detail_Rows_Use_The_Property_Colours()
+    {
+        runContext.AppConfig.Theme.PropertyKey   = ConsolePalette.Cyan;
+        runContext.AppConfig.Theme.PropertyValue = ConsolePalette.Yellow;
+
+        InstalledAppsControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(App("Visual Studio Code", publisher: "Microsoft Corporation")));
+
+        ListView detail = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+
+        Assert.NotEmpty(detail.Items);
+        Assert.All(detail.Items.Cast<ListViewItem>(), row => {
+            Assert.Equal(ConsolePalette.Cyan,   row.SubItems[0].ForegroundColor);
+            Assert.Equal(ConsolePalette.Yellow, row.SubItems[1].ForegroundColor);
+        });
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_App()

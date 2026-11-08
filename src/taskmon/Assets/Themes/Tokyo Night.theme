@@ -30,9 +30,9 @@ chart.title=#a9b1d6
 chart.grid=#A9A9A9
 chart.range.low.background=#9ece6a
 chart.range.low.foreground=#000000
-chart.range.mid.background=#ff9e64
+chart.range.mid.background=#bb9af7  
 chart.range.mid.foreground=#000000
-chart.range.high.background=#bb9af7
+chart.range.high.background=#ff9e64
 chart.range.high.foreground=#000000
 
 metre.background=transparent
@@ -64,7 +64,7 @@ performance.memory.modified=#9ece6a
 performance.memory.standby=#ff9e64
 performance.memory.free=#9ece6a
 
-property.key=#a9b1d6
+property.key=#9ece6a
 property.value=#a9b1d6
 
 process.list.normaluserspace=#9ece6a

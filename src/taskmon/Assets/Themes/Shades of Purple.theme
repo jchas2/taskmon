@@ -41,7 +41,7 @@ metre.borderforeground=#B362FF
 metre.borderbackground=transparent
 
 listview.background=transparent
-listview.foreground=#B362FF
+listview.foreground=#FF9D00
 listview.borderforeground=#B362FF
 listview.borderbackground=transparent
 listview.header.background=#222244
@@ -64,8 +64,8 @@ performance.memory.modified=#A5FF90
 performance.memory.standby=#FF9D00
 performance.memory.free=#A5FF90
 
-property.key=#B362FF
-property.value=#B362FF
+property.key=#FF9D00
+property.value=#9EFFFF
 
 process.list.normaluserspace=#A5FF90
 process.list.lowpriority=#FF628C
