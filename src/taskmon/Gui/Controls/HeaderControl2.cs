@@ -120,8 +120,8 @@ public sealed class HeaderControl2 : Control
             return;
         }
 
-        Color lbColor      = appConfig.Theme.Foreground;
-        Color fgColour     = appConfig.Theme.RangeLowBackground;
+        Color lbColor      = appConfig.Theme.PropertyKey;
+        Color fgColour     = appConfig.Theme.PropertyValue;
         Color bgColour     = appConfig.Theme.Background;
         Color borderColour = appConfig.Theme.ControlBorder;
 

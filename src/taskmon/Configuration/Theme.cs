@@ -36,6 +36,11 @@ public sealed class Theme
         Constants.Keys.CommandForeground,
         Constants.Keys.ControlBorder,
         Constants.Keys.DeltaHighlightColour,
+        Constants.Keys.DialogBackground,
+        Constants.Keys.DialogBorder,
+        Constants.Keys.DialogButtonBackground,
+        Constants.Keys.DialogButtonForeground,
+        Constants.Keys.DialogForeground,
         Constants.Keys.Error,
         Constants.Keys.Foreground,
         Constants.Keys.ForegroundHighlight,
@@ -211,6 +216,38 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.DeltaHighlightColour, ConsolePalette.DarkYellow);
         set => SetColour(Constants.Keys.DeltaHighlightColour, value);
+    }
+
+    // The dialog colours fall back to the list view header and highlight colours dialogs used
+    // before they had keys of their own, so a theme without dialog.* keys looks the same.
+    public Color DialogBackground
+    {
+        get => GetColour(Constants.Keys.DialogBackground, HeaderBackground);
+        set => SetColour(Constants.Keys.DialogBackground, value);
+    }
+
+    public Color DialogBorder
+    {
+        get => GetColour(Constants.Keys.DialogBorder, HeaderForeground);
+        set => SetColour(Constants.Keys.DialogBorder, value);
+    }
+
+    public Color DialogButtonBackground
+    {
+        get => GetColour(Constants.Keys.DialogButtonBackground, BackgroundHighlight);
+        set => SetColour(Constants.Keys.DialogButtonBackground, value);
+    }
+
+    public Color DialogButtonForeground
+    {
+        get => GetColour(Constants.Keys.DialogButtonForeground, ForegroundHighlight);
+        set => SetColour(Constants.Keys.DialogButtonForeground, value);
+    }
+
+    public Color DialogForeground
+    {
+        get => GetColour(Constants.Keys.DialogForeground, HeaderForeground);
+        set => SetColour(Constants.Keys.DialogForeground, value);
     }
 
     public Color Error

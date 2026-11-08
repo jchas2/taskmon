@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using Task.Monitor.Configuration;
-using Task.Monitor.Gui.Commands;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
@@ -222,12 +221,6 @@ public sealed class MainScreen2 : Screen
 
     private void ApplyThemeDefaults()
     {
-        DialogBackgroundColour       = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour           = runContext.AppConfig.Theme.HeaderForeground;
-        DialogForegroundColour       = runContext.AppConfig.Theme.HeaderForeground;
-        DialogButtonBackgroundColour = runContext.AppConfig.Theme.BackgroundHighlight;
-        DialogButtonForegroundColour = runContext.AppConfig.Theme.ForegroundHighlight;
-
         CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
 
         foreach (Control ctrl in Controls) {
@@ -267,7 +260,7 @@ public sealed class MainScreen2 : Screen
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         // A control showing its own dialog turns redraws off and needs every key, Tab and F2 included.
-        if (!Control.RedrawEnabled && !IsDialogVisible) {
+        if (!Control.RedrawEnabled) {
             focusedControl.KeyPressed(keyInfo, ref handled);
             return;
         }

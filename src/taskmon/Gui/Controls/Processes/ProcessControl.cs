@@ -138,34 +138,6 @@ public sealed partial class ProcessControl : Control
         return string.Join(" · ", parts);
     }
 
-    public List<int> CheckedProcesses
-    {
-        get {
-            lock (DrawingLock) {
-
-                int GetItemPid(ListViewItem item)
-                {
-                    ListViewSubItem selectedSubItem = item.SubItems[(int)Columns.Pid];
-
-                    if (int.TryParse(selectedSubItem.Text, out int pid)) {
-                        return pid;
-                    }
-
-                    return InvalidSelectedItemIndex;
-                }
-
-                List<int> checkedProcesses = processView.ShowCheckboxes
-                    ? processView.Items
-                        .Where(item => item.Checked)
-                        .Select(item => GetItemPid(item))
-                        .ToList()
-                    : [];
-
-                return checkedProcesses;
-            }
-        }
-    }
-
     public string FilterText
     {
         get => filter.Text;

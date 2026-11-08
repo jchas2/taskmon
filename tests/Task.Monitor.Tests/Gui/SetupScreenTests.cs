@@ -5,6 +5,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
@@ -148,12 +149,6 @@ public sealed class SetupScreenTests
 
         Assert.Equal(ConsolePalette.Black, setupScreen.BackgroundColour);
         Assert.NotEmpty(setupScreen.Controls);
-        Assert.True(setupScreen.CursorVisible);
-        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, setupScreen.DialogBorderColour);
-        Assert.Equal(ConsolePalette.DarkGray, setupScreen.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, setupScreen.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.Gray, setupScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.White, setupScreen.ForegroundColour);
         Assert.Equal(0, setupScreen.Height);
         Assert.NotNull(setupScreen.Name);
@@ -370,6 +365,43 @@ public sealed class SetupScreenTests
 
         Assert.Equal(500, runContext.AppConfig.DelayInMilliseconds);
         Assert.Equal(500, runContext.ServiceController.Delay);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void F10_That_Fails_To_Save_Shows_A_Message_Until_It_Is_Dismissed()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContextHelper.fileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
+        runContextHelper.fileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>())).Throws(new IOException("Disk unavailable"));
+
+        SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
+        setupScreen.Load();
+        setupScreen.Resize();
+
+        // The message box turns off the process-wide Control.RedrawEnabled until it is dismissed -
+        // always put it back, so a failed assertion can't blind every test that runs after this.
+        try {
+            runContextHelper.terminal.Invocations.Clear();
+
+            bool handled = false;
+            setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
+
+            Assert.True(handled);
+            Assert.False(Control.RedrawEnabled);
+            Assert.Contains("Save Failed", CapturedOutput());
+            Assert.Contains("An error occurred saving config.", CapturedOutput());
+
+            handled = false;
+            setupScreen.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
+
+            Assert.True(handled);
+            Assert.True(Control.RedrawEnabled);
+        }
+        finally {
+            Control.RedrawEnabled = true;
+        }
 
         setupScreen.Unload();
     }
@@ -666,7 +698,7 @@ public sealed class SetupScreenTests
 
     [Fact]
     public void SetupScreen_Canary_Test() =>
-        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<SetupScreen>());
 
     private SetupScreen ShowTab(string tabName, int width)
     {

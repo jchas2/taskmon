@@ -14,7 +14,7 @@
 colour-mode=indexed
 
 control.background=transparent
-control.background.highlight.focused=##3b5070
+control.background.highlight.focused=#3b5070
 control.background.highlight.inactive=#708090
 control.foreground=#98c379
 control.foreground.highlight.focused=#e06c75
@@ -47,6 +47,12 @@ listview.borderbackground=transparent
 listview.header.background=#282c34
 listview.header.foreground=#98c379
 
+dialog.background=#282c34
+dialog.foreground=#98c379
+dialog.border=#98c379
+dialog.button.background=#00FFFF
+dialog.button.foreground=#e06c75
+
 performance.panel.background=transparent
 performance.panel.foreground=#98c379
 performance.panel.titlebar.background=#282c34
@@ -59,7 +65,7 @@ performance.memory.standby=#d19a66
 performance.memory.free=#98c379
 
 property.key=#98c379
-property.value=#98c379
+property.value=#c678dd
 
 process.list.normaluserspace=#61afef
 process.list.lowpriority=#0000FF

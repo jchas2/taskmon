@@ -64,16 +64,6 @@ public sealed class AppConfig
         savedConfig = CopyConfig();
     }
 
-    public AppConfig(IFileSystem fileSystem, Config iniConfig)
-    {
-        this.fileSystem = fileSystem;
-        this.iniConfig = iniConfig;
-        LoadSections();
-        LoadThemes();
-        LoadLayouts();
-        savedConfig = CopyConfig();
-    }
-
     private AppConfig(AppConfig source)
     {
         fileSystem = source.fileSystem;

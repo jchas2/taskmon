@@ -47,6 +47,12 @@ listview.borderbackground=transparent
 listview.header.background=#1e1e1e
 listview.header.foreground=#858585
 
+dialog.background=#1e1e1e
+dialog.foreground=#858585
+dialog.border=#858585
+dialog.button.background=#004a9e
+dialog.button.foreground=#ffffff
+
 performance.panel.background=transparent
 performance.panel.foreground=#E19773
 performance.panel.titlebar.background=#1e1e1e

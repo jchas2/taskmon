@@ -133,6 +133,12 @@ public sealed class Constants
         public const string HeaderBackground         = "listview.header.background";
         public const string HeaderForeground         = "listview.header.foreground";
 
+        public const string DialogBackground       = "dialog.background";
+        public const string DialogForeground       = "dialog.foreground";
+        public const string DialogBorder           = "dialog.border";
+        public const string DialogButtonBackground = "dialog.button.background";
+        public const string DialogButtonForeground = "dialog.button.foreground";
+
         public const string PerformancePanelBackground         = "performance.panel.background";
         public const string PerformancePanelForeground         = "performance.panel.foreground";
         public const string PerformancePanelTitlebarBackground = "performance.panel.titlebar.background";

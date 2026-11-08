@@ -10,6 +10,7 @@ using Task.Monitor.System.Controls.PickerBox;
 using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
+using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
 using TextInputDialogControl = Task.Monitor.System.Controls.TextInputDialog.TextInputDialog;
 
@@ -18,9 +19,10 @@ namespace Task.Monitor.Gui;
 // A live WYSIWYG editor for the SummaryLayout control.
 public sealed class LayoutDesignerScreen : Screen
 {
-    private const int   BannerHeight = 1;
-    private const int   FooterHeight = 1;
-    private const float RatioStep    = 0.05f;
+    private const int   BannerHeight    = 1;
+    private const int   FooterHeight    = 1;
+    private const int   MessageBoxWidth = 48;
+    private const float RatioStep       = 0.05f;
 
 #if __APPLE__
     private static readonly PaneControlType[] UnavailableControlTypes = [];
@@ -60,6 +62,7 @@ public sealed class LayoutDesignerScreen : Screen
     private readonly PickerBoxControl           controlTypePicker;
     private readonly PickerBoxControl           columnPicker;
     private readonly TextInputDialogControl     saveDialog;
+    private readonly MessageBoxControl          messageBox;
     private readonly Dictionary<Control, Color> highlightedBorders = new();
     private SummaryLayoutTree                   tree               = SummaryLayoutTree.CreateEmpty();
 
@@ -78,6 +81,12 @@ public sealed class LayoutDesignerScreen : Screen
             Visible = false,
             Title = "Save Layout As",
             CharacterFilter = ch => char.IsLetterOrDigit(ch) || ch is '-' or ' '
+        };
+
+        messageBox = new MessageBoxControl(runContext.Terminal) {
+            Visible = false,
+            Buttons = MessageBoxButtons.Ok,
+            Height  = MessageBoxControl.PreferredHeight
         };
 
         RebuildPaneControls();
@@ -253,6 +262,9 @@ public sealed class LayoutDesignerScreen : Screen
         else if (saveDialog.Visible) {
             saveDialog.Draw();
         }
+        else if (messageBox.Visible) {
+            messageBox.Draw();
+        }
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -272,7 +284,11 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        // Routes to Screen's messageBox.
+        if (messageBox.Visible) {
+            OnMessageBoxKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         base.OnKeyPressed(keyInfo, ref handled);
 
         if (handled) {
@@ -355,19 +371,17 @@ public sealed class LayoutDesignerScreen : Screen
     protected override void OnLoad()
     {
         Terminal.CursorVisible = false;
-        
-        DialogBackgroundColour = runContext.AppConfig.Theme.HeaderBackground;
-        DialogBorderColour     = runContext.AppConfig.Theme.HeaderForeground;
-        DialogForegroundColour = runContext.AppConfig.Theme.HeaderForeground;
-        
+
         CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
         CommonControl.Theme(controlTypePicker, runContext.AppConfig.Theme);
         CommonControl.Theme(columnPicker, runContext.AppConfig.Theme);
         CommonControl.Theme(saveDialog, runContext.AppConfig.Theme);
-        
+        CommonControl.Theme(messageBox, runContext.AppConfig.Theme);
+
         controlTypePicker.Load();
         columnPicker.Load();
         saveDialog.Load();
+        messageBox.Load();
 
         foreach (Control control in paneControls.Values) {
             SummaryPaneTheme.Apply(control, runContext.AppConfig);
@@ -379,6 +393,21 @@ public sealed class LayoutDesignerScreen : Screen
         RefreshSelectionHighlight();
 
         runContext.ServiceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
+    }
+
+    private void OnMessageBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        messageBox.KeyPressed(keyInfo, ref handled);
+
+        if (messageBox.Result == MessageBoxResult.None) {
+            return;
+        }
+
+        messageBox.Visible    = false;
+        Control.RedrawEnabled = true;
+
+        Clear();
+        Draw();
     }
 
     protected override void OnResize()
@@ -430,6 +459,7 @@ public sealed class LayoutDesignerScreen : Screen
         controlTypePicker.Unload();
         columnPicker.Unload();
         saveDialog.Unload();
+        messageBox.Unload();
 
         isLoaded = false;
         Terminal.CursorVisible = true;
@@ -614,9 +644,7 @@ public sealed class LayoutDesignerScreen : Screen
         if (runContext.AppConfig.IsBuiltInLayout(name)) {
             ShowMessageBox(
                 "Built-in Layout",
-                $"'{name}'\nis a built-in layout.\nSave it under a new name.",
-                MessageBoxButtons.Ok,
-                () => { });
+                $"'{name}'\nis a built-in layout.\nSave it under a new name.");
 
             return;
         }
@@ -625,12 +653,25 @@ public sealed class LayoutDesignerScreen : Screen
         bool saved = runContext.AppConfig.SaveLayout(SummaryControlLayout.FromTree(name, tree));
 
         if (!saved) {
-            ShowMessageBox(
-                "Save Failed", "An error occurred saving the layout.", MessageBoxButtons.Ok, () => { });
+            ShowMessageBox("Save Failed", "An error occurred saving the layout.");
             return;
         }
 
         DrawBanner();
+    }
+
+    private void ShowMessageBox(string title, string text)
+    {
+        Control.RedrawEnabled = false;
+
+        messageBox.Width = Math.Min(MessageBoxWidth, Width);
+        messageBox.X     = X + Math.Max(0, (Width - messageBox.Width) / 2);
+        messageBox.Y     = Y + Math.Max(0, (Height - messageBox.Height) / 2);
+        messageBox.Title = title;
+        messageBox.Text  = text;
+
+        messageBox.Visible = true;
+        messageBox.ShowMessageBox();
     }
 
     internal int SelectedNodeId => selectedNodeId;

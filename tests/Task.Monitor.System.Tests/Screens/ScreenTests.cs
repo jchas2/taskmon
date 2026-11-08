@@ -13,7 +13,7 @@ public sealed class ScreenTests
 
     [Fact]
     public void InputBox_Canary_Test() =>
-        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<TestScreen1>());
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<TestScreen1>());
 
     [Fact]
     public void Should_Construct_Default()
@@ -23,12 +23,6 @@ public sealed class ScreenTests
 
         Assert.Equal(ConsolePalette.Black, testScreen.BackgroundColour);
         Assert.Empty(testScreen.Controls);
-        Assert.True(testScreen.CursorVisible);
-        Assert.Equal(ConsolePalette.Gray, testScreen.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, testScreen.DialogBorderColour);
-        Assert.Equal(ConsolePalette.DarkGray, testScreen.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, testScreen.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.Gray, testScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.White, testScreen.ForegroundColour);
         Assert.Equal(0, testScreen.Height);
         Assert.NotNull(testScreen.Name);

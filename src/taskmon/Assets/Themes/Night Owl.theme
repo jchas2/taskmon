@@ -14,11 +14,11 @@
 colour-mode=indexed
 
 control.background=transparent
-control.background.highlight.focused=#1d3b53       ; editor.selectionBackground
-control.background.highlight.inactive=#708090       ; editor.selectionBackground
-control.foreground=#c792ea                  ; tokenColors: entity
-control.foreground.highlight.focused=#e2a2f433      ; editor.wordHighlightStrongBackground
-control.foreground.highlight.inactive=#e2a2f433      ; editor.wordHighlightStrongBackground
+control.background.highlight.focused=#1d3b53    ; editor.selectionBackground
+control.background.highlight.inactive=#708090   ; editor.selectionBackground
+control.foreground=#c792ea                      ; tokenColors: entity
+control.foreground.highlight.focused=#e2a2f433  ; editor.wordHighlightStrongBackground
+control.foreground.highlight.inactive=#e2a2f433 ; editor.wordHighlightStrongBackground
 control.border=#c792ea
 control.border.focused=#ecc48d
 
@@ -26,13 +26,13 @@ chart.background=transparent
 chart.borderforeground=#c792ea
 chart.borderbackground=transparent
 chart.yaxis=#ecc48d
-chart.title=#c792ea                  ; tokenColors: entity
+chart.title=#c792ea                             ; tokenColors: entity
 chart.grid=#A9A9A9
-chart.range.low.background=#637777        ; tokenColors: comment
+chart.range.low.background=#637777              ; tokenColors: comment
 chart.range.low.foreground=#222222
-chart.range.mid.background=#c792ea        ; tokenColors: keyword
+chart.range.mid.background=#c792ea              ; tokenColors: keyword
 chart.range.mid.foreground=#222222
-chart.range.high.background=#F78C6C       ; tokenColors: variable
+chart.range.high.background=#F78C6C             ; tokenColors: variable
 chart.range.high.foreground=#222222
 
 metre.background=transparent
@@ -41,36 +41,42 @@ metre.borderforeground=#c792ea
 metre.borderbackground=transparent
 
 listview.background=transparent
-listview.foreground=#c792ea                  ; tokenColors: entity
+listview.foreground=#c792ea                     ; tokenColors: entity
 listview.borderforeground=#c792ea
 listview.borderbackground=transparent
-listview.header.background=#0b2942          ; tab.activeBackground
-listview.header.foreground=#d2dee7          ; tab.activeForeground
+listview.header.background=#0b2942              ; tab.activeBackground
+listview.header.foreground=#d2dee7              ; tab.activeForeground
+
+dialog.background=#0b2942
+dialog.foreground=#d2dee7
+dialog.border=#d2dee7
+dialog.button.background=#1d3b53
+dialog.button.foreground=#e2a2f433
 
 performance.panel.background=transparent
-performance.panel.foreground=#c792ea                  ; tokenColors: entity
-performance.panel.titlebar.background=#0b2942          ; tab.activeBackground
-performance.panel.titlebar.foreground=#d2dee7          ; tab.activeForeground
-performance.cpu.kernel=#F78C6C       ; tokenColors: variable
-performance.cpu.user=#ecc48d    ; tokenColors: string
-performance.memory.inuse=#F78C6C       ; tokenColors: variable
-performance.memory.modified=#ecc48d    ; tokenColors: string
-performance.memory.standby=#c792ea        ; tokenColors: keyword
-performance.memory.free=#637777        ; tokenColors: comment
+performance.panel.foreground=#c792ea            ; tokenColors: entity
+performance.panel.titlebar.background=#0b2942   ; tab.activeBackground
+performance.panel.titlebar.foreground=#d2dee7   ; tab.activeForeground
+performance.cpu.kernel=#F78C6C                  ; tokenColors: variable
+performance.cpu.user=#ecc48d                    ; tokenColors: string
+performance.memory.inuse=#F78C6C                ; tokenColors: variable
+performance.memory.modified=#ecc48d             ; tokenColors: string
+performance.memory.standby=#c792ea              ; tokenColors: keyword
+performance.memory.free=#637777                 ; tokenColors: comment
 
 property.key=#c792ea
 property.value=#c792ea
 
-process.list.normaluserspace=#ecc48d    ; tokenColors: string
-process.list.lowpriority=#82AAFF         ; tokenColors: constant
-process.list.highcpu=#F78C6C             ; tokenColors: variable
-process.list.iobound=#7fdbca             ; tokenColors: punctuation
-process.list.script=#7fdbca               ; tokenColors: support
-process.list.user.currentnonroot=#637777    ; tokenColors: comment
-process.list.user.othernonroot=#c5e478      ; tokenColors: support.function
-process.list.user.system=#d9f5dd              ; tokenColors: punctuation.definition.parameters
-process.list.user.root=#d9f5dd                ; tokenColors: punctuation.definition.parameters
-process.list.deltahighlight=#ffcb8b      ; tokencolors: meta
+process.list.normaluserspace=#ecc48d            ; tokenColors: string
+process.list.lowpriority=#82AAFF                ; tokenColors: constant
+process.list.highcpu=#F78C6C                    ; tokenColors: variable
+process.list.iobound=#7fdbca                    ; tokenColors: punctuation
+process.list.script=#7fdbca                     ; tokenColors: support
+process.list.user.currentnonroot=#637777        ; tokenColors: comment
+process.list.user.othernonroot=#c5e478          ; tokenColors: support.function
+process.list.user.system=#d9f5dd                ; tokenColors: punctuation.definition.parameters
+process.list.user.root=#d9f5dd                  ; tokenColors: punctuation.definition.parameters
+process.list.deltahighlight=#ffcb8b             ; tokencolors: meta
 
 heatmap.state.scanning=#222222
 heatmap.state.completed=#222222
@@ -78,11 +84,11 @@ heatmap.state.faulted=#222222
 
 app.error=#db61a2
 
-menubar.foreground=#d2dee7          ; tab.activeForeground
-menubar.background=#0b2942          ; tab.activeBackground
+menubar.foreground=#d2dee7                      ; tab.activeForeground
+menubar.background=#0b2942                      ; tab.activeBackground
 
-command.foreground=#d2dee7          ; tab.activeForeground
-command.background=#0b2942          ; tab.activeBackground
+command.foreground=#d2dee7                      ; tab.activeForeground
+command.background=#0b2942                      ; tab.activeBackground
 
 hotkey.key=#00BFFF
 hotkey.name=#c792ea

@@ -423,7 +423,14 @@ public partial class ProcessInfoControl : Control
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");
-            processInfoView.Items.Add(new(new[] { "Error:", ex.Message.ToRed() }));
+
+            ListViewItem errorRow = new(
+                ["Error:", ex.Message],
+                appConfig.Theme.ListViewBackground,
+                appConfig.Theme.ListViewForeground);
+
+            errorRow.SubItems[(int)InfoColumns.Value].ForegroundColor = appConfig.Theme.Error;
+            processInfoView.Items.Add(errorRow);
         }
     }
     

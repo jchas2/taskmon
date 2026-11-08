@@ -50,8 +50,13 @@ public sealed class AppConfigHealthTests
         Assert.Equal(new HealthThresholds(), appConfig.HealthThresholds);
     }
 
-    private AppConfig Load(string health) =>
-        new(fileSystem.Object, Config.FromString($"[health]\n{health}\n")!);
+    private AppConfig Load(string health)
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.TryLoad(Config.FromString($"[health]\n{health}\n")!));
+
+        return appConfig;
+    }
 
     [Fact]
     public void Text_In_A_Number_Falls_Back_To_The_Default()

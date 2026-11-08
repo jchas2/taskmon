@@ -39,6 +39,11 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#121d18"), theme.CommandBackground);
         Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.CommandForeground);
         Assert.Equal(ColorTranslator.FromHtml("#bda25c"), theme.DeltaHighlightColour);
+        Assert.Equal(ColorTranslator.FromHtml("#4b4b4b"), theme.DialogBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#4c4c4c"), theme.DialogBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#4d4d4d"), theme.DialogButtonBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#4e4e4e"), theme.DialogButtonForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#4f4f4f"), theme.DialogForeground);
         Assert.Equal(ColorTranslator.FromHtml("#a6423f"), theme.Error);
         Assert.Equal(ColorTranslator.FromHtml("#717f24"), theme.Foreground);
         Assert.Equal(ColorTranslator.FromHtml("#73fa91"), theme.ForegroundHighlight);
@@ -137,6 +142,25 @@ public sealed class ThemeTests
         Theme theme = new(parser.Sections[0]);
         
         AssertThemeColours(theme);
+    }
+
+    // Themes without dialog.* keys keep the colours dialogs had before the keys existed.
+    [Fact]
+    public void Dialog_Colours_Fall_Back_To_Header_And_Highlight_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.HeaderBackground, "#111111");
+        section.Add(Constants.Keys.HeaderForeground, "#222222");
+        section.Add(Constants.Keys.BackgroundHighlight, "#333333");
+        section.Add(Constants.Keys.ForegroundHighlight, "#444444");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#111111"), theme.DialogBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.DialogBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.DialogForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.DialogButtonBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#444444"), theme.DialogButtonForeground);
     }
 
     [Fact]
@@ -334,6 +358,11 @@ public sealed class ThemeTests
             CommandBackground                  = ColorTranslator.FromHtml("#121d18"),
             CommandForeground                  = ColorTranslator.FromHtml("#717f24"),
             DeltaHighlightColour               = ColorTranslator.FromHtml("#bda25c"),
+            DialogBackground                   = ColorTranslator.FromHtml("#4b4b4b"),
+            DialogBorder                       = ColorTranslator.FromHtml("#4c4c4c"),
+            DialogButtonBackground             = ColorTranslator.FromHtml("#4d4d4d"),
+            DialogButtonForeground             = ColorTranslator.FromHtml("#4e4e4e"),
+            DialogForeground                   = ColorTranslator.FromHtml("#4f4f4f"),
             Error                              = ColorTranslator.FromHtml("#a6423f"),
             Foreground                         = ColorTranslator.FromHtml("#717f24"),
             ForegroundHighlight                = ColorTranslator.FromHtml("#73fa91"),
@@ -411,6 +440,11 @@ public sealed class ThemeTests
         theme.CommandBackground           = ColorTranslator.FromHtml("#0c0c0c");
         theme.CommandForeground           = ColorTranslator.FromHtml("#0d0d0d");
         theme.DeltaHighlightColour        = ColorTranslator.FromHtml("#0e0e0e");
+        theme.DialogBackground            = ColorTranslator.FromHtml("#505050");
+        theme.DialogBorder                = ColorTranslator.FromHtml("#515151");
+        theme.DialogButtonBackground      = ColorTranslator.FromHtml("#525252");
+        theme.DialogButtonForeground      = ColorTranslator.FromHtml("#535353");
+        theme.DialogForeground            = ColorTranslator.FromHtml("#545454");
         theme.Error                       = ColorTranslator.FromHtml("#0f0f0f");
         theme.Foreground                  = ColorTranslator.FromHtml("#101010");
         theme.ForegroundHighlight         = ColorTranslator.FromHtml("#111111");
@@ -476,6 +510,11 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#0c0c0c"), theme.CommandBackground);
         Assert.Equal(ColorTranslator.FromHtml("#0d0d0d"), theme.CommandForeground);
         Assert.Equal(ColorTranslator.FromHtml("#0e0e0e"), theme.DeltaHighlightColour);
+        Assert.Equal(ColorTranslator.FromHtml("#505050"), theme.DialogBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#515151"), theme.DialogBorder);
+        Assert.Equal(ColorTranslator.FromHtml("#525252"), theme.DialogButtonBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#535353"), theme.DialogButtonForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#545454"), theme.DialogForeground);
         Assert.Equal(ColorTranslator.FromHtml("#0f0f0f"), theme.Error);
         Assert.Equal(ColorTranslator.FromHtml("#101010"), theme.Foreground);
         Assert.Equal(ColorTranslator.FromHtml("#111111"), theme.ForegroundHighlight);
@@ -580,6 +619,12 @@ listview.foreground=#252525
 listview.header.background=#121d18
 listview.header.foreground=#717f24
 
+dialog.background=#4b4b4b
+dialog.foreground=#4f4f4f
+dialog.border=#4c4c4c
+dialog.button.background=#4d4d4d
+dialog.button.foreground=#4e4e4e
+
 performance.panel.background=#262626
 performance.panel.foreground=#272727
 performance.panel.titlebar.background=#282828
@@ -623,8 +668,39 @@ command.background=#121d18
 ";
 
     [Fact]
+    public void Shipped_Themes_Define_Dialog_Colours()
+    {
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+
+        string[] dialogKeys = [
+            Constants.Keys.DialogBackground,
+            Constants.Keys.DialogBorder,
+            Constants.Keys.DialogButtonBackground,
+            Constants.Keys.DialogButtonForeground,
+            Constants.Keys.DialogForeground
+        ];
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+            ConfigSection section = parser.Sections[0];
+
+            foreach (string key in dialogKeys) {
+                Assert.True(section.Contains(key), $"{name} is missing {key}");
+                Assert.Matches(HexOrTransparent, section.GetString(key));
+            }
+        }
+    }
+
+    [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(65, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(70, CanaryTestHelper.GetPropertyCount<Theme>());
 
     [Fact]
     public void TipGlyph_Falls_Back_To_Orange_When_Not_Set()

@@ -45,8 +45,16 @@ public sealed class ProcessServiceFake : ProcessService
     public override ProcessSample? GetProcessSample(int pid)
     {
         SampleRequestedPids.Add(pid);
+
+        if (GetProcessSampleException is { } exception) {
+            throw exception;
+        }
+
         return samples.SingleOrDefault(sample => sample.Pid == pid);
     }
+
+    // When set, GetProcessSample throws it, as a failed lookup would.
+    public Exception? GetProcessSampleException { get; set; }
 
     public override List<ThreadInfo> GetThreads(int pid)
     {

@@ -36,12 +36,6 @@ public sealed class HelpScreenTests
 
         Assert.Equal(ConsolePalette.Black, helpScreen.BackgroundColour);
         Assert.Equal(1, helpScreen.Controls.Count);
-        Assert.True(helpScreen.CursorVisible);
-        Assert.Equal(ConsolePalette.Gray, helpScreen.DialogBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, helpScreen.DialogBorderColour);
-        Assert.Equal(ConsolePalette.DarkGray, helpScreen.DialogButtonBackgroundColour);
-        Assert.Equal(ConsolePalette.Black, helpScreen.DialogButtonForegroundColour);
-        Assert.Equal(ConsolePalette.Gray, helpScreen.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.White, helpScreen.ForegroundColour);
         Assert.Equal(0, helpScreen.Height);
         Assert.NotNull(helpScreen.Name);
@@ -86,7 +80,7 @@ public sealed class HelpScreenTests
 
     [Fact]
     public void HelpScreen_Canary_Test() =>
-        Assert.Equal(21, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<HelpScreen>());
 
     public static TheoryData<string> HelpTextData()
         => new() 

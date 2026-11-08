@@ -3,12 +3,41 @@ using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System.Configuration;
+using Task.Monitor.System.Controls.DriveInputBox;
+using Task.Monitor.System.Controls.TextInputDialog;
+using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
+using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
+using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class CommonControlTests
 {
+    private static readonly Color DialogBackground       = ColorTranslator.FromHtml("#101010");
+    private static readonly Color DialogBorder           = ColorTranslator.FromHtml("#202020");
+    private static readonly Color DialogButtonBackground = ColorTranslator.FromHtml("#303030");
+    private static readonly Color DialogButtonForeground = ColorTranslator.FromHtml("#404040");
+    private static readonly Color DialogForeground       = ColorTranslator.FromHtml("#505050");
+
+    // Dialog colours that differ from the header and highlight colours they fall back to, so a
+    // dialog themed from those instead would fail.
+    private static Theme CreateDialogTheme()
+    {
+        ConfigSection section = new("dialog-theme-test");
+        section.Add(Constants.Keys.HeaderBackground, "#aaaaaa");
+        section.Add(Constants.Keys.HeaderForeground, "#bbbbbb");
+        section.Add(Constants.Keys.BackgroundHighlight, "#cccccc");
+        section.Add(Constants.Keys.ForegroundHighlight, "#dddddd");
+        section.Add(Constants.Keys.DialogBackground, "#101010");
+        section.Add(Constants.Keys.DialogBorder, "#202020");
+        section.Add(Constants.Keys.DialogButtonBackground, "#303030");
+        section.Add(Constants.Keys.DialogButtonForeground, "#404040");
+        section.Add(Constants.Keys.DialogForeground, "#505050");
+
+        return new Theme(section);
+    }
+
     private static Theme CreateTheme()
     {
         ConfigSection section = new("theme-test");
@@ -17,6 +46,46 @@ public sealed class CommonControlTests
         section.Add(Constants.Keys.ListViewBorderBackground, "#778899");
 
         return new Theme(section);
+    }
+
+    [Fact]
+    public void Dialogs_Take_Their_Colours_From_The_Dialog_Theme_Keys()
+    {
+        Theme theme = CreateDialogTheme();
+        RecordingTerminal terminal = new();
+
+        MessageBoxControl messageBox = new(terminal);
+        CommonControl.Theme(messageBox, theme);
+
+        Assert.Equal(DialogBackground, messageBox.DialogBackgroundColour);
+        Assert.Equal(DialogBorder, messageBox.DialogBorderColour);
+        Assert.Equal(DialogForeground, messageBox.DialogForegroundColour);
+        Assert.Equal(DialogButtonBackground, messageBox.DialogButtonBackgroundColour);
+        Assert.Equal(DialogButtonForeground, messageBox.DialogButtonForegroundColour);
+
+        DriveInputBox driveInputBox = new(terminal);
+        CommonControl.Theme(driveInputBox, theme);
+
+        Assert.Equal(DialogBackground, driveInputBox.DialogBackgroundColour);
+        Assert.Equal(DialogBorder, driveInputBox.DialogBorderColour);
+        Assert.Equal(DialogForeground, driveInputBox.DialogForegroundColour);
+        Assert.Equal(DialogButtonBackground, driveInputBox.DialogButtonBackgroundColour);
+        Assert.Equal(DialogButtonForeground, driveInputBox.DialogButtonForegroundColour);
+
+        PickerBoxControl pickerBox = new(terminal);
+        CommonControl.Theme(pickerBox, theme);
+
+        Assert.Equal(DialogBackground, pickerBox.DialogBackgroundColour);
+        Assert.Equal(DialogBorder, pickerBox.DialogBorderColour);
+        Assert.Equal(DialogForeground, pickerBox.DialogForegroundColour);
+
+        TextInputDialog textInputDialog = new(terminal);
+        CommonControl.Theme(textInputDialog, theme);
+
+        Assert.Equal(DialogBackground, textInputDialog.DialogBackgroundColour);
+        Assert.Equal(DialogForeground, textInputDialog.DialogForegroundColour);
+        Assert.Equal(DialogButtonBackground, textInputDialog.DialogButtonBackgroundColour);
+        Assert.Equal(DialogButtonForeground, textInputDialog.DialogButtonForegroundColour);
     }
 
     [Fact]

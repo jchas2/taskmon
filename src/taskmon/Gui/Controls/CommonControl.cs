@@ -73,11 +73,11 @@ public static class CommonControl
 
     public static void Theme(DriveInputBox control, Theme theme)
     {
-        control.DialogBackgroundColour                = theme.HeaderBackground;
-        control.DialogBorderColour                    = theme.HeaderForeground;
-        control.DialogButtonBackgroundColour          = theme.BackgroundHighlight;
-        control.DialogButtonForegroundColour          = theme.ForegroundHighlight;
-        control.DialogForegroundColour                = theme.HeaderForeground;
+        control.DialogBackgroundColour                = theme.DialogBackground;
+        control.DialogBorderColour                    = theme.DialogBorder;
+        control.DialogButtonBackgroundColour          = theme.DialogButtonBackground;
+        control.DialogButtonForegroundColour          = theme.DialogButtonForeground;
+        control.DialogForegroundColour                = theme.DialogForeground;
         control.ListBackgroundHighlightColour         = theme.BackgroundHighlight;
         control.ListForegroundHighlightColour         = theme.ForegroundHighlight;
         control.ListBackgroundHighlightInactiveColour = theme.BackgroundHighlightInactive;
@@ -106,11 +106,11 @@ public static class CommonControl
 
     public static void Theme(MessageBoxControl control, Theme theme)
     {
-        control.DialogBackgroundColour       = theme.HeaderBackground;
-        control.DialogBorderColour           = theme.HeaderForeground;
-        control.DialogForegroundColour       = theme.HeaderForeground;
-        control.DialogButtonBackgroundColour = theme.BackgroundHighlight;
-        control.DialogButtonForegroundColour = theme.ForegroundHighlight;
+        control.DialogBackgroundColour       = theme.DialogBackground;
+        control.DialogBorderColour           = theme.DialogBorder;
+        control.DialogForegroundColour       = theme.DialogForeground;
+        control.DialogButtonBackgroundColour = theme.DialogButtonBackground;
+        control.DialogButtonForegroundColour = theme.DialogButtonForeground;
     }
 
     public static void Theme(MetreControl control, Theme theme)
@@ -123,9 +123,9 @@ public static class CommonControl
 
     public static void Theme(PickerBoxControl control, Theme theme)
     {
-        control.DialogBackgroundColour                = theme.HeaderBackground;
-        control.DialogBorderColour                    = theme.HeaderForeground;
-        control.DialogForegroundColour                = theme.HeaderForeground;
+        control.DialogBackgroundColour                = theme.DialogBackground;
+        control.DialogBorderColour                    = theme.DialogBorder;
+        control.DialogForegroundColour                = theme.DialogForeground;
         control.ListBackgroundHighlightColour         = theme.BackgroundHighlight;
         control.ListForegroundHighlightColour         = theme.ForegroundHighlight;
         control.ListBackgroundHighlightInactiveColour = theme.BackgroundHighlightInactive;
@@ -134,10 +134,10 @@ public static class CommonControl
 
     public static void Theme(TextInputDialog control, Theme theme)
     {
-        control.DialogBackgroundColour       = theme.HeaderBackground;
-        control.DialogForegroundColour       = theme.HeaderForeground;
-        control.DialogButtonBackgroundColour = theme.BackgroundHighlight;
-        control.DialogButtonForegroundColour = theme.ForegroundHighlight;
+        control.DialogBackgroundColour       = theme.DialogBackground;
+        control.DialogForegroundColour       = theme.DialogForeground;
+        control.DialogButtonBackgroundColour = theme.DialogButtonBackground;
+        control.DialogButtonForegroundColour = theme.DialogButtonForeground;
         control.FieldBackgroundColour        = theme.Background;
         control.FieldForegroundColour        = theme.Foreground;
     }

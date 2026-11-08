@@ -28,16 +28,6 @@ public sealed class AppConfigTests
     }
 
     [Fact]
-    public void Constructor_With_FileSystem_And_Config_Initialises_Successfully()
-    {
-        Config config = new();
-        AppConfig appConfig = new(fileSystem.Object, config);
-
-        Assert.NotNull(appConfig);
-        Assert.NotNull(appConfig.Themes);
-    }
-
-    [Fact]
     public void Constructor_With_FileSystem_Initialises_Successfully()
     {
         var appConfig = new AppConfig(fileSystem.Object);
@@ -252,7 +242,10 @@ use-irix-cpu-reporting=True
         fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
         fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Returns(iniText);
 
-        return new AppConfig(fileSystem.Object, Config.FromFile(fileSystem.Object, testConfigPath));
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.TryLoad(Config.FromFile(fileSystem.Object, testConfigPath)));
+
+        return appConfig;
     }
 
     [Fact]
@@ -569,7 +562,8 @@ control.foreground=#abcdef
 
         Assert.NotNull(iniConfig);
 
-        AppConfig appConfig = new(fileSystem.Object, iniConfig);
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.TryLoad(iniConfig));
         
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
@@ -642,7 +636,8 @@ control.foreground=#abcdef
         
         Assert.NotNull(iniConfig);
         
-        AppConfig appConfig = new(fileSystem.Object, iniConfig);
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.TryLoad(iniConfig));
         
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 

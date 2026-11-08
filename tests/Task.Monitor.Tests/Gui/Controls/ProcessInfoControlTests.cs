@@ -1,3 +1,4 @@
+using System.Drawing;
 using Moq;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.System.Services.Process;
@@ -123,6 +124,23 @@ public sealed class ProcessInfoControlTests
 
         ctrl.SelectMenuItemForTests(2);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Modules could not be loaded"))), Times.AtLeastOnce);
+    }
+
+    // The process details are the one place a load error shows outside a dialog; it takes the
+    // theme's app.error colour rather than a hard-coded red.
+    [Fact]
+    public void LoadProcess_Shows_A_Load_Error_In_The_Theme_Error_Colour()
+    {
+        Color errorColour = ColorTranslator.FromHtml("#c0ffee");
+        runContext.AppConfig.Theme.Error = errorColour;
+        processServiceFake.GetProcessSampleException = new InvalidOperationException("Sample unavailable");
+
+        ProcessInfoControl ctrl = CreateLoadedControl();
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.LoadProcess(Environment.ProcessId);
+
+        string errorText = $"\u001b[38;2;{errorColour.R};{errorColour.G};{errorColour.B}mSample unavailable";
+        runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(errorText))), Times.AtLeastOnce);
     }
 
     [Fact]

@@ -11,6 +11,7 @@ using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Screens;
+using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 using ProcessService = Task.Monitor.System.Services.Process.ProcessService;
 
 namespace Task.Monitor.Gui;
@@ -36,6 +37,7 @@ public class SetupScreen : Screen
     private readonly ListView          layoutView;
     private readonly ListView          metreView;
     private readonly ListView          delayView;
+    private readonly MessageBoxControl messageBox;
     private readonly List<ListView>    tabControls = [];
     
     private readonly Dictionary<ListView, Func<SummaryLayoutTree>> previewLayouts;
@@ -76,6 +78,12 @@ public class SetupScreen : Screen
     {
         this.runContext = runContext;
         this.screenApp  = screenApp;
+
+        messageBox = new MessageBoxControl(runContext.Terminal) {
+            Visible = false,
+            Buttons = MessageBoxButtons.Ok,
+            Height  = MessageBoxControl.PreferredHeight
+        };
 
         headerView = new(runContext.Terminal) {
             Name  = nameof(headerView),
@@ -537,10 +545,19 @@ public class SetupScreen : Screen
             previewTheme,
             enabled: true,
             Terminal);
+
+        if (messageBox.Visible) {
+            messageBox.Draw();
+        }
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (messageBox.Visible) {
+            OnMessageBoxKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         base.OnKeyPressed(keyInfo, ref handled);
 
         if (handled) {
@@ -595,11 +612,8 @@ public class SetupScreen : Screen
                     handled = true;
                     ShowMessageBox(
                         "Save Failed",
-                        runContext.AppConfig.LastSaveError ?? "An error occurred saving config.",
-                        MessageBoxButtons.Ok,
-                        () => { },
-                        SaveErrorWidth);
-                } 
+                        runContext.AppConfig.LastSaveError ?? "An error occurred saving config.");
+                }
                 break;
         }
     }
@@ -609,11 +623,13 @@ public class SetupScreen : Screen
         Terminal.CursorVisible = false;
 
         CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
-        
+
         foreach (Control control in Controls) {
             control.Load();
         }
-        
+
+        messageBox.Load();
+
         foreach (ListView listView in tabControls) {
             listView.Visible = false;
         }
@@ -644,6 +660,21 @@ public class SetupScreen : Screen
         metreView.ItemClicked += MetreViewOnItemClicked;
         
         base.OnLoad();
+    }
+
+    private void OnMessageBoxKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        messageBox.KeyPressed(keyInfo, ref handled);
+
+        if (messageBox.Result == MessageBoxResult.None) {
+            return;
+        }
+
+        messageBox.Visible    = false;
+        Control.RedrawEnabled = true;
+
+        Clear();
+        Draw();
     }
 
     protected override void OnResize()
@@ -708,6 +739,8 @@ public class SetupScreen : Screen
             control.Unload();
             (control as ListView)?.Items.Clear();
         }
+
+        messageBox.Unload();
 
         Terminal.CursorVisible = true;
         
@@ -810,6 +843,23 @@ public class SetupScreen : Screen
                 return;
             }
         }
+    }
+
+    // Themed when shown, so it follows the theme being previewed.
+    private void ShowMessageBox(string title, string text)
+    {
+        Control.RedrawEnabled = false;
+
+        CommonControl.Theme(messageBox, previewTheme);
+
+        messageBox.Width = Math.Min(SaveErrorWidth, Width);
+        messageBox.X     = X + Math.Max(0, (Width - messageBox.Width) / 2);
+        messageBox.Y     = Y + Math.Max(0, (Height - messageBox.Height) / 2);
+        messageBox.Title = title;
+        messageBox.Text  = text;
+
+        messageBox.Visible = true;
+        messageBox.ShowMessageBox();
     }
 
     private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
