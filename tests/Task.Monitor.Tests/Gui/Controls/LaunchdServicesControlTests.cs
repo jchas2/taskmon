@@ -132,6 +132,31 @@ public sealed class LaunchdServicesControlTests : IDisposable
 
     public void Dispose() => Control.RedrawEnabled = true;
 
+    // Regression test: STATUS was drawn in chart.range.high.foreground for a failed service and
+    // chart.range.mid.foreground for one not running - the dark text that goes on those colour
+    // blocks - so both showed black on the list background.
+    [Fact]
+    public void Failed_And_Stopped_Services_Show_Their_Status_In_The_Range_Colours()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+
+        // Exit code 1, and no longer running.
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 1 << 8)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeHighBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        // Not running, but it exited cleanly.
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 0)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except a failed service's status and last exit, which keep their
     // highlight.
@@ -158,7 +183,7 @@ public sealed class LaunchdServicesControlTests : IDisposable
         foreach (string field in new[] { "Status", "Last Exit" }) {
             ListViewItem row = detail.Items.Cast<ListViewItem>().Single(item => item.SubItems[0].Text == field);
             Assert.Equal(ConsolePalette.Cyan, row.SubItems[0].ForegroundColor);
-            Assert.Equal(runContext.AppConfig.Theme.RangeHighForeground, row.SubItems[1].ForegroundColor);
+            Assert.Equal(runContext.AppConfig.Theme.RangeHighBackground, row.SubItems[1].ForegroundColor);
         }
 
         ctrl.Unload();

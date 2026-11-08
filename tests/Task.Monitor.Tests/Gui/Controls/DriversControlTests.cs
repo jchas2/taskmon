@@ -103,30 +103,65 @@ public sealed class DriversControlTests : IDisposable
 
     public void Dispose() => Control.RedrawEnabled = true;
 
+    // Regression test: a stopped driver's STATUS was drawn in chart.range.mid.foreground - the dark
+    // text that goes on the mid colour block - so "Stopped" showed black on the list background.
+    [Fact]
+    public void A_Stopped_Driver_Shows_Its_Status_In_The_Mid_Range_Colour()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
+    // Loaded is how a macOS kernel extension reports running; both count as running drivers.
+    [Theory]
+    [InlineData(DriverStatus.Running)]
+    [InlineData(DriverStatus.Loaded)]
+    public void A_Running_Driver_Shows_Its_Status_In_The_Low_Range_Colour(DriverStatus running)
+    {
+        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: running)));
+
+        Assert.Equal(ConsolePalette.Magenta, ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
-    // values in property.value, except a stopped driver's status, which keeps its highlight.
+    // values in property.value, except the status, which keeps its running / stopped highlight.
     [Fact]
     public void Detail_Rows_Use_The_Property_Colours()
     {
-        runContext.AppConfig.Theme.PropertyKey   = ConsolePalette.Cyan;
-        runContext.AppConfig.Theme.PropertyValue = ConsolePalette.Yellow;
+        runContext.AppConfig.Theme.PropertyKey        = ConsolePalette.Cyan;
+        runContext.AppConfig.Theme.PropertyValue      = ConsolePalette.Yellow;
+        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.RangeMidBackground = ConsolePalette.Red;
 
         DriversControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Driver("Disk Driver", publisher: "Microsoft Corporation")));
 
-        ListView detail = ctrl.Controls.OfType<ListView>().Single(view => view.HeaderText == "DETAIL");
+        ListView detail = ListPaneTestHelper.Detail(ctrl);
 
         Assert.NotEmpty(detail.Items);
         Assert.All(detail.Items.Cast<ListViewItem>(), row => {
-            Assert.Equal(ConsolePalette.Cyan,   row.SubItems[0].ForegroundColor);
-            Assert.Equal(ConsolePalette.Yellow, row.SubItems[1].ForegroundColor);
+            Assert.Equal(ConsolePalette.Cyan, row.SubItems[0].ForegroundColor);
+            Assert.Equal(
+                row.SubItems[0].Text == "Status" ? ConsolePalette.Magenta : ConsolePalette.Yellow,
+                row.SubItems[1].ForegroundColor);
         });
 
         ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
 
         ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
         Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
-        Assert.Equal(runContext.AppConfig.Theme.RangeMidForeground, status.SubItems[1].ForegroundColor);
+        Assert.Equal(ConsolePalette.Red,  status.SubItems[1].ForegroundColor);
 
         ctrl.Unload();
     }

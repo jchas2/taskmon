@@ -209,6 +209,21 @@ public sealed class StartupControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // Regression test: a disabled entry's STATUS was drawn in chart.range.mid.foreground - the dark
+    // text that goes on the mid colour block - so it showed black on the list background.
+    [Fact]
+    public void A_Disabled_Entry_Shows_Its_Status_In_The_Mid_Range_Colour()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Entry("OneDrive", state: StartupEntryState.Disabled)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except a disabled entry's status, which keeps its highlight.
     [Fact]
@@ -232,7 +247,7 @@ public sealed class StartupControlTests : IDisposable
 
         ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
         Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
-        Assert.Equal(runContext.AppConfig.Theme.RangeMidForeground, status.SubItems[1].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.RangeMidBackground, status.SubItems[1].ForegroundColor);
 
         ctrl.Unload();
     }
