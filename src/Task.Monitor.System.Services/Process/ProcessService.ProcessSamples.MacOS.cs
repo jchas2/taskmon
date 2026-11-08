@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Task.Monitor.Interop.Mach;
-using Task.Monitor.System.Process;
 
 namespace Task.Monitor.System.Services.Process;
 
@@ -123,7 +122,8 @@ public partial class ProcessService
         return buffer;
     }
 
-    public static ProcessSample? GetProcessSample(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
+    // Called from the UI thread, so it can't share the worker's nameResolver.
+    private static ProcessSample? GetProcessSampleInternal(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
 
     private List<ProcessSample> GetProcessSamples()
     {

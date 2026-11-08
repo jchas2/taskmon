@@ -1,8 +1,7 @@
-﻿using System.Reflection;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
 
-namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
 public sealed class ModuleInfoTests
 {
@@ -17,7 +16,7 @@ public sealed class ModuleInfoTests
             ModuleName = "test",
             FileName = "test.dll"
         };
-        
+
         Assert.Equal("test", moduleInfo.ModuleName);
         Assert.Equal("test.dll", moduleInfo.FileName);
     }

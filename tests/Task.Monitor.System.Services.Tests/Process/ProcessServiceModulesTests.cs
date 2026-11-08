@@ -1,17 +1,17 @@
-﻿using System.Runtime.Versioning;
-using Task.Monitor.System.Process;
+using System.Runtime.Versioning;
+using Task.Monitor.System.Services.Process;
 using SysDiag = System.Diagnostics;
 
-namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
-public sealed class ModuleServiceTests
+public sealed class ProcessServiceModulesTests
 {
     [SkippableFact]
     [SupportedOSPlatform("windows")]
     public void Should_Enumerate_Module_Properties_For_Current_Process()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ModuleService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
 
         foreach (ModuleInfo moduleInfo in modules) {
             Assert.NotNull(moduleInfo.ModuleName);
@@ -27,7 +27,7 @@ public sealed class ModuleServiceTests
     public void Should_Enumerate_Module_Properties_For_Current_Process_MacOS()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ModuleService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
 
         foreach (ModuleInfo moduleInfo in modules) {
             Assert.NotEmpty(moduleInfo.FileName);
@@ -42,12 +42,16 @@ public sealed class ModuleServiceTests
         Assert.Equal(modules.Select(m => m.FileName).Distinct().Count(), modules.Count);
     }
 
+    [Fact]
+    public void Should_Return_No_Modules_For_A_Negative_Pid() =>
+        Assert.Empty(new ProcessService().GetModules(-1));
+
     [SkippableFact]
     [SupportedOSPlatform("macos")]
     public void Should_Return_Modules_For_Current_Process_MacOS()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ModuleService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
 
         // The test host has the runtime dylibs mapped, so the walk must find some.
         Assert.InRange(modules.Count, 1, int.MaxValue);
@@ -55,11 +59,11 @@ public sealed class ModuleServiceTests
 
     [SkippableFact]
     [SupportedOSPlatform("windows")]
-    public void Should_Return_Modules_For_Current_Process_Windows() 
+    public void Should_Return_Modules_For_Current_Process_Windows()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ModuleService().GetModules(currentProcess.Id);
-        
+        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
+
         Assert.InRange(modules.Count, 1, int.MaxValue);
     }
 
@@ -70,6 +74,6 @@ public sealed class ModuleServiceTests
     {
         Skip.IfNot(OperatingSystem.IsMacOS());
 
-        Assert.Empty(new ModuleService().GetModules(0));
+        Assert.Empty(new ProcessService().GetModules(0));
     }
 }

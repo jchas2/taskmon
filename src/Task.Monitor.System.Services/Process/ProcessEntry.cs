@@ -19,10 +19,8 @@ public sealed class ProcessEntry
 
     public long   UsedMemory            { get; set; }
 
-    // What the process holds whether or not it is in RAM at the moment, which UsedMemory misses:
-    // commit charge on Windows, and the physical footprint with compressed memory on macOS.
+    // Commit charge on Windows, physical footprint with compressed memory on macOS.
     public long   CommittedMemory       { get; set; }
-
 
     public ulong  DiskReadBytes         { get; set; }
     public ulong  DiskWriteBytes        { get; set; }

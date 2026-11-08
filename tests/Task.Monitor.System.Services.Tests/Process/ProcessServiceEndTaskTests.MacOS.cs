@@ -1,8 +1,8 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
-namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
-public partial class ProcessUtilsTests
+public partial class ProcessServiceEndTaskTests
 {
 #if __APPLE__
     private void CreateScriptFile(string fileName)
@@ -16,4 +16,3 @@ public partial class ProcessUtilsTests
     }
 #endif
 }
- 

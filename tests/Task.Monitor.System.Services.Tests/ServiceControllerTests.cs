@@ -22,6 +22,24 @@ public sealed class ServiceControllerTests
             throw new InvalidOperationException("boom");
     }
 
+    private class FakeCharlieService : WorkerService { }
+
+    private sealed class DerivedCharlieService : FakeCharlieService { }
+
+    // Tests register a fake subclass in place of a real service (e.g. ProcessService), and the
+    // controls still ask for it by the real service's type.
+    [Fact]
+    public void GetService_Finds_A_Registered_Subclass_By_Its_Base_Type()
+    {
+        ServiceController     controller = new();
+        DerivedCharlieService derived    = new();
+
+        controller.AddService(() => derived);
+
+        Assert.Same(derived, controller.GetService<FakeCharlieService>());
+        Assert.Same(derived, controller.GetService<DerivedCharlieService>());
+    }
+
     [Fact]
     public void Snapshot_Lists_Every_Registered_Service_In_Registration_Order_With_Its_Status()
     {

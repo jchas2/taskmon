@@ -4,7 +4,8 @@ using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Process;
 using WorkerTask = System.Threading.Tasks.Task;
     
 namespace Task.Monitor.Gui.Controls.Processes;
@@ -19,35 +20,29 @@ public partial class ProcessInfoControl : Control
     private const string MsgModulesNotLoaded  = "Modules could not be loaded";
     private const string MsgLoading           = "Loading, please wait...";
 
-    private readonly IProcessService processService;
-    private readonly IModuleService  moduleService;
-    private readonly IThreadService  threadService;
-    private readonly AppConfig       appConfig;
-    private readonly ListView        processInfoView;
-    private readonly ListView        menuView;
-    private readonly ListView        modulesView;
-    private readonly ListView        threadsView;
-    private readonly ListView        handlesView;
-    
-    private readonly List<ListView>  tabControls = [];
-    
+    private readonly ServiceController serviceController;
+    private readonly AppConfig         appConfig;
+    private readonly ListView          processInfoView;
+    private readonly ListView          menuView;
+    private readonly ListView          modulesView;
+    private readonly ListView          threadsView;
+    private readonly ListView          handlesView;
+
+    private readonly List<ListView>    tabControls = [];
+
     private WorkerTask?              workerTask;
     private CancellationTokenSource? cancellationTokenSource;
 
     private bool modulesLoaded;
-    
+
     public ProcessInfoControl(
-        IProcessService processService,
-        IModuleService  moduleService,
-        IThreadService  threadService,
-        ISystemTerminal terminal, 
-        AppConfig       appConfig) 
+        ServiceController serviceController,
+        ISystemTerminal   terminal,
+        AppConfig         appConfig)
         : base(terminal)
     {
-        this.processService = processService;
-        this.moduleService  = moduleService;
-        this.threadService  = threadService;
-        this.appConfig      = appConfig;
+        this.serviceController = serviceController;
+        this.appConfig         = appConfig;
         
         menuView = new ListView(terminal) {
             TabStop  = true,
@@ -309,7 +304,8 @@ public partial class ProcessInfoControl : Control
     protected override void OnUnload()
     {
         lock (DrawingLock) {
-            // Just cancel the token and don't wait; it could deadlock under KeyPressed (which can call Unload).
+            // Just cancel the token and don't wait;
+            // it could deadlock under KeyPressed (which can call Unload).
             cancellationTokenSource?.Cancel();
             cancellationTokenSource = null;
 
@@ -327,6 +323,8 @@ public partial class ProcessInfoControl : Control
         base.OnUnload();
     }
 
+    private ProcessService ProcessService => serviceController.GetService<ProcessService>();
+
     internal string ProcessTitle => processInfoView.HeaderText;
 
     public void ResetToDetailPane()
@@ -335,15 +333,15 @@ public partial class ProcessInfoControl : Control
         menuView.SelectedIndex = 0;
     }
 
-    private static string ResolveProcessTitle(ProcessInfo processInfo)
+    private static string ResolveProcessTitle(ProcessSample sample)
     {
-        string name = !string.IsNullOrWhiteSpace(processInfo.ProcessName) ? processInfo.ProcessName
-            : !string.IsNullOrWhiteSpace(processInfo.ModuleName) ? processInfo.ModuleName
-            : Path.GetFileName(processInfo.FileName);
+        string name = !string.IsNullOrWhiteSpace(sample.ProcessName) ? sample.ProcessName
+            : !string.IsNullOrWhiteSpace(sample.ModuleName) ? sample.ModuleName
+            : Path.GetFileName(sample.FileName);
 
         return string.IsNullOrWhiteSpace(name)
-            ? $"({processInfo.Pid})"
-            : $"{name} ({processInfo.Pid})";
+            ? $"({sample.Pid})"
+            : $"{name} ({sample.Pid})";
     }
 
     internal int SelectedMenuIndexForTests => menuView.SelectedIndex;
@@ -373,38 +371,38 @@ public partial class ProcessInfoControl : Control
         }
 
         try {
-            ProcessInfo? processInfo = processService.GetProcessById(SelectedProcessId);
-            if (processInfo == null) {
+            ProcessSample? sample = ProcessService.GetProcessSample(SelectedProcessId);
+            if (sample == null) {
                 processInfoView.Items.Clear();
                 SetProcessTitle(string.Empty);
                 return;
             }
 
-            SetProcessTitle(ResolveProcessTitle(processInfo));
+            SetProcessTitle(ResolveProcessTitle(sample));
 
-            FileInfo finfo = new(processInfo.FileName);
+            FileInfo finfo = new(sample.FileName);
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(finfo.FullName);
 
             processInfoView.ColumnHeaders[0].Text = "Pid:";
             processInfoView.ColumnHeaders[1].Text = SelectedProcessId.ToString();
             
             processInfoView.Items.Add(
-                new(["File:", processInfo.ModuleName],
+                new(["File:", sample.ModuleName],
                     appConfig.Theme.ListViewBackground,
                     appConfig.Theme.ListViewForeground));
-                    
+
             processInfoView.Items.Add(
-                new(["Description:", processInfo.FileDescription],
+                new(["Description:", sample.FileDescription],
                     appConfig.Theme.ListViewBackground,
                     appConfig.Theme.ListViewForeground));
-                    
+
             processInfoView.Items.Add(
-                new(["Path:", processInfo.CmdLine],
+                new(["Path:", sample.CmdLine],
                     appConfig.Theme.ListViewBackground,
                     appConfig.Theme.ListViewForeground));
-            
+
             processInfoView.Items.Add(
-                new(["User:", processInfo.UserName],
+                new(["User:", sample.UserName],
                     appConfig.Theme.ListViewBackground,
                     appConfig.Theme.ListViewForeground));
             
@@ -447,7 +445,7 @@ public partial class ProcessInfoControl : Control
                 modulesView.Items.Clear();
                 modulesView.Draw();
 
-                List<ModuleInfo> modules = moduleService.GetModules(SelectedProcessId)
+                List<ModuleInfo> modules = ProcessService.GetModules(SelectedProcessId)
                     .OrderBy(m => m.ModuleName)
                     .ToList();
 
@@ -483,7 +481,7 @@ public partial class ProcessInfoControl : Control
             threadsView.EmptyListViewText = MsgThreadsNotLoaded;
 
             try {
-                List<ThreadInfo> threads = threadService.GetThreads(SelectedProcessId)
+                List<ThreadInfo> threads = ProcessService.GetThreads(SelectedProcessId)
                     .OrderByDescending(t => t.CpuTotalTime.Ticks)
                     .ToList();
 

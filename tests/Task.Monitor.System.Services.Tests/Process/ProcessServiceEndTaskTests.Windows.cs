@@ -1,6 +1,6 @@
-﻿namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
-public partial class ProcessUtilsTests
+public partial class ProcessServiceEndTaskTests
 {
 #if __WIN32__
     private void CreateScriptFile(string fileName)

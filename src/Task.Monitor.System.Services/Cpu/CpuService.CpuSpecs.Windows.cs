@@ -10,6 +10,30 @@ namespace Task.Monitor.System.Services.Cpu;
 public partial class CpuService
 {
 #if __WIN32__
+    private const string CpuRegistryPath = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0\";
+
+    private static string GetCpuNameInternal()
+    {
+        const string RegKeyProcessorName = "ProcessorNameString";
+
+        using RegistryKey? key = Registry.LocalMachine.OpenSubKey(CpuRegistryPath);
+
+        if (key == null) {
+            TraceEx.WriteLineOnce(CpuRegistryPath, "Failed GetCpuNameInternal OpenSubKey");
+            return string.Empty;
+        }
+
+        // REG_SZ
+        object? processorName = key.GetValue(RegKeyProcessorName);
+
+        if (processorName == null) {
+            TraceEx.WriteLineOnce(RegKeyProcessorName, "Failed GetCpuNameInternal GetValue");
+            return string.Empty;
+        }
+
+        return processorName.ToString() ?? string.Empty;
+    }
+
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
         specs.CpuCores = (ulong)Environment.ProcessorCount;
@@ -33,29 +57,21 @@ public partial class CpuService
 
     private static void PopulateCpuSpecs(ref CpuSpecs specs)
     {
-        const string RegPath             = @"HARDWARE\DESCRIPTION\System\CentralProcessor\0\";
-        const string RegKeyProcessorName = "ProcessorNameString";
-        const string RegKeyFrequencyMhz  = "~Mhz";
+        const string RegKeyFrequencyMhz = "~Mhz";
 
         specs.CpuVirtualizationFirmwareEnabled = ProcessThreadsApi.IsProcessorFeaturePresent(
             ProcessThreadsApi.PF_VIRT_FIRMWARE_ENABLED);
 
-        using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegPath);
-        
-        if (key == null) {
-            TraceEx.WriteLineOnce(RegPath, "Failed GetCpuInfoInternal OpenSubKey");
-            return;
-        }
-        
-        object? processorName = key.GetValue(RegKeyProcessorName);
-        
-        if (processorName == null) {
-            TraceEx.WriteLineOnce(RegKeyProcessorName, "Failed GetCpuInfoInternal GetValue");
-            return;
-        }
-        
-        specs.CpuName = processorName.ToString() ?? string.Empty;    
+        specs.CpuName = GetCpuNameInternal();
 
+        using RegistryKey? key = Registry.LocalMachine.OpenSubKey(CpuRegistryPath);
+
+        if (key == null) {
+            TraceEx.WriteLineOnce(CpuRegistryPath, "Failed GetCpuInfoInternal OpenSubKey");
+            return;
+        }
+
+        // Reg DWORD
         object? frequency = key.GetValue(RegKeyFrequencyMhz);
         
         if (frequency == null) {

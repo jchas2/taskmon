@@ -8,6 +8,7 @@ using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Process;
 using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui.Controls;
@@ -546,10 +547,11 @@ public sealed class ProcessesControlTests : IDisposable
     [Fact]
     public void Right_Arrow_With_The_Confirmation_Open_Stays_In_The_Dialog()
     {
+        ProcessServiceFake processService = new();
+        runContext.ServiceController.AddService(() => processService);
+
         ProcessesControl ctrl = CreateFocusableControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        List<int> ended = [];
-        ctrl.ProcessControl.EndTask = ended.Add;
 
         Press(ctrl, EndTaskKey);
         bool handled = Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.RightArrow));
@@ -560,7 +562,7 @@ public sealed class ProcessesControlTests : IDisposable
 
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
 
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
 
         ctrl.Unload();
     }

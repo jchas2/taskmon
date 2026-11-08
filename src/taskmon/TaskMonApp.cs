@@ -6,6 +6,7 @@ using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Cpu;
 
 namespace Task.Monitor;
 
@@ -25,14 +26,11 @@ public sealed class TaskMonApp(RunContext runContext)
             }
         }
 
-        SystemStatistics stats = new();
-        _ = SystemInfo.GetSystemInfo(ref stats);
-        
         Trace.WriteLine($"{Configuration.Constants.AppName} started.");
         Trace.WriteLine($"{Configuration.Constants.AppName} version = {AssemblyVersionInfo.GetVersion()}");
         Trace.WriteLine($"Running as root = {SystemInfo.IsRunningAsRoot()}");
-        Trace.WriteLine($"CPU = {stats.CpuName}");
-        Trace.WriteLine($"OS Version = {stats.OsVersion}");
+        Trace.WriteLine($"CPU = {CpuService.GetCpuName()}");
+        Trace.WriteLine($"OS Version = {SystemInfo.GetOsVersion()}");
         Trace.WriteLine($"Log Path = {logPath ?? string.Empty}");
         Trace.WriteLine(new string('-', 10));
 

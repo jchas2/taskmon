@@ -16,7 +16,6 @@ public sealed partial class ServicesControl
 
     private sealed record ToggleFailure(string DisplayName, bool Start, ServiceControlOutcome Outcome);
 
-    // Requests sent and not yet completed, by service name: true to start, false to stop.
     private readonly Dictionary<string, bool> inFlight = new(StringComparer.OrdinalIgnoreCase);
 
     private ToggleFailure? pendingFailure;

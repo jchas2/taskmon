@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
@@ -14,7 +15,7 @@ namespace Task.Monitor.System.Services.Process;
 public partial class ProcessService
 {
 #if __WIN32__
-    private static readonly Dictionary<string, string> UserMap = new();
+    private static readonly ConcurrentDictionary<string, string> UserMap = new();
 
     private static unsafe ProcessSample? CreateProcessSample(Kernel32.PROCESSENTRY32W* entry)
     {
@@ -205,7 +206,7 @@ public partial class ProcessService
         }
     }
 
-    public static unsafe ProcessSample? GetProcessSample(int pid)
+    private static unsafe ProcessSample? GetProcessSampleInternal(int pid)
     {
         ProcessSample? sample = null;
         nint hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
@@ -356,7 +357,7 @@ public partial class ProcessService
 
         if (domainIndex != -1) {
             string abbrevUserName = userName.Substring(domainIndex + 1);
-            UserMap.Add(userName, abbrevUserName);
+            UserMap.TryAdd(userName, abbrevUserName);
         }
 
         return userName;

@@ -88,7 +88,7 @@ public sealed class ServiceController : WorkerService
             : null;
 
     public T GetService<T>() where T : ISystemService =>
-        (T)allServices.Single(srv => srv.GetType() == typeof(T));
+        allServices.OfType<T>().Single();
 
     private void OnDeviceChanged(DeviceCategory category)
     {

@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Task.Monitor.System.Services\Task.Monitor.System.Services.csproj" />
+        <ProjectReference Include="..\Task.Monitor.Tests.Common\Task.Monitor.Tests.Common.csproj" />
     </ItemGroup>
 
 </Project>

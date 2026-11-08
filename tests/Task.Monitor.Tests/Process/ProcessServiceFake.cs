@@ -1,21 +1,62 @@
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Tests.Process;
 
-public sealed class ProcessServiceFake : IProcessService
+// Stands in for ProcessService's single-process lookups once registered in the ServiceController. It is
+// never started, so it samples nothing, and it ends no real processes.
+public sealed class ProcessServiceFake : ProcessService
 {
-    private readonly List<ProcessInfo> processInfos = [];
+    private readonly List<ModuleInfo>    moduleInfos = [];
+    private readonly List<ProcessSample> samples     = [];
+    private readonly List<ThreadInfo>    threadInfos = [];
 
-    public void AddProcessInfo(ProcessInfo processInfo) =>
-        processInfos.Add(processInfo);
-
-    public ProcessInfo? GetProcessById(int pid)
+    public ProcessServiceFake Add(ModuleInfo moduleInfo)
     {
-        RequestedPids.Add(pid);
-        return processInfos.SingleOrDefault(p => p.Pid == pid);
+        moduleInfos.Add(moduleInfo);
+        return this;
     }
 
-    public List<ProcessInfo> GetProcesses() => processInfos;
+    public ProcessServiceFake Add(ProcessSample sample)
+    {
+        samples.Add(sample);
+        return this;
+    }
 
-    public List<int> RequestedPids { get; } = [];
+    public ProcessServiceFake Add(ThreadInfo threadInfo)
+    {
+        threadInfos.Add(threadInfo);
+        return this;
+    }
+
+    public List<int> EndedPids { get; } = [];
+
+    public override bool EndTask(int pid, int timeoutMilliseconds)
+    {
+        EndedPids.Add(pid);
+        return true;
+    }
+
+    public override List<ModuleInfo> GetModules(int pid)
+    {
+        ModuleRequestedPids.Add(pid);
+        return moduleInfos;
+    }
+
+    public override ProcessSample? GetProcessSample(int pid)
+    {
+        SampleRequestedPids.Add(pid);
+        return samples.SingleOrDefault(sample => sample.Pid == pid);
+    }
+
+    public override List<ThreadInfo> GetThreads(int pid)
+    {
+        ThreadRequestedPids.Add(pid);
+        return threadInfos;
+    }
+
+    public List<int> ModuleRequestedPids { get; } = [];
+
+    public List<int> SampleRequestedPids { get; } = [];
+
+    public List<int> ThreadRequestedPids { get; } = [];
 }

@@ -1,8 +1,8 @@
 #if __APPLE__
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 using SysDiag = System.Diagnostics;
 
-namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
 public sealed class ProcessNameResolverTests : IDisposable
 {

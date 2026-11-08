@@ -2,7 +2,7 @@
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.System.Controls.ListView;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 

@@ -1,13 +1,12 @@
-﻿using System.Reflection;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
 
-namespace Task.Monitor.System.Tests.Process;
+namespace Task.Monitor.System.Services.Tests.Process;
 
 public sealed class ThreadInfoTests
 {
     [Fact]
-    public void InputBox_Canary_Test() =>
+    public void ThreadInfo_Canary_Test() =>
         Assert.Equal(8, CanaryTestHelper.GetPropertyCount<ThreadInfo>());
 
     [Fact]
@@ -23,7 +22,7 @@ public sealed class ThreadInfoTests
             StartAddress = long.MaxValue,
             ThreadState = "Wait"
         };
-        
+
         Assert.Equal(1, threadInfo.ThreadId);
         Assert.Equal(TimeSpan.MaxValue, threadInfo.CpuKernelTime);
         Assert.Equal(TimeSpan.MaxValue, threadInfo.CpuTotalTime);
@@ -34,4 +33,3 @@ public sealed class ThreadInfoTests
         Assert.Equal("Wait", threadInfo.ThreadState);
     }
 }
- 

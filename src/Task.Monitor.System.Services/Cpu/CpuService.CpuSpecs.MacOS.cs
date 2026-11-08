@@ -82,11 +82,14 @@ public partial class CpuService
         return maxMhz;
     }
 
+    private static string GetCpuNameInternal() =>
+        Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
         specs.CpuCores   = (ulong)Environment.ProcessorCount;
         specs.CpuSockets = 1;
-        specs.CpuName    = Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+        specs.CpuName    = GetCpuNameInternal();
         
         specs.CpuVirtualizationFirmwareEnabled = false; // Windows only.
 

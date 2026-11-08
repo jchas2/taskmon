@@ -4,6 +4,9 @@ public sealed partial class CpuService : WorkerService
 {
     private CpuSpecs cpuSpecs = new();
 
+    // Static so it can be read before the services start (e.g. for the startup log).
+    public static string GetCpuName() => GetCpuNameInternal();
+
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
         CpuInfo cpuInfo = new();

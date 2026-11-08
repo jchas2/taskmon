@@ -13,6 +13,7 @@ using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Process;
 using ServiceController = Task.Monitor.System.Services.ServiceController;
 using SystemSnapshot = Task.Monitor.System.Services.SystemSnapshot;
 using SystemSnapshotEventArgs = Task.Monitor.System.Services.SystemSnapshotEventArgs;
@@ -540,13 +541,14 @@ public sealed class MainScreen2Tests : IDisposable
     [Fact]
     public void Tab_And_F2_Reach_The_End_Task_Confirmation_Instead_Of_The_Screen()
     {
+        ProcessServiceFake processService = new();
+        runContext.ServiceController.AddService(() => processService);
+
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
         ProcessControl   processControl   = processesControl.ProcessControl;
-        List<int>        ended            = [];
         bool             handled          = false;
 
-        processControl.EndTask = ended.Add;
         mainScreen.SetActiveControl(new MenuListViewItem(processesControl, "PROCESSES"));
         mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
         RaiseSnapshotUpdated(new SystemSnapshot {
@@ -570,7 +572,7 @@ public sealed class MainScreen2Tests : IDisposable
         mainScreen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
 
         Assert.False(processControl.IsEndTaskDialogVisible);
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
     }
 
     private List<Theme> ThemesInSetupOrder() => runContext.AppConfig.Themes.OrderBy(t => t.Name).ToList();

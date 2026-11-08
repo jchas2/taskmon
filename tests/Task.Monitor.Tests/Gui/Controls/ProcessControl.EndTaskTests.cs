@@ -5,18 +5,21 @@ using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Process;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class ProcessControlEndTaskTests : IDisposable
 {
-    private readonly RunContextHelper runContextHelper;
-    private readonly RunContext       runContext;
+    private readonly RunContextHelper   runContextHelper;
+    private readonly RunContext         runContext;
+    private readonly ProcessServiceFake processService = new();
 
     public ProcessControlEndTaskTests()
     {
         runContextHelper = new RunContextHelper();
         runContext       = runContextHelper.GetRunContext();
+        runContext.ServiceController.AddService(() => processService);
     }
 
     private static SystemSnapshot BuildSnapshot(params int[] pids) =>
@@ -46,7 +49,6 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         runContext.AppConfig.MultiSelectProcesses = true;
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222, 3333, 4444, 5555));
-        ctrl.EndTask = _ => { };
 
         for (int i = 0; i < 5; i++) {
             Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar));
@@ -71,7 +73,6 @@ public sealed class ProcessControlEndTaskTests : IDisposable
     {
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        ctrl.EndTask = _ => { };
 
         Press(ctrl, EndTaskKey);
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
@@ -108,13 +109,11 @@ public sealed class ProcessControlEndTaskTests : IDisposable
     {
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Press(ctrl, EndTaskKey);
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Escape));
 
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
         Assert.False(ctrl.IsEndTaskDialogVisible);
         Assert.True(Control.RedrawEnabled);
 
@@ -137,19 +136,17 @@ public sealed class ProcessControlEndTaskTests : IDisposable
     {
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Assert.True(Press(ctrl, EndTaskKey));
 
         Assert.True(ctrl.IsEndTaskDialogVisible);
         Assert.False(Control.RedrawEnabled);
         Assert.Contains("End this task?", CapturedOutput());
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
 
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
 
-        Assert.Equal([1111], ended);
+        Assert.Equal([1111], processService.EndedPids);
 
         ctrl.Unload();
     }
@@ -160,8 +157,6 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         runContext.AppConfig.MultiSelectProcesses = true;
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222, 3333));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Spacebar));
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow));
@@ -171,7 +166,7 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         Press(ctrl, EndTaskKey);
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
 
-        Assert.Equal([1111, 3333], ended);
+        Assert.Equal([1111, 3333], processService.EndedPids);
 
         ctrl.Unload();
     }
@@ -182,14 +177,12 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         runContext.AppConfig.MultiSelectProcesses = true;
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222, 3333));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow));
         Press(ctrl, EndTaskKey);
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
 
-        Assert.Equal([2222], ended);
+        Assert.Equal([2222], processService.EndedPids);
 
         ctrl.Unload();
     }
@@ -202,13 +195,11 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         runContext.AppConfig.ConfirmTaskDelete = false;
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(2222, 1111));
         Press(ctrl, EndTaskKey);
 
-        Assert.Equal([1111], ended);
+        Assert.Equal([1111], processService.EndedPids);
 
         ctrl.Unload();
     }
@@ -218,13 +209,11 @@ public sealed class ProcessControlEndTaskTests : IDisposable
     {
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(Environment.ProcessId));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Assert.True(Press(ctrl, EndTaskKey));
 
         Assert.False(ctrl.IsEndTaskDialogVisible);
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
 
         ctrl.Unload();
     }
@@ -235,12 +224,10 @@ public sealed class ProcessControlEndTaskTests : IDisposable
         runContext.AppConfig.ConfirmTaskDelete = false;
         ProcessControl ctrl = CreateControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Press(ctrl, EndTaskKey);
 
-        Assert.Equal([1111], ended);
+        Assert.Equal([1111], processService.EndedPids);
         Assert.False(ctrl.IsEndTaskDialogVisible);
         Assert.True(Control.RedrawEnabled);
 
@@ -251,13 +238,11 @@ public sealed class ProcessControlEndTaskTests : IDisposable
     public void K_With_An_Empty_List_Does_Nothing()
     {
         ProcessControl ctrl = CreateControl();
-        List<int> ended = [];
-        ctrl.EndTask = ended.Add;
 
         Press(ctrl, EndTaskKey);
 
         Assert.False(ctrl.IsEndTaskDialogVisible);
-        Assert.Empty(ended);
+        Assert.Empty(processService.EndedPids);
 
         ctrl.Unload();
     }

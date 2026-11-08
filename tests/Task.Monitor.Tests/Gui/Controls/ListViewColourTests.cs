@@ -15,13 +15,12 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.PickerBox;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Process;
-using SysDiag = System.Diagnostics;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
@@ -164,21 +163,19 @@ public sealed class ListViewColourTests
     [Fact]
     public void ProcessInfoControl_ListViews_And_Rows_Use_The_ListView_Colours()
     {
-        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
-        Assert.NotNull(processInfo);
+        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
+        Assert.NotNull(sample);
 
         ProcessServiceFake processServiceFake = new();
-        processServiceFake.AddProcessInfo(processInfo);
+        processServiceFake.Add(sample);
+        runContext.ServiceController.AddService(() => processServiceFake);
 
         ProcessInfoControl control = new(
-            processServiceFake,
-            new ModuleServiceFake(),
-            new ThreadServiceFake(),
+            runContext.ServiceController,
             Terminal,
             runContext.AppConfig) {
             AutoRefresh = false,
-            SelectedProcessId = currentProcess.Id
+            SelectedProcessId = sample.Pid
         };
 
         Loaded(control);

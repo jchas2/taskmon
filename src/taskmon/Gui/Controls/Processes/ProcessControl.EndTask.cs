@@ -4,7 +4,6 @@ using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Services.Process;
 using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
-using ProcessUtils = Task.Monitor.System.Process.ProcessUtils;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 
@@ -45,22 +44,17 @@ public sealed partial class ProcessControl
         Control.RedrawEnabled = true;
     }
 
-    internal Action<int> EndTask { get; set; } = pid => ProcessUtils.EndTask(pid, EndTaskTimeout);
-
     private void EndTasks(IReadOnlyList<int> pids)
     {
         Trace.WriteLine($"End task pids: {string.Join(", ", pids)}");
 
+        ProcessService processService = serviceController.GetService<ProcessService>();
+
         foreach (int pid in pids) {
-            EndTask(pid);
+            processService.EndTask(pid, EndTaskTimeout);
         }
 
-        try {
-            serviceController.GetService<ProcessService>().RequestImmediateRefresh();
-        }
-        catch (InvalidOperationException) {
-            // No process service registered (e.g. under test) - the next sample picks it up.
-        }
+        processService.RequestImmediateRefresh();
     }
 
     private List<(int Pid, string Name)> GetEndTaskTargets()

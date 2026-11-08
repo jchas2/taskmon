@@ -1,9 +1,9 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Process;
+namespace Task.Monitor.System.Services.Process;
 
-public sealed class ProcessNameResolver
+internal sealed class ProcessNameResolver
 {
     private const int DefaultArgMax  = 1024 * 1024;
     private const int MaxCachedNames = 4096;

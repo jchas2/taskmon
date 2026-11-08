@@ -1,6 +1,6 @@
 using Moq;
 using Task.Monitor.Gui.Controls.Processes;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
 using Task.Monitor.Tests.Process;
 using Xunit.Abstractions;
@@ -16,49 +16,40 @@ public sealed class ProcessInfoControlTests
     private readonly RunContext runContext;
 
     private readonly ProcessServiceFake processServiceFake = new();
-    private readonly ModuleServiceFake moduleServiceFake = new();
-    private readonly ThreadServiceFake threadServiceFake = new();
 
     public ProcessInfoControlTests(ITestOutputHelper outputHelper)
     {
         this.outputHelper = outputHelper;
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
+        runContext.ServiceController.AddService(() => processServiceFake);
     }
 
-    // ProcessInfo's setters are internal to Task.Monitor.System, so these use the real current
-    // process (as the tests above do) rather than hand-built fixtures.
+    // ProcessSample's setters are internal to Task.Monitor.System.Services, so these use the real
+    // current process rather than hand-built fixtures.
     private (int Pid, string ProcessName) AddCurrentProcess()
     {
-        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
+        ProcessSample sample = CurrentProcessSample();
 
-        Assert.NotNull(processInfo);
-        Assert.False(string.IsNullOrWhiteSpace(processInfo.ProcessName));
+        processServiceFake.Add(sample);
 
-        processServiceFake.AddProcessInfo(processInfo);
-
-        return (processInfo.Pid, processInfo.ProcessName);
+        return (sample.Pid, sample.ProcessName);
     }
 
     [Fact]
     public void Constructor_With_Null_Terminal_Throws_ArgumentNullException() =>
-        Assert.Throws<ArgumentNullException>(() => 
+        Assert.Throws<ArgumentNullException>(() =>
             new ProcessInfoControl(
-                processServiceFake,
-                moduleServiceFake,
-                threadServiceFake,
-                null!, 
+                runContext.ServiceController,
+                null!,
                 runContext.AppConfig));
 
     [Fact]
     public void Constructor_With_Valid_Args_Initialises_Successfully()
     {
         ProcessInfoControl ctrl = new(
-            processServiceFake,
-            moduleServiceFake,
-            threadServiceFake,
-            runContext.Terminal, 
+            runContext.ServiceController,
+            runContext.Terminal,
             runContext.AppConfig);
 
         Assert.NotNull(ctrl);
@@ -68,9 +59,7 @@ public sealed class ProcessInfoControlTests
     private ProcessInfoControl CreateLoadedControl(TimeSpan? refreshInterval = null)
     {
         ProcessInfoControl ctrl = new(
-            processServiceFake,
-            moduleServiceFake,
-            threadServiceFake,
+            runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
             Width = 128,
@@ -85,6 +74,16 @@ public sealed class ProcessInfoControlTests
         return ctrl;
     }
 
+    private static ProcessSample CurrentProcessSample()
+    {
+        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
+
+        Assert.NotNull(sample);
+        Assert.False(string.IsNullOrWhiteSpace(sample.ProcessName));
+
+        return sample;
+    }
+
     [Fact]
     public void LoadProcess_After_No_Selection_Loads_The_Process()
     {
@@ -93,8 +92,8 @@ public sealed class ProcessInfoControlTests
         ProcessInfoControl ctrl = CreateLoadedControl();
         ctrl.LoadProcess(pid);
 
-        Assert.Equal([pid], processServiceFake.RequestedPids);
-        Assert.Equal([pid], threadServiceFake.RequestedPids);
+        Assert.Equal([pid], processServiceFake.SampleRequestedPids);
+        Assert.Equal([pid], processServiceFake.ThreadRequestedPids);
         Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
     }
 
@@ -147,9 +146,9 @@ public sealed class ProcessInfoControlTests
 
         // PROCESSES opens before ProcessControl has selected a row. Asking for pid -1 threw and
         // logged an exception on every open.
-        Assert.Empty(processServiceFake.RequestedPids);
-        Assert.Empty(threadServiceFake.RequestedPids);
-        Assert.Empty(moduleServiceFake.RequestedPids);
+        Assert.Empty(processServiceFake.SampleRequestedPids);
+        Assert.Empty(processServiceFake.ThreadRequestedPids);
+        Assert.Empty(processServiceFake.ModuleRequestedPids);
         Assert.Equal(string.Empty, ctrl.ProcessTitle);
     }
 
@@ -206,7 +205,7 @@ public sealed class ProcessInfoControlTests
         ctrl.LoadProcess(pid);
         ctrl.SelectMenuItemForTests(2);
 
-        int callsAfterModulesShown = moduleServiceFake.GetModulesCallCount;
+        int callsAfterModulesShown = processServiceFake.ModuleRequestedPids.Count;
         Assert.True(callsAfterModulesShown > 0);
 
         ctrl.ResetToDetailPane();
@@ -214,24 +213,17 @@ public sealed class ProcessInfoControlTests
 
         Assert.True(ctrl.IsDetailActiveForTests);
         Assert.Equal(0, ctrl.SelectedMenuIndexForTests);
-        Assert.Equal(callsAfterModulesShown, moduleServiceFake.GetModulesCallCount);
+        Assert.Equal(callsAfterModulesShown, processServiceFake.ModuleRequestedPids.Count);
     }
 
     // DETAIL is the first menu item and the tab shown by default (no selection needed).
     [Fact]
     public void Should_Draw_Detail_By_Default()
     {
-        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
-
-        Assert.NotNull(processInfo);
-
-        processServiceFake.AddProcessInfo(processInfo);
+        (int pid, _) = AddCurrentProcess();
 
         ProcessInfoControl ctrl = new(
-            processServiceFake,
-            moduleServiceFake,
-            threadServiceFake,
+            runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
             Width = 128,
@@ -239,7 +231,7 @@ public sealed class ProcessInfoControlTests
         };
 
         ctrl.AutoRefresh = false;
-        ctrl.SelectedProcessId = currentProcess.Id;
+        ctrl.SelectedProcessId = pid;
 
         ctrl.Load();
         ctrl.Resize();
@@ -271,14 +263,9 @@ public sealed class ProcessInfoControlTests
     [Fact]
     public void Should_Draw_Threads_When_Selected()
     {
-        using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        ProcessInfo? processInfo = new ProcessService().GetProcessById(currentProcess.Id);
+        (int pid, _) = AddCurrentProcess();
 
-        Assert.NotNull(processInfo);
-
-        processServiceFake.AddProcessInfo(processInfo);
-
-        threadServiceFake.Add(
+        processServiceFake.Add(
             new ThreadInfo {
                 CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 7),
                 CpuUserTime = new TimeSpan(hours: 0, minutes: 9, seconds: 41),
@@ -294,9 +281,7 @@ public sealed class ProcessInfoControlTests
         // a narrower control here would clip USER TIME/TOTAL TIME before this ever gets to assert
         // their content.
         ProcessInfoControl ctrl = new(
-            processServiceFake,
-            moduleServiceFake,
-            threadServiceFake,
+            runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig) {
             Width = 160,
@@ -304,7 +289,7 @@ public sealed class ProcessInfoControlTests
         };
 
         ctrl.AutoRefresh = false;
-        ctrl.SelectedProcessId = currentProcess.Id;
+        ctrl.SelectedProcessId = pid;
 
         ctrl.Load();
         ctrl.Resize();
@@ -347,11 +332,11 @@ public sealed class ProcessInfoControlTests
         Assert.Equal(requestsAtUnload, ThreadRequestCount());
     }
 
-    // The worker asks the thread service while holding DrawingLock.
+    // The worker asks the process service for threads while holding DrawingLock.
     private int ThreadRequestCount()
     {
         lock (ProcessInfoControl.DrawingLockForTests) {
-            return threadServiceFake.RequestedPids.Count;
+            return processServiceFake.ThreadRequestedPids.Count;
         }
     }
 

@@ -2,9 +2,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
-using Task.Monitor.System.Process;
 using Task.Monitor.System.Services;
-using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 
@@ -33,9 +31,7 @@ public sealed class ProcessesControl : Control
         };
 
         processInfoControl = new ProcessInfoControl(
-            new Task.Monitor.System.Process.ProcessService(),
-            new ModuleService(),
-            new ThreadService(),
+            serviceController,
             terminal,
             appConfig) {
             TabStop  = true,

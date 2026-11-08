@@ -2,7 +2,7 @@ using Moq;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Internal.Abstractions;
-using Task.Monitor.System.Process;
+using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
