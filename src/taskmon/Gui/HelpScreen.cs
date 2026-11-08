@@ -1,8 +1,8 @@
 using System.Drawing;
-using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 
@@ -18,60 +18,96 @@ public class HelpScreen : Screen
     private const string SpaceHelpText = "Space-bar to check/uncheck items";
 #endif
 
-    private readonly RunContext runContext;
-    private readonly ListView helpView;
-    private StringBuilder colourHelpText = new();
-    private StringBuilder functionHelpText = new();
+    private const string Title = "TASK MONITOR HELP";
+
+    private const int KeyColumnWidth      = 10;
+    private const int KeyDescriptionWidth = 40;
+    private const int LabelColumnWidth    = 28;
+    private const int SwatchWidth         = 4;
+    private const int WideSwatchWidth     = 5;
+
+    private readonly AnsiScreenBuffer frame = new();
+    private readonly RunContext       runContext;
+
+    private readonly ListView chartView;
+    private readonly ListView functionKeysView;
+    private readonly ListView keysView;
+    private readonly ListView otherKeysView;
+    private readonly ListView processView;
+
+    private readonly ListView[] sections;
 
     public HelpScreen(RunContext runContext) : base(runContext.Terminal)
     {
         this.runContext = runContext;
-        
-        helpView = new(runContext.Terminal) {
-            EnableScroll = false,
-            EnableRowSelect = false,
-            ShowColumnHeaders = false,
-            ShowCheckboxes = false,
+
+        chartView        = NewSection("CHART COLOURS", columns: 4);
+        processView      = NewSection("PROCESS AND PATH COLOURS", columns: 5);
+        keysView         = NewSection("KEYS", columns: 4);
+        functionKeysView = NewSection("FUNCTION KEYS", columns: 2);
+        otherKeysView    = NewSection("OTHER KEYS", columns: 2);
+
+        sections = [chartView, processView, keysView, functionKeysView, otherKeysView];
+
+        foreach (ListView section in sections) {
+            Controls.Add(section);
+        }
+    }
+
+    private static ListViewSubItem Cell(string text, Color foreground, Color background) =>
+        new(null!, text, background, foreground);
+
+    private static ListViewItem KeyRow(Theme theme, params string[] cells) =>
+        new(cells
+            .Select((text, i) => Cell(
+                text,
+                i % 2 == 0 ? theme.RangeLowBackground : theme.ListViewForeground,
+                theme.ListViewBackground))
+            .ToArray());
+
+    private ListView NewSection(string title, int columns)
+    {
+        ListView section = new(runContext.Terminal) {
+            EnableScroll      = false,
+            EnableRowSelect   = false,
+            HeaderText        = title,
+            ShowBorder        = true,
+            ShowCheckboxes    = false,
+            ShowColumnHeaders = false
         };
 
-        helpView.ColumnHeaders
-            .Add(new ListViewColumnHeader(""))
-            .Add(new ListViewColumnHeader(""))
-            .Add(new ListViewColumnHeader(""))
-            .Add(new ListViewColumnHeader(""));
-        
-        Controls.Add(helpView);
-    } 
+        for (int i = 0; i < columns; i++) {
+            section.ColumnHeaders.Add(new ListViewColumnHeader(""));
+        }
+
+        return section;
+    }
 
     protected override void OnDraw()
     {
-        Terminal.SetCursorPosition(X, Y);
-        Terminal.BackgroundColor = runContext.AppConfig.Theme.MenubarBackground;
-        Terminal.ForegroundColor = runContext.AppConfig.Theme.MenubarForeground;
+        Theme theme  = runContext.AppConfig.Theme;
+        int   offset = Math.Max(0, (Width - Title.Length) / 2);
 
-        string menubar = "TASK MONITOR HELP";
-        int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
-        
-        Terminal.WriteEmptyLineTo(offsetX);
-        Terminal.Write(menubar);
-        Terminal.WriteEmptyLineTo(Width - offsetX - menubar.Length);
-        Terminal.WriteLine(colourHelpText.ToString());
-        
-        helpView.Draw();
-        
-        Terminal.SetCursorPosition(0, helpView.Y + helpView.Height);
-        Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
-        Terminal.ForegroundColor = runContext.AppConfig.Theme.Foreground;
-        Terminal.WriteEmptyLine();
-        Terminal.WriteLine(functionHelpText.ToString());
-        
+        frame.Clear();
+        frame.MoveTo(X, Y);
+        frame.SetColour(theme.MenubarForeground, theme.MenubarBackground);
+        frame.Append(' ', offset);
+        frame.Append(Title.AsSpan(0, Math.Min(Title.Length, Math.Max(0, Width - offset))));
+        frame.Append(' ', Width - offset - Title.Length);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
+
+        foreach (ListView section in sections) {
+            section.Draw();
+        }
+
         KeyBindControl.Draw(
             "ESC",
             "Exit",
             X,
             Height - 1,
             10,
-            runContext.AppConfig.Theme,
+            theme,
             enabled: true,
             runContext.Terminal);
     }
@@ -79,75 +115,70 @@ public class HelpScreen : Screen
     protected override void OnLoad()
     {
         Terminal.CursorVisible = false;
-        
-        Color bg = runContext.AppConfig.Theme.Background;
-        Color fg = runContext.AppConfig.Theme.Foreground;
-        Color listBg = runContext.AppConfig.Theme.ListViewBackground;
-        Color listFg = runContext.AppConfig.Theme.ListViewForeground;
-        Color keyColour = runContext.AppConfig.Theme.RangeLowBackground;
-        Theme theme = runContext.AppConfig.Theme;
 
-        BackgroundColour = bg;
-        ForegroundColour = fg;
+        Theme theme  = runContext.AppConfig.Theme;
+        Color listBg = theme.ListViewBackground;
+        Color listFg = theme.ListViewForeground;
 
-        helpView.BackgroundColour = listBg;
-        helpView.ForegroundColour = listFg;
-        helpView.BorderForegroundColour = runContext.AppConfig.Theme.ListViewBorderForeground;
-        helpView.BorderBackgroundColour = runContext.AppConfig.Theme.ListViewBorderBackground;
+        BackgroundColour = theme.Background;
+        ForegroundColour = theme.Foreground;
 
-        helpView.ColumnHeaders[0].RightAligned = true;
-        helpView.ColumnHeaders[1].RightAligned = false;
-        helpView.ColumnHeaders[2].RightAligned = true;
-        helpView.ColumnHeaders[3].RightAligned = false;
-
-        colourHelpText.Append("Chart Colours: ".ToColour(fg, bg));
-        colourHelpText.Append("Low ".ToColour(theme.RangeLowBackground, bg));
-        colourHelpText.Append("Mid ".ToColour(theme.RangeMidBackground, bg));
-        colourHelpText.AppendLine("High".ToColour(theme.RangeHighBackground, bg));
-        colourHelpText.AppendLine();
-        colourHelpText.AppendLine("Process and Path Colours:".ToColour(fg, bg));
-        colourHelpText.AppendLine("Normal process".ToColour(theme.ColumnCommandNormalUserSpace, bg));
-        colourHelpText.AppendLine("Low priority (nice) process".ToColour(theme.ColumnCommandLowPriority, bg));
-        colourHelpText.AppendLine("High Cpu usage (> 1 core)".ToColour(theme.ColumnCommandHighCpu, bg));
-        colourHelpText.AppendLine("I/O bound process".ToColour(theme.ColumnCommandIoBound, bg));
-        colourHelpText.Append("Metric ".ToColour(fg, bg));
-        colourHelpText.Append("Low ".ToColour(theme.RangeLowForeground, theme.RangeLowBackground));
-        colourHelpText.Append("Mid ".ToColour(theme.RangeMidForeground, theme.RangeMidBackground));
-        colourHelpText.AppendLine("High".ToColour(theme.RangeHighForeground, theme.RangeHighBackground));
-        colourHelpText.AppendLine("Metric changed".ToColour(theme.DeltaHighlightColour, bg));
-        
-        helpView.Items.Add(new ListViewItem(new[] { "", "", "", "" }));
-        helpView.Items.Add(new ListViewItem(new[] { "\u2190:", "Move left to next screen component",  "\u2191:", "Arrow to scroll up" }));
-        helpView.Items.Add(new ListViewItem(new[] { "\u2192:", "Move right to next screen component", "\u2193:", "Arrow to scroll down" }));
-        helpView.Items.Add(new ListViewItem(new[] { "Pg Up:", "Move up one page in list",             "\u21B5:", "ENTER to select item" }));
-        helpView.Items.Add(new ListViewItem(new[] { "Pg Down:", "Move down one page in list",         "ESC:", "Close dialog or clear the filter" }));
-        helpView.Items.Add(new ListViewItem(new[] { "a:", "Sort ascending",                           "d:", "Sort descending" }));
-        helpView.Items.Add(new ListViewItem(new[] { "s:", "Select sort column",                       "p g m:", "Sort processes on CPU%, GPU%, Memory" }));
-        helpView.Items.Add(new ListViewItem(new[] { "f:", "Filter the list in the current view",      "x:", "Toggle multiple process selection" }));
-        helpView.Items.Add(new ListViewItem(new[] { "u:", "Uncheck all selected processes",           "\u2423:", SpaceHelpText }));
-        helpView.Items.Add(new ListViewItem(new[] { "k:", "End task (checked or selected)",           "r F5:", "Refresh the current list" }));
-        helpView.Items.Add(new ListViewItem(new[] { "z:", "Freeze process updates",                   "i:", "Toggle Irix mode CPU reporting" }));
-        helpView.Items.Add(new ListViewItem(new[] { "t:", "Show the next tip in the footer",          "", "" }));
-        
-        for (int i = 0; i < helpView.Items.Count; i++) {
-            helpView.Items[i].SubItems[0].ForegroundColor = keyColour;
-            helpView.Items[i].SubItems[0].BackgroundColor = listBg;
-            helpView.Items[i].SubItems[2].ForegroundColor = keyColour;
-            helpView.Items[i].SubItems[2].BackgroundColor = listBg;
+        foreach (ListView section in sections) {
+            section.BackgroundColour       = listBg;
+            section.ForegroundColour       = listFg;
+            section.BorderForegroundColour = theme.ListViewBorderForeground;
+            section.BorderBackgroundColour = theme.ListViewBorderBackground;
         }
 
-        functionHelpText.AppendLine(
-            @$"Function Keys:
-{"F1:".ToColour(theme.RangeLowBackground, bg)}{"  Show this help screen.".ToColour(fg, bg)}
-{"F2:".ToColour(theme.RangeLowBackground, bg)}{"  Show setup screen, where you can configure metre display options, choose visible columns, select colour themes and other settings.".ToColour(fg, bg)}
-{"F3:".ToColour(theme.RangeLowBackground, bg)}{"  Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it.".ToColour(fg, bg)}
-{"F4:".ToColour(theme.RangeLowBackground, bg)}{"  Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it.".ToColour(fg, bg)}
-{"F5:".ToColour(theme.RangeLowBackground, bg)}{"  Refresh the Startup, Apps, Services or Drivers list (same as r).".ToColour(fg, bg)}
-{"F10:".ToColour(theme.RangeLowBackground, bg)}{" Exit Task Monitor.".ToColour(fg, bg)}
-{"F12:".ToColour(theme.RangeLowBackground, bg)}{" Show the about screen.".ToColour(fg, bg)}
+        keysView.ColumnHeaders[0].RightAligned         = true;
+        keysView.ColumnHeaders[2].RightAligned         = true;
+        functionKeysView.ColumnHeaders[0].RightAligned = true;
+        otherKeysView.ColumnHeaders[0].RightAligned    = true;
 
-End Task:
-{"k:".ToColour(theme.RangeLowBackground, bg)}{"   End the selected process, or every checked process when multiple selection (x) is on. Child processes are also ended.".ToColour(fg, bg)}");
+        chartView.Items.Add(new ListViewItem([
+            Cell("Low",  theme.RangeLowBackground,  listBg),
+            Cell("Mid",  theme.RangeMidBackground,  listBg),
+            Cell("High", theme.RangeHighBackground, listBg),
+            Cell("",     listFg,                    listBg)
+        ]));
+
+        processView.Items.Add(new ListViewItem([Cell("Normal process",              theme.ColumnCommandNormalUserSpace, listBg)]));
+        processView.Items.Add(new ListViewItem([Cell("Low priority (nice) process", theme.ColumnCommandLowPriority,     listBg)]));
+        processView.Items.Add(new ListViewItem([Cell("High Cpu usage (> 1 core)",   theme.ColumnCommandHighCpu,         listBg)]));
+        processView.Items.Add(new ListViewItem([Cell("I/O bound process",           theme.ColumnCommandIoBound,         listBg)]));
+
+        processView.Items.Add(new ListViewItem([
+            Cell("Metric", listFg,                    listBg),
+            Cell("Low",    theme.RangeLowForeground,  theme.RangeLowBackground),
+            Cell("Mid",    theme.RangeMidForeground,  theme.RangeMidBackground),
+            Cell("High",   theme.RangeHighForeground, theme.RangeHighBackground),
+            Cell("",       listFg,                    listBg)
+        ]));
+
+        processView.Items.Add(new ListViewItem([Cell("Metric changed", theme.DeltaHighlightColour, listBg)]));
+
+        keysView.Items.Add(KeyRow(theme, "←:",        "Move left to next screen component",   "↑:",       "Arrow to scroll up"));
+        keysView.Items.Add(KeyRow(theme, "→:",        "Move right to next screen component",  "↓:",       "Arrow to scroll down"));
+        keysView.Items.Add(KeyRow(theme, "Pg Up:",    "Move up one page in list",             "↵:",       "ENTER to select item"));
+        keysView.Items.Add(KeyRow(theme, "Pg Down:",  "Move down one page in list",           "ESC:",     "Close dialog or clear the filter"));
+        keysView.Items.Add(KeyRow(theme, "a:",        "Sort ascending",                       "d:",       "Sort descending"));
+        keysView.Items.Add(KeyRow(theme, "s:",        "Select sort column",                   "p g m:",   "Sort processes on CPU%, GPU%, Memory"));
+        keysView.Items.Add(KeyRow(theme, "f:",        "Filter the list in the current view",  "x:",       "Toggle multiple process selection"));
+        keysView.Items.Add(KeyRow(theme, "u:",        "Uncheck all selected processes",       "␣:",       SpaceHelpText));
+        keysView.Items.Add(KeyRow(theme, "k:",        "End task (checked or selected)",       "r F5:",    "Refresh the current list"));
+        keysView.Items.Add(KeyRow(theme, "z:",        "Freeze process updates",               "i:",       "Toggle Irix mode CPU reporting"));
+        keysView.Items.Add(KeyRow(theme, "t:",        "Show the next tip in the footer",      "",         ""));
+
+        functionKeysView.Items.Add(KeyRow(theme, "F1:",  "Show this help screen."));
+        functionKeysView.Items.Add(KeyRow(theme, "F2:",  "Show setup: metre display, visible columns, colour themes and other settings."));
+        functionKeysView.Items.Add(KeyRow(theme, "F3:",  "Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it."));
+        functionKeysView.Items.Add(KeyRow(theme, "F4:",  "Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it."));
+        functionKeysView.Items.Add(KeyRow(theme, "F5:",  "Refresh the Startup, Apps, Services or Drivers list (same as r)."));
+        functionKeysView.Items.Add(KeyRow(theme, "F10:", "Exit Task Monitor."));
+        functionKeysView.Items.Add(KeyRow(theme, "F12:", "Show the about screen."));
+
+        otherKeysView.Items.Add(KeyRow(theme, "k:",
+            "End the selected process, or all checked processes in multiple selection (x), and their child processes."));
 
         base.OnLoad();
     }
@@ -156,25 +187,45 @@ End Task:
     {
         runContext.Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
 
-        helpView.Y = 10; // Room for colourHelpText.
-        helpView.X = 0;
-        helpView.Width = runContext.Terminal.WindowWidth - helpView.X - 2;
-        helpView.Height = helpView.Items.Count + 1;
+        int width  = Math.Max(0, Width - 2);
+        int inner  = Math.Max(0, width - 2);
+        int keyRow = Y + Height - 1;
+        int y      = Y + 1;
 
-        helpView.ColumnHeaders[0].Width = 10;
-        helpView.ColumnHeaders[1].Width = 40;
-        helpView.ColumnHeaders[2].Width = 10;
-        helpView.ColumnHeaders[3].Width = 40;
-        
+        foreach (ListView section in sections) {
+            section.X       = X;
+            section.Y       = y;
+            section.Width   = width;
+            section.Height  = section.Items.Count + 2;
+            section.Visible = y + section.Height <= keyRow;
+
+            y += section.Height;
+        }
+
+        SetColumnWidths(chartView,        SwatchWidth,      SwatchWidth, WideSwatchWidth);
+        SetColumnWidths(processView,      LabelColumnWidth, SwatchWidth, SwatchWidth, WideSwatchWidth);
+        SetColumnWidths(keysView,         KeyColumnWidth,   KeyDescriptionWidth, KeyColumnWidth);
+        SetColumnWidths(functionKeysView, KeyColumnWidth);
+        SetColumnWidths(otherKeysView,    KeyColumnWidth);
+
+        void SetColumnWidths(ListView section, params int[] leading)
+        {
+            for (int i = 0; i < leading.Length; i++) {
+                section.ColumnHeaders[i].Width = leading[i];
+            }
+
+            section.ColumnHeaders[leading.Length].Width = Math.Max(0, inner - leading.Sum());
+        }
+
         base.OnResize();
     }
 
     protected override void OnUnload()
     {
-        helpView.Items.Clear();
-        colourHelpText.Clear();
-        functionHelpText.Clear();
-        
+        foreach (ListView section in sections) {
+            section.Items.Clear();
+        }
+
         base.OnUnload();
         Terminal.CursorVisible = true;
     }

@@ -84,12 +84,27 @@ public sealed class ListViewColourTests
         return rows;
     }
 
+    // The Metric row's Low / Mid / High swatches show how metric cells look in the process list, so
+    // they are drawn on the range colours; every other cell uses the list background.
     [Fact]
     public void HelpScreen_Rows_Use_The_ListView_Background()
     {
         HelpScreen screen = Loaded(new HelpScreen(runContext));
 
-        AssertRowsUseListViewBackground(screen);
+        List<ListViewSubItem> swatches = ThemedListViews(screen)
+            .SelectMany(listView => listView.Items.Cast<ListViewItem>())
+            .SelectMany(row => row.SubItems.Cast<ListViewSubItem>())
+            .Where(subItem => subItem.BackgroundColor.ToArgb() != ListViewBackground.ToArgb())
+            .ToList();
+
+        Assert.Equal(new[] { "Low", "Mid", "High" }, swatches.Select(swatch => swatch.Text));
+        Assert.Equal(
+            new[] {
+                runContext.AppConfig.Theme.RangeLowBackground.ToArgb(),
+                runContext.AppConfig.Theme.RangeMidBackground.ToArgb(),
+                runContext.AppConfig.Theme.RangeHighBackground.ToArgb()
+            },
+            swatches.Select(swatch => swatch.BackgroundColor.ToArgb()));
 
         screen.Unload();
     }
