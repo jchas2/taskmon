@@ -418,6 +418,22 @@ public sealed class SystemInfoControlTests
         ctrl.Unload();
     }
 
+    // Firmware lists empty slots as memory devices with no size. They are not installed modules.
+    [Fact]
+    public void Memory_Section_Counts_Only_The_Slots_With_A_Module_Installed()
+    {
+        SystemInfoControl ctrl = CreateControl();
+        SystemSnapshot snapshot = BuildSnapshot();
+        snapshot.Memory!.Specs.Devices.Add(new MemoryDevice { Slot = 3, DeviceLocator = "DIMM 2", SizeInMegabytes = 0 });
+        ctrl.Sample(snapshot);
+        ctrl.SelectSectionForTests(Memory);
+        ctrl.Draw();
+
+        Assert.Equal(["2"], ValuesOf(ctrl, "Installed Modules:"));
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Nav_Shows_Every_Section_Label_Regardless_Of_Selection()
     {

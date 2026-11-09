@@ -132,7 +132,7 @@ public sealed partial class SystemInfoControl
         }
 
         List<MemoryDevice> devices = memory.Specs.Devices;
-        AddRow(target, "Installed Modules:", devices.Count.ToString());
+        AddRow(target, "Installed Modules:", devices.Count(device => device.SizeInMegabytes > 0).ToString());
 
         foreach (MemoryDevice device in devices) {
             AddHeaderRow(target, $"SLOT {device.Slot}  {OrNotAvailable(device.DeviceLocator)}", indent: 2);
