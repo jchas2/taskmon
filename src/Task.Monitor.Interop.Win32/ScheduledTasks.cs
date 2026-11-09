@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.Interop.Win32;
@@ -73,7 +72,6 @@ public static unsafe class ScheduledTasks
         return hr;
     }
 
-    // Creates the task service and connects it to the local machine as the current user.
     private static int ConnectService(out nint taskService)
     {
         int hr = Ole32.CoCreateInstance(
@@ -94,52 +92,50 @@ public static unsafe class ScheduledTasks
     public static IReadOnlyList<TaskRecord> EnumerateTasks()
     {
         List<TaskRecord> records = new();
-        nint taskService = nint.Zero;
-        nint rootFolder = nint.Zero;
 
-        int hResult = Ole32.ComInitializeEx(Ole32.COINIT_MULTITHREADED);
+        using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
+        int connectHr = ConnectService(out nint taskServiceRef);
+        using ComScope taskService = new(taskServiceRef);
 
-        if (ConnectService(out taskService) < 0) {
-            goto Finished;
+        if (connectHr < 0) {
+            return records;
         }
 
-        if (GetFolder(taskService, "\\", out rootFolder) < 0) {
-            goto Finished;
+        int folderHr = GetFolder(taskService, "\\", out nint rootFolderRef);
+
+        using ComScope rootFolder = new(rootFolderRef);
+
+        if (folderHr < 0) {
+            return records;
         }
 
         WalkFolder(rootFolder, records);
-
-        Finished:
-        InteropHelper.MarshalRelease(ref rootFolder);
-        InteropHelper.MarshalRelease(ref taskService);
-        Ole32.ComUninitialize(hResult);
         return records;
     }
 
     private static string GetBSTRProperty(nint obj, int slot)
     {
-        nint bstr;
-        int hr = ((delegate* unmanaged[Stdcall]<nint, nint*, int>)Ole32.Vtbl(obj)[slot])(obj, &bstr);
+        nint value = nint.Zero;
+        int  hr    = ((delegate* unmanaged[Stdcall]<nint, nint*, int>)Ole32.Vtbl(obj)[slot])(obj, &value);
 
-        if (hr < 0 || bstr == nint.Zero) {
+        if (hr < 0 || value == nint.Zero) {
             return string.Empty;
         }
 
-        string value = InteropHelper.TryMarshalPtrToStringBSTR(bstr); 
-        Marshal.FreeBSTR(bstr);
-        return value;
+        using BstrScope bstr = new(value);
+
+        return InteropHelper.TryMarshalPtrToStringBSTR(bstr);
     }
 
-    // Calls a vtable method shaped HRESULT Method(BSTR path, IUnknown** result).
     private static int GetByPath(nint obj, int slot, string path, out nint result)
     {
-        nint pathBstr = Ole32.SysAllocString(path);
+        using BstrScope pathBstr = BstrScope.Allocate(path);
+
         nint found;
 
         int hr = ((delegate* unmanaged[Stdcall]<nint, nint, nint*, int>)
             Ole32.Vtbl(obj)[slot])(obj, pathBstr, &found);
 
-        Ole32.SysFreeString(pathBstr);
         result = hr >= 0 ? found : nint.Zero;
         return hr;
     }
@@ -187,9 +183,9 @@ public static unsafe class ScheduledTasks
         int count = GetCollectionCount(taskCollection);
 
         for (int i = 1; i <= count; i++) {
-            nint task = GetCollectionItem(taskCollection, i);
+            using ComScope task = new(GetCollectionItem(taskCollection, i));
 
-            if (task == nint.Zero) {
+            if (task.IsNull) {
                 continue;
             }
 
@@ -198,84 +194,78 @@ public static unsafe class ScheduledTasks
             string xml = GetBSTRProperty(task, SlotTaskXml);
 
             records.Add(new TaskRecord(
-                folderPath, 
-                name, 
-                enabled, 
+                folderPath,
+                name,
+                enabled,
                 xml));
-            
-            InteropHelper.MarshalRelease(ref task);
         }
     }
 
     public static int SetEnabled(string folderPath, string name, bool enabled)
     {
-        nint taskService = nint.Zero;
-        nint folder      = nint.Zero;
-        nint task        = nint.Zero;
-
-        int hResult = Ole32.ComInitializeEx(Ole32.COINIT_MULTITHREADED);
-        int hr      = ConnectService(out taskService);
+        using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
+        int hr = ConnectService(out nint taskServiceRef);
+        using ComScope taskService = new(taskServiceRef);
 
         if (hr < 0) {
-            goto Finished;
+            return hr;
         }
 
-        hr = GetFolder(taskService, folderPath, out folder);
+        hr = GetFolder(taskService, folderPath, out nint folderRef);
+
+        using ComScope folder = new(folderRef);
 
         if (hr < 0) {
-            goto Finished;
+            return hr;
         }
 
-        hr = GetTask(folder, name, out task);
+        hr = GetTask(folder, name, out nint taskRef);
+
+        using ComScope task = new(taskRef);
 
         if (hr < 0) {
-            goto Finished;
+            return hr;
         }
 
-        hr = ((delegate* unmanaged[Stdcall]<nint, short, int>)
+        return ((delegate* unmanaged[Stdcall]<nint, short, int>)
             Ole32.Vtbl(task)[SlotTaskPutEnabled])(task, enabled ? VARIANT_TRUE : VARIANT_FALSE);
-
-        Finished:
-        InteropHelper.MarshalRelease(ref task);
-        InteropHelper.MarshalRelease(ref folder);
-        InteropHelper.MarshalRelease(ref taskService);
-        Ole32.ComUninitialize(hResult);
-        return hr;
     }
 
     private static void WalkFolder(nint folder, List<TaskRecord> records)
     {
-        string folderPath = GetBSTRProperty(folder, SlotFolderPath);
-        nint taskCollection;
+        string folderPath        = GetBSTRProperty(folder, SlotFolderPath);
+        nint   taskCollectionRef = nint.Zero;
 
         int getTasksHr = ((delegate* unmanaged[Stdcall]<nint, int, nint*, int>)
-            Ole32.Vtbl(folder)[SlotFolderGetTasks])(folder, TASK_ENUM_EXCLUDE_HIDDEN, &taskCollection);
+            Ole32.Vtbl(folder)[SlotFolderGetTasks])(folder, TASK_ENUM_EXCLUDE_HIDDEN, &taskCollectionRef);
 
-        if (getTasksHr >= 0 && taskCollection != nint.Zero) {
-            ReadTasks(taskCollection, folderPath, records);
-            InteropHelper.MarshalRelease(ref taskCollection);
+        using (ComScope taskCollection = new(taskCollectionRef)) {
+            if (getTasksHr >= 0 && !taskCollection.IsNull) {
+                ReadTasks(taskCollection, folderPath, records);
+            }
         }
 
-        nint folderCollection;
+        nint folderCollectionRef = nint.Zero;
 
         int getFoldersHr = ((delegate* unmanaged[Stdcall]<nint, int, nint*, int>)
-            Ole32.Vtbl(folder)[SlotFolderGetFolders])(folder, TASK_ENUM_EXCLUDE_HIDDEN, &folderCollection);
+            Ole32.Vtbl(folder)[SlotFolderGetFolders])(folder, TASK_ENUM_EXCLUDE_HIDDEN, &folderCollectionRef);
 
-        if (getFoldersHr >= 0 && folderCollection != nint.Zero) {
-            int count = GetCollectionCount(folderCollection);
+        using ComScope folderCollection = new(folderCollectionRef);
 
-            for (int i = 1; i <= count; i++) {
-                nint subFolder = GetCollectionItem(folderCollection, i);
+        if (getFoldersHr < 0 || folderCollection.IsNull) {
+            return;
+        }
 
-                if (subFolder == nint.Zero) {
-                    continue;
-                }
+        int count = GetCollectionCount(folderCollection);
 
-                WalkFolder(subFolder, records);
-                InteropHelper.MarshalRelease(ref subFolder);
+        for (int i = 1; i <= count; i++) {
+            using ComScope subFolder = new(GetCollectionItem(folderCollection, i));
+
+            if (subFolder.IsNull) {
+                continue;
             }
-            
-            InteropHelper.MarshalRelease(ref folderCollection);
+
+            WalkFolder(subFolder, records);
         }
     }
 }

@@ -32,7 +32,7 @@ public partial class ProcessService
             return null;
         }
 
-        SafeProcessHandle processHandle = new(hProcess, ownsHandle: false);
+        using SafeProcessHandle processHandle = new(hProcess, ownsHandle: true);
 
         ProcessSample sample = new() {
             Pid = (int)entry->th32ProcessID
@@ -82,8 +82,35 @@ public partial class ProcessService
         sample.DiskReadBytes = diskReadBytes;
         sample.DiskWriteBytes = diskWriteBytes;
 
-        Kernel32.CloseHandle(hProcess);
         return sample;
+    }
+
+    internal static string GetAccountName(SecurityIdentifier sid)
+    {
+        IdentityReference identityRef;
+
+        try {
+            identityRef = sid.Translate(typeof(NTAccount));
+        }
+        catch (IdentityNotMappedException) {
+            TraceEx.WriteLineOnce(nameof(GetAccountName), $"Failed to get account name for {sid}");
+            return sid.Value;
+        }
+
+        string userName = identityRef.ToString();
+
+        if (UserMap.TryGetValue(userName, out string? name)) {
+            return name;
+        }
+
+        int domainIndex = userName.IndexOf('\\');
+
+        if (domainIndex != -1) {
+            string abbrevUserName = userName.Substring(domainIndex + 1);
+            UserMap.TryAdd(userName, abbrevUserName);
+        }
+
+        return userName;
     }
 
     private static string GetProcessCommandLine(int pid, in string defaultValue)
@@ -209,9 +236,10 @@ public partial class ProcessService
     private static unsafe ProcessSample? GetProcessSampleInternal(int pid)
     {
         ProcessSample? sample = null;
-        nint hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
-        if (hSnapshot == nint.Zero) {
+        using KernelHandleScope snapshot = new(Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0));
+
+        if (snapshot.IsInvalid) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
             return null;
         }
@@ -220,9 +248,8 @@ public partial class ProcessService
             dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>()
         };
 
-        if (!Kernel32.Process32FirstW(hSnapshot, &entry)) {
+        if (!Kernel32.Process32FirstW(snapshot, &entry)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
-            Kernel32.CloseHandle(hSnapshot);
             return null;
         }
 
@@ -237,18 +264,18 @@ public partial class ProcessService
                 break;
             }
 
-        } while (Kernel32.Process32NextW(hSnapshot, &entry));
+        } while (Kernel32.Process32NextW(snapshot, &entry));
 
-        Kernel32.CloseHandle(hSnapshot);
         return sample;
     }
 
     private static unsafe List<ProcessSample> GetProcessSamples()
     {
         List<ProcessSample> samples = new();
-        nint hSnapshot = Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0);
 
-        if (hSnapshot == nint.Zero) {
+        using KernelHandleScope snapshot = new(Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0));
+
+        if (snapshot.IsInvalid) {
             PInvokeErrorHelpers.TraceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
             return samples;
         }
@@ -257,9 +284,8 @@ public partial class ProcessService
             dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>()
         };
 
-        if (!Kernel32.Process32FirstW(hSnapshot, &entry)) {
+        if (!Kernel32.Process32FirstW(snapshot, &entry)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
-            Kernel32.CloseHandle(hSnapshot);
             return samples;
         }
 
@@ -272,9 +298,8 @@ public partial class ProcessService
 
             entry.dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>();
 
-        } while (Kernel32.Process32NextW(hSnapshot, &entry));
+        } while (Kernel32.Process32NextW(snapshot, &entry));
 
-        Kernel32.CloseHandle(hSnapshot);
         return samples;
     }
 
@@ -342,25 +367,9 @@ public partial class ProcessService
     {
         SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
 
-        if (sid == null) {
-            return string.Empty;
-        }
-
-        IdentityReference identityRef = sid.Translate(typeof(NTAccount));
-        string userName = identityRef.ToString();
-
-        if (UserMap.TryGetValue(userName, out string? name)) {
-            return name;
-        }
-
-        int domainIndex = userName.IndexOf('\\');
-
-        if (domainIndex != -1) {
-            string abbrevUserName = userName.Substring(domainIndex + 1);
-            UserMap.TryAdd(userName, abbrevUserName);
-        }
-
-        return userName;
+        return sid == null
+            ? string.Empty
+            : GetAccountName(sid);
     }
 #endif
 }

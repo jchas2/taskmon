@@ -11,9 +11,9 @@ namespace Task.Monitor.Gui;
 public class HelpScreen : Screen
 {
 #if __WIN32__
-    private const string SpaceHelpText = "Tick items; toggle STARTUP or SERVICES";
+    private const string SpaceHelpText = "Check/uncheck items; toggle STARTUP or SERVICES";
 #elif __APPLE__
-    private const string SpaceHelpText = "Tick items; enable/disable in STARTUP";
+    private const string SpaceHelpText = "Check/uncheck items; enable/disable in STARTUP";
 #else
     private const string SpaceHelpText = "Space-bar to check/uncheck items";
 #endif
@@ -21,7 +21,7 @@ public class HelpScreen : Screen
     private const string Title = "TASK MONITOR HELP";
 
     private const int KeyColumnWidth      = 10;
-    private const int KeyDescriptionWidth = 40;
+    private const int KeyDescriptionWidth = 41;
     private const int LabelColumnWidth    = 28;
     private const int SwatchWidth         = 4;
     private const int WideSwatchWidth     = 5;
@@ -157,20 +157,20 @@ public class HelpScreen : Screen
 
         processView.Items.Add(new ListViewItem([Cell("Metric changed", theme.DeltaHighlightColour, listBg)]));
 
-        keysView.Items.Add(KeyRow(theme, "←:",        "Move left to next screen component",   "↑:",       "Arrow to scroll up"));
-        keysView.Items.Add(KeyRow(theme, "→:",        "Move right to next screen component",  "↓:",       "Arrow to scroll down"));
-        keysView.Items.Add(KeyRow(theme, "Pg Up:",    "Move up one page in list",             "↵:",       "ENTER to select item"));
-        keysView.Items.Add(KeyRow(theme, "Pg Down:",  "Move down one page in list",           "ESC:",     "Close dialog or clear the filter"));
-        keysView.Items.Add(KeyRow(theme, "a:",        "Sort ascending",                       "d:",       "Sort descending"));
-        keysView.Items.Add(KeyRow(theme, "s:",        "Select sort column",                   "p g m:",   "Sort processes on CPU%, GPU%, Memory"));
-        keysView.Items.Add(KeyRow(theme, "f:",        "Filter the list in the current view",  "x:",       "Toggle multiple process selection"));
-        keysView.Items.Add(KeyRow(theme, "u:",        "Uncheck all selected processes",       "␣:",       SpaceHelpText));
-        keysView.Items.Add(KeyRow(theme, "k:",        "End task (checked or selected)",       "r F5:",    "Refresh the current list"));
-        keysView.Items.Add(KeyRow(theme, "z:",        "Freeze process updates",               "i:",       "Toggle Irix mode CPU reporting"));
-        keysView.Items.Add(KeyRow(theme, "t:",        "Show the next tip in the footer",      "",         ""));
+        keysView.Items.Add(KeyRow(theme, "←:",        "Move left to next screen component",       "↑:",       "Arrow to scroll list up"));
+        keysView.Items.Add(KeyRow(theme, "→:",        "Move right to next screen component",      "↓:",       "Arrow to scroll list down"));
+        keysView.Items.Add(KeyRow(theme, "Pg Up:",    "Move up one page in list",                 "↵:",       "ENTER to select item in list"));
+        keysView.Items.Add(KeyRow(theme, "Pg Down:",  "Move down one page in list",               "ESC:",     "Close dialog or clear the filter"));
+        keysView.Items.Add(KeyRow(theme, "a:",        "Sort list ascending",                      "d:",       "Sort list descending"));
+        keysView.Items.Add(KeyRow(theme, "s:",        "Select list sort column",                  "p g m:",   "Sort process list on CPU%, GPU%, Memory"));
+        keysView.Items.Add(KeyRow(theme, "f:",        "Filter the list",                          "x:",       "Toggle multiple process list selection"));
+        keysView.Items.Add(KeyRow(theme, "u:",        "Uncheck all selected processes in a list", "␣:",       SpaceHelpText));
+        keysView.Items.Add(KeyRow(theme, "k:",        "End task (checked or selected)",           "r F5:",    "Refresh the current list"));
+        keysView.Items.Add(KeyRow(theme, "z:",        "Freeze process list updates",              "i:",       "Toggle Irix mode CPU reporting in process list"));
+        keysView.Items.Add(KeyRow(theme, "t:",        "Show the next tip in the footer",          "",         ""));
 
         functionKeysView.Items.Add(KeyRow(theme, "F1:",  "Show this help screen."));
-        functionKeysView.Items.Add(KeyRow(theme, "F2:",  "Show setup: metre display, visible columns, colour themes and other settings."));
+        functionKeysView.Items.Add(KeyRow(theme, "F2:",  "Show setup: layouts, metre display, visible columns, colour themes and other settings."));
         functionKeysView.Items.Add(KeyRow(theme, "F3:",  "Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it."));
         functionKeysView.Items.Add(KeyRow(theme, "F4:",  "Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it."));
         functionKeysView.Items.Add(KeyRow(theme, "F5:",  "Refresh the Startup, Apps, Services or Drivers list (same as r)."));

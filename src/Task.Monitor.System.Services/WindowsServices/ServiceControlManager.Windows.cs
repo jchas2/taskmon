@@ -22,12 +22,12 @@ internal static class ServiceControlManager
 
     public static unsafe T[] EnumerateServices<T>(uint serviceType, string caller, Func<nint, ServiceEntry, T> map)
     {
-        nint hSCM = WinService.OpenSCManager(
+        using ServiceHandleScope scm = new(WinService.OpenSCManager(
             lpMachineName:  null!,
             lpDatabaseName: null!,
-            WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT);
+            WinService.SC_MANAGER_ENUMERATE_SERVICE | WinService.SC_MANAGER_CONNECT));
 
-        if (hSCM == nint.Zero) {
+        if (scm.IsNull) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
                 nameof(WinService.OpenSCManager),
                 $"Failed {caller} {nameof(WinService.SC_MANAGER_ENUMERATE_SERVICE)}");
@@ -35,82 +35,72 @@ internal static class ServiceControlManager
             return [];
         }
 
-        nint buffer = nint.Zero;
+        uint bytesNeeded      = 0;
+        uint servicesReturned = 0;
+        uint resumeHandle     = 0;
 
-        try {
-            uint bytesNeeded      = 0;
-            uint servicesReturned = 0;
-            uint resumeHandle     = 0;
+        WinService.EnumServicesStatusEx(
+            scm,
+            WinService.INFO_LEVEL_STANDARD,
+            serviceType,
+            WinService.SERVICE_STATE_ALL,
+            nint.Zero,
+            0,
+            &bytesNeeded,
+            &servicesReturned,
+            &resumeHandle,
+            null!);
 
-            WinService.EnumServicesStatusEx(
-                hSCM,
-                WinService.INFO_LEVEL_STANDARD,
-                serviceType,
-                WinService.SERVICE_STATE_ALL,
-                nint.Zero,
-                0,
-                &bytesNeeded,
-                &servicesReturned,
-                &resumeHandle,
-                null!);
+        if (bytesNeeded == 0) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(WinService.EnumServicesStatusEx),
+                $"{nameof(WinService.EnumServicesStatusEx)} {nameof(bytesNeeded)} returned 0 for {caller}");
 
-            if (bytesNeeded == 0) {
-                PInvokeErrorHelpers.TraceOnceOnLastError(
-                    nameof(WinService.EnumServicesStatusEx),
-                    $"{nameof(WinService.EnumServicesStatusEx)} {nameof(bytesNeeded)} returned 0 for {caller}");
-
-                return [];
-            }
-
-            buffer       = Marshal.AllocHGlobal((nint)bytesNeeded);
-            resumeHandle = 0;
-
-            if (!WinService.EnumServicesStatusEx(
-                hSCM,
-                WinService.INFO_LEVEL_STANDARD,
-                serviceType,
-                WinService.SERVICE_STATE_ALL,
-                buffer,
-                bytesNeeded,
-                &bytesNeeded,
-                &servicesReturned,
-                &resumeHandle,
-                null!)) {
-
-                PInvokeErrorHelpers.TraceOnceOnLastError(
-                    nameof(WinService.EnumServicesStatusEx),
-                    $"{nameof(WinService.EnumServicesStatusEx)} failed to fill the buffer for {caller}");
-
-                return [];
-            }
-
-            T[]  results    = new T[servicesReturned];
-            nint currentPtr = buffer;
-            int  structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUS_PROCESS>();
-
-            for (int i = 0; i < servicesReturned; i++) {
-                WinService.ENUM_SERVICE_STATUS_PROCESS status =
-                    Marshal.PtrToStructure<WinService.ENUM_SERVICE_STATUS_PROCESS>(currentPtr);
-
-                ServiceEntry entry = new(
-                    status.lpServiceName,
-                    status.lpDisplayName,
-                    MapStatus((WinService.ServiceCurrentState)status.dwCurrentState),
-                    status.dwProcessId);
-
-                results[i] = map(hSCM, entry);
-                currentPtr = nint.Add(currentPtr, structSize);
-            }
-
-            return results;
+            return [];
         }
-        finally {
-            if (buffer != nint.Zero) {
-                Marshal.FreeHGlobal(buffer);
-            }
 
-            WinService.CloseServiceHandle(hSCM);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)bytesNeeded);
+
+        resumeHandle = 0;
+
+        if (!WinService.EnumServicesStatusEx(
+            scm,
+            WinService.INFO_LEVEL_STANDARD,
+            serviceType,
+            WinService.SERVICE_STATE_ALL,
+            buffer,
+            bytesNeeded,
+            &bytesNeeded,
+            &servicesReturned,
+            &resumeHandle,
+            null!)) {
+
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(WinService.EnumServicesStatusEx),
+                $"{nameof(WinService.EnumServicesStatusEx)} failed to fill the buffer for {caller}");
+
+            return [];
         }
+
+        T[]  results    = new T[servicesReturned];
+        nint currentPtr = buffer;
+        int  structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUS_PROCESS>();
+
+        for (int i = 0; i < servicesReturned; i++) {
+            WinService.ENUM_SERVICE_STATUS_PROCESS status =
+                Marshal.PtrToStructure<WinService.ENUM_SERVICE_STATUS_PROCESS>(currentPtr);
+
+            ServiceEntry entry = new(
+                status.lpServiceName,
+                status.lpDisplayName,
+                MapStatus((WinService.ServiceCurrentState)status.dwCurrentState),
+                status.dwProcessId);
+
+            results[i] = map(scm, entry);
+            currentPtr = nint.Add(currentPtr, structSize);
+        }
+
+        return results;
     }
 
     internal static WindowsServiceStartType MapStartType(WinService.ServiceStartType startType) => startType switch {
@@ -145,47 +135,38 @@ internal static class ServiceControlManager
             return null;
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)bytesNeeded);
 
-        try {
-            if (!WinService.QueryServiceConfig(hService, buffer, bytesNeeded, out _)) {
-                PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.QueryServiceConfig)}_{serviceName}");
-                return null;
-            }
-
-            WinService.QUERY_SERVICE_CONFIGW config = Marshal.PtrToStructure<WinService.QUERY_SERVICE_CONFIGW>(buffer);
-
-            return new ServiceConfig(
-                MapStartType((WinService.ServiceStartType)config.dwStartType),
-                string.IsNullOrEmpty(config.lpBinaryPathName) ? null : config.lpBinaryPathName,
-                string.IsNullOrEmpty(config.lpServiceStartName) ? null : config.lpServiceStartName);
+        if (!WinService.QueryServiceConfig(hService, buffer, bytesNeeded, out _)) {
+            PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.QueryServiceConfig)}_{serviceName}");
+            return null;
         }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        WinService.QUERY_SERVICE_CONFIGW config = Marshal.PtrToStructure<WinService.QUERY_SERVICE_CONFIGW>(buffer);
+
+        return new ServiceConfig(
+            MapStartType((WinService.ServiceStartType)config.dwStartType),
+            string.IsNullOrEmpty(config.lpBinaryPathName) ? null : config.lpBinaryPathName,
+            string.IsNullOrEmpty(config.lpServiceStartName) ? null : config.lpServiceStartName);
     }
 
     public static bool QueryDelayedAutoStart(nint hService)
     {
-        int  size   = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
-        nint buffer = Marshal.AllocHGlobal(size);
+        int size = Marshal.SizeOf<WinService.SERVICE_DELAYED_AUTO_START_INFO>();
 
-        try {
-            if (!WinService.QueryServiceConfig2(
-                hService,
-                WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
-                buffer,
-                (uint)size,
-                out _)) {
+        using HGlobalScope buffer = HGlobalScope.Allocate(size);
 
-                return false;
-            }
+        if (!WinService.QueryServiceConfig2(
+            hService,
+            WinService.SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+            buffer,
+            (uint)size,
+            out _)) {
 
-            return Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer).fDelayedAutostart;
+            return false;
         }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        return Marshal.PtrToStructure<WinService.SERVICE_DELAYED_AUTO_START_INFO>(buffer).fDelayedAutostart;
     }
 
     public static string? QueryDescription(nint hService)
@@ -201,46 +182,36 @@ internal static class ServiceControlManager
             return null;
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)bytesNeeded);
 
-        try {
-            if (!WinService.QueryServiceConfig2(
-                hService,
-                WinService.SERVICE_CONFIG_DESCRIPTION,
-                buffer,
-                bytesNeeded,
-                out _)) {
+        if (!WinService.QueryServiceConfig2(
+            hService,
+            WinService.SERVICE_CONFIG_DESCRIPTION,
+            buffer,
+            bytesNeeded,
+            out _)) {
 
-                return null;
-            }
-
-            WinService.SERVICE_DESCRIPTIONW description = Marshal.PtrToStructure<WinService.SERVICE_DESCRIPTIONW>(buffer);
-
-            return string.IsNullOrEmpty(description.lpDescription)
-                ? null
-                : description.lpDescription;
+            return null;
         }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        WinService.SERVICE_DESCRIPTIONW description = Marshal.PtrToStructure<WinService.SERVICE_DESCRIPTIONW>(buffer);
+
+        return string.IsNullOrEmpty(description.lpDescription)
+            ? null
+            : description.lpDescription;
     }
 
     public static bool QueryService(nint hSCM, string serviceName, Action<nint> query)
     {
-        nint hService = WinService.OpenService(hSCM, serviceName, WinService.SERVICE_QUERY_CONFIG);
+        using ServiceHandleScope service = new(WinService.OpenService(hSCM, serviceName, WinService.SERVICE_QUERY_CONFIG));
 
-        if (hService == nint.Zero) {
+        if (service.IsNull) {
             PInvokeErrorHelpers.TraceOnceOnLastError($"{nameof(WinService.OpenService)}_{serviceName}_Config");
             return false;
         }
 
-        try {
-            query(hService);
-            return true;
-        }
-        finally {
-            WinService.CloseServiceHandle(hService);
-        }
+        query(service);
+        return true;
     }
 
     private static string[] ReadRunningDependents(nint hService)
@@ -257,33 +228,28 @@ internal static class ServiceControlManager
             return [];
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)bytesNeeded);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)bytesNeeded);
 
-        try {
-            if (!WinService.EnumDependentServices(
-                hService,
-                WinService.SERVICE_ACTIVE,
-                buffer,
-                bytesNeeded,
-                out _,
-                out uint count)) {
+        if (!WinService.EnumDependentServices(
+            hService,
+            WinService.SERVICE_ACTIVE,
+            buffer,
+            bytesNeeded,
+            out _,
+            out uint count)) {
 
-                return [];
-            }
-
-            int      structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUSW>();
-            string[] names      = new string[count];
-
-            for (int i = 0; i < count; i++) {
-                names[i] = Marshal.PtrToStructure<WinService.ENUM_SERVICE_STATUSW>(
-                    nint.Add(buffer, i * structSize)).lpDisplayName;
-            }
-
-            return names;
+            return [];
         }
-        finally {
-            Marshal.FreeHGlobal(buffer);
+
+        int      structSize = Marshal.SizeOf<WinService.ENUM_SERVICE_STATUSW>();
+        string[] names      = new string[count];
+
+        for (int i = 0; i < count; i++) {
+            names[i] = Marshal.PtrToStructure<WinService.ENUM_SERVICE_STATUSW>(
+                nint.Add(buffer, i * structSize)).lpDisplayName;
         }
+
+        return names;
     }
 
     public static string[] RunningDependents(string serviceName) =>
@@ -313,32 +279,22 @@ internal static class ServiceControlManager
 
     private static T UseService<T>(string serviceName, int access, Func<nint, T> use, Func<int, T> failed)
     {
-        nint hSCM = WinService.OpenSCManager(
+        using ServiceHandleScope scm = new(WinService.OpenSCManager(
             lpMachineName:   null!,
             lpDatabaseName:  null!,
-            dwDesiredAccess: WinService.SC_MANAGER_CONNECT);
+            dwDesiredAccess: WinService.SC_MANAGER_CONNECT));
 
-        if (hSCM == nint.Zero) {
+        if (scm.IsNull) {
             return failed(Marshal.GetLastPInvokeError());
         }
 
-        try {
-            nint hService = WinService.OpenService(hSCM, serviceName, access);
+        using ServiceHandleScope service = new(WinService.OpenService(scm, serviceName, access));
 
-            if (hService == nint.Zero) {
-                return failed(Marshal.GetLastPInvokeError());
-            }
+        if (service.IsNull) {
+            return failed(Marshal.GetLastPInvokeError());
+        }
 
-            try {
-                return use(hService);
-            }
-            finally {
-                WinService.CloseServiceHandle(hService);
-            }
-        }
-        finally {
-            WinService.CloseServiceHandle(hSCM);
-        }
+        return use(service);
     }
 }
 #endif

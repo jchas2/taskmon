@@ -45,7 +45,7 @@ public static unsafe class Wbem
     {
         List<Dictionary<string, object?>> rows = new();
 
-        int hResult = Ole32.ComInitializeEx(Ole32.COINIT_MULTITHREADED);
+        using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
 
         int secHr = Ole32.CoInitializeSecurity(
             securityDescriptor: nint.Zero, 
@@ -59,27 +59,27 @@ public static unsafe class Wbem
             reserved3: nint.Zero);
 
         if (secHr < 0 && secHr != RPC_E_TOO_LATE) {
-            Ole32.ComUninitialize(hResult);
             return rows;
         }
 
-        nint locator    = nint.Zero;
-        nint services   = nint.Zero;
-        nint enumerator = nint.Zero;
-        
-        nint namespaceBstr = Ole32.SysAllocString(wmiNamespace);
-        nint languageBstr  = Ole32.SysAllocString("WQL");
-        nint queryBstr     = Ole32.SysAllocString(wql);
+        using BstrScope namespaceBstr = BstrScope.Allocate(wmiNamespace);
+        using BstrScope languageBstr  = BstrScope.Allocate("WQL");
+        using BstrScope queryBstr     = BstrScope.Allocate(wql);
 
-        if (Ole32.CoCreateInstance(
-            in CLSID_WbemLocator, 
-            nint.Zero, 
+        int createHr = Ole32.CoCreateInstance(
+            in CLSID_WbemLocator,
+            nint.Zero,
             CLSCTX_INPROC_SERVER,
-            in IID_IWbemLocator, 
-            out locator) < 0 || locator == nint.Zero) {
-            
-            goto Finished;
+            in IID_IWbemLocator,
+            out nint locatorRef);
+
+        using ComScope locator = new(locatorRef);
+
+        if (createHr < 0 || locator.IsNull) {
+            return rows;
         }
+
+        nint servicesRef = nint.Zero;
 
         int connectHr = ((delegate* unmanaged[Stdcall]<nint, nint, nint, nint, nint, int, nint, nint, nint*, int>)
             Ole32.Vtbl(locator)[SlotLocatorConnectServer])(
@@ -90,11 +90,13 @@ public static unsafe class Wbem
                 nint.Zero, 
                 0, 
                 nint.Zero, 
-                nint.Zero, 
-                &services);
+                nint.Zero,
+                &servicesRef);
 
-        if (connectHr < 0 || services == nint.Zero) {
-            goto Finished;
+        using ComScope services = new(servicesRef);
+
+        if (connectHr < 0 || services.IsNull) {
+            return rows;
         }
 
         if (Ole32.CoSetProxyBlanket(
@@ -107,34 +109,27 @@ public static unsafe class Wbem
             authInfo: nint.Zero, 
             capabilities: EOAC_NONE) < 0) {
 
-            goto Finished;
+            return rows;
         }
+
+        nint enumeratorRef = nint.Zero;
 
         int execHr = ((delegate* unmanaged[Stdcall]<nint, nint, nint, int, nint, nint*, int>)
             Ole32.Vtbl(services)[SlotServicesExecQuery])(
-                services, 
-                languageBstr, 
+                services,
+                languageBstr,
                 queryBstr,
-                WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, 
-                nint.Zero, 
-                &enumerator);
+                WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+                nint.Zero,
+                &enumeratorRef);
 
-        if (execHr < 0 || enumerator == nint.Zero) {
-            goto Finished;
+        using ComScope enumerator = new(enumeratorRef);
+
+        if (execHr < 0 || enumerator.IsNull) {
+            return rows;
         }
 
         ReadRows(enumerator, properties, rows);
-        
-    Finished:
-        InteropHelper.MarshalRelease(ref enumerator);
-        InteropHelper.MarshalRelease(ref services);
-        InteropHelper.MarshalRelease(ref locator);
-        
-        Ole32.SysFreeString(namespaceBstr);
-        Ole32.SysFreeString(languageBstr);
-        Ole32.SysFreeString(queryBstr);
-        Ole32.ComUninitialize(hResult);
-        
         return rows;
     }
 
@@ -162,19 +157,19 @@ public static unsafe class Wbem
         byte* value = variant + 8;
 
         object? result = vt switch {
-            2 =>  *(short*)value,             // VT_I2
-            3 or 22 => *(int*)value,          // VT_I4 / VT_INT
-            4 =>  (double)*(float*)value,     // VT_R4
-            5 =>  *(double*)value,            // VT_R8
-            8 =>  InteropHelper.TryMarshalPtrToStringBSTR(*(nint*)value),     // VT_BSTR
-            11 => *(short*)value != 0,        // VT_BOOL
-            16 => *(sbyte*)value,             // VT_I1
-            17 => *value,                     // VT_UI1
-            18 => *(ushort*)value,            // VT_UI2
-            19 or 23 => *(uint*)value,        // VT_UI4 / VT_UINT
-            20 => *(long*)value,              // VT_I8
-            21 => *(ulong*)value,             // VT_UI8
-            _ => null                         // VT_EMPTY, VT_NULL, arrays, ...
+            2        => *(short*)value,              // VT_I2
+            3 or 22  => *(int*)value,                // VT_I4 / VT_INT
+            4        => (double)*(float*)value,      // VT_R4
+            5        => *(double*)value,             // VT_R8
+            8        => InteropHelper.TryMarshalPtrToStringBSTR(*(nint*)value),     // VT_BSTR
+            11       => *(short*)value != 0,         // VT_BOOL
+            16       => *(sbyte*)value,              // VT_I1
+            17       => *value,                      // VT_UI1
+            18       => *(ushort*)value,             // VT_UI2
+            19 or 23 => *(uint*)value,               // VT_UI4 / VT_UINT
+            20       => *(long*)value,               // VT_I8
+            21       => *(ulong*)value,              // VT_UI8
+            _        => null                         // VT_EMPTY, VT_NULL, arrays, ...
         };
             
         Ole32.VariantClear(variant);
@@ -187,18 +182,20 @@ public static unsafe class Wbem
         List<Dictionary<string, object?>> rows)
     {
         while (true) {
-            nint classObject = nint.Zero;
-            uint returned = 0;
+            nint classObjectRef = nint.Zero;
+            uint returned       = 0;
 
             int hr = ((delegate* unmanaged[Stdcall]<nint, int, uint, nint*, uint*, int>)
                 Ole32.Vtbl(enumerator)[SlotEnumNext])(
-                    enumerator, 
-                    WBEM_INFINITE, 
-                    1, 
-                    &classObject, 
+                    enumerator,
+                    WBEM_INFINITE,
+                    1,
+                    &classObjectRef,
                     &returned);
 
-            if (hr != S_OK || returned == 0 || classObject == nint.Zero) {
+            using ComScope classObject = new(classObjectRef);
+
+            if (hr != S_OK || returned == 0 || classObject.IsNull) {
                 break;
             }
 
@@ -209,7 +206,6 @@ public static unsafe class Wbem
             }
 
             rows.Add(row);
-            InteropHelper.MarshalRelease(ref classObject);
         }
     }
 }

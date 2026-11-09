@@ -43,32 +43,29 @@ public partial class MemoryService
             return null;
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)size);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)size);
 
         uint written = Kernel32.GetSystemFirmwareTable(
-            RawSmbiosProvider, 
-            firmwareTableId: 0, 
-            buffer, 
+            RawSmbiosProvider,
+            firmwareTableId: 0,
+            buffer,
             size);
-        
+
         if (written == 0 || written > size) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable), 
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable),
                 "Failed to retrieve SMBIOS firmware table");
-            Marshal.FreeHGlobal(buffer);
             return null;
         }
 
         if (written < RawSmbiosHeaderLength) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable), 
+            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable),
                 "SMBIOS firmware table is truncated");
-            Marshal.FreeHGlobal(buffer);
             return null;
         }
 
         byte[] table = new byte[written];
         Marshal.Copy(buffer, table, 0, (int)written);
-        Marshal.FreeHGlobal(buffer);
-        
+
         return table;
     }
 #endif

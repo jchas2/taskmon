@@ -58,16 +58,16 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
 
     private double? ReadSmartTemperature(int physicalDriveIndex)
     {
-        nint handle = FileApi.CreateFileW(
+        using KernelHandleScope handle = new(FileApi.CreateFileW(
             $@"\\.\PhysicalDrive{physicalDriveIndex}",
             GENERIC_READ | GENERIC_WRITE,
             FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE,
             nint.Zero,
             FileApi.OPEN_EXISTING,
             0,
-            nint.Zero);
+            nint.Zero));
 
-        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
+        if (handle.IsInvalid) {
             if (Marshal.GetLastPInvokeError() == ERROR_ACCESS_DENIED) {
                 accessDenied = true;
             }
@@ -75,51 +75,46 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
             return null;
         }
 
-        try {
-            int outSize     = SendCmdOutParamsHeaderSize + SmartDataSize;
-            byte* inBuffer  = stackalloc byte[SendCmdInParamsHeaderSize];
-            byte* outBuffer = stackalloc byte[outSize];
-            
-            new Span<byte>(inBuffer, SendCmdInParamsHeaderSize).Clear();
-            new Span<byte>(outBuffer, outSize).Clear();
+        int outSize     = SendCmdOutParamsHeaderSize + SmartDataSize;
+        byte* inBuffer  = stackalloc byte[SendCmdInParamsHeaderSize];
+        byte* outBuffer = stackalloc byte[outSize];
 
-            // The following inBuffer values must be populated when using SMART_RCV_DRIVE_DATA
-            // with DeviceIoControl.
-            *(uint*)inBuffer = SmartDataSize;
-            inBuffer[4] = 0xD0;                                           // Features  = SMART READ DATA
-            inBuffer[5] = 0x01;                                           // SectorCount
-            inBuffer[6] = 0x01;                                           // SectorNumber
-            inBuffer[7] = 0x4F;                                           // CylLow
-            inBuffer[8] = 0xC2;                                           // CylHigh
-            inBuffer[9] = (byte)(0xA0 | ((physicalDriveIndex & 1) << 4)); // DriveHead
-            inBuffer[10] = 0xB0;                                          // Command   = SMART
-            inBuffer[12] = (byte)physicalDriveIndex;
+        new Span<byte>(inBuffer, SendCmdInParamsHeaderSize).Clear();
+        new Span<byte>(outBuffer, outSize).Clear();
 
-            uint returned = 0;
+        // The following inBuffer values must be populated when using SMART_RCV_DRIVE_DATA
+        // with DeviceIoControl.
+        *(uint*)inBuffer = SmartDataSize;
+        inBuffer[4] = 0xD0;                                           // Features  = SMART READ DATA
+        inBuffer[5] = 0x01;                                           // SectorCount
+        inBuffer[6] = 0x01;                                           // SectorNumber
+        inBuffer[7] = 0x4F;                                           // CylLow
+        inBuffer[8] = 0xC2;                                           // CylHigh
+        inBuffer[9] = (byte)(0xA0 | ((physicalDriveIndex & 1) << 4)); // DriveHead
+        inBuffer[10] = 0xB0;                                          // Command   = SMART
+        inBuffer[12] = (byte)physicalDriveIndex;
 
-            bool ok = IoApiSet.DeviceIoControl(
-                handle,
-                SMART_RCV_DRIVE_DATA,
-                inBuffer, 
-                SendCmdInParamsHeaderSize,
-                outBuffer, 
-                (uint)outSize,
-                &returned, 
-                nint.Zero);
+        uint returned = 0;
 
-            if (!ok || returned < SendCmdOutParamsHeaderSize + 2) {
-                return null;
-            }
+        bool ok = IoApiSet.DeviceIoControl(
+            handle,
+            SMART_RCV_DRIVE_DATA,
+            inBuffer,
+            SendCmdInParamsHeaderSize,
+            outBuffer,
+            (uint)outSize,
+            &returned,
+            nint.Zero);
 
-            ReadOnlySpan<byte> attributeTable = new(
-                outBuffer + SendCmdOutParamsHeaderSize,
-                (int)Math.Min(returned - SendCmdOutParamsHeaderSize, (uint)SmartDataSize));
-
-            return SmartAttributeTable.TemperatureCelsius(attributeTable);
+        if (!ok || returned < SendCmdOutParamsHeaderSize + 2) {
+            return null;
         }
-        finally {
-            Kernel32.CloseHandle(handle);
-        }
+
+        ReadOnlySpan<byte> attributeTable = new(
+            outBuffer + SendCmdOutParamsHeaderSize,
+            (int)Math.Min(returned - SendCmdOutParamsHeaderSize, (uint)SmartDataSize));
+
+        return SmartAttributeTable.TemperatureCelsius(attributeTable);
     }
 
     public bool TryInitialise() => true;

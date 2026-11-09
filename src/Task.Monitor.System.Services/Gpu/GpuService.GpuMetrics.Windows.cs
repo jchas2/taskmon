@@ -43,17 +43,17 @@ public partial class GpuService
 
     private unsafe bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
     {
-        nint factoryPtr     = nint.Zero;
         long totalDedicated = 0;
         long usedDedicated  = 0;
         long totalShared    = 0;
         long usedShared     = 0;
         bool queried        = false;
 
-        try
-        {
+        try {
             Guid factoryIid = Dxgi.IID_IDXGIFactory1;
-            int  hr         = Dxgi.CreateDXGIFactory1(ref factoryIid, out factoryPtr);
+            int  hr         = Dxgi.CreateDXGIFactory1(ref factoryIid, out nint factoryRef);
+
+            using ComScope factory = new(factoryRef);
 
             if (hr < 0) {
                 PInvokeErrorHelpers.TraceOnceOnHResult(
@@ -64,81 +64,69 @@ public partial class GpuService
                 return false;
             }
 
-            byte* buffer      = stackalloc byte[D3DKmt.QueryStatisticsBufferSize];
-            uint adapterIndex = 0;
+            byte* buffer = stackalloc byte[D3DKmt.QueryStatisticsBufferSize];
 
-            while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapter1Ptr) == Dxgi.S_OK)
-            {
-                try
-                {
-                    int descHr = Dxgi.GetDesc1(adapter1Ptr, out Dxgi.DXGI_ADAPTER_DESC1 desc);
+            for (uint adapterIndex = 0;
+                 Dxgi.EnumAdapters1(factory, adapterIndex, out nint adapterRef) == Dxgi.S_OK;
+                 adapterIndex++) {
 
-                    if (descHr < 0) {
-                        PInvokeErrorHelpers.TraceOnceOnHResult(
-                            nameof(Dxgi.GetDesc1),
-                            $"Failed {nameof(Dxgi.GetDesc1)}",
-                            descHr);
+                using ComScope adapter = new(adapterRef);
 
-                        continue;
-                    }
+                int descHr = Dxgi.GetDesc1(adapter, out Dxgi.DXGI_ADAPTER_DESC1 desc);
 
-                    if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
-                        continue;
-                    }
+                if (descHr < 0) {
+                    PInvokeErrorHelpers.TraceOnceOnHResult(
+                        nameof(Dxgi.GetDesc1),
+                        $"Failed {nameof(Dxgi.GetDesc1)}",
+                        descHr);
 
-                    if (!TryGetBytesResident(
-                        buffer,
-                        desc.AdapterLuid,
-                        out long dedicatedResident,
-                        out long sharedResident)) {
-
-                        continue;
-                    }
-
-                    totalDedicated += (long)(ulong)desc.DedicatedVideoMemory;
-                    usedDedicated  += dedicatedResident;
-                    totalShared    += (long)(ulong)desc.SharedSystemMemory;
-                    usedShared     += sharedResident;
-                    
-                    queried = true;
-
-                    long deviceDedicated = (long)(ulong)desc.DedicatedVideoMemory;
-                    long deviceShared    = (long)(ulong)desc.SharedSystemMemory;
-
-                    GpuDeviceMetrics metrics = new();
-                    // Not inline declared to assist with debugging.
-                    metrics.Index                      = (int)adapterIndex;
-                    metrics.AdapterLuid                = desc.AdapterLuid;
-                    metrics.GpuPercentTime             = Math.Clamp(engineUtilisationByLuid.GetValueOrDefault(desc.AdapterLuid) / 100.0, 0.0, 1.0);
-                    metrics.TotalGpuMemory             = deviceDedicated;
-                    metrics.AvailableGpuMemory         = deviceDedicated - dedicatedResident;
-                    metrics.TotalSharedGpuMemory       = deviceShared;
-                    metrics.AvailableSharedGpuMemory   = deviceShared - sharedResident;
-                    metrics.TotalCombinedGpuMemory     = deviceDedicated + deviceShared;
-                    metrics.AvailableCombinedGpuMemory = (deviceDedicated + deviceShared) - (dedicatedResident + sharedResident);
-
-                    gpuInfo.Metrics.Devices.Add(metrics);
+                    continue;
                 }
-                finally
-                {
-                    Marshal.Release(adapter1Ptr);
-                    adapterIndex++;
+
+                if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
+                    continue;
                 }
+
+                if (!TryGetBytesResident(
+                    buffer,
+                    desc.AdapterLuid,
+                    out long dedicatedResident,
+                    out long sharedResident)) {
+
+                    continue;
+                }
+
+                totalDedicated += (long)(ulong)desc.DedicatedVideoMemory;
+                usedDedicated  += dedicatedResident;
+                totalShared    += (long)(ulong)desc.SharedSystemMemory;
+                usedShared     += sharedResident;
+
+                queried = true;
+
+                long deviceDedicated = (long)(ulong)desc.DedicatedVideoMemory;
+                long deviceShared    = (long)(ulong)desc.SharedSystemMemory;
+
+                GpuDeviceMetrics metrics = new();
+                // Not inline declared to assist with debugging.
+                metrics.Index                      = (int)adapterIndex;
+                metrics.AdapterLuid                = desc.AdapterLuid;
+                metrics.GpuPercentTime             = Math.Clamp(engineUtilisationByLuid.GetValueOrDefault(desc.AdapterLuid) / 100.0, 0.0, 1.0);
+                metrics.TotalGpuMemory             = deviceDedicated;
+                metrics.AvailableGpuMemory         = deviceDedicated - dedicatedResident;
+                metrics.TotalSharedGpuMemory       = deviceShared;
+                metrics.AvailableSharedGpuMemory   = deviceShared - sharedResident;
+                metrics.TotalCombinedGpuMemory     = deviceDedicated + deviceShared;
+                metrics.AvailableCombinedGpuMemory = (deviceDedicated + deviceShared) - (dedicatedResident + sharedResident);
+
+                gpuInfo.Metrics.Devices.Add(metrics);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             TraceEx.WriteLineOnce(
                 nameof(OnDoWorkGpuMemoryMetrics),
                 $"Failed {nameof(OnDoWorkGpuMemoryMetrics)}: {ex.Message}");
 
             return false;
-        }
-        finally
-        {
-            if (factoryPtr != nint.Zero) {
-                Marshal.Release(factoryPtr);
-            }
         }
 
         if (!queried) {

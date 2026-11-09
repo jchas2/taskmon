@@ -7,14 +7,6 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class InteropHelper
 {
-    public static void MarshalRelease(ref nint pointer)
-    {
-        if (pointer != nint.Zero) {
-            Marshal.Release(pointer);
-            pointer = nint.Zero;
-        }
-    }
-
     public static unsafe byte* ReadPointer(byte* structure, int offset) =>
         (byte*)Unsafe.ReadUnaligned<nint>(structure + offset);
 
@@ -30,7 +22,7 @@ public static class InteropHelper
             return string.Empty;
         }
 
-        // Prevent access violation by clamping on sentinel \0 within\to maxLength.
+        // Prevent access violation by clamping on sentinel \0 within or to maxLength.
         int length = new ReadOnlySpan<byte>((void*)pointer, maxLength).IndexOf((byte)0);
 
         if (length < 0) {

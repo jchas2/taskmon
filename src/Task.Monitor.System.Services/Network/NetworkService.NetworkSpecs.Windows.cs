@@ -33,54 +33,42 @@ public partial class NetworkService
 
     private static unsafe List<NetworkDevice>? EnumerateAdapters()
     {
-        uint size   = InitialAdapterBufferSize;
-        nint buffer = nint.Zero;
+        uint size = InitialAdapterBufferSize;
 
-        try {
-            // First iteration sizes the buffer.
-            for (int attempt = 0; attempt < MaxAdapterBufferAttempts; attempt++) {
-                buffer = Marshal.AllocHGlobal((int)size);
+        for (int attempt = 0; attempt < MaxAdapterBufferAttempts; attempt++) {
+            using HGlobalScope buffer = HGlobalScope.Allocate((int)size);
 
-                uint result = IpHlpApi.GetAdaptersAddresses(
-                    WS2Def.AF_UNSPEC,
-                    AdapterFlags,
-                    nint.Zero,
-                    (void*)buffer,
-                    &size);
+            uint result = IpHlpApi.GetAdaptersAddresses(
+                WS2Def.AF_UNSPEC,
+                AdapterFlags,
+                nint.Zero,
+                (void*)buffer.Value,
+                &size);
 
-                if (result == IpHlpApi.ERROR_SUCCESS) {
-                    return ReadAdapters((byte*)buffer);
-                }
-
-                Marshal.FreeHGlobal(buffer);
-                buffer = nint.Zero;
-
-                // There can genuinely be no adapters.
-                if (result == IpHlpApi.ERROR_NO_DATA) {
-                    return new List<NetworkDevice>();
-                }
-
-                if (result != IpHlpApi.ERROR_BUFFER_OVERFLOW) {
-                    PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                        nameof(IpHlpApi.GetAdaptersAddresses),
-                        $"Failed {nameof(EnumerateAdapters)}",
-                        result);
-
-                    return null;
-                }
+            if (result == IpHlpApi.ERROR_SUCCESS) {
+                return ReadAdapters((byte*)buffer.Value);
             }
 
-            TraceEx.WriteLineOnce(
-                nameof(EnumerateAdapters),
-                $"{nameof(IpHlpApi.GetAdaptersAddresses)} kept asking for a larger buffer");
+            // There can genuinely be no adapters.
+            if (result == IpHlpApi.ERROR_NO_DATA) {
+                return new List<NetworkDevice>();
+            }
 
-            return null;
-        }
-        finally {
-            if (buffer != nint.Zero) {
-                Marshal.FreeHGlobal(buffer);
+            if (result != IpHlpApi.ERROR_BUFFER_OVERFLOW) {
+                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
+                    nameof(IpHlpApi.GetAdaptersAddresses),
+                    $"Failed {nameof(EnumerateAdapters)}",
+                    result);
+
+                return null;
             }
         }
+
+        TraceEx.WriteLineOnce(
+            nameof(EnumerateAdapters),
+            $"{nameof(IpHlpApi.GetAdaptersAddresses)} kept asking for a larger buffer");
+
+        return null;
     }
 
     private NetworkSpecs? OnStartNetworkSpecs()

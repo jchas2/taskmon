@@ -103,27 +103,22 @@ public partial class CpuService
             return;
         }
 
-        nint buffer = Marshal.AllocHGlobal((int)length);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)length);
 
-        try {
-            if (!SysInfoApi.GetLogicalProcessorInformationEx(RelationAll, (byte*)buffer, &length)) {
-                PInvokeErrorHelpers.TraceOnceOnLastError(
-                    nameof(SysInfoApi.GetLogicalProcessorInformationEx),
-                    "Failed to read the processor information buffer");
+        if (!SysInfoApi.GetLogicalProcessorInformationEx(RelationAll, (byte*)buffer.Value, &length)) {
+            PInvokeErrorHelpers.TraceOnceOnLastError(
+                nameof(SysInfoApi.GetLogicalProcessorInformationEx),
+                "Failed to read the processor information buffer");
 
-                return;
-            }
-
-            CpuTopology topology = CpuTopologyParser.Parse(new ReadOnlySpan<byte>((void*)buffer, (int)length));
-
-            specs.CpuSockets      = topology.SocketCount == 0 ? 1 : topology.SocketCount;
-            specs.CpuL1CacheBytes = topology.L1CacheBytes;
-            specs.CpuL2CacheBytes = topology.L2CacheBytes;
-            specs.CpuL3CacheBytes = topology.L3CacheBytes;
+            return;
         }
-        finally {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        CpuTopology topology = CpuTopologyParser.Parse(new ReadOnlySpan<byte>((void*)buffer.Value, (int)length));
+
+        specs.CpuSockets      = topology.SocketCount == 0 ? 1 : topology.SocketCount;
+        specs.CpuL1CacheBytes = topology.L1CacheBytes;
+        specs.CpuL2CacheBytes = topology.L2CacheBytes;
+        specs.CpuL3CacheBytes = topology.L3CacheBytes;
     }
 #endif
 }

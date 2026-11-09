@@ -13,16 +13,16 @@ public static unsafe class Nvme
             return false;
         }
 
-        nint handle = FileApi.CreateFileW(
+        using KernelHandleScope handle = new(FileApi.CreateFileW(
             $@"\\.\PhysicalDrive{physicalDriveIndex}",
             0,
             FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE,
             nint.Zero,
             FileApi.OPEN_EXISTING,
             0,
-            nint.Zero);
+            nint.Zero));
 
-        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
+        if (handle.IsInvalid) {
             return false;
         }
 
@@ -53,7 +53,6 @@ public static unsafe class Nvme
                 nint.Zero);
 
             if (!result || returned < HeaderSize + ProtocolDataSize) {
-                Kernel32.CloseHandle(handle);
                 return false;
             }
 
@@ -72,7 +71,6 @@ public static unsafe class Nvme
             }
 
             new ReadOnlySpan<byte>(p + start, output.Length).CopyTo(output);
-            Kernel32.CloseHandle(handle);
             return true;
         }
     }

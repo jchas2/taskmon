@@ -12,11 +12,11 @@ public static unsafe class Adl
     private const int AdlOk = 0;
 
     // AdapterInfo is a flat C struct; it is read by offset rather than marshalled.
-    private const int AdapterInfoSize = 1572;
+    private const int AdapterInfoSize    = 1572;
     private const int OffsetAdapterIndex = 4;       // iAdapterIndex
-    private const int OffsetUdid = 8;               // strUDID[256]
-    private const int OffsetVendorId = 276;         // iVendorID
-    private const int OffsetPnpString = 1312;       // strPNPString[256]
+    private const int OffsetUdid         = 8;       // strUDID[256]
+    private const int OffsetVendorId     = 276;     // iVendorID
+    private const int OffsetPnpString    = 1312;    // strPNPString[256]
 
     private const int Od6CurrentPowerTotal = 0;
 
@@ -72,12 +72,12 @@ public static unsafe class Adl
         }
 
         int bufferSize = AdapterInfoSize * count;
-        nint buffer = Marshal.AllocHGlobal(bufferSize);
 
-        new Span<byte>((void*)buffer, bufferSize).Clear();
+        using HGlobalScope buffer = HGlobalScope.Allocate(bufferSize);
+
+        new Span<byte>((void*)buffer.Value, bufferSize).Clear();
 
         if (ADL2_Adapter_AdapterInfo_Get(context, buffer, bufferSize) != AdlOk) {
-            Marshal.FreeHGlobal(buffer);
             return [];
         }
 
@@ -85,7 +85,7 @@ public static unsafe class Adl
         HashSet<int> adapterIndexes = new();
 
         for (int i = 0; i < count; i++) {
-            byte* entry = (byte*)buffer + i * AdapterInfoSize;
+            byte* entry = (byte*)buffer.Value + i * AdapterInfoSize;
             int adapterIndex = *(int*)(entry + OffsetAdapterIndex);
 
             // Several ADL "adapters" can map to one physical GPU; use the first.
@@ -108,7 +108,6 @@ public static unsafe class Adl
             adapters.Add(new Adapter(adapterIndex, vendorId, deviceId));
         }
 
-        Marshal.FreeHGlobal(buffer);
         return adapters;
     }
 

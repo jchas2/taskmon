@@ -29,45 +29,40 @@ public partial class DiskService
     {
         string devicePath = volumeName.TrimEnd('\\');
 
-        nint handle = FileApi.CreateFileW(
+        using KernelHandleScope handle = new(FileApi.CreateFileW(
             devicePath,
             DeviceQueryAccess,
             DeviceShareMode,
             nint.Zero,
             FileApi.OPEN_EXISTING,
             0,
-            nint.Zero);
+            nint.Zero));
 
-        if (handle == Kernel32.INVALID_HANDLE_VALUE) {
+        if (handle.IsInvalid) {
             specs.UnattachedVolumes.Add(volume);
             return;
         }
 
-        try {
-            if (!TryQueryDiskExtents(handle, out uint[] diskNumbers)) {
-                specs.UnattachedVolumes.Add(volume);
-                return;
-            }
-
-            bool attached = false;
-
-            foreach (uint diskNumber in diskNumbers) {
-                DiskDevice? device = specs.Devices.FirstOrDefault(disk => disk.Index == (int)diskNumber);
-
-                if (device == null) {
-                    continue;
-                }
-
-                device.Volumes.Add(volume);
-                attached = true;
-            }
-
-            if (!attached) {
-                specs.UnattachedVolumes.Add(volume);
-            }
+        if (!TryQueryDiskExtents(handle, out uint[] diskNumbers)) {
+            specs.UnattachedVolumes.Add(volume);
+            return;
         }
-        finally {
-            Kernel32.CloseHandle(handle);
+
+        bool attached = false;
+
+        foreach (uint diskNumber in diskNumbers) {
+            DiskDevice? device = specs.Devices.FirstOrDefault(disk => disk.Index == (int)diskNumber);
+
+            if (device == null) {
+                continue;
+            }
+
+            device.Volumes.Add(volume);
+            attached = true;
+        }
+
+        if (!attached) {
+            specs.UnattachedVolumes.Add(volume);
         }
     }
 
@@ -77,35 +72,30 @@ public partial class DiskService
         {
             string devicePath = $@"\\.\PhysicalDrive{index}";
 
-            nint handle = FileApi.CreateFileW(
+            using KernelHandleScope handle = new(FileApi.CreateFileW(
                 devicePath,
                 DeviceQueryAccess,
                 DeviceShareMode,
                 nint.Zero,
                 FileApi.OPEN_EXISTING,
                 0,
-                nint.Zero);
+                nint.Zero));
 
-            if (handle == Kernel32.INVALID_HANDLE_VALUE) {
+            if (handle.IsInvalid) {
                 continue;
             }
 
-            try {
-                byte[]? descriptor = QueryDeviceDescriptor(handle, devicePath);
+            byte[]? descriptor = QueryDeviceDescriptor(handle, devicePath);
 
-                DiskDevice device = descriptor != null
-                    ? DiskDeviceParser.Parse(descriptor)
-                    : new DiskDevice();
+            DiskDevice device = descriptor != null
+                ? DiskDeviceParser.Parse(descriptor)
+                : new DiskDevice();
 
-                device.Index     = index;
-                device.Capacity  = QueryCapacity(handle, devicePath);
-                device.MediaType = ResolveMediaType(handle, device);
+            device.Index     = index;
+            device.Capacity  = QueryCapacity(handle, devicePath);
+            device.MediaType = ResolveMediaType(handle, device);
 
-                specs.Devices.Add(device);
-            }
-            finally {
-                Kernel32.CloseHandle(handle);
-            }
+            specs.Devices.Add(device);
         }
     }
 

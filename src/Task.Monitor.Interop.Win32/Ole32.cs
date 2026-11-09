@@ -30,15 +30,6 @@ public static class Ole32
         uint capabilities, 
         nint reserved3);
 
-    public static int ComInitializeEx(uint dwCoInit) => CoInitializeEx(nint.Zero, dwCoInit);
-
-    public static void ComUninitialize(int hResult)
-    {
-        if (hResult >= 0) {
-            CoUninitialize();
-        }    
-    }
-
     [DllImport(Libraries.Ole32, PreserveSig = true)]
     public static extern int CoSetProxyBlanket(
         nint proxy, 

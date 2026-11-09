@@ -1,7 +1,6 @@
 #if __WIN32__
 using Microsoft.Win32;
 #endif
-using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 
@@ -39,11 +38,11 @@ public partial class GpuService
 
     private static void EnumerateAdapters(GpuSpecs specs)
     {
-        nint factoryPtr = nint.Zero;
-
         try {
             Guid factoryIid = Dxgi.IID_IDXGIFactory1;
-            int hr = Dxgi.CreateDXGIFactory1(ref factoryIid, out factoryPtr);
+            int  hr         = Dxgi.CreateDXGIFactory1(ref factoryIid, out nint factoryRef);
+
+            using ComScope factory = new(factoryRef);
 
             if (hr < 0) {
                 PInvokeErrorHelpers.TraceOnceOnHResult(
@@ -54,43 +53,34 @@ public partial class GpuService
                 return;
             }
 
-            uint adapterIndex = 0;
+            for (uint adapterIndex = 0;
+                 Dxgi.EnumAdapters1(factory, adapterIndex, out nint adapterRef) == Dxgi.S_OK;
+                 adapterIndex++) {
 
-            while (Dxgi.EnumAdapters1(factoryPtr, adapterIndex, out nint adapterPtr) == Dxgi.S_OK)
-            {
-                try {
-                    int descHr = Dxgi.GetDesc1(adapterPtr, out Dxgi.DXGI_ADAPTER_DESC1 desc);
+                using ComScope adapter = new(adapterRef);
 
-                    if (descHr < 0) {
-                        PInvokeErrorHelpers.TraceOnceOnHResult(
-                            nameof(Dxgi.GetDesc1),
-                            $"Failed {nameof(Dxgi.GetDesc1)}",
-                            descHr);
+                int descHr = Dxgi.GetDesc1(adapter, out Dxgi.DXGI_ADAPTER_DESC1 desc);
 
-                        continue;
-                    }
+                if (descHr < 0) {
+                    PInvokeErrorHelpers.TraceOnceOnHResult(
+                        nameof(Dxgi.GetDesc1),
+                        $"Failed {nameof(Dxgi.GetDesc1)}",
+                        descHr);
 
-                    if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
-                        continue;
-                    }
-
-                    specs.Devices.Add(BuildDevice((int)adapterIndex, desc));
+                    continue;
                 }
-                finally {
-                    Marshal.Release(adapterPtr);
-                    adapterIndex++;
+
+                if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
+                    continue;
                 }
+
+                specs.Devices.Add(BuildDevice((int)adapterIndex, desc));
             }
         }
         catch (Exception ex) {
             TraceEx.WriteLineOnce(
                 nameof(EnumerateAdapters),
                 $"Failed {nameof(EnumerateAdapters)}: {ex.Message}");
-        }
-        finally {
-            if (factoryPtr != nint.Zero) {
-                Marshal.Release(factoryPtr);
-            }
         }
     }
 

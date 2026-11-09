@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.Interop.Win32;
 
@@ -56,29 +55,31 @@ public static unsafe class ShellLink
 
     public static Target? Resolve(string shortcutPath)
     {
-        Target? target = null;
-        nint shellLink = nint.Zero;
-        nint persistFile = nint.Zero;
+        using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_APARTMENTTHREADED);
 
-        int hResult = Ole32.ComInitializeEx(Ole32.COINIT_APARTMENTTHREADED);
-
-        if (Ole32.CoCreateInstance(
+        int createHr = Ole32.CoCreateInstance(
             in CLSID_ShellLink,
             nint.Zero,
             CLSCTX_INPROC_SERVER,
             in IID_IShellLinkW,
-            out shellLink) < 0 || shellLink == nint.Zero) {
+            out nint shellLinkRef);
 
-            goto Finished;
+        using ComScope shellLink = new(shellLinkRef);
+
+        if (createHr < 0 || shellLink.IsNull) {
+            return null;
         }
 
         Guid persistFileIid = IID_IPersistFile;
+        nint persistFileRef = nint.Zero;
 
         int queryHr = ((delegate* unmanaged[Stdcall]<nint, Guid*, nint*, int>)
-            Ole32.Vtbl(shellLink)[0])(shellLink, &persistFileIid, &persistFile);
+            Ole32.Vtbl(shellLink)[0])(shellLink, &persistFileIid, &persistFileRef);
+
+        using ComScope persistFile = new(persistFileRef);
 
         if (queryHr < 0) {
-            goto Finished;
+            return null;
         }
 
         fixed (char* pFileName = shortcutPath) {
@@ -86,30 +87,26 @@ public static unsafe class ShellLink
                 Ole32.Vtbl(persistFile)[SlotLoad])(persistFile, pFileName, STGM_READ);
 
             if (loadHr < 0) {
-                goto Finished;
+                return null;
             }
         }
 
         string path = GetString(
-            shellLink, 
-            SlotGetPath, 
-            MAX_PATH, 
+            shellLink,
+            SlotGetPath,
+            MAX_PATH,
             withFindData: true);
 
-        if (path.Length != 0) {
-            string arguments = GetString(
-                shellLink, 
-                SlotGetArguments, 
-                InfoTipSize, 
-                withFindData: false);
-            
-            target = new Target(path, arguments);
+        if (path.Length == 0) {
+            return null;
         }
-        
-        Finished: 
-        InteropHelper.MarshalRelease(ref persistFile);
-        InteropHelper.MarshalRelease(ref shellLink);
-        Ole32.ComUninitialize(hResult);
-        return target;
+
+        string arguments = GetString(
+            shellLink,
+            SlotGetArguments,
+            InfoTipSize,
+            withFindData: false);
+
+        return new Target(path, arguments);
     }
 }

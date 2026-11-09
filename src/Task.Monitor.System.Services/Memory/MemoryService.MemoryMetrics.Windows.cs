@@ -150,20 +150,21 @@ public partial class MemoryService
         }
 
         // Kernel wants a bigger buffer than our struct.
-        void* buffer = NativeMemory.AllocZeroed(returnLength);
+        using HGlobalScope buffer = HGlobalScope.Allocate((int)returnLength);
+
+        new Span<byte>((void*)buffer.Value, (int)returnLength).Clear();
+
         status = Winternl.NtQuerySystemInformation(
-            Winternl.SystemMemoryListInformation, 
-            buffer, 
-            returnLength, 
+            Winternl.SystemMemoryListInformation,
+            (void*)buffer.Value,
+            returnLength,
             &returnLength);
-        
+
         if (status != Winternl.STATUS_SUCCESS) {
-            NativeMemory.Free(buffer);
             return false;
         }
 
-        info = Unsafe.ReadUnaligned<Winternl.SYSTEM_MEMORY_LIST_INFORMATION>(buffer);
-        NativeMemory.Free(buffer);
+        info = Unsafe.ReadUnaligned<Winternl.SYSTEM_MEMORY_LIST_INFORMATION>((void*)buffer.Value);
         return true;
     }
 
