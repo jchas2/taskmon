@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
@@ -55,6 +56,10 @@ public sealed partial class HealthService : WorkerService
             reports           = ReadReports(thresholds.ReportLookbackHours, thresholds.EventHistorySize);
             drives            = ReadDrives(disks);
             nextReportReadUtc = utcNow + ReportReadInterval;
+
+            if (IsFirstCycle) {
+                Trace.WriteLine($"{ServiceName}: {reports.Count} crash and hang reports in the last {thresholds.ReportLookbackHours} hours");
+            }
         }
 
         HealthSample sample = new() {
@@ -79,14 +84,26 @@ public sealed partial class HealthService : WorkerService
 
     protected override void OnStart()
     {
-        if (eventsRestored || EventStore is not { } store || thresholds.EventHistorySize == 0) {
+        if (eventsRestored) {
+            return;
+        }
+
+        if (EventStore is not { } store || thresholds.EventHistorySize == 0) {
+            Trace.WriteLine(EventStore is null
+                ? $"{ServiceName}: event history SKIPPED, no events folder"
+                : $"{ServiceName}: event history SKIPPED, turned off");
+
             return;
         }
 
         eventsRestored = true;
 
-        evaluator.Restore(store.Load(thresholds.EventHistorySize));
+        IReadOnlyList<HealthEvent> restored = store.Load(thresholds.EventHistorySize);
+
+        evaluator.Restore(restored);
         store.Prune(thresholds.EventHistorySize);
+
+        Trace.WriteLine($"{ServiceName}: event history OK, {restored.Count} events restored");
     }
 
     protected override void OnStop() => SaveEvents(evaluator.Finish(DateTime.UtcNow));

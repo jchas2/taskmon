@@ -130,33 +130,6 @@ public sealed class LaunchdServicesControlTests : IDisposable
         ctrl.Unload();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
-    // Regression test: STATUS was drawn in chart.range.high.foreground for a failed service and
-    // chart.range.mid.foreground for one not running - the dark text that goes on those colour
-    // blocks - so both showed black on the list background.
-    [Fact]
-    public void Failed_And_Stopped_Services_Show_Their_Status_In_The_Range_Colours()
-    {
-        LaunchdServicesControl ctrl = CreateControl();
-
-        // Exit code 1, and no longer running.
-        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 1 << 8)));
-
-        Assert.Equal(
-            runContext.AppConfig.Theme.RangeHighBackground,
-            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        // Not running, but it exited cleanly.
-        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 0)));
-
-        Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
-            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except a failed service's status and last exit, which keep their
     // highlight.
@@ -188,6 +161,8 @@ public sealed class LaunchdServicesControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Service()
@@ -270,6 +245,31 @@ public sealed class LaunchdServicesControlTests : IDisposable
         Assert.Contains("com.alpha.agent", output);
         Assert.Contains("com.charlie.agent", output);
         Assert.DoesNotContain("Filter:", output);
+
+        ctrl.Unload();
+    }
+
+    // Regression test: STATUS was drawn in chart.range.high.foreground for a failed service and
+    // chart.range.mid.foreground for one not running - the dark text that goes on those colour
+    // blocks - so both showed black on the list background.
+    [Fact]
+    public void Failed_And_Stopped_Services_Show_Their_Status_In_The_Range_Colours()
+    {
+        LaunchdServicesControl ctrl = CreateControl();
+
+        // Exit code 1, and no longer running.
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 1 << 8)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeHighBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        // Not running, but it exited cleanly.
+        ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 0)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();
     }

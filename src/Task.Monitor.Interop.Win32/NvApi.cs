@@ -93,6 +93,38 @@ public static unsafe class NvApi
         return fn != nint.Zero && ((delegate* unmanaged[Cdecl]<int>)fn)() == 0;
     }
 
+    public static bool Initialize(out string diagnostic)
+    {
+        const int NvApiNvidiaDeviceNotFound = -6;
+
+        try {
+            nint fn = nvapi_QueryInterface(OffsetInitialize);
+
+            if (fn == nint.Zero) {
+                diagnostic = $"FAILED, {Nvapi} has no NvAPI_Initialize";
+                return false;
+            }
+
+            int status = ((delegate* unmanaged[Cdecl]<int>)fn)();
+
+            diagnostic = status switch {
+                0                         => "OK",
+                NvApiNvidiaDeviceNotFound => "NOT FOUND, no NVIDIA GPU",
+                _                         => $"FAILED, NvAPI_Initialize returned NVAPI status {status}"
+            };
+
+            return status == 0;
+        }
+        catch (DllNotFoundException) {
+            diagnostic = $"NOT FOUND, {Nvapi} is not installed";
+            return false;
+        }
+        catch (EntryPointNotFoundException) {
+            diagnostic = $"FAILED, {Nvapi} has no nvapi_QueryInterface";
+            return false;
+        }
+    }
+
     [DllImport(Nvapi, EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
     private static extern nint nvapi_QueryInterface(uint offset);
 

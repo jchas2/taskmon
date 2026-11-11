@@ -15,9 +15,9 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.PickerBox;
-using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Services.Startup;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Process;
@@ -164,6 +164,35 @@ public sealed class ListViewColourTests
         host.Unload();
     }
 
+    private static T Loaded<T>(T control) where T : Control
+    {
+        control.Width = 160;
+        control.Height = 48;
+        control.Load();
+        control.Resize();
+        return control;
+    }
+
+    private ProcessInfoControl LoadedProcessInfoControl()
+    {
+        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
+        Assert.NotNull(sample);
+
+        ProcessServiceFake processServiceFake = new();
+        processServiceFake.Add(sample);
+        runContext.ServiceController.AddService(() => processServiceFake);
+
+        ProcessInfoControl control = new(
+            runContext.ServiceController,
+            Terminal,
+            runContext.AppConfig) {
+            AutoRefresh = false,
+            SelectedProcessId = sample.Pid
+        };
+
+        return Loaded(control);
+    }
+
     public static TheoryData<string> PerformanceHosts => new() {
         nameof(CpuPerformanceControl),
         nameof(DiskPerformanceControl),
@@ -210,29 +239,6 @@ public sealed class ListViewColourTests
         host.Unload();
     }
 
-    private static T Loaded<T>(T control) where T : Control
-    {
-        control.Width = 160;
-        control.Height = 48;
-        control.Load();
-        control.Resize();
-        return control;
-    }
-
-    [Fact]
-    public void ProcessInfoControl_ListViews_And_Rows_Use_The_ListView_Colours()
-    {
-        ProcessInfoControl control = LoadedProcessInfoControl();
-
-        AssertListViewsUseListViewColours(control);
-        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
-
-        Assert.Contains(rows, row => row.SubItems[0].Text == "DETAIL"
-            && row.SubItems[0].ForegroundColor == ListViewForeground);
-
-        control.Unload();
-    }
-
     // DETAIL lists "Key:" / value rows, drawn like the performance specs lists.
     [Fact]
     public void ProcessInfoControl_Detail_Rows_Use_The_Property_Colours()
@@ -257,24 +263,18 @@ public sealed class ListViewColourTests
         control.Unload();
     }
 
-    private ProcessInfoControl LoadedProcessInfoControl()
+    [Fact]
+    public void ProcessInfoControl_ListViews_And_Rows_Use_The_ListView_Colours()
     {
-        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
-        Assert.NotNull(sample);
+        ProcessInfoControl control = LoadedProcessInfoControl();
 
-        ProcessServiceFake processServiceFake = new();
-        processServiceFake.Add(sample);
-        runContext.ServiceController.AddService(() => processServiceFake);
+        AssertListViewsUseListViewColours(control);
+        List<ListViewItem> rows = AssertRowsUseListViewBackground(control);
 
-        ProcessInfoControl control = new(
-            runContext.ServiceController,
-            Terminal,
-            runContext.AppConfig) {
-            AutoRefresh = false,
-            SelectedProcessId = sample.Pid
-        };
+        Assert.Contains(rows, row => row.SubItems[0].Text == "DETAIL"
+            && row.SubItems[0].ForegroundColor == ListViewForeground);
 
-        return Loaded(control);
+        control.Unload();
     }
 
     [Fact]

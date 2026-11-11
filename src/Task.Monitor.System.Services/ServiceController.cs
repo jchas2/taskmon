@@ -152,9 +152,9 @@ public sealed class ServiceController : WorkerService
         deviceChangeNotifier.DeviceChanged += OnDeviceChanged;
         deviceChangeNotifier.Start();
 
+        // Each service logs its own start-up, from its worker, once it has actually started.
         foreach (ISystemService systemService in allServices) {
             systemService.Start();
-            Trace.WriteLine($"{systemService.GetType()} started, status: {systemService.Status}");
         }
 
         base.Start();
@@ -169,7 +169,7 @@ public sealed class ServiceController : WorkerService
 
         foreach (ISystemService systemService in allServices) {
             systemService.Stop();
-            Trace.WriteLine($"{systemService.GetType()} stopped, status: {systemService.Status}");
+            Trace.WriteLine($"{systemService.GetType().Name}: stopped, status {systemService.Status}");
         }
     }
 

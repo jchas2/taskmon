@@ -39,11 +39,20 @@ public static unsafe class Wbem
     private const int VariantSize = 24;
 
     public static IReadOnlyList<Dictionary<string, object?>> Query(
-        string wmiNamespace, 
-        string wql, 
+        string wmiNamespace,
+        string wql,
+        params string[] properties) =>
+        Query(wmiNamespace, wql, out _, properties);
+
+    public static IReadOnlyList<Dictionary<string, object?>> Query(
+        string          wmiNamespace,
+        string          wql,
+        out ComFailure? failure,
         params string[] properties)
     {
         List<Dictionary<string, object?>> rows = new();
+
+        failure = null;
 
         using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
 
@@ -59,6 +68,7 @@ public static unsafe class Wbem
             reserved3: nint.Zero);
 
         if (secHr < 0 && secHr != RPC_E_TOO_LATE) {
+            failure = new ComFailure(nameof(Ole32.CoInitializeSecurity), secHr);
             return rows;
         }
 
@@ -76,6 +86,7 @@ public static unsafe class Wbem
         using ComScope locator = new(locatorRef);
 
         if (createHr < 0 || locator.IsNull) {
+            failure = new ComFailure($"{nameof(Ole32.CoCreateInstance)} WbemLocator", createHr);
             return rows;
         }
 
@@ -96,19 +107,22 @@ public static unsafe class Wbem
         using ComScope services = new(servicesRef);
 
         if (connectHr < 0 || services.IsNull) {
+            failure = new ComFailure($"IWbemLocator::ConnectServer {wmiNamespace}", connectHr);
             return rows;
         }
 
-        if (Ole32.CoSetProxyBlanket(
-            proxy: services, 
-            authnService: RPC_C_AUTHN_WINNT, 
-            authzService: RPC_C_AUTHZ_NONE, 
+        int blanketHr = Ole32.CoSetProxyBlanket(
+            proxy: services,
+            authnService: RPC_C_AUTHN_WINNT,
+            authzService: RPC_C_AUTHZ_NONE,
             serverPrincipalName: nint.Zero,
-            authnLevel: RPC_C_AUTHN_LEVEL_CALL, 
-            impLevel: RPC_C_IMP_LEVEL_IMPERSONATE, 
-            authInfo: nint.Zero, 
-            capabilities: EOAC_NONE) < 0) {
+            authnLevel: RPC_C_AUTHN_LEVEL_CALL,
+            impLevel: RPC_C_IMP_LEVEL_IMPERSONATE,
+            authInfo: nint.Zero,
+            capabilities: EOAC_NONE);
 
+        if (blanketHr < 0) {
+            failure = new ComFailure(nameof(Ole32.CoSetProxyBlanket), blanketHr);
             return rows;
         }
 
@@ -126,10 +140,16 @@ public static unsafe class Wbem
         using ComScope enumerator = new(enumeratorRef);
 
         if (execHr < 0 || enumerator.IsNull) {
+            failure = new ComFailure("IWbemServices::ExecQuery", execHr);
             return rows;
         }
 
-        ReadRows(enumerator, properties, rows);
+        int nextHr = ReadRows(enumerator, properties, rows);
+
+        if (nextHr < 0) {
+            failure = new ComFailure("IEnumWbemClassObject::Next", nextHr);
+        }
+
         return rows;
     }
 
@@ -176,9 +196,9 @@ public static unsafe class Wbem
         return result;
     }
 
-    private static void ReadRows(
-        nint enumerator, 
-        string[] properties, 
+    private static int ReadRows(
+        nint enumerator,
+        string[] properties,
         List<Dictionary<string, object?>> rows)
     {
         while (true) {
@@ -196,7 +216,7 @@ public static unsafe class Wbem
             using ComScope classObject = new(classObjectRef);
 
             if (hr != S_OK || returned == 0 || classObject.IsNull) {
-                break;
+                return hr;
             }
 
             Dictionary<string, object?> row = new(properties.Length);

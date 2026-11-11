@@ -558,6 +558,37 @@ public sealed class ThemeTests
     }
 
     [Fact]
+    public void Shipped_Themes_Define_Dialog_Colours()
+    {
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+
+        string[] dialogKeys = [
+            Constants.Keys.DialogBackground,
+            Constants.Keys.DialogBorder,
+            Constants.Keys.DialogButtonBackground,
+            Constants.Keys.DialogButtonForeground,
+            Constants.Keys.DialogForeground
+        ];
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+            ConfigSection section = parser.Sections[0];
+
+            foreach (string key in dialogKeys) {
+                Assert.True(section.Contains(key), $"{name} is missing {key}");
+                Assert.Matches(HexOrTransparent, section.GetString(key));
+            }
+        }
+    }
+
+    [Fact]
     public void Shipped_Themes_Define_Property_HotKey_And_Tip_Colours()
     {
         Assembly asm = typeof(Theme).Assembly;
@@ -666,37 +697,6 @@ menubar.background=#121d18
 command.foreground=#717f24
 command.background=#121d18
 ";
-
-    [Fact]
-    public void Shipped_Themes_Define_Dialog_Colours()
-    {
-        Assembly asm = typeof(Theme).Assembly;
-        string[] themeNames = asm.GetManifestResourceNames()
-            .Where(n => n.EndsWith(Constants.ThemeExtension))
-            .ToArray();
-
-        Assert.NotEmpty(themeNames);
-
-        string[] dialogKeys = [
-            Constants.Keys.DialogBackground,
-            Constants.Keys.DialogBorder,
-            Constants.Keys.DialogButtonBackground,
-            Constants.Keys.DialogButtonForeground,
-            Constants.Keys.DialogForeground
-        ];
-
-        foreach (string name in themeNames) {
-            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
-            ConfigParser parser = new(reader.ReadToEnd());
-            parser.Parse();
-            ConfigSection section = parser.Sections[0];
-
-            foreach (string key in dialogKeys) {
-                Assert.True(section.Contains(key), $"{name} is missing {key}");
-                Assert.Matches(HexOrTransparent, section.GetString(key));
-            }
-        }
-    }
 
     [Fact]
     public void Theme_Canary_Test() =>

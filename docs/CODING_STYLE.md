@@ -232,6 +232,37 @@ A normal build only compiles the host platform's code. On macOS, `./build-win32.
 `__WIN32__` code paths as a check (the output isn't runnable). CI builds and tests both platforms, so
 check the `build-windows` and `build-macos` jobs before merging.
 
+## Logging
+
+The log is the first thing to read when taskmon misbehaves on someone else's machine, so each
+service records what it found and whether the native calls it depends on worked when it starts.
+
+- **Start-up lines** use `Trace.WriteLine` and start with the service's type name:
+  `<ServiceName>: <what> <OK | FAILED | NOT FOUND | SKIPPED> [detail]`. NOT FOUND is something
+  expected to be missing, such as a vendor's driver on another vendor's GPU; FAILED is something that
+  should have worked.
+
+  ```text
+  GpuService: DXGI CreateDXGIFactory1 OK
+  GpuService: adapter 0 NVIDIA GeForce RTX 4070 SUPER, 10DE:2783, Discrete, 11997 MB, driver 32.0.16.1088 (7-22-2026)
+  ThermalService: ADL NOT FOUND, atiadlxx.dll is not installed
+  ThermalService: ACPI Thermal Zones FAILED, IEnumWbemClassObject::Next 0x80041003 (Access denied)
+  ```
+
+- `WorkerService` writes `<ServiceName>: starting` before `OnStart` and `<ServiceName>: started in
+  N ms` after the first sample. Checks that only happen on the first sample go inside
+  `if (IsFirstCycle)`.
+- **Describe error codes** with `ErrorCodes.Describe`, which gives `5 (Access is denied.)` for a
+  Win32 error or errno and `0x800007D5 (No data to return.)` for an HRESULT, NTSTATUS, PDH or IOReturn
+  code. On macOS, use `ErrorCodes.DescribeKernReturn` for a `kern_return_t`.
+- **Code that runs every sample** reports failures with the `PInvokeErrorHelpers.TraceOnce…` and
+  `TraceEx.WriteLineOnce` helpers, so a failure that repeats is written once. Don't key them on a
+  value that changes every sample, such as a PID; summarise those on the first sample instead.
+- **Rediscovery logs changes only.** Work repeated on a timer (re-probing providers, rescanning
+  lists) writes nothing unless the result differs from what was last logged.
+- **Never log** serial numbers, MAC addresses, IP addresses or user names: people attach the log
+  to bug reports. Models, part numbers and driver versions are fine.
+
 ## Dependencies
 
 taskmon takes **no third-party runtime dependencies**. Keeping the CPU and memory footprint of the

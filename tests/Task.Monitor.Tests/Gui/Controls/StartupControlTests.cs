@@ -25,6 +25,21 @@ public sealed class StartupControlTests : IDisposable
         runContext = runContextHelper.GetRunContext();
     }
 
+    // Regression test: a disabled entry's STATUS was drawn in chart.range.mid.foreground - the dark
+    // text that goes on the mid colour block - so it showed black on the list background.
+    [Fact]
+    public void A_Disabled_Entry_Shows_Its_Status_In_The_Mid_Range_Colour()
+    {
+        StartupControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Entry("OneDrive", state: StartupEntryState.Disabled)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void A_Failed_Toggle_Keeps_The_Checkbox_And_Says_Why_Until_Dismissed()
     {
@@ -187,43 +202,6 @@ public sealed class StartupControlTests : IDisposable
         ctrl.Unload();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
-    [Fact]
-    public void Draws_A_Checkbox_Per_Row_From_The_Entry_State_And_Keeps_The_Command_Column()
-    {
-        StartupControl ctrl = CreateControl(canSetEnabled: true);
-        ctrl.Sample(SnapshotWith(
-            Entry("Alpha App"),
-            Entry("Bravo App", state: StartupEntryState.Disabled),
-            Entry("Charlie App", state: StartupEntryState.Unknown)));
-        ctrl.Draw();
-
-        string output = VisibleOutput();
-
-        Assert.Contains("[x] Alpha App", output);
-        Assert.Contains("[ ] Bravo App", output);
-        Assert.Contains("[ ] Charlie App", output);
-        Assert.Contains("COMMAND", output);
-
-        ctrl.Unload();
-    }
-
-    // Regression test: a disabled entry's STATUS was drawn in chart.range.mid.foreground - the dark
-    // text that goes on the mid colour block - so it showed black on the list background.
-    [Fact]
-    public void A_Disabled_Entry_Shows_Its_Status_In_The_Mid_Range_Colour()
-    {
-        StartupControl ctrl = CreateControl();
-        ctrl.Sample(SnapshotWith(Entry("OneDrive", state: StartupEntryState.Disabled)));
-
-        Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
-            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except a disabled entry's status, which keeps its highlight.
     [Fact]
@@ -248,6 +226,28 @@ public sealed class StartupControlTests : IDisposable
         ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
         Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
         Assert.Equal(runContext.AppConfig.Theme.RangeMidBackground, status.SubItems[1].ForegroundColor);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void Draws_A_Checkbox_Per_Row_From_The_Entry_State_And_Keeps_The_Command_Column()
+    {
+        StartupControl ctrl = CreateControl(canSetEnabled: true);
+        ctrl.Sample(SnapshotWith(
+            Entry("Alpha App"),
+            Entry("Bravo App", state: StartupEntryState.Disabled),
+            Entry("Charlie App", state: StartupEntryState.Unknown)));
+        ctrl.Draw();
+
+        string output = VisibleOutput();
+
+        Assert.Contains("[x] Alpha App", output);
+        Assert.Contains("[ ] Bravo App", output);
+        Assert.Contains("[ ] Charlie App", output);
+        Assert.Contains("COMMAND", output);
 
         ctrl.Unload();
     }

@@ -39,7 +39,8 @@ internal sealed class SmcThermalSampler : IDisposable
                 return false;
             }
 
-            smc = Smc.Open();
+            smc            = Smc.Open(out string diagnostic);
+            OpenDiagnostic = diagnostic;
 
             if (smc is null) {
                 openFailed = true;
@@ -67,6 +68,8 @@ internal sealed class SmcThermalSampler : IDisposable
             }
         }
     }
+
+    public string OpenDiagnostic { get; private set; } = string.Empty;
 
     public List<FanReading> ReadFans()
     {

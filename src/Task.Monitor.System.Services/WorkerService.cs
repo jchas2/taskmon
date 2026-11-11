@@ -42,11 +42,25 @@ public class WorkerService : ISystemService
 
     private void DoWork(CancellationToken cancellationToken)
     {
+        long startTimestamp = Stopwatch.GetTimestamp();
+
+        Trace.WriteLine($"{ServiceName}: starting");
         wakeSignal.Reset();
         OnStart();
 
+        IsFirstCycle = true;
+
         while (!cancellationToken.IsCancellationRequested) {
             OnDoWork(cancellationToken);
+
+            if (IsFirstCycle) {
+                IsFirstCycle = false;
+
+                Trace.WriteLine(
+                    $"{ServiceName}: started in {Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds:0} ms, " +
+                    $"status {serviceStatus}");
+            }
+
             ThreadSleep(cancellationToken);
         }
 
@@ -55,6 +69,8 @@ public class WorkerService : ISystemService
 
     protected T? GetLatest<T>() where T : class =>
         Controller?.GetLatestInfo<T>();
+
+    protected bool IsFirstCycle { get; private set; }
 
     protected virtual void OnDoWork(CancellationToken cancellationToken) { }
 
@@ -71,11 +87,15 @@ public class WorkerService : ISystemService
         wakeSignal.Set();
     }
 
+    protected string ServiceName => GetType().Name;
+
     public virtual void Start()
     {
         serviceStatus           = ServiceStatus.Starting;
         cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Token.Register(wakeSignal.Set);
+
+        serviceStatus = ServiceStatus.Running;
 
         workerTask = WorkerTask.Run(() => {
             try {
@@ -83,10 +103,10 @@ public class WorkerService : ISystemService
             }
             catch (Exception ex) {
                 serviceStatus = ServiceStatus.Errored;
-                ExceptionHelper.LogException(ex);
+                Trace.WriteLine($"{ServiceName}: FAILED with {ex.GetType().Name}, the service has stopped");
+                ExceptionHelper.LogException(ex, ServiceName);
             }
         });
-        serviceStatus = ServiceStatus.Running;
     }
 
     public ServiceStatus Status => serviceStatus;

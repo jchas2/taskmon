@@ -10,6 +10,8 @@ internal sealed class SmartBatteryPowerProvider : IPowerProvider
 
     private uint battery;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         if (battery != 0) {
@@ -78,6 +80,8 @@ internal sealed class SmartBatteryPowerProvider : IPowerProvider
     public bool TryInitialise()
     {
         battery = IOKit.IOServiceGetMatchingService(0, IOKit.IOServiceMatching(ServiceName));
+
+        Diagnostic = battery != 0 ? "OK" : $"NOT FOUND, no {ServiceName}, as on a desktop Mac";
 
         return battery != 0;
     }

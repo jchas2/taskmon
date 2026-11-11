@@ -1,18 +1,22 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
-// The ACPI / EMI power meter, exposed as the "Power Meter" performance counter set. Present on
-// many laptops and a few desktops; reports whole-system or a platform rail, in milliwatts.
+// The ACPI / EMI power meter, present on laptops.
 internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 {
     private const string CounterPath = @"\Power Meter(*)\Power";
 
+    private const uint PdhNoData = 0x800007D5;
+
     private PdhQuery? query;
     private nint      counter;
+
+    public string Diagnostic { get; private set; } = string.Empty;
 
     public void Dispose()
     {
@@ -23,10 +27,9 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
 
     public string Name => "ACPI Power Meter";
 
-    // The counter is documented as milliwatts, but be forgiving: a value that only makes sense as
-    // watts is taken as watts.
     private static double? Normalise(double raw)
     {
+        // The counter is documented as milliwatts.
         double asMilliwatts = raw / 1000.0;
 
         if (asMilliwatts is > 0.5 and < 1000) {
@@ -52,9 +55,9 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         ];
     }
 
-    private double? ReadWatts()
+    private double? ReadCollectedWatts()
     {
-        if (query is null || !query.Collect() || !query.TryReadFormattedDoubles(counter, out uint itemCount)) {
+        if (query is null || !query.TryReadFormattedDoubles(counter, out uint itemCount)) {
             return null;
         }
 
@@ -83,19 +86,39 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         return any ? Normalise(summed) : null;
     }
 
+    private double? ReadWatts() =>
+        query is not null && query.Collect()
+            ? ReadCollectedWatts()
+            : null;
+
     public bool TryInitialise()
     {
-        query = PdhQuery.Open(nameof(PowerMeterPdhProvider), CounterPath);
+        query = PdhQuery.Open(nameof(PowerMeterPdhProvider), out string failure, CounterPath);
 
         if (query is null) {
+            Diagnostic = $"FAILED, {failure}";
             return false;
         }
 
         counter = query.Counters[0];
-        query.Collect();
 
-        // Keep the provider only if the machine actually has a power meter instance.
-        return ReadWatts() is not null;
+        query.TryCollect(out _);
+
+        if (!query.TryCollect(out uint status)) {
+            Diagnostic = status == PdhNoData
+                ? "NOT FOUND, no power meter on this machine"
+                : $"FAILED, {nameof(Pdh.PdhCollectQueryData)} {ErrorCodes.Describe(status)}";
+
+            return false;
+        }
+
+        if (ReadCollectedWatts() is null) {
+            Diagnostic = "NOT FOUND, the power meter has no reading";
+            return false;
+        }
+
+        Diagnostic = "OK";
+        return true;
     }
 }
 #endif

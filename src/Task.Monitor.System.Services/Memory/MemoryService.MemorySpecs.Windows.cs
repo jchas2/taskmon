@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
  using Task.Monitor.Interop.Win32;
@@ -18,12 +19,18 @@ public partial class MemoryService
 
         if (rawData != null) {
             specs.Devices.AddRange(ParseRawSmbiosTable(rawData));
+
+            // The raw table's header holds the SMBIOS version at bytes 1 and 2.
+            Trace.WriteLine(
+                $"{ServiceName}: SMBIOS {rawData[1]}.{rawData[2]} table OK, {rawData.Length} bytes, " +
+                $"{specs.Devices.Count} memory devices");
         }
 
-        // Some virtual machines, and old firmware, list no memory devices. 
+        // Some virtual machines, and old firmware, list no memory devices.
         // Fallback to a mock device displaying the total system memory.
         if (specs.Devices.Count == 0 && TryGetTotalPhysicalMemory(out ulong totalBytes)) {
             specs.Devices.Add(SystemMemoryDevice(totalBytes));
+            Trace.WriteLine($"{ServiceName}: no SMBIOS memory devices, showing the total Windows reports instead");
         }
     }
 
@@ -48,7 +55,10 @@ public partial class MemoryService
             bufferSize: 0);
         
         if (size == 0) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable));
+            Trace.WriteLine(
+                $"{nameof(MemoryService)}: SMBIOS {nameof(Kernel32.GetSystemFirmwareTable)} FAILED " +
+                $"{ErrorCodes.Describe(Marshal.GetLastPInvokeError())}");
+
             return null;
         }
 
@@ -61,14 +71,15 @@ public partial class MemoryService
             size);
 
         if (written == 0 || written > size) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable),
-                "Failed to retrieve SMBIOS firmware table");
+            Trace.WriteLine(
+                $"{nameof(MemoryService)}: SMBIOS {nameof(Kernel32.GetSystemFirmwareTable)} FAILED " +
+                $"{ErrorCodes.Describe(Marshal.GetLastPInvokeError())}, reading {size} bytes");
+
             return null;
         }
 
         if (written < RawSmbiosHeaderLength) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.GetSystemFirmwareTable),
-                "SMBIOS firmware table is truncated");
+            Trace.WriteLine($"{nameof(MemoryService)}: SMBIOS table FAILED, only {written} bytes");
             return null;
         }
 

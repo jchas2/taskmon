@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -41,7 +42,118 @@ public partial class GpuService
             offset, 
             0) == D3DKmt.STATUS_SUCCESS;
 
-    private unsafe bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
+    private bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
+    {
+        bool read = ReadGpuMemoryMetrics(gpuInfo);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(
+                gpuInfo.Specs.Devices.Count == 0 ? $"{ServiceName}: D3DKMT memory statistics SKIPPED, no hardware adapters" :
+                read                             ? $"{ServiceName}: D3DKMT memory statistics OK, {gpuInfo.Metrics.Devices.Count} adapters" :
+                                                   $"{ServiceName}: D3DKMT memory statistics FAILED, see the D3DKMTQueryStatistics error");
+        }
+
+        return read;
+    }
+
+    private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
+    {
+        gpuInfo.Metrics.GpuPercentTime = 0.0;
+
+        engineUtilisationByLuid.Clear();
+
+        if (engineQuery is null || !engineQuery.Collect()) {
+            return;
+        }
+
+        if (!counterPrimed) {
+            counterPrimed = true;
+            return;
+        }
+
+        if (!engineQuery.TryReadFormattedDoubles(engineCounter, out uint itemCount)) {
+            return;
+        }
+
+        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)engineQuery.Buffer;
+
+        Dictionary<string, double> engineTotals  = new();
+        Dictionary<int, double>    processTotals = new();
+
+        for (uint i = 0; i < itemCount; i++) {
+            Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
+
+            if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
+                item.CStatus != Pdh.PDH_CSTATUS_NEW_DATA) {
+                continue;
+            }
+
+            string? instanceName = Marshal.PtrToStringUni(item.szName);
+
+            if (string.IsNullOrEmpty(instanceName)) {
+                continue;
+            }
+
+            string? engineKey = GpuDeviceParser.ParseEngineFromInstance(instanceName);
+
+            if (engineKey == null) {
+                continue;
+            }
+
+            engineTotals[engineKey] = engineTotals.GetValueOrDefault(engineKey) + item.doubleValue;
+            int pid = GpuDeviceParser.ParsePidFromInstance(instanceName);
+
+            if (pid >= 0 && item.doubleValue > 0.0) {
+                processTotals[pid] = Math.Max(processTotals.GetValueOrDefault(pid), item.doubleValue);
+            }
+        }
+
+        double busiestEngine = 0.0;
+
+        foreach ((string engineKey, double engineTotal) in engineTotals) {
+            busiestEngine = Math.Max(busiestEngine, engineTotal);
+
+            if (GpuDeviceParser.TryParseAdapterLuid(engineKey, out long luid)) {
+                engineUtilisationByLuid[luid] =
+                    Math.Max(engineUtilisationByLuid.GetValueOrDefault(luid), engineTotal);
+            }
+        }
+
+        gpuInfo.Metrics.GpuPercentTime = Math.Clamp(busiestEngine / 100.0, 0.0, 1.0);
+
+        foreach ((int pid, double percent) in processTotals) {
+            gpuInfo.Metrics.ProcessPercentTime[pid] = Math.Clamp(percent / 100.0, 0.0, 1.0);
+        }
+    }
+
+    private void OnStartGpuPidMetrics()
+    {
+        engineQuery   = PdhQuery.OpenAtStartup(ServiceName, GpuEngineCounterPath, GpuEngineCounterPath);
+        engineCounter = engineQuery?.Counters[0] ?? nint.Zero;
+        counterPrimed = false;
+    }
+
+    private void OnStopGpuPidMetrics()
+    {
+        engineQuery?.Dispose();
+        engineQuery   = null;
+        engineCounter = nint.Zero;
+        counterPrimed = false;
+    }
+
+    private static unsafe int QuerySegmentStatistics(
+        byte* buffer,
+        long  adapterLuid,
+        int   offset,
+        uint  segmentId)
+    {
+        InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_SEGMENT, adapterLuid);
+        *(uint*)(buffer + offset) = segmentId;
+
+        return D3DKmt.D3DKMTQueryStatistics((nint)buffer);
+    }
+
+    private unsafe bool ReadGpuMemoryMetrics(GpuInfo gpuInfo)
     {
         long totalDedicated = 0;
         long usedDedicated  = 0;
@@ -153,103 +265,6 @@ public partial class GpuService
         return true;
     }
 
-    private unsafe void OnDoWorkGpuPidMetrics(GpuInfo gpuInfo)
-    {
-        gpuInfo.Metrics.GpuPercentTime = 0.0;
-
-        engineUtilisationByLuid.Clear();
-
-        if (engineQuery is null || !engineQuery.Collect()) {
-            return;
-        }
-
-        if (!counterPrimed) {
-            counterPrimed = true;
-            return;
-        }
-
-        if (!engineQuery.TryReadFormattedDoubles(engineCounter, out uint itemCount)) {
-            return;
-        }
-
-        Pdh.PDH_FMT_COUNTERVALUE_ITEM_W* items = (Pdh.PDH_FMT_COUNTERVALUE_ITEM_W*)engineQuery.Buffer;
-
-        Dictionary<string, double> engineTotals  = new();
-        Dictionary<int, double>    processTotals = new();
-
-        for (uint i = 0; i < itemCount; i++) {
-            Pdh.PDH_FMT_COUNTERVALUE_ITEM_W item = items[i];
-
-            if (item.CStatus != Pdh.PDH_CSTATUS_VALID_DATA &&
-                item.CStatus != Pdh.PDH_CSTATUS_NEW_DATA) {
-                continue;
-            }
-
-            string? instanceName = Marshal.PtrToStringUni(item.szName);
-
-            if (string.IsNullOrEmpty(instanceName)) {
-                continue;
-            }
-
-            string? engineKey = GpuDeviceParser.ParseEngineFromInstance(instanceName);
-
-            if (engineKey == null) {
-                continue;
-            }
-
-            engineTotals[engineKey] = engineTotals.GetValueOrDefault(engineKey) + item.doubleValue;
-            int pid = GpuDeviceParser.ParsePidFromInstance(instanceName);
-
-            if (pid >= 0 && item.doubleValue > 0.0) {
-                processTotals[pid] = Math.Max(processTotals.GetValueOrDefault(pid), item.doubleValue);
-            }
-        }
-
-        double busiestEngine = 0.0;
-
-        foreach ((string engineKey, double engineTotal) in engineTotals) {
-            busiestEngine = Math.Max(busiestEngine, engineTotal);
-
-            if (GpuDeviceParser.TryParseAdapterLuid(engineKey, out long luid)) {
-                engineUtilisationByLuid[luid] =
-                    Math.Max(engineUtilisationByLuid.GetValueOrDefault(luid), engineTotal);
-            }
-        }
-
-        gpuInfo.Metrics.GpuPercentTime = Math.Clamp(busiestEngine / 100.0, 0.0, 1.0);
-
-        foreach ((int pid, double percent) in processTotals) {
-            gpuInfo.Metrics.ProcessPercentTime[pid] = Math.Clamp(percent / 100.0, 0.0, 1.0);
-        }
-    }
-
-    private void OnStartGpuPidMetrics()
-    {
-        engineQuery   = PdhQuery.Open(nameof(GpuService), GpuEngineCounterPath);
-        engineCounter = engineQuery?.Counters[0] ?? nint.Zero;
-        counterPrimed = false;
-    }
-
-    private void OnStopGpuPidMetrics()
-    {
-        engineQuery?.Dispose();
-        engineQuery   = null;
-        engineCounter = nint.Zero;
-        counterPrimed = false;
-    }
-
-    private static unsafe int QuerySegmentStatistics(
-        byte* buffer,
-        long  adapterLuid,
-        int   offset,
-        uint  segmentId)
-    {
-        InitQueryStatistics(buffer, D3DKmt.D3DKMT_QUERYSTATISTICS_SEGMENT, adapterLuid);
-        *(uint*)(buffer + offset) = segmentId;
-
-        return D3DKmt.D3DKMTQueryStatistics((nint)buffer);
-    }
-
     private unsafe int ResolveSegmentIdOffset(byte* buffer, long adapterLuid)
     {
         if (segmentIdOffset > 0) {
@@ -301,7 +316,7 @@ public partial class GpuService
         if (status != D3DKmt.STATUS_SUCCESS) {
             TraceEx.WriteLineOnce(
                 $"{nameof(D3DKmt.D3DKMTQueryStatistics)} adapter 0x{adapterLuid:X16}",
-                $"Failed {nameof(D3DKmt.D3DKMTQueryStatistics)} adapter query: NTSTATUS 0x{status:X8}");
+                $"Failed {nameof(D3DKmt.D3DKMTQueryStatistics)} adapter query: {ErrorCodes.Describe(status)}");
 
             return false;
         }

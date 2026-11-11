@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -67,7 +68,7 @@ public partial class CpuService
         using RegistryKey? key = Registry.LocalMachine.OpenSubKey(CpuRegistryPath);
 
         if (key == null) {
-            TraceEx.WriteLineOnce(CpuRegistryPath, "Failed GetCpuInfoInternal OpenSubKey");
+            Trace.WriteLine($"{nameof(CpuService)}: registry {CpuRegistryPath} FAILED, the key could not be opened");
             return;
         }
 
@@ -75,12 +76,12 @@ public partial class CpuService
         object? frequency = key.GetValue(RegKeyFrequencyMhz);
         
         if (frequency == null) {
-            TraceEx.WriteLineOnce(RegKeyFrequencyMhz, "Failed GetCpuInfoInternal GetValue");
+            Trace.WriteLine($"{nameof(CpuService)}: registry {CpuRegistryPath}{RegKeyFrequencyMhz} NOT FOUND");
             return;
         }
 
         if (!int.TryParse(frequency.ToString() ?? "0", out int frequencyInt32)) {
-            TraceEx.WriteLineOnce($"FRQ{frequency}", $"Failed GetCpuInfoInternal TryParse frequency");
+            Trace.WriteLine($"{nameof(CpuService)}: registry {CpuRegistryPath}{RegKeyFrequencyMhz} FAILED, \"{frequency}\" is not a number");
         }
         
         specs.CpuFrequency = frequencyInt32;
@@ -96,9 +97,9 @@ public partial class CpuService
             Marshal.GetLastPInvokeError() != SysInfoApi.ERROR_INSUFFICIENT_BUFFER ||
             length == 0) {
 
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(SysInfoApi.GetLogicalProcessorInformationEx),
-                "Failed to size the processor information buffer");
+            Trace.WriteLine(
+                $"{nameof(CpuService)}: {nameof(SysInfoApi.GetLogicalProcessorInformationEx)} FAILED " +
+                $"{ErrorCodes.Describe(Marshal.GetLastPInvokeError())}, sizing the buffer");
 
             return;
         }
@@ -106,9 +107,9 @@ public partial class CpuService
         using HGlobalScope buffer = HGlobalScope.Allocate((int)length);
 
         if (!SysInfoApi.GetLogicalProcessorInformationEx(RelationAll, (byte*)buffer.Value, &length)) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(SysInfoApi.GetLogicalProcessorInformationEx),
-                "Failed to read the processor information buffer");
+            Trace.WriteLine(
+                $"{nameof(CpuService)}: {nameof(SysInfoApi.GetLogicalProcessorInformationEx)} FAILED " +
+                $"{ErrorCodes.Describe(Marshal.GetLastPInvokeError())}");
 
             return;
         }

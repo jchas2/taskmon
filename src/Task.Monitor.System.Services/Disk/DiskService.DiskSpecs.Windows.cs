@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -10,6 +11,7 @@ public partial class DiskService
 #if __WIN32__
     private const int MaxPhysicalDrives = 64;
 
+    private const int  ErrorFileNotFound = 2;
     private const uint DeviceQueryAccess = 0;
     private const uint DeviceShareMode   = FileApi.FILE_SHARE_READ | FileApi.FILE_SHARE_WRITE;
 
@@ -82,6 +84,12 @@ public partial class DiskService
                 nint.Zero));
 
             if (handle.IsInvalid) {
+                int error = Marshal.GetLastPInvokeError();
+
+                if (error != ErrorFileNotFound) {
+                    Trace.WriteLine($"{nameof(DiskService)}: {devicePath} FAILED {ErrorCodes.Describe(error)}");
+                }
+
                 continue;
             }
 
@@ -105,9 +113,9 @@ public partial class DiskService
         nint findHandle = FileApi.FindFirstVolumeW(volumeNameBuffer, Kernel32.MAX_PATH);
 
         if (findHandle == Kernel32.INVALID_HANDLE_VALUE) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(FileApi.FindFirstVolumeW),
-                $"Failed {nameof(EnumerateVolumes)}");
+            Trace.WriteLine(
+                $"{nameof(DiskService)}: {nameof(FileApi.FindFirstVolumeW)} FAILED " +
+                $"{ErrorCodes.Describe(Marshal.GetLastPInvokeError())}");
 
             return;
         }
@@ -123,9 +131,7 @@ public partial class DiskService
             int error = Marshal.GetLastPInvokeError();
 
             if (error != FileApi.ERROR_NO_MORE_FILES) {
-                PInvokeErrorHelpers.TraceOnceOnLastError(
-                    nameof(FileApi.FindNextVolumeW),
-                    $"Failed {nameof(EnumerateVolumes)}");
+                Trace.WriteLine($"{nameof(DiskService)}: {nameof(FileApi.FindNextVolumeW)} FAILED {ErrorCodes.Describe(error)}");
             }
         }
         finally {
@@ -194,7 +200,7 @@ public partial class DiskService
         WinIoCtl.STORAGE_DESCRIPTOR_HEADER header = new();
         uint returned = 0;
 
-        // The descriptor is variable length, so the header is fetched first purely for its size.
+        // The descriptor is variable length, so the header is fetched first for its size.
         if (!IoApiSet.DeviceIoControl(
             handle,
             WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,

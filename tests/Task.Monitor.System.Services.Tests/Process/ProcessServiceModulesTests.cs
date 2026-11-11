@@ -42,10 +42,6 @@ public sealed class ProcessServiceModulesTests
         Assert.Equal(modules.Select(m => m.FileName).Distinct().Count(), modules.Count);
     }
 
-    [Fact]
-    public void Should_Return_No_Modules_For_A_Negative_Pid() =>
-        Assert.Empty(new ProcessService().GetModules(-1));
-
     [SkippableFact]
     [SupportedOSPlatform("macos")]
     public void Should_Return_Modules_For_Current_Process_MacOS()
@@ -66,6 +62,10 @@ public sealed class ProcessServiceModulesTests
 
         Assert.InRange(modules.Count, 1, int.MaxValue);
     }
+
+    [Fact]
+    public void Should_Return_No_Modules_For_A_Negative_Pid() =>
+        Assert.Empty(new ProcessService().GetModules(-1));
 
     // Regression test: run as root, reading kernel_task's memory map logged an EXC_GUARD crash report.
     [SkippableFact]

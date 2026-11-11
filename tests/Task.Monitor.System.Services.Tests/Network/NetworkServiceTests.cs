@@ -2,7 +2,7 @@ using Task.Monitor.System.Services.Network;
 
 namespace Task.Monitor.System.Services.Tests.Network;
 
-public sealed class NetworkServiceTests
+public sealed partial class NetworkServiceTests
 {
     [Fact]
     public void Should_Run_NetworkSystemService()

@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
 using Task.Monitor.System.Services.Npu;
 
@@ -37,7 +38,13 @@ public sealed class SocService : WorkerService
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        if (!sampler.EnsureSubscribed() || sampler.Sample() is not { } channels) {
+        bool subscribed = sampler.EnsureSubscribed();
+
+        if (IsFirstCycle) {
+            Trace.WriteLine($"{ServiceName}: IOReport GPU and ANE channels {sampler.Diagnostic}");
+        }
+
+        if (!subscribed || sampler.Sample() is not { } channels) {
             return;
         }
 
@@ -52,6 +59,14 @@ public sealed class SocService : WorkerService
     {
         gpuFrequencies = ReadGpuFrequencies();
         neuralEngine   = ReadNeuralEngine();
+
+        Trace.WriteLine(gpuFrequencies.Count > 0
+            ? $"{ServiceName}: GPU frequency table OK, {gpuFrequencies.Count} states"
+            : $"{ServiceName}: GPU frequency table NOT FOUND in {PowerManagerService}");
+
+        Trace.WriteLine(neuralEngine is { } engine
+            ? $"{ServiceName}: Neural Engine OK, {engine.Description}, {engine.Cores} cores"
+            : $"{ServiceName}: Neural Engine NOT FOUND, no {NeuralEngineDriver}");
     }
 
     protected override void OnStop() => sampler.Dispose();

@@ -126,16 +126,15 @@ public partial class CpuService
     {
         const string ProcessorTimeCounterPath = @"\Processor(*)\% Processor Time";
 
-        // Collected once up front: a rate counter needs two samples before it reports a value.
-        processorQuery = PdhQuery.Open(nameof(CpuService), ProcessorTimeCounterPath);
+        processorQuery = PdhQuery.OpenAtStartup(ServiceName, ProcessorTimeCounterPath, ProcessorTimeCounterPath);
 
         if (processorQuery is null || !processorQuery.Collect()) {
             serviceStatus = ServiceStatus.Errored;
         }
 
-        // A query of its own, so a machine missing one of these only loses the health signals.
-        pressureQuery = PdhQuery.Open(
-            nameof(CpuService),
+        pressureQuery = PdhQuery.OpenAtStartup(
+            ServiceName,
+            "pressure counters",
             @"\System\Processor Queue Length",
             @"\Processor Information(_Total)\% Performance Limit",
             @"\Processor(_Total)\% DPC Time",

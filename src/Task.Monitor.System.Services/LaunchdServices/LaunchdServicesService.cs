@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Task.Monitor.System.Services.LaunchdServices;
 
 public sealed partial class LaunchdServicesService : WorkerService
@@ -20,8 +22,13 @@ public sealed partial class LaunchdServicesService : WorkerService
         Publish(new LaunchdServicesInfo { Specs = servicesSpecs });
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         servicesSpecs = ScanServices();
+        Trace.WriteLine(servicesSpecs.Services.Count > 0
+            ? $"{ServiceName}: {servicesSpecs.Services.Count} launchd services"
+            : $"{ServiceName}: launchd services FAILED, none read, see the error above");
+    }
 
     private LaunchdServicesSpecs ScanServices()
     {

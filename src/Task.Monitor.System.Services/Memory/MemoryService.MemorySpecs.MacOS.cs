@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Memory;
@@ -14,6 +15,7 @@ public partial class MemoryService
         specs.Devices.Clear();
 
         if (!Sys.SysctlByNameLong("hw.memsize", out long memSize) || memSize <= 0) {
+            Trace.WriteLine($"{ServiceName}: sysctl hw.memsize FAILED, no memory size");
             return;
         }
 

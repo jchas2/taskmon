@@ -7,6 +7,8 @@ internal sealed class SmcThermalProvider(SmcThermalSampler sampler, Func<IReadOn
 {
     private const string HottestSensor = "Hottest";
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose() { }
 
     public string Name => "SMC";
@@ -24,6 +26,20 @@ internal sealed class SmcThermalProvider(SmcThermalSampler sampler, Func<IReadOn
         });
     }
 
-    public bool TryInitialise() => sampler.EnsureOpen() && sampler.HasTemperatures;
+    public bool TryInitialise()
+    {
+        if (!sampler.EnsureOpen()) {
+            Diagnostic = sampler.OpenDiagnostic;
+            return false;
+        }
+
+        if (!sampler.HasTemperatures) {
+            Diagnostic = "NOT FOUND, the SMC has no temperature keys this build knows";
+            return false;
+        }
+
+        Diagnostic = "OK";
+        return true;
+    }
 }
 #endif

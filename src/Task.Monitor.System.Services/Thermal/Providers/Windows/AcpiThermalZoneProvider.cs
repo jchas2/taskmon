@@ -16,6 +16,8 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
     private bool     available;
     private DateTime lastQueryUtc;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose() { }
 
     public string Name => "ACPI Thermal Zones";
@@ -78,11 +80,18 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
 
     public bool TryInitialise()
     {
+        // Many machines have no ACPI thermal zones, and reading them may need elevation.
         try {
-            available = Wbem.Query(Namespace, Wql, "InstanceName").Count > 0;
+            int zones = Wbem.Query(Namespace, Wql, out ComFailure? failure, "InstanceName").Count;
+
+            available  = zones > 0;
+            Diagnostic = failure is { } failed ? $"FAILED, {failed}"
+                : available                    ? $"OK, {zones} zones"
+                :                                "NOT FOUND, no ACPI thermal zones";
         }
-        catch {
-            available = false;
+        catch (Exception ex) {
+            available  = false;
+            Diagnostic = $"FAILED with {ex.GetType().Name}: {ex.Message}";
         }
 
         return available;

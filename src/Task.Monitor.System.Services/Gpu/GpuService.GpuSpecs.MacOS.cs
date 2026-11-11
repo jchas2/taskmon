@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Gpu;
@@ -38,11 +39,18 @@ public partial class GpuService
 
     private void OnStartGpuSpecs(GpuSpecs specs)
     {
-        long totalMemory = TryReadIOAcceleratorMemory(out long allocMemory, out _)
-            ? allocMemory
-            : 0;
+        bool memoryRead  = TryReadIOAcceleratorMemory(out long allocMemory, out _);
+        long totalMemory = memoryRead ? allocMemory : 0;
 
         specs.GpuCores = GetGpuCoreCount();
+
+        Trace.WriteLine(memoryRead
+            ? $"{ServiceName}: IOAccelerator memory statistics OK"
+            : $"{ServiceName}: IOAccelerator memory statistics NOT FOUND");
+
+        Trace.WriteLine(
+            $"{ServiceName}: adapter 0 {AppleGpuDescription}, {IntegratedAdapterType}, {specs.GpuCores} cores " +
+            $"(AGXAccelerator), {totalMemory / (1024 * 1024)} MB allocated");
         specs.TotalGpuMemory = totalMemory;
 
         specs.Devices.Clear();
@@ -50,7 +58,7 @@ public partial class GpuService
             Index                = 0,
             Vendor               = AppleVendor,
             // A precise model string ("Apple M1 Pro") would require Metal (MTLDevice.name); the
-            // IORegistry "model" property is typed inconsistently across SoCs, so a safe label is used.
+            // IORegistry "model" property is inconsistent across SoCs, so use a default for now.
             Description          = AppleGpuDescription,
             AdapterType          = IntegratedAdapterType,
             DedicatedVideoMemory = 0,

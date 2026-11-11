@@ -12,6 +12,8 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
     private nint previousSample;
     private bool subscribeFailed;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         lock (@lock) {
@@ -61,6 +63,7 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
             }
 
             if (merged == nint.Zero) {
+                Diagnostic      = "NOT FOUND, none of the IOReport channel groups";
                 subscribeFailed = true;
                 return false;
             }
@@ -69,12 +72,14 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
 
             if (created == nint.Zero) {
                 CoreFoundation.CFRelease(merged);
+                Diagnostic      = "FAILED, IOReportCreateSubscription returned no subscription";
                 subscribeFailed = true;
                 return false;
             }
 
             channels     = merged;
             subscription = created;
+            Diagnostic   = "OK";
             return true;
         }
     }

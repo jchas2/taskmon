@@ -120,8 +120,6 @@ public sealed class InstalledAppsControlTests : IDisposable
         ctrl.Unload();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value.
     [Fact]
@@ -143,6 +141,8 @@ public sealed class InstalledAppsControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_App()

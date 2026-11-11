@@ -126,13 +126,12 @@ public partial class DiskService
 
     private void OnStartDiskMetrics()
     {
-        // A query of its own, so a machine missing one of these only loses the health signals.
-        // Collected once up front: a rate counter needs two samples before it reports a value.
-        pressureQuery = PdhQuery.Open(nameof(DiskService), DiskLatencyCounterPath, DiskQueueLengthCounterPath);
+        pressureQuery = PdhQuery.OpenAtStartup(ServiceName, "pressure counters", DiskLatencyCounterPath, DiskQueueLengthCounterPath);
         pressureQuery?.Collect();
 
-        diskQuery = PdhQuery.Open(
-            nameof(DiskService),
+        diskQuery = PdhQuery.OpenAtStartup(
+            ServiceName,
+            "disk counters",
             DiskReadBytesCounterPath,
             DiskWriteBytesCounterPath,
             DiskIdleTimeCounterPath);
@@ -161,8 +160,7 @@ public partial class DiskService
     {
         // Format example: "0 C:" or "1 D: E:", and just "2" for a disk carrying no mounted volume.
         // The leading integer is the physical drive number that \\.\PhysicalDriveN and
-        // IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS both use, which is how a counter row is matched
-        // back to a DiskDevice.
+        // IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS both use.
         int separatorIndex = instanceName.IndexOf(' ');
 
         ReadOnlySpan<char> indexSpan = separatorIndex == -1

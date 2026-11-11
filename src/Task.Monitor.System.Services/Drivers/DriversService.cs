@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Task.Monitor.System.Services.Drivers;
 
 public sealed partial class DriversService : WorkerService
@@ -20,8 +22,13 @@ public sealed partial class DriversService : WorkerService
         Publish(new DriversInfo { Specs = driversSpecs });
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         driversSpecs = ScanDrivers();
+        Trace.WriteLine(driversSpecs.Drivers.Count > 0
+            ? $"{ServiceName}: {driversSpecs.Drivers.Count} drivers"
+            : $"{ServiceName}: drivers FAILED, none read, see the error above");
+    }
 
     private DriversSpecs ScanDrivers()
     {

@@ -10,6 +10,8 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 {
     private bool initialised;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         if (!initialised) {
@@ -78,15 +80,8 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 
     public bool TryInitialise()
     {
-        try {
-            initialised = NvApi.Initialize();
-        }
-        catch (DllNotFoundException) {
-            initialised = false;
-        }
-        catch (EntryPointNotFoundException) {
-            initialised = false;
-        }
+        initialised = NvApi.Initialize(out string diagnostic);
+        Diagnostic  = diagnostic;
 
         return initialised;
     }

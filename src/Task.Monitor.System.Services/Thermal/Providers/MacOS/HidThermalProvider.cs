@@ -16,6 +16,8 @@ internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisk
     private nint client;
     private nint services;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         nandServices.Clear();
@@ -98,16 +100,19 @@ internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisk
             client = IOHIDEventSystem.IOHIDEventSystemClientCreate(nint.Zero);
         }
         catch (EntryPointNotFoundException) {
+            Diagnostic = "FAILED, IOHIDEventSystemClientCreate is missing";
             return false;
         }
 
         if (client == nint.Zero) {
+            Diagnostic = "FAILED, IOHIDEventSystemClientCreate returned no client";
             return false;
         }
 
         services = IOHIDEventSystem.IOHIDEventSystemClientCopyServices(client);
 
         if (services == nint.Zero) {
+            Diagnostic = "FAILED, IOHIDEventSystemClientCopyServices returned no services";
             return false;
         }
 
@@ -120,6 +125,10 @@ internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisk
                 nandServices.Add(service);
             }
         }
+
+        Diagnostic = nandServices.Count > 0
+            ? $"OK, {nandServices.Count} NAND sensors of {count} HID services"
+            : $"NOT FOUND, no NAND sensors among {count} HID services";
 
         return nandServices.Count > 0;
     }

@@ -660,6 +660,8 @@ public sealed class LayoutDesignerScreen : Screen
         DrawBanner();
     }
 
+    internal int SelectedNodeId => selectedNodeId;
+
     private void ShowMessageBox(string title, string text)
     {
         Control.RedrawEnabled = false;
@@ -673,8 +675,6 @@ public sealed class LayoutDesignerScreen : Screen
         messageBox.Visible = true;
         messageBox.ShowMessageBox();
     }
-
-    internal int SelectedNodeId => selectedNodeId;
 
     private void SplitSelectedPane(Orientation orientation)
     {

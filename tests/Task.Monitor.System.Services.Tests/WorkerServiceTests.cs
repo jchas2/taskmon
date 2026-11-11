@@ -1,9 +1,34 @@
+using System.Text.RegularExpressions;
 using Task.Monitor.System.Services;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests;
 
 public sealed class WorkerServiceTests
 {
+    // Records IsFirstCycle for each sample, and signals once two have run.
+    private sealed class FirstCycleSpyService : WorkerService
+    {
+        public readonly List<bool>           FirstCycleFlags = new();
+        public readonly ManualResetEventSlim SecondCycleRan  = new(initialState: false);
+
+        protected override void OnDoWork(CancellationToken cancellationToken)
+        {
+            lock (FirstCycleFlags) {
+                FirstCycleFlags.Add(IsFirstCycle);
+
+                if (FirstCycleFlags.Count == 2) {
+                    SecondCycleRan.Set();
+                }
+            }
+        }
+    }
+
+    private sealed class StartFailingService : WorkerService
+    {
+        protected override void OnStart() => throw new InvalidOperationException("boom");
+    }
+
     private sealed class SpyWorkerService : WorkerService
     {
         public readonly List<bool> RefreshFlagPerCycle = new();
@@ -62,6 +87,24 @@ public sealed class WorkerServiceTests
     }
 
     [Fact]
+    public void IsFirstCycle_Is_True_Only_While_The_First_Sample_Is_Taken()
+    {
+        FirstCycleSpyService service = new() { Delay = 500 };
+        service.Start();
+
+        try {
+            Assert.True(service.SecondCycleRan.Wait(5_000), "two cycles should run");
+        }
+        finally {
+            service.Stop();
+        }
+
+        lock (service.FirstCycleFlags) {
+            Assert.Equal([true, false], service.FirstCycleFlags.Take(2));
+        }
+    }
+
+    [Fact]
     public void RequestImmediateRefresh_Wakes_The_Worker_Well_Before_The_Delay()
     {
         SpyWorkerService service = new();
@@ -85,6 +128,55 @@ public sealed class WorkerServiceTests
         finally {
             service.Stop();
         }
+    }
+
+    // "started" follows the first sample, so it covers the checks a service makes there too.
+    [Fact]
+    public void Start_Logs_Starting_And_Then_Started_After_The_First_Sample()
+    {
+        using TraceCapture capture = new();
+
+        FirstCycleSpyService service = new() { Delay = 500 };
+        service.Start();
+
+        try {
+            Assert.True(service.SecondCycleRan.Wait(5_000), "two cycles should run");
+        }
+        finally {
+            service.Stop();
+        }
+
+        IReadOnlyList<string> lines = capture.LinesContaining($"{nameof(FirstCycleSpyService)}:");
+
+        Assert.Equal(2, lines.Count);
+        Assert.Equal($"{nameof(FirstCycleSpyService)}: starting", lines[0]);
+        Assert.Matches(new Regex($@"^{nameof(FirstCycleSpyService)}: started in \d+ ms, status Running$"), lines[1]);
+    }
+
+    // The exception's own lines do not say which of the services threw it.
+    [Fact]
+    public void Start_Names_The_Service_When_Start_Up_Throws()
+    {
+        using TraceCapture capture = new();
+
+        StartFailingService service = new() { Delay = 500 };
+        service.Start();
+
+        try {
+            Assert.True(
+                SpinWait.SpinUntil(() => service.Status == ServiceStatus.Errored, 5_000),
+                "the service should report Errored");
+        }
+        finally {
+            service.Stop();
+        }
+
+        Assert.Equal(
+            [
+                $"{nameof(StartFailingService)}: starting",
+                $"{nameof(StartFailingService)}: FAILED with InvalidOperationException, the service has stopped"
+            ],
+            capture.LinesContaining($"{nameof(StartFailingService)}:"));
     }
 
     [Fact]

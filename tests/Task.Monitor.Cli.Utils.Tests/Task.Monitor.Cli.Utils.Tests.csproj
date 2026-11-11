@@ -3,7 +3,8 @@
     <Import Project="..\..\eng\Test.props" />
     <Import Project="..\..\eng\Lang.props" />
     <Import Project="..\..\eng\TargetFramework.props" />
-    
+    <Import Project="..\..\eng\Preprocessor.props" />
+
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
@@ -15,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Task.Monitor.Cli.Utils\Task.Monitor.Cli.Utils.csproj" />
+      <ProjectReference Include="..\Task.Monitor.Tests.Common\Task.Monitor.Tests.Common.csproj" />
     </ItemGroup>
 
 </Project>

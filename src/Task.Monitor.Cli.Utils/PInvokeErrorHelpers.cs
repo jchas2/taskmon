@@ -5,6 +5,9 @@ namespace Task.Monitor.Cli.Utils;
 
 public static class PInvokeErrorHelpers
 {
+    private const string HResultError = "HRESULT ERROR";
+    private const string PInvokeError = "PINVOKE ERROR";
+
     public static void AssertOnLastError(string message)
     {
 #if DEBUG
@@ -13,36 +16,36 @@ public static class PInvokeErrorHelpers
 #endif
     }
 
-    private static string GetFormattedErrorMessage() => GetFormattedErrorMessage(string.Empty);
-    
+    private static string Format(string kind, string description, string message) =>
+        string.IsNullOrEmpty(message)
+            ? $"{kind} {description}"
+            : $"{kind} {description}: {message}";
+
     private static string GetFormattedErrorMessage(string message)
     {
         int error = Marshal.GetLastPInvokeError();
-        
-        string errorMessage = $"PINVOKE ERROR ({error}): {Marshal.GetPInvokeErrorMessage(error)}";
 
-        if (string.IsNullOrEmpty(message)) {
-            errorMessage += $" {message}";
-        }
-        
-        return errorMessage;
+        return Format(PInvokeError, ErrorCodes.Describe(error), message);
     }
 
     public static void TraceOnceOnHResult(string key, string message, int hr) =>
-        TraceEx.WriteLineOnce(key, $"HRESULT ERROR (0x{hr:X8}): {message}");
+        TraceEx.WriteLineOnce(key, Format(HResultError, ErrorCodes.Describe(hr), message));
 
     public static void TraceOnceOnLastError(string key) =>
-        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage());
+        TraceEx.WriteLineOnce(key, GetFormattedErrorMessage(string.Empty));
 
-    public static void TraceOnceOnLastError(string key, string message) => 
+    public static void TraceOnceOnLastError(string key, string message) =>
         TraceEx.WriteLineOnce(key, GetFormattedErrorMessage(message));
 
     public static void TraceOnceOnPInvokeError(string key, string message, uint error) =>
-        TraceEx.WriteLineOnce(key, $"PINVOKE ERROR ({error}): {message}");
+        TraceEx.WriteLineOnce(key, Format(PInvokeError, ErrorCodes.Describe(error), message));
+
+    public static void TraceOnHResult(string message, int hr) =>
+        Trace.WriteLine(Format(HResultError, ErrorCodes.Describe(hr), message));
 
     public static void TraceOnLastError(string message) =>
         Trace.WriteLine(GetFormattedErrorMessage(message));
 
     public static void TraceOnPInvokeError(string message, uint error) =>
-        Trace.WriteLine($"PINVOKE ERROR ({error}): {message}");
+        Trace.WriteLine(Format(PInvokeError, ErrorCodes.Describe(error), message));
 }

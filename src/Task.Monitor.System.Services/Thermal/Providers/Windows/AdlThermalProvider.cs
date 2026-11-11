@@ -10,6 +10,8 @@ internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus)
 {
     private readonly AdlAdapters adapters = new();
 
+    public string Diagnostic => adapters.Diagnostic;
+
     public void Dispose() => adapters.Dispose();
 
     public string Name => "ADL";

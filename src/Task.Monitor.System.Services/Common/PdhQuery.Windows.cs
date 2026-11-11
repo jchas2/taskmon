@@ -1,4 +1,5 @@
 #if __WIN32__
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -32,9 +33,7 @@ internal sealed unsafe class PdhQuery : IDisposable
 
     public bool Collect()
     {
-        uint result = Pdh.PdhCollectQueryData(query);
-
-        if (result == Pdh.ERROR_SUCCESS) {
+        if (TryCollect(out uint result)) {
             return true;
         }
 
@@ -64,15 +63,22 @@ internal sealed unsafe class PdhQuery : IDisposable
 
     public static PdhQuery? Open(string owner, params string[] counterPaths)
     {
+        PdhQuery? opened = Open(owner, out string failure, counterPaths);
+
+        if (opened is null) {
+            TraceEx.WriteLineOnce($"{nameof(PdhQuery)} {owner} {failure}", $"Failed {owner}: {failure}");
+        }
+
+        return opened;
+    }
+
+    public static PdhQuery? Open(string owner, out string failure, params string[] counterPaths)
+    {
         nint query = nint.Zero;
         uint result = Pdh.PdhOpenQuery(null, nint.Zero, &query);
 
         if (result != Pdh.ERROR_SUCCESS) {
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                $"{nameof(Pdh.PdhOpenQuery)} {owner}",
-                $"Failed {owner}",
-                result);
-
+            failure = $"{nameof(Pdh.PdhOpenQuery)} {ErrorCodes.Describe(result)}";
             return null;
         }
 
@@ -83,10 +89,7 @@ internal sealed unsafe class PdhQuery : IDisposable
             result = Pdh.PdhAddEnglishCounter(query, counterPaths[i], nint.Zero, &counter);
 
             if (result != Pdh.ERROR_SUCCESS) {
-                PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                    counterPaths[i],
-                    $"Failed {nameof(Pdh.PdhAddEnglishCounter)} {owner}",
-                    result);
+                failure = $"{nameof(Pdh.PdhAddEnglishCounter)} {counterPaths[i]} {ErrorCodes.Describe(result)}";
 
                 Pdh.PdhCloseQuery(query);
                 return null;
@@ -95,7 +98,25 @@ internal sealed unsafe class PdhQuery : IDisposable
             counters[i] = counter;
         }
 
+        failure = string.Empty;
         return new PdhQuery(query, counters, owner);
+    }
+
+    public static PdhQuery? OpenAtStartup(string serviceName, string label, params string[] counterPaths)
+    {
+        PdhQuery? opened = Open(serviceName, out string failure, counterPaths);
+
+        Trace.WriteLine(opened is null
+            ? $"{serviceName}: PDH {label} FAILED, {failure}"
+            : $"{serviceName}: PDH {label} OK");
+
+        return opened;
+    }
+
+    public bool TryCollect(out uint status)
+    {
+        status = Pdh.PdhCollectQueryData(query);
+        return status == Pdh.ERROR_SUCCESS;
     }
 
     private bool TryRead(nint counter, string api, ReadArray read, out uint itemCount)
@@ -134,7 +155,6 @@ internal sealed unsafe class PdhQuery : IDisposable
         return false;
     }
 
-    // For a counter with a single instance, such as \System\Processor Queue Length.
     public bool TryReadFormattedDouble(nint counter, out double value)
     {
         value = 0.0;

@@ -148,20 +148,32 @@ public static unsafe class Adl
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static nint Malloc(int size) => Marshal.AllocHGlobal(size);
 
-    public static bool TryCreate(out nint context)
+    public static bool TryCreate(out nint context) => TryCreate(out context, out _);
+
+    public static bool TryCreate(out nint context, out string diagnostic)
     {
         context = nint.Zero;
 
         try {
-            // The lib is only available when an AMD driver is installed.
             int status = ADL2_Main_Control_Create(
-                (nint)(delegate* unmanaged[Stdcall]<int, nint>)&Malloc, 
-                1, 
+                (nint)(delegate* unmanaged[Stdcall]<int, nint>)&Malloc,
+                1,
                 out context);
 
-            return status == AdlOk && context != nint.Zero;
+            bool created = status == AdlOk && context != nint.Zero;
+
+            diagnostic = created
+                ? "OK"
+                : $"FAILED, ADL2_Main_Control_Create returned ADL status {status}";
+
+            return created;
         }
-        catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException) {
+        catch (DllNotFoundException) {
+            diagnostic = $"NOT FOUND, {AtiAdlxx} is not installed";
+            return false;
+        }
+        catch (EntryPointNotFoundException) {
+            diagnostic = $"FAILED, {AtiAdlxx} has no ADL2_Main_Control_Create";
             return false;
         }
     }

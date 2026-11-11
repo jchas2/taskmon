@@ -14,12 +14,25 @@ public static unsafe class Nvml
     public static int DeviceCount() =>
         nvmlDeviceGetCount_v2(out uint count) == NvmlSuccess ? (int)count : 0;
 
-    public static bool Initialize()
+    public static bool Initialize() => Initialize(out _);
+
+    public static bool Initialize(out string diagnostic)
     {
         try {
-            return nvmlInit_v2() == NvmlSuccess;
+            int status = nvmlInit_v2();
+
+            diagnostic = status == NvmlSuccess
+                ? "OK"
+                : $"FAILED, {nameof(nvmlInit_v2)} returned NVML status {status}";
+
+            return status == NvmlSuccess;
         }
-        catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException) {
+        catch (DllNotFoundException) {
+            diagnostic = $"NOT FOUND, {NvmlDll} is not installed";
+            return false;
+        }
+        catch (EntryPointNotFoundException) {
+            diagnostic = $"FAILED, {NvmlDll} has no {nameof(nvmlInit_v2)}";
             return false;
         }
     }

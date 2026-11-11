@@ -1,10 +1,11 @@
+using System.Diagnostics;
+
 namespace Task.Monitor.System.Services.InstalledApps;
 
 public sealed partial class InstalledAppsService : WorkerService
 {
     private const int RescanEveryCycles = 40;
 
-    // How long one cycle may spend measuring app sizes before publishing what it has so far.
     private static readonly TimeSpan SizeBudget = TimeSpan.FromMilliseconds(750);
 
     private readonly InstalledAppSizeCache sizeCache = new();
@@ -27,8 +28,13 @@ public sealed partial class InstalledAppsService : WorkerService
         Publish(new InstalledAppsInfo { Specs = installedAppsSpecs });
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         installedAppsSpecs = ScanInstalledApps();
+        Trace.WriteLine($"{ServiceName}: {installedAppsSpecs.Apps.Count} apps: " +
+            $"{installedAppsSpecs.Apps.Count(app => app.Scope == InstalledAppScope.Machine)} machine, " +
+            $"{installedAppsSpecs.Apps.Count(app => app.Scope == InstalledAppScope.User)} user");
+    }
 
     private partial InstalledAppsSpecs ScanInstalledApps();
 

@@ -17,7 +17,9 @@ public partial class ProcessService
 #if __WIN32__
     private static readonly ConcurrentDictionary<string, string> UserMap = new();
 
-    private static unsafe ProcessSample? CreateProcessSample(Kernel32.PROCESSENTRY32W* entry)
+    private static unsafe ProcessSample? CreateProcessSample(
+        Kernel32.PROCESSENTRY32W* entry,
+        Dictionary<int, int>?     openFailures)
     {
         nint hProcess = Kernel32.OpenProcess(
             Kernel32.PROCESS_QUERY_LIMITED_INFORMATION,
@@ -25,9 +27,11 @@ public partial class ProcessService
             entry->th32ProcessID);
 
         if (hProcess == nint.Zero) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                $"{nameof(Kernel32.OpenProcess)}_{entry->th32ProcessID}",
-                $"Failed to open process for pid {entry->th32ProcessID}");
+            int error = Marshal.GetLastPInvokeError();
+
+            if (openFailures != null && entry->th32ProcessID != 0) {
+                openFailures[error] = openFailures.GetValueOrDefault(error) + 1;
+            }
 
             return null;
         }
@@ -258,7 +262,7 @@ public partial class ProcessService
                 continue;
             }
 
-            sample = CreateProcessSample(&entry);
+            sample = CreateProcessSample(&entry, openFailures: null);
 
             if (sample != null) {
                 break;
@@ -269,7 +273,7 @@ public partial class ProcessService
         return sample;
     }
 
-    private static unsafe List<ProcessSample> GetProcessSamples()
+    private static unsafe List<ProcessSample> GetProcessSamples(Dictionary<int, int>? openFailures = null)
     {
         List<ProcessSample> samples = new();
 
@@ -290,7 +294,7 @@ public partial class ProcessService
         }
 
         do {
-            ProcessSample? sample = CreateProcessSample(&entry);
+            ProcessSample? sample = CreateProcessSample(&entry, openFailures);
 
             if (sample != null) {
                 samples.Add(sample);

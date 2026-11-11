@@ -78,7 +78,8 @@ public partial class StartupService
 
     private void PopulateFromShortcut(StartupEntry entry, string shortcutPath)
     {
-        if (ShellLink.Resolve(shortcutPath) is not { } target) {
+        if (ShellLink.Resolve(shortcutPath, out ComFailure? failure) is not { } target) {
+            scanNotes.Add($"shortcut {Path.GetFileName(shortcutPath)} not resolved, {failure}");
             entry.Command = shortcutPath;
             return;
         }
@@ -260,7 +261,13 @@ public partial class StartupService
 
     private void ScanScheduledTasks(StartupSpecs specs)
     {
-        foreach (ScheduledTasks.TaskRecord record in ScheduledTasks.EnumerateTasks()) {
+        IReadOnlyList<ScheduledTasks.TaskRecord> records = ScheduledTasks.EnumerateTasks(out ComFailure? failure);
+
+        scanNotes.Add(failure is { } failed
+            ? $"Task Scheduler FAILED, {failed}"
+            : $"Task Scheduler OK, {records.Count} tasks read");
+
+        foreach (ScheduledTasks.TaskRecord record in records) {
             if (record.FolderPath.StartsWith(BuiltInWindowsTaskFolderPrefix, StringComparison.OrdinalIgnoreCase)) {
                 continue;
             }

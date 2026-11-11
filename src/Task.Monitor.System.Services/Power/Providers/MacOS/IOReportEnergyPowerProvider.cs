@@ -17,6 +17,8 @@ internal sealed class IOReportEnergyPowerProvider(
         (PowerComponent.Display,      PowerRails.Display),
     ];
 
+    public string Diagnostic => sampler.Diagnostic;
+
     public void Dispose() { }
 
     private static bool IsCluster(string channel, string prefix) =>

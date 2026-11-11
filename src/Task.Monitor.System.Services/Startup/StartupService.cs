@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Task.Monitor.System.Services.Startup;
 
 public sealed partial class StartupService : WorkerService
@@ -9,7 +11,22 @@ public sealed partial class StartupService : WorkerService
     private int cyclesSinceScan;
     private int writeCount;
 
+    private readonly List<string> scanNotes = new();
+
     private partial StartupToggleResult ApplyEnabled(StartupEntry entry, bool enabled);
+
+    private void LogScan(StartupSpecs specs)
+    {
+        string bySource = string.Join(", ", specs.Entries
+            .GroupBy(entry => entry.Source)
+            .Select(group => $"{group.Count()} {group.Key}"));
+
+        Trace.WriteLine($"{ServiceName}: {specs.Entries.Count} entries{(bySource.Length > 0 ? $": {bySource}" : string.Empty)}");
+
+        foreach (string note in scanNotes) {
+            Trace.WriteLine($"{ServiceName}: {note}");
+        }
+    }
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
@@ -26,11 +43,16 @@ public sealed partial class StartupService : WorkerService
         Publish(new StartupInfo { Specs = startupSpecs });
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         startupSpecs = Scan();
+        LogScan(startupSpecs);
+    }
 
     private StartupSpecs Scan()
     {
+        scanNotes.Clear();
+
         StartupSpecs specs = ScanStartup();
 
         specs.Entries.Sort(static (left, right) => {

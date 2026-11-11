@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.System.Services.Tests.Thermal;
 
-public sealed class ThermalServiceTests(ITestOutputHelper output)
+public sealed partial class ThermalServiceTests(ITestOutputHelper output)
 {
     private const int MinimumDelay = 500;
 

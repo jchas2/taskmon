@@ -131,7 +131,15 @@ public partial class NetworkService
     {
         Dictionary<ulong, InterfaceSample> samples = new();
 
-        if (!TryReadInterfaceTable(samples)) {
+        bool read = TryReadInterfaceTable(samples);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(read
+                ? $"{ServiceName}: {nameof(IpHlpApi.GetIfTable2)} OK, {samples.Count} interfaces"
+                : $"{ServiceName}: {nameof(IpHlpApi.GetIfTable2)} FAILED, see the error above");
+        }
+
+        if (!read) {
             return;
         }
 

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Task.Monitor.System.Services.WindowsServices;
 
 public sealed partial class WindowsServicesService : WorkerService
@@ -31,8 +33,13 @@ public sealed partial class WindowsServicesService : WorkerService
         Publish(new WindowsServicesInfo { Specs = servicesSpecs });
     }
 
-    protected override void OnStart() =>
+    protected override void OnStart()
+    {
         servicesSpecs = ScanServices();
+        Trace.WriteLine(servicesSpecs.Services.Count > 0
+            ? $"{ServiceName}: {servicesSpecs.Services.Count} services"
+            : $"{ServiceName}: services FAILED, none read, see the service manager error above");
+    }
 
     private partial IReadOnlyList<(string ServiceName, WindowsServiceStatus Status)> QueryStatuses();
 

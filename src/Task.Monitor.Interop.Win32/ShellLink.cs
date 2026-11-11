@@ -30,12 +30,13 @@ public static unsafe class ShellLink
 
     public readonly record struct Target(string Path, string Arguments);
 
-    private static string GetString(nint shellLink, int slot, int capacity, bool withFindData)
+    private static string GetString(nint shellLink, int slot, int capacity, bool withFindData) =>
+        GetString(shellLink, slot, capacity, withFindData, out _);
+
+    private static string GetString(nint shellLink, int slot, int capacity, bool withFindData, out int hr)
     {
         char* buffer = stackalloc char[capacity];
         new Span<char>(buffer, capacity).Clear();
-
-        int hr;
 
         if (withFindData) {
             byte* findData = stackalloc byte[Win32FindDataSize];
@@ -53,8 +54,12 @@ public static unsafe class ShellLink
             : string.Empty;
     }
 
-    public static Target? Resolve(string shortcutPath)
+    public static Target? Resolve(string shortcutPath) => Resolve(shortcutPath, out _);
+
+    public static Target? Resolve(string shortcutPath, out ComFailure? failure)
     {
+        failure = null;
+
         using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_APARTMENTTHREADED);
 
         int createHr = Ole32.CoCreateInstance(
@@ -67,6 +72,7 @@ public static unsafe class ShellLink
         using ComScope shellLink = new(shellLinkRef);
 
         if (createHr < 0 || shellLink.IsNull) {
+            failure = new ComFailure($"{nameof(Ole32.CoCreateInstance)} ShellLink", createHr);
             return null;
         }
 
@@ -79,6 +85,7 @@ public static unsafe class ShellLink
         using ComScope persistFile = new(persistFileRef);
 
         if (queryHr < 0) {
+            failure = new ComFailure("IUnknown::QueryInterface IPersistFile", queryHr);
             return null;
         }
 
@@ -87,6 +94,7 @@ public static unsafe class ShellLink
                 Ole32.Vtbl(persistFile)[SlotLoad])(persistFile, pFileName, STGM_READ);
 
             if (loadHr < 0) {
+                failure = new ComFailure("IPersistFile::Load", loadHr);
                 return null;
             }
         }
@@ -95,9 +103,11 @@ public static unsafe class ShellLink
             shellLink,
             SlotGetPath,
             MAX_PATH,
-            withFindData: true);
+            withFindData: true,
+            out int pathHr);
 
         if (path.Length == 0) {
+            failure = new ComFailure("IShellLinkW::GetPath", pathHr);
             return null;
         }
 

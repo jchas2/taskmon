@@ -1,4 +1,5 @@
 #if __WIN32__
+using System.Diagnostics;
 using Microsoft.Win32;
 #endif
 using Task.Monitor.Cli.Utils;
@@ -11,6 +12,8 @@ namespace Task.Monitor.System.Services.Gpu;
 public partial class GpuService
 {
 #if __WIN32__
+    private const double BytesPerMegabyte = 1024.0 * 1024.0;
+
     private const string DisplayClassRegPath =
         @"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}";
 
@@ -45,13 +48,11 @@ public partial class GpuService
             using ComScope factory = new(factoryRef);
 
             if (hr < 0) {
-                PInvokeErrorHelpers.TraceOnceOnHResult(
-                    nameof(Dxgi.CreateDXGIFactory1),
-                    $"Failed {nameof(EnumerateAdapters)}",
-                    hr);
-
+                Trace.WriteLine($"{nameof(GpuService)}: DXGI {nameof(Dxgi.CreateDXGIFactory1)} FAILED {ErrorCodes.Describe(hr)}");
                 return;
             }
+
+            Trace.WriteLine($"{nameof(GpuService)}: DXGI {nameof(Dxgi.CreateDXGIFactory1)} OK");
 
             for (uint adapterIndex = 0;
                  Dxgi.EnumAdapters1(factory, adapterIndex, out nint adapterRef) == Dxgi.S_OK;
@@ -62,15 +63,14 @@ public partial class GpuService
                 int descHr = Dxgi.GetDesc1(adapter, out Dxgi.DXGI_ADAPTER_DESC1 desc);
 
                 if (descHr < 0) {
-                    PInvokeErrorHelpers.TraceOnceOnHResult(
-                        nameof(Dxgi.GetDesc1),
-                        $"Failed {nameof(Dxgi.GetDesc1)}",
-                        descHr);
+                    Trace.WriteLine(
+                        $"{nameof(GpuService)}: adapter {adapterIndex} {nameof(Dxgi.GetDesc1)} FAILED {ErrorCodes.Describe(descHr)}");
 
                     continue;
                 }
 
                 if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
+                    Trace.WriteLine($"{nameof(GpuService)}: adapter {adapterIndex} {desc.GetDescription().Trim()} SKIPPED, software");
                     continue;
                 }
 
@@ -78,9 +78,7 @@ public partial class GpuService
             }
         }
         catch (Exception ex) {
-            TraceEx.WriteLineOnce(
-                nameof(EnumerateAdapters),
-                $"Failed {nameof(EnumerateAdapters)}: {ex.Message}");
+            Trace.WriteLine($"{nameof(GpuService)}: DXGI adapters FAILED with {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -98,6 +96,13 @@ public partial class GpuService
         EnumerateAdapters(specs);
         UpdateFromRegistry(specs.Devices);
 
+        foreach (GpuDevice device in specs.Devices) {
+            Trace.WriteLine(
+                $"{ServiceName}: adapter {device.Index} {device.Description}, {device.VendorId:X4}:{device.DeviceId:X4}, " +
+                $"{device.AdapterType}, {device.DedicatedVideoMemory / BytesPerMegabyte:0} MB, " +
+                $"driver {device.DriverVersion} ({device.DriverDate})");
+        }
+
         specs.TotalGpuMemory = specs.Devices.Sum(device => device.DedicatedVideoMemory);
     }
 
@@ -110,7 +115,7 @@ public partial class GpuService
         using RegistryKey? classKey = Registry.LocalMachine.OpenSubKey(DisplayClassRegPath);
 
         if (classKey == null) {
-            TraceEx.WriteLineOnce(DisplayClassRegPath, $"Failed {nameof(UpdateFromRegistry)} OpenSubKey");
+            Trace.WriteLine($"{nameof(GpuService)}: registry {DisplayClassRegPath} FAILED, the key could not be opened");
             return;
         }
 

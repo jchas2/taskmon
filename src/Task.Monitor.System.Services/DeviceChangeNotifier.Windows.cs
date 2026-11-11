@@ -1,4 +1,5 @@
 #if __WIN32__
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -56,10 +57,16 @@ public sealed unsafe partial class DeviceChangeNotifier
 
             started = true;
 
-            Register(DeviceCategory.Storage, CfgMgr32.GUID_DEVINTERFACE_VOLUME);
-            Register(DeviceCategory.Storage, CfgMgr32.GUID_DEVINTERFACE_DISK);
-            Register(DeviceCategory.Network, CfgMgr32.GUID_DEVINTERFACE_NET);
-            Register(DeviceCategory.Gpu,     CfgMgr32.GUID_DEVINTERFACE_DISPLAY_ADAPTER);
+            List<string> registered = new();
+
+            Register(DeviceCategory.Storage, CfgMgr32.GUID_DEVINTERFACE_VOLUME,          "volume",          registered);
+            Register(DeviceCategory.Storage, CfgMgr32.GUID_DEVINTERFACE_DISK,            "disk",            registered);
+            Register(DeviceCategory.Network, CfgMgr32.GUID_DEVINTERFACE_NET,             "network",         registered);
+            Register(DeviceCategory.Gpu,     CfgMgr32.GUID_DEVINTERFACE_DISPLAY_ADAPTER, "display adapter", registered);
+
+            if (registered.Count > 0) {
+                Trace.WriteLine($"{nameof(DeviceChangeNotifier)}: {nameof(CfgMgr32.CM_Register_Notification)} OK for {string.Join(", ", registered)}");
+            }
         }
     }
 
@@ -86,7 +93,7 @@ public sealed unsafe partial class DeviceChangeNotifier
         }
     }
 
-    private void Register(DeviceCategory category, Guid interfaceClass)
+    private void Register(DeviceCategory category, Guid interfaceClass, string interfaceName, List<string> registered)
     {
         Registration registration = new() {
             Owner = this, Category = category
@@ -110,15 +117,16 @@ public sealed unsafe partial class DeviceChangeNotifier
         if (result != CfgMgr32.CR_SUCCESS) {
             registration.Self.Free();
 
-            TraceEx.WriteLineOnce(
-                nameof(CfgMgr32.CM_Register_Notification),
-                $"Failed to register device notifications for {category}: CONFIGRET {result}");
+            Trace.WriteLine(
+                $"{nameof(DeviceChangeNotifier)}: {nameof(CfgMgr32.CM_Register_Notification)} {interfaceName} FAILED, " +
+                $"CONFIGRET 0x{result:X}");
 
             return;
         }
 
         registration.Handle = handle;
         registrations.Add(registration);
+        registered.Add(interfaceName);
     }
 }
 #endif

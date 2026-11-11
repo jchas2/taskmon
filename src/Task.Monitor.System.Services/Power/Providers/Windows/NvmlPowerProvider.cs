@@ -10,6 +10,8 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
 {
     private bool initialised;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         if (initialised) {
@@ -54,12 +56,8 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
 
     public bool TryInitialise()
     {
-        try {
-            initialised = Nvml.Initialize();
-        }
-        catch (DllNotFoundException) {
-            initialised = false;
-        }
+        initialised = Nvml.Initialize(out string diagnostic);
+        Diagnostic  = diagnostic;
 
         return initialised;
     }

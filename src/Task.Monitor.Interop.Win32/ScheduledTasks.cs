@@ -72,8 +72,10 @@ public static unsafe class ScheduledTasks
         return hr;
     }
 
-    private static int ConnectService(out nint taskService)
+    private static int ConnectService(out nint taskService, out string call)
     {
+        call = $"{nameof(Ole32.CoCreateInstance)} TaskScheduler";
+
         int hr = Ole32.CoCreateInstance(
             in CLSID_TaskScheduler,
             nint.Zero,
@@ -86,18 +88,25 @@ public static unsafe class ScheduledTasks
             return hr < 0 ? hr : E_FAIL;
         }
 
+        call = "ITaskService::Connect";
+
         return Connect(taskService);
     }
 
-    public static IReadOnlyList<TaskRecord> EnumerateTasks()
+    public static IReadOnlyList<TaskRecord> EnumerateTasks() => EnumerateTasks(out _);
+
+    public static IReadOnlyList<TaskRecord> EnumerateTasks(out ComFailure? failure)
     {
         List<TaskRecord> records = new();
 
+        failure = null;
+
         using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
-        int connectHr = ConnectService(out nint taskServiceRef);
+        int connectHr = ConnectService(out nint taskServiceRef, out string connectCall);
         using ComScope taskService = new(taskServiceRef);
 
         if (connectHr < 0) {
+            failure = new ComFailure(connectCall, connectHr);
             return records;
         }
 
@@ -106,6 +115,7 @@ public static unsafe class ScheduledTasks
         using ComScope rootFolder = new(rootFolderRef);
 
         if (folderHr < 0) {
+            failure = new ComFailure(@"ITaskService::GetFolder \", folderHr);
             return records;
         }
 
@@ -204,7 +214,7 @@ public static unsafe class ScheduledTasks
     public static int SetEnabled(string folderPath, string name, bool enabled)
     {
         using ComInitScope com = ComInitScope.Initialise(Ole32.COINIT_MULTITHREADED);
-        int hr = ConnectService(out nint taskServiceRef);
+        int hr = ConnectService(out nint taskServiceRef, out _);
         using ComScope taskService = new(taskServiceRef);
 
         if (hr < 0) {

@@ -1,6 +1,8 @@
 #if __APPLE__
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Cpu;
@@ -43,6 +45,9 @@ public partial class CpuService
         return pmgrEntry;
     }
 
+    private static string GetCpuNameInternal() =>
+        Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+
     private static double MaxDvfsFrequencyMhz(Dictionary<string, nint> props, string key)
     {
         // A DVFS table is an array of 8-byte entries whose first uint32 is the frequency. M1-M4
@@ -82,9 +87,6 @@ public partial class CpuService
         return maxMhz;
     }
 
-    private static string GetCpuNameInternal() =>
-        Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
-
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
         specs.CpuCores   = (ulong)Environment.ProcessorCount;
@@ -119,6 +121,7 @@ public partial class CpuService
         using IOObjectScope pmgr = new(FindPmgrEntry());
 
         if (pmgr.IsNull) {
+            Trace.WriteLine($"{nameof(CpuService)}: IOKit AppleARMIODevice pmgr NOT FOUND, core frequencies unknown");
             return;
         }
 
@@ -126,6 +129,9 @@ public partial class CpuService
         using CFScope properties = new(propertiesRef);
 
         if (result != 0 || properties.IsNull) {
+            Trace.WriteLine(
+                $"{nameof(CpuService)}: IOKit pmgr properties FAILED {ErrorCodes.DescribeKernReturn(result)}, core frequencies unknown");
+
             return;
         }
 

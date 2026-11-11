@@ -24,6 +24,37 @@ public sealed class DriversControlTests : IDisposable
         runContext = runContextHelper.GetRunContext();
     }
 
+    // Loaded is how a macOS kernel extension reports running; both count as running drivers.
+    [Theory]
+    [InlineData(DriverStatus.Running)]
+    [InlineData(DriverStatus.Loaded)]
+    public void A_Running_Driver_Shows_Its_Status_In_The_Low_Range_Colour(DriverStatus running)
+    {
+        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: running)));
+
+        Assert.Equal(ConsolePalette.Magenta, ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
+    // Regression test: a stopped driver's STATUS was drawn in chart.range.mid.foreground - the dark
+    // text that goes on the mid colour block - so "Stopped" showed black on the list background.
+    [Fact]
+    public void A_Stopped_Driver_Shows_Its_Status_In_The_Mid_Range_Colour()
+    {
+        DriversControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -101,39 +132,6 @@ public sealed class DriversControlTests : IDisposable
         ctrl.Unload();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
-    // Regression test: a stopped driver's STATUS was drawn in chart.range.mid.foreground - the dark
-    // text that goes on the mid colour block - so "Stopped" showed black on the list background.
-    [Fact]
-    public void A_Stopped_Driver_Shows_Its_Status_In_The_Mid_Range_Colour()
-    {
-        DriversControl ctrl = CreateControl();
-        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
-
-        Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
-            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
-    // Loaded is how a macOS kernel extension reports running; both count as running drivers.
-    [Theory]
-    [InlineData(DriverStatus.Running)]
-    [InlineData(DriverStatus.Loaded)]
-    public void A_Running_Driver_Shows_Its_Status_In_The_Low_Range_Colour(DriverStatus running)
-    {
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
-
-        DriversControl ctrl = CreateControl();
-        ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: running)));
-
-        Assert.Equal(ConsolePalette.Magenta, ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except the status, which keeps its running / stopped highlight.
     [Fact]
@@ -165,6 +163,8 @@ public sealed class DriversControlTests : IDisposable
 
         ctrl.Unload();
     }
+
+    public void Dispose() => Control.RedrawEnabled = true;
 
     [Fact]
     public void Draws_A_Detail_Pane_For_The_Selected_Driver()

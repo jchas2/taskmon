@@ -18,6 +18,8 @@ internal sealed class IOReportEnergySampler : IDisposable
 
     public readonly record struct Delta(string Channel, string? Unit, long Value);
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         lock (@lock) {
@@ -51,6 +53,7 @@ internal sealed class IOReportEnergySampler : IDisposable
             using CFScope available = new(IOReport.IOReportCopyChannelsInGroup(group, nint.Zero, 0, 0, 0));
 
             if (available.IsNull) {
+                Diagnostic      = $"NOT FOUND, no IOReport {EnergyModelGroup} channels";
                 subscribeFailed = true;
                 return false;
             }
@@ -59,6 +62,7 @@ internal sealed class IOReportEnergySampler : IDisposable
                 nint.Zero, CoreFoundation.CFDictionaryGetCount(available), available);
 
             if (mutableChannels == nint.Zero) {
+                Diagnostic      = "FAILED, CFDictionaryCreateMutableCopy returned no dictionary";
                 subscribeFailed = true;
                 return false;
             }
@@ -67,12 +71,14 @@ internal sealed class IOReportEnergySampler : IDisposable
 
             if (created == nint.Zero) {
                 CoreFoundation.CFRelease(mutableChannels);
+                Diagnostic      = "FAILED, IOReportCreateSubscription returned no subscription";
                 subscribeFailed = true;
                 return false;
             }
 
             channels     = mutableChannels;
             subscription = created;
+            Diagnostic   = "OK";
             return true;
         }
     }

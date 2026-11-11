@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
@@ -13,8 +14,16 @@ public partial class MemoryService
 
     private unsafe void OnDoWorkMemoryCompressionMetrics(MemoryInfo memoryInfo)
     {
-        if (!QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION memListInfo, out int status)) {
-            TraceEx.WriteLineOnce(nameof(QueryMemoryList), $"Failed to query NtQuerySystemInformation. Status: 0x{status:X8}");
+        bool listed = QueryMemoryList(out Winternl.SYSTEM_MEMORY_LIST_INFORMATION memListInfo, out int status);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(listed
+                ? $"{ServiceName}: NtQuerySystemInformation memory lists OK"
+                : $"{ServiceName}: NtQuerySystemInformation memory lists FAILED {ErrorCodes.Describe(status)}");
+        }
+
+        if (!listed) {
+            TraceEx.WriteLineOnce(nameof(QueryMemoryList), $"Failed to query NtQuerySystemInformation: {ErrorCodes.Describe(status)}");
             return;
         }
 
@@ -111,9 +120,9 @@ public partial class MemoryService
 
     private void OnStartPressureMetrics()
     {
-        // Collected once up front: a rate counter needs two samples before it reports a value.
-        pagingQuery = PdhQuery.Open(
-            nameof(MemoryService),
+        pagingQuery = PdhQuery.OpenAtStartup(
+            ServiceName,
+            "paging counters",
             @"\Memory\Pages Input/sec",
             @"\Memory\Pages Output/sec",
             @"\Memory\Page Faults/sec");

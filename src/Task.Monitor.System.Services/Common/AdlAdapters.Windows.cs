@@ -11,6 +11,8 @@ internal sealed class AdlAdapters : IDisposable
 
     public delegate bool TryReadValue(nint context, int adapterIndex, out double value);
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         if (context != nint.Zero) {
@@ -40,17 +42,11 @@ internal sealed class AdlAdapters : IDisposable
 
     public bool TryOpen()
     {
-        context = nint.Zero;
+        bool opened = Adl.TryCreate(out context, out string diagnostic);
 
-        try {
-            Adl.TryCreate(out context);
-        }
-        catch (DllNotFoundException) {
-            // There's no AMD driver installed.
-            context = nint.Zero;
-        }
+        Diagnostic = diagnostic;
 
-        return context != nint.Zero;
+        return opened;
     }
 }
 #endif

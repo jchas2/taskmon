@@ -9,6 +9,8 @@ internal sealed class SmcPowerProvider : IPowerProvider
 
     private Smc? smc;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         smc?.Dispose();
@@ -32,12 +34,24 @@ internal sealed class SmcPowerProvider : IPowerProvider
     public bool TryInitialise()
     {
         if (SmartBatteryPowerProvider.IsPresent()) {
+            Diagnostic = "SKIPPED, the smart battery reports system power";
             return false;
         }
 
-        smc = Smc.Open();
+        smc = Smc.Open(out string diagnostic);
 
-        return smc?.ReadValue(SystemTotalKey) is not null;
+        if (smc is null) {
+            Diagnostic = diagnostic;
+            return false;
+        }
+
+        if (smc.ReadValue(SystemTotalKey) is null) {
+            Diagnostic = $"NOT FOUND, the SMC has no {SystemTotalKey} key";
+            return false;
+        }
+
+        Diagnostic = "OK";
+        return true;
     }
 }
 #endif

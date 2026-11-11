@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.Interop.Mach;
 
@@ -93,17 +94,26 @@ public sealed class Smc : IDisposable
         return info;
     }
 
-    public static Smc? Open()
+    public static Smc? Open() => Open(out _);
+
+    public static Smc? Open(out string diagnostic)
     {
         using IOObjectScope service = new(IOKit.IOServiceGetMatchingService(0, IOKit.IOServiceMatching("AppleSMC")));
 
         if (service.IsNull) {
+            diagnostic = "NOT FOUND, no AppleSMC service";
             return null;
         }
 
-        return IOKit.IOServiceOpen(service, MachTask.task_self_trap(), 0, out uint connection) == 0
-            ? new Smc(connection)
-            : null;
+        int result = IOKit.IOServiceOpen(service, MachTask.task_self_trap(), 0, out uint connection);
+
+        if (result != 0) {
+            diagnostic = $"FAILED, IOServiceOpen AppleSMC {ErrorCodes.DescribeKernReturn(result)}";
+            return null;
+        }
+
+        diagnostic = "OK";
+        return new Smc(connection);
     }
 
     public List<string> ReadKeys()

@@ -110,6 +110,19 @@ public sealed class ServicesControlTests : IDisposable
     }
 
     [Fact]
+    public void A_Running_Service_Shows_Its_Status_In_The_Low_Range_Colour()
+    {
+        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Running)));
+
+        Assert.Equal(ConsolePalette.Magenta, ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
     public void A_Status_Change_Keeps_The_List_Scrolled_And_The_Service_Selected()
     {
         RecordedRequests     requests = new();
@@ -140,6 +153,21 @@ public sealed class ServicesControlTests : IDisposable
         Assert.DoesNotContain("Service 05", output);
         Assert.Contains("Service 30", detail);
         Assert.Contains("Stopped", detail);
+
+        ctrl.Unload();
+    }
+
+    // Regression test: a stopped service's STATUS was drawn in chart.range.mid.foreground - the dark
+    // text that goes on the mid colour block - so "Stopped" showed black on the list background.
+    [Fact]
+    public void A_Stopped_Service_Shows_Its_Status_In_The_Mid_Range_Colour()
+    {
+        ServicesControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Stopped)));
+
+        Assert.Equal(
+            runContext.AppConfig.Theme.RangeMidBackground,
+            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();
     }
@@ -256,62 +284,6 @@ public sealed class ServicesControlTests : IDisposable
         ctrl.Unload();
     }
 
-    public void Dispose() => Control.RedrawEnabled = true;
-
-    [Fact]
-    public void Draws_A_Checkbox_Ticked_For_A_Service_Running_Or_On_Its_Way_Up()
-    {
-        ServicesControl ctrl = CreateControl(canControl: true);
-        ctrl.Sample(SnapshotWith(
-            Service("Running Service"),
-            Service("Start Service",    status: WindowsServiceStatus.StartPending),
-            Service("Paused Service",   status: WindowsServiceStatus.Paused),
-            Service("Continue Service", status: WindowsServiceStatus.ContinuePending),
-            Service("Stop Service",     status: WindowsServiceStatus.StopPending),
-            Service("Stopped Service",  status: WindowsServiceStatus.Stopped)));
-        ctrl.Draw();
-
-        string output = VisibleOutput();
-
-        Assert.Contains("[x] Running Service", output);
-        Assert.Contains("[x] Start Service", output);
-        Assert.Contains("[x] Paused Service", output);
-        Assert.Contains("[x] Continue Service", output);
-        Assert.Contains("[ ] Stop Service", output);
-        Assert.Contains("[ ] Stopped Service", output);
-        Assert.Contains("DESCRIPTION", output);
-
-        ctrl.Unload();
-    }
-
-    // Regression test: a stopped service's STATUS was drawn in chart.range.mid.foreground - the dark
-    // text that goes on the mid colour block - so "Stopped" showed black on the list background.
-    [Fact]
-    public void A_Stopped_Service_Shows_Its_Status_In_The_Mid_Range_Colour()
-    {
-        ServicesControl ctrl = CreateControl();
-        ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Stopped)));
-
-        Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
-            ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
-    [Fact]
-    public void A_Running_Service_Shows_Its_Status_In_The_Low_Range_Colour()
-    {
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
-
-        ServicesControl ctrl = CreateControl();
-        ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Running)));
-
-        Assert.Equal(ConsolePalette.Magenta, ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
-
-        ctrl.Unload();
-    }
-
     // DETAIL lists field / value rows like the other property lists: fields in property.key and
     // values in property.value, except the status, which keeps its running / stopped highlight.
     [Fact]
@@ -340,6 +312,34 @@ public sealed class ServicesControlTests : IDisposable
         ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
         Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
         Assert.Equal(ConsolePalette.Red,  status.SubItems[1].ForegroundColor);
+
+        ctrl.Unload();
+    }
+
+    public void Dispose() => Control.RedrawEnabled = true;
+
+    [Fact]
+    public void Draws_A_Checkbox_Ticked_For_A_Service_Running_Or_On_Its_Way_Up()
+    {
+        ServicesControl ctrl = CreateControl(canControl: true);
+        ctrl.Sample(SnapshotWith(
+            Service("Running Service"),
+            Service("Start Service",    status: WindowsServiceStatus.StartPending),
+            Service("Paused Service",   status: WindowsServiceStatus.Paused),
+            Service("Continue Service", status: WindowsServiceStatus.ContinuePending),
+            Service("Stop Service",     status: WindowsServiceStatus.StopPending),
+            Service("Stopped Service",  status: WindowsServiceStatus.Stopped)));
+        ctrl.Draw();
+
+        string output = VisibleOutput();
+
+        Assert.Contains("[x] Running Service", output);
+        Assert.Contains("[x] Start Service", output);
+        Assert.Contains("[x] Paused Service", output);
+        Assert.Contains("[x] Continue Service", output);
+        Assert.Contains("[ ] Stop Service", output);
+        Assert.Contains("[ ] Stopped Service", output);
+        Assert.Contains("DESCRIPTION", output);
 
         ctrl.Unload();
     }
