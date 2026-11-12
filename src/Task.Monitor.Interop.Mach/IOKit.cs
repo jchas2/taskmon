@@ -4,6 +4,9 @@ namespace Task.Monitor.Interop.Mach;
 
 public static class IOKit
 {
+    public const string FirstMatchNotification = "IOServiceFirstMatch";
+    public const string TerminatedNotification = "IOServiceTerminate";
+
     public static unsafe Dictionary<string, object?>? GetLoadedKextInfo(IReadOnlyList<string> infoKeys)
     {
         nint[] keys = new nint[infoKeys.Count];
@@ -40,6 +43,15 @@ public static class IOKit
 
     [DllImport(Libraries.IOKit)]
     public static extern uint IOIteratorNext(IntPtr iterator);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern nint IONotificationPortCreate(uint mainPort);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern void IONotificationPortDestroy(nint notifyPort);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern void IONotificationPortSetDispatchQueue(nint notifyPort, nint queue);
 
     [DllImport(Libraries.IOKit)]
     public static extern uint IOObjectGetUserRetainCount(uint obj);
@@ -79,6 +91,15 @@ public static class IOKit
         nint   key,
         nint   allocator,
         uint   options);
+
+    [DllImport(Libraries.IOKit)]
+    public static extern unsafe int IOServiceAddMatchingNotification(
+        nint                                  notifyPort,
+        string                                notificationType,
+        nint                                  matching,
+        delegate* unmanaged<nint, uint, void> callback,
+        nint                                  refCon,
+        out uint                              notification);
 
     [DllImport(Libraries.IOKit)]
     public static extern int IOServiceClose(uint connection);
