@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Gpu;
@@ -18,6 +19,8 @@ public partial class GpuService
     private nint gpuReportPrevSample   = nint.Zero;
     
     private bool gpuReportInitFailed;
+
+    private string gpuReportDiagnostic = string.Empty;
 
     private bool EnsureGpuReportSubscription()
     {
@@ -39,16 +42,17 @@ public partial class GpuService
             0));
 
         if (channels.IsNull) {
+            gpuReportDiagnostic = "NOT FOUND, no IOReport GPU Stats channels";
             gpuReportInitFailed = true;
             return false;
         }
 
         long count = CoreFoundation.CFDictionaryGetCount(channels);
 
-        // Owned by gpuReportChannels once subscribed, so released manually rather than scoped.
         nint mutableChannels = CoreFoundation.CFDictionaryCreateMutableCopy(nint.Zero, count, channels);
 
         if (mutableChannels == nint.Zero) {
+            gpuReportDiagnostic = "FAILED, CFDictionaryCreateMutableCopy returned no dictionary";
             gpuReportInitFailed = true;
             return false;
         }
@@ -62,16 +66,18 @@ public partial class GpuService
 
         if (subscription == nint.Zero) {
             CoreFoundation.CFRelease(mutableChannels);
+            gpuReportDiagnostic = "FAILED, IOReportCreateSubscription returned no subscription";
             gpuReportInitFailed = true;
             return false;
         }
 
         gpuReportChannels     = mutableChannels;
         gpuReportSubscription = subscription;
+        gpuReportDiagnostic   = "OK";
         return true;
     }
 
-    private static Dictionary<int, long> GetProcessGpuTime()
+    private static Dictionary<int, long> GetProcessGpuTime(out string status)
     {
         long typeIdCFArray      = CoreFoundation.CFArrayGetTypeID();
         long typeIdCFDictionary = CoreFoundation.CFDictionaryGetTypeID();
@@ -81,7 +87,8 @@ public partial class GpuService
         using IOObjectScope   accelerator = new(IOKit.IOServiceGetMatchingService(0, matching));
 
         if (accelerator.IsNull) {
-            Trace.WriteLine($"Failed to get IOAccelerator via IOServiceGetMatchingService in {nameof(GpuService)}.");
+            status = "NOT FOUND, no IOAccelerator service";
+            TraceEx.WriteLineOnce($"{nameof(GpuService)} IOAccelerator", $"{nameof(GpuService)}: IOAccelerator {status}");
             return gpuInfo;
         }
 
@@ -95,7 +102,8 @@ public partial class GpuService
         using IOObjectScope iterator = new(iteratorRef);
 
         if (result != 0 || iterator.IsNull) {
-            Trace.WriteLine($"Failed to get IOIterator via IORegistryEntryGetChildIterator in {nameof(GpuService)}.");
+            status = $"FAILED, IORegistryEntryGetChildIterator {ErrorCodes.DescribeKernReturn(result)}";
+            TraceEx.WriteLineOnce($"{nameof(GpuService)} IOAccelerator children", $"{nameof(GpuService)}: IOAccelerator {status}");
             return gpuInfo;
         }
 
@@ -161,6 +169,7 @@ public partial class GpuService
             }
         }
 
+        status = $"OK, {gpuInfo.Count} processes with GPU time";
         return gpuInfo;
     }
 
@@ -168,7 +177,12 @@ public partial class GpuService
     {
         UpdateDeviceGpuUsage(gpuInfo);
 
-        Dictionary<int, long> current = GetProcessGpuTime();
+        Dictionary<int, long> current = GetProcessGpuTime(out string timeStatus);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine($"{ServiceName}: IOReport GPU Stats {gpuReportDiagnostic}");
+            Trace.WriteLine($"{ServiceName}: IOAccelerator per-process GPU time {timeStatus}");
+        }
         long now = Stopwatch.GetTimestamp();
 
         if (!gpuPrimed) {
@@ -236,8 +250,8 @@ public partial class GpuService
             gpuReportChannels = nint.Zero;
         }
 
-        // The IOReportSubscriptionRef is private API and is not safely CFReleasable here; it is left
-        // to be reclaimed at process exit (one per service lifetime).
+        // The IOReportSubscriptionRef is private API and is not safely CFReleasable here.
+        // I've left it to be reclaimed at process exit (one per service lifetime).
         gpuReportSubscription = nint.Zero;
         gpuReportInitFailed = false;
     }
@@ -310,6 +324,10 @@ public partial class GpuService
         nint sample = IOReport.IOReportCreateSamples(gpuReportSubscription, gpuReportChannels, nint.Zero);
 
         if (sample == nint.Zero) {
+            TraceEx.WriteLineOnce(
+                $"{nameof(GpuService)} IOReportCreateSamples",
+                $"{nameof(GpuService)}: IOReportCreateSamples returned no GPU Stats sample");
+
             return;
         }
 

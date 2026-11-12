@@ -28,6 +28,15 @@ public sealed class TargetUserTests
         Assert.Equal(501u, TargetUser.ResolveUid(euid: 501, uid: 501, sudoUid: "502", consoleUid: 503));
     }
 
+    // The log is attached to bug reports, so the user is given by uid, never by name.
+    [Fact]
+    public void Describe_Gives_The_User_By_Uid()
+    {
+        TargetUser user = TargetUser.Current();
+
+        Assert.StartsWith($"target user uid {user.Uid}, ", user.Describe());
+    }
+
     [SkippableFact]
     public void The_Current_User_Owns_Their_Session()
     {

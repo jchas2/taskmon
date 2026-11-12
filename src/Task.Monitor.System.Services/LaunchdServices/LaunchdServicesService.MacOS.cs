@@ -5,6 +5,6 @@ public partial class LaunchdServicesService
 #if __APPLE__
     private readonly LaunchdScanCache cache = new();
 
-    private partial IEnumerable<LaunchdServiceInfo> EnumerateServices() => LaunchdServiceLookup.GetServices(cache);
+    private partial IEnumerable<LaunchdServiceInfo> EnumerateServices() => LaunchdServiceLookup.GetServices(cache, scanNotes);
 #endif
 }

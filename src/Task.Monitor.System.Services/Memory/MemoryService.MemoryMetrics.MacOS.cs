@@ -49,7 +49,19 @@ public partial class MemoryService
 
     private void OnDoWorkMemoryMetrics(MemoryInfo memoryInfo)
     {
-        if (!TryReadVmStatistics(out vmStats)) {
+        bool read = TryReadVmStatistics(out vmStats, out int result);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(read
+                ? $"{ServiceName}: host_statistics64 OK"
+                : $"{ServiceName}: host_statistics64 FAILED {ErrorCodes.DescribeKernReturn(result)}");
+        }
+
+        if (!read) {
+            TraceEx.WriteLineOnce(
+                $"{nameof(MemoryService)} host_statistics64",
+                $"{ServiceName}: host_statistics64 FAILED {ErrorCodes.DescribeKernReturn(result)}");
+
             return;
         }
 
@@ -70,7 +82,14 @@ public partial class MemoryService
         memoryInfo.Metrics.TotalVirtual     = 0;
         memoryInfo.Metrics.AvailableVirtual = 0;
 
-        ReadSwapUsage(memoryInfo);
+        bool swapRead = ReadSwapUsage(memoryInfo);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(swapRead
+                ? $"{ServiceName}: sysctl vm.swapusage OK"
+                : $"{ServiceName}: sysctl vm.swapusage FAILED, no swap size");
+        }
+
         ReadSwapRates(memoryInfo);
 
         memoryInfo.Metrics.AvailablePhysicalRatio = totalPhysical > 0
@@ -86,7 +105,15 @@ public partial class MemoryService
 
     private void OnDoWorkPressureMetrics(MemoryInfo memoryInfo)
     {
-        if (Sys.SysctlByNameInt(MemoryPressureLevelKey, out int level)) {
+        bool read = Sys.SysctlByNameInt(MemoryPressureLevelKey, out int level);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(read
+                ? $"{ServiceName}: sysctl {MemoryPressureLevelKey} OK"
+                : $"{ServiceName}: sysctl {MemoryPressureLevelKey} FAILED, no memory pressure");
+        }
+
+        if (read) {
             memoryInfo.Metrics.Pressure = ToMemoryPressure(level);
         }
     }
@@ -118,7 +145,7 @@ public partial class MemoryService
         previousSwapTimestamp = timestamp;
     }
 
-    private static unsafe void ReadSwapUsage(MemoryInfo memoryInfo)
+    private static unsafe bool ReadSwapUsage(MemoryInfo memoryInfo)
     {
         ReadOnlySpan<int> name = [(int)Sys.Selectors.CTL_VM, Sys.VM_SWAPUSAGE];
         
@@ -129,13 +156,15 @@ public partial class MemoryService
         using HGlobalScope scope = new((nint)buffer);
 
         if (!read || length != sizeof(Sys.XswUsage)) {
-            return;
+            return false;
         }
 
         Sys.XswUsage* xsw = (Sys.XswUsage*)buffer;
         
         memoryInfo.Metrics.TotalPageFile     = xsw->total;
         memoryInfo.Metrics.AvailablePageFile = xsw->avail;
+
+        return true;
     }
 
     internal static MemoryPressure ToMemoryPressure(int level) => level switch {
@@ -144,7 +173,7 @@ public partial class MemoryService
                             _ => MemoryPressure.Normal
     };
 
-    private static bool TryReadVmStatistics(out MachHost.VmStatistics64 info)
+    private static bool TryReadVmStatistics(out MachHost.VmStatistics64 info, out int result)
     {
         info = default;
 
@@ -153,7 +182,9 @@ public partial class MemoryService
         
         using HGlobalScope buffer = HGlobalScope.Allocate(Marshal.SizeOf<MachHost.VmStatistics64>());
 
-        if (MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count) != 0) {
+        result = MachHost.host_statistics64(host, MachHost.HOST_VM_INFO64, buffer, ref count);
+
+        if (result != 0) {
             return false;
         }
 

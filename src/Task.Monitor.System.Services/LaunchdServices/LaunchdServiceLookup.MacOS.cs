@@ -50,14 +50,23 @@ internal static class LaunchdServiceLookup
         return service;
     }
 
-    internal static List<LaunchdServiceInfo> GetServices(LaunchdScanCache cache)
+    internal static List<LaunchdServiceInfo> GetServices(LaunchdScanCache cache, List<string>? notes = null)
     {
         TargetUser user = TargetUser.Current();
+
+        List<Dictionary<string, object?>>? systemJobs = ServiceManagement.GetSystemJobs();
+        List<Dictionary<string, object?>>? userJobs   = user.IsSessionOwner ? ServiceManagement.GetUserJobs() : null;
+
+        notes?.Add(user.Describe());
+        notes?.Add(JobsNote("system", systemJobs));
+        notes?.Add(user.IsSessionOwner
+            ? JobsNote("user", userJobs)
+            : "SMCopyAllJobDictionaries user SKIPPED, outside the user's session");
 
         List<LaunchdServiceInfo> services = Merge(
             LaunchdDomain.System,
             ReadPlists(cache, SystemFolders.Select(folder => (folder, folder))),
-            ServiceManagement.GetSystemJobs(),
+            systemJobs,
             LaunchdOverrides.ReadSystem());
 
         services.AddRange(Merge(
@@ -66,7 +75,7 @@ internal static class LaunchdServiceLookup
                 .. UserFolders.Select(folder => (folder, folder)),
                 (Path.Combine(user.HomeDirectory, UserLaunchAgentsFolder), UserLaunchAgentsGroup)
             ]),
-            user.IsSessionOwner ? ServiceManagement.GetUserJobs() : null,
+            userJobs,
             LaunchdOverrides.ReadUser(user.Uid)));
 
         foreach (LaunchdServiceInfo service in services) {
@@ -79,6 +88,11 @@ internal static class LaunchdServiceLookup
 
         return services;
     }
+
+    private static string JobsNote(string domain, List<Dictionary<string, object?>>? jobs) =>
+        jobs is null
+            ? $"SMCopyAllJobDictionaries {domain} FAILED, no jobs returned, so none show as running"
+            : $"SMCopyAllJobDictionaries {domain} OK, {jobs.Count} jobs";
 
     internal static List<LaunchdServiceInfo> Merge(
         LaunchdDomain                                        domain,

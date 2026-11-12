@@ -10,6 +10,8 @@ public sealed partial class LaunchdServicesService : WorkerService
 
     private int cyclesSinceScan;
 
+    private readonly List<string> scanNotes = new();
+
     private partial IEnumerable<LaunchdServiceInfo> EnumerateServices();
 
     protected override void OnDoWork(CancellationToken cancellationToken)
@@ -25,6 +27,11 @@ public sealed partial class LaunchdServicesService : WorkerService
     protected override void OnStart()
     {
         servicesSpecs = ScanServices();
+
+        foreach (string note in scanNotes) {
+            Trace.WriteLine($"{ServiceName}: {note}");
+        }
+
         Trace.WriteLine(servicesSpecs.Services.Count > 0
             ? $"{ServiceName}: {servicesSpecs.Services.Count} launchd services"
             : $"{ServiceName}: launchd services FAILED, none read, see the error above");
@@ -34,6 +41,7 @@ public sealed partial class LaunchdServicesService : WorkerService
     {
         LaunchdServicesSpecs specs = new();
 
+        scanNotes.Clear();
         specs.Services.AddRange(EnumerateServices());
 
         specs.Services.Sort(static (left, right) => {

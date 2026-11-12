@@ -39,9 +39,14 @@ internal static partial class DriverLookup
             : null;
     }
 
-    internal static List<DriverInfo> GetDrivers()
+    internal static List<DriverInfo> GetDrivers(List<string>? notes = null)
     {
-        Dictionary<string, object?> loadedKexts = IOKit.GetLoadedKextInfo(LoadedInfoKeys) ?? new();
+        Dictionary<string, object?>? loadedInfo  = IOKit.GetLoadedKextInfo(LoadedInfoKeys);
+        Dictionary<string, object?>  loadedKexts = loadedInfo ?? new();
+
+        notes?.Add(loadedInfo is null
+            ? "KextManagerCopyLoadedKextInfo FAILED, no loaded kexts returned, so none show as loaded"
+            : $"KextManagerCopyLoadedKextInfo OK, {loadedInfo.Count} loaded kexts");
 
         HashSet<string>  bundlePaths = new(StringComparer.Ordinal);
         List<DriverInfo> drivers     = new();

@@ -1,5 +1,6 @@
 #if __APPLE__
 using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 using Task.Monitor.System.Services.Common;
 
@@ -265,6 +266,15 @@ public partial class DiskService
         using IOObjectScope iterator = new(iteratorRef);
 
         if (result != 0 || iterator.IsNull) {
+            string failure = result != 0
+                ? $"{ServiceName}: IOKit {BlockStorageDriverClass} statistics FAILED {ErrorCodes.DescribeKernReturn(result)}"
+                : $"{ServiceName}: IOKit {BlockStorageDriverClass} statistics NOT FOUND";
+
+            if (IsFirstCycle) {
+                Trace.WriteLine(failure);
+            }
+
+            TraceEx.WriteLineOnce($"{nameof(DiskService)} {BlockStorageDriverClass} statistics", failure);
             return;
         }
 
@@ -278,6 +288,10 @@ public partial class DiskService
             if (!IsVirtualDisk(entry, seenEntries)) {
                 ReadDriverStatistics(entry, live);
             }
+        }
+
+        if (IsFirstCycle) {
+            Trace.WriteLine($"{ServiceName}: IOKit {BlockStorageDriverClass} statistics OK, {live.Count} disks read");
         }
 
         PruneMissing(diskStates, live.Contains);

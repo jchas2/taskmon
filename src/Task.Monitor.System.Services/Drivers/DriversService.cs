@@ -10,6 +10,8 @@ public sealed partial class DriversService : WorkerService
 
     private int cyclesSinceScan;
 
+    private readonly List<string> scanNotes = new();
+
     private partial IEnumerable<DriverInfo> EnumerateDrivers();
 
     protected override void OnDoWork(CancellationToken cancellationToken)
@@ -25,6 +27,11 @@ public sealed partial class DriversService : WorkerService
     protected override void OnStart()
     {
         driversSpecs = ScanDrivers();
+
+        foreach (string note in scanNotes) {
+            Trace.WriteLine($"{ServiceName}: {note}");
+        }
+
         Trace.WriteLine(driversSpecs.Drivers.Count > 0
             ? $"{ServiceName}: {driversSpecs.Drivers.Count} drivers"
             : $"{ServiceName}: drivers FAILED, none read, see the error above");
@@ -34,6 +41,7 @@ public sealed partial class DriversService : WorkerService
     {
         DriversSpecs specs = new();
 
+        scanNotes.Clear();
         specs.Drivers.AddRange(EnumerateDrivers());
 
         specs.Drivers.Sort(static (left, right) =>

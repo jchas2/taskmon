@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.WindowsServices;
 
@@ -18,11 +17,8 @@ public partial class ProcessService
         Trace.WriteLine($"{ServiceName}: process snapshot OK, {opened} processes opened");
 
         if (openFailures.Count > 0) {
-            string byError = string.Join(", ", openFailures
-                .OrderByDescending(failure => failure.Value)
-                .Select(failure => $"{ErrorCodes.Describe(failure.Key)} x{failure.Value}"));
-
-            Trace.WriteLine($"{ServiceName}: {openFailures.Values.Sum()} processes could not be opened: {byError}");
+            Trace.WriteLine(
+                $"{ServiceName}: {openFailures.Values.Sum()} processes could not be opened: {DescribeFailures(openFailures)}");
         }
     }
 

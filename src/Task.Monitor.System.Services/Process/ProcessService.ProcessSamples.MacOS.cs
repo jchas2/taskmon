@@ -32,7 +32,19 @@ public partial class ProcessService
             (long)(systemTime / NanosecondsTo100NanosecondsFactor * cachedTimebase.numer / cachedTimebase.denom));
     }
 
-    private static unsafe ProcessSample? CreateProcessSample(int pid, ProcessNameResolver nameResolver)
+    private static void CountFailure(Dictionary<int, int>? readFailures)
+    {
+        int error = Marshal.GetLastPInvokeError();
+
+        if (readFailures != null) {
+            readFailures[error] = readFailures.GetValueOrDefault(error) + 1;
+        }
+    }
+
+    private static unsafe ProcessSample? CreateProcessSample(
+        int                   pid,
+        ProcessNameResolver   nameResolver,
+        Dictionary<int, int>? readFailures = null)
     {
         int size = sizeof(ProcInfo.proc_taskallinfo);
         ProcInfo.proc_taskallinfo procTaskInfo = default;
@@ -45,6 +57,7 @@ public partial class ProcessService
             size);
 
         if (result != size) {
+            CountFailure(readFailures);
             return null;
         }
 
@@ -52,6 +65,7 @@ public partial class ProcessService
         result = LibProc.proc_pid_rusage(pid, SysResource.RUSAGE_INFO_V3, &usage);
 
         if (result < 0) {
+            CountFailure(readFailures);
             return null;
         }
 
@@ -95,8 +109,10 @@ public partial class ProcessService
         return sample;
     }
 
-    private static unsafe int[] GetPids()
+    private static unsafe int[] GetPids(out bool listed)
     {
+        listed = false;
+
         int newSize = LibProc.proc_listallpids(null, 0);
 
         if (newSize <= 0) {
@@ -119,19 +135,21 @@ public partial class ProcessService
         while (newSize == buffer.Length);
 
         Array.Resize(ref buffer, newSize);
+
+        listed = true;
         return buffer;
     }
 
     // Called from the UI thread, so it can't share the worker's nameResolver.
     private static ProcessSample? GetProcessSampleInternal(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
 
-    private List<ProcessSample> GetProcessSamples()
+    private List<ProcessSample> GetProcessSamples(Dictionary<int, int>? readFailures, out bool listed)
     {
-        int[] pids = GetPids();
+        int[] pids = GetPids(out listed);
         List<ProcessSample> samples = new(pids.Length);
 
         for (int i = 0; i < pids.Length; i++) {
-            ProcessSample? sample = CreateProcessSample(pids[i], nameResolver);
+            ProcessSample? sample = CreateProcessSample(pids[i], nameResolver, readFailures);
 
             if (sample != null) {
                 samples.Add(sample);

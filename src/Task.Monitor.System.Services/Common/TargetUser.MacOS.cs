@@ -28,6 +28,11 @@ public sealed class TargetUser
         };
     }
 
+    public string Describe() =>
+        $"target user uid {Uid}, {(IsRoot ? "running as root" : "not running as root")}, " +
+        $"{(IsSessionOwner ? "in the user's session" : "outside the user's session")}" +
+        $"{(Uuid is null ? ", user UUID NOT FOUND" : string.Empty)}";
+
     private static unsafe string? GetHomeDirectory(uint uid)
     {
         byte* buffer = stackalloc byte[PasswdBufferSize];

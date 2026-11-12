@@ -26,6 +26,10 @@ public sealed partial class StartupService : WorkerService
         foreach (string note in scanNotes) {
             Trace.WriteLine($"{ServiceName}: {note}");
         }
+
+        foreach (string note in specs.Notes) {
+            Trace.WriteLine($"{ServiceName}: note: {note}");
+        }
     }
 
     protected override void OnDoWork(CancellationToken cancellationToken)

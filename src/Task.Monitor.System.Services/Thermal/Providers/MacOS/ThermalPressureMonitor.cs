@@ -8,6 +8,8 @@ internal sealed class ThermalPressureMonitor : IDisposable
     private int  token = -1;
     private bool registerFailed;
 
+    public string Diagnostic { get; private set; } = string.Empty;
+
     public void Dispose()
     {
         if (token >= 0) {
@@ -25,7 +27,10 @@ internal sealed class ThermalPressureMonitor : IDisposable
                 return null;
             }
 
-            if (Notify.notify_register_check(Notify.ThermalPressureLevel, out int registered) != 0) {
+            uint registerStatus = Notify.notify_register_check(Notify.ThermalPressureLevel, out int registered);
+
+            if (registerStatus != 0) {
+                Diagnostic     = $"FAILED, notify_register_check returned notify status {registerStatus}";
                 registerFailed = true;
                 return null;
             }
@@ -33,7 +38,15 @@ internal sealed class ThermalPressureMonitor : IDisposable
             token = registered;
         }
 
-        return Notify.notify_get_state(token, out ulong level) == 0 ? ToPressure(level) : null;
+        uint stateStatus = Notify.notify_get_state(token, out ulong level);
+
+        if (stateStatus != 0) {
+            Diagnostic = $"FAILED, notify_get_state returned notify status {stateStatus}";
+            return null;
+        }
+
+        Diagnostic = "OK";
+        return ToPressure(level);
     }
 
     internal static ThermalPressure? ToPressure(ulong level) => level switch {

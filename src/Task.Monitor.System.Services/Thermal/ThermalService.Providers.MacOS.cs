@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Thermal.Providers.MacOS;
@@ -34,6 +35,10 @@ public partial class ThermalService
         }
 
         metrics.Pressure = pressureMonitor.Read();
+
+        if (IsFirstCycle) {
+            Trace.WriteLine($"{ServiceName}: thermal pressure notifications {pressureMonitor.Diagnostic}");
+        }
     }
 }
 #endif

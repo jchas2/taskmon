@@ -429,6 +429,12 @@ public partial class StartupService
             ? BackgroundItems.From(BackgroundItemsDatabase.Read(), user)
             : null;
 
+        scanNotes.Add(user.Describe());
+        scanNotes.Add(
+            !user.IsRoot       ? "background items database SKIPPED, needs root, using the per-session lists" :
+            background is null ? "background items database NOT FOUND or unreadable, using the per-session lists" :
+                                 $"background items database OK, {background.Records.Count} records");
+
         if (background is not null) {
             ScanBackgroundItems(
                 specs,

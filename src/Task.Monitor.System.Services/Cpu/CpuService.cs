@@ -25,6 +25,11 @@ public sealed partial class CpuService : WorkerService
                 $"{specs.CpuPerformanceCores} performance cores at {specs.CpuPerformanceFrequency:0} MHz, " +
                 $"{specs.CpuEfficiencyCores} efficiency cores at {specs.CpuEfficiencyFrequency:0} MHz");
         }
+#if __APPLE__
+        else {
+            Trace.WriteLine($"{ServiceName}: performance levels NOT FOUND, the hw.perflevel sysctls gave no cores");
+        }
+#endif
 
 #if __WIN32__
         Trace.WriteLine(

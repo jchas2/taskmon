@@ -1,4 +1,6 @@
 #if __APPLE__
+using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Disk;
@@ -39,14 +41,21 @@ public partial class DiskService
         using IOObjectScope iterator = new(iteratorRef);
 
         if (result != 0 || iterator.IsNull) {
+            Trace.WriteLine(result != 0
+                ? $"{nameof(DiskService)}: IOKit {BlockStorageDriverClass} FAILED {ErrorCodes.DescribeKernReturn(result)}"
+                : $"{nameof(DiskService)}: IOKit {BlockStorageDriverClass} NOT FOUND");
+
             return;
         }
 
+        int  matched = 0;
         uint entryRef;
 
         while ((entryRef = IOKit.IOIteratorNext(iterator)) != 0) {
             using IOObjectScope entry = new(entryRef);
             DiskDevice? device = BuildDiskDevice(entry);
+
+            matched++;
 
             if (device != null) {
                 specs.Devices.Add(device);
@@ -54,6 +63,9 @@ public partial class DiskService
         }
 
         specs.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
+
+        Trace.WriteLine(
+            $"{nameof(DiskService)}: IOKit {BlockStorageDriverClass} OK, {matched} matched, {specs.Devices.Count} physical");
     }
 
     private static void EnumerateVolumes(DiskSpecs specs)

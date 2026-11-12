@@ -1,4 +1,5 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Gpu;
@@ -10,8 +11,6 @@ public partial class GpuService
     private ulong? recommendedWorkingSet;
     private bool   recommendedWorkingSetRead;
 
-    // The GPU's ceiling in unified memory: the wired limit when an admin has raised it, otherwise
-    // Metal's recommended working set, falling back to the pool allocated so far.
     internal static long GpuMemoryLimit(long wiredLimitMb, ulong? recommendedWorkingSet, long allocatedMemory)
     {
         if (wiredLimitMb > 0) {
@@ -21,17 +20,23 @@ public partial class GpuService
         return recommendedWorkingSet is { } recommended ? (long)recommended : allocatedMemory;
     }
 
-    // Runs after OnDoWorkGpuPidMetrics, so GpuPercentTime is already set when the device metric is
-    // emitted below.
     private bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
     {
         if (!TryReadIOAcceleratorMemory(out long allocMemory, out long inUseMemory)) {
+            if (IsFirstCycle) {
+                Trace.WriteLine($"{ServiceName}: GPU memory metrics SKIPPED, no IOAccelerator memory statistics");
+            }
+
             return false;
         }
 
         if (!recommendedWorkingSetRead) {
             recommendedWorkingSet     = Metal.RecommendedMaxWorkingSetSize();
             recommendedWorkingSetRead = true;
+
+            Trace.WriteLine(recommendedWorkingSet is { } workingSet
+                ? $"{ServiceName}: Metal recommendedMaxWorkingSetSize OK, {workingSet / (1024 * 1024)} MB"
+                : $"{ServiceName}: Metal recommendedMaxWorkingSetSize NOT FOUND, using the memory allocated so far");
         }
 
         long wiredLimitMb = Sys.SysctlByNameInt(WiredLimitKey, out int limit) ? limit : 0;
@@ -42,8 +47,6 @@ public partial class GpuService
         metrics.TotalGpuMemory             = totalMemory;
         metrics.AvailableGpuMemory         = available;
 
-        // Apple Silicon uses a single unified memory pool with no dedicated VRAM, so the shared and
-        // combined figures all report the same limit.
         metrics.TotalSharedGpuMemory       = totalMemory;
         metrics.AvailableSharedGpuMemory   = available;
         metrics.TotalCombinedGpuMemory     = totalMemory;

@@ -1,4 +1,5 @@
 #if __APPLE__
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Soc;
@@ -125,7 +126,6 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
         return samples;
     }
 
-    // The change since the previous call; the first call only takes the baseline.
     public List<IOReportChannelSample>? Sample()
     {
         lock (@lock) {
@@ -136,6 +136,10 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
             nint sample = IOReport.IOReportCreateSamples(subscription, channels, nint.Zero);
 
             if (sample == nint.Zero) {
+                TraceEx.WriteLineOnce(
+                    $"{nameof(IOReportSampler)} IOReportCreateSamples",
+                    "SocService: IOReportCreateSamples returned no GPU and ANE sample");
+
                 return null;
             }
 

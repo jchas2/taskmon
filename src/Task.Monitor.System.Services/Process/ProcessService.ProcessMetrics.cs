@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Process;
@@ -7,7 +8,6 @@ public partial class ProcessService
 {
     private const int InitialCapacity = 2048;
 
-    // Shared empty map used when no per-process GPU data is available for a cycle.
     private static readonly Dictionary<int, double> NoGpuPercent = new();
 
     private readonly Dictionary<int, ProcessSampleState> sampleStates = new(InitialCapacity);
@@ -177,6 +177,12 @@ public partial class ProcessService
             sampleStates.Remove(stalePids[i]);
         }
     }
+
+    internal static string DescribeFailures(IReadOnlyDictionary<int, int> failuresByError) =>
+        string.Join(", ", failuresByError
+            .OrderByDescending(failure => failure.Value)
+            .ThenBy(failure => failure.Key)
+            .Select(failure => $"{ErrorCodes.Describe(failure.Key)} x{failure.Value}"));
 
     internal static double FirstDiskBytesPerSecond(
         ProcessSample sample,

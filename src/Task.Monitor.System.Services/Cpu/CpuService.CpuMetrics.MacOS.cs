@@ -1,6 +1,8 @@
 #if __APPLE__
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Cpu;
@@ -16,11 +18,11 @@ public partial class CpuService
     private long aggIdleDelta;
     private long aggNiceDelta;
 
-    private static uint[]? CaptureCpuTicks(out int cpuCount)
+    private static uint[]? CaptureCpuTicks(out int cpuCount, out int result)
     {
         cpuCount = 0;
 
-        int result = MachHost.host_processor_info(
+        result = MachHost.host_processor_info(
             MachHost.mach_host_self(),
             MachHost.PROCESSOR_CPU_LOAD_INFO,
             out uint numCpus,
@@ -49,9 +51,20 @@ public partial class CpuService
 
     private void OnDoWorkCpuCore(CpuInfo cpuInfo)
     {
-        uint[]? current = CaptureCpuTicks(out int cpus);
+        uint[]? current = CaptureCpuTicks(out int cpus, out int result);
+        bool    read    = current != null && cpus > 0;
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(read
+                ? $"{ServiceName}: host_processor_info OK, {cpus} processors"
+                : $"{ServiceName}: host_processor_info FAILED {ErrorCodes.DescribeKernReturn(result)}");
+        }
 
         if (current == null || cpus <= 0) {
+            TraceEx.WriteLineOnce(
+                $"{nameof(CpuService)} host_processor_info",
+                $"{ServiceName}: host_processor_info FAILED {ErrorCodes.DescribeKernReturn(result)}");
+
             return;
         }
 
@@ -123,7 +136,6 @@ public partial class CpuService
     {
         double[] loadAverage = new double[1];
 
-        // Unlike the Windows queue this counts running threads too, so it reads higher.
         if (Sys.getloadavg(loadAverage, loadAverage.Length) == loadAverage.Length) {
             cpuInfo.Metrics.RunQueuePerCore = loadAverage[0] / Environment.ProcessorCount;
         }

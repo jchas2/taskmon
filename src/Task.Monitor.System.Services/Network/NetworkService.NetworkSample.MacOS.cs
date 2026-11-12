@@ -67,7 +67,15 @@ public partial class NetworkService
     {
         Dictionary<uint, InterfaceSample> samples = new();
 
-        if (!TryReadInterfaceList(samples)) {
+        bool read = TryReadInterfaceList(samples);
+
+        if (IsFirstCycle) {
+            Trace.WriteLine(read
+                ? $"{ServiceName}: sysctl NET_RT_IFLIST2 OK, {samples.Count} interfaces"
+                : $"{ServiceName}: sysctl NET_RT_IFLIST2 FAILED, no interface counters");
+        }
+
+        if (!read) {
             return;
         }
 

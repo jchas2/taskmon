@@ -1,5 +1,6 @@
 #if __APPLE__
 using System.Diagnostics;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
@@ -122,6 +123,10 @@ internal sealed class IOReportEnergySampler : IDisposable
             long timestamp = Stopwatch.GetTimestamp();
 
             if (sample == nint.Zero) {
+                TraceEx.WriteLineOnce(
+                    $"{nameof(IOReportEnergySampler)} IOReportCreateSamples",
+                    $"PowerService: IOReportCreateSamples returned no {EnergyModelGroup} sample");
+
                 return null;
             }
 
