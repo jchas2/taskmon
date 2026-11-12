@@ -4,7 +4,8 @@
 //   1. fields and nested types (original relative order)
 //   2. events (A-Z)
 //   3. constructors and destructor (original relative order)
-//   4. properties, methods, indexers and operators (one A-Z list, case-insensitive)
+//   4. properties, methods, indexers and operators (one A-Z list, case-insensitive), except that a
+//      canary test (a method named *_Canary_Test) comes first
 //
 // Skipped: property-only types (data classes) and enums.
 // Comments, attributes and balanced #if blocks move with their member. A member whose
@@ -160,6 +161,10 @@ sealed class Reorderer : CSharpSyntaxRewriter
 
     public List<string> Errors { get; } = [];
 
+    // A canary test leads its class, so the property count it pins is the first thing a reader sees.
+    private static bool IsCanary(MemberDeclarationSyntax m) =>
+        m is MethodDeclarationSyntax x && x.Identifier.ValueText.EndsWith("_Canary_Test", StringComparison.Ordinal);
+
     private static bool IsDirective(SyntaxTrivia t) => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia);
 
     public List<string> Log { get; } = [];
@@ -202,6 +207,7 @@ sealed class Reorderer : CSharpSyntaxRewriter
         var ordered = members
             .Select((m, i) => (m, i))
             .OrderBy(x => Rank(x.m))
+            .ThenBy(x => IsCanary(x.m) ? 0 : 1)
             .ThenBy(x => Rank(x.m) is 1 or 3 ? Name(x.m) : "", NameComparer)
             .ThenBy(x => x.i)
             .Select(x => x.i)

@@ -18,6 +18,10 @@ public sealed class HelpScreenTests
         runContext = runContextHelper.GetRunContext();
     }
 
+    [Fact]
+    public void HelpScreen_Canary_Test() =>
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<HelpScreen>());
+
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
@@ -85,10 +89,6 @@ public sealed class HelpScreenTests
         Assert.Equal(runContext.AppConfig.Theme.Background, capturedBg);
         Assert.Equal(runContext.AppConfig.Theme.Foreground, capturedFg);
     }
-
-    [Fact]
-    public void HelpScreen_Canary_Test() =>
-        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<HelpScreen>());
 
     public static TheoryData<string> HelpTextData()
         => new()

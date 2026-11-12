@@ -1,5 +1,6 @@
 using System.Reflection;
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
@@ -36,12 +37,38 @@ public sealed class MainScreen2Tests : IDisposable
         screenApp = new ScreenApplication(runContext.Terminal);
     }
 
+    [Fact]
+    public void MainScreen2_Canary_Test() =>
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<MainScreen2>());
+
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"
                 && invocation.Arguments.Count == 1
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
+
+    [Fact]
+    public void Default_Properties_After_Construction_Have_Default_Values()
+    {
+        MainScreen2 mainScreen = new(runContext, screenApp);
+
+        Assert.Equal(ConsolePalette.Black, mainScreen.BackgroundColour);
+        Assert.Equal(ConsolePalette.White, mainScreen.BorderColour);
+        Assert.NotEmpty(mainScreen.Controls);
+        Assert.Equal(ConsolePalette.White, mainScreen.DisplayBorderColour);
+        Assert.False(mainScreen.Focused);
+        Assert.Equal(ConsolePalette.White, mainScreen.ForegroundColour);
+        Assert.False(mainScreen.HasFocus);
+        Assert.Equal(0, mainScreen.Height);
+        Assert.Equal(string.Empty, mainScreen.Name);
+        Assert.Equal(0U, mainScreen.TabIndex);
+        Assert.False(mainScreen.TabStop);
+        Assert.True(mainScreen.Visible);
+        Assert.Equal(0, mainScreen.Width);
+        Assert.Equal(0, mainScreen.X);
+        Assert.Equal(0, mainScreen.Y);
+    }
 
     public void Dispose() => Control.RedrawEnabled = true;
 

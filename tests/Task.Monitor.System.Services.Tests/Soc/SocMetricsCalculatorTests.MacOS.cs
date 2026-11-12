@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using Task.Monitor.System.Services.Npu;
 using Task.Monitor.System.Services.Soc;
+using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Task.Monitor.System.Services.Tests.Soc;
@@ -13,6 +14,10 @@ public sealed class SocMetricsCalculatorTests(ITestOutputHelper output)
 
     // The M3 Pro GPU table as read from pmgr: OFF, then P1..P13.
     private static readonly double[] M3ProGpuMhz = [0, 338, 618, 796, 832, 924, 952, 1056, 1064, 1182, 1182, 1312, 1242, 1380];
+
+    [Fact]
+    public void NpuDevice_Canary_Test() =>
+        Assert.Equal(6, CanaryTestHelper.GetPropertyCount<NpuDevice>());
 
     [Fact]
     public void BuildNpuInfo_Publishes_The_Specs_Even_Without_A_Reading()

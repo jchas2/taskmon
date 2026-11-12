@@ -1,11 +1,16 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Configuration;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.Tests.Configuration;
 
 public sealed class SummaryControlLayoutTests
 {
+    [Fact]
+    public void SummaryLayoutNode_Canary_Test() =>
+        Assert.Equal(8, CanaryTestHelper.GetPropertyCount<SummaryLayoutNode>());
+
     // A CpuCores pane is designer-only (no menu or screen builds one), so persistence is the only
     // thing that carries it between sessions.
     [Fact]

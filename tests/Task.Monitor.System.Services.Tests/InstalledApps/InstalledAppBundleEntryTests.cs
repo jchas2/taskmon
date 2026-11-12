@@ -1,10 +1,15 @@
 using Task.Monitor.System.Services.InstalledApps;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests.InstalledApps;
 
 public sealed class InstalledAppBundleEntryTests
 {
     private const string BundlePath = "/Applications/Visual Studio Code.app";
+
+    [Fact]
+    public void InstalledApp_Canary_Test() =>
+        Assert.Equal(10, CanaryTestHelper.GetPropertyCount<InstalledApp>());
 
     [Fact]
     public void GetStamp_Changes_When_The_Info_Plist_Is_Rewritten()

@@ -92,6 +92,8 @@ Details:
 - In partial types, each file is ordered on its own. Members never move between files.
 - Two platform variants of the same member (`#if __APPLE__` / `#if __WIN32__`) stay together as one
   unit at that member's position.
+- In a test class, a [canary test](#canary-tests) (`<Type>_Canary_Test`) comes first in region 4,
+  ahead of the A–Z list.
 
 Exempt from alphabetical ordering:
 
@@ -279,3 +281,30 @@ Native AOT binary low is a core design goal; see the README's
   under test, so A–Z keeps each member's tests together. Don't group tests with section-header
   comments (`// ---- Scrolling ----`); if a group needs its own setup, give it its own test class.
 - Comments in tests explain the behaviour being guarded, not the mechanics of the assertion.
+
+### Canary tests
+
+A canary test pins the number of public instance properties on a type, so a property added later
+fails a test until it is also added to the tests that are meant to cover every property.
+
+```csharp
+[Fact]
+public void HealthEvent_Canary_Test() =>
+    Assert.Equal(8, CanaryTestHelper.GetPropertyCount<HealthEvent>());
+```
+
+- **Add one beside any test that covers every property of a type**: a defaults or set/get test, a
+  round trip through a file, a parser that fills every field, or settings read from and written to
+  the config file. Put it in the same test class, named `<Type>_Canary_Test`, and keep it in a
+  `.Windows.cs` or `.MacOS.cs` file when the test it guards is there. It is the first test in the
+  class: the reorder tool puts it ahead of the A–Z list, after the fields and constructors.
+- **Don't add one** where a test checks only the fields one source fills, such as a parser for a
+  type whose other properties are set elsewhere; it would fail for properties the test was never
+  meant to cover.
+- **When a canary fails**, add the new property to the tests it guards first, then raise the count.
+  Never raise the count on its own: the canary then passes while the new property goes untested.
+- Inherited properties are counted, so a property added to a base class such as `Control` fails the
+  canary of every control and screen as well as `Control_Canary_Test`. Check each derived type's
+  defaults test for the new property.
+- The same idea applies to anything else that must stay in step with its tests;
+  `TaskMon_Actions_Canary_Test` counts the `IAction` classes.

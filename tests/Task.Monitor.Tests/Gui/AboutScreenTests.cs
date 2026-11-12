@@ -1,4 +1,5 @@
 using Moq;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Mascot;
 using Task.Monitor.Tests.Common;
@@ -33,6 +34,28 @@ public sealed class AboutScreenTests
         AboutScreen screen = new(runContext);
 
         Assert.IsType<MascotControl>(Assert.Single(screen.Controls));
+    }
+
+    [Fact]
+    public void Default_Properties_After_Construction_Have_Default_Values()
+    {
+        AboutScreen screen = new(runContext);
+
+        Assert.Equal(ConsolePalette.Black, screen.BackgroundColour);
+        Assert.Equal(ConsolePalette.White, screen.BorderColour);
+        Assert.Single(screen.Controls);
+        Assert.Equal(ConsolePalette.White, screen.DisplayBorderColour);
+        Assert.False(screen.Focused);
+        Assert.Equal(ConsolePalette.White, screen.ForegroundColour);
+        Assert.False(screen.HasFocus);
+        Assert.Equal(0, screen.Height);
+        Assert.Equal(string.Empty, screen.Name);
+        Assert.Equal(0U, screen.TabIndex);
+        Assert.False(screen.TabStop);
+        Assert.True(screen.Visible);
+        Assert.Equal(0, screen.Width);
+        Assert.Equal(0, screen.X);
+        Assert.Equal(0, screen.Y);
     }
 
     [Fact]

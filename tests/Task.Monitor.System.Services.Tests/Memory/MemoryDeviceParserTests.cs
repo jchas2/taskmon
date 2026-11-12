@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using Task.Monitor.System.Services.Memory;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests.Memory;
 
@@ -10,6 +11,10 @@ public sealed class MemoryDeviceParserTests
     private const int  MemoryDeviceLength = 0x28;
 
     private const string NotAvailable = "N/A";
+
+    [Fact]
+    public void MemoryDevice_Canary_Test() =>
+        Assert.Equal(11, CanaryTestHelper.GetPropertyCount<MemoryDevice>());
 
     // A Type 17 structure for a 16 GB DDR5 DIMM, 4800 MT/s configured at 4400, with no serial
     // number. withStrings: false leaves every string index at 0 and an empty string table. A

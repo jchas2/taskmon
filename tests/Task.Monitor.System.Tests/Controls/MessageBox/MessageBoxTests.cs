@@ -8,6 +8,10 @@ namespace Task.Monitor.System.Tests.Controls.MessageBox;
 
 public sealed class MessageBoxTests
 {
+    [Fact]
+    public void MessageBox_Canary_Test() =>
+        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+
     public static TheoryData<List<ConsoleKey>, MessageBoxResult> KeyPressData()
         => new() {
             // Key combinations with defined behaviour.
@@ -75,10 +79,6 @@ public sealed class MessageBoxTests
             { new List<ConsoleKey>() { ConsoleKey.DownArrow }, MessageBoxResult.None },
             { new List<ConsoleKey>() { ConsoleKey.UpArrow }, MessageBoxResult.None },
         };
-
-    [Fact]
-    public void MessageBox_Canary_Test() =>
-        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
 
     [Theory]
     [MemberData(nameof(KeyPressData))]

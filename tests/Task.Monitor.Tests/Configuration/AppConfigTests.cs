@@ -8,6 +8,7 @@ using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.Tests.Common;
 namespace Task.Monitor.Tests.Configuration;
 
 public sealed class AppConfigTests
@@ -17,6 +18,10 @@ public sealed class AppConfigTests
     
     public AppConfigTests() =>
         fileSystem = new Mock<IFileSystem>();
+
+    [Fact]
+    public void AppConfig_Canary_Test() =>
+        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<AppConfig>());
 
     [Fact]
     public void A_New_Config_Starts_With_All_Charts_As_The_Default_Layout()
@@ -81,6 +86,7 @@ highlight-daemons=False
 highlight-stats-col-update=False
 metre-style=Bars
 multi-select-procs=True
+show-large-metre-grid=True
 show-metre-cpu-numerically=False
 show-metre-disk-numerically=False
 show-metre-mem-numerically=False
@@ -89,6 +95,7 @@ show-metre-gpu-numerically=False
 show-metre-npu-numerically=False
 show-metre-gpu-mem-numerically=False
 show-metre-network-numerically=False
+show-small-metre-grid=True
 show-tips=False
 show-y-axis-scale=False
 use-irix-cpu-reporting=False
@@ -680,6 +687,7 @@ control.foreground=#abcdef
         Assert.Equal("root", appConfig.FilterUserName);
         Assert.Equal("kernel_task", appConfig.FilterProcess);
         Assert.False(appConfig.HighlightDaemons);
+        Assert.False(appConfig.HighlightStatisticsColumnUpdate);
         Assert.Equal(MetreControlStyle.Bars, appConfig.MetreStyle);
         Assert.True(appConfig.MultiSelectProcesses);
         Assert.Equal(Statistics.Mem, appConfig.SortColumn);
@@ -692,9 +700,20 @@ control.foreground=#abcdef
         Assert.False(appConfig.ShowMetreGpuMemNumerically);
         Assert.False(appConfig.ShowMetreNetworkNumerically);
         Assert.False(appConfig.ShowMetreNpuNumerically);
+        Assert.True(appConfig.ShowLargeMetreGrid);
+        Assert.True(appConfig.ShowSmallMetreGrid);
         Assert.False(appConfig.ShowTips);
         Assert.False(appConfig.ShowYAxisScale);
         Assert.False(appConfig.UseIrixReporting);
+
+        Statistics allButPower =
+            Statistics.Process | Statistics.Pid     | Statistics.User   | Statistics.Pri    |
+            Statistics.Cpu     | Statistics.Thrd    | Statistics.Gpu    | Statistics.Mem    |
+            Statistics.Path    | Statistics.Disk    | Statistics.AvgCpu | Statistics.AvgGpu |
+            Statistics.AvgMem  | Statistics.AvgDisk | Statistics.MaxCpu | Statistics.MaxGpu |
+            Statistics.MaxMem  | Statistics.MaxDisk;
+
+        Assert.Equal(allButPower, appConfig.VisibleColumns);
     }
 
     [Fact]

@@ -14,6 +14,10 @@ public sealed class ThemeTests
     private static readonly Regex HexOrTransparent =
         new("^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$", RegexOptions.Compiled);
 
+    [Fact]
+    public void Theme_Canary_Test() =>
+        Assert.Equal(70, CanaryTestHelper.GetPropertyCount<Theme>());
+
     private void AssertThemeColours(Theme theme)
     {
         Assert.Equal(ColorTranslator.FromHtml("#0f1610"), theme.Background);
@@ -132,6 +136,23 @@ public sealed class ThemeTests
 
         Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ChartBorderForeground);
         Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBorderBackground);
+    }
+
+    [Fact]
+    public void ColourMode_Defaults_To_Auto_When_Not_Set() =>
+        Assert.Equal(ColourMode.Auto, new Theme(new ConfigSection("theme-test")).ColourMode);
+
+    [Theory]
+    [InlineData("Indexed",    ColourMode.Indexed)]
+    [InlineData("Truecolour", ColourMode.Truecolour)]
+    public void ColourMode_Is_Read_From_The_Theme(string value, ColourMode expected)
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.ColourMode, value);
+
+        Theme theme = new(section);
+
+        Assert.Equal(expected, theme.ColourMode);
     }
 
     [Fact]
@@ -697,10 +718,6 @@ menubar.background=#121d18
 command.foreground=#717f24
 command.background=#121d18
 ";
-
-    [Fact]
-    public void Theme_Canary_Test() =>
-        Assert.Equal(70, CanaryTestHelper.GetPropertyCount<Theme>());
 
     [Fact]
     public void TipGlyph_Falls_Back_To_Orange_When_Not_Set()

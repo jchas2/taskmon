@@ -2,11 +2,16 @@
 using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Controls;
+using Task.Monitor.Tests.Common;
 namespace Task.Monitor.System.Tests.Controls;
 
 public class ControlTests
 {
     private static readonly Mock<ISystemTerminal> SystemTerminalSingleton = new();
+
+    [Fact]
+    public void Control_Canary_Test() =>
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<Control>());
 
     public static TheoryData<string> BorderedControls() => new() { "ListView", "Chart", "Metre" };
 
@@ -62,10 +67,17 @@ public class ControlTests
         Control control = new(terminalMock.Object);
 
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.White, control.BorderColour);
         Assert.Equal(0, control.ControlCount);
         Assert.Empty(control.Controls);
+        Assert.Equal(ConsolePalette.White, control.DisplayBorderColour);
+        Assert.False(control.Focused);
         Assert.Equal(ConsolePalette.White, control.ForegroundColour);
+        Assert.False(control.HasFocus);
         Assert.Equal(0, control.Height);
+        Assert.Equal(string.Empty, control.Name);
+        Assert.Equal(0U, control.TabIndex);
+        Assert.False(control.TabStop);
         Assert.True(control.Visible);
         Assert.Equal(0, control.Width);
         Assert.Equal(0, control.X);

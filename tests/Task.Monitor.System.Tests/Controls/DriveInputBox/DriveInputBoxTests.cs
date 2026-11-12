@@ -8,6 +8,10 @@ namespace Task.Monitor.System.Tests.Controls.DriveInputBox;
 
 public sealed class DriveInputBoxTests
 {
+    [Fact]
+    public void DriveInputBox_Canary_Test() =>
+        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
+
     private static DriveInputBoxControl CreateBox(Mock<ISystemTerminal>? terminal = null)
     {
         terminal ??= TerminalMock.Setup();
@@ -57,10 +61,6 @@ public sealed class DriveInputBoxTests
         Assert.Equal(DriveInputBoxResult.Ok, control.Result);
         Assert.Equal("D:\\", control.SelectedPath);
     }
-
-    [Fact]
-    public void DriveInputBox_Canary_Test() =>
-        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
 
     [Fact]
     public void Enter_With_The_First_Candidate_Highlighted_Selects_It()
@@ -196,6 +196,10 @@ public sealed class DriveInputBoxTests
         Assert.Equal(ConsolePalette.DarkGray, control.DialogButtonBackgroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogButtonForegroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ListBackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.Gray, control.ListBackgroundHighlightInactiveColour);
+        Assert.Equal(ConsolePalette.Cyan, control.ListForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.Black, control.ListForegroundHighlightInactiveColour);
         Assert.NotNull(control.Title);
         Assert.Empty(control.Title);
         Assert.Equal(DriveInputBoxResult.None, control.Result);

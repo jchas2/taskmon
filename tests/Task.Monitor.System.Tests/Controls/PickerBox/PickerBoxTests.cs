@@ -8,6 +8,10 @@ namespace Task.Monitor.System.Tests.Controls.PickerBox;
 
 public sealed class PickerBoxTests
 {
+    [Fact]
+    public void PickerBox_Canary_Test() =>
+        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+
     private static PickerBoxControl CreateBox(
         Mock<ISystemTerminal>? terminal = null,
         bool multiSelect = false,
@@ -181,10 +185,6 @@ public sealed class PickerBoxTests
     }
 
     [Fact]
-    public void PickerBox_Canary_Test() =>
-        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
-
-    [Fact]
     public void SetItems_Highlights_The_Initial_Item_Wherever_It_Sorts()
     {
         PickerBoxControl control = CreateBox();
@@ -222,6 +222,10 @@ public sealed class PickerBoxTests
         Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
         Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.White, control.ListBackgroundHighlightColour);
+        Assert.Equal(ConsolePalette.Gray, control.ListBackgroundHighlightInactiveColour);
+        Assert.Equal(ConsolePalette.Cyan, control.ListForegroundHighlightColour);
+        Assert.Equal(ConsolePalette.Black, control.ListForegroundHighlightInactiveColour);
         Assert.NotNull(control.Title);
         Assert.Empty(control.Title);
         Assert.False(control.MultiSelect);

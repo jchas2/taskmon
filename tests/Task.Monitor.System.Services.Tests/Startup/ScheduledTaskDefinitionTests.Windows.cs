@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.System.Services.Startup;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests.Startup;
 
@@ -9,6 +10,10 @@ public sealed class ScheduledTaskDefinitionTests
         <?xml version="1.0" encoding="UTF-16"?>
         <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
         """;
+
+    [Fact]
+    public void ScheduledTaskDefinition_Canary_Test() =>
+        Assert.Equal(6, CanaryTestHelper.GetPropertyCount<ScheduledTaskDefinition>());
 
     [Fact]
     public void A_ComHandler_Only_Task_Has_No_Executable_Path()

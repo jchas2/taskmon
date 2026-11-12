@@ -27,6 +27,10 @@ public sealed class LayoutDesignerScreenTests
         runContext = runContextHelper.GetRunContext();
     }
 
+    [Fact]
+    public void LayoutDesignerScreen_Canary_Test() =>
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<LayoutDesignerScreen>());
+
     private static bool AnyDescendantFocused(Control control) =>
         control.Focused || control.Controls.Any(AnyDescendantFocused);
 
@@ -304,6 +308,28 @@ public sealed class LayoutDesignerScreenTests
         Assert.Equal(screen.Tree.RootId, pane.Id);
 
         screen.Unload();
+    }
+
+    [Fact]
+    public void Default_Properties_After_Construction_Have_Default_Values()
+    {
+        LayoutDesignerScreen screen = new(runContext);
+
+        Assert.Equal(ConsolePalette.Black, screen.BackgroundColour);
+        Assert.Equal(ConsolePalette.White, screen.BorderColour);
+        Assert.NotEmpty(screen.Controls);
+        Assert.Equal(ConsolePalette.White, screen.DisplayBorderColour);
+        Assert.False(screen.Focused);
+        Assert.Equal(ConsolePalette.White, screen.ForegroundColour);
+        Assert.False(screen.HasFocus);
+        Assert.Equal(0, screen.Height);
+        Assert.Equal(string.Empty, screen.Name);
+        Assert.Equal(0U, screen.TabIndex);
+        Assert.False(screen.TabStop);
+        Assert.True(screen.Visible);
+        Assert.Equal(0, screen.Width);
+        Assert.Equal(0, screen.X);
+        Assert.Equal(0, screen.Y);
     }
 
     [Fact]

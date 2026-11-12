@@ -26,6 +26,10 @@ public sealed class SetupScreenTests
         screenApp = new ScreenApplication(runContext.Terminal);
     }
 
+    [Fact]
+    public void SetupScreen_Canary_Test() =>
+        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<SetupScreen>());
+
     // Makes LAYOUTS the active tab with its list focused - what Right arrow does after picking
     // LAYOUTS in the category menu.
     private static ListView ActivateLayoutsTab(SetupScreen setupScreen)
@@ -695,10 +699,6 @@ public sealed class SetupScreenTests
 
         throw new InvalidOperationException($"No row '{text}'.");
     }
-
-    [Fact]
-    public void SetupScreen_Canary_Test() =>
-        Assert.Equal(15, CanaryTestHelper.GetPropertyCount<SetupScreen>());
 
     private SetupScreen ShowTab(string tabName, int width)
     {

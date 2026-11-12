@@ -10,6 +10,23 @@ public class TaskMonAppTests
     private readonly StringWriter stringOutputWriter = new();    // stdout
     private readonly StringWriter stringErrorWriter = new();     // stderr
 
+    [Fact]
+    public void TaskMon_Actions_Canary_Test()
+    {
+        AssemblyName assemblyName = Assembly
+            .GetExecutingAssembly()
+            .GetReferencedAssemblies()
+            .First(asm => asm.Name == "taskmon");
+
+        Assembly taskmonLib = Assembly.Load(assemblyName);
+
+        int count = taskmonLib.GetExportedTypes()
+            .Where(t => t.IsClass && t.Assembly == taskmonLib)
+            .Count(t => typeof(IAction).IsAssignableFrom(t));
+
+        Assert.Equal(4, count);
+    }
+
     public static TheoryData<string, Type> ActionArgData()
         => new() {
             { "-h", typeof(ShowUsageAction) },
@@ -129,23 +146,6 @@ public class TaskMonAppTests
             { "--cpu-only", Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu },
             { "--gpu-only", Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu }
         };
-
-    [Fact]
-    public void TaskMon_Actions_Canary_Test()
-    {
-        AssemblyName assemblyName = Assembly
-            .GetExecutingAssembly()
-            .GetReferencedAssemblies()
-            .First(asm => asm.Name == "taskmon");
-
-         Assembly taskmonLib = Assembly.Load(assemblyName);
-
-         int count = taskmonLib.GetExportedTypes()
-             .Where(t => t.IsClass && t.Assembly == taskmonLib)
-             .Count(t => typeof(IAction).IsAssignableFrom(t));
-         
-         Assert.Equal(4, count);
-    }
 
     public static TheoryData<string, string, string> ValidStringFilterData()
         => new() {

@@ -12,7 +12,7 @@ public sealed class ScreenTests
     public class TestScreen2(ISystemTerminal systemTerminal) : Screen(systemTerminal);
 
     [Fact]
-    public void InputBox_Canary_Test() =>
+    public void Screen_Canary_Test() =>
         Assert.Equal(15, CanaryTestHelper.GetPropertyCount<TestScreen1>());
 
     [Fact]

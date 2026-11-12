@@ -1,5 +1,6 @@
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Services.Health;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests.Health;
 
@@ -13,6 +14,10 @@ public sealed class HealthEventStoreTests : IDisposable
     private readonly HealthEventStore store;
 
     public HealthEventStoreTests() => store = new HealthEventStore(new FileSystem(), folder);
+
+    [Fact]
+    public void HealthEvent_Canary_Test() =>
+        Assert.Equal(8, CanaryTestHelper.GetPropertyCount<HealthEvent>());
 
     [Theory]
     [InlineData("[event]\nversion=2\nresource=Cpu\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\n")]

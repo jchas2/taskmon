@@ -29,6 +29,10 @@ public sealed class ListViewTests
     private const string Up = "▲";
     private const string Down = "▼";
 
+    [Fact]
+    public void ListView_Canary_Test() =>
+        Assert.Equal(37, CanaryTestHelper.GetPropertyCount<ListViewControl>());
+
     public static TheoryData<ConsoleKeyInfo, int> ArrowKeyNoScrollData()
         => new()
         {
@@ -371,10 +375,6 @@ public sealed class ListViewTests
         
         Assert.Equal(0, listView.ItemCount);
     }
-
-    [Fact]
-    public void ListView_Canary_Test() =>
-        Assert.Equal(37, CanaryTestHelper.GetPropertyCount<ListViewControl>());
 
         [Fact]
     public void OnDraw_Blits_The_Frame_With_A_Single_Span_Write()
