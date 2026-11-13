@@ -12,7 +12,7 @@ internal sealed class MemoryHealthRule : IHealthRule
             availablePercent,
             thresholds.MemoryAvailableWarningPercent,
             thresholds.MemoryAvailableCriticalPercent,
-            $"{availablePercent:0}% available");
+            new HealthCause(HealthCauseKind.MemoryAvailable, availablePercent));
 
     private static double? CommitPercent(MemoryMetrics metrics) =>
         metrics.CommitLimit > 0.0
@@ -33,12 +33,15 @@ internal sealed class MemoryHealthRule : IHealthRule
             : NumericCondition(availablePercent, commitPercent, metrics, thresholds);
 
         return new HealthReading {
-            Resource    = Resource,
-            Level       = worst.Level,
-            Reason      = worst.Reason,
-            Severity    = worst.Severity,
-            Utilisation = $"{100.0 - availablePercent:0}% in use",
-            Saturation  = SaturationText(metrics, commitPercent)
+            Resource = Resource,
+            Level    = worst.Level,
+            Cause    = worst.Cause,
+            Severity = worst.Severity,
+            Measures = new MemoryHealthMeasures(
+                PercentPerRatio - availablePercent,
+                commitPercent,
+                metrics.PagesInPerSecond,
+                metrics.Pressure)
         };
     }
 
@@ -55,7 +58,7 @@ internal sealed class MemoryHealthRule : IHealthRule
                 commit,
                 thresholds.CommitWarningPercent,
                 thresholds.CommitCriticalPercent,
-                $"commit {commit:0}%"));
+                new HealthCause(HealthCauseKind.CommitCharge, commit)));
         }
 
         // Windows reads pages back in after memory comes free, and programs starting up read their
@@ -65,14 +68,11 @@ internal sealed class MemoryHealthRule : IHealthRule
                 pagesIn,
                 thresholds.HardFaultsWarningPerSecond,
                 double.PositiveInfinity,
-                PagesInText(pagesIn)));
+                new HealthCause(HealthCauseKind.PagesIn, pagesIn)));
         }
 
         return HealthCondition.Worst(conditions);
     }
-
-    // Pages read from disk, not hard faults: one hard fault usually reads several pages at once.
-    private static string PagesInText(double pagesIn) => $"{pagesIn:0} pages in/s";
 
     // macOS memory is judged by the kernel's own pressure level. Available memory is low by
     // design, as the system fills spare memory with cache.
@@ -81,35 +81,23 @@ internal sealed class MemoryHealthRule : IHealthRule
         MemoryMetrics    metrics,
         HealthThresholds thresholds)
     {
+        HealthCause cause = new(HealthCauseKind.MemoryPressure, (int)pressure);
+
         HealthCondition level = pressure switch {
-            MemoryPressure.Critical => new HealthCondition(HealthLevel.Critical, "kernel pressure critical", 2.0),
-            MemoryPressure.Warning  => new HealthCondition(HealthLevel.Warning, "kernel pressure warning", 1.0),
+            MemoryPressure.Critical => new HealthCondition(HealthLevel.Critical, cause, 2.0),
+            MemoryPressure.Warning  => new HealthCondition(HealthLevel.Warning, cause, 1.0),
                                   _ => HealthCondition.Clear
         };
 
-        double swapOutMb = (metrics.SwapOutBytesPerSecond ?? 0.0) / BytesPerMegabyte;
+        double swapOut   = metrics.SwapOutBytesPerSecond ?? 0.0;
+        double swapOutMb = swapOut / BytesPerMegabyte;
 
         HealthCondition swap = swapOutMb > thresholds.SwapOutWarningMbPerSecond
-            ? new HealthCondition(HealthLevel.Warning, $"swapping out {swapOutMb:0.0} MB/s", 1.0 + swapOutMb)
+            ? new HealthCondition(HealthLevel.Warning, new HealthCause(HealthCauseKind.SwapOut, swapOut), 1.0 + swapOutMb)
             : HealthCondition.Clear;
 
         return HealthCondition.Worst([level, swap]);
     }
 
     public HealthResource Resource => HealthResource.Memory;
-
-    private static string SaturationText(MemoryMetrics metrics, double? commitPercent)
-    {
-        if (metrics.Pressure is { } pressure) {
-            return $"Pressure {pressure}";
-        }
-
-        if (metrics.PagesInPerSecond is not { } pagesIn) {
-            return commitPercent is { } commit ? $"Commit {commit:0}%" : string.Empty;
-        }
-
-        return commitPercent is { } percent
-            ? $"Commit {percent:0}%, {PagesInText(pagesIn)}"
-            : PagesInText(pagesIn);
-    }
 }

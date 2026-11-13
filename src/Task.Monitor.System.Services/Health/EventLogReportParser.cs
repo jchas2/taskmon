@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Runtime.ExceptionServices;
 using System.Xml;
 using System.Xml.Linq;
+using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Services.Health;
 
@@ -19,31 +21,31 @@ internal static class EventLogReportParser
     {
         switch (provider) {
             case ApplicationError when eventId == 1000: {
-                string  app    = Named(data, "AppName") ?? First(data);
                 string? module = Named(data, "ModuleName");
 
-                // Windows records "unknown" itself for some crashes, which says nothing to show.
-                string detail = module == null || module.Equals(Unknown, StringComparison.OrdinalIgnoreCase)
-                    ? app
-                    : $"{app}, in {module}";
-
-                return new HealthReport(timeUtc, HealthReportKind.AppCrash, "App crash", detail, app);
+                return new HealthReport {
+                    TimeUtc = timeUtc,
+                    Cause   = HealthReportCause.AppError,
+                    App     = Named(data, "AppName") ?? First(data),
+                    Module  = module == null || module.Equals(Unknown, StringComparison.OrdinalIgnoreCase) ? string.Empty : module
+                };
             }
 
-            case ApplicationHang when eventId == 1002: {
-                string app = Named(data, "AppName") ?? First(data);
-
-                return new HealthReport(timeUtc, HealthReportKind.AppHang, "App hang", app, app);
-            }
+            case ApplicationHang when eventId == 1002:
+                return new HealthReport {
+                    TimeUtc = timeUtc,
+                    Cause   = HealthReportCause.AppHang,
+                    App     = Named(data, "AppName") ?? First(data)
+                };
 
             case ResourceDetector when eventId == 2004:
-                return new HealthReport(timeUtc, HealthReportKind.LowMemory, "Low memory", "Windows ran low on virtual memory", string.Empty);
+                return new HealthReport { TimeUtc = timeUtc, Cause = HealthReportCause.VirtualMemoryLow };
 
             case KernelPower when eventId == 41:
-                return new HealthReport(timeUtc, HealthReportKind.UnexpectedRestart, "Unexpected restart", "Restarted without shutting down cleanly", string.Empty);
+                return new HealthReport { TimeUtc = timeUtc, Cause = HealthReportCause.UnexpectedRestart };
 
             case WheaLogger:
-                return new HealthReport(timeUtc, HealthReportKind.HardwareError, "Hardware error", $"WHEA event {eventId}", string.Empty);
+                return new HealthReport { TimeUtc = timeUtc, Cause = HealthReportCause.HardwareError, EventId = eventId };
 
             default:
                 return provider.Equals(DiskProvider, StringComparison.OrdinalIgnoreCase) || eventId == 129
@@ -54,16 +56,16 @@ internal static class EventLogReportParser
 
     private static HealthReport? DiskError(string provider, int eventId, DateTime timeUtc)
     {
-        string? detail = eventId switch {
-            7   => "Bad block",
-            51  => "Error during a paging operation",
-            129 => $"{provider} reset the device",
-            153 => "Request retried",
+        HealthReportCause? cause = eventId switch {
+            7   => HealthReportCause.BadBlock,
+            51  => HealthReportCause.PagingError,
+            129 => HealthReportCause.DeviceReset,
+            153 => HealthReportCause.RequestRetried,
             _   => null
         };
 
-        return detail != null
-            ? new HealthReport(timeUtc, HealthReportKind.DiskError, "Disk error", detail, string.Empty)
+        return cause is { } found
+            ? new HealthReport { TimeUtc = timeUtc, Cause = found, Driver = provider }
             : null;
     }
 
@@ -95,7 +97,8 @@ internal static class EventLogReportParser
 
             return Build(provider, id, timeUtc, data);
         }
-        catch (XmlException) {
+        catch (XmlException ex) {
+            ExceptionHelper.LogException(ex);
             return null;
         }
     }

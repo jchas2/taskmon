@@ -56,7 +56,7 @@ public partial class HealthService
                 NvmeHealthLog.PercentUsed(log) is { } percentUsed &&
                 NvmeHealthLog.MediaErrors(log) is { } mediaErrors) {
 
-                drives.Add(new DriveHealth($"Disk {disk.Index}", warning, percentUsed, mediaErrors));
+                drives.Add(new DriveHealth(disk.Index, warning, percentUsed, mediaErrors));
             }
         }
 

@@ -12,9 +12,10 @@ public sealed class EventLogReportParserTests
             1000,
             "<Data Name='AppName'>chrome.exe</Data><Data Name='ModuleName'>ntdll.dll</Data>"))!;
 
+        Assert.Equal(HealthReportCause.AppError, report.Cause);
         Assert.Equal(HealthReportKind.AppCrash, report.Kind);
-        Assert.Equal("chrome.exe, in ntdll.dll", report.Detail);
-        Assert.Equal("chrome.exe", report.Source);
+        Assert.Equal("chrome.exe", report.App);
+        Assert.Equal("ntdll.dll", report.Module);
     }
 
     // Regression test: a real [Environment]::FailFast crash records the module as "unknown".
@@ -26,7 +27,8 @@ public sealed class EventLogReportParserTests
             1000,
             "<Data Name='AppName'>powershell.exe</Data><Data Name='ModuleName'>unknown</Data>"))!;
 
-        Assert.Equal("powershell.exe", report.Detail);
+        Assert.Equal("powershell.exe", report.App);
+        Assert.Empty(report.Module);
     }
 
     [Fact]
@@ -37,21 +39,29 @@ public sealed class EventLogReportParserTests
             1002,
             "<Data>notepad.exe</Data><Data>10.0</Data>"))!;
 
+        Assert.Equal(HealthReportCause.AppHang, report.Cause);
         Assert.Equal(HealthReportKind.AppHang, report.Kind);
-        Assert.Equal("notepad.exe", report.Source);
+        Assert.Equal("notepad.exe", report.App);
+    }
+
+    [Fact]
+    public void A_Hardware_Error_Keeps_Its_Event_Id()
+    {
+        Assert.Equal(18, EventLogReportParser.Parse(Event("Microsoft-Windows-WHEA-Logger", 18))!.EventId);
     }
 
     [Theory]
-    [InlineData("disk", 7, "Bad block")]
-    [InlineData("disk", 51, "Error during a paging operation")]
-    [InlineData("disk", 153, "Request retried")]
-    [InlineData("stornvme", 129, "stornvme reset the device")]
-    public void Disk_Events_Are_Described(string provider, int eventId, string detail)
+    [InlineData("disk", 7, HealthReportCause.BadBlock)]
+    [InlineData("disk", 51, HealthReportCause.PagingError)]
+    [InlineData("disk", 153, HealthReportCause.RequestRetried)]
+    [InlineData("stornvme", 129, HealthReportCause.DeviceReset)]
+    public void Disk_Events_Are_Described(string provider, int eventId, HealthReportCause cause)
     {
         HealthReport report = EventLogReportParser.Parse(Event(provider, eventId))!;
 
+        Assert.Equal(cause, report.Cause);
         Assert.Equal(HealthReportKind.DiskError, report.Kind);
-        Assert.Equal(detail, report.Detail);
+        Assert.Equal(provider, report.Driver);
     }
 
     private static string Event(string provider, int eventId, string data = "") =>
@@ -71,12 +81,15 @@ public sealed class EventLogReportParserTests
     }
 
     [Theory]
-    [InlineData("Microsoft-Windows-Resource-Exhaustion-Detector", 2004, HealthReportKind.LowMemory)]
-    [InlineData("Microsoft-Windows-Kernel-Power", 41, HealthReportKind.UnexpectedRestart)]
-    [InlineData("Microsoft-Windows-WHEA-Logger", 17, HealthReportKind.HardwareError)]
-    public void System_Events_Map_Across(string provider, int eventId, HealthReportKind kind)
+    [InlineData("Microsoft-Windows-Resource-Exhaustion-Detector", 2004, HealthReportCause.VirtualMemoryLow, HealthReportKind.LowMemory)]
+    [InlineData("Microsoft-Windows-Kernel-Power", 41, HealthReportCause.UnexpectedRestart, HealthReportKind.UnexpectedRestart)]
+    [InlineData("Microsoft-Windows-WHEA-Logger", 17, HealthReportCause.HardwareError, HealthReportKind.HardwareError)]
+    public void System_Events_Map_Across(string provider, int eventId, HealthReportCause cause, HealthReportKind kind)
     {
-        Assert.Equal(kind, EventLogReportParser.Parse(Event(provider, eventId))!.Kind);
+        HealthReport report = EventLogReportParser.Parse(Event(provider, eventId))!;
+
+        Assert.Equal(cause, report.Cause);
+        Assert.Equal(kind, report.Kind);
     }
 
     [Fact]

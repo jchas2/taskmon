@@ -44,6 +44,8 @@ internal sealed class HealthTracker
         }
     }
 
+    public HealthCause? Cause { get; private set; }
+
     public bool IsUnderPressure(HealthReading reading, HealthThresholds thresholds, DateTime utcNow) =>
         Level >= HealthLevel.Warning &&
         (reading.Level >= HealthLevel.Warning || !belowWarning.HasHeld(thresholds.SustainGraceSeconds, utcNow));
@@ -51,8 +53,6 @@ internal sealed class HealthTracker
     public HealthLevel Level { get; private set; } = HealthLevel.Unknown;
 
     public HealthEvent? OpenEvent { get; private set; }
-
-    public string Reason { get; private set; } = string.Empty;
 
     private void Reset()
     {
@@ -124,7 +124,7 @@ internal sealed class HealthTracker
             utcNow);
 
         if (reading.Level >= HealthLevel.Warning) {
-            Reason = reading.Reason;
+            Cause = reading.Cause;
         }
 
         UpdateLevel(reading, thresholds, utcNow);
@@ -175,7 +175,7 @@ internal sealed class HealthTracker
                 Resource   = reading.Resource,
                 Level      = Level,
                 StartUtc   = warning.Since ?? utcNow,
-                PeakReason = Reason,
+                PeakCause  = Cause,
                 PeakValue  = reading.Severity,
                 Culprits   = culprits
             };
@@ -188,7 +188,7 @@ internal sealed class HealthTracker
         if (reading.Level > peakLevel || (reading.Level == peakLevel && reading.Severity > OpenEvent.PeakValue)) {
             peakLevel = reading.Level;
             OpenEvent = OpenEvent with {
-                PeakReason = reading.Reason,
+                PeakCause  = reading.Cause,
                 PeakValue  = reading.Severity,
                 Culprits   = culprits
             };

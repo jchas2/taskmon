@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using Task.Monitor.Extensions;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Health;
 
@@ -32,9 +33,9 @@ public sealed partial class HealthControl
                         : healthEvent.IsInterrupted     ? "interrupted"
                                                         : "ongoing";
 
-        return string.IsNullOrEmpty(healthEvent.PeakReason)
-            ? duration
-            : $"{duration}, peak {healthEvent.PeakReason}";
+        return healthEvent.PeakCause is { } cause
+            ? $"{duration}, peak {cause.ToReasonText()}"
+            : duration;
     }
 
     internal static string DescribeHeadline(HealthInfo info)
@@ -85,7 +86,7 @@ public sealed partial class HealthControl
     private void RefreshCauses(HealthInfo info)
     {
         string signature = string.Join("|", info.Culprits.Select(culprit =>
-            $"{culprit.ProcessName}:{culprit.ProcessCount}:{culprit.Detail}:{string.Join(",", culprit.Resources)}"));
+            $"{culprit.ProcessName}:{culprit.ProcessCount}:{culprit.ToUsageText()}:{string.Join(",", culprit.Resources)}"));
 
         visibleCauses = info.Culprits;
 
@@ -110,7 +111,7 @@ public sealed partial class HealthControl
 
             string behind = string.Join(", ", culprit.Resources.Select(ResourceName));
 
-            causesView.Items.Add(new ListViewItem([name, culprit.Detail, behind], background, foreground));
+            causesView.Items.Add(new ListViewItem([name, culprit.ToUsageText(), behind], background, foreground));
         }
 
         if (causesView.Items.Count > 0) {
@@ -125,9 +126,9 @@ public sealed partial class HealthControl
     private void RefreshEvents(HealthInfo info)
     {
         string events = string.Join("|", info.Events.Select(healthEvent =>
-            $"{healthEvent.Resource}:{healthEvent.Level}:{healthEvent.StartUtc.Ticks}:{healthEvent.PeakReason}:{DescribeEvent(healthEvent)}"));
+            $"{healthEvent.Resource}:{healthEvent.Level}:{healthEvent.StartUtc.Ticks}:{DescribeEvent(healthEvent)}"));
 
-        string reports = string.Join("|", info.Reports.Select(report => $"{report.TimeUtc.Ticks}:{report.Title}:{report.Detail}"));
+        string reports = string.Join("|", info.Reports.Select(report => $"{report.TimeUtc.Ticks}:{report.ToTitle()}:{report.ToDetailText()}"));
         string signature = $"{events}#{reports}";
 
         if (signature == lastEventsSignature) {
@@ -178,11 +179,19 @@ public sealed partial class HealthControl
             HealthReading reading = info.Resources[i];
             ListViewItem  row     = resourcesView.Items[i];
 
+            HealthCause? reason = reading.Level >= HealthLevel.Warning 
+                ? reading.Cause 
+                : null;
+
+            string saturation = reason != null && !reason.IsShownInUtilisation()
+                ? reason.ToReasonText()
+                : reading.Measures.ToSaturationText();
+
             row.SubItems[1].Text            = StatusText(reading.Level);
             row.SubItems[1].ForegroundColor = StatusColour(reading.Level);
-            row.SubItems[2].Text            = Cell(reading.Utilisation);
-            row.SubItems[3].Text            = Cell(reading.Level >= HealthLevel.Warning && !reading.IsExplainedByUtilisation ? reading.Reason : reading.Saturation);
-            row.SubItems[4].Text            = Cell(reading.Errors);
+            row.SubItems[2].Text            = Cell(reading.Measures.ToUtilisationText());
+            row.SubItems[3].Text            = Cell(saturation);
+            row.SubItems[4].Text            = Cell(reading.Measures.ToErrorsText());
         }
     }
 
@@ -200,9 +209,9 @@ public sealed partial class HealthControl
 
         return new ListViewItem(
             [new ListViewSubItem(null!, DescribeTime(report.TimeUtc, DateTime.UtcNow), background, foreground),
-             new ListViewSubItem(null!, report.Title, background, foreground),
-             new ListViewSubItem(null!, report.Detail, background, foreground),
-             new ListViewSubItem(null!, Cell(report.Source), background, foreground)]);
+             new ListViewSubItem(null!, report.ToTitle(), background, foreground),
+             new ListViewSubItem(null!, report.ToDetailText(), background, foreground),
+             new ListViewSubItem(null!, Cell(report.App), background, foreground)]);
     }
 
     internal static string ResourceName(HealthResource resource) => resource switch {

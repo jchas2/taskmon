@@ -83,7 +83,7 @@ public sealed class HealthEvaluatorTests
 
         HealthInfo info = Run(Busy(0.99), from: 40, to: 105);
 
-        Assert.Contains("99%", Assert.Single(info.Events).PeakReason);
+        Assert.Equal(new HealthCause(HealthCauseKind.CpuBusy, 99.0), Assert.Single(info.Events).PeakCause);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class HealthEvaluatorTests
         HealthCulprit culprit = Assert.Single(info.Culprits);
 
         Assert.Equal(42, culprit.Pid);
-        Assert.Equal("Not responding for 12 s", culprit.Detail);
+        Assert.Equal(12.0, culprit.NotRespondingSeconds);
         Assert.Equal(HealthLevel.Warning, Level(info, HealthResource.Apps));
         Assert.Equal(["notepad"], Assert.Single(info.Events).Culprits);
     }
@@ -143,7 +143,7 @@ public sealed class HealthEvaluatorTests
 
         HealthInfo info = Run(Busy(0.96), from: 40, to: 45);
 
-        Assert.Contains("96%", Assert.Single(info.Events).PeakReason);
+        Assert.Equal(new HealthCause(HealthCauseKind.CpuBusy, 96.0), Assert.Single(info.Events).PeakCause);
     }
 
     // Regression test: on a real run the CPU averaged 99.7% and never reached Critical, as one
@@ -173,7 +173,7 @@ public sealed class HealthEvaluatorTests
 
         HealthInfo info = Run(Busy(0.91), from: 40, to: 45);
 
-        Assert.Contains("97%", Assert.Single(info.Events).PeakReason);
+        Assert.Equal(new HealthCause(HealthCauseKind.CpuBusy, 97.0), Assert.Single(info.Events).PeakCause);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public sealed class HealthEvaluatorTests
 
         HealthEvent healthEvent = Assert.Single(Run(lagging, from: 70, to: 75).Events);
 
-        Assert.Contains("100%", healthEvent.PeakReason);
+        Assert.Equal(new HealthCause(HealthCauseKind.CpuBusy, 100.0), healthEvent.PeakCause);
         Assert.Equal(["yes"], healthEvent.Culprits);
     }
 
@@ -465,7 +465,7 @@ public sealed class HealthEvaluatorTests
     [Fact]
     public void Reports_Are_Passed_Through_Without_Changing_The_Overall_Level()
     {
-        HealthReport report = new(Start, HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty);
+        HealthReport report = new() { TimeUtc = Start, Cause = HealthReportCause.BadBlock, Driver = "disk" };
 
         HealthInfo info = evaluator.Evaluate(Busy(0.10) with { Reports = [report] }, thresholds, Start);
 

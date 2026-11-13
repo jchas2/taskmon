@@ -1,4 +1,3 @@
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.Health;
@@ -35,33 +34,25 @@ internal sealed class HealthCulpritFinder
         public bool     IsLive;
     }
 
-    private static string Detail(ProcessTrend trend, IReadOnlyList<HealthResource> resources)
+    private static HealthCulprit Culprit(string name, ProcessTrend trend, IReadOnlyList<HealthResource> resources)
     {
-        List<string> parts = [];
-
         bool isThermal = resources.Contains(HealthResource.Thermal);
+        bool isMemory  = resources.Contains(HealthResource.Memory);
+        bool isCpu     = resources.Contains(HealthResource.Cpu) || (isThermal && trend.Cpu >= MinCpuRatio);
+        bool isGpu     = resources.Contains(HealthResource.Gpu) || (isThermal && trend.Gpu >= MinGpuRatio);
+        bool isGrowing = isMemory && trend.MemoryGrowthPerMinute >= BytesPerMegabyte;
 
-        if (resources.Contains(HealthResource.Cpu) || (isThermal && trend.Cpu >= MinCpuRatio)) {
-            parts.Add($"{trend.Cpu * PercentPerRatio:0}% CPU");
-        }
-
-        if (resources.Contains(HealthResource.Memory)) {
-            parts.Add($"{trend.Memory.ToFormattedByteSize()} memory");
-
-            if (trend.MemoryGrowthPerMinute >= BytesPerMegabyte) {
-                parts.Add($"+{trend.MemoryGrowthPerMinute / BytesPerMegabyte:0} MB/min");
-            }
-        }
-
-        if (resources.Contains(HealthResource.Disk)) {
-            parts.Add($"{trend.Disk / BytesPerMegabyte:0} MB/s disk");
-        }
-
-        if (resources.Contains(HealthResource.Gpu) || (isThermal && trend.Gpu >= MinGpuRatio)) {
-            parts.Add($"{trend.Gpu * PercentPerRatio:0}% GPU");
-        }
-
-        return string.Join(", ", parts);
+        return new HealthCulprit {
+            ProcessName                = name,
+            ProcessCount               = trend.Count,
+            Pid                        = trend.Pid,
+            Resources                  = resources,
+            CpuPercent                 = isCpu ? trend.Cpu * PercentPerRatio : null,
+            MemoryBytes                = isMemory ? trend.Memory : null,
+            MemoryGrowthBytesPerMinute = isGrowing ? trend.MemoryGrowthPerMinute : null,
+            DiskBytesPerSecond         = resources.Contains(HealthResource.Disk) ? trend.Disk : null,
+            GpuPercent                 = isGpu ? trend.Gpu * PercentPerRatio : null
+        };
     }
 
     public IReadOnlyList<HealthCulprit> Find(IEnumerable<HealthResource> underPressure)
@@ -97,12 +88,7 @@ internal sealed class HealthCulpritFinder
             .OrderByDescending(entry => shares[entry.Key])
             .ThenByDescending(entry => entry.Value.Count)
             .Take(MaxCulprits)
-            .Select(entry => new HealthCulprit(
-                entry.Key,
-                trends[entry.Key].Count,
-                trends[entry.Key].Pid,
-                Detail(trends[entry.Key], entry.Value),
-                entry.Value))
+            .Select(entry => Culprit(entry.Key, trends[entry.Key], entry.Value))
             .ToList();
     }
 

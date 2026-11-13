@@ -43,7 +43,7 @@ public sealed class HealthControlTests
                 Level         = HealthLevel.Critical,
                 StartUtc      = Now,
                 IsInterrupted = true,
-                PeakReason    = "100% busy"
+                PeakCause     = new HealthCause(HealthCauseKind.CpuBusy, 100.0)
             }]
         };
 
@@ -88,15 +88,14 @@ public sealed class HealthControlTests
         ctrl.Sample(Snapshot(new HealthInfo {
             Level     = HealthLevel.Warning,
             Resources = [new HealthReading {
-                Resource                 = HealthResource.Volumes,
-                Level                    = HealthLevel.Warning,
-                Reason                   = "E:\\ 95% full",
-                Utilisation              = "E:\\ 95% full",
-                Saturation               = "Not changing",
-                IsExplainedByUtilisation = true
+                Resource = HealthResource.Volumes,
+                Level    = HealthLevel.Warning,
+                Cause    = new HealthCause(HealthCauseKind.VolumeFull, 95.0, "E:\\"),
+                Measures = new VolumesHealthMeasures("E:\\", 95.0, 5L * 1024 * 1024 * 1024, 0.0)
             }]
         }));
 
+        Assert.Contains("E:\\ 95% full", VisibleText());
         Assert.Contains("Not changing", VisibleText());
     }
 
@@ -177,9 +176,15 @@ public sealed class HealthControlTests
         new() {
             Level     = HealthLevel.Ok,
             Resources = [
-                new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Ok, Utilisation = "12%" },
+                new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Ok, Measures = new CpuHealthMeasures(12.0, null) },
                 new HealthReading { Resource = HealthResource.Gpu }
             ]
+        };
+
+    private static HealthInfo NetworkHealth(NetworkHealthMeasures measures) =>
+        new() {
+            Level     = HealthLevel.Ok,
+            Resources = [new HealthReading { Resource = HealthResource.Network, Level = HealthLevel.Ok, Measures = measures }]
         };
 
     [Fact]
@@ -199,23 +204,33 @@ public sealed class HealthControlTests
             SinceUtc  = Now,
             Resources = [
                 new HealthReading {
-                    Resource    = HealthResource.Memory,
-                    Level       = HealthLevel.Warning,
-                    Reason      = "commit 93%",
-                    Utilisation = "91% in use"
+                    Resource = HealthResource.Memory,
+                    Level    = HealthLevel.Warning,
+                    Cause    = new HealthCause(HealthCauseKind.CommitCharge, 93.0),
+                    Measures = new MemoryHealthMeasures(91.0, 93.0, null, null)
                 },
-                new HealthReading { Resource = HealthResource.Thermal, Level = HealthLevel.Critical, Reason = "CPU limited to 61%" }
+                new HealthReading {
+                    Resource = HealthResource.Thermal,
+                    Level    = HealthLevel.Critical,
+                    Cause    = new HealthCause(HealthCauseKind.CpuPerformanceLimit, 61.0)
+                }
             ],
             Culprits = [
-                new HealthCulprit("chrome", 14, 4242, "6 GB memory", [HealthResource.Memory])
+                new HealthCulprit {
+                    ProcessName  = "chrome",
+                    ProcessCount = 14,
+                    Pid          = 4242,
+                    Resources    = [HealthResource.Memory],
+                    MemoryBytes  = 6L * 1024 * 1024 * 1024
+                }
             ],
             Events = [
                 new HealthEvent {
-                    Resource   = HealthResource.Memory,
-                    Level      = HealthLevel.Warning,
-                    StartUtc   = Now,
-                    PeakReason = "commit 96%",
-                    Culprits   = ["chrome"]
+                    Resource  = HealthResource.Memory,
+                    Level     = HealthLevel.Warning,
+                    StartUtc  = Now,
+                    PeakCause = new HealthCause(HealthCauseKind.CommitCharge, 96.0),
+                    Culprits  = ["chrome"]
                 }
             ]
         };
@@ -231,8 +246,9 @@ public sealed class HealthControlTests
 
         Assert.Contains("Warning", text);
         Assert.Contains("commit 93%", text);
+        Assert.Contains("91% in use", text);
         Assert.Contains("chrome (14)", text);
-        Assert.Contains("6 GB memory", text);
+        Assert.Contains("6.0 GB memory", text);
         Assert.Contains("Memory → Warning", text);
         Assert.Contains("ongoing, peak commit 96%", text);
     }
@@ -244,13 +260,18 @@ public sealed class HealthControlTests
 
         HealthInfo info = new() {
             Level     = HealthLevel.Warning,
-            Resources = [new HealthReading { Resource = HealthResource.Disk, Level = HealthLevel.Warning, Reason = "latency 30 ms" }]
+            Resources = [new HealthReading {
+                Resource = HealthResource.Disk,
+                Level    = HealthLevel.Warning,
+                Cause    = new HealthCause(HealthCauseKind.DiskLatency, 30.0)
+            }]
         };
 
         ctrl.Sample(Snapshot(info));
 
         string text = VisibleText();
 
+        Assert.Contains("latency 30 ms", text);
         Assert.Contains("No process stands out.", text);
         Assert.DoesNotContain("Nothing under pressure.", text);
     }
@@ -272,18 +293,38 @@ public sealed class HealthControlTests
                 EndUtc   = nowUtc.AddMinutes(-2)
             }],
             Reports = [
-                new HealthReport(nowUtc.AddMinutes(-1), HealthReportKind.AppCrash, "App crash", "chrome.exe, in ntdll.dll", "chrome.exe"),
-                new HealthReport(nowUtc.AddMinutes(-9), HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty)
+                new HealthReport {
+                    TimeUtc = nowUtc.AddMinutes(-1),
+                    Cause   = HealthReportCause.AppError,
+                    App     = "chrome.exe",
+                    Module  = "ntdll.dll"
+                },
+                new HealthReport { TimeUtc = nowUtc.AddMinutes(-9), Cause = HealthReportCause.BadBlock, Driver = "disk" }
             ]
         }));
 
         Assert.Equal(3, ctrl.EventsView.Items.Count);
         Assert.Equal("App crash", ctrl.EventsView.Items[0].SubItems[1].Text);
+        Assert.Equal("chrome.exe, in ntdll.dll", ctrl.EventsView.Items[0].SubItems[2].Text);
+        Assert.Equal("chrome.exe", ctrl.EventsView.Items[0].SubItems[3].Text);
         Assert.Equal("CPU → Warning", ctrl.EventsView.Items[1].SubItems[1].Text);
         Assert.Equal("Disk error", ctrl.EventsView.Items[2].SubItems[1].Text);
+        Assert.Equal("Bad block", ctrl.EventsView.Items[2].SubItems[2].Text);
     }
 
     private static SystemSnapshot Snapshot(HealthInfo info) => new() { Health = info };
+
+    // Regression test: the network rate was always shown in MB/s, so everyday traffic read
+    // "↓ 0.0 ↑ 0.0 MB/s" while the Summary charts showed it moving in KB/s.
+    [Fact]
+    public void The_Network_Row_Shows_Light_Traffic_In_KB_Per_Second()
+    {
+        HealthControl ctrl = CreateControl();
+
+        ctrl.Sample(Snapshot(NetworkHealth(new NetworkHealthMeasures(20_480.0, 3_072.0, 0.0, 0.0))));
+
+        Assert.Contains("↓ 20.0 KB/s ↑ 3.0 KB/s", VisibleText());
+    }
 
     [Fact]
     public void The_Selected_Cause_Survives_A_Refresh()
@@ -294,8 +335,8 @@ public sealed class HealthControlTests
             Level     = HealthLevel.Warning,
             Resources = [new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Warning }],
             Culprits  = [
-                new HealthCulprit("alpha", 1, 1, "10% CPU", [HealthResource.Cpu]),
-                new HealthCulprit("bravo", 1, 2, "20% CPU", [HealthResource.Cpu])
+                new HealthCulprit { ProcessName = "alpha", Pid = 1, Resources = [HealthResource.Cpu], CpuPercent = 10.0 },
+                new HealthCulprit { ProcessName = "bravo", Pid = 2, Resources = [HealthResource.Cpu], CpuPercent = 20.0 }
             ]
         };
 
@@ -307,12 +348,22 @@ public sealed class HealthControlTests
         HealthInfo changed = new() {
             Level     = twoCauses.Level,
             Resources = twoCauses.Resources,
-            Culprits  = [twoCauses.Culprits[0], twoCauses.Culprits[1] with { Detail = "25% CPU" }]
+            Culprits  = [twoCauses.Culprits[0], twoCauses.Culprits[1] with { CpuPercent = 25.0 }]
         };
 
         ctrl.Sample(Snapshot(changed));
 
         Assert.Equal(1, ctrl.CausesView.SelectedIndex);
+    }
+
+    [Fact]
+    public void The_Utilisation_Column_Fits_The_Widest_Network_Rates()
+    {
+        HealthControl ctrl = CreateControl(width: 120);
+
+        ctrl.Sample(Snapshot(NetworkHealth(new NetworkHealthMeasures(1_048_473.0, 1_048_473.0, 0.0, 0.0))));
+
+        Assert.Contains("↓ 1023.9 KB/s ↑ 1023.9 KB/s", VisibleText());
     }
 
     private string VisibleText() =>

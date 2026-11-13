@@ -7,7 +7,7 @@ public sealed record HealthEvent
     public required DateTime       StartUtc      { get; init; }
     public DateTime?               EndUtc        { get; init; }
     public bool                    IsInterrupted { get; init; }
-    public string                  PeakReason    { get; init; } = string.Empty;
+    public HealthCause?            PeakCause     { get; init; }
     public double                  PeakValue     { get; init; }
     public IReadOnlyList<string>   Culprits      { get; init; } = [];
 }

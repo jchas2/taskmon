@@ -23,7 +23,7 @@ public sealed partial class HealthControl : Control
     private const int MaxCauseProcessColumnWidth = 28;
     private const int MaxCauseBehindColumnWidth  = 22;
     private const int MaxEventProcessesWidth     = 26;
-    private const int MaxUtilisationColumnWidth  = 24;
+    private const int MaxUtilisationColumnWidth  = 28;
     private const int MinCauseBehindColumnWidth  = 12;
     private const int MinCauseProcessColumnWidth = 16;
     private const int ResourceErrorsColumnWidth  = 20;

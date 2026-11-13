@@ -36,13 +36,13 @@ public sealed class HealthRulesTests
     public void Apps_Are_Unknown_Where_Hangs_Cannot_Be_Detected_But_Still_Count_Reports()
     {
         HealthSample sample = new() {
-            Reports = [new HealthReport(DateTime.UtcNow, HealthReportKind.AppCrash, "App crash", "x", "x")]
+            Reports = [new HealthReport { TimeUtc = DateTime.UtcNow, Cause = HealthReportCause.AppError, App = "x" }]
         };
 
         HealthReading reading = new AppsHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Unknown, reading.Level);
-        Assert.Equal("1 app fault", reading.Errors);
+        Assert.Equal(new AppsHealthMeasures(null, 1), reading.Measures);
     }
 
     [Fact]
@@ -52,18 +52,18 @@ public sealed class HealthRulesTests
             Apps(new HungApp(1, "short", 6.0), new HungApp(2, "long", 12.0)),
             thresholds);
 
-        Assert.Equal("long not responding for 12 s", reading.Reason);
-        Assert.Equal("2 not responding", reading.Saturation);
-        Assert.Empty(reading.Utilisation);
+        Assert.Equal(new HealthCause(HealthCauseKind.AppNotResponding, 12.0, "long"), reading.Cause);
+        Assert.Equal(new AppsHealthMeasures(2, 0), reading.Measures);
     }
 
     [Theory]
-    [InlineData(HealthReportKind.AppCrash)]
-    [InlineData(HealthReportKind.AppHang)]
-    public void Apps_Reports_Never_Change_The_Status(HealthReportKind kind)
+    [InlineData(HealthReportCause.AppError)]
+    [InlineData(HealthReportCause.AppHang)]
+    [InlineData(HealthReportCause.CrashReport)]
+    public void Apps_Reports_Never_Change_The_Status(HealthReportCause cause)
     {
         HealthSample sample = Apps() with {
-            Reports = Enumerable.Repeat(new HealthReport(DateTime.UtcNow, kind, "x", "x", "x"), 50).ToList()
+            Reports = Enumerable.Repeat(new HealthReport { TimeUtc = DateTime.UtcNow, Cause = cause, App = "x" }, 50).ToList()
         };
 
         Assert.Equal(HealthLevel.Ok, new AppsHealthRule().Evaluate(sample, thresholds).Level);
@@ -78,8 +78,8 @@ public sealed class HealthRulesTests
     {
         HealthReading reading = new CpuHealthRule().Evaluate(Cpu(new CpuMetrics { CpuTotalTime = 1.008 }), thresholds);
 
-        Assert.Equal("100%", reading.Utilisation);
-        Assert.Equal("100% busy", reading.Reason);
+        Assert.Equal(100.0, Assert.IsType<CpuHealthMeasures>(reading.Measures).BusyPercent);
+        Assert.Equal(new HealthCause(HealthCauseKind.CpuBusy, 100.0), reading.Cause);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class HealthRulesTests
         HealthReading reading = new CpuHealthRule().Evaluate(Cpu(new CpuMetrics { CpuTotalTime = 0.16, RunQueuePerCore = 2.5 }), thresholds);
 
         Assert.Equal(HealthLevel.Ok, reading.Level);
-        Assert.Equal("Queue 2.5 per core", reading.Saturation);
+        Assert.Equal(2.5, Assert.IsType<CpuHealthMeasures>(reading.Measures).RunQueuePerCore);
     }
 
     [Fact]
@@ -144,21 +144,24 @@ public sealed class HealthRulesTests
     [Fact]
     public void Disk_Drive_Critical_Warning_Is_Critical_And_Named()
     {
-        HealthSample sample = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0x05, 10, 0)] };
+        HealthSample sample = Disk(new DiskMetrics()) with { Drives = [new DriveHealth(0, 0x05, 10, 0)] };
 
         HealthReading reading = new DiskHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Critical, reading.Level);
-        Assert.Equal("Disk 0: spare space low, reliability degraded", reading.Reason);
+        Assert.Equal(new HealthCause(HealthCauseKind.DriveWarning, 0x05, "0"), reading.Cause);
     }
 
     [Fact]
     public void Disk_Drive_Wear_Raises_A_Warning_At_Its_Setting()
     {
-        HealthSample worn = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0, 91, 0)] };
-        HealthSample fine = Disk(new DiskMetrics()) with { Drives = [new DriveHealth("Disk 0", 0, 40, 0)] };
+        HealthSample worn = Disk(new DiskMetrics()) with { Drives = [new DriveHealth(1, 0, 91, 0)] };
+        HealthSample fine = Disk(new DiskMetrics()) with { Drives = [new DriveHealth(1, 0, 40, 0)] };
 
-        Assert.Equal(HealthLevel.Warning, new DiskHealthRule().Evaluate(worn, thresholds).Level);
+        HealthReading reading = new DiskHealthRule().Evaluate(worn, thresholds);
+
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal(new HealthCause(HealthCauseKind.DriveWear, 91, "1"), reading.Cause);
         Assert.Equal(HealthLevel.Ok, new DiskHealthRule().Evaluate(fine, thresholds).Level);
     }
 
@@ -166,14 +169,14 @@ public sealed class HealthRulesTests
     public void Disk_Errors_Are_Listed_But_Never_Change_The_Status()
     {
         HealthSample sample = Disk(new DiskMetrics()) with {
-            Drives  = [new DriveHealth("Disk 0", 0, 3, 12)],
-            Reports = [new HealthReport(DateTime.UtcNow, HealthReportKind.DiskError, "Disk error", "Bad block", string.Empty)]
+            Drives  = [new DriveHealth(0, 0, 3, 12), new DriveHealth(1, 0, 7, 0)],
+            Reports = [new HealthReport { TimeUtc = DateTime.UtcNow, Cause = HealthReportCause.BadBlock, Driver = "disk" }]
         };
 
         HealthReading reading = new DiskHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Ok, reading.Level);
-        Assert.Equal("3% worn, 12 media, 1 logged", reading.Errors);
+        Assert.Equal(new DiskHealthMeasures(0.0, null, null, 7, 12, 1), reading.Measures);
     }
 
     [Fact]
@@ -182,6 +185,14 @@ public sealed class HealthRulesTests
         HealthSample sample = Disk(new DiskMetrics { PercentActiveTime = 95.0 });
 
         Assert.Equal(HealthLevel.Warning, new DiskHealthRule().Evaluate(sample, thresholds).Level);
+    }
+
+    [Fact]
+    public void Disk_Has_No_Wear_Figure_Without_Nvme_Health()
+    {
+        HealthSample sample = Disk(new DiskMetrics { PercentActiveTime = 12.0, LatencyMs = 4.5, QueueLength = 2.0 });
+
+        Assert.Equal(new DiskHealthMeasures(12.0, 4.5, 2.0, null, 0, 0), new DiskHealthRule().Evaluate(sample, thresholds).Measures);
     }
 
     [Theory]
@@ -221,10 +232,12 @@ public sealed class HealthRulesTests
             [new GpuDevice { AdapterLuid = 1, AdapterType = "Integrated" }],
             GpuCard(1, Gigabyte / 8, 0, 8 * Gigabyte, 6 * Gigabyte));
 
-        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+        HealthReading     reading  = new GpuHealthRule().Evaluate(sample, thresholds);
+        GpuHealthMeasures measures = Assert.IsType<GpuHealthMeasures>(reading.Measures);
 
         Assert.Equal(HealthLevel.Ok, reading.Level);
-        Assert.Equal("Memory 26% used", reading.Saturation);
+        Assert.False(measures.IsDedicatedMemory);
+        Assert.Equal(26.0, measures.MemoryUsedPercent!.Value, 0);
     }
 
     // Regression test: with shared memory counted in, a full 12 GB card read 42% and never warned.
@@ -235,25 +248,30 @@ public sealed class HealthRulesTests
             [new GpuDevice { AdapterLuid = 1, AdapterType = GpuDeviceParser.DiscreteAdapterType }],
             GpuCard(1, 12 * Gigabyte, Gigabyte / 2, 16 * Gigabyte, 16 * Gigabyte));
 
-        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+        HealthReading     reading  = new GpuHealthRule().Evaluate(sample, thresholds);
+        GpuHealthMeasures measures = Assert.IsType<GpuHealthMeasures>(reading.Measures);
 
         Assert.Equal(HealthLevel.Warning, reading.Level);
-        Assert.Equal("VRAM 4% free", reading.Reason);
-        Assert.Equal("VRAM 96% used", reading.Saturation);
+        Assert.Equal(HealthCauseKind.VramFree, reading.Cause!.Kind);
+        Assert.Equal(4.0, reading.Cause.Value, 0);
+        Assert.True(measures.IsDedicatedMemory);
+        Assert.Equal(96.0, measures.MemoryUsedPercent!.Value, 0);
     }
 
-    [Fact]
-    public void Gpu_Held_Back_By_A_Limit_Is_A_Warning()
+    [Theory]
+    [InlineData(0.25, 0.10, HealthCauseKind.GpuHeatLimit)]
+    [InlineData(0.10, 0.25, HealthCauseKind.GpuPowerLimit)]
+    public void Gpu_Held_Back_By_A_Limit_Is_A_Warning(double thermal, double power, HealthCauseKind expected)
     {
         HealthSample sample = new() {
             Gpu = new GpuInfo(),
-            Soc = new SocInfo { Metrics = new SocMetrics { GpuThermalLimitRatio = 0.25 } }
+            Soc = new SocInfo { Metrics = new SocMetrics { GpuThermalLimitRatio = thermal, GpuPowerLimitRatio = power } }
         };
 
         HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Warning, reading.Level);
-        Assert.Contains("heat", reading.Reason);
+        Assert.Equal(new HealthCause(expected, 25.0), reading.Cause);
     }
 
     [Fact]
@@ -265,10 +283,12 @@ public sealed class HealthRulesTests
             GpuCard(1, Gigabyte / 8, Gigabyte / 8, 8 * Gigabyte, 8 * Gigabyte),
             GpuCard(2, 12 * Gigabyte, Gigabyte / 2, 16 * Gigabyte, 16 * Gigabyte));
 
-        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+        HealthReading     reading  = new GpuHealthRule().Evaluate(sample, thresholds);
+        GpuHealthMeasures measures = Assert.IsType<GpuHealthMeasures>(reading.Measures);
 
         Assert.Equal(HealthLevel.Warning, reading.Level);
-        Assert.Equal("VRAM 96% used", reading.Saturation);
+        Assert.True(measures.IsDedicatedMemory);
+        Assert.Equal(96.0, measures.MemoryUsedPercent!.Value, 0);
     }
 
     [Fact]
@@ -284,7 +304,10 @@ public sealed class HealthRulesTests
     {
         HealthSample sample = new() { Gpu = new GpuInfo() };
 
-        Assert.Equal(HealthLevel.Ok, new GpuHealthRule().Evaluate(sample, thresholds).Level);
+        HealthReading reading = new GpuHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(HealthLevel.Ok, reading.Level);
+        Assert.Null(Assert.IsType<GpuHealthMeasures>(reading.Measures).MemoryUsedPercent);
     }
 
     private static HealthSample Memory(MemoryMetrics metrics) =>
@@ -360,10 +383,8 @@ public sealed class HealthRulesTests
         Assert.Equal(expected, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
     }
 
-    // Regression test: pages read from disk were shown as "hard faults/s", overstating the faults
-    // as each one usually reads several pages.
     [Fact]
-    public void Memory_Names_Pages_Read_In_As_Pages()
+    public void Memory_Pages_Read_In_Are_The_Cause_When_Memory_Is_Short()
     {
         HealthSample sample = Memory(new MemoryMetrics {
             TotalPhysical     = 100 * Gigabyte,
@@ -376,8 +397,8 @@ public sealed class HealthRulesTests
         HealthReading reading = new MemoryHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Warning, reading.Level);
-        Assert.Equal("600 pages in/s", reading.Reason);
-        Assert.Equal("Commit 31%, 600 pages in/s", reading.Saturation);
+        Assert.Equal(new HealthCause(HealthCauseKind.PagesIn, 600.0), reading.Cause);
+        Assert.Equal(new MemoryHealthMeasures(80.0, 31.0, 600.0, null), reading.Measures);
     }
 
     [Fact]
@@ -399,11 +420,15 @@ public sealed class HealthRulesTests
     {
         HealthSample sample = Memory(new MemoryMetrics { TotalPhysical = Gigabyte, Pressure = pressure });
 
-        Assert.Equal(expected, new MemoryHealthRule().Evaluate(sample, thresholds).Level);
+        HealthReading reading = new MemoryHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(expected, reading.Level);
+        Assert.Equal(new HealthCause(HealthCauseKind.MemoryPressure, (int)pressure), reading.Cause);
+        Assert.Equal(pressure, Assert.IsType<MemoryHealthMeasures>(reading.Measures).Pressure);
     }
 
     [Fact]
-    public void Memory_Shows_Pages_Read_In_Without_A_Commit_Figure()
+    public void Memory_Reads_Pages_In_Without_A_Commit_Figure()
     {
         HealthSample sample = Memory(new MemoryMetrics {
             TotalPhysical     = 100 * Gigabyte,
@@ -411,7 +436,7 @@ public sealed class HealthRulesTests
             PagesInPerSecond  = 0.0
         });
 
-        Assert.Equal("0 pages in/s", new MemoryHealthRule().Evaluate(sample, thresholds).Saturation);
+        Assert.Equal(new MemoryHealthMeasures(50.0, null, 0.0, null), new MemoryHealthRule().Evaluate(sample, thresholds).Measures);
     }
 
     [Fact]
@@ -427,8 +452,11 @@ public sealed class HealthRulesTests
             TotalPhysical = 100 * Gigabyte, Pressure = MemoryPressure.Normal, SwapOutBytesPerSecond = swapOut
         });
 
+        HealthReading reading = new MemoryHealthRule().Evaluate(macos, thresholds);
+
         Assert.Equal(HealthLevel.Ok, new MemoryHealthRule().Evaluate(windows, thresholds).Level);
-        Assert.Equal(HealthLevel.Warning, new MemoryHealthRule().Evaluate(macos, thresholds).Level);
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal(new HealthCause(HealthCauseKind.SwapOut, swapOut), reading.Cause);
     }
 
     [Fact]
@@ -439,9 +467,8 @@ public sealed class HealthRulesTests
         HealthReading reading = new NetworkHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Warning, reading.Level);
-        Assert.Equal("2.5 discards/s", reading.Reason);
-        Assert.Equal("Discards 2.5/s", reading.Saturation);
-        Assert.Equal("0 errors/s", reading.Errors);
+        Assert.Equal(new HealthCause(HealthCauseKind.NetworkDiscards, 2.5), reading.Cause);
+        Assert.Equal(new NetworkHealthMeasures(0.0, 0.0, 2.5, 0.0), reading.Measures);
     }
 
     [Fact]
@@ -452,8 +479,25 @@ public sealed class HealthRulesTests
         HealthSample clean  = new() { Network = new NetworkInfo() };
         HealthSample errors = new() { Network = new NetworkInfo { Metrics = new NetworkMetrics { ErrorsPerSecond = 1.5 } } };
 
+        HealthReading reading = rule.Evaluate(errors, thresholds);
+
         Assert.Equal(HealthLevel.Ok, rule.Evaluate(clean, thresholds).Level);
-        Assert.Equal(HealthLevel.Warning, rule.Evaluate(errors, thresholds).Level);
+        Assert.Equal(HealthLevel.Warning, reading.Level);
+        Assert.Equal(new HealthCause(HealthCauseKind.NetworkErrors, 1.5), reading.Cause);
+    }
+
+    // Regression test: the rule wrote the rates in MB/s to one decimal place, so anything under about
+    // 51 KB/s read "0.0" and the network looked idle. The rates now go to the UI in bytes.
+    [Fact]
+    public void Network_Passes_On_The_Byte_Rates()
+    {
+        HealthSample sample = new() {
+            Network = new NetworkInfo { Metrics = new NetworkMetrics { ReceiveBytesPerSecond = 20_480.0, SendBytesPerSecond = 3_072.0 } }
+        };
+
+        HealthReading reading = new NetworkHealthRule().Evaluate(sample, thresholds);
+
+        Assert.Equal(new NetworkHealthMeasures(20_480.0, 3_072.0, 0.0, 0.0), reading.Measures);
     }
 
     [Fact]
@@ -471,7 +515,10 @@ public sealed class HealthRulesTests
         ];
 
         foreach (IHealthRule rule in rules) {
-            Assert.Equal(HealthLevel.Unknown, rule.Evaluate(new HealthSample(), thresholds).Level);
+            HealthReading reading = rule.Evaluate(new HealthSample(), thresholds);
+
+            Assert.Equal(HealthLevel.Unknown, reading.Level);
+            Assert.Null(reading.Cause);
         }
     }
 
@@ -497,7 +544,7 @@ public sealed class HealthRulesTests
         HealthReading reading = new ThermalHealthRule().Evaluate(Thermal(metrics), thresholds);
 
         Assert.Equal(HealthLevel.Ok, reading.Level);
-        Assert.Contains("99", reading.Utilisation);
+        Assert.Equal(new ThermalHealthMeasures(ThermalComponent.Disk, 99.0, null, null), reading.Measures);
     }
 
     [Theory]
@@ -520,6 +567,7 @@ public sealed class HealthRulesTests
         HealthReading reading = new ThermalHealthRule().Evaluate(Cpu(new CpuMetrics { PerformanceLimitPercent = limit }), thresholds);
 
         Assert.Equal(expected, reading.Level);
+        Assert.Equal(new ThermalHealthMeasures(ThermalComponent.Other, null, null, limit), reading.Measures);
     }
 
     [Theory]
@@ -534,16 +582,15 @@ public sealed class HealthRulesTests
         Assert.Equal(expected, new ThermalHealthRule().Evaluate(Thermal(metrics), thresholds).Level);
     }
 
-    // Regression test: "CPU limit 100%" read as fully limited, when 100 means nothing is held back.
-    [Theory]
-    [InlineData(100.0, "CPU not limited")]
-    [InlineData(99.7, "CPU not limited")]
-    [InlineData(94.0, "CPU limited to 94%")]
-    public void Thermal_Says_Whether_The_Cpu_Is_Limited(double limit, string expected)
+    [Fact]
+    public void Thermal_Names_The_Sensor_Near_Its_Limit()
     {
-        HealthReading reading = new ThermalHealthRule().Evaluate(Cpu(new CpuMetrics { PerformanceLimitPercent = limit }), thresholds);
+        ThermalMetrics metrics = new();
+        metrics.Sensors.Add(new ThermalSensor { Component = ThermalComponent.Gpu, Celsius = 94.0, CriticalCelsius = 100.0 });
 
-        Assert.Equal(expected, reading.Saturation);
+        HealthReading reading = new ThermalHealthRule().Evaluate(Thermal(metrics), thresholds);
+
+        Assert.Equal(new HealthCause(HealthCauseKind.SensorNearLimit, 94.0, "Gpu", 100.0), reading.Cause);
     }
 
     [Theory]
@@ -566,24 +613,7 @@ public sealed class HealthRulesTests
         HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds);
 
         Assert.Equal(HealthLevel.Critical, reading.Level);
-        Assert.Equal("D:\\ 100% full", reading.Reason);
-    }
-
-    [Theory]
-    [InlineData(0.0, "Not changing")]
-    [InlineData(512.0 * 1024, "Not changing")]
-    [InlineData(-512.0 * 1024, "Not changing")]
-    [InlineData(-40.0 * Megabyte, "Freeing 40.0 MB/min")]
-    [InlineData(120.0 * Megabyte, "Filling 120.0 MB/min, about 6 h left")]
-    [InlineData(1440.0 * Megabyte, "Filling 1.4 GB/min, about 30 min left")]
-    [InlineData(10.0 * Megabyte, "Filling 10.0 MB/min, about 3 days left")]
-    public void Volumes_Describe_Their_Trend(double rate, string expected)
-    {
-        HealthSample sample = new() {
-            Volumes = [new HealthVolume("E:\\", 43200L * (long)Megabyte, 100 * (long)Gigabyte, false, rate)]
-        };
-
-        Assert.Equal(expected, new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+        Assert.Equal(new HealthCause(HealthCauseKind.VolumeFull, 100.0, "D:\\"), reading.Cause);
     }
 
     [Fact]
@@ -591,28 +621,21 @@ public sealed class HealthRulesTests
     {
         HealthSample sample = new() { Volumes = [new HealthVolume("E:\\", 50, 100, false)] };
 
-        Assert.Equal(string.Empty, new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+        Assert.Null(Assert.IsType<VolumesHealthMeasures>(new VolumesHealthRule().Evaluate(sample, thresholds).Measures).FillBytesPerMinute);
     }
 
     [Fact]
-    public void Volumes_Keep_Their_Trend_Visible_Under_Pressure()
+    public void Volumes_Pass_On_The_Trend_And_Space_Left()
     {
-        HealthSample sample = new() { Volumes = [new HealthVolume("E:\\", 5, 100, false, 0.0)] };
+        HealthSample sample = new() {
+            Volumes = [new HealthVolume("E:\\", 43200L * (long)Megabyte, 100 * (long)Gigabyte, false, 120.0 * Megabyte)]
+        };
 
         HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds);
 
-        Assert.True(reading.IsExplainedByUtilisation);
-        Assert.Equal("Not changing", reading.Saturation);
-    }
-
-    [Fact]
-    public void Volumes_Leave_Out_A_Time_Left_Too_Far_Off_To_Mean_Anything()
-    {
-        HealthSample sample = new() {
-            Volumes = [new HealthVolume("E:\\", 432_000L * (long)Megabyte, 1000 * (long)Gigabyte, false, 2.0 * Megabyte)]
-        };
-
-        Assert.Equal("Filling 2.0 MB/min", new VolumesHealthRule().Evaluate(sample, thresholds).Saturation);
+        Assert.Equal(
+            new VolumesHealthMeasures("E:\\", 57.8125, 43200L * (long)Megabyte, 120.0 * Megabyte),
+            reading.Measures);
     }
 
     [Fact]
@@ -625,7 +648,10 @@ public sealed class HealthRulesTests
             ]
         };
 
-        Assert.Equal("D:\\ 80% full", new VolumesHealthRule().Evaluate(sample, thresholds).Utilisation);
+        VolumesHealthMeasures measures = Assert.IsType<VolumesHealthMeasures>(new VolumesHealthRule().Evaluate(sample, thresholds).Measures);
+
+        Assert.Equal("D:\\", measures.Name);
+        Assert.Equal(80.0, measures.FullPercent, 6);
     }
 
     // Regression test: the row showed the fullest volume beside a reason naming another, which would
@@ -642,12 +668,14 @@ public sealed class HealthRulesTests
             ]
         };
 
-        HealthReading reading = new VolumesHealthRule().Evaluate(sample, thresholds with { VolumeFreeCriticalPercent = 1 });
+        HealthReading         reading  = new VolumesHealthRule().Evaluate(sample, thresholds with { VolumeFreeCriticalPercent = 1 });
+        VolumesHealthMeasures measures = Assert.IsType<VolumesHealthMeasures>(reading.Measures);
 
         Assert.Equal(HealthLevel.Critical, reading.Level);
-        Assert.Equal("C:\\ 98% full", reading.Reason);
-        Assert.Equal("C:\\ 98% full", reading.Utilisation);
-        Assert.Equal("Not changing", reading.Saturation);
+        Assert.Equal(new HealthCause(HealthCauseKind.VolumeFull, 97.5, "C:\\"), reading.Cause);
+        Assert.Equal("C:\\", measures.Name);
+        Assert.Equal(97.5, measures.FullPercent);
+        Assert.Equal(0.0, measures.FillBytesPerMinute);
     }
 
     [Fact]

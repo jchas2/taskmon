@@ -97,7 +97,7 @@ public sealed class MainScreen2Tests : IDisposable
             Health    = new HealthInfo {
                 Level     = HealthLevel.Warning,
                 Resources = [new HealthReading { Resource = HealthResource.Cpu, Level = HealthLevel.Warning }],
-                Culprits  = [new HealthCulprit("second", 1, 2222, "10% CPU", [HealthResource.Cpu])]
+                Culprits  = [new HealthCulprit { ProcessName = "second", Pid = 2222, Resources = [HealthResource.Cpu], CpuPercent = 10.0 }]
             }
         });
 

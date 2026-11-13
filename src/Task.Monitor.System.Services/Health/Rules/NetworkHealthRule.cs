@@ -1,5 +1,3 @@
-using Task.Monitor.System.Services.Network;
-
 namespace Task.Monitor.System.Services.Health.Rules;
 
 internal sealed class NetworkHealthRule : IHealthRule
@@ -13,22 +11,27 @@ internal sealed class NetworkHealthRule : IHealthRule
         double discards = metrics.DiscardsPerSecond;
         double errors   = metrics.ErrorsPerSecond;
 
-        HealthCondition worst = HealthCondition.Worst([RateCondition(errors, "errors"), RateCondition(discards, "discards")]);
+        HealthCondition worst = HealthCondition.Worst([
+            RateCondition(errors, HealthCauseKind.NetworkErrors),
+            RateCondition(discards, HealthCauseKind.NetworkDiscards)
+        ]);
 
         return new HealthReading {
-            Resource    = Resource,
-            Level       = worst.Level,
-            Reason      = worst.Reason,
-            Severity    = worst.Severity,
-            Utilisation = $"↓ {metrics.ReceiveMegabytesPerSecond:0.0} ↑ {metrics.SendMegabytesPerSecond:0.0} MB/s",
-            Saturation  = $"Discards {discards:0.#}/s",
-            Errors      = $"{errors:0.#} errors/s"
+            Resource = Resource,
+            Level    = worst.Level,
+            Cause    = worst.Cause,
+            Severity = worst.Severity,
+            Measures = new NetworkHealthMeasures(
+                metrics.ReceiveBytesPerSecond,
+                metrics.SendBytesPerSecond,
+                discards,
+                errors)
         };
     }
 
-    private static HealthCondition RateCondition(double perSecond, string name) =>
+    private static HealthCondition RateCondition(double perSecond, HealthCauseKind kind) =>
         perSecond > 0.0
-            ? new HealthCondition(HealthLevel.Warning, $"{perSecond:0.#} {name}/s", 1.0 + perSecond)
+            ? new HealthCondition(HealthLevel.Warning, new HealthCause(kind, perSecond), 1.0 + perSecond)
             : HealthCondition.Clear;
 
     public HealthResource Resource => HealthResource.Network;

@@ -34,8 +34,8 @@ public sealed class HealthEvaluator
 
     private static HealthReading BuildReading(HealthReading reading, HealthTracker tracker) =>
         reading with {
-            Level  = tracker.Level,
-            Reason = tracker.Level >= HealthLevel.Warning ? tracker.Reason : string.Empty
+            Level = tracker.Level,
+            Cause = tracker.Level >= HealthLevel.Warning ? tracker.Cause : null
         };
 
     public HealthInfo Evaluate(HealthSample sample, HealthThresholds thresholds, DateTime utcNow)
@@ -92,11 +92,15 @@ public sealed class HealthEvaluator
             .Select(open => open with { EndUtc = utcNow })
             .ToList();
 
-    // A hung app is its own cause, as it may be using little resources, if any.
     private static IReadOnlyList<HealthCulprit> HungCulprits(HealthSample sample, HealthThresholds thresholds) =>
         sample.HungApps
             .Where(app => app.Seconds >= thresholds.NotRespondingWarningSeconds)
-            .Select(app => new HealthCulprit(app.Name, 1, app.Pid, $"Not responding for {app.Seconds:0} s", [HealthResource.Apps]))
+            .Select(app => new HealthCulprit {
+                ProcessName          = app.Name,
+                Pid                  = app.Pid,
+                Resources            = [HealthResource.Apps],
+                NotRespondingSeconds = app.Seconds
+            })
             .ToList();
 
     private static IReadOnlyList<string> NamesFor(IReadOnlyList<HealthCulprit> found, HealthResource resource) =>

@@ -18,39 +18,34 @@ internal static partial class DiagnosticReportParser
     public static HealthReport? Parse(string fileName, DateTime timeUtc, string? diagEvent = null)
     {
         if (fileName.StartsWith(JetsamEventPrefix, StringComparison.OrdinalIgnoreCase)) {
-            return new HealthReport(
-                timeUtc,
-                HealthReportKind.LowMemory,
-                "Low memory",
-                "macOS stopped processes to free memory",
-                string.Empty);
+            return new HealthReport { TimeUtc = timeUtc, Cause = HealthReportCause.JetsamReport };
         }
 
-        (HealthReportKind Kind, string Title, string Detail)? report = fileName switch {
+        HealthReportCause? cause = fileName switch {
             _ when fileName.EndsWith(".cpu_resource.diag", StringComparison.OrdinalIgnoreCase) || diagEvent == CpuEvent
-                => (HealthReportKind.ResourceLimit, "CPU limit", "Used too much CPU"),
+                => HealthReportCause.CpuLimitReport,
             _ when fileName.EndsWith(".diskwrites_resource.diag", StringComparison.OrdinalIgnoreCase) || diagEvent == DiskWritesEvent
-                => (HealthReportKind.ResourceLimit, "Disk write limit", "Wrote too much to disk"),
+                => HealthReportCause.DiskWriteLimitReport,
             _ when fileName.EndsWith(".hang", StringComparison.OrdinalIgnoreCase)
-                => (HealthReportKind.AppHang, "App hang", "Stopped responding"),
+                => HealthReportCause.HangReport,
             _ when fileName.EndsWith(".spin", StringComparison.OrdinalIgnoreCase)
-                => (HealthReportKind.AppHang, "App hang", "Spun without responding"),
+                => HealthReportCause.SpinReport,
             _ when fileName.EndsWith(".ips", StringComparison.OrdinalIgnoreCase) ||
                    fileName.EndsWith(".crash", StringComparison.OrdinalIgnoreCase)
-                => (HealthReportKind.AppCrash, "App crash", "Crashed"),
+                => HealthReportCause.CrashReport,
             _ => null
         };
 
-        if (report is not { } found) {
+        if (cause is not { } found) {
             return null;
         }
 
         Match match = AppName().Match(fileName);
-        
-        string app  = match.Success 
-            ? match.Groups["app"].Value 
+
+        string app  = match.Success
+            ? match.Groups["app"].Value
             : Path.GetFileNameWithoutExtension(fileName);
 
-        return new HealthReport(timeUtc, found.Kind, found.Title, $"{app}: {found.Detail}", app);
+        return new HealthReport { TimeUtc = timeUtc, Cause = found, App = app };
     }
 }

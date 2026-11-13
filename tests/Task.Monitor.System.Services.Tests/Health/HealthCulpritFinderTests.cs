@@ -38,8 +38,26 @@ public sealed class HealthCulpritFinderTests
         HealthCulprit culprit = Assert.Single(finder.Find([HealthResource.Cpu, HealthResource.Memory]));
 
         Assert.Equal([HealthResource.Cpu, HealthResource.Memory], culprit.Resources);
-        Assert.Contains("CPU", culprit.Detail);
-        Assert.Contains("memory", culprit.Detail);
+        Assert.NotNull(culprit.CpuPercent);
+        Assert.Equal(500 * Megabyte, culprit.MemoryBytes);
+        Assert.Null(culprit.DiskBytesPerSecond);
+        Assert.Null(culprit.GpuPercent);
+    }
+
+    // Heat comes from both the CPU and the GPU, so a culprit behind Thermal shows its use of each.
+    [Fact]
+    public void A_Thermal_Culprit_Carries_Its_Cpu_And_Gpu_Use()
+    {
+        ProcessEntry game = Entry("game", 1, cpu: 0.3);
+        game.GpuTimePercent = 0.6;
+
+        finder.Update(Processes(game), Start);
+
+        HealthCulprit culprit = Assert.Single(finder.Find([HealthResource.Thermal]));
+
+        Assert.NotNull(culprit.CpuPercent);
+        Assert.NotNull(culprit.GpuPercent);
+        Assert.Null(culprit.MemoryBytes);
     }
 
     private static ProcessEntry Entry(string name, int pid, double cpu = 0.0, long memory = 0, double disk = 0.0) =>
@@ -59,7 +77,18 @@ public sealed class HealthCulpritFinderTests
 
         HealthCulprit culprit = Assert.Single(finder.Find([HealthResource.Memory]));
 
-        Assert.Contains("+60 MB/min", culprit.Detail);
+        Assert.Equal(60.0 * Megabyte, culprit.MemoryGrowthBytesPerMinute);
+    }
+
+    [Fact]
+    public void Growth_Under_A_Megabyte_A_Minute_Is_Left_Out()
+    {
+        finder.Update(Processes(Entry("steady", 1, memory: 100 * Megabyte)), Start);
+        finder.Update(Processes(Entry("steady", 1, memory: 100 * Megabyte + 1024)), Start.AddMinutes(1));
+
+        HealthCulprit culprit = Assert.Single(finder.Find([HealthResource.Memory]));
+
+        Assert.Null(culprit.MemoryGrowthBytesPerMinute);
     }
 
     [Fact]
@@ -86,7 +115,7 @@ public sealed class HealthCulpritFinderTests
         HealthCulprit top = finder.Find([HealthResource.Memory])[0];
 
         Assert.Equal("holder", top.ProcessName);
-        Assert.Contains("54.0 GB memory", top.Detail);
+        Assert.Equal(54L * 1024 * Megabyte, top.MemoryBytes);
     }
 
     private string[] Names(HealthResource resource) =>

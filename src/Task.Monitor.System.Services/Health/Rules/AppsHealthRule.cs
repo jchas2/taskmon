@@ -4,16 +4,10 @@ internal sealed class AppsHealthRule : IHealthRule
 {
     public HealthReading Evaluate(HealthSample sample, HealthThresholds thresholds)
     {
-        int reported = sample.Reports.Count(report => report.Kind is HealthReportKind.AppCrash or HealthReportKind.AppHang);
-
-        string errors = reported switch {
-            0 => string.Empty,
-            1 => "1 app fault",
-            _ => $"{reported} app faults"
-        };
+        int faults = sample.Reports.Count(report => report.Kind is HealthReportKind.AppCrash or HealthReportKind.AppHang);
 
         if (!sample.CanDetectHungApps) {
-            return new HealthReading { Resource = Resource, Errors = errors };
+            return new HealthReading { Resource = Resource, Measures = new AppsHealthMeasures(null, faults) };
         }
 
         HungApp? longest = sample.HungApps.MaxBy(app => app.Seconds);
@@ -23,17 +17,16 @@ internal sealed class AppsHealthRule : IHealthRule
                 longest.Seconds,
                 thresholds.NotRespondingWarningSeconds,
                 thresholds.NotRespondingCriticalSeconds,
-                $"{longest.Name} not responding for {longest.Seconds:0} s")
+                new HealthCause(HealthCauseKind.AppNotResponding, longest.Seconds, longest.Name))
             : HealthCondition.Clear;
 
         return new HealthReading {
             Resource    = Resource,
             Level       = condition.Level,
-            Reason      = condition.Reason,
+            Cause       = condition.Cause,
             Severity    = condition.Severity,
             IsImmediate = true,
-            Saturation  = $"{sample.HungApps.Count} not responding",
-            Errors      = errors
+            Measures    = new AppsHealthMeasures(sample.HungApps.Count, faults)
         };
     }
 

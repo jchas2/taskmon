@@ -4,8 +4,6 @@ namespace Task.Monitor.System.Services.Health.Rules;
 
 internal sealed class ThermalHealthRule : IHealthRule
 {
-    private const double NoLimitPercent = 100.0;
-
     public HealthReading Evaluate(HealthSample sample, HealthThresholds thresholds)
     {
         ThermalMetrics? metrics = sample.Thermal?.Metrics;
@@ -23,7 +21,7 @@ internal sealed class ThermalHealthRule : IHealthRule
                     critical - sensor.Celsius,
                     thresholds.SensorWarningMarginCelsius,
                     thresholds.SensorCriticalMarginCelsius,
-                    $"{SensorText(sensor)} near its {critical:0} °C limit"));
+                    new HealthCause(HealthCauseKind.SensorNearLimit, sensor.Celsius, sensor.Component.ToString(), critical)));
             }
         }
 
@@ -36,19 +34,22 @@ internal sealed class ThermalHealthRule : IHealthRule
                 percent,
                 thresholds.PerformanceLimitWarningPercent,
                 double.NegativeInfinity,
-                $"CPU limited to {percent:0}%"));
+                new HealthCause(HealthCauseKind.CpuPerformanceLimit, percent)));
         }
 
         HealthCondition worst   = HealthCondition.Worst(conditions);
         ThermalSensor?  hottest = metrics?.Sensors.MaxBy(sensor => sensor.Celsius);
 
         return new HealthReading {
-            Resource    = Resource,
-            Level       = worst.Level,
-            Reason      = worst.Reason,
-            Severity    = worst.Severity,
-            Utilisation = hottest != null ? SensorText(hottest) : string.Empty,
-            Saturation  = SaturationText(metrics?.Pressure, limit)
+            Resource = Resource,
+            Level    = worst.Level,
+            Cause    = worst.Cause,
+            Severity = worst.Severity,
+            Measures = new ThermalHealthMeasures(
+                hottest?.Component ?? ThermalComponent.Other,
+                hottest?.Celsius,
+                metrics?.Pressure,
+                limit)
         };
     }
 
@@ -62,32 +63,8 @@ internal sealed class ThermalHealthRule : IHealthRule
             ? HealthLevel.Critical
             : HealthLevel.Warning;
 
-        return new HealthCondition(level, $"thermal pressure {pressure}", 1.0 + (int)pressure);
+        return new HealthCondition(level, new HealthCause(HealthCauseKind.ThermalPressure, (int)pressure), 1.0 + (int)pressure);
     }
 
     public HealthResource Resource => HealthResource.Thermal;
-
-    private static string SaturationText(ThermalPressure? pressure, double? limit)
-    {
-        if (pressure is { } level) {
-            return $"Pressure {level}";
-        }
-
-        if (limit is not { } percent) {
-            return string.Empty;
-        }
-
-        return Math.Round(percent) >= NoLimitPercent
-            ? "CPU not limited"
-            : $"CPU limited to {percent:0}%";
-    }
-
-    private static string SensorText(ThermalSensor sensor)
-    {
-        string name = sensor.Component is ThermalComponent.Cpu or ThermalComponent.Gpu
-            ? sensor.Component.ToString().ToUpperInvariant()
-            : sensor.Component.ToString();
-
-        return $"{name} {sensor.Celsius:0} °C";
-    }
 }

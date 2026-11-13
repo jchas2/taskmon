@@ -8,21 +8,24 @@ namespace Task.Monitor.System.Services.Health;
 
 public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
 {
-    private const string CulpritKeyPrefix = "culprit-";
-    private const int    CurrentVersion   = 1;
-    private const string EndKey           = "end";
-    private const char   EscapeChar       = '\\';
-    private const string FileNamePattern  = "????????T??????Z-*.ini";
-    private const string FileTimeFormat   = "yyyyMMdd'T'HHmmss'Z'";
-    private const string LevelKey         = "level";
-    private const string PeakReasonKey    = "peak-reason";
-    private const string PeakValueKey     = "peak-value";
-    private const string ResourceKey      = "resource";
-    private const string RoundTripNumber  = "R";
-    private const string RoundTripTime    = "O";
-    private const string SectionName      = "event";
-    private const string StartKey         = "start";
-    private const string VersionKey       = "version";
+    private const string CulpritKeyPrefix    = "culprit-";
+    private const int    CurrentVersion      = 2;
+    private const string EndKey              = "end";
+    private const char   EscapeChar          = '\\';
+    private const string FileNamePattern     = "????????T??????Z-*.ini";
+    private const string FileTimeFormat      = "yyyyMMdd'T'HHmmss'Z'";
+    private const string LevelKey            = "level";
+    private const string PeakCauseKey        = "peak-cause";
+    private const string PeakCauseLimitKey   = "peak-cause-limit";
+    private const string PeakCauseSubjectKey = "peak-cause-subject";
+    private const string PeakCauseValueKey   = "peak-cause-value";
+    private const string PeakValueKey        = "peak-value";
+    private const string ResourceKey         = "resource";
+    private const string RoundTripNumber     = "R";
+    private const string RoundTripTime       = "O";
+    private const string SectionName         = "event";
+    private const string StartKey            = "start";
+    private const string VersionKey          = "version";
 
     internal static string Escape(string text)
     {
@@ -66,20 +69,14 @@ public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
 
         DateTime? endUtc = TryParseTime(section.GetString(EndKey), out DateTime end) ? end : null;
 
-        _ = double.TryParse(
-            section.GetString(PeakValueKey),
-            NumberStyles.Float,
-            CultureInfo.InvariantCulture,
-            out double peakValue);
-
         return new HealthEvent {
             Resource      = resource,
             Level         = level,
             StartUtc      = startUtc,
             EndUtc        = endUtc,
             IsInterrupted = endUtc == null,
-            PeakReason    = Unescape(section.GetString(PeakReasonKey)),
-            PeakValue     = peakValue,
+            PeakCause     = ReadCause(section),
+            PeakValue     = ReadNumber(section, PeakValueKey),
             Culprits      = ReadCulprits(section)
         };
     }
@@ -121,6 +118,19 @@ public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
         }
     }
 
+    private static HealthCause? ReadCause(ConfigSection section)
+    {
+        if (!Enum.TryParse(section.GetString(PeakCauseKey), out HealthCauseKind kind)) {
+            return null;
+        }
+
+        return new HealthCause(
+            kind,
+            ReadNumber(section, PeakCauseValueKey),
+            Unescape(section.GetString(PeakCauseSubjectKey)),
+            ReadNumber(section, PeakCauseLimitKey));
+    }
+
     private static List<string> ReadCulprits(ConfigSection section)
     {
         List<string> culprits = [];
@@ -130,6 +140,17 @@ public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
         }
 
         return culprits;
+    }
+
+    private static double ReadNumber(ConfigSection section, string key)
+    {
+        _ = double.TryParse(
+            section.GetString(key),
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out double number);
+
+        return number;
     }
 
     public void Save(HealthEvent healthEvent)
@@ -152,9 +173,15 @@ public sealed class HealthEventStore(IFileSystem fileSystem, string folder)
             section.Add(EndKey, endUtc.ToString(RoundTripTime, CultureInfo.InvariantCulture));
         }
 
-        section
-            .Add(PeakReasonKey, Escape(healthEvent.PeakReason))
-            .Add(PeakValueKey, healthEvent.PeakValue.ToString(RoundTripNumber, CultureInfo.InvariantCulture));
+        if (healthEvent.PeakCause is { } cause) {
+            section
+                .Add(PeakCauseKey, cause.Kind.ToString())
+                .Add(PeakCauseValueKey, cause.Value.ToString(RoundTripNumber, CultureInfo.InvariantCulture))
+                .Add(PeakCauseSubjectKey, Escape(cause.Subject))
+                .Add(PeakCauseLimitKey, cause.Limit.ToString(RoundTripNumber, CultureInfo.InvariantCulture));
+        }
+
+        section.Add(PeakValueKey, healthEvent.PeakValue.ToString(RoundTripNumber, CultureInfo.InvariantCulture));
 
         for (int i = 0; i < healthEvent.Culprits.Count; i++) {
             section.Add($"{CulpritKeyPrefix}{i}", Escape(healthEvent.Culprits[i]));

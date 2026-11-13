@@ -19,7 +19,7 @@ internal sealed class CpuHealthRule : IHealthRule
                 busyPercent,
                 thresholds.CpuWarningPercent,
                 thresholds.CpuCriticalPercent,
-                $"{busyPercent:0}% busy")
+                new HealthCause(HealthCauseKind.CpuBusy, busyPercent))
         ];
 
         if (metrics.RunQueuePerCore is { } queue && busyPercent >= thresholds.RunQueueBusyPercent) {
@@ -27,7 +27,7 @@ internal sealed class CpuHealthRule : IHealthRule
                 queue,
                 thresholds.RunQueueWarningPerCore,
                 double.PositiveInfinity,
-                $"queue {queue:0.0} per core"));
+                new HealthCause(HealthCauseKind.RunQueue, queue)));
         }
 
         if (metrics.DriverTimePercent is { } driverTime) {
@@ -35,18 +35,17 @@ internal sealed class CpuHealthRule : IHealthRule
                 driverTime,
                 thresholds.DriverTimeWarningPercent,
                 double.PositiveInfinity,
-                $"{driverTime:0}% of CPU in drivers"));
+                new HealthCause(HealthCauseKind.DriverTime, driverTime)));
         }
 
         HealthCondition worst = HealthCondition.Worst(conditions);
 
         return new HealthReading {
-            Resource    = Resource,
-            Level       = worst.Level,
-            Reason      = worst.Reason,
-            Severity    = worst.Severity,
-            Utilisation = $"{busyPercent:0}%",
-            Saturation  = metrics.RunQueuePerCore is { } perCore ? $"Queue {perCore:0.0} per core" : string.Empty
+            Resource = Resource,
+            Level    = worst.Level,
+            Cause    = worst.Cause,
+            Severity = worst.Severity,
+            Measures = new CpuHealthMeasures(busyPercent, metrics.RunQueuePerCore)
         };
     }
 

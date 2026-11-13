@@ -16,14 +16,20 @@ public sealed class HealthEventStoreTests : IDisposable
     public HealthEventStoreTests() => store = new HealthEventStore(new FileSystem(), folder);
 
     [Fact]
+    public void HealthCause_Canary_Test() =>
+        Assert.Equal(4, CanaryTestHelper.GetPropertyCount<HealthCause>());
+
+    [Fact]
     public void HealthEvent_Canary_Test() =>
         Assert.Equal(8, CanaryTestHelper.GetPropertyCount<HealthEvent>());
 
+    // Version 1 saved the reason as text, which the UI can no longer format.
     [Theory]
-    [InlineData("[event]\nversion=2\nresource=Cpu\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\n")]
-    [InlineData("[event]\nversion=1\nresource=Toaster\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\n")]
-    [InlineData("[event]\nversion=1\nresource=Cpu\nlevel=Warning\nstart=yesterday\n")]
-    [InlineData("[other]\nversion=1\n")]
+    [InlineData("[event]\nversion=1\nresource=Cpu\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\npeak-reason=100% busy\n")]
+    [InlineData("[event]\nversion=3\nresource=Cpu\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\n")]
+    [InlineData("[event]\nversion=2\nresource=Toaster\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\n")]
+    [InlineData("[event]\nversion=2\nresource=Cpu\nlevel=Warning\nstart=yesterday\n")]
+    [InlineData("[other]\nversion=2\n")]
     public void An_Event_It_Cannot_Read_Is_Skipped(string text)
     {
         File.WriteAllText(Path.Combine(folder, "20261101T060333Z-cpu-1.ini"), text);
@@ -57,6 +63,28 @@ public sealed class HealthEventStoreTests : IDisposable
         Assert.Null(loaded.EndUtc);
     }
 
+    // A cause renamed or removed since the event was saved loses the cause, not the whole event.
+    [Fact]
+    public void An_Event_With_A_Cause_It_No_Longer_Knows_Still_Loads()
+    {
+        File.WriteAllText(
+            Path.Combine(folder, "20261101T060333Z-cpu-1.ini"),
+            "[event]\nversion=2\nresource=Cpu\nlevel=Warning\nstart=2026-11-01T06:03:33.0000000Z\npeak-cause=Toaster\n");
+
+        HealthEvent loaded = Assert.Single(store.Load(Limit));
+
+        Assert.Equal(HealthResource.Cpu, loaded.Resource);
+        Assert.Null(loaded.PeakCause);
+    }
+
+    [Fact]
+    public void An_Event_With_No_Cause_Loads_Without_One()
+    {
+        store.Save(Event(Start) with { PeakCause = null });
+
+        Assert.Null(Assert.Single(store.Load(Limit)).PeakCause);
+    }
+
     [Theory]
     [InlineData("a;b")]
     [InlineData("a=b#c")]
@@ -68,11 +96,13 @@ public sealed class HealthEventStoreTests : IDisposable
     [InlineData("[event]")]
     public void Awkward_Text_Survives_A_Round_Trip(string text)
     {
-        store.Save(Event(Start) with { PeakReason = text, Culprits = [text] });
+        HealthCause cause = new(HealthCauseKind.VolumeFull, 98.0, text);
+
+        store.Save(Event(Start) with { PeakCause = cause, Culprits = [text] });
 
         HealthEvent loaded = Assert.Single(store.Load(Limit));
 
-        Assert.Equal(text, loaded.PeakReason);
+        Assert.Equal(cause, loaded.PeakCause);
         Assert.Equal([text], loaded.Culprits);
     }
 
@@ -93,7 +123,7 @@ public sealed class HealthEventStoreTests : IDisposable
             Level      = HealthLevel.Critical,
             StartUtc   = startUtc,
             EndUtc     = startUtc.AddMinutes(3),
-            PeakReason = "100% busy",
+            PeakCause  = new HealthCause(HealthCauseKind.SensorNearLimit, 94.25, "Cpu", 100.0),
             PeakValue  = 1.1111111111111112,
             Culprits   = ["yes", "Brave Browser H"]
         };
@@ -112,7 +142,7 @@ public sealed class HealthEventStoreTests : IDisposable
         Assert.Equal(saved.StartUtc, loaded.StartUtc);
         Assert.Equal(DateTimeKind.Utc, loaded.StartUtc.Kind);
         Assert.Equal(saved.EndUtc, loaded.EndUtc);
-        Assert.Equal(saved.PeakReason, loaded.PeakReason);
+        Assert.Equal(saved.PeakCause, loaded.PeakCause);
         Assert.Equal(saved.PeakValue, loaded.PeakValue);
         Assert.Equal(saved.Culprits, loaded.Culprits);
         Assert.False(loaded.IsInterrupted);
