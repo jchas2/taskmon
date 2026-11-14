@@ -1,10 +1,13 @@
 using System.Drawing;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
@@ -15,6 +18,12 @@ namespace Task.Monitor.Tests.Gui;
 
 public sealed class SetupScreenTests
 {
+    private const string RestartHint = "Restart taskmon to use the new language";
+
+    // The list views the category menu switches between.
+    private static readonly string[] TabNames =
+        ["generalView", "columnsView", "themeView", "layoutView", "metreView", "delayView", "languageView"];
+
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
     private readonly ScreenApplication screenApp;
@@ -34,9 +43,7 @@ public sealed class SetupScreenTests
     // LAYOUTS in the category menu.
     private static ListView ActivateLayoutsTab(SetupScreen setupScreen)
     {
-        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
-            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView")) {
+        foreach (ListView tab in setupScreen.Controls.OfType<ListView>().Where(c => TabNames.Contains(c.Name))) {
             tab.Visible = tab.Name == "layoutView";
         }
 
@@ -70,7 +77,7 @@ public sealed class SetupScreenTests
             .Select(invocation => (string)invocation.Arguments[0]!));
 
     [Fact]
-    public void Categories_Menu_Ends_At_Delay_With_No_Process_Limit()
+    public void Categories_Menu_Ends_At_Language_With_No_Process_Limit()
     {
         SetupScreen setupScreen = new(runContext, screenApp);
         setupScreen.Load();
@@ -78,7 +85,7 @@ public sealed class SetupScreenTests
         ListView menuView = setupScreen.Controls.OfType<ListView>().Single(c => c.Name == "menuView");
 
         Assert.Equal(
-            ["GENERAL", "COLUMNS", "THEMES", "LAYOUTS", "METRES", "DELAY"],
+            ["GENERAL", "COLUMNS", "THEMES", "LAYOUTS", "METRES", "DELAY", "LANGUAGE"],
             menuView.Items.Select(item => item.Text));
 
         setupScreen.Unload();
@@ -104,6 +111,7 @@ public sealed class SetupScreenTests
             { "METRES",                                            "menuView" },
             { "DELAY",                                             "menuView" },
             { "LAYOUTS",                                           "menuView" },
+            { "LANGUAGE",                                          "menuView" },
 
             { "CPU %",                                             "columnsView" },
             { "Average CPU %",                                     "columnsView" },
@@ -161,6 +169,10 @@ public sealed class SetupScreenTests
             { "High (1000 ms)",                                    "delayView" },
             { "Normal (1500 ms)",                                  "delayView" },
             { "Slow (3000 ms)",                                    "delayView" },
+
+            { "Deutsch",                                           "languageView" },
+            { "English (United States)",                           "languageView" },
+            { "Português (Brasil)",                                "languageView" },
         };
 
     [Fact]
@@ -351,6 +363,42 @@ public sealed class SetupScreenTests
         setupScreen.Unload();
     }
 
+    // The new language waits for the next start: many labels are set when the screens are built.
+    [Fact]
+    public void F10_Keeps_The_Screens_In_Their_Language_Until_The_Next_Start()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        string running = CultureInfo.CurrentUICulture.Name;
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        SelectRow(TabView(setupScreen, "languageView"), "Deutsch");
+        PressF10(setupScreen);
+
+        Assert.Equal("de", runContext.AppConfig.UiLanguage);
+        Assert.Equal(running, CultureInfo.CurrentUICulture.Name);
+
+        setupScreen.Unload();
+    }
+
+    // it-IT and it give the same translation, so an untouched it-IT is saved as written.
+    [Fact]
+    public void F10_Leaves_A_Language_Written_Another_Way_As_It_Is()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.AppConfig.UiLanguage = "it-IT";
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        PressF10(setupScreen);
+
+        Assert.Equal("it-IT", runContext.AppConfig.UiLanguage);
+
+        setupScreen.Unload();
+    }
+
     // The highlighted layout becomes the SUMMARY screen's layout on F10 Done, like the THEMES tab.
     [Fact]
     public void F10_Makes_The_Highlighted_Layout_The_Summary_Default()
@@ -386,6 +434,25 @@ public sealed class SetupScreenTests
 
         Assert.Equal(500, runContext.AppConfig.DelayInMilliseconds);
         Assert.Equal(500, runContext.ServiceController.Delay);
+
+        setupScreen.Unload();
+    }
+
+    [Theory]
+    [InlineData("Deutsch",                  "de")]
+    [InlineData("English (United Kingdom)", "en-GB")]
+    [InlineData("Português (Brasil)",       "pt-BR")]
+    public void F10_Saves_The_Highlighted_Language(string row, string expected)
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        SelectRow(TabView(setupScreen, "languageView"), row);
+        PressF10(setupScreen);
+
+        Assert.Equal(expected, runContext.AppConfig.UiLanguage);
 
         setupScreen.Unload();
     }
@@ -447,6 +514,23 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
+    public void F10_With_The_System_Default_Highlighted_Clears_The_Language()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.AppConfig.UiLanguage = "de";
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        TabView(setupScreen, "languageView").SelectedIndex = 0;
+        PressF10(setupScreen);
+
+        Assert.Equal(string.Empty, runContext.AppConfig.UiLanguage);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
     public void Highlighting_A_Metre_Style_Restyles_The_Preview_But_Not_The_Saved_Style()
     {
         MetreControlStyle saved = runContext.AppConfig.MetreStyle;
@@ -498,6 +582,117 @@ public sealed class SetupScreenTests
             ConsolePalette.PreferIndexedColours = preferIndexed;
             setupScreen.Unload();
         }
+    }
+
+    [Fact]
+    public void Language_Tab_Footer_Says_A_New_Language_Needs_A_Restart()
+    {
+        SetupScreen setupScreen = ShowTab("languageView", width: 100);
+        setupScreen.Draw();
+
+        Assert.EndsWith(RestartHint, TabView(setupScreen, "languageView").FooterText);
+
+        setupScreen.Unload();
+    }
+
+    [Theory]
+    [InlineData("de",    "Deutsch")]
+    [InlineData("it-IT", "Italiano")]
+    [InlineData("de-AT", "Deutsch")]
+    [InlineData("en-US", "English (United States)")]
+    public void Language_Tab_Highlights_The_Configured_Language(string configured, string expected)
+    {
+        runContext.AppConfig.UiLanguage = configured;
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView languageView = TabView(setupScreen, "languageView");
+
+        Assert.Equal(expected, languageView.SelectedItem?.Text);
+        Assert.Equal(UiLanguage.Choices.Count + 1, languageView.Items.Count);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Language_Tab_Highlights_The_System_Default_When_No_Language_Is_Configured()
+    {
+        runContext.AppConfig.UiLanguage = string.Empty;
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        Assert.Equal(0, TabView(setupScreen, "languageView").SelectedIndex);
+
+        setupScreen.Unload();
+    }
+
+    // A ui-language Setup has no row for keeps a row of its own, so F10 leaves it alone.
+    [Fact]
+    public void Language_Tab_Keeps_An_Unlisted_Language_As_A_Highlighted_Row()
+    {
+        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.AppConfig.UiLanguage = "en-AU";
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView languageView = TabView(setupScreen, "languageView");
+
+        Assert.Equal("en-AU (from taskmon.ini)", languageView.SelectedItem?.Text);
+        Assert.Equal(UiLanguage.Choices.Count + 2, languageView.Items.Count);
+
+        PressF10(setupScreen);
+
+        Assert.Equal("en-AU", runContext.AppConfig.UiLanguage);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void Language_Tab_Lists_The_System_Default_Then_Each_Language_In_Its_Own_Name()
+    {
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView languageView = TabView(setupScreen, "languageView");
+
+        Assert.Equal($"System default: {UiLanguage.SystemChoice().NativeName}", languageView.Items[0].Text);
+        Assert.Equal(
+            ["Dansk", "Deutsch", "English (United Kingdom)", "English (United States)", "Español",
+             "Français", "Italiano", "Nederlands", "Polski", "Português (Brasil)"],
+            languageView.Items.Skip(1).Select(item => item.Text));
+
+        setupScreen.Unload();
+    }
+
+    // The hint is one sentence with no gap between hot keys, so a cut would land mid-word.
+    [Theory]
+    [InlineData(UiCulture.British)]
+    [InlineData(UiCulture.American)]
+    [InlineData(UiCulture.BrazilianPortuguese)]
+    [InlineData(UiCulture.Danish)]
+    [InlineData(UiCulture.Dutch)]
+    [InlineData(UiCulture.French)]
+    [InlineData(UiCulture.German)]
+    [InlineData(UiCulture.Italian)]
+    [InlineData(UiCulture.Polish)]
+    [InlineData(UiCulture.Spanish)]
+    public void Language_Tab_Shows_Its_Whole_Restart_Hint_At_80_Columns(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        SetupScreen setupScreen = ShowTab("languageView", width: 80);
+
+        runContextHelper.terminal.Invocations.Clear();
+        setupScreen.Draw();
+
+        string visible = Regex.Replace(CapturedOutput(), @"\x1b\[[0-9;]*[A-Za-z]", string.Empty);
+
+        Assert.Contains($"─ {Strings.SetupLanguageRestartHint} ─", visible);
+
+        setupScreen.Unload();
     }
 
     [Fact]
@@ -648,9 +843,7 @@ public sealed class SetupScreenTests
         SetupScreen setupScreen = new(runContext, localScreenApp);
         setupScreen.Load();
 
-        foreach (ListView tab in setupScreen.Controls.OfType<ListView>()
-            .Where(c => c.Name is "generalView" or "columnsView" or "themeView"
-                or "layoutView" or "metreView" or "delayView")) {
+        foreach (ListView tab in setupScreen.Controls.OfType<ListView>().Where(c => TabNames.Contains(c.Name))) {
             tab.Visible = tab.Name == "layoutView";
         }
 
@@ -662,6 +855,12 @@ public sealed class SetupScreenTests
         Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
 
         setupScreen.Unload();
+    }
+
+    private static void PressF10(SetupScreen setupScreen)
+    {
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
     }
 
     [Theory]

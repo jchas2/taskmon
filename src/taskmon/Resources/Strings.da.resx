@@ -236,6 +236,24 @@
   <data name="SetupLayoutsCreateEdit" xml:space="preserve">
     <value>Opret/Rediger</value>
   </data>
+  <data name="SetupLanguageMenuItem" xml:space="preserve">
+    <value>SPROG</value>
+  </data>
+  <data name="SetupLanguageHeader" xml:space="preserve">
+    <value>Visningssprog</value>
+  </data>
+  <data name="SetupLanguageSystem" xml:space="preserve">
+    <value>Systemsprog: {0}</value>
+  </data>
+  <data name="SetupLanguageUnlisted" xml:space="preserve">
+    <value>{0} (fra taskmon.ini)</value>
+  </data>
+  <data name="SetupLanguageRestartHint" xml:space="preserve">
+    <value>Genstart taskmon for at bruge det nye sprog</value>
+  </data>
+  <data name="SetupLanguageOverridden" xml:space="preserve">
+    <value>{0} tilsidesætter dette valg</value>
+  </data>
   <data name="SetupConfirmTaskDelete" xml:space="preserve">
     <value>Bekræft afslutning af job</value>
   </data>

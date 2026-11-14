@@ -236,6 +236,24 @@
   <data name="SetupLayoutsCreateEdit" xml:space="preserve">
     <value>Crea/Modifica</value>
   </data>
+  <data name="SetupLanguageMenuItem" xml:space="preserve">
+    <value>LINGUA</value>
+  </data>
+  <data name="SetupLanguageHeader" xml:space="preserve">
+    <value>Lingua dell&apos;interfaccia</value>
+  </data>
+  <data name="SetupLanguageSystem" xml:space="preserve">
+    <value>Lingua di sistema: {0}</value>
+  </data>
+  <data name="SetupLanguageUnlisted" xml:space="preserve">
+    <value>{0} (da taskmon.ini)</value>
+  </data>
+  <data name="SetupLanguageRestartHint" xml:space="preserve">
+    <value>Riavvia taskmon per usare la nuova lingua</value>
+  </data>
+  <data name="SetupLanguageOverridden" xml:space="preserve">
+    <value>{0} prevale su questa scelta</value>
+  </data>
   <data name="SetupConfirmTaskDelete" xml:space="preserve">
     <value>Conferma prima di terminare le attività</value>
   </data>

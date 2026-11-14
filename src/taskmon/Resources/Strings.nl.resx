@@ -236,6 +236,24 @@
   <data name="SetupLayoutsCreateEdit" xml:space="preserve">
     <value>Maken/Bewerken</value>
   </data>
+  <data name="SetupLanguageMenuItem" xml:space="preserve">
+    <value>TAAL</value>
+  </data>
+  <data name="SetupLanguageHeader" xml:space="preserve">
+    <value>Weergavetaal</value>
+  </data>
+  <data name="SetupLanguageSystem" xml:space="preserve">
+    <value>Systeemtaal: {0}</value>
+  </data>
+  <data name="SetupLanguageUnlisted" xml:space="preserve">
+    <value>{0} (uit taskmon.ini)</value>
+  </data>
+  <data name="SetupLanguageRestartHint" xml:space="preserve">
+    <value>Start taskmon opnieuw voor de nieuwe taal</value>
+  </data>
+  <data name="SetupLanguageOverridden" xml:space="preserve">
+    <value>{0} gaat voor deze keuze</value>
+  </data>
   <data name="SetupConfirmTaskDelete" xml:space="preserve">
     <value>Beëindigen van taken bevestigen</value>
   </data>

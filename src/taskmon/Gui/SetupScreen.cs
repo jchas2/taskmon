@@ -37,6 +37,7 @@ public class SetupScreen : Screen
     private readonly ListView          layoutView;
     private readonly ListView          metreView;
     private readonly ListView          delayView;
+    private readonly ListView          languageView;
     private readonly MessageBoxControl messageBox;
     private readonly List<ListView>    tabControls = [];
     
@@ -46,6 +47,7 @@ public class SetupScreen : Screen
     private Theme      previewTheme;
     private AppConfig? previewConfig;
     private ListView?  previewTab;
+    private string     languageNote = string.Empty;
 
     private bool preferIndexedColours;
     private bool returnToLayoutsTab;
@@ -179,6 +181,18 @@ public class SetupScreen : Screen
         delayView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupDelayHeader));
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("ms"));
 
+        languageView = new(runContext.Terminal) {
+            Name              = nameof(languageView),
+            EnableScroll      = true,
+            ShowColumnHeaders = true,
+            TabIndex          = 6,
+            TabStop           = true,
+            Visible           = false
+        };
+
+        languageView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupLanguageHeader));
+        languageView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
+
         Controls
             .Add(headerView)
             .Add(menuView)
@@ -187,15 +201,17 @@ public class SetupScreen : Screen
             .Add(themeView)
             .Add(layoutView)
             .Add(metreView)
-            .Add(delayView);
-        
+            .Add(delayView)
+            .Add(languageView);
+
         tabControls.AddRange(new [] {
             generalView,
             columnsView,
             themeView,
             layoutView,
             metreView,
-            delayView
+            delayView,
+            languageView
         });
 
         previewTheme = runContext.AppConfig.Theme;
@@ -362,6 +378,41 @@ public class SetupScreen : Screen
         headerView.Items.Add(new ListViewItem(string.Format(CultureInfo.CurrentCulture, Strings.SetupConfigFile, ConfigFileDisplayPath)));
     }
 
+    // The highlighted row is the configured language. Its key keeps the value as written (it-IT,
+    // not it), and a value that matches no language gets a row of its own, so F10 never rewrites a
+    // ui-language that wasn't changed here.
+    private void LoadLanguageSection()
+    {
+        string            configured = runContext.AppConfig.UiLanguage;
+        UiLanguageChoice? chosen     = UiLanguage.Find(configured);
+
+        languageView.Items.Add(new ListViewItem([
+            string.Format(CultureInfo.CurrentCulture, Strings.SetupLanguageSystem, UiLanguage.SystemChoice().NativeName),
+            string.Empty]));
+
+        languageView.SelectedIndex = 0;
+
+        foreach (UiLanguageChoice choice in UiLanguage.Choices) {
+            languageView.Items.Add(new ListViewItem([choice.NativeName, choice == chosen ? configured : choice.Code]));
+
+            if (choice == chosen) {
+                languageView.SelectedIndex = languageView.Items.Count - 1;
+            }
+        }
+
+        if (chosen == null && !string.IsNullOrWhiteSpace(configured)) {
+            languageView.Items.Add(new ListViewItem([
+                string.Format(CultureInfo.CurrentCulture, Strings.SetupLanguageUnlisted, configured.Trim()),
+                configured]));
+
+            languageView.SelectedIndex = languageView.Items.Count - 1;
+        }
+
+        languageNote = UiLanguage.IsOverridden(Environment.GetEnvironmentVariable)
+            ? string.Format(CultureInfo.CurrentCulture, Strings.SetupLanguageOverridden, UiLanguage.UiLanguageEnvVar)
+            : Strings.SetupLanguageRestartHint;
+    }
+
     private void LoadMenuItems()
     {
         menuView.Items.Add(
@@ -393,6 +444,11 @@ public class SetupScreen : Screen
             new MenuListViewItem(
                 delayView,
                 Strings.SetupDelayMenuItem));
+
+        menuView.Items.Add(
+            new MenuListViewItem(
+                languageView,
+                Strings.SetupLanguageMenuItem));
     }
 
     private void LoadUxSection()
@@ -487,6 +543,11 @@ public class SetupScreen : Screen
 
         if (delayView.SelectedItem?.SubItems[1].Text is { } delay) {
             runContext.AppConfig.DelayInMilliseconds = int.Parse(delay);
+        }
+
+        // Saved for the next start: the screens keep the language they started in.
+        if (languageView.SelectedItem?.SubItems[1].Text is { } language) {
+            runContext.AppConfig.UiLanguage = language;
         }
 
         runContext.ServiceController.SetSamplingDelay(runContext.AppConfig.DelayInMilliseconds);
@@ -646,6 +707,7 @@ public class SetupScreen : Screen
         LoadUxSection();
         
         LoadDelaySection();
+        LoadLanguageSection();
 
         previewTheme         = runContext.AppConfig.Theme;
         preferIndexedColours = ConsolePalette.PreferIndexedColours;
@@ -706,10 +768,11 @@ public class SetupScreen : Screen
             ctrl.ColumnHeaders[0].Width = Math.Max(0, ctrl.Width - checkboxWidth - BorderInset);
         }
 
-        generalView.ColumnHeaders[1].Width = 0;
-        delayView.ColumnHeaders[1].Width   = 0;
-        columnsView.ColumnHeaders[1].Width = 0;
-        metreView.ColumnHeaders[1].Width   = 0;
+        generalView.ColumnHeaders[1].Width  = 0;
+        delayView.ColumnHeaders[1].Width    = 0;
+        columnsView.ColumnHeaders[1].Width  = 0;
+        metreView.ColumnHeaders[1].Width    = 0;
+        languageView.ColumnHeaders[1].Width = 0;
 
         ResizePreview();
 
@@ -931,6 +994,7 @@ public class SetupScreen : Screen
             CommonControl.Theme(ctrl, previewTheme);
         }
 
-        layoutView.FooterText = CommonControl.FooterText(previewTheme, ("↵", Strings.SetupLayoutsCreateEdit));
+        layoutView.FooterText   = CommonControl.FooterText(previewTheme, ("↵", Strings.SetupLayoutsCreateEdit));
+        languageView.FooterText = CommonControl.FooterNote(previewTheme, languageNote);
     }
 }

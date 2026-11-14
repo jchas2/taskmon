@@ -297,6 +297,30 @@
     <value>Create/Edit</value>
     <comment>Footer label for the ↵ key on the layouts list.</comment>
   </data>
+  <data name="SetupLanguageMenuItem" xml:space="preserve">
+    <value>LANGUAGE</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupLanguageHeader" xml:space="preserve">
+    <value>Display language</value>
+    <comment>Column header of the Setup list that picks the language of the screens.</comment>
+  </data>
+  <data name="SetupLanguageSystem" xml:space="preserve">
+    <value>System default: {0}</value>
+    <comment>First row of the language list, which follows the system&apos;s language. {0} is the language that gives, in its own name, such as Deutsch.</comment>
+  </data>
+  <data name="SetupLanguageUnlisted" xml:space="preserve">
+    <value>{0} (from taskmon.ini)</value>
+    <comment>Language list row for a ui-language value in taskmon.ini that matches no other row. {0} is the value as written, such as en-AU.</comment>
+  </data>
+  <data name="SetupLanguageRestartHint" xml:space="preserve">
+    <value>Restart taskmon to use the new language</value>
+    <comment>Footer of the language list: a new language shows the next time taskmon starts. Max 50 characters.</comment>
+  </data>
+  <data name="SetupLanguageOverridden" xml:space="preserve">
+    <value>{0} overrides this choice</value>
+    <comment>Footer of the language list when the environment variable picks the language. {0} is its name, TASKMON_UI_LANGUAGE, which adds 16 characters. Max 34 characters.</comment>
+  </data>
   <data name="SetupConfirmTaskDelete" xml:space="preserve">
     <value>Confirm Task delete</value>
     <comment>General setting.</comment>

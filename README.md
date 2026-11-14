@@ -50,7 +50,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
 - **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
 - **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Windows that stop responding are shown as they happen, and crashes, hangs and hardware errors the system recorded in the last 24 hours are listed alongside. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
-- **Languages**: British English (the default), US English, Brazilian Portuguese, Danish, Dutch, French, German, Italian, Polish and Spanish, picked from your system settings or chosen in `taskmon.ini`. See [Language](#language).
+- **Languages**: British English (the default), US English, Brazilian Portuguese, Danish, Dutch, French, German, Italian, Polish and Spanish, picked from your system settings or chosen in Setup. See [Language](#language).
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -190,18 +190,20 @@ Task Monitor's screens are in British English by default, and also in US English
 Task Monitor picks the language when it starts, from the first of these that names one:
 
 1. The `TASKMON_UI_LANGUAGE` environment variable, for a one-off change.
-2. The `ui-language` setting in the `[ux]` section of `taskmon.ini`, to keep a choice.
+2. The language chosen in Setup, kept as the `ui-language` setting in the `[ux]` section of `taskmon.ini`.
 3. Your region, when both it and your display language are English. Windows often has an English (United States) display language on UK and Australian machines, while the region says where you are and so which spelling you'd expect.
 4. Your display language on Windows, or the `LANG` environment variable on macOS.
 
-To keep Task Monitor in Italian, set this in `taskmon.ini`:
+To keep Task Monitor in Italian, press F2 for Setup, choose LANGUAGE, highlight Italiano and press F10. Each language is listed in its own name. Task Monitor shows the new language the next time it starts, as the note under the list says.
+
+Setup saves the choice in `taskmon.ini`, which you can also edit yourself:
 
 ```ini
 [ux]
 ui-language=it-IT
 ```
 
-`ui-language` is empty by default, which leaves the choice to steps 3 and 4. A change takes effect the next time Task Monitor starts.
+`ui-language` is empty by default, which leaves the choice to steps 3 and 4. That is the System default row in Setup, which names the language it gives. A code you set that Setup doesn't list, such as `en-AU`, gets a row of its own, so saving from Setup keeps it.
 
 For a single session, set the environment variable instead. It overrides `ui-language`:
 

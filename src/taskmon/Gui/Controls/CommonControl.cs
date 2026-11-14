@@ -21,6 +21,13 @@ public static class CommonControl
     public static (string Key, string Label) ClearFilterHotKey => ("Esc", Strings.HotKeyClearFilter);
     public static (string Key, string Label) FilterHotKey      => ("f", Strings.HotKeyFilter);
 
+    // A plain note on a list's bottom border, in the colour of a hot key's label. It has no gap for
+    // the border to cut at, so keep it short enough for the narrowest list it goes on.
+    public static string FooterNote(Theme theme, string note) =>
+        string.IsNullOrEmpty(note)
+            ? string.Empty
+            : ConsolePalette.BackgroundSgr(theme.ListViewBorderBackground) + ConsolePalette.ForegroundSgr(theme.HotKeyName) + note;
+
     public static string FooterText(Theme theme, params (string Key, string Label)[] hotKeys)
     {
         if (hotKeys.Length == 0) {
