@@ -7,6 +7,9 @@
         <!-- The UI text in Resources\Strings.resx is British English. Strings.<culture>.resx
              files override it, and NativeAOT compiles them into the executable. -->
         <NeutralLanguage>en-GB</NeutralLanguage>
+        <!-- IDEs load a project by running only its compile step, so generate the Strings class
+             there as well; otherwise Rider can't see it. -->
+        <CoreCompileDependsOn>PrepareResources;$(CoreCompileDependsOn)</CoreCompileDependsOn>
     </PropertyGroup>
 
     <ItemGroup>
