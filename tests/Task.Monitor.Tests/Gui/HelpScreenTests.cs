@@ -142,8 +142,14 @@ public sealed class HelpScreenTests
     [Theory]
     [InlineData(UiCulture.British)]
     [InlineData(UiCulture.American)]
+    [InlineData(UiCulture.BrazilianPortuguese)]
+    [InlineData(UiCulture.Danish)]
+    [InlineData(UiCulture.Dutch)]
+    [InlineData(UiCulture.French)]
     [InlineData(UiCulture.German)]
     [InlineData(UiCulture.Italian)]
+    [InlineData(UiCulture.Polish)]
+    [InlineData(UiCulture.Spanish)]
     public void OnResize_Fits_Every_Text_At_120_Columns(string cultureName)
     {
         using IDisposable _ = UiCulture.Use(cultureName);

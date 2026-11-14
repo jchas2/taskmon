@@ -968,8 +968,14 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Theory]
     [InlineData(UiCulture.British,  "Cpu Metre")]
     [InlineData(UiCulture.American, "Cpu Meter")]
+    [InlineData(UiCulture.BrazilianPortuguese, "Medidor de CPU")]
+    [InlineData(UiCulture.Danish,   "CPU-måler")]
+    [InlineData(UiCulture.Dutch,    "CPU-meter")]
+    [InlineData(UiCulture.French,   "Jauge CPU")]
     [InlineData(UiCulture.German,   "CPU-Anzeige")]
     [InlineData(UiCulture.Italian,  "Indicatore CPU")]
+    [InlineData(UiCulture.Polish,   "Wskaźnik CPU")]
+    [InlineData(UiCulture.Spanish,  "Medidor de CPU")]
     public void The_Control_Type_Label_Follows_The_UI_Language(string cultureName, string expected)
     {
         using IDisposable _ = UiCulture.Use(cultureName);

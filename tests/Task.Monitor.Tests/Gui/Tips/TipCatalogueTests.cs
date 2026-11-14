@@ -14,8 +14,14 @@ public sealed class TipCatalogueTests
     [Theory]
     [InlineData(UiCulture.British)]
     [InlineData(UiCulture.American)]
+    [InlineData(UiCulture.BrazilianPortuguese)]
+    [InlineData(UiCulture.Danish)]
+    [InlineData(UiCulture.Dutch)]
+    [InlineData(UiCulture.French)]
     [InlineData(UiCulture.German)]
     [InlineData(UiCulture.Italian)]
+    [InlineData(UiCulture.Polish)]
+    [InlineData(UiCulture.Spanish)]
     public void Every_Tip_Fits_The_Footer(string cultureName)
     {
         CultureInfo british = CultureInfo.GetCultureInfo(UiCulture.British);

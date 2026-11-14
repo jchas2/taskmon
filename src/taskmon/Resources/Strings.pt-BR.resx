@@ -1,0 +1,2500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Brazilian Portuguese. A full translation: every entry in Strings.resx has one here. Keep {0}-style
+  placeholders and {F2}-style key markup unchanged, and stay within each entry's
+  "Max N characters." limit in Strings.resx.
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SetupMetreStylesHeader" xml:space="preserve">
+    <value>Estilos de medidor</value>
+  </data>
+  <data name="SetupMetresMenuItem" xml:space="preserve">
+    <value>MEDIDORES</value>
+  </data>
+  <data name="HelpChartColoursSection" xml:space="preserve">
+    <value>CORES DOS GRÁFICOS</value>
+  </data>
+  <data name="HelpProcessColoursSection" xml:space="preserve">
+    <value>CORES DE PROCESSOS E CAMINHOS</value>
+  </data>
+  <data name="HelpF2Description" xml:space="preserve">
+    <value>Mostrar as configurações: layouts, medidores, colunas visíveis, temas de cores e outras opções.</value>
+  </data>
+  <data name="HelpF3Description" xml:space="preserve">
+    <value>Mudar para o próximo tema de cores, na ordem das configurações. Salve-o lá para mantê-lo.</value>
+  </data>
+  <data name="TipSetupOptions" xml:space="preserve">
+    <value>{F2} muda o tema, as colunas visíveis, o estilo dos medidores e a taxa de atualização.</value>
+  </data>
+  <data name="TipHelpScreen" xml:space="preserve">
+    <value>{F1} mostra todas as teclas e o significado das cores.</value>
+  </data>
+  <data name="HealthUtilisationColumn" xml:space="preserve">
+    <value>UTILIZAÇÃO</value>
+  </data>
+  <data name="DiskSpaceCancellingStatus" xml:space="preserve">
+    <value>Cancelando… {0}</value>
+  </data>
+  <data name="DiskSpaceCancelledStatus" xml:space="preserve">
+    <value>Cancelado - {0}</value>
+  </data>
+  <data name="PaneControlType_Empty" xml:space="preserve">
+    <value>Vazio</value>
+  </data>
+  <data name="PaneControlType_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PaneControlType_Memory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="PaneControlType_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="PaneControlType_Disk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="PaneControlType_NetworkSent" xml:space="preserve">
+    <value>Rede enviada</value>
+  </data>
+  <data name="PaneControlType_NetworkReceived" xml:space="preserve">
+    <value>Rede recebida</value>
+  </data>
+  <data name="PaneControlType_GpuMemory" xml:space="preserve">
+    <value>Memória da GPU</value>
+  </data>
+  <data name="PaneControlType_VirtualMemory" xml:space="preserve">
+    <value>Memória virtual</value>
+  </data>
+  <data name="PaneControlType_Process" xml:space="preserve">
+    <value>Processos</value>
+  </data>
+  <data name="PaneControlType_Drivers" xml:space="preserve">
+    <value>Drivers</value>
+  </data>
+  <data name="PaneControlType_Services" xml:space="preserve">
+    <value>Serviços</value>
+  </data>
+  <data name="PaneControlType_Startup" xml:space="preserve">
+    <value>Inicialização</value>
+  </data>
+  <data name="PaneControlType_InstalledApps" xml:space="preserve">
+    <value>Aplicativos instalados</value>
+  </data>
+  <data name="PaneControlType_SystemInfo" xml:space="preserve">
+    <value>Info do sistema</value>
+  </data>
+  <data name="PaneControlType_DiskSpace" xml:space="preserve">
+    <value>Uso do disco</value>
+  </data>
+  <data name="PaneControlType_Thermals" xml:space="preserve">
+    <value>Temperaturas</value>
+  </data>
+  <data name="PaneControlType_CpuCores" xml:space="preserve">
+    <value>Núcleos de CPU</value>
+  </data>
+  <data name="PaneControlType_Power" xml:space="preserve">
+    <value>Energia</value>
+  </data>
+  <data name="PaneControlType_CpuMetre" xml:space="preserve">
+    <value>Medidor de CPU</value>
+  </data>
+  <data name="PaneControlType_GpuMetre" xml:space="preserve">
+    <value>Medidor de GPU</value>
+  </data>
+  <data name="PaneControlType_GpuMemoryMetre" xml:space="preserve">
+    <value>Medidor de memória da GPU</value>
+  </data>
+  <data name="PaneControlType_MemoryMetre" xml:space="preserve">
+    <value>Medidor de memória</value>
+  </data>
+  <data name="PaneControlType_VirtualMemoryMetre" xml:space="preserve">
+    <value>Medidor de memória virtual</value>
+  </data>
+  <data name="PaneControlType_DiskMetre" xml:space="preserve">
+    <value>Medidor de disco</value>
+  </data>
+  <data name="PaneControlType_NetworkSendMetre" xml:space="preserve">
+    <value>Medidor de rede enviada</value>
+  </data>
+  <data name="PaneControlType_NetworkReceiveMetre" xml:space="preserve">
+    <value>Medidor de rede recebida</value>
+  </data>
+  <data name="PaneControlType_Fans" xml:space="preserve">
+    <value>Ventoinhas</value>
+  </data>
+  <data name="PaneControlType_NpuMetre" xml:space="preserve">
+    <value>Medidor de NPU</value>
+  </data>
+  <data name="PaneControlType_Npu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="DialogOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="DialogCancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="DriveInputBoxCustomPath" xml:space="preserve">
+    <value>Caminho personalizado...</value>
+  </data>
+  <data name="DriveInputBoxHelp" xml:space="preserve">
+    <value>↑ ↓ mover   ← → botão   ↵ confirmar   Esc cancelar</value>
+  </data>
+  <data name="MessageBoxHelp" xml:space="preserve">
+    <value>Escolha com ← → e ↵</value>
+  </data>
+  <data name="PickerBoxHelp" xml:space="preserve">
+    <value>↑ ↓ mover   ↵ escolher   Esc cancelar</value>
+  </data>
+  <data name="PickerBoxMultiSelectHelp" xml:space="preserve">
+    <value>↑ ↓ mover   Espaço marcar   ↵ confirmar   Esc cancelar</value>
+  </data>
+  <data name="TextInputDialogHelp" xml:space="preserve">
+    <value>Tab botão   ↵ confirmar   Esc cancelar</value>
+  </data>
+  <data name="HotKeyClearFilter" xml:space="preserve">
+    <value>Limpar filtro</value>
+  </data>
+  <data name="HotKeyFilter" xml:space="preserve">
+    <value>Filtrar</value>
+  </data>
+  <data name="HotKeyRefresh" xml:space="preserve">
+    <value>Atualizar</value>
+  </data>
+  <data name="HotKeyScroll" xml:space="preserve">
+    <value>Rolar</value>
+  </data>
+  <data name="HotKeySort" xml:space="preserve">
+    <value>Ordenar</value>
+  </data>
+  <data name="CommonNotAvailable" xml:space="preserve">
+    <value>N/D</value>
+  </data>
+  <data name="CommonSaveFailedTitle" xml:space="preserve">
+    <value>Falha ao salvar</value>
+  </data>
+  <data name="SetupTitle" xml:space="preserve">
+    <value>TASK MONITOR - CONFIGURAÇÕES</value>
+  </data>
+  <data name="SetupDone" xml:space="preserve">
+    <value>Concluído</value>
+  </data>
+  <data name="SetupConfigFile" xml:space="preserve">
+    <value>Arquivo de configuração: {0}</value>
+  </data>
+  <data name="SetupSaveFailedText" xml:space="preserve">
+    <value>Ocorreu um erro ao salvar a configuração.</value>
+  </data>
+  <data name="SetupCategoriesHeader" xml:space="preserve">
+    <value>CATEGORIAS</value>
+  </data>
+  <data name="SetupGeneralMenuItem" xml:space="preserve">
+    <value>GERAL</value>
+  </data>
+  <data name="SetupColumnsMenuItem" xml:space="preserve">
+    <value>COLUNAS</value>
+  </data>
+  <data name="SetupThemesMenuItem" xml:space="preserve">
+    <value>TEMAS</value>
+  </data>
+  <data name="SetupLayoutsMenuItem" xml:space="preserve">
+    <value>LAYOUTS</value>
+  </data>
+  <data name="SetupDelayMenuItem" xml:space="preserve">
+    <value>INTERVALO</value>
+  </data>
+  <data name="SetupGeneralHeader" xml:space="preserve">
+    <value>Configurações gerais</value>
+  </data>
+  <data name="SetupColumnsHeader" xml:space="preserve">
+    <value>Colunas visíveis</value>
+  </data>
+  <data name="SetupThemesHeader" xml:space="preserve">
+    <value>Temas disponíveis</value>
+  </data>
+  <data name="SetupLayoutsHeader" xml:space="preserve">
+    <value>Layouts do resumo - o destacado é usado ao pressionar F10 Concluído</value>
+  </data>
+  <data name="SetupDelayHeader" xml:space="preserve">
+    <value>Tempo entre atualizações</value>
+  </data>
+  <data name="SetupNewLayoutRow" xml:space="preserve">
+    <value>+ Novo layout</value>
+  </data>
+  <data name="SetupLayoutsCreateEdit" xml:space="preserve">
+    <value>Criar/Editar</value>
+  </data>
+  <data name="SetupConfirmTaskDelete" xml:space="preserve">
+    <value>Confirmar ao finalizar tarefas</value>
+  </data>
+  <data name="SetupHighlightWindowsServices" xml:space="preserve">
+    <value>Destacar serviços do Windows</value>
+  </data>
+  <data name="SetupHighlightDaemons" xml:space="preserve">
+    <value>Destacar daemons</value>
+  </data>
+  <data name="SetupHighlightChangedValues" xml:space="preserve">
+    <value>Destacar valores alterados</value>
+  </data>
+  <data name="SetupMultiSelectProcesses" xml:space="preserve">
+    <value>Permitir seleção múltipla de processos</value>
+  </data>
+  <data name="SetupShowCpuNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de CPU</value>
+  </data>
+  <data name="SetupShowGpuNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de GPU</value>
+  </data>
+  <data name="SetupShowNpuNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de NPU</value>
+  </data>
+  <data name="SetupShowMemoryNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de memória</value>
+  </data>
+  <data name="SetupShowGpuMemoryNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de memória da GPU</value>
+  </data>
+  <data name="SetupShowVirtualMemoryNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de memória virtual</value>
+  </data>
+  <data name="SetupShowSwapNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de memória swap</value>
+  </data>
+  <data name="SetupShowDiskNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de disco</value>
+  </data>
+  <data name="SetupShowNetworkNumerically" xml:space="preserve">
+    <value>Mostrar em números o rótulo do gráfico de rede</value>
+  </data>
+  <data name="SetupShowYAxisScale" xml:space="preserve">
+    <value>Mostrar a escala do eixo Y dos gráficos</value>
+  </data>
+  <data name="SetupShowLargeChartGrid" xml:space="preserve">
+    <value>Mostrar grade nos gráficos grandes</value>
+  </data>
+  <data name="SetupShowSmallChartGrid" xml:space="preserve">
+    <value>Mostrar grade nos gráficos pequenos (núcleos de CPU, painéis de desempenho)</value>
+  </data>
+  <data name="SetupShowTips" xml:space="preserve">
+    <value>Mostrar dicas no rodapé</value>
+  </data>
+  <data name="SetupIrixModeWindows" xml:space="preserve">
+    <value>Usar o modo Irix para CPU% por processo (saturação de um único núcleo)</value>
+  </data>
+  <data name="SetupIrixModeMacOS" xml:space="preserve">
+    <value>Usar o modo Irix para CPU% por processo (como o Monitor de Atividade)</value>
+  </data>
+  <data name="MetreControlStyle_Blocks" xml:space="preserve">
+    <value>Blocos</value>
+  </data>
+  <data name="MetreControlStyle_Bars" xml:space="preserve">
+    <value>Barras</value>
+  </data>
+  <data name="MetreControlStyle_Dots" xml:space="preserve">
+    <value>Pontos</value>
+  </data>
+  <data name="Statistics_User" xml:space="preserve">
+    <value>Usuário</value>
+  </data>
+  <data name="Statistics_Pri" xml:space="preserve">
+    <value>Prioridade</value>
+  </data>
+  <data name="Statistics_Cpu" xml:space="preserve">
+    <value>CPU %</value>
+  </data>
+  <data name="Statistics_AvgCpu" xml:space="preserve">
+    <value>CPU % média</value>
+  </data>
+  <data name="Statistics_MaxCpu" xml:space="preserve">
+    <value>CPU % máxima</value>
+  </data>
+  <data name="Statistics_Thrd" xml:space="preserve">
+    <value>Threads</value>
+  </data>
+  <data name="Statistics_Gpu" xml:space="preserve">
+    <value>GPU %</value>
+  </data>
+  <data name="Statistics_AvgGpu" xml:space="preserve">
+    <value>GPU % média</value>
+  </data>
+  <data name="Statistics_MaxGpu" xml:space="preserve">
+    <value>GPU % máxima</value>
+  </data>
+  <data name="Statistics_Mem" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="Statistics_AvgMem" xml:space="preserve">
+    <value>Memória média</value>
+  </data>
+  <data name="Statistics_MaxMem" xml:space="preserve">
+    <value>Memória máxima</value>
+  </data>
+  <data name="Statistics_Disk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="Statistics_AvgDisk" xml:space="preserve">
+    <value>Disco médio</value>
+  </data>
+  <data name="Statistics_MaxDisk" xml:space="preserve">
+    <value>Disco máximo</value>
+  </data>
+  <data name="Statistics_Power" xml:space="preserve">
+    <value>Energia</value>
+  </data>
+  <data name="Statistics_Path" xml:space="preserve">
+    <value>Caminho</value>
+  </data>
+  <data name="LayoutDesignerTitle" xml:space="preserve">
+    <value>EDITOR DE LAYOUT - {0}</value>
+  </data>
+  <data name="LayoutDesignerUntitled" xml:space="preserve">
+    <value>Sem título</value>
+  </data>
+  <data name="LayoutDesignerHelp" xml:space="preserve">
+    <value>←↑→↓ Mover  V/H Dividir  ↵ Atribuir  C Colunas  +/- Tamanho  Del Remover  S Salvar  Esc Voltar</value>
+  </data>
+  <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
+    <value>Colunas</value>
+  </data>
+  <data name="LayoutDesignerAssignTitle" xml:space="preserve">
+    <value>Atribuir conteúdo</value>
+  </data>
+  <data name="LayoutDesignerSaveTitle" xml:space="preserve">
+    <value>Salvar layout como</value>
+  </data>
+  <data name="LayoutDesignerCopyName" xml:space="preserve">
+    <value>{0} - Cópia</value>
+  </data>
+  <data name="LayoutDesignerBuiltInTitle" xml:space="preserve">
+    <value>Layout integrado</value>
+  </data>
+  <data name="LayoutDesignerBuiltInText" xml:space="preserve">
+    <value>“{0}”
+é um layout integrado.
+Salve-o com outro nome.</value>
+  </data>
+  <data name="LayoutDesignerSaveFailedText" xml:space="preserve">
+    <value>Ocorreu um erro ao salvar o layout.</value>
+  </data>
+  <data name="FilterNoMatches" xml:space="preserve">
+    <value>Nenhuma correspondência</value>
+  </data>
+  <data name="FilterHeader" xml:space="preserve">
+    <value>Filtro: {0} ({1})</value>
+  </data>
+  <data name="FilterHeaderWithTotal" xml:space="preserve">
+    <value>Filtro: {0} ({1} de {2})</value>
+  </data>
+  <data name="KeyBindExit" xml:space="preserve">
+    <value>Sair</value>
+  </data>
+  <data name="HelpTitle" xml:space="preserve">
+    <value>TASK MONITOR - AJUDA</value>
+  </data>
+  <data name="HelpKeysSection" xml:space="preserve">
+    <value>TECLAS</value>
+  </data>
+  <data name="HelpFunctionKeysSection" xml:space="preserve">
+    <value>TECLAS DE FUNÇÃO</value>
+  </data>
+  <data name="HelpOtherKeysSection" xml:space="preserve">
+    <value>OUTRAS TECLAS</value>
+  </data>
+  <data name="HelpRangeLow" xml:space="preserve">
+    <value>Baixo</value>
+  </data>
+  <data name="HelpRangeMid" xml:space="preserve">
+    <value>Médio</value>
+  </data>
+  <data name="HelpRangeHigh" xml:space="preserve">
+    <value>Alto</value>
+  </data>
+  <data name="HelpNormalProcess" xml:space="preserve">
+    <value>Processo normal</value>
+  </data>
+  <data name="HelpLowPriorityProcess" xml:space="preserve">
+    <value>Processo de baixa prioridade (nice)</value>
+  </data>
+  <data name="HelpHighCpuProcess" xml:space="preserve">
+    <value>Uso alto de CPU (&gt; 1 núcleo)</value>
+  </data>
+  <data name="HelpIoBoundProcess" xml:space="preserve">
+    <value>Processo limitado por E/S</value>
+  </data>
+  <data name="HelpMetric" xml:space="preserve">
+    <value>Métrica</value>
+  </data>
+  <data name="HelpMetricChanged" xml:space="preserve">
+    <value>Métrica alterada</value>
+  </data>
+  <data name="HelpKeyMoveLeft" xml:space="preserve">
+    <value>Ir para o componente à esquerda</value>
+  </data>
+  <data name="HelpKeyScrollUp" xml:space="preserve">
+    <value>Rolar a lista para cima</value>
+  </data>
+  <data name="HelpKeyMoveRight" xml:space="preserve">
+    <value>Ir para o componente à direita</value>
+  </data>
+  <data name="HelpKeyScrollDown" xml:space="preserve">
+    <value>Rolar a lista para baixo</value>
+  </data>
+  <data name="HelpKeyPageUp" xml:space="preserve">
+    <value>Subir uma página na lista</value>
+  </data>
+  <data name="HelpKeyEnter" xml:space="preserve">
+    <value>ENTER para escolher um item da lista</value>
+  </data>
+  <data name="HelpKeyPageDown" xml:space="preserve">
+    <value>Descer uma página na lista</value>
+  </data>
+  <data name="HelpKeyEscape" xml:space="preserve">
+    <value>Fechar a caixa de diálogo ou limpar o filtro</value>
+  </data>
+  <data name="HelpKeySortAscending" xml:space="preserve">
+    <value>Ordenar a lista em ordem crescente</value>
+  </data>
+  <data name="HelpKeySortDescending" xml:space="preserve">
+    <value>Ordenar a lista em ordem decrescente</value>
+  </data>
+  <data name="HelpKeySortColumn" xml:space="preserve">
+    <value>Escolher a coluna de ordenação</value>
+  </data>
+  <data name="HelpKeySortProcesses" xml:space="preserve">
+    <value>Ordenar processos por CPU%, GPU%, memória</value>
+  </data>
+  <data name="HelpKeyFilter" xml:space="preserve">
+    <value>Filtrar a lista</value>
+  </data>
+  <data name="HelpKeyMultiSelect" xml:space="preserve">
+    <value>Ativar/desativar a seleção múltipla</value>
+  </data>
+  <data name="HelpKeyUncheckAll" xml:space="preserve">
+    <value>Desmarcar todos os processos marcados</value>
+  </data>
+  <data name="HelpKeySpace" xml:space="preserve">
+    <value>Barra de espaço para marcar/desmarcar</value>
+  </data>
+  <data name="HelpKeySpaceWindows" xml:space="preserve">
+    <value>Marcar/desmarcar; alternar INICIALIZAÇÃO ou SERVIÇOS</value>
+  </data>
+  <data name="HelpKeySpaceMacOS" xml:space="preserve">
+    <value>Marcar/desmarcar; ativar/desativar em INICIALIZAÇÃO</value>
+  </data>
+  <data name="HelpKeyEndTask" xml:space="preserve">
+    <value>Finalizar tarefa (marcadas ou escolhida)</value>
+  </data>
+  <data name="HelpKeyRefresh" xml:space="preserve">
+    <value>Atualizar a lista atual</value>
+  </data>
+  <data name="HelpKeyFreeze" xml:space="preserve">
+    <value>Congelar a lista de processos</value>
+  </data>
+  <data name="HelpKeyIrix" xml:space="preserve">
+    <value>Alternar o modo Irix de CPU na lista</value>
+  </data>
+  <data name="HelpKeyNextTip" xml:space="preserve">
+    <value>Mostrar a próxima dica</value>
+  </data>
+  <data name="HelpF1Description" xml:space="preserve">
+    <value>Mostrar esta tela de ajuda.</value>
+  </data>
+  <data name="HelpF4Description" xml:space="preserve">
+    <value>Mudar o RESUMO para o próximo layout, na ordem das configurações. Salve-o lá para mantê-lo.</value>
+  </data>
+  <data name="HelpF5Description" xml:space="preserve">
+    <value>Atualizar a lista Inicialização, Aplicativos, Serviços ou Drivers (igual a r).</value>
+  </data>
+  <data name="HelpF10Description" xml:space="preserve">
+    <value>Sair do Task Monitor.</value>
+  </data>
+  <data name="HelpF12Description" xml:space="preserve">
+    <value>Mostrar a tela Sobre.</value>
+  </data>
+  <data name="HelpOtherKeyEndTask" xml:space="preserve">
+    <value>Finalizar o processo selecionado, ou todos os marcados na seleção múltipla (x), e seus processos filhos.</value>
+  </data>
+  <data name="MainMenuTitle" xml:space="preserve">
+    <value>MENU DE VISÕES</value>
+  </data>
+  <data name="MainMenuSummary" xml:space="preserve">
+    <value>RESUMO</value>
+  </data>
+  <data name="MainMenuHealth" xml:space="preserve">
+    <value>SAÚDE</value>
+  </data>
+  <data name="MainMenuPerformance" xml:space="preserve">
+    <value>DESEMPENHO</value>
+  </data>
+  <data name="MainMenuProcesses" xml:space="preserve">
+    <value>PROCESSOS</value>
+  </data>
+  <data name="MainMenuThermals" xml:space="preserve">
+    <value>TEMPERATURAS</value>
+  </data>
+  <data name="MainMenuDiskSpace" xml:space="preserve">
+    <value>USO DO DISCO</value>
+  </data>
+  <data name="MainMenuStartup" xml:space="preserve">
+    <value>INICIALIZAÇÃO</value>
+  </data>
+  <data name="MainMenuApps" xml:space="preserve">
+    <value>APLICATIVOS</value>
+  </data>
+  <data name="MainMenuServices" xml:space="preserve">
+    <value>SERVIÇOS</value>
+  </data>
+  <data name="MainMenuDrivers" xml:space="preserve">
+    <value>DRIVERS</value>
+  </data>
+  <data name="MainMenuSystemInfo" xml:space="preserve">
+    <value>INFO SISTEMA</value>
+  </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>SOBRE O TASK MONITOR</value>
+  </data>
+  <data name="AboutProductName" xml:space="preserve">
+    <value>Task Monitor</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Versão {0}</value>
+  </data>
+  <data name="HeaderTitle" xml:space="preserve">
+    <value>TASK MONITOR</value>
+  </data>
+  <data name="HeaderMachineLabel" xml:space="preserve">
+    <value>Máquina:</value>
+  </data>
+  <data name="HeaderOsLabel" xml:space="preserve">
+    <value>SO:</value>
+  </data>
+  <data name="HeaderIpLabel" xml:space="preserve">
+    <value>IP:</value>
+  </data>
+  <data name="HeaderCpuLabel" xml:space="preserve">
+    <value>CPU:</value>
+  </data>
+  <data name="HeaderTasksLabel" xml:space="preserve">
+    <value>Tarefas:</value>
+  </data>
+  <data name="HeaderThreadsLabel" xml:space="preserve">
+    <value>Threads:</value>
+  </data>
+  <data name="HeaderRunning" xml:space="preserve">
+    <value>em execução</value>
+  </data>
+  <data name="HeaderCores" xml:space="preserve">
+    <value>{0} núcleos</value>
+  </data>
+  <data name="HeaderPerformanceCores" xml:space="preserve">
+    <value>{0}P</value>
+  </data>
+  <data name="HeaderEfficiencyCores" xml:space="preserve">
+    <value>{0}E</value>
+  </data>
+  <data name="HeaderSuperCores" xml:space="preserve">
+    <value>{0}S</value>
+  </data>
+  <data name="HeaderGpuCores" xml:space="preserve">
+    <value>{0} GPU</value>
+  </data>
+  <data name="HeaderIrixMode" xml:space="preserve">
+    <value>Modo Irix</value>
+  </data>
+  <data name="HeaderSolarisMode" xml:space="preserve">
+    <value>Modo Solaris</value>
+  </data>
+  <data name="FooterBanner" xml:space="preserve">
+    <value>Task Monitor v{0}</value>
+  </data>
+  <data name="FooterReceived" xml:space="preserve">
+    <value>{0} Rx</value>
+  </data>
+  <data name="FooterTip" xml:space="preserve">
+    <value>Dica:</value>
+  </data>
+  <data name="FooterServicesRunning" xml:space="preserve">
+    <value>Serviços: em execução</value>
+  </data>
+  <data name="FooterServiceErrored" xml:space="preserve">
+    <value>Status do serviço: erro</value>
+  </data>
+  <data name="FooterServiceStopping" xml:space="preserve">
+    <value>Status do serviço: parando</value>
+  </data>
+  <data name="FooterServiceUnknown" xml:space="preserve">
+    <value>Status do serviço: desconhecido</value>
+  </data>
+  <data name="FooterKeyHelp" xml:space="preserve">
+    <value>Ajuda</value>
+  </data>
+  <data name="FooterKeySetup" xml:space="preserve">
+    <value>Configurações</value>
+  </data>
+  <data name="FooterKeyTheme" xml:space="preserve">
+    <value>Tema</value>
+  </data>
+  <data name="FooterKeyLayout" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="FooterKeyNextTip" xml:space="preserve">
+    <value>Próxima</value>
+  </data>
+  <data name="SortByHeader" xml:space="preserve">
+    <value>ORDENAR POR</value>
+  </data>
+  <data name="SummaryTopProcesses" xml:space="preserve">
+    <value>Top {0} processos    {1} no total</value>
+  </data>
+  <data name="SummaryEmptyPane" xml:space="preserve">
+    <value>vazio</value>
+  </data>
+  <data name="SummaryCpuChartLabel" xml:space="preserve">
+    <value>{0:000.0%} Kernel {1:000.0%} Usuário {2:000.0%}</value>
+  </data>
+  <data name="ChartTitleCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ChartTitleMemory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="ChartTitleVirtualMemory" xml:space="preserve">
+    <value>Virtual</value>
+  </data>
+  <data name="ChartTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="ChartTitleDisk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="ChartTitleGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="ChartTitleGpuMemory" xml:space="preserve">
+    <value>Memória GPU</value>
+  </data>
+  <data name="ChartTitleNetworkReceived" xml:space="preserve">
+    <value>Rede rec.</value>
+  </data>
+  <data name="ChartTitleNetworkSent" xml:space="preserve">
+    <value>Rede env.</value>
+  </data>
+  <data name="ChartTitleNpu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="ProcessColumnProcess" xml:space="preserve">
+    <value>PROCESSO</value>
+  </data>
+  <data name="ProcessColumnPid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="ProcessColumnUser" xml:space="preserve">
+    <value>USUÁRIO</value>
+  </data>
+  <data name="ProcessColumnPriorityWindows" xml:space="preserve">
+    <value>PRI</value>
+  </data>
+  <data name="ProcessColumnPriorityMacOS" xml:space="preserve">
+    <value>NI</value>
+  </data>
+  <data name="ProcessColumnCpu" xml:space="preserve">
+    <value>CPU%</value>
+  </data>
+  <data name="ProcessColumnAvgCpu" xml:space="preserve">
+    <value>MÉD CPU%</value>
+  </data>
+  <data name="ProcessColumnMaxCpu" xml:space="preserve">
+    <value>MÁX CPU%</value>
+  </data>
+  <data name="ProcessColumnThreads" xml:space="preserve">
+    <value>THRDS</value>
+  </data>
+  <data name="ProcessColumnGpu" xml:space="preserve">
+    <value>GPU%</value>
+  </data>
+  <data name="ProcessColumnAvgGpu" xml:space="preserve">
+    <value>MÉD GPU%</value>
+  </data>
+  <data name="ProcessColumnMaxGpu" xml:space="preserve">
+    <value>MÁX GPU%</value>
+  </data>
+  <data name="ProcessColumnMemory" xml:space="preserve">
+    <value>MEM</value>
+  </data>
+  <data name="ProcessColumnAvgMemory" xml:space="preserve">
+    <value>MÉD MEM</value>
+  </data>
+  <data name="ProcessColumnMaxMemory" xml:space="preserve">
+    <value>MÁX MEM</value>
+  </data>
+  <data name="ProcessColumnDisk" xml:space="preserve">
+    <value>DISCO</value>
+  </data>
+  <data name="ProcessColumnAvgDisk" xml:space="preserve">
+    <value>MÉD DISCO</value>
+  </data>
+  <data name="ProcessColumnMaxDisk" xml:space="preserve">
+    <value>MÁX DISCO</value>
+  </data>
+  <data name="ProcessColumnPower" xml:space="preserve">
+    <value>ENERGIA</value>
+  </data>
+  <data name="ProcessColumnPath" xml:space="preserve">
+    <value>CAMINHO</value>
+  </data>
+  <data name="HotKeyEndTask" xml:space="preserve">
+    <value>Finalizar</value>
+  </data>
+  <data name="ProcessesFilterTitle" xml:space="preserve">
+    <value>Filtrar processos</value>
+  </data>
+  <data name="ProcessesFrozen" xml:space="preserve">
+    <value>Congelado</value>
+  </data>
+  <data name="EndTaskTitleOne" xml:space="preserve">
+    <value>Finalizar tarefa</value>
+  </data>
+  <data name="EndTaskTitleMany" xml:space="preserve">
+    <value>Finalizar tarefas</value>
+  </data>
+  <data name="EndTaskHeadingOne" xml:space="preserve">
+    <value>Finalizar esta tarefa?</value>
+  </data>
+  <data name="EndTaskHeadingMany" xml:space="preserve">
+    <value>Finalizar estas {0} tarefas?</value>
+  </data>
+  <data name="EndTaskMore" xml:space="preserve">
+    <value>e mais {0}</value>
+  </data>
+  <data name="EndTaskChildren" xml:space="preserve">
+    <value>Os processos filhos também são finalizados.</value>
+  </data>
+  <data name="ProcessInfoNotImplemented" xml:space="preserve">
+    <value>Ainda não disponível neste sistema</value>
+  </data>
+  <data name="ProcessInfoThreadsNotLoaded" xml:space="preserve">
+    <value>Não foi possível carregar as threads</value>
+  </data>
+  <data name="ProcessInfoModulesNotLoaded" xml:space="preserve">
+    <value>Não foi possível carregar os módulos</value>
+  </data>
+  <data name="ProcessInfoLoading" xml:space="preserve">
+    <value>Carregando, aguarde...</value>
+  </data>
+  <data name="ProcessInfoMenuHeader" xml:space="preserve">
+    <value>ESCOLHA</value>
+  </data>
+  <data name="ProcessInfoMenuDetail" xml:space="preserve">
+    <value>DETALHE</value>
+  </data>
+  <data name="ProcessInfoMenuThreads" xml:space="preserve">
+    <value>THREADS</value>
+  </data>
+  <data name="ProcessInfoMenuModules" xml:space="preserve">
+    <value>MÓDULOS</value>
+  </data>
+  <data name="ProcessInfoMenuHandles" xml:space="preserve">
+    <value>HANDLES</value>
+  </data>
+  <data name="ProcessInfoPidLabel" xml:space="preserve">
+    <value>PID:</value>
+  </data>
+  <data name="ProcessInfoThreadId" xml:space="preserve">
+    <value>ID THREAD</value>
+  </data>
+  <data name="ProcessInfoState" xml:space="preserve">
+    <value>ESTADO</value>
+  </data>
+  <data name="ProcessInfoReason" xml:space="preserve">
+    <value>MOTIVO</value>
+  </data>
+  <data name="ProcessInfoPriority" xml:space="preserve">
+    <value>PRI</value>
+  </data>
+  <data name="ProcessInfoStartAddress" xml:space="preserve">
+    <value>ENDEREÇO INICIAL</value>
+  </data>
+  <data name="ProcessInfoKernelTime" xml:space="preserve">
+    <value>TEMPO KERNEL</value>
+  </data>
+  <data name="ProcessInfoUserTime" xml:space="preserve">
+    <value>TEMPO USUÁRIO</value>
+  </data>
+  <data name="ProcessInfoTotalTime" xml:space="preserve">
+    <value>TEMPO TOTAL</value>
+  </data>
+  <data name="ProcessInfoModule" xml:space="preserve">
+    <value>MÓDULO</value>
+  </data>
+  <data name="ProcessInfoPath" xml:space="preserve">
+    <value>CAMINHO</value>
+  </data>
+  <data name="ProcessInfoId" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="ProcessInfoName" xml:space="preserve">
+    <value>NOME</value>
+  </data>
+  <data name="ProcessInfoFile" xml:space="preserve">
+    <value>Arquivo:</value>
+  </data>
+  <data name="ProcessInfoDescription" xml:space="preserve">
+    <value>Descrição:</value>
+  </data>
+  <data name="ProcessInfoPathLabel" xml:space="preserve">
+    <value>Caminho:</value>
+  </data>
+  <data name="ProcessInfoUser" xml:space="preserve">
+    <value>Usuário:</value>
+  </data>
+  <data name="ProcessInfoVersion" xml:space="preserve">
+    <value>Versão:</value>
+  </data>
+  <data name="ProcessInfoSize" xml:space="preserve">
+    <value>Tamanho:</value>
+  </data>
+  <data name="ProcessInfoSizeOnDisk" xml:space="preserve">
+    <value>No disco:</value>
+  </data>
+  <data name="ProcessInfoBytes" xml:space="preserve">
+    <value>{0} bytes</value>
+  </data>
+  <data name="ProcessInfoError" xml:space="preserve">
+    <value>Erro:</value>
+  </data>
+  <data name="CommonYes" xml:space="preserve">
+    <value>Sim</value>
+  </data>
+  <data name="CommonNo" xml:space="preserve">
+    <value>Não</value>
+  </data>
+  <data name="CommonUnknown" xml:space="preserve">
+    <value>Desconh.</value>
+  </data>
+  <data name="CpuKernel" xml:space="preserve">
+    <value>Kernel</value>
+  </data>
+  <data name="CpuUser" xml:space="preserve">
+    <value>Usuário</value>
+  </data>
+  <data name="LabelName" xml:space="preserve">
+    <value>Nome:</value>
+  </data>
+  <data name="LabelDescription" xml:space="preserve">
+    <value>Descrição:</value>
+  </data>
+  <data name="LabelVendor" xml:space="preserve">
+    <value>Fornecedor:</value>
+  </data>
+  <data name="LabelModel" xml:space="preserve">
+    <value>Modelo:</value>
+  </data>
+  <data name="LabelManufacturer" xml:space="preserve">
+    <value>Fabricante:</value>
+  </data>
+  <data name="LabelCores" xml:space="preserve">
+    <value>Núcleos:</value>
+  </data>
+  <data name="LabelVersion" xml:space="preserve">
+    <value>Versão:</value>
+  </data>
+  <data name="PerformanceUtilisationColumn" xml:space="preserve">
+    <value>Utilização</value>
+  </data>
+  <data name="PerformanceSpeedColumn" xml:space="preserve">
+    <value>Velocidade</value>
+  </data>
+  <data name="PerformanceTasksColumn" xml:space="preserve">
+    <value>Tarefas</value>
+  </data>
+  <data name="PerformanceThreadsColumn" xml:space="preserve">
+    <value>Threads</value>
+  </data>
+  <data name="PerformancePowerDrawColumn" xml:space="preserve">
+    <value>Consumo</value>
+  </data>
+  <data name="PerformanceCoreChart" xml:space="preserve">
+    <value>CPU {0}</value>
+  </data>
+  <data name="PerformanceBaseSpeed" xml:space="preserve">
+    <value>Velocidade base:</value>
+  </data>
+  <data name="PerformanceSockets" xml:space="preserve">
+    <value>Soquetes:</value>
+  </data>
+  <data name="PerformanceLogicalProcessors" xml:space="preserve">
+    <value>Núcleos lógicos:</value>
+  </data>
+  <data name="LabelVirtualisation" xml:space="preserve">
+    <value>Virtualização:</value>
+  </data>
+  <data name="PerformanceL1Cache" xml:space="preserve">
+    <value>Cache L1:</value>
+  </data>
+  <data name="PerformanceL2Cache" xml:space="preserve">
+    <value>Cache L2:</value>
+  </data>
+  <data name="PerformanceL3Cache" xml:space="preserve">
+    <value>Cache L3:</value>
+  </data>
+  <data name="PerformanceActiveTimeColumn" xml:space="preserve">
+    <value>Tempo ativo</value>
+  </data>
+  <data name="PerformanceReadSpeedColumn" xml:space="preserve">
+    <value>Leitura</value>
+  </data>
+  <data name="PerformanceWriteSpeedColumn" xml:space="preserve">
+    <value>Gravação</value>
+  </data>
+  <data name="PerformancePowerColumn" xml:space="preserve">
+    <value>Energia</value>
+  </data>
+  <data name="PerformanceActiveTimeChart" xml:space="preserve">
+    <value>Tempo ativo {0}</value>
+  </data>
+  <data name="PerformanceDiskTransferChart" xml:space="preserve">
+    <value>Taxa de transferência do disco {0}</value>
+  </data>
+  <data name="LabelFirmwareRevision" xml:space="preserve">
+    <value>Revisão firmware:</value>
+  </data>
+  <data name="LabelSerialNumber" xml:space="preserve">
+    <value>Número de série:</value>
+  </data>
+  <data name="LabelBusType" xml:space="preserve">
+    <value>Tipo de barramento:</value>
+  </data>
+  <data name="LabelMediaType" xml:space="preserve">
+    <value>Tipo de mídia:</value>
+  </data>
+  <data name="LabelCapacity" xml:space="preserve">
+    <value>Capacidade:</value>
+  </data>
+  <data name="LabelRemovable" xml:space="preserve">
+    <value>Removível:</value>
+  </data>
+  <data name="PerformanceTotalBytesRead" xml:space="preserve">
+    <value>Total lido:</value>
+  </data>
+  <data name="PerformanceTotalBytesWritten" xml:space="preserve">
+    <value>Total gravado:</value>
+  </data>
+  <data name="PerformanceNumberOfDisks" xml:space="preserve">
+    <value>Número de discos:</value>
+  </data>
+  <data name="LabelTotalCapacity" xml:space="preserve">
+    <value>Capacidade total:</value>
+  </data>
+  <data name="PerformanceRatedWatts" xml:space="preserve">
+    <value>{0:0.0} W (nominal)</value>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryColumn" xml:space="preserve">
+    <value>Memória dedicada</value>
+  </data>
+  <data name="PerformanceGpuMemoryColumn" xml:space="preserve">
+    <value>Memória da GPU</value>
+  </data>
+  <data name="PerformanceSharedGpuMemoryColumn" xml:space="preserve">
+    <value>Memória compartilhada</value>
+  </data>
+  <data name="PerformanceFrequencyColumn" xml:space="preserve">
+    <value>Frequência</value>
+  </data>
+  <data name="PerformanceThrottlingColumn" xml:space="preserve">
+    <value>Limitação</value>
+  </data>
+  <data name="PerformanceGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryChart" xml:space="preserve">
+    <value>Memória dedicada da GPU {0}</value>
+  </data>
+  <data name="PerformanceGpuMemoryChart" xml:space="preserve">
+    <value>Memória da GPU {0}</value>
+  </data>
+  <data name="LabelAdapterType" xml:space="preserve">
+    <value>Tipo adaptador:</value>
+  </data>
+  <data name="LabelDriverVersion" xml:space="preserve">
+    <value>Versão do driver:</value>
+  </data>
+  <data name="LabelDriverDate" xml:space="preserve">
+    <value>Data do driver:</value>
+  </data>
+  <data name="PerformanceInUseColumn" xml:space="preserve">
+    <value>Em uso</value>
+  </data>
+  <data name="PerformanceAvailableColumn" xml:space="preserve">
+    <value>Disponível</value>
+  </data>
+  <data name="PerformanceCommittedColumn" xml:space="preserve">
+    <value>Confirmada</value>
+  </data>
+  <data name="PerformanceSwapFileColumn" xml:space="preserve">
+    <value>Arquivo de paginação</value>
+  </data>
+  <data name="PerformanceSwapInColumn" xml:space="preserve">
+    <value>Swap de entrada</value>
+  </data>
+  <data name="PerformanceSwapOutColumn" xml:space="preserve">
+    <value>Swap de saída</value>
+  </data>
+  <data name="PerformanceMemoryChart" xml:space="preserve">
+    <value>Memória {0}</value>
+  </data>
+  <data name="PerformanceCommittedMemoryChart" xml:space="preserve">
+    <value>Memória confirmada {0}</value>
+  </data>
+  <data name="PerformanceSwapFileChart" xml:space="preserve">
+    <value>Arquivo de paginação {0}</value>
+  </data>
+  <data name="PerformanceInUseSeries" xml:space="preserve">
+    <value>Em uso</value>
+  </data>
+  <data name="PerformanceModifiedSeries" xml:space="preserve">
+    <value>Modificada</value>
+  </data>
+  <data name="PerformanceStandbySeries" xml:space="preserve">
+    <value>Em espera</value>
+  </data>
+  <data name="PerformanceFreeSeries" xml:space="preserve">
+    <value>Livre</value>
+  </data>
+  <data name="LabelMemory" xml:space="preserve">
+    <value>Memória:</value>
+  </data>
+  <data name="LabelSpeed" xml:space="preserve">
+    <value>Velocidade:</value>
+  </data>
+  <data name="PerformanceConfiguredSpeed" xml:space="preserve">
+    <value>Vel. configurada:</value>
+  </data>
+  <data name="PerformanceSlotsUsed" xml:space="preserve">
+    <value>Slots usados:</value>
+  </data>
+  <data name="PerformanceSlotsUsedValue" xml:space="preserve">
+    <value>{0} de {1}</value>
+  </data>
+  <data name="PerformanceFormFactor" xml:space="preserve">
+    <value>Fator forma:</value>
+  </data>
+  <data name="PerformanceInUse" xml:space="preserve">
+    <value>Em uso:</value>
+  </data>
+  <data name="PerformanceModified" xml:space="preserve">
+    <value>Modificada:</value>
+  </data>
+  <data name="PerformanceStandbyCached" xml:space="preserve">
+    <value>Em espera (cache):</value>
+  </data>
+  <data name="PerformanceFree" xml:space="preserve">
+    <value>Livre:</value>
+  </data>
+  <data name="PerformanceSendColumn" xml:space="preserve">
+    <value>Envio</value>
+  </data>
+  <data name="PerformanceReceiveColumn" xml:space="preserve">
+    <value>Recebimento</value>
+  </data>
+  <data name="PerformanceSendChart" xml:space="preserve">
+    <value>Envio {0}</value>
+  </data>
+  <data name="PerformanceReceiveChart" xml:space="preserve">
+    <value>Recebimento {0}</value>
+  </data>
+  <data name="PerformanceFriendlyName" xml:space="preserve">
+    <value>Nome amigável:</value>
+  </data>
+  <data name="LabelConnectionType" xml:space="preserve">
+    <value>Tipo de conexão:</value>
+  </data>
+  <data name="LabelPhysicalMedium" xml:space="preserve">
+    <value>Meio físico:</value>
+  </data>
+  <data name="LabelMacAddress" xml:space="preserve">
+    <value>Endereço MAC:</value>
+  </data>
+  <data name="LabelIpv4Addresses" xml:space="preserve">
+    <value>Endereços IPv4:</value>
+  </data>
+  <data name="LabelIpv6Addresses" xml:space="preserve">
+    <value>Endereços IPv6:</value>
+  </data>
+  <data name="LabelTransmitLinkSpeed" xml:space="preserve">
+    <value>Vel. de envio:</value>
+  </data>
+  <data name="LabelReceiveLinkSpeed" xml:space="preserve">
+    <value>Vel. de recebimento:</value>
+  </data>
+  <data name="LabelOperationalStatus" xml:space="preserve">
+    <value>Status operacional:</value>
+  </data>
+  <data name="PerformanceTotalBytesSent" xml:space="preserve">
+    <value>Total enviado:</value>
+  </data>
+  <data name="PerformanceTotalBytesReceived" xml:space="preserve">
+    <value>Total recebido:</value>
+  </data>
+  <data name="PerformanceTotalPacketsSent" xml:space="preserve">
+    <value>Pacotes enviados:</value>
+  </data>
+  <data name="PerformanceTotalPacketsReceived" xml:space="preserve">
+    <value>Pacotes recebidos:</value>
+  </data>
+  <data name="PerformancePeakPowerColumn" xml:space="preserve">
+    <value>Pico</value>
+  </data>
+  <data name="PerformancePowerChart" xml:space="preserve">
+    <value>Energia {0}</value>
+  </data>
+  <data name="LabelChip" xml:space="preserve">
+    <value>Chip:</value>
+  </data>
+  <data name="LabelArchitecture" xml:space="preserve">
+    <value>Arquitetura:</value>
+  </data>
+  <data name="PerformanceCpuPanel" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PerformanceMemoryPanel" xml:space="preserve">
+    <value>MEMÓRIA</value>
+  </data>
+  <data name="PerformanceDisksPanel" xml:space="preserve">
+    <value>DISCOS</value>
+  </data>
+  <data name="PerformanceDiskPanel" xml:space="preserve">
+    <value>Disco {0}</value>
+  </data>
+  <data name="PerformanceGpuPanel" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="PerformanceNetworkPanel" xml:space="preserve">
+    <value>REDE</value>
+  </data>
+  <data name="PerformanceGpuCores" xml:space="preserve">
+    <value>{0} núcleos</value>
+  </data>
+  <data name="PerformanceLogicalProcessorsCount" xml:space="preserve">
+    <value>{0} processadores lógicos</value>
+  </data>
+  <data name="PerformanceSendShort" xml:space="preserve">
+    <value>E: {0}</value>
+  </data>
+  <data name="PerformanceReceiveShort" xml:space="preserve">
+    <value>R: {0}</value>
+  </data>
+  <data name="ListColumnName" xml:space="preserve">
+    <value>NOME</value>
+  </data>
+  <data name="ListColumnStatus" xml:space="preserve">
+    <value>STATUS</value>
+  </data>
+  <data name="ListColumnVersion" xml:space="preserve">
+    <value>VERSÃO</value>
+  </data>
+  <data name="ListColumnPublisher" xml:space="preserve">
+    <value>EDITOR</value>
+  </data>
+  <data name="ListColumnScope" xml:space="preserve">
+    <value>ESCOPO</value>
+  </data>
+  <data name="ListColumnPath" xml:space="preserve">
+    <value>CAMINHO</value>
+  </data>
+  <data name="ListColumnDescription" xml:space="preserve">
+    <value>DESCRIÇÃO</value>
+  </data>
+  <data name="ListColumnField" xml:space="preserve">
+    <value>CAMPO</value>
+  </data>
+  <data name="ListColumnValue" xml:space="preserve">
+    <value>VALOR</value>
+  </data>
+  <data name="ListDetailHeader" xml:space="preserve">
+    <value>DETALHE</value>
+  </data>
+  <data name="ListHeaderRunningTotal" xml:space="preserve">
+    <value>{0} em execução / {1} no total</value>
+  </data>
+  <data name="DetailName" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="DetailStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="DetailVersion" xml:space="preserve">
+    <value>Versão</value>
+  </data>
+  <data name="DetailPublisher" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="DetailPath" xml:space="preserve">
+    <value>Caminho</value>
+  </data>
+  <data name="DetailScope" xml:space="preserve">
+    <value>Escopo</value>
+  </data>
+  <data name="DetailDescription" xml:space="preserve">
+    <value>Descrição</value>
+  </data>
+  <data name="DetailStartupType" xml:space="preserve">
+    <value>Inicialização</value>
+  </data>
+  <data name="DetailLogOnAs" xml:space="preserve">
+    <value>Conta</value>
+  </data>
+  <data name="DetailType" xml:space="preserve">
+    <value>Tipo</value>
+  </data>
+  <data name="DetailCommand" xml:space="preserve">
+    <value>Comando</value>
+  </data>
+  <data name="DetailInstalled" xml:space="preserve">
+    <value>Instalado</value>
+  </data>
+  <data name="DetailSize" xml:space="preserve">
+    <value>Tamanho</value>
+  </data>
+  <data name="DetailLocation" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="DetailLabel" xml:space="preserve">
+    <value>Rótulo</value>
+  </data>
+  <data name="DetailDomain" xml:space="preserve">
+    <value>Domínio</value>
+  </data>
+  <data name="DetailGroup" xml:space="preserve">
+    <value>Grupo</value>
+  </data>
+  <data name="DetailStartType" xml:space="preserve">
+    <value>Inicialização</value>
+  </data>
+  <data name="DetailEnabled" xml:space="preserve">
+    <value>Ativado</value>
+  </data>
+  <data name="DetailLastExit" xml:space="preserve">
+    <value>Última saída</value>
+  </data>
+  <data name="DetailProgram" xml:space="preserve">
+    <value>Programa</value>
+  </data>
+  <data name="DetailArguments" xml:space="preserve">
+    <value>Argumentos</value>
+  </data>
+  <data name="DetailPlist" xml:space="preserve">
+    <value>Plist</value>
+  </data>
+  <data name="ScopeMachine" xml:space="preserve">
+    <value>Máquina</value>
+  </data>
+  <data name="ScopeUser" xml:space="preserve">
+    <value>Usuário</value>
+  </data>
+  <data name="ServiceStatusStopped" xml:space="preserve">
+    <value>Parado</value>
+  </data>
+  <data name="ServiceStatusStartPending" xml:space="preserve">
+    <value>Iniciando…</value>
+  </data>
+  <data name="ServiceStatusStopPending" xml:space="preserve">
+    <value>Parando…</value>
+  </data>
+  <data name="ServiceStatusRunning" xml:space="preserve">
+    <value>Em execução</value>
+  </data>
+  <data name="ServiceStatusContinuePending" xml:space="preserve">
+    <value>Retomando…</value>
+  </data>
+  <data name="ServiceStatusPausePending" xml:space="preserve">
+    <value>Pausando…</value>
+  </data>
+  <data name="ServiceStatusPaused" xml:space="preserve">
+    <value>Pausado</value>
+  </data>
+  <data name="StatusNotLoaded" xml:space="preserve">
+    <value>Não carregado</value>
+  </data>
+  <data name="StartTypeAutomaticDelayed" xml:space="preserve">
+    <value>Automático (atrasado)</value>
+  </data>
+  <data name="StartTypeAutomatic" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="StartTypeManual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="StartTypeDisabled" xml:space="preserve">
+    <value>Desativado</value>
+  </data>
+  <data name="StartTypeBootStart" xml:space="preserve">
+    <value>Inicialização</value>
+  </data>
+  <data name="StartTypeSystemStart" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="StartTypeOnDemand" xml:space="preserve">
+    <value>Sob demanda</value>
+  </data>
+  <data name="CommonNeedsAdministrator" xml:space="preserve">
+    <value>Requer direitos de administrador.</value>
+  </data>
+  <data name="CommonRunAsAdministrator" xml:space="preserve">
+    <value>Execute o taskmon como administrador.</value>
+  </data>
+  <data name="CommonNoLongerExists" xml:space="preserve">
+    <value>Não existe mais.</value>
+  </data>
+  <data name="ServicesGathering" xml:space="preserve">
+    <value>Coletando serviços do Windows…</value>
+  </data>
+  <data name="ServicesFilterTitle" xml:space="preserve">
+    <value>Filtrar serviços</value>
+  </data>
+  <data name="ServicesColumnStartupType" xml:space="preserve">
+    <value>INICIALIZAÇÃO</value>
+  </data>
+  <data name="ServicesColumnLogOnAs" xml:space="preserve">
+    <value>CONTA</value>
+  </data>
+  <data name="ServicesLocalSystem" xml:space="preserve">
+    <value>Sistema Local</value>
+  </data>
+  <data name="ServicesLocalService" xml:space="preserve">
+    <value>Serviço Local</value>
+  </data>
+  <data name="ServicesNetworkService" xml:space="preserve">
+    <value>Serviço de Rede</value>
+  </data>
+  <data name="ServicesStarting" xml:space="preserve">
+    <value>Iniciando…</value>
+  </data>
+  <data name="ServicesStopping" xml:space="preserve">
+    <value>Parando…</value>
+  </data>
+  <data name="ServicesToggleHotKey" xml:space="preserve">
+    <value>Iniciar/Parar</value>
+  </data>
+  <data name="ServicesToggleTitleStart" xml:space="preserve">
+    <value>Iniciar serviço</value>
+  </data>
+  <data name="ServicesToggleTitleStop" xml:space="preserve">
+    <value>Parar serviço</value>
+  </data>
+  <data name="ServicesCouldNotStart" xml:space="preserve">
+    <value>Não foi possível iniciar {0}</value>
+  </data>
+  <data name="ServicesCouldNotStop" xml:space="preserve">
+    <value>Não foi possível parar {0}</value>
+  </data>
+  <data name="ServicesRefused" xml:space="preserve">
+    <value>O Windows recusou a alteração.</value>
+  </data>
+  <data name="ServicesBusy" xml:space="preserve">
+    <value>Está ocupado. Tente de novo em instantes.</value>
+  </data>
+  <data name="ServicesCannotStop" xml:space="preserve">
+    <value>Não aceita pedidos de parada.</value>
+  </data>
+  <data name="ServicesDependencyFailed" xml:space="preserve">
+    <value>Um serviço do qual depende não pôde ser iniciado.</value>
+  </data>
+  <data name="ServicesDidNotStop" xml:space="preserve">
+    <value>Ainda está em execução.</value>
+  </data>
+  <data name="ServicesDisabled" xml:space="preserve">
+    <value>Seu tipo de inicialização é “Desativado”.</value>
+  </data>
+  <data name="ServicesNotSupported" xml:space="preserve">
+    <value>Não é possível iniciar nem parar serviços aqui.</value>
+  </data>
+  <data name="ServicesStillStarting" xml:space="preserve">
+    <value>Ainda está iniciando após um minuto.</value>
+  </data>
+  <data name="ServicesStillStopping" xml:space="preserve">
+    <value>Ainda está parando após um minuto.</value>
+  </data>
+  <data name="ServicesStoppedAfterStarting" xml:space="preserve">
+    <value>Foi iniciado e depois parou.</value>
+  </data>
+  <data name="ServicesTimedOut" xml:space="preserve">
+    <value>Não respondeu a tempo.</value>
+  </data>
+  <data name="ServicesWindowsError" xml:space="preserve">
+    <value>Erro do Windows {0}.</value>
+  </data>
+  <data name="ServicesDependentsRunning" xml:space="preserve">
+    <value>Outros serviços em execução dependem dele.</value>
+  </data>
+  <data name="ServicesDependentsList" xml:space="preserve">
+    <value>Serviços em execução que dependem dele:</value>
+  </data>
+  <data name="ServicesDependentsMore" xml:space="preserve">
+    <value>e mais {0}</value>
+  </data>
+  <data name="StartupGathering" xml:space="preserve">
+    <value>Coletando aplicativos de inicialização…</value>
+  </data>
+  <data name="StartupFilterTitle" xml:space="preserve">
+    <value>Filtrar inicialização</value>
+  </data>
+  <data name="StartupColumnType" xml:space="preserve">
+    <value>TIPO</value>
+  </data>
+  <data name="StartupColumnCommand" xml:space="preserve">
+    <value>COMANDO</value>
+  </data>
+  <data name="StartupHeader" xml:space="preserve">
+    <value>{0} ativados / {1} no total</value>
+  </data>
+  <data name="StartupStateEnabled" xml:space="preserve">
+    <value>Ativo</value>
+  </data>
+  <data name="StartupStateDisabled" xml:space="preserve">
+    <value>Inativo</value>
+  </data>
+  <data name="StartupTypeRun" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="StartupTypeRunOnce" xml:space="preserve">
+    <value>RunOnce</value>
+  </data>
+  <data name="StartupTypeStartupFolder" xml:space="preserve">
+    <value>Pasta</value>
+  </data>
+  <data name="StartupTypeScheduledTask" xml:space="preserve">
+    <value>Tarefa agendada</value>
+  </data>
+  <data name="StartupTypeOpenAtLogin" xml:space="preserve">
+    <value>Abrir no login</value>
+  </data>
+  <data name="StartupTypeLoginHelper" xml:space="preserve">
+    <value>Auxiliar login</value>
+  </data>
+  <data name="StartupTypeLaunchAgent" xml:space="preserve">
+    <value>Launch Agent</value>
+  </data>
+  <data name="StartupTypeLaunchDaemon" xml:space="preserve">
+    <value>Launch Daemon</value>
+  </data>
+  <data name="StartupToggleHotKey" xml:space="preserve">
+    <value>Ativar/Desativar</value>
+  </data>
+  <data name="StartupToggleTitleEnable" xml:space="preserve">
+    <value>Ativar aplicativo de inicialização</value>
+  </data>
+  <data name="StartupToggleTitleDisable" xml:space="preserve">
+    <value>Desativar aplicativo de inicialização</value>
+  </data>
+  <data name="StartupCouldNotEnable" xml:space="preserve">
+    <value>Não foi possível ativar {0}</value>
+  </data>
+  <data name="StartupCouldNotDisable" xml:space="preserve">
+    <value>Não foi possível desativar {0}</value>
+  </data>
+  <data name="StartupRefused" xml:space="preserve">
+    <value>{0} recusou a alteração.</value>
+  </data>
+  <data name="StartupCouldNotChange" xml:space="preserve">
+    <value>{0} não conseguiu fazer a alteração.</value>
+  </data>
+  <data name="StartupNeedsRoot" xml:space="preserve">
+    <value>Requer direitos de root.</value>
+  </data>
+  <data name="StartupRunWithSudo" xml:space="preserve">
+    <value>Execute o taskmon com sudo.</value>
+  </data>
+  <data name="StartupUseLoginItems" xml:space="preserve">
+    <value>Use Ajustes do Sistema &gt; Itens de Início.</value>
+  </data>
+  <data name="StartupStateUnreadable" xml:space="preserve">
+    <value>Não é possível ler o estado atual.</value>
+  </data>
+  <data name="StartupCannotEnableType" xml:space="preserve">
+    <value>Itens do tipo {0} não podem ser ativados.</value>
+  </data>
+  <data name="StartupCannotDisableType" xml:space="preserve">
+    <value>Itens do tipo {0} não podem ser desativados.</value>
+  </data>
+  <data name="StartupAllowInSettings" xml:space="preserve">
+    <value>Permita-o em Ajustes do Sistema,</value>
+  </data>
+  <data name="StartupAllowInLoginItems" xml:space="preserve">
+    <value>Geral &gt; Itens de Início.</value>
+  </data>
+  <data name="DriversGathering" xml:space="preserve">
+    <value>Coletando drivers…</value>
+  </data>
+  <data name="DriversFilterTitle" xml:space="preserve">
+    <value>Filtrar drivers</value>
+  </data>
+  <data name="DriversColumnStartType" xml:space="preserve">
+    <value>INICIALIZAÇÃO</value>
+  </data>
+  <data name="DriverStatusLoaded" xml:space="preserve">
+    <value>Carregado</value>
+  </data>
+  <data name="AppsGathering" xml:space="preserve">
+    <value>Coletando aplicativos instalados…</value>
+  </data>
+  <data name="AppsFilterTitle" xml:space="preserve">
+    <value>Filtrar aplicativos</value>
+  </data>
+  <data name="AppsColumnInstalled" xml:space="preserve">
+    <value>INSTALADO</value>
+  </data>
+  <data name="ListColumnSize" xml:space="preserve">
+    <value>TAMANHO</value>
+  </data>
+  <data name="AppsColumnLocation" xml:space="preserve">
+    <value>LOCAL</value>
+  </data>
+  <data name="AppsHeader" xml:space="preserve">
+    <value>{0} instalados</value>
+  </data>
+  <data name="LaunchdGathering" xml:space="preserve">
+    <value>Coletando serviços do launchd…</value>
+  </data>
+  <data name="LaunchdColumnLabel" xml:space="preserve">
+    <value>RÓTULO</value>
+  </data>
+  <data name="LaunchdColumnGroup" xml:space="preserve">
+    <value>GRUPO</value>
+  </data>
+  <data name="LaunchdColumnStart" xml:space="preserve">
+    <value>INÍCIO</value>
+  </data>
+  <data name="LaunchdColumnEnabled" xml:space="preserve">
+    <value>ATIVO</value>
+  </data>
+  <data name="LaunchdStatusRunning" xml:space="preserve">
+    <value>Ativo ({0})</value>
+  </data>
+  <data name="LaunchdStatusWaiting" xml:space="preserve">
+    <value>Aguardando</value>
+  </data>
+  <data name="LaunchdStartKeepAlive" xml:space="preserve">
+    <value>Permanente</value>
+  </data>
+  <data name="LaunchdStartAtLoad" xml:space="preserve">
+    <value>Ao carregar</value>
+  </data>
+  <data name="LaunchdSignal" xml:space="preserve">
+    <value>Sinal {0}</value>
+  </data>
+  <data name="LaunchdExit" xml:space="preserve">
+    <value>Saída {0}</value>
+  </data>
+  <data name="LaunchdDomain_System" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="LaunchdDomain_User" xml:space="preserve">
+    <value>Usuário</value>
+  </data>
+  <data name="SystemInfoGathering" xml:space="preserve">
+    <value>Coletando…</value>
+  </data>
+  <data name="SystemInfoGatheringSystem" xml:space="preserve">
+    <value>Coletando informações do sistema…</value>
+  </data>
+  <data name="SystemInfoMenuCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="SystemInfoMenuMemory" xml:space="preserve">
+    <value>MEMÓRIA</value>
+  </data>
+  <data name="SystemInfoMenuGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="SystemInfoMenuNpu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="SystemInfoMenuDisk" xml:space="preserve">
+    <value>DISCO</value>
+  </data>
+  <data name="SystemInfoMenuNetwork" xml:space="preserve">
+    <value>REDE</value>
+  </data>
+  <data name="SystemInfoNoNeuralEngine" xml:space="preserve">
+    <value>Nenhum Neural Engine encontrado</value>
+  </data>
+  <data name="SystemInfoProcessor" xml:space="preserve">
+    <value>Processador:</value>
+  </data>
+  <data name="SystemInfoLogicalProcessors" xml:space="preserve">
+    <value>Processadores lógicos:</value>
+  </data>
+  <data name="SystemInfoBaseFrequency" xml:space="preserve">
+    <value>Frequência base:</value>
+  </data>
+  <data name="SystemInfoPerformanceCores" xml:space="preserve">
+    <value>Núcleos de desempenho:</value>
+  </data>
+  <data name="SystemInfoEfficiencyCores" xml:space="preserve">
+    <value>Núcleos de eficiência:</value>
+  </data>
+  <data name="SystemInfoCoresAtFrequency" xml:space="preserve">
+    <value>{0} a {1:0.00} GHz</value>
+  </data>
+  <data name="SystemInfoL1Cache" xml:space="preserve">
+    <value>Cache L1:</value>
+  </data>
+  <data name="SystemInfoL2Cache" xml:space="preserve">
+    <value>Cache L2:</value>
+  </data>
+  <data name="SystemInfoL3Cache" xml:space="preserve">
+    <value>Cache L3:</value>
+  </data>
+  <data name="SystemInfoInstalledDrives" xml:space="preserve">
+    <value>Unidades instaladas:</value>
+  </data>
+  <data name="SystemInfoDiskHeader" xml:space="preserve">
+    <value>DISCO {0}  {1}</value>
+  </data>
+  <data name="SystemInfoUnattachedVolumes" xml:space="preserve">
+    <value>VOLUMES NÃO ANEXADOS</value>
+  </data>
+  <data name="SystemInfoInstalledAdapters" xml:space="preserve">
+    <value>Adaptadores instalados:</value>
+  </data>
+  <data name="SystemInfoTotalDedicatedMemory" xml:space="preserve">
+    <value>Memória dedicada total:</value>
+  </data>
+  <data name="SystemInfoGpuHeader" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+  </data>
+  <data name="SystemInfoDedicatedVideoMemory" xml:space="preserve">
+    <value>Memória de vídeo dedicada:</value>
+  </data>
+  <data name="SystemInfoDedicatedSystemMemory" xml:space="preserve">
+    <value>Mem. sistema dedicada:</value>
+  </data>
+  <data name="SystemInfoSharedSystemMemory" xml:space="preserve">
+    <value>Mem. sistema compartilhada:</value>
+  </data>
+  <data name="SystemInfoVendorDeviceId" xml:space="preserve">
+    <value>ID fornecedor/dispositivo:</value>
+  </data>
+  <data name="SystemInfoInstalledModules" xml:space="preserve">
+    <value>Módulos instalados:</value>
+  </data>
+  <data name="SystemInfoSlotHeader" xml:space="preserve">
+    <value>SLOT {0}  {1}</value>
+  </data>
+  <data name="SystemInfoType" xml:space="preserve">
+    <value>Tipo:</value>
+  </data>
+  <data name="SystemInfoFormFactor" xml:space="preserve">
+    <value>Fator forma:</value>
+  </data>
+  <data name="SystemInfoTransferRate" xml:space="preserve">
+    <value>{0} MT/s</value>
+  </data>
+  <data name="SystemInfoConfiguredSpeed" xml:space="preserve">
+    <value>Velocidade configurada:</value>
+  </data>
+  <data name="SystemInfoPartNumber" xml:space="preserve">
+    <value>Número da peça:</value>
+  </data>
+  <data name="SystemInfoBankLocator" xml:space="preserve">
+    <value>Localizador do banco:</value>
+  </data>
+  <data name="SystemInfoAdapters" xml:space="preserve">
+    <value>Adaptadores:</value>
+  </data>
+  <data name="SystemInfoNeuralEngines" xml:space="preserve">
+    <value>Neural Engines:</value>
+  </data>
+  <data name="SystemInfoMachineName" xml:space="preserve">
+    <value>Nome da máquina:</value>
+  </data>
+  <data name="SystemInfoOperatingSystem" xml:space="preserve">
+    <value>Sistema operacional:</value>
+  </data>
+  <data name="SystemInfoCpu" xml:space="preserve">
+    <value>CPU:</value>
+  </data>
+  <data name="SystemInfoSummaryLogicalProcessors" xml:space="preserve">
+    <value>Processadores lógicos</value>
+  </data>
+  <data name="SystemInfoBaseSpeed" xml:space="preserve">
+    <value>Velocidade base:</value>
+  </data>
+  <data name="ThermalsCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ThermalsCpuNumbered" xml:space="preserve">
+    <value>CPU {0}</value>
+  </data>
+  <data name="ThermalsBattery" xml:space="preserve">
+    <value>Bateria</value>
+  </data>
+  <data name="ThermalsChipset" xml:space="preserve">
+    <value>Chipset</value>
+  </data>
+  <data name="ThermalsAmbient" xml:space="preserve">
+    <value>Ambiente</value>
+  </data>
+  <data name="ThermalsSystem" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="ThermalsPressure" xml:space="preserve">
+    <value>Pressão térmica: {0}</value>
+  </data>
+  <data name="ThermalsNoSensors" xml:space="preserve">
+    <value>Nenhum sensor de temperatura detectado.</value>
+  </data>
+  <data name="ThermalsMacUnreadable" xml:space="preserve">
+    <value>Não foi possível ler os sensores de temperatura SMC e HID.</value>
+  </data>
+  <data name="ThermalsWindowsAppearHere" xml:space="preserve">
+    <value>As temperaturas da GPU e das unidades NVMe aparecem aqui quando disponíveis.</value>
+  </data>
+  <data name="ThermalsWindowsNeedsDriver" xml:space="preserve">
+    <value>Uma temperatura de CPU precisa requer um driver auxiliar de kernel assinado.</value>
+  </data>
+  <data name="ThermalPressure_Nominal" xml:space="preserve">
+    <value>Nominal</value>
+  </data>
+  <data name="ThermalPressure_Moderate" xml:space="preserve">
+    <value>Moderada</value>
+  </data>
+  <data name="ThermalPressure_Heavy" xml:space="preserve">
+    <value>Alta</value>
+  </data>
+  <data name="ThermalPressure_Trapping" xml:space="preserve">
+    <value>Crítica</value>
+  </data>
+  <data name="ThermalPressure_Sleeping" xml:space="preserve">
+    <value>Em repouso</value>
+  </data>
+  <data name="MemoryPressure_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="MemoryPressure_Warning" xml:space="preserve">
+    <value>Aviso</value>
+  </data>
+  <data name="MemoryPressure_Critical" xml:space="preserve">
+    <value>Crítica</value>
+  </data>
+  <data name="PowerHeader" xml:space="preserve">
+    <value>ENERGIA</value>
+  </data>
+  <data name="PowerNone" xml:space="preserve">
+    <value>Nenhuma leitura de energia disponível.</value>
+  </data>
+  <data name="PowerColumnComponent" xml:space="preserve">
+    <value>COMPONENTE</value>
+  </data>
+  <data name="PowerColumnRail" xml:space="preserve">
+    <value>LINHA</value>
+  </data>
+  <data name="PowerColumnPower" xml:space="preserve">
+    <value>POTÊNCIA</value>
+  </data>
+  <data name="PowerCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PowerBattery" xml:space="preserve">
+    <value>Bateria</value>
+  </data>
+  <data name="PowerNeuralEngine" xml:space="preserve">
+    <value>Neural Engine</value>
+  </data>
+  <data name="PowerMemory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="PowerDisplay" xml:space="preserve">
+    <value>Tela</value>
+  </data>
+  <data name="PowerSystem" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
+  <data name="PowerRated" xml:space="preserve">
+    <value>{0} (nominal)</value>
+  </data>
+  <data name="FansHeader" xml:space="preserve">
+    <value>VENTOINHAS</value>
+  </data>
+  <data name="FansNone" xml:space="preserve">
+    <value>Nenhuma ventoinha.</value>
+  </data>
+  <data name="FansColumnFan" xml:space="preserve">
+    <value>VENTOINHA</value>
+  </data>
+  <data name="FansColumnRpm" xml:space="preserve">
+    <value>RPM</value>
+  </data>
+  <data name="FansColumnMin" xml:space="preserve">
+    <value>MIN</value>
+  </data>
+  <data name="FansColumnMax" xml:space="preserve">
+    <value>MÁX</value>
+  </data>
+  <data name="FansColumnLoad" xml:space="preserve">
+    <value>CARGA</value>
+  </data>
+  <data name="HealthShowProcessHotKey" xml:space="preserve">
+    <value>Mostrar processo</value>
+  </data>
+  <data name="HealthWaiting" xml:space="preserve">
+    <value>Coletando métricas…</value>
+  </data>
+  <data name="HealthNoCauses" xml:space="preserve">
+    <value>Nada sob pressão.</value>
+  </data>
+  <data name="HealthNoEvents" xml:space="preserve">
+    <value>Nenhum evento registrado ainda.</value>
+  </data>
+  <data name="HealthNoProcess" xml:space="preserve">
+    <value>Nenhum processo se destaca.</value>
+  </data>
+  <data name="HealthGatheringMetrics" xml:space="preserve">
+    <value>Coletando métricas</value>
+  </data>
+  <data name="HealthHealthy" xml:space="preserve">
+    <value>Saudável</value>
+  </data>
+  <data name="HealthUnderPressure" xml:space="preserve">
+    <value>Sob pressão: {0}</value>
+  </data>
+  <data name="HealthUnderPressureSince" xml:space="preserve">
+    <value>{0}, desde {1:HH:mm:ss}</value>
+  </data>
+  <data name="HealthDurationSeconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="HealthDurationMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="HealthDurationHoursMinutes" xml:space="preserve">
+    <value>{0} h {1} min</value>
+  </data>
+  <data name="HealthEventInterrupted" xml:space="preserve">
+    <value>interrompido</value>
+  </data>
+  <data name="HealthEventOngoing" xml:space="preserve">
+    <value>em andamento</value>
+  </data>
+  <data name="HealthEventWithPeak" xml:space="preserve">
+    <value>{0}, pico {1}</value>
+  </data>
+  <data name="HealthLikelyCauses" xml:space="preserve">
+    <value>CAUSAS PROVÁVEIS</value>
+  </data>
+  <data name="HealthRecentEvents" xml:space="preserve">
+    <value>EVENTOS RECENTES</value>
+  </data>
+  <data name="HealthColumnResource" xml:space="preserve">
+    <value>RECURSO</value>
+  </data>
+  <data name="HealthColumnSaturation" xml:space="preserve">
+    <value>SATURAÇÃO</value>
+  </data>
+  <data name="HealthColumnErrors" xml:space="preserve">
+    <value>ERROS</value>
+  </data>
+  <data name="HealthColumnProcess" xml:space="preserve">
+    <value>PROCESSO</value>
+  </data>
+  <data name="HealthColumnUsing" xml:space="preserve">
+    <value>USO</value>
+  </data>
+  <data name="HealthColumnBehind" xml:space="preserve">
+    <value>CAUSADOR</value>
+  </data>
+  <data name="HealthColumnTime" xml:space="preserve">
+    <value>HORA</value>
+  </data>
+  <data name="HealthColumnEvent" xml:space="preserve">
+    <value>EVENTO</value>
+  </data>
+  <data name="HealthColumnDetail" xml:space="preserve">
+    <value>DETALHE</value>
+  </data>
+  <data name="HealthColumnProcesses" xml:space="preserve">
+    <value>PROCESSOS</value>
+  </data>
+  <data name="HealthLevel_Unknown" xml:space="preserve">
+    <value>Sem dados</value>
+  </data>
+  <data name="HealthLevel_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="HealthLevel_Warning" xml:space="preserve">
+    <value>Aviso</value>
+  </data>
+  <data name="HealthLevel_Critical" xml:space="preserve">
+    <value>Crítico</value>
+  </data>
+  <data name="HealthResource_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="HealthResource_Memory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="HealthResource_Disk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="HealthResource_Volumes" xml:space="preserve">
+    <value>Volumes</value>
+  </data>
+  <data name="HealthResource_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="HealthResource_Network" xml:space="preserve">
+    <value>Rede</value>
+  </data>
+  <data name="HealthResource_Thermal" xml:space="preserve">
+    <value>Térmico</value>
+  </data>
+  <data name="HealthResource_Apps" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="DiskSpaceFilesTitle" xml:space="preserve">
+    <value>MAIORES ARQUIVOS</value>
+  </data>
+  <data name="DiskSpaceFilesHeader" xml:space="preserve">
+    <value>{0} ({1} dos {2} maiores)</value>
+  </data>
+  <data name="DiskSpaceNoFiles" xml:space="preserve">
+    <value>Nenhum arquivo analisado ainda - pressione s para iniciar uma análise.</value>
+  </data>
+  <data name="DiskSpaceColumnFile" xml:space="preserve">
+    <value>ARQUIVO</value>
+  </data>
+  <data name="DiskSpaceScanned" xml:space="preserve">
+    <value>{0:N0} arquivos / {1}</value>
+  </data>
+  <data name="DiskSpaceScanningStatus" xml:space="preserve">
+    <value>Analisando… {0}</value>
+  </data>
+  <data name="DiskSpaceCompletedStatus" xml:space="preserve">
+    <value>Concluído - {0} em {1:0.0} s</value>
+  </data>
+  <data name="DiskSpaceFailedStatus" xml:space="preserve">
+    <value>Falha: {0}</value>
+  </data>
+  <data name="DiskSpaceScanFailed" xml:space="preserve">
+    <value>A análise falhou.</value>
+  </data>
+  <data name="DiskSpaceRootFolders" xml:space="preserve">
+    <value>Pastas raiz</value>
+  </data>
+  <data name="DiskSpaceSelectDrive" xml:space="preserve">
+    <value>Selecione uma unidade</value>
+  </data>
+  <data name="DiskSpaceScanPath" xml:space="preserve">
+    <value>Caminho a analisar:</value>
+  </data>
+  <data name="DiskSpaceBorderHint" xml:space="preserve">
+    <value>s Iniciar análise   c Cancelar</value>
+  </data>
+  <data name="CpuCoresTitle" xml:space="preserve">
+    <value>Núcleos de CPU</value>
+  </data>
+  <data name="CpuCoresNoData" xml:space="preserve">
+    <value>Dados de CPU por núcleo não estão disponíveis neste sistema</value>
+  </data>
+  <data name="CpuCoresLabel" xml:space="preserve">
+    <value>C{0}</value>
+  </data>
+  <data name="MetreTitleCpu" xml:space="preserve">
+    <value>CPU%</value>
+  </data>
+  <data name="MetreTitleDisk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="MetreTitleMemory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="MetreTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="MetreTitleVirtual" xml:space="preserve">
+    <value>Virtual</value>
+  </data>
+  <data name="MetreTitleNetworkReceive" xml:space="preserve">
+    <value>Rede rec.</value>
+  </data>
+  <data name="MetreTitleNetworkSend" xml:space="preserve">
+    <value>Rede env.</value>
+  </data>
+  <data name="MetreTitleGpuMemory" xml:space="preserve">
+    <value>Memória GPU</value>
+  </data>
+  <data name="MetreTitleGpu" xml:space="preserve">
+    <value>GPU%</value>
+  </data>
+  <data name="MetreTitleNpu" xml:space="preserve">
+    <value>NPU%</value>
+  </data>
+  <data name="HealthDriveSpareLow" xml:space="preserve">
+    <value>reserva baixa</value>
+  </data>
+  <data name="HealthDriveOverTemperature" xml:space="preserve">
+    <value>superaquecimento</value>
+  </data>
+  <data name="HealthDriveReliabilityDegraded" xml:space="preserve">
+    <value>confiabilidade degradada</value>
+  </data>
+  <data name="HealthDriveReadOnly" xml:space="preserve">
+    <value>somente leitura</value>
+  </data>
+  <data name="HealthDriveBackupFailed" xml:space="preserve">
+    <value>falha no backup</value>
+  </data>
+  <data name="HealthAppFaultOne" xml:space="preserve">
+    <value>1 falha de aplicativo</value>
+  </data>
+  <data name="HealthAppFaults" xml:space="preserve">
+    <value>{0} falhas de aplicativo</value>
+  </data>
+  <data name="HealthTimeLeftMinutes" xml:space="preserve">
+    <value>{0:0} min</value>
+  </data>
+  <data name="HealthTimeLeftHours" xml:space="preserve">
+    <value>{0:0} h</value>
+  </data>
+  <data name="HealthTimeLeftDays" xml:space="preserve">
+    <value>{0:0} dias</value>
+  </data>
+  <data name="HealthDiskWorn" xml:space="preserve">
+    <value>{0}% de desgaste</value>
+  </data>
+  <data name="HealthDiskMediaErrors" xml:space="preserve">
+    <value>{0} de mídia</value>
+  </data>
+  <data name="HealthDiskLoggedErrors" xml:space="preserve">
+    <value>{0} registrados</value>
+  </data>
+  <data name="HealthDiskName" xml:space="preserve">
+    <value>Disco {0}</value>
+  </data>
+  <data name="HealthLatency" xml:space="preserve">
+    <value>Latência {0:0.0} ms</value>
+  </data>
+  <data name="HealthLatencyQueue" xml:space="preserve">
+    <value>Latência {0:0.0} ms, fila {1:0}</value>
+  </data>
+  <data name="HealthVolumeFull" xml:space="preserve">
+    <value>{0} {1:0}% cheio</value>
+  </data>
+  <data name="HealthVram" xml:space="preserve">
+    <value>VRAM</value>
+  </data>
+  <data name="HealthGpuMemory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="HealthGpuMemoryUsed" xml:space="preserve">
+    <value>{0} {1:0}% usada</value>
+  </data>
+  <data name="HealthPressureLevel" xml:space="preserve">
+    <value>Pressão {0}</value>
+  </data>
+  <data name="HealthCommit" xml:space="preserve">
+    <value>Confirmada {0:0}%</value>
+  </data>
+  <data name="HealthCommitPagesIn" xml:space="preserve">
+    <value>Confirmada {0:0}%, {1}</value>
+  </data>
+  <data name="HealthPagesIn" xml:space="preserve">
+    <value>{0:0} páginas de entrada/s</value>
+  </data>
+  <data name="HealthSensorTemperature" xml:space="preserve">
+    <value>{0} {1:0} °C</value>
+  </data>
+  <data name="HealthCpuNotLimited" xml:space="preserve">
+    <value>CPU sem limite</value>
+  </data>
+  <data name="HealthCpuLimited" xml:space="preserve">
+    <value>CPU limitada a {0:0}%</value>
+  </data>
+  <data name="HealthReportAppErrorIn" xml:space="preserve">
+    <value>{0}, em {1}</value>
+  </data>
+  <data name="HealthReportBadBlock" xml:space="preserve">
+    <value>Bloco defeituoso</value>
+  </data>
+  <data name="HealthReportCpuLimit" xml:space="preserve">
+    <value>{0}: usou CPU demais</value>
+  </data>
+  <data name="HealthReportCrash" xml:space="preserve">
+    <value>{0}: falhou</value>
+  </data>
+  <data name="HealthReportDeviceReset" xml:space="preserve">
+    <value>{0} redefiniu o dispositivo</value>
+  </data>
+  <data name="HealthReportDiskWriteLimit" xml:space="preserve">
+    <value>{0}: gravou demais no disco</value>
+  </data>
+  <data name="HealthReportHang" xml:space="preserve">
+    <value>{0}: parou de responder</value>
+  </data>
+  <data name="HealthReportHardwareError" xml:space="preserve">
+    <value>Evento WHEA {0}</value>
+  </data>
+  <data name="HealthReportJetsam" xml:space="preserve">
+    <value>O macOS encerrou processos para liberar memória</value>
+  </data>
+  <data name="HealthReportPagingError" xml:space="preserve">
+    <value>Erro durante uma operação de paginação</value>
+  </data>
+  <data name="HealthReportRequestRetried" xml:space="preserve">
+    <value>Solicitação repetida</value>
+  </data>
+  <data name="HealthReportSpin" xml:space="preserve">
+    <value>{0}: ocupado sem responder</value>
+  </data>
+  <data name="HealthReportUnexpectedRestart" xml:space="preserve">
+    <value>Reinício sem desligamento correto</value>
+  </data>
+  <data name="HealthReportVirtualMemoryLow" xml:space="preserve">
+    <value>O Windows ficou com pouca memória virtual</value>
+  </data>
+  <data name="HealthErrorsPerSecond" xml:space="preserve">
+    <value>{0:0.#} erros/s</value>
+  </data>
+  <data name="HealthReasonNotResponding" xml:space="preserve">
+    <value>{0} sem responder há {1:0} s</value>
+  </data>
+  <data name="HealthReasonCommit" xml:space="preserve">
+    <value>confirmada {0:0}%</value>
+  </data>
+  <data name="HealthReasonBusy" xml:space="preserve">
+    <value>{0:0}% ocupado</value>
+  </data>
+  <data name="HealthReasonActive" xml:space="preserve">
+    <value>{0:0}% ativo</value>
+  </data>
+  <data name="HealthReasonLatency" xml:space="preserve">
+    <value>latência {0:0} ms</value>
+  </data>
+  <data name="HealthReasonDriverTime" xml:space="preserve">
+    <value>{0:0}% da CPU em drivers</value>
+  </data>
+  <data name="HealthReasonWorn" xml:space="preserve">
+    <value>{0} {1:0}% desgastado</value>
+  </data>
+  <data name="HealthReasonHeatLimit" xml:space="preserve">
+    <value>contido pelo calor {0:0}%</value>
+  </data>
+  <data name="HealthReasonFree" xml:space="preserve">
+    <value>{0} {1:0}% livre</value>
+  </data>
+  <data name="HealthReasonPowerLimit" xml:space="preserve">
+    <value>contido pela energia {0:0}%</value>
+  </data>
+  <data name="HealthReasonAvailable" xml:space="preserve">
+    <value>{0:0}% disponível</value>
+  </data>
+  <data name="HealthReasonKernelPressure" xml:space="preserve">
+    <value>pressão do kernel {0}</value>
+  </data>
+  <data name="HealthReasonDiscards" xml:space="preserve">
+    <value>{0:0.#} descartes/s</value>
+  </data>
+  <data name="HealthReasonQueue" xml:space="preserve">
+    <value>fila de {0:0.0} por núcleo</value>
+  </data>
+  <data name="HealthReasonNearLimit" xml:space="preserve">
+    <value>{0} perto do limite de {1:0} °C</value>
+  </data>
+  <data name="HealthReasonSwappingOut" xml:space="preserve">
+    <value>swap de saída {0}</value>
+  </data>
+  <data name="HealthReasonThermalPressure" xml:space="preserve">
+    <value>pressão térmica {0}</value>
+  </data>
+  <data name="HealthNotRespondingCount" xml:space="preserve">
+    <value>{0} sem resposta</value>
+  </data>
+  <data name="HealthQueuePerCore" xml:space="preserve">
+    <value>Fila {0:0.0} por núcleo</value>
+  </data>
+  <data name="HealthDiscardsPerSecond" xml:space="preserve">
+    <value>Descartes {0:0.#}/s</value>
+  </data>
+  <data name="HealthTitleAppCrash" xml:space="preserve">
+    <value>Falha de app</value>
+  </data>
+  <data name="HealthTitleAppHang" xml:space="preserve">
+    <value>App travado</value>
+  </data>
+  <data name="HealthTitleDiskError" xml:space="preserve">
+    <value>Erro de disco</value>
+  </data>
+  <data name="HealthTitleHardwareError" xml:space="preserve">
+    <value>Erro de hardware</value>
+  </data>
+  <data name="HealthTitleLowMemory" xml:space="preserve">
+    <value>Pouca memória</value>
+  </data>
+  <data name="HealthTitleCpuLimit" xml:space="preserve">
+    <value>Limite de CPU</value>
+  </data>
+  <data name="HealthTitleDiskWriteLimit" xml:space="preserve">
+    <value>Limite de gravação</value>
+  </data>
+  <data name="HealthTitleUnexpectedRestart" xml:space="preserve">
+    <value>Reinício inesperado</value>
+  </data>
+  <data name="HealthUsageNotResponding" xml:space="preserve">
+    <value>Sem responder há {0:0} s</value>
+  </data>
+  <data name="HealthUsageCpu" xml:space="preserve">
+    <value>{0:0}% CPU</value>
+  </data>
+  <data name="HealthUsageMemory" xml:space="preserve">
+    <value>{0} de memória</value>
+  </data>
+  <data name="HealthUsageMemoryGrowth" xml:space="preserve">
+    <value>+{0:0} MB/min</value>
+  </data>
+  <data name="HealthUsageDisk" xml:space="preserve">
+    <value>{0:0} MB/s de disco</value>
+  </data>
+  <data name="HealthUsageGpu" xml:space="preserve">
+    <value>{0:0}% GPU</value>
+  </data>
+  <data name="HealthInUse" xml:space="preserve">
+    <value>{0:0}% em uso</value>
+  </data>
+  <data name="HealthNotChanging" xml:space="preserve">
+    <value>Sem alteração</value>
+  </data>
+  <data name="HealthPerMinute" xml:space="preserve">
+    <value>{0}/min</value>
+  </data>
+  <data name="HealthFreeing" xml:space="preserve">
+    <value>Liberando {0}</value>
+  </data>
+  <data name="HealthFilling" xml:space="preserve">
+    <value>Enchendo {0}</value>
+  </data>
+  <data name="HealthFillingTimeLeft" xml:space="preserve">
+    <value>Enchendo {0}, cerca de {1} restantes</value>
+  </data>
+  <data name="ThermalComponent_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ThermalComponent_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="ThermalComponent_Disk" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="ThermalComponent_Memory" xml:space="preserve">
+    <value>Memória</value>
+  </data>
+  <data name="ThermalComponent_Battery" xml:space="preserve">
+    <value>Bateria</value>
+  </data>
+  <data name="ThermalComponent_Chipset" xml:space="preserve">
+    <value>Chipset</value>
+  </data>
+  <data name="ThermalComponent_Ambient" xml:space="preserve">
+    <value>Ambiente</value>
+  </data>
+  <data name="ThermalComponent_Other" xml:space="preserve">
+    <value>Outro</value>
+  </data>
+  <data name="CommonEnabled" xml:space="preserve">
+    <value>Ativado</value>
+  </data>
+  <data name="CommonDisabled" xml:space="preserve">
+    <value>Desativado</value>
+  </data>
+  <data name="UpdateIntervalDisplay" xml:space="preserve">
+    <value>{0} ({1} ms)</value>
+  </data>
+  <data name="UpdateIntervalCustom" xml:space="preserve">
+    <value>Personalizado ({0} ms)</value>
+  </data>
+  <data name="UpdateInterval_Fast" xml:space="preserve">
+    <value>Rápido</value>
+  </data>
+  <data name="UpdateInterval_High" xml:space="preserve">
+    <value>Alto</value>
+  </data>
+  <data name="UpdateInterval_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="UpdateInterval_Slow" xml:space="preserve">
+    <value>Lento</value>
+  </data>
+  <data name="SocGpuIdle" xml:space="preserve">
+    <value>Ociosa</value>
+  </data>
+  <data name="SocThermalLimit" xml:space="preserve">
+    <value>Térmico {0:0}%</value>
+  </data>
+  <data name="SocPowerLimit" xml:space="preserve">
+    <value>Energia {0:0}%</value>
+  </data>
+  <data name="SocNoLimit" xml:space="preserve">
+    <value>Nenhum</value>
+  </data>
+  <data name="NpuDisplayName" xml:space="preserve">
+    <value>NPU {0}  {1}</value>
+  </data>
+  <data name="NpuDisplayNameShort" xml:space="preserve">
+    <value>NPU {0}</value>
+  </data>
+  <data name="NpuCores" xml:space="preserve">
+    <value>{0} núcleos</value>
+  </data>
+  <data name="FanOff" xml:space="preserve">
+    <value>Desligada</value>
+  </data>
+  <data name="SnapshotCpuKernelUser" xml:space="preserve">
+    <value>CPU {0:000.0%} Kernel {1:000.0%} Usuário {2:000.0%}</value>
+  </data>
+  <data name="SnapshotDiskLabel" xml:space="preserve">
+    <value>Disco {0} · {1}</value>
+  </data>
+  <data name="SnapshotDiskLabelShort" xml:space="preserve">
+    <value>Disco {0}</value>
+  </data>
+  <data name="SnapshotDiskName" xml:space="preserve">
+    <value>Disco {0}  {1}</value>
+  </data>
+  <data name="SnapshotDiskNameWithVolumes" xml:space="preserve">
+    <value>Disco {0}  {1} ({2})</value>
+  </data>
+  <data name="SnapshotDiskModelUnknown" xml:space="preserve">
+    <value>Disco</value>
+  </data>
+  <data name="SnapshotGpuName" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+  </data>
+  <data name="SnapshotGpuNameShort" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="SnapshotGpuLabel" xml:space="preserve">
+    <value>GPU · {0}</value>
+  </data>
+  <data name="SnapshotGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="SnapshotAdapter" xml:space="preserve">
+    <value>Adaptador</value>
+  </data>
+  <data name="SnapshotAdapterNumbered" xml:space="preserve">
+    <value>Adaptador {0}</value>
+  </data>
+  <data name="CliUsage" xml:space="preserve">
+    <value>
+{0} versão {1}
+
+Uso: {0} [opções]
+
+Opções:
+     --gpu-only           Mostra os gráficos de GPU e ordena os processos por GPU% ao iniciar
+     --cpu-only           Mostra os gráficos de CPU e ordena os processos por CPU% ao iniciar
+     --pid PID            Monitora o processo com o PID informado
+  -u --username &lt;NAME&gt;    Mostra apenas os processos do usuário NAME
+  -p --process &lt;NAME&gt;     Mostra apenas os processos cujo nome corresponde a NAME
+  -s --sort &lt;COLUMN&gt;      Ordena a lista de processos por COLUMN
+     --sort-help          Mostra as colunas disponíveis para a opção --sort
+  -d --delay &lt;DELAY&gt;      DELAY (em milissegundos) entre as atualizações da lista de processos
+  -t --theme &lt;NAME&gt;       Carrega o tema NAME do arquivo de configuração
+     --theme-help         Mostra os nomes de temas disponíveis para a opção --theme
+
+     --debug              Ao iniciar, aguarda um depurador se anexar ao processo {0}
+  -v --version            Mostra as informações da versão
+  -i --info               Mostra a configuração e as informações do ambiente.
+  -h --help               Mostra a ajuda
+
+Pressione F1 no {0} para ver a ajuda online. 
+</value>
+  </data>
+  <data name="TipMenuNavigation" xml:space="preserve">
+    <value>{→} vai do menu para uma visão, e {←} volta ao menu.</value>
+  </data>
+  <data name="TipSummaryPanes" xml:space="preserve">
+    <value>No RESUMO, {←} e {→} alternam entre os painéis.</value>
+  </data>
+  <data name="TipPaging" xml:space="preserve">
+    <value>{PgUp} e {PgDn} avançam uma página por vez em qualquer lista.</value>
+  </data>
+  <data name="TipFilter" xml:space="preserve">
+    <value>{f} filtra a lista atual; {Esc} limpa o filtro.</value>
+  </data>
+  <data name="TipSortColumn" xml:space="preserve">
+    <value>{s} escolhe a coluna pela qual uma lista de processos é ordenada.</value>
+  </data>
+  <data name="TipSortDirection" xml:space="preserve">
+    <value>{a} ou {d} ordenam uma lista de processos em ordem crescente ou decrescente.</value>
+  </data>
+  <data name="TipSortShortcuts" xml:space="preserve">
+    <value>{p}, {g} ou {m} ordenam os processos por CPU, GPU ou memória.</value>
+  </data>
+  <data name="TipFreeze" xml:space="preserve">
+    <value>{z} congela as atualizações de uma lista de processos; {z} de novo as retoma.</value>
+  </data>
+  <data name="TipIrix" xml:space="preserve">
+    <value>{i} alterna o modo Irix de CPU em uma lista de processos.</value>
+  </data>
+  <data name="TipMultiSelect" xml:space="preserve">
+    <value>{x} ativa a seleção múltipla, {Space} marca processos e {k} finaliza todos eles.</value>
+  </data>
+  <data name="TipUntick" xml:space="preserve">
+    <value>{u} desmarca todos os processos marcados.</value>
+  </data>
+  <data name="TipEndTask" xml:space="preserve">
+    <value>{k} finaliza o processo selecionado e também seus processos filhos.</value>
+  </data>
+  <data name="TipRefresh" xml:space="preserve">
+    <value>{r} ou {F5} atualizam a lista Inicialização, Aplicativos, Serviços ou Drivers.</value>
+  </data>
+  <data name="TipNextTheme" xml:space="preserve">
+    <value>{F3} experimenta o próximo tema; salve-o em {F2} Configurações.</value>
+  </data>
+  <data name="TipNextLayout" xml:space="preserve">
+    <value>{F4} experimenta o próximo layout do RESUMO; salve-o em {F2} Configurações.</value>
+  </data>
+  <data name="TipLayouts" xml:space="preserve">
+    <value>Em {F2} Configurações, LAYOUTS permite escolher ou criar o layout do RESUMO.</value>
+  </data>
+  <data name="TipHealth" xml:space="preserve">
+    <value>SAÚDE mostra qual recurso está sob pressão e os processos por trás disso.</value>
+  </data>
+  <data name="TipHealthShowProcess" xml:space="preserve">
+    <value>Em SAÚDE, {Enter} em uma causa provável abre esse processo em PROCESSOS.</value>
+  </data>
+  <data name="TipNextTip" xml:space="preserve">
+    <value>{t} mostra a próxima dica.</value>
+  </data>
+  <data name="TipHideTips" xml:space="preserve">
+    <value>Oculte estas dicas desmarcando “Mostrar dicas no rodapé” em {F2} Configurações.</value>
+  </data>
+  <data name="TipWindowsServices" xml:space="preserve">
+    <value>Os serviços do Windows são destacados nas listas de processos. Desative em {F2} Configurações.</value>
+  </data>
+  <data name="TipStartupToggle" xml:space="preserve">
+    <value>Em INICIALIZAÇÃO, {Space} ativa ou desativa o aplicativo selecionado. Vale imediatamente.</value>
+  </data>
+  <data name="TipServicesToggle" xml:space="preserve">
+    <value>Em SERVIÇOS, {Space} inicia ou para o serviço selecionado.</value>
+  </data>
+  <data name="TipDaemons" xml:space="preserve">
+    <value>Os daemons são destacados nas listas de processos. Desative em {F2} Configurações.</value>
+  </data>
+  <data name="ConfigSaveParseError" xml:space="preserve">
+    <value>{0} contém um erro e não foi salvo.
+{1}</value>
+  </data>
+</root>

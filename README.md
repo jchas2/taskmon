@@ -50,7 +50,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
 - **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
 - **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Windows that stop responding are shown as they happen, and crashes, hangs and hardware errors the system recorded in the last 24 hours are listed alongside. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
-- **Languages**: British English (the default), US English, German and Italian, picked from your system settings or chosen in `taskmon.ini`. See [Language](#language).
+- **Languages**: British English (the default), US English, Brazilian Portuguese, Danish, Dutch, French, German, Italian, Polish and Spanish, picked from your system settings or chosen in `taskmon.ini`. See [Language](#language).
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -172,14 +172,20 @@ If the file can't be read, Task Monitor starts with its default settings and lea
 
 ### Language
 
-Task Monitor's screens are in British English by default, and also in US English, German and Italian.
+Task Monitor's screens are in British English by default, and also in US English, Brazilian Portuguese, Danish, Dutch, French, German, Italian, Polish and Spanish.
 
 | Language | Code | Used for |
 | :--- | :--- | :--- |
-| British English | `en-GB` | The default, and any language without its own translation, such as `en-AU` or `fr-FR`. |
+| British English | `en-GB` | The default, and any language without its own translation, such as `en-AU` or `sv-SE`. |
 | US English | `en-US` | US English only. |
+| Brazilian Portuguese | `pt-BR` | Brazil only. European Portuguese (`pt-PT`) gets British English. |
+| Danish | `da` | Danish (`da-DK`). |
+| Dutch | `nl` | Any Dutch region, such as `nl-NL` or `nl-BE`. |
+| French | `fr` | Any French region, such as `fr-FR`, `fr-CA` or `fr-CH`. |
 | German | `de` | Any German region, such as `de-DE`, `de-AT` or `de-CH`. |
 | Italian | `it` | Any Italian region, such as `it-IT` or `it-CH`. |
+| Polish | `pl` | Polish (`pl-PL`). |
+| Spanish | `es` | Any Spanish region, such as `es-ES`, `es-MX` or `es-AR`. |
 
 Task Monitor picks the language when it starts, from the first of these that names one:
 

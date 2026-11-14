@@ -1,0 +1,2500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Danish. A full translation: every entry in Strings.resx has one here. Keep {0}-style
+  placeholders and {F2}-style key markup unchanged, and stay within each entry's
+  "Max N characters." limit in Strings.resx.
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SetupMetreStylesHeader" xml:space="preserve">
+    <value>Målerstile</value>
+  </data>
+  <data name="SetupMetresMenuItem" xml:space="preserve">
+    <value>MÅLERE</value>
+  </data>
+  <data name="HelpChartColoursSection" xml:space="preserve">
+    <value>DIAGRAMFARVER</value>
+  </data>
+  <data name="HelpProcessColoursSection" xml:space="preserve">
+    <value>FARVER FOR PROCESSER OG STIER</value>
+  </data>
+  <data name="HelpF2Description" xml:space="preserve">
+    <value>Vis indstillinger: layouts, målere, synlige kolonner, farvetemaer og andre indstillinger.</value>
+  </data>
+  <data name="HelpF3Description" xml:space="preserve">
+    <value>Skift til næste farvetema i indstillingernes rækkefølge. Gem det der for at beholde det.</value>
+  </data>
+  <data name="TipSetupOptions" xml:space="preserve">
+    <value>Med {F2} ændrer du tema, synlige kolonner, målerstil og opdateringshastighed.</value>
+  </data>
+  <data name="TipHelpScreen" xml:space="preserve">
+    <value>Med {F1} ser du alle taster, og hvad farverne betyder.</value>
+  </data>
+  <data name="HealthUtilisationColumn" xml:space="preserve">
+    <value>UDNYTTELSE</value>
+  </data>
+  <data name="DiskSpaceCancellingStatus" xml:space="preserve">
+    <value>Annullerer… {0}</value>
+  </data>
+  <data name="DiskSpaceCancelledStatus" xml:space="preserve">
+    <value>Annulleret - {0}</value>
+  </data>
+  <data name="PaneControlType_Empty" xml:space="preserve">
+    <value>Tom</value>
+  </data>
+  <data name="PaneControlType_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PaneControlType_Memory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="PaneControlType_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="PaneControlType_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="PaneControlType_NetworkSent" xml:space="preserve">
+    <value>Netværk sendt</value>
+  </data>
+  <data name="PaneControlType_NetworkReceived" xml:space="preserve">
+    <value>Netværk modtaget</value>
+  </data>
+  <data name="PaneControlType_GpuMemory" xml:space="preserve">
+    <value>GPU-hukommelse</value>
+  </data>
+  <data name="PaneControlType_VirtualMemory" xml:space="preserve">
+    <value>Virtuel hukommelse</value>
+  </data>
+  <data name="PaneControlType_Process" xml:space="preserve">
+    <value>Processer</value>
+  </data>
+  <data name="PaneControlType_Drivers" xml:space="preserve">
+    <value>Drivere</value>
+  </data>
+  <data name="PaneControlType_Services" xml:space="preserve">
+    <value>Tjenester</value>
+  </data>
+  <data name="PaneControlType_Startup" xml:space="preserve">
+    <value>Opstart</value>
+  </data>
+  <data name="PaneControlType_InstalledApps" xml:space="preserve">
+    <value>Installerede apps</value>
+  </data>
+  <data name="PaneControlType_SystemInfo" xml:space="preserve">
+    <value>Systeminfo</value>
+  </data>
+  <data name="PaneControlType_DiskSpace" xml:space="preserve">
+    <value>Diskplads</value>
+  </data>
+  <data name="PaneControlType_Thermals" xml:space="preserve">
+    <value>Temperaturer</value>
+  </data>
+  <data name="PaneControlType_CpuCores" xml:space="preserve">
+    <value>CPU-kerner</value>
+  </data>
+  <data name="PaneControlType_Power" xml:space="preserve">
+    <value>Energi</value>
+  </data>
+  <data name="PaneControlType_CpuMetre" xml:space="preserve">
+    <value>CPU-måler</value>
+  </data>
+  <data name="PaneControlType_GpuMetre" xml:space="preserve">
+    <value>GPU-måler</value>
+  </data>
+  <data name="PaneControlType_GpuMemoryMetre" xml:space="preserve">
+    <value>GPU-hukommelsesmåler</value>
+  </data>
+  <data name="PaneControlType_MemoryMetre" xml:space="preserve">
+    <value>Hukommelsesmåler</value>
+  </data>
+  <data name="PaneControlType_VirtualMemoryMetre" xml:space="preserve">
+    <value>Måler for virtuel hukommelse</value>
+  </data>
+  <data name="PaneControlType_DiskMetre" xml:space="preserve">
+    <value>Diskmåler</value>
+  </data>
+  <data name="PaneControlType_NetworkSendMetre" xml:space="preserve">
+    <value>Måler for netværk sendt</value>
+  </data>
+  <data name="PaneControlType_NetworkReceiveMetre" xml:space="preserve">
+    <value>Måler for netværk modtaget</value>
+  </data>
+  <data name="PaneControlType_Fans" xml:space="preserve">
+    <value>Blæsere</value>
+  </data>
+  <data name="PaneControlType_NpuMetre" xml:space="preserve">
+    <value>NPU-måler</value>
+  </data>
+  <data name="PaneControlType_Npu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="DialogOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="DialogCancel" xml:space="preserve">
+    <value>Annuller</value>
+  </data>
+  <data name="DriveInputBoxCustomPath" xml:space="preserve">
+    <value>Brugerdefineret sti...</value>
+  </data>
+  <data name="DriveInputBoxHelp" xml:space="preserve">
+    <value>↑ ↓ gennemse   ← → knap   ↵ bekræft   Esc annuller</value>
+  </data>
+  <data name="MessageBoxHelp" xml:space="preserve">
+    <value>Vælg med ← → og ↵</value>
+  </data>
+  <data name="PickerBoxHelp" xml:space="preserve">
+    <value>↑ ↓ gennemse   ↵ vælg   Esc annuller</value>
+  </data>
+  <data name="PickerBoxMultiSelectHelp" xml:space="preserve">
+    <value>↑ ↓ gennemse   Mellemrum marker   ↵ bekræft   Esc annuller</value>
+  </data>
+  <data name="TextInputDialogHelp" xml:space="preserve">
+    <value>Tab knap   ↵ bekræft   Esc annuller</value>
+  </data>
+  <data name="HotKeyClearFilter" xml:space="preserve">
+    <value>Ryd filter</value>
+  </data>
+  <data name="HotKeyFilter" xml:space="preserve">
+    <value>Filtrer</value>
+  </data>
+  <data name="HotKeyRefresh" xml:space="preserve">
+    <value>Opdater</value>
+  </data>
+  <data name="HotKeyScroll" xml:space="preserve">
+    <value>Rul</value>
+  </data>
+  <data name="HotKeySort" xml:space="preserve">
+    <value>Sorter</value>
+  </data>
+  <data name="CommonNotAvailable" xml:space="preserve">
+    <value>I/T</value>
+  </data>
+  <data name="CommonSaveFailedTitle" xml:space="preserve">
+    <value>Gemning mislykkedes</value>
+  </data>
+  <data name="SetupTitle" xml:space="preserve">
+    <value>TASK MONITOR - INDSTILLINGER</value>
+  </data>
+  <data name="SetupDone" xml:space="preserve">
+    <value>Færdig</value>
+  </data>
+  <data name="SetupConfigFile" xml:space="preserve">
+    <value>Konfigurationsfil: {0}</value>
+  </data>
+  <data name="SetupSaveFailedText" xml:space="preserve">
+    <value>Der opstod en fejl under gemning af konfigurationen.</value>
+  </data>
+  <data name="SetupCategoriesHeader" xml:space="preserve">
+    <value>KATEGORIER</value>
+  </data>
+  <data name="SetupGeneralMenuItem" xml:space="preserve">
+    <value>GENERELT</value>
+  </data>
+  <data name="SetupColumnsMenuItem" xml:space="preserve">
+    <value>KOLONNER</value>
+  </data>
+  <data name="SetupThemesMenuItem" xml:space="preserve">
+    <value>TEMAER</value>
+  </data>
+  <data name="SetupLayoutsMenuItem" xml:space="preserve">
+    <value>LAYOUTS</value>
+  </data>
+  <data name="SetupDelayMenuItem" xml:space="preserve">
+    <value>INTERVAL</value>
+  </data>
+  <data name="SetupGeneralHeader" xml:space="preserve">
+    <value>Generelle indstillinger</value>
+  </data>
+  <data name="SetupColumnsHeader" xml:space="preserve">
+    <value>Synlige kolonner</value>
+  </data>
+  <data name="SetupThemesHeader" xml:space="preserve">
+    <value>Tilgængelige temaer</value>
+  </data>
+  <data name="SetupLayoutsHeader" xml:space="preserve">
+    <value>Oversigtslayouts - det fremhævede bruges ved F10 Færdig</value>
+  </data>
+  <data name="SetupDelayHeader" xml:space="preserve">
+    <value>Tid mellem opdateringer</value>
+  </data>
+  <data name="SetupNewLayoutRow" xml:space="preserve">
+    <value>+ Nyt layout</value>
+  </data>
+  <data name="SetupLayoutsCreateEdit" xml:space="preserve">
+    <value>Opret/Rediger</value>
+  </data>
+  <data name="SetupConfirmTaskDelete" xml:space="preserve">
+    <value>Bekræft afslutning af job</value>
+  </data>
+  <data name="SetupHighlightWindowsServices" xml:space="preserve">
+    <value>Fremhæv Windows-tjenester</value>
+  </data>
+  <data name="SetupHighlightDaemons" xml:space="preserve">
+    <value>Fremhæv daemons</value>
+  </data>
+  <data name="SetupHighlightChangedValues" xml:space="preserve">
+    <value>Fremhæv ændrede værdier</value>
+  </data>
+  <data name="SetupMultiSelectProcesses" xml:space="preserve">
+    <value>Tillad flervalg af processer</value>
+  </data>
+  <data name="SetupShowCpuNumerically" xml:space="preserve">
+    <value>Vis etiketten for CPU-diagrammet som tal</value>
+  </data>
+  <data name="SetupShowGpuNumerically" xml:space="preserve">
+    <value>Vis etiketten for GPU-diagrammet som tal</value>
+  </data>
+  <data name="SetupShowNpuNumerically" xml:space="preserve">
+    <value>Vis etiketten for NPU-diagrammet som tal</value>
+  </data>
+  <data name="SetupShowMemoryNumerically" xml:space="preserve">
+    <value>Vis etiketten for hukommelsesdiagrammet som tal</value>
+  </data>
+  <data name="SetupShowGpuMemoryNumerically" xml:space="preserve">
+    <value>Vis etiketten for GPU-hukommelsesdiagrammet som tal</value>
+  </data>
+  <data name="SetupShowVirtualMemoryNumerically" xml:space="preserve">
+    <value>Vis etiketten for diagrammet for virtuel hukommelse som tal</value>
+  </data>
+  <data name="SetupShowSwapNumerically" xml:space="preserve">
+    <value>Vis etiketten for swapdiagrammet som tal</value>
+  </data>
+  <data name="SetupShowDiskNumerically" xml:space="preserve">
+    <value>Vis etiketten for diskdiagrammet som tal</value>
+  </data>
+  <data name="SetupShowNetworkNumerically" xml:space="preserve">
+    <value>Vis etiketten for netværksdiagrammet som tal</value>
+  </data>
+  <data name="SetupShowYAxisScale" xml:space="preserve">
+    <value>Vis Y-aksens skala i diagrammer</value>
+  </data>
+  <data name="SetupShowLargeChartGrid" xml:space="preserve">
+    <value>Vis gitter på store diagrammer</value>
+  </data>
+  <data name="SetupShowSmallChartGrid" xml:space="preserve">
+    <value>Vis gitter på små diagrammer (CPU-kerner, ydeevnepaneler)</value>
+  </data>
+  <data name="SetupShowTips" xml:space="preserve">
+    <value>Vis tip i sidefoden</value>
+  </data>
+  <data name="SetupIrixModeWindows" xml:space="preserve">
+    <value>Brug Irix-tilstand til CPU% pr. proces (mætning af én kerne)</value>
+  </data>
+  <data name="SetupIrixModeMacOS" xml:space="preserve">
+    <value>Brug Irix-tilstand til CPU% pr. proces (som Aktivitetsovervågning)</value>
+  </data>
+  <data name="MetreControlStyle_Blocks" xml:space="preserve">
+    <value>Blokke</value>
+  </data>
+  <data name="MetreControlStyle_Bars" xml:space="preserve">
+    <value>Søjler</value>
+  </data>
+  <data name="MetreControlStyle_Dots" xml:space="preserve">
+    <value>Prikker</value>
+  </data>
+  <data name="Statistics_User" xml:space="preserve">
+    <value>Bruger</value>
+  </data>
+  <data name="Statistics_Pri" xml:space="preserve">
+    <value>Prioritet</value>
+  </data>
+  <data name="Statistics_Cpu" xml:space="preserve">
+    <value>CPU %</value>
+  </data>
+  <data name="Statistics_AvgCpu" xml:space="preserve">
+    <value>CPU % gennemsnit</value>
+  </data>
+  <data name="Statistics_MaxCpu" xml:space="preserve">
+    <value>CPU % maks.</value>
+  </data>
+  <data name="Statistics_Thrd" xml:space="preserve">
+    <value>Tråde</value>
+  </data>
+  <data name="Statistics_Gpu" xml:space="preserve">
+    <value>GPU %</value>
+  </data>
+  <data name="Statistics_AvgGpu" xml:space="preserve">
+    <value>GPU % gennemsnit</value>
+  </data>
+  <data name="Statistics_MaxGpu" xml:space="preserve">
+    <value>GPU % maks.</value>
+  </data>
+  <data name="Statistics_Mem" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="Statistics_AvgMem" xml:space="preserve">
+    <value>Hukommelse gennemsnit</value>
+  </data>
+  <data name="Statistics_MaxMem" xml:space="preserve">
+    <value>Hukommelse maks.</value>
+  </data>
+  <data name="Statistics_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="Statistics_AvgDisk" xml:space="preserve">
+    <value>Disk gennemsnit</value>
+  </data>
+  <data name="Statistics_MaxDisk" xml:space="preserve">
+    <value>Disk maks.</value>
+  </data>
+  <data name="Statistics_Power" xml:space="preserve">
+    <value>Energi</value>
+  </data>
+  <data name="Statistics_Path" xml:space="preserve">
+    <value>Sti</value>
+  </data>
+  <data name="LayoutDesignerTitle" xml:space="preserve">
+    <value>LAYOUTDESIGNER - {0}</value>
+  </data>
+  <data name="LayoutDesignerUntitled" xml:space="preserve">
+    <value>Uden navn</value>
+  </data>
+  <data name="LayoutDesignerHelp" xml:space="preserve">
+    <value>←↑→↓ Flyt  V/H Opdel  ↵ Tildel  C Kolonner  +/- Størrelse  Del Fjern  S Gem  Esc Tilbage</value>
+  </data>
+  <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
+    <value>Kolonner</value>
+  </data>
+  <data name="LayoutDesignerAssignTitle" xml:space="preserve">
+    <value>Tildel indhold</value>
+  </data>
+  <data name="LayoutDesignerSaveTitle" xml:space="preserve">
+    <value>Gem layout som</value>
+  </data>
+  <data name="LayoutDesignerCopyName" xml:space="preserve">
+    <value>{0} - kopi</value>
+  </data>
+  <data name="LayoutDesignerBuiltInTitle" xml:space="preserve">
+    <value>Indbygget layout</value>
+  </data>
+  <data name="LayoutDesignerBuiltInText" xml:space="preserve">
+    <value>»{0}«
+er et indbygget layout.
+Gem det under et nyt navn.</value>
+  </data>
+  <data name="LayoutDesignerSaveFailedText" xml:space="preserve">
+    <value>Der opstod en fejl under gemning af layoutet.</value>
+  </data>
+  <data name="FilterNoMatches" xml:space="preserve">
+    <value>Ingen resultater</value>
+  </data>
+  <data name="FilterHeader" xml:space="preserve">
+    <value>Filter: {0} ({1})</value>
+  </data>
+  <data name="FilterHeaderWithTotal" xml:space="preserve">
+    <value>Filter: {0} ({1} af {2})</value>
+  </data>
+  <data name="KeyBindExit" xml:space="preserve">
+    <value>Luk</value>
+  </data>
+  <data name="HelpTitle" xml:space="preserve">
+    <value>TASK MONITOR - HJÆLP</value>
+  </data>
+  <data name="HelpKeysSection" xml:space="preserve">
+    <value>TASTER</value>
+  </data>
+  <data name="HelpFunctionKeysSection" xml:space="preserve">
+    <value>FUNKTIONSTASTER</value>
+  </data>
+  <data name="HelpOtherKeysSection" xml:space="preserve">
+    <value>ANDRE TASTER</value>
+  </data>
+  <data name="HelpRangeLow" xml:space="preserve">
+    <value>Lav</value>
+  </data>
+  <data name="HelpRangeMid" xml:space="preserve">
+    <value>Middel</value>
+  </data>
+  <data name="HelpRangeHigh" xml:space="preserve">
+    <value>Høj</value>
+  </data>
+  <data name="HelpNormalProcess" xml:space="preserve">
+    <value>Normal proces</value>
+  </data>
+  <data name="HelpLowPriorityProcess" xml:space="preserve">
+    <value>Proces med lav prioritet (nice)</value>
+  </data>
+  <data name="HelpHighCpuProcess" xml:space="preserve">
+    <value>Højt CPU-forbrug (&gt; 1 kerne)</value>
+  </data>
+  <data name="HelpIoBoundProcess" xml:space="preserve">
+    <value>I/O-bunden proces</value>
+  </data>
+  <data name="HelpMetric" xml:space="preserve">
+    <value>Måling</value>
+  </data>
+  <data name="HelpMetricChanged" xml:space="preserve">
+    <value>Ændret måling</value>
+  </data>
+  <data name="HelpKeyMoveLeft" xml:space="preserve">
+    <value>Gå til komponenten til venstre</value>
+  </data>
+  <data name="HelpKeyScrollUp" xml:space="preserve">
+    <value>Rul listen op</value>
+  </data>
+  <data name="HelpKeyMoveRight" xml:space="preserve">
+    <value>Gå til komponenten til højre</value>
+  </data>
+  <data name="HelpKeyScrollDown" xml:space="preserve">
+    <value>Rul listen ned</value>
+  </data>
+  <data name="HelpKeyPageUp" xml:space="preserve">
+    <value>Én side op i listen</value>
+  </data>
+  <data name="HelpKeyEnter" xml:space="preserve">
+    <value>ENTER vælger et element i listen</value>
+  </data>
+  <data name="HelpKeyPageDown" xml:space="preserve">
+    <value>Én side ned i listen</value>
+  </data>
+  <data name="HelpKeyEscape" xml:space="preserve">
+    <value>Luk dialogboksen eller ryd filteret</value>
+  </data>
+  <data name="HelpKeySortAscending" xml:space="preserve">
+    <value>Sorter listen stigende</value>
+  </data>
+  <data name="HelpKeySortDescending" xml:space="preserve">
+    <value>Sorter listen faldende</value>
+  </data>
+  <data name="HelpKeySortColumn" xml:space="preserve">
+    <value>Vælg sorteringskolonne</value>
+  </data>
+  <data name="HelpKeySortProcesses" xml:space="preserve">
+    <value>Sorter processer efter CPU%, GPU%, hukommelse</value>
+  </data>
+  <data name="HelpKeyFilter" xml:space="preserve">
+    <value>Filtrer listen</value>
+  </data>
+  <data name="HelpKeyMultiSelect" xml:space="preserve">
+    <value>Slå flervalg til/fra</value>
+  </data>
+  <data name="HelpKeyUncheckAll" xml:space="preserve">
+    <value>Fjern markering af alle processer</value>
+  </data>
+  <data name="HelpKeySpace" xml:space="preserve">
+    <value>Mellemrum markerer/fjerner markering</value>
+  </data>
+  <data name="HelpKeySpaceWindows" xml:space="preserve">
+    <value>Marker/fjern markering; skift OPSTART eller TJENESTER</value>
+  </data>
+  <data name="HelpKeySpaceMacOS" xml:space="preserve">
+    <value>Marker/fjern markering; slå til/fra i OPSTART</value>
+  </data>
+  <data name="HelpKeyEndTask" xml:space="preserve">
+    <value>Afslut job (markerede eller valgte)</value>
+  </data>
+  <data name="HelpKeyRefresh" xml:space="preserve">
+    <value>Opdater den aktuelle liste</value>
+  </data>
+  <data name="HelpKeyFreeze" xml:space="preserve">
+    <value>Frys opdatering af proceslisten</value>
+  </data>
+  <data name="HelpKeyIrix" xml:space="preserve">
+    <value>Slå Irix-tilstand for CPU til/fra i proceslisten</value>
+  </data>
+  <data name="HelpKeyNextTip" xml:space="preserve">
+    <value>Vis næste tip</value>
+  </data>
+  <data name="HelpF1Description" xml:space="preserve">
+    <value>Vis denne hjælpeskærm.</value>
+  </data>
+  <data name="HelpF4Description" xml:space="preserve">
+    <value>Skift OVERSIGT til næste layout i indstillingernes rækkefølge. Gem det der for at beholde det.</value>
+  </data>
+  <data name="HelpF5Description" xml:space="preserve">
+    <value>Opdater listen Opstart, Apps, Tjenester eller Drivere (som r).</value>
+  </data>
+  <data name="HelpF10Description" xml:space="preserve">
+    <value>Luk Task Monitor.</value>
+  </data>
+  <data name="HelpF12Description" xml:space="preserve">
+    <value>Vis skærmen Om.</value>
+  </data>
+  <data name="HelpOtherKeyEndTask" xml:space="preserve">
+    <value>Afslut den valgte proces eller alle markerede ved flervalg (x) sammen med deres underprocesser.</value>
+  </data>
+  <data name="MainMenuTitle" xml:space="preserve">
+    <value>VISNINGSMENU</value>
+  </data>
+  <data name="MainMenuSummary" xml:space="preserve">
+    <value>OVERSIGT</value>
+  </data>
+  <data name="MainMenuHealth" xml:space="preserve">
+    <value>TILSTAND</value>
+  </data>
+  <data name="MainMenuPerformance" xml:space="preserve">
+    <value>YDEEVNE</value>
+  </data>
+  <data name="MainMenuProcesses" xml:space="preserve">
+    <value>PROCESSER</value>
+  </data>
+  <data name="MainMenuThermals" xml:space="preserve">
+    <value>TEMPERATURER</value>
+  </data>
+  <data name="MainMenuDiskSpace" xml:space="preserve">
+    <value>DISKPLADS</value>
+  </data>
+  <data name="MainMenuStartup" xml:space="preserve">
+    <value>OPSTART</value>
+  </data>
+  <data name="MainMenuApps" xml:space="preserve">
+    <value>APPS</value>
+  </data>
+  <data name="MainMenuServices" xml:space="preserve">
+    <value>TJENESTER</value>
+  </data>
+  <data name="MainMenuDrivers" xml:space="preserve">
+    <value>DRIVERE</value>
+  </data>
+  <data name="MainMenuSystemInfo" xml:space="preserve">
+    <value>SYSTEMINFO</value>
+  </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>OM TASK MONITOR</value>
+  </data>
+  <data name="AboutProductName" xml:space="preserve">
+    <value>Task Monitor</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="HeaderTitle" xml:space="preserve">
+    <value>TASK MONITOR</value>
+  </data>
+  <data name="HeaderMachineLabel" xml:space="preserve">
+    <value>Computer:</value>
+  </data>
+  <data name="HeaderOsLabel" xml:space="preserve">
+    <value>OS:</value>
+  </data>
+  <data name="HeaderIpLabel" xml:space="preserve">
+    <value>IP:</value>
+  </data>
+  <data name="HeaderCpuLabel" xml:space="preserve">
+    <value>CPU:</value>
+  </data>
+  <data name="HeaderTasksLabel" xml:space="preserve">
+    <value>Opgaver:</value>
+  </data>
+  <data name="HeaderThreadsLabel" xml:space="preserve">
+    <value>Tråde:</value>
+  </data>
+  <data name="HeaderRunning" xml:space="preserve">
+    <value>kører</value>
+  </data>
+  <data name="HeaderCores" xml:space="preserve">
+    <value>{0} kerner</value>
+  </data>
+  <data name="HeaderPerformanceCores" xml:space="preserve">
+    <value>{0}P</value>
+  </data>
+  <data name="HeaderEfficiencyCores" xml:space="preserve">
+    <value>{0}E</value>
+  </data>
+  <data name="HeaderSuperCores" xml:space="preserve">
+    <value>{0}S</value>
+  </data>
+  <data name="HeaderGpuCores" xml:space="preserve">
+    <value>{0} GPU</value>
+  </data>
+  <data name="HeaderIrixMode" xml:space="preserve">
+    <value>Irix-tilstand</value>
+  </data>
+  <data name="HeaderSolarisMode" xml:space="preserve">
+    <value>Solaris-tilstand</value>
+  </data>
+  <data name="FooterBanner" xml:space="preserve">
+    <value>Task Monitor v{0}</value>
+  </data>
+  <data name="FooterReceived" xml:space="preserve">
+    <value>{0} Rx</value>
+  </data>
+  <data name="FooterTip" xml:space="preserve">
+    <value>Tip:</value>
+  </data>
+  <data name="FooterServicesRunning" xml:space="preserve">
+    <value>Tjenester: kører</value>
+  </data>
+  <data name="FooterServiceErrored" xml:space="preserve">
+    <value>Tjenestestatus: fejl</value>
+  </data>
+  <data name="FooterServiceStopping" xml:space="preserve">
+    <value>Tjenestestatus: stopper</value>
+  </data>
+  <data name="FooterServiceUnknown" xml:space="preserve">
+    <value>Tjenestestatus: ukendt</value>
+  </data>
+  <data name="FooterKeyHelp" xml:space="preserve">
+    <value>Hjælp</value>
+  </data>
+  <data name="FooterKeySetup" xml:space="preserve">
+    <value>Indstillinger</value>
+  </data>
+  <data name="FooterKeyTheme" xml:space="preserve">
+    <value>Tema</value>
+  </data>
+  <data name="FooterKeyLayout" xml:space="preserve">
+    <value>Layout</value>
+  </data>
+  <data name="FooterKeyNextTip" xml:space="preserve">
+    <value>Næste</value>
+  </data>
+  <data name="SortByHeader" xml:space="preserve">
+    <value>SORTER EFTER</value>
+  </data>
+  <data name="SummaryTopProcesses" xml:space="preserve">
+    <value>Top {0}-processer    {1} i alt</value>
+  </data>
+  <data name="SummaryEmptyPane" xml:space="preserve">
+    <value>tom</value>
+  </data>
+  <data name="SummaryCpuChartLabel" xml:space="preserve">
+    <value>{0:000.0%} Kerne {1:000.0%} Bruger {2:000.0%}</value>
+  </data>
+  <data name="ChartTitleCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ChartTitleMemory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="ChartTitleVirtualMemory" xml:space="preserve">
+    <value>Virtuel</value>
+  </data>
+  <data name="ChartTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="ChartTitleDisk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="ChartTitleGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="ChartTitleGpuMemory" xml:space="preserve">
+    <value>GPU-hukommelse</value>
+  </data>
+  <data name="ChartTitleNetworkReceived" xml:space="preserve">
+    <value>Net modt.</value>
+  </data>
+  <data name="ChartTitleNetworkSent" xml:space="preserve">
+    <value>Net sendt</value>
+  </data>
+  <data name="ChartTitleNpu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="ProcessColumnProcess" xml:space="preserve">
+    <value>PROCES</value>
+  </data>
+  <data name="ProcessColumnPid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="ProcessColumnUser" xml:space="preserve">
+    <value>BRUGER</value>
+  </data>
+  <data name="ProcessColumnPriorityWindows" xml:space="preserve">
+    <value>PRI</value>
+  </data>
+  <data name="ProcessColumnPriorityMacOS" xml:space="preserve">
+    <value>NI</value>
+  </data>
+  <data name="ProcessColumnCpu" xml:space="preserve">
+    <value>CPU%</value>
+  </data>
+  <data name="ProcessColumnAvgCpu" xml:space="preserve">
+    <value>GNS CPU%</value>
+  </data>
+  <data name="ProcessColumnMaxCpu" xml:space="preserve">
+    <value>MAX CPU%</value>
+  </data>
+  <data name="ProcessColumnThreads" xml:space="preserve">
+    <value>TRÅDE</value>
+  </data>
+  <data name="ProcessColumnGpu" xml:space="preserve">
+    <value>GPU%</value>
+  </data>
+  <data name="ProcessColumnAvgGpu" xml:space="preserve">
+    <value>GNS GPU%</value>
+  </data>
+  <data name="ProcessColumnMaxGpu" xml:space="preserve">
+    <value>MAX GPU%</value>
+  </data>
+  <data name="ProcessColumnMemory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="ProcessColumnAvgMemory" xml:space="preserve">
+    <value>GNS RAM</value>
+  </data>
+  <data name="ProcessColumnMaxMemory" xml:space="preserve">
+    <value>MAX RAM</value>
+  </data>
+  <data name="ProcessColumnDisk" xml:space="preserve">
+    <value>DISK</value>
+  </data>
+  <data name="ProcessColumnAvgDisk" xml:space="preserve">
+    <value>GNS DISK</value>
+  </data>
+  <data name="ProcessColumnMaxDisk" xml:space="preserve">
+    <value>MAX DISK</value>
+  </data>
+  <data name="ProcessColumnPower" xml:space="preserve">
+    <value>ENERGI</value>
+  </data>
+  <data name="ProcessColumnPath" xml:space="preserve">
+    <value>STI</value>
+  </data>
+  <data name="HotKeyEndTask" xml:space="preserve">
+    <value>Afslut</value>
+  </data>
+  <data name="ProcessesFilterTitle" xml:space="preserve">
+    <value>Filtrer processer</value>
+  </data>
+  <data name="ProcessesFrozen" xml:space="preserve">
+    <value>Frosset</value>
+  </data>
+  <data name="EndTaskTitleOne" xml:space="preserve">
+    <value>Afslut job</value>
+  </data>
+  <data name="EndTaskTitleMany" xml:space="preserve">
+    <value>Afslut flere job</value>
+  </data>
+  <data name="EndTaskHeadingOne" xml:space="preserve">
+    <value>Afslut dette job?</value>
+  </data>
+  <data name="EndTaskHeadingMany" xml:space="preserve">
+    <value>Afslut disse {0} job?</value>
+  </data>
+  <data name="EndTaskMore" xml:space="preserve">
+    <value>og {0} mere</value>
+  </data>
+  <data name="EndTaskChildren" xml:space="preserve">
+    <value>Underprocesser afsluttes også.</value>
+  </data>
+  <data name="ProcessInfoNotImplemented" xml:space="preserve">
+    <value>Endnu ikke understøttet på dette OS</value>
+  </data>
+  <data name="ProcessInfoThreadsNotLoaded" xml:space="preserve">
+    <value>Trådene kunne ikke indlæses</value>
+  </data>
+  <data name="ProcessInfoModulesNotLoaded" xml:space="preserve">
+    <value>Modulerne kunne ikke indlæses</value>
+  </data>
+  <data name="ProcessInfoLoading" xml:space="preserve">
+    <value>Indlæser, vent venligst...</value>
+  </data>
+  <data name="ProcessInfoMenuHeader" xml:space="preserve">
+    <value>VÆLG</value>
+  </data>
+  <data name="ProcessInfoMenuDetail" xml:space="preserve">
+    <value>DETALJE</value>
+  </data>
+  <data name="ProcessInfoMenuThreads" xml:space="preserve">
+    <value>TRÅDE</value>
+  </data>
+  <data name="ProcessInfoMenuModules" xml:space="preserve">
+    <value>MODULER</value>
+  </data>
+  <data name="ProcessInfoMenuHandles" xml:space="preserve">
+    <value>HÅNDTAG</value>
+  </data>
+  <data name="ProcessInfoPidLabel" xml:space="preserve">
+    <value>PID:</value>
+  </data>
+  <data name="ProcessInfoThreadId" xml:space="preserve">
+    <value>TRÅD-ID</value>
+  </data>
+  <data name="ProcessInfoState" xml:space="preserve">
+    <value>TILSTAND</value>
+  </data>
+  <data name="ProcessInfoReason" xml:space="preserve">
+    <value>ÅRSAG</value>
+  </data>
+  <data name="ProcessInfoPriority" xml:space="preserve">
+    <value>PRI</value>
+  </data>
+  <data name="ProcessInfoStartAddress" xml:space="preserve">
+    <value>STARTADRESSE</value>
+  </data>
+  <data name="ProcessInfoKernelTime" xml:space="preserve">
+    <value>KERNETID</value>
+  </data>
+  <data name="ProcessInfoUserTime" xml:space="preserve">
+    <value>BRUGERTID</value>
+  </data>
+  <data name="ProcessInfoTotalTime" xml:space="preserve">
+    <value>SAMLET TID</value>
+  </data>
+  <data name="ProcessInfoModule" xml:space="preserve">
+    <value>MODUL</value>
+  </data>
+  <data name="ProcessInfoPath" xml:space="preserve">
+    <value>STI</value>
+  </data>
+  <data name="ProcessInfoId" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="ProcessInfoName" xml:space="preserve">
+    <value>NAVN</value>
+  </data>
+  <data name="ProcessInfoFile" xml:space="preserve">
+    <value>Fil:</value>
+  </data>
+  <data name="ProcessInfoDescription" xml:space="preserve">
+    <value>Beskrivelse:</value>
+  </data>
+  <data name="ProcessInfoPathLabel" xml:space="preserve">
+    <value>Sti:</value>
+  </data>
+  <data name="ProcessInfoUser" xml:space="preserve">
+    <value>Bruger:</value>
+  </data>
+  <data name="ProcessInfoVersion" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="ProcessInfoSize" xml:space="preserve">
+    <value>Størrelse:</value>
+  </data>
+  <data name="ProcessInfoSizeOnDisk" xml:space="preserve">
+    <value>På disk:</value>
+  </data>
+  <data name="ProcessInfoBytes" xml:space="preserve">
+    <value>{0} byte</value>
+  </data>
+  <data name="ProcessInfoError" xml:space="preserve">
+    <value>Fejl:</value>
+  </data>
+  <data name="CommonYes" xml:space="preserve">
+    <value>Ja</value>
+  </data>
+  <data name="CommonNo" xml:space="preserve">
+    <value>Nej</value>
+  </data>
+  <data name="CommonUnknown" xml:space="preserve">
+    <value>Ukendt</value>
+  </data>
+  <data name="CpuKernel" xml:space="preserve">
+    <value>Kerne</value>
+  </data>
+  <data name="CpuUser" xml:space="preserve">
+    <value>Bruger</value>
+  </data>
+  <data name="LabelName" xml:space="preserve">
+    <value>Navn:</value>
+  </data>
+  <data name="LabelDescription" xml:space="preserve">
+    <value>Beskrivelse:</value>
+  </data>
+  <data name="LabelVendor" xml:space="preserve">
+    <value>Leverandør:</value>
+  </data>
+  <data name="LabelModel" xml:space="preserve">
+    <value>Model:</value>
+  </data>
+  <data name="LabelManufacturer" xml:space="preserve">
+    <value>Producent:</value>
+  </data>
+  <data name="LabelCores" xml:space="preserve">
+    <value>Kerner:</value>
+  </data>
+  <data name="LabelVersion" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="PerformanceUtilisationColumn" xml:space="preserve">
+    <value>Udnyttelse</value>
+  </data>
+  <data name="PerformanceSpeedColumn" xml:space="preserve">
+    <value>Hastighed</value>
+  </data>
+  <data name="PerformanceTasksColumn" xml:space="preserve">
+    <value>Opgaver</value>
+  </data>
+  <data name="PerformanceThreadsColumn" xml:space="preserve">
+    <value>Tråde</value>
+  </data>
+  <data name="PerformancePowerDrawColumn" xml:space="preserve">
+    <value>Forbrug</value>
+  </data>
+  <data name="PerformanceCoreChart" xml:space="preserve">
+    <value>CPU {0}</value>
+  </data>
+  <data name="PerformanceBaseSpeed" xml:space="preserve">
+    <value>Basishastighed:</value>
+  </data>
+  <data name="PerformanceSockets" xml:space="preserve">
+    <value>Sokler:</value>
+  </data>
+  <data name="PerformanceLogicalProcessors" xml:space="preserve">
+    <value>Logiske processorer:</value>
+  </data>
+  <data name="LabelVirtualisation" xml:space="preserve">
+    <value>Virtualisering:</value>
+  </data>
+  <data name="PerformanceL1Cache" xml:space="preserve">
+    <value>L1-cache:</value>
+  </data>
+  <data name="PerformanceL2Cache" xml:space="preserve">
+    <value>L2-cache:</value>
+  </data>
+  <data name="PerformanceL3Cache" xml:space="preserve">
+    <value>L3-cache:</value>
+  </data>
+  <data name="PerformanceActiveTimeColumn" xml:space="preserve">
+    <value>Aktiv tid</value>
+  </data>
+  <data name="PerformanceReadSpeedColumn" xml:space="preserve">
+    <value>Læsning</value>
+  </data>
+  <data name="PerformanceWriteSpeedColumn" xml:space="preserve">
+    <value>Skrivning</value>
+  </data>
+  <data name="PerformancePowerColumn" xml:space="preserve">
+    <value>Energi</value>
+  </data>
+  <data name="PerformanceActiveTimeChart" xml:space="preserve">
+    <value>Aktiv tid {0}</value>
+  </data>
+  <data name="PerformanceDiskTransferChart" xml:space="preserve">
+    <value>Diskoverførselshastighed {0}</value>
+  </data>
+  <data name="LabelFirmwareRevision" xml:space="preserve">
+    <value>Firmwareversion:</value>
+  </data>
+  <data name="LabelSerialNumber" xml:space="preserve">
+    <value>Serienummer:</value>
+  </data>
+  <data name="LabelBusType" xml:space="preserve">
+    <value>Bustype:</value>
+  </data>
+  <data name="LabelMediaType" xml:space="preserve">
+    <value>Medietype:</value>
+  </data>
+  <data name="LabelCapacity" xml:space="preserve">
+    <value>Kapacitet:</value>
+  </data>
+  <data name="LabelRemovable" xml:space="preserve">
+    <value>Flytbar:</value>
+  </data>
+  <data name="PerformanceTotalBytesRead" xml:space="preserve">
+    <value>Læst i alt:</value>
+  </data>
+  <data name="PerformanceTotalBytesWritten" xml:space="preserve">
+    <value>Skrevet i alt:</value>
+  </data>
+  <data name="PerformanceNumberOfDisks" xml:space="preserve">
+    <value>Antal diske:</value>
+  </data>
+  <data name="LabelTotalCapacity" xml:space="preserve">
+    <value>Samlet kapacitet:</value>
+  </data>
+  <data name="PerformanceRatedWatts" xml:space="preserve">
+    <value>{0:0.0} W (nominel)</value>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryColumn" xml:space="preserve">
+    <value>Dedikeret hukommelse</value>
+  </data>
+  <data name="PerformanceGpuMemoryColumn" xml:space="preserve">
+    <value>GPU-hukommelse</value>
+  </data>
+  <data name="PerformanceSharedGpuMemoryColumn" xml:space="preserve">
+    <value>Delt hukommelse</value>
+  </data>
+  <data name="PerformanceFrequencyColumn" xml:space="preserve">
+    <value>Frekvens</value>
+  </data>
+  <data name="PerformanceThrottlingColumn" xml:space="preserve">
+    <value>Drosling</value>
+  </data>
+  <data name="PerformanceGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryChart" xml:space="preserve">
+    <value>Dedikeret GPU-hukommelse {0}</value>
+  </data>
+  <data name="PerformanceGpuMemoryChart" xml:space="preserve">
+    <value>GPU-hukommelse {0}</value>
+  </data>
+  <data name="LabelAdapterType" xml:space="preserve">
+    <value>Adaptertype:</value>
+  </data>
+  <data name="LabelDriverVersion" xml:space="preserve">
+    <value>Driverversion:</value>
+  </data>
+  <data name="LabelDriverDate" xml:space="preserve">
+    <value>Driverdato:</value>
+  </data>
+  <data name="PerformanceInUseColumn" xml:space="preserve">
+    <value>I brug</value>
+  </data>
+  <data name="PerformanceAvailableColumn" xml:space="preserve">
+    <value>Tilgængelig</value>
+  </data>
+  <data name="PerformanceCommittedColumn" xml:space="preserve">
+    <value>Allokeret</value>
+  </data>
+  <data name="PerformanceSwapFileColumn" xml:space="preserve">
+    <value>Sidefil</value>
+  </data>
+  <data name="PerformanceSwapInColumn" xml:space="preserve">
+    <value>Swap ind</value>
+  </data>
+  <data name="PerformanceSwapOutColumn" xml:space="preserve">
+    <value>Swap ud</value>
+  </data>
+  <data name="PerformanceMemoryChart" xml:space="preserve">
+    <value>Hukommelse {0}</value>
+  </data>
+  <data name="PerformanceCommittedMemoryChart" xml:space="preserve">
+    <value>Allokeret hukommelse {0}</value>
+  </data>
+  <data name="PerformanceSwapFileChart" xml:space="preserve">
+    <value>Sidefil {0}</value>
+  </data>
+  <data name="PerformanceInUseSeries" xml:space="preserve">
+    <value>I brug</value>
+  </data>
+  <data name="PerformanceModifiedSeries" xml:space="preserve">
+    <value>Ændret</value>
+  </data>
+  <data name="PerformanceStandbySeries" xml:space="preserve">
+    <value>Standby</value>
+  </data>
+  <data name="PerformanceFreeSeries" xml:space="preserve">
+    <value>Ledig</value>
+  </data>
+  <data name="LabelMemory" xml:space="preserve">
+    <value>Hukommelse:</value>
+  </data>
+  <data name="LabelSpeed" xml:space="preserve">
+    <value>Hastighed:</value>
+  </data>
+  <data name="PerformanceConfiguredSpeed" xml:space="preserve">
+    <value>Indstillet hastighed:</value>
+  </data>
+  <data name="PerformanceSlotsUsed" xml:space="preserve">
+    <value>Brugte pladser:</value>
+  </data>
+  <data name="PerformanceSlotsUsedValue" xml:space="preserve">
+    <value>{0} af {1}</value>
+  </data>
+  <data name="PerformanceFormFactor" xml:space="preserve">
+    <value>Formfaktor:</value>
+  </data>
+  <data name="PerformanceInUse" xml:space="preserve">
+    <value>I brug:</value>
+  </data>
+  <data name="PerformanceModified" xml:space="preserve">
+    <value>Ændret:</value>
+  </data>
+  <data name="PerformanceStandbyCached" xml:space="preserve">
+    <value>Standby (cache):</value>
+  </data>
+  <data name="PerformanceFree" xml:space="preserve">
+    <value>Ledig:</value>
+  </data>
+  <data name="PerformanceSendColumn" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="PerformanceReceiveColumn" xml:space="preserve">
+    <value>Modtag</value>
+  </data>
+  <data name="PerformanceSendChart" xml:space="preserve">
+    <value>Send {0}</value>
+  </data>
+  <data name="PerformanceReceiveChart" xml:space="preserve">
+    <value>Modtag {0}</value>
+  </data>
+  <data name="PerformanceFriendlyName" xml:space="preserve">
+    <value>Brugervenligt navn:</value>
+  </data>
+  <data name="LabelConnectionType" xml:space="preserve">
+    <value>Forbindelsestype:</value>
+  </data>
+  <data name="LabelPhysicalMedium" xml:space="preserve">
+    <value>Fysisk medie:</value>
+  </data>
+  <data name="LabelMacAddress" xml:space="preserve">
+    <value>MAC-adresse:</value>
+  </data>
+  <data name="LabelIpv4Addresses" xml:space="preserve">
+    <value>IPv4-adresser:</value>
+  </data>
+  <data name="LabelIpv6Addresses" xml:space="preserve">
+    <value>IPv6-adresser:</value>
+  </data>
+  <data name="LabelTransmitLinkSpeed" xml:space="preserve">
+    <value>Sendehastighed:</value>
+  </data>
+  <data name="LabelReceiveLinkSpeed" xml:space="preserve">
+    <value>Modtagehastighed:</value>
+  </data>
+  <data name="LabelOperationalStatus" xml:space="preserve">
+    <value>Driftsstatus:</value>
+  </data>
+  <data name="PerformanceTotalBytesSent" xml:space="preserve">
+    <value>Sendt i alt:</value>
+  </data>
+  <data name="PerformanceTotalBytesReceived" xml:space="preserve">
+    <value>Modtaget i alt:</value>
+  </data>
+  <data name="PerformanceTotalPacketsSent" xml:space="preserve">
+    <value>Pakker sendt:</value>
+  </data>
+  <data name="PerformanceTotalPacketsReceived" xml:space="preserve">
+    <value>Pakker modtaget:</value>
+  </data>
+  <data name="PerformancePeakPowerColumn" xml:space="preserve">
+    <value>Spids</value>
+  </data>
+  <data name="PerformancePowerChart" xml:space="preserve">
+    <value>Energi {0}</value>
+  </data>
+  <data name="LabelChip" xml:space="preserve">
+    <value>Chip:</value>
+  </data>
+  <data name="LabelArchitecture" xml:space="preserve">
+    <value>Arkitektur:</value>
+  </data>
+  <data name="PerformanceCpuPanel" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PerformanceMemoryPanel" xml:space="preserve">
+    <value>HUKOMMELSE</value>
+  </data>
+  <data name="PerformanceDisksPanel" xml:space="preserve">
+    <value>DISKE</value>
+  </data>
+  <data name="PerformanceDiskPanel" xml:space="preserve">
+    <value>Disk {0}</value>
+  </data>
+  <data name="PerformanceGpuPanel" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="PerformanceNetworkPanel" xml:space="preserve">
+    <value>NETVÆRK</value>
+  </data>
+  <data name="PerformanceGpuCores" xml:space="preserve">
+    <value>{0} kerner</value>
+  </data>
+  <data name="PerformanceLogicalProcessorsCount" xml:space="preserve">
+    <value>{0} logiske processorer</value>
+  </data>
+  <data name="PerformanceSendShort" xml:space="preserve">
+    <value>S: {0}</value>
+  </data>
+  <data name="PerformanceReceiveShort" xml:space="preserve">
+    <value>M: {0}</value>
+  </data>
+  <data name="ListColumnName" xml:space="preserve">
+    <value>NAVN</value>
+  </data>
+  <data name="ListColumnStatus" xml:space="preserve">
+    <value>STATUS</value>
+  </data>
+  <data name="ListColumnVersion" xml:space="preserve">
+    <value>VERSION</value>
+  </data>
+  <data name="ListColumnPublisher" xml:space="preserve">
+    <value>UDGIVER</value>
+  </data>
+  <data name="ListColumnScope" xml:space="preserve">
+    <value>OMFANG</value>
+  </data>
+  <data name="ListColumnPath" xml:space="preserve">
+    <value>STI</value>
+  </data>
+  <data name="ListColumnDescription" xml:space="preserve">
+    <value>BESKRIVELSE</value>
+  </data>
+  <data name="ListColumnField" xml:space="preserve">
+    <value>FELT</value>
+  </data>
+  <data name="ListColumnValue" xml:space="preserve">
+    <value>VÆRDI</value>
+  </data>
+  <data name="ListDetailHeader" xml:space="preserve">
+    <value>DETALJER</value>
+  </data>
+  <data name="ListHeaderRunningTotal" xml:space="preserve">
+    <value>{0} kører / {1} i alt</value>
+  </data>
+  <data name="DetailName" xml:space="preserve">
+    <value>Navn</value>
+  </data>
+  <data name="DetailStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="DetailVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="DetailPublisher" xml:space="preserve">
+    <value>Udgiver</value>
+  </data>
+  <data name="DetailPath" xml:space="preserve">
+    <value>Sti</value>
+  </data>
+  <data name="DetailScope" xml:space="preserve">
+    <value>Omfang</value>
+  </data>
+  <data name="DetailDescription" xml:space="preserve">
+    <value>Beskrivelse</value>
+  </data>
+  <data name="DetailStartupType" xml:space="preserve">
+    <value>Starttype</value>
+  </data>
+  <data name="DetailLogOnAs" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="DetailType" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="DetailCommand" xml:space="preserve">
+    <value>Kommando</value>
+  </data>
+  <data name="DetailInstalled" xml:space="preserve">
+    <value>Installeret</value>
+  </data>
+  <data name="DetailSize" xml:space="preserve">
+    <value>Størrelse</value>
+  </data>
+  <data name="DetailLocation" xml:space="preserve">
+    <value>Placering</value>
+  </data>
+  <data name="DetailLabel" xml:space="preserve">
+    <value>Etiket</value>
+  </data>
+  <data name="DetailDomain" xml:space="preserve">
+    <value>Domæne</value>
+  </data>
+  <data name="DetailGroup" xml:space="preserve">
+    <value>Gruppe</value>
+  </data>
+  <data name="DetailStartType" xml:space="preserve">
+    <value>Starttype</value>
+  </data>
+  <data name="DetailEnabled" xml:space="preserve">
+    <value>Aktiveret</value>
+  </data>
+  <data name="DetailLastExit" xml:space="preserve">
+    <value>Sidste exit</value>
+  </data>
+  <data name="DetailProgram" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="DetailArguments" xml:space="preserve">
+    <value>Argumenter</value>
+  </data>
+  <data name="DetailPlist" xml:space="preserve">
+    <value>Plist</value>
+  </data>
+  <data name="ScopeMachine" xml:space="preserve">
+    <value>Computer</value>
+  </data>
+  <data name="ScopeUser" xml:space="preserve">
+    <value>Bruger</value>
+  </data>
+  <data name="ServiceStatusStopped" xml:space="preserve">
+    <value>Stoppet</value>
+  </data>
+  <data name="ServiceStatusStartPending" xml:space="preserve">
+    <value>Starter…</value>
+  </data>
+  <data name="ServiceStatusStopPending" xml:space="preserve">
+    <value>Stopper…</value>
+  </data>
+  <data name="ServiceStatusRunning" xml:space="preserve">
+    <value>Kører</value>
+  </data>
+  <data name="ServiceStatusContinuePending" xml:space="preserve">
+    <value>Genoptager…</value>
+  </data>
+  <data name="ServiceStatusPausePending" xml:space="preserve">
+    <value>Sættes på pause…</value>
+  </data>
+  <data name="ServiceStatusPaused" xml:space="preserve">
+    <value>På pause</value>
+  </data>
+  <data name="StatusNotLoaded" xml:space="preserve">
+    <value>Ikke indlæst</value>
+  </data>
+  <data name="StartTypeAutomaticDelayed" xml:space="preserve">
+    <value>Automatisk (forsinket)</value>
+  </data>
+  <data name="StartTypeAutomatic" xml:space="preserve">
+    <value>Automatisk</value>
+  </data>
+  <data name="StartTypeManual" xml:space="preserve">
+    <value>Manuel</value>
+  </data>
+  <data name="StartTypeDisabled" xml:space="preserve">
+    <value>Deaktiveret</value>
+  </data>
+  <data name="StartTypeBootStart" xml:space="preserve">
+    <value>Ved opstart</value>
+  </data>
+  <data name="StartTypeSystemStart" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="StartTypeOnDemand" xml:space="preserve">
+    <value>Efter behov</value>
+  </data>
+  <data name="CommonNeedsAdministrator" xml:space="preserve">
+    <value>Det kræver administratorrettigheder.</value>
+  </data>
+  <data name="CommonRunAsAdministrator" xml:space="preserve">
+    <value>Kør taskmon som administrator.</value>
+  </data>
+  <data name="CommonNoLongerExists" xml:space="preserve">
+    <value>Findes ikke længere.</value>
+  </data>
+  <data name="ServicesGathering" xml:space="preserve">
+    <value>Indsamler Windows-tjenester…</value>
+  </data>
+  <data name="ServicesFilterTitle" xml:space="preserve">
+    <value>Filtrer tjenester</value>
+  </data>
+  <data name="ServicesColumnStartupType" xml:space="preserve">
+    <value>STARTTYPE</value>
+  </data>
+  <data name="ServicesColumnLogOnAs" xml:space="preserve">
+    <value>LOG PÅ SOM</value>
+  </data>
+  <data name="ServicesLocalSystem" xml:space="preserve">
+    <value>Lokalt system</value>
+  </data>
+  <data name="ServicesLocalService" xml:space="preserve">
+    <value>Lokal tjeneste</value>
+  </data>
+  <data name="ServicesNetworkService" xml:space="preserve">
+    <value>Netværkstjeneste</value>
+  </data>
+  <data name="ServicesStarting" xml:space="preserve">
+    <value>Starter…</value>
+  </data>
+  <data name="ServicesStopping" xml:space="preserve">
+    <value>Stopper…</value>
+  </data>
+  <data name="ServicesToggleHotKey" xml:space="preserve">
+    <value>Start/Stop</value>
+  </data>
+  <data name="ServicesToggleTitleStart" xml:space="preserve">
+    <value>Start tjeneste</value>
+  </data>
+  <data name="ServicesToggleTitleStop" xml:space="preserve">
+    <value>Stop tjeneste</value>
+  </data>
+  <data name="ServicesCouldNotStart" xml:space="preserve">
+    <value>Kunne ikke starte {0}</value>
+  </data>
+  <data name="ServicesCouldNotStop" xml:space="preserve">
+    <value>Kunne ikke stoppe {0}</value>
+  </data>
+  <data name="ServicesRefused" xml:space="preserve">
+    <value>Windows afviste ændringen.</value>
+  </data>
+  <data name="ServicesBusy" xml:space="preserve">
+    <value>Tjenesten er optaget. Prøv igen om lidt.</value>
+  </data>
+  <data name="ServicesCannotStop" xml:space="preserve">
+    <value>Tjenesten accepterer ikke en stopanmodning.</value>
+  </data>
+  <data name="ServicesDependencyFailed" xml:space="preserve">
+    <value>En tjeneste, den afhænger af, kunne ikke starte.</value>
+  </data>
+  <data name="ServicesDidNotStop" xml:space="preserve">
+    <value>Tjenesten kører stadig.</value>
+  </data>
+  <data name="ServicesDisabled" xml:space="preserve">
+    <value>Dens starttype er »Deaktiveret«.</value>
+  </data>
+  <data name="ServicesNotSupported" xml:space="preserve">
+    <value>Tjenester kan ikke startes eller stoppes her.</value>
+  </data>
+  <data name="ServicesStillStarting" xml:space="preserve">
+    <value>Tjenesten starter stadig efter et minut.</value>
+  </data>
+  <data name="ServicesStillStopping" xml:space="preserve">
+    <value>Tjenesten stopper stadig efter et minut.</value>
+  </data>
+  <data name="ServicesStoppedAfterStarting" xml:space="preserve">
+    <value>Tjenesten startede og stoppede derefter.</value>
+  </data>
+  <data name="ServicesTimedOut" xml:space="preserve">
+    <value>Tjenesten svarede ikke i tide.</value>
+  </data>
+  <data name="ServicesWindowsError" xml:space="preserve">
+    <value>Windows-fejl {0}.</value>
+  </data>
+  <data name="ServicesDependentsRunning" xml:space="preserve">
+    <value>Andre kørende tjenester afhænger af den.</value>
+  </data>
+  <data name="ServicesDependentsList" xml:space="preserve">
+    <value>Kørende tjenester, der afhænger af den:</value>
+  </data>
+  <data name="ServicesDependentsMore" xml:space="preserve">
+    <value>og {0} mere</value>
+  </data>
+  <data name="StartupGathering" xml:space="preserve">
+    <value>Indsamler opstartsapps…</value>
+  </data>
+  <data name="StartupFilterTitle" xml:space="preserve">
+    <value>Filtrer opstart</value>
+  </data>
+  <data name="StartupColumnType" xml:space="preserve">
+    <value>TYPE</value>
+  </data>
+  <data name="StartupColumnCommand" xml:space="preserve">
+    <value>KOMMANDO</value>
+  </data>
+  <data name="StartupHeader" xml:space="preserve">
+    <value>{0} aktiveret / {1} i alt</value>
+  </data>
+  <data name="StartupStateEnabled" xml:space="preserve">
+    <value>Til</value>
+  </data>
+  <data name="StartupStateDisabled" xml:space="preserve">
+    <value>Fra</value>
+  </data>
+  <data name="StartupTypeRun" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="StartupTypeRunOnce" xml:space="preserve">
+    <value>RunOnce</value>
+  </data>
+  <data name="StartupTypeStartupFolder" xml:space="preserve">
+    <value>Startmappe</value>
+  </data>
+  <data name="StartupTypeScheduledTask" xml:space="preserve">
+    <value>Planlagt opgave</value>
+  </data>
+  <data name="StartupTypeOpenAtLogin" xml:space="preserve">
+    <value>Ved login</value>
+  </data>
+  <data name="StartupTypeLoginHelper" xml:space="preserve">
+    <value>Loginhjælper</value>
+  </data>
+  <data name="StartupTypeLaunchAgent" xml:space="preserve">
+    <value>Launch Agent</value>
+  </data>
+  <data name="StartupTypeLaunchDaemon" xml:space="preserve">
+    <value>Launch Daemon</value>
+  </data>
+  <data name="StartupToggleHotKey" xml:space="preserve">
+    <value>Til/Fra</value>
+  </data>
+  <data name="StartupToggleTitleEnable" xml:space="preserve">
+    <value>Aktivér opstartsapp</value>
+  </data>
+  <data name="StartupToggleTitleDisable" xml:space="preserve">
+    <value>Deaktivér opstartsapp</value>
+  </data>
+  <data name="StartupCouldNotEnable" xml:space="preserve">
+    <value>Kunne ikke aktivere {0}</value>
+  </data>
+  <data name="StartupCouldNotDisable" xml:space="preserve">
+    <value>Kunne ikke deaktivere {0}</value>
+  </data>
+  <data name="StartupRefused" xml:space="preserve">
+    <value>{0} afviste ændringen.</value>
+  </data>
+  <data name="StartupCouldNotChange" xml:space="preserve">
+    <value>{0} kunne ikke foretage ændringen.</value>
+  </data>
+  <data name="StartupNeedsRoot" xml:space="preserve">
+    <value>Det kræver root-rettigheder.</value>
+  </data>
+  <data name="StartupRunWithSudo" xml:space="preserve">
+    <value>Kør taskmon med sudo.</value>
+  </data>
+  <data name="StartupUseLoginItems" xml:space="preserve">
+    <value>Brug Systemindstillinger &gt; Login-emner.</value>
+  </data>
+  <data name="StartupStateUnreadable" xml:space="preserve">
+    <value>Den aktuelle tilstand kan ikke læses.</value>
+  </data>
+  <data name="StartupCannotEnableType" xml:space="preserve">
+    <value>Emner af typen {0} kan ikke aktiveres.</value>
+  </data>
+  <data name="StartupCannotDisableType" xml:space="preserve">
+    <value>Emner af typen {0} kan ikke deaktiveres.</value>
+  </data>
+  <data name="StartupAllowInSettings" xml:space="preserve">
+    <value>Tillad det i Systemindstillinger,</value>
+  </data>
+  <data name="StartupAllowInLoginItems" xml:space="preserve">
+    <value>Generelt &gt; Login-emner.</value>
+  </data>
+  <data name="DriversGathering" xml:space="preserve">
+    <value>Indsamler drivere…</value>
+  </data>
+  <data name="DriversFilterTitle" xml:space="preserve">
+    <value>Filtrer drivere</value>
+  </data>
+  <data name="DriversColumnStartType" xml:space="preserve">
+    <value>STARTTYPE</value>
+  </data>
+  <data name="DriverStatusLoaded" xml:space="preserve">
+    <value>Indlæst</value>
+  </data>
+  <data name="AppsGathering" xml:space="preserve">
+    <value>Indsamler installerede apps…</value>
+  </data>
+  <data name="AppsFilterTitle" xml:space="preserve">
+    <value>Filtrer apps</value>
+  </data>
+  <data name="AppsColumnInstalled" xml:space="preserve">
+    <value>INSTALLERET</value>
+  </data>
+  <data name="ListColumnSize" xml:space="preserve">
+    <value>STØRRELSE</value>
+  </data>
+  <data name="AppsColumnLocation" xml:space="preserve">
+    <value>PLACERING</value>
+  </data>
+  <data name="AppsHeader" xml:space="preserve">
+    <value>{0} installeret</value>
+  </data>
+  <data name="LaunchdGathering" xml:space="preserve">
+    <value>Indsamler launchd-tjenester…</value>
+  </data>
+  <data name="LaunchdColumnLabel" xml:space="preserve">
+    <value>ETIKET</value>
+  </data>
+  <data name="LaunchdColumnGroup" xml:space="preserve">
+    <value>GRUPPE</value>
+  </data>
+  <data name="LaunchdColumnStart" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="LaunchdColumnEnabled" xml:space="preserve">
+    <value>AKTIV</value>
+  </data>
+  <data name="LaunchdStatusRunning" xml:space="preserve">
+    <value>Kører ({0})</value>
+  </data>
+  <data name="LaunchdStatusWaiting" xml:space="preserve">
+    <value>Venter</value>
+  </data>
+  <data name="LaunchdStartKeepAlive" xml:space="preserve">
+    <value>Altid</value>
+  </data>
+  <data name="LaunchdStartAtLoad" xml:space="preserve">
+    <value>Ved start</value>
+  </data>
+  <data name="LaunchdSignal" xml:space="preserve">
+    <value>Signal {0}</value>
+  </data>
+  <data name="LaunchdExit" xml:space="preserve">
+    <value>Exit {0}</value>
+  </data>
+  <data name="LaunchdDomain_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="LaunchdDomain_User" xml:space="preserve">
+    <value>Bruger</value>
+  </data>
+  <data name="SystemInfoGathering" xml:space="preserve">
+    <value>Indsamler…</value>
+  </data>
+  <data name="SystemInfoGatheringSystem" xml:space="preserve">
+    <value>Indsamler systemoplysninger…</value>
+  </data>
+  <data name="SystemInfoMenuCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="SystemInfoMenuMemory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="SystemInfoMenuGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="SystemInfoMenuNpu" xml:space="preserve">
+    <value>NPU</value>
+  </data>
+  <data name="SystemInfoMenuDisk" xml:space="preserve">
+    <value>DISK</value>
+  </data>
+  <data name="SystemInfoMenuNetwork" xml:space="preserve">
+    <value>NETVÆRK</value>
+  </data>
+  <data name="SystemInfoNoNeuralEngine" xml:space="preserve">
+    <value>Ingen Neural Engine fundet</value>
+  </data>
+  <data name="SystemInfoProcessor" xml:space="preserve">
+    <value>Processor:</value>
+  </data>
+  <data name="SystemInfoLogicalProcessors" xml:space="preserve">
+    <value>Logiske processorer:</value>
+  </data>
+  <data name="SystemInfoBaseFrequency" xml:space="preserve">
+    <value>Basisfrekvens:</value>
+  </data>
+  <data name="SystemInfoPerformanceCores" xml:space="preserve">
+    <value>Ydelseskerner:</value>
+  </data>
+  <data name="SystemInfoEfficiencyCores" xml:space="preserve">
+    <value>Effektivitetskerner:</value>
+  </data>
+  <data name="SystemInfoCoresAtFrequency" xml:space="preserve">
+    <value>{0} @ {1:0.00} GHz</value>
+  </data>
+  <data name="SystemInfoL1Cache" xml:space="preserve">
+    <value>L1-cache:</value>
+  </data>
+  <data name="SystemInfoL2Cache" xml:space="preserve">
+    <value>L2-cache:</value>
+  </data>
+  <data name="SystemInfoL3Cache" xml:space="preserve">
+    <value>L3-cache:</value>
+  </data>
+  <data name="SystemInfoInstalledDrives" xml:space="preserve">
+    <value>Installerede drev:</value>
+  </data>
+  <data name="SystemInfoDiskHeader" xml:space="preserve">
+    <value>DISK {0}  {1}</value>
+  </data>
+  <data name="SystemInfoUnattachedVolumes" xml:space="preserve">
+    <value>IKKE-TILKNYTTEDE VOLUMENER</value>
+  </data>
+  <data name="SystemInfoInstalledAdapters" xml:space="preserve">
+    <value>Installerede adaptere:</value>
+  </data>
+  <data name="SystemInfoTotalDedicatedMemory" xml:space="preserve">
+    <value>Dedikeret hukommelse i alt:</value>
+  </data>
+  <data name="SystemInfoGpuHeader" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+  </data>
+  <data name="SystemInfoDedicatedVideoMemory" xml:space="preserve">
+    <value>Dedikeret videohukommelse:</value>
+  </data>
+  <data name="SystemInfoDedicatedSystemMemory" xml:space="preserve">
+    <value>Dedikeret systemhukommelse:</value>
+  </data>
+  <data name="SystemInfoSharedSystemMemory" xml:space="preserve">
+    <value>Delt systemhukommelse:</value>
+  </data>
+  <data name="SystemInfoVendorDeviceId" xml:space="preserve">
+    <value>Leverandør-/enheds-id:</value>
+  </data>
+  <data name="SystemInfoInstalledModules" xml:space="preserve">
+    <value>Installerede moduler:</value>
+  </data>
+  <data name="SystemInfoSlotHeader" xml:space="preserve">
+    <value>PLADS {0}  {1}</value>
+  </data>
+  <data name="SystemInfoType" xml:space="preserve">
+    <value>Type:</value>
+  </data>
+  <data name="SystemInfoFormFactor" xml:space="preserve">
+    <value>Formfaktor:</value>
+  </data>
+  <data name="SystemInfoTransferRate" xml:space="preserve">
+    <value>{0} MT/s</value>
+  </data>
+  <data name="SystemInfoConfiguredSpeed" xml:space="preserve">
+    <value>Indstillet hastighed:</value>
+  </data>
+  <data name="SystemInfoPartNumber" xml:space="preserve">
+    <value>Varenummer:</value>
+  </data>
+  <data name="SystemInfoBankLocator" xml:space="preserve">
+    <value>Bankplacering:</value>
+  </data>
+  <data name="SystemInfoAdapters" xml:space="preserve">
+    <value>Adaptere:</value>
+  </data>
+  <data name="SystemInfoNeuralEngines" xml:space="preserve">
+    <value>Neural Engines:</value>
+  </data>
+  <data name="SystemInfoMachineName" xml:space="preserve">
+    <value>Computernavn:</value>
+  </data>
+  <data name="SystemInfoOperatingSystem" xml:space="preserve">
+    <value>Operativsystem:</value>
+  </data>
+  <data name="SystemInfoCpu" xml:space="preserve">
+    <value>CPU:</value>
+  </data>
+  <data name="SystemInfoSummaryLogicalProcessors" xml:space="preserve">
+    <value>Logiske processorer</value>
+  </data>
+  <data name="SystemInfoBaseSpeed" xml:space="preserve">
+    <value>Basishastighed:</value>
+  </data>
+  <data name="ThermalsCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ThermalsCpuNumbered" xml:space="preserve">
+    <value>CPU {0}</value>
+  </data>
+  <data name="ThermalsBattery" xml:space="preserve">
+    <value>Batteri</value>
+  </data>
+  <data name="ThermalsChipset" xml:space="preserve">
+    <value>Chipsæt</value>
+  </data>
+  <data name="ThermalsAmbient" xml:space="preserve">
+    <value>Omgivelser</value>
+  </data>
+  <data name="ThermalsSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="ThermalsPressure" xml:space="preserve">
+    <value>Termisk pres: {0}</value>
+  </data>
+  <data name="ThermalsNoSensors" xml:space="preserve">
+    <value>Ingen temperatursensorer fundet.</value>
+  </data>
+  <data name="ThermalsMacUnreadable" xml:space="preserve">
+    <value>SMC- og HID-temperatursensorerne kunne ikke læses.</value>
+  </data>
+  <data name="ThermalsWindowsAppearHere" xml:space="preserve">
+    <value>GPU- og NVMe-temperaturer vises her, når de er tilgængelige.</value>
+  </data>
+  <data name="ThermalsWindowsNeedsDriver" xml:space="preserve">
+    <value>Præcis CPU-temperatur kræver en signeret kernehjælpedriver.</value>
+  </data>
+  <data name="ThermalPressure_Nominal" xml:space="preserve">
+    <value>Nominel</value>
+  </data>
+  <data name="ThermalPressure_Moderate" xml:space="preserve">
+    <value>Moderat</value>
+  </data>
+  <data name="ThermalPressure_Heavy" xml:space="preserve">
+    <value>Kraftig</value>
+  </data>
+  <data name="ThermalPressure_Trapping" xml:space="preserve">
+    <value>Kritisk</value>
+  </data>
+  <data name="ThermalPressure_Sleeping" xml:space="preserve">
+    <value>Dvale</value>
+  </data>
+  <data name="MemoryPressure_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="MemoryPressure_Warning" xml:space="preserve">
+    <value>Advarsel</value>
+  </data>
+  <data name="MemoryPressure_Critical" xml:space="preserve">
+    <value>Kritisk</value>
+  </data>
+  <data name="PowerHeader" xml:space="preserve">
+    <value>ENERGI</value>
+  </data>
+  <data name="PowerNone" xml:space="preserve">
+    <value>Ingen energimålinger tilgængelige.</value>
+  </data>
+  <data name="PowerColumnComponent" xml:space="preserve">
+    <value>KOMPONENT</value>
+  </data>
+  <data name="PowerColumnRail" xml:space="preserve">
+    <value>SKINNE</value>
+  </data>
+  <data name="PowerColumnPower" xml:space="preserve">
+    <value>EFFEKT</value>
+  </data>
+  <data name="PowerCpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="PowerBattery" xml:space="preserve">
+    <value>Batteri</value>
+  </data>
+  <data name="PowerNeuralEngine" xml:space="preserve">
+    <value>Neural Engine</value>
+  </data>
+  <data name="PowerMemory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="PowerDisplay" xml:space="preserve">
+    <value>Skærm</value>
+  </data>
+  <data name="PowerSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="PowerRated" xml:space="preserve">
+    <value>{0} (nominel)</value>
+  </data>
+  <data name="FansHeader" xml:space="preserve">
+    <value>BLÆSERE</value>
+  </data>
+  <data name="FansNone" xml:space="preserve">
+    <value>Ingen blæsere.</value>
+  </data>
+  <data name="FansColumnFan" xml:space="preserve">
+    <value>BLÆSER</value>
+  </data>
+  <data name="FansColumnRpm" xml:space="preserve">
+    <value>O/MIN</value>
+  </data>
+  <data name="FansColumnMin" xml:space="preserve">
+    <value>MIN</value>
+  </data>
+  <data name="FansColumnMax" xml:space="preserve">
+    <value>MAKS</value>
+  </data>
+  <data name="FansColumnLoad" xml:space="preserve">
+    <value>BELASTNING</value>
+  </data>
+  <data name="HealthShowProcessHotKey" xml:space="preserve">
+    <value>Vis proces</value>
+  </data>
+  <data name="HealthWaiting" xml:space="preserve">
+    <value>Indsamler målinger…</value>
+  </data>
+  <data name="HealthNoCauses" xml:space="preserve">
+    <value>Intet er under pres.</value>
+  </data>
+  <data name="HealthNoEvents" xml:space="preserve">
+    <value>Ingen hændelser registreret endnu.</value>
+  </data>
+  <data name="HealthNoProcess" xml:space="preserve">
+    <value>Ingen proces skiller sig ud.</value>
+  </data>
+  <data name="HealthGatheringMetrics" xml:space="preserve">
+    <value>Indsamler målinger</value>
+  </data>
+  <data name="HealthHealthy" xml:space="preserve">
+    <value>Sund</value>
+  </data>
+  <data name="HealthUnderPressure" xml:space="preserve">
+    <value>Under pres: {0}</value>
+  </data>
+  <data name="HealthUnderPressureSince" xml:space="preserve">
+    <value>{0}, siden {1:HH:mm:ss}</value>
+  </data>
+  <data name="HealthDurationSeconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="HealthDurationMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="HealthDurationHoursMinutes" xml:space="preserve">
+    <value>{0} t {1} min</value>
+  </data>
+  <data name="HealthEventInterrupted" xml:space="preserve">
+    <value>afbrudt</value>
+  </data>
+  <data name="HealthEventOngoing" xml:space="preserve">
+    <value>igangværende</value>
+  </data>
+  <data name="HealthEventWithPeak" xml:space="preserve">
+    <value>{0}, top {1}</value>
+  </data>
+  <data name="HealthLikelyCauses" xml:space="preserve">
+    <value>SANDSYNLIGE ÅRSAGER</value>
+  </data>
+  <data name="HealthRecentEvents" xml:space="preserve">
+    <value>SENESTE HÆNDELSER</value>
+  </data>
+  <data name="HealthColumnResource" xml:space="preserve">
+    <value>RESSOURCE</value>
+  </data>
+  <data name="HealthColumnSaturation" xml:space="preserve">
+    <value>MÆTNING</value>
+  </data>
+  <data name="HealthColumnErrors" xml:space="preserve">
+    <value>FEJL</value>
+  </data>
+  <data name="HealthColumnProcess" xml:space="preserve">
+    <value>PROCES</value>
+  </data>
+  <data name="HealthColumnUsing" xml:space="preserve">
+    <value>FORBRUG</value>
+  </data>
+  <data name="HealthColumnBehind" xml:space="preserve">
+    <value>ÅRSAG</value>
+  </data>
+  <data name="HealthColumnTime" xml:space="preserve">
+    <value>TID</value>
+  </data>
+  <data name="HealthColumnEvent" xml:space="preserve">
+    <value>HÆNDELSE</value>
+  </data>
+  <data name="HealthColumnDetail" xml:space="preserve">
+    <value>DETALJER</value>
+  </data>
+  <data name="HealthColumnProcesses" xml:space="preserve">
+    <value>PROCESSER</value>
+  </data>
+  <data name="HealthLevel_Unknown" xml:space="preserve">
+    <value>Ukendt</value>
+  </data>
+  <data name="HealthLevel_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="HealthLevel_Warning" xml:space="preserve">
+    <value>Advarsel</value>
+  </data>
+  <data name="HealthLevel_Critical" xml:space="preserve">
+    <value>Kritisk</value>
+  </data>
+  <data name="HealthResource_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="HealthResource_Memory" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="HealthResource_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="HealthResource_Volumes" xml:space="preserve">
+    <value>Volumener</value>
+  </data>
+  <data name="HealthResource_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="HealthResource_Network" xml:space="preserve">
+    <value>Netværk</value>
+  </data>
+  <data name="HealthResource_Thermal" xml:space="preserve">
+    <value>Varme</value>
+  </data>
+  <data name="HealthResource_Apps" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="DiskSpaceFilesTitle" xml:space="preserve">
+    <value>STØRSTE FILER</value>
+  </data>
+  <data name="DiskSpaceFilesHeader" xml:space="preserve">
+    <value>{0} ({1} af de {2} største)</value>
+  </data>
+  <data name="DiskSpaceNoFiles" xml:space="preserve">
+    <value>Ingen filer scannet endnu - tryk på s for at starte en scanning.</value>
+  </data>
+  <data name="DiskSpaceColumnFile" xml:space="preserve">
+    <value>FIL</value>
+  </data>
+  <data name="DiskSpaceScanned" xml:space="preserve">
+    <value>{0:N0} filer / {1}</value>
+  </data>
+  <data name="DiskSpaceScanningStatus" xml:space="preserve">
+    <value>Scanner… {0}</value>
+  </data>
+  <data name="DiskSpaceCompletedStatus" xml:space="preserve">
+    <value>Fuldført - {0} på {1:0.0} s</value>
+  </data>
+  <data name="DiskSpaceFailedStatus" xml:space="preserve">
+    <value>Mislykkedes: {0}</value>
+  </data>
+  <data name="DiskSpaceScanFailed" xml:space="preserve">
+    <value>Scanningen mislykkedes.</value>
+  </data>
+  <data name="DiskSpaceRootFolders" xml:space="preserve">
+    <value>Rodmapper</value>
+  </data>
+  <data name="DiskSpaceSelectDrive" xml:space="preserve">
+    <value>Vælg et drev</value>
+  </data>
+  <data name="DiskSpaceScanPath" xml:space="preserve">
+    <value>Sti at scanne:</value>
+  </data>
+  <data name="DiskSpaceBorderHint" xml:space="preserve">
+    <value>s Start scanning   c Annuller</value>
+  </data>
+  <data name="CpuCoresTitle" xml:space="preserve">
+    <value>CPU-kerner</value>
+  </data>
+  <data name="CpuCoresNoData" xml:space="preserve">
+    <value>CPU-data pr. kerne er ikke tilgængelige på dette OS</value>
+  </data>
+  <data name="CpuCoresLabel" xml:space="preserve">
+    <value>C{0}</value>
+  </data>
+  <data name="MetreTitleCpu" xml:space="preserve">
+    <value>CPU%</value>
+  </data>
+  <data name="MetreTitleDisk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="MetreTitleMemory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="MetreTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+  </data>
+  <data name="MetreTitleVirtual" xml:space="preserve">
+    <value>Virtuel</value>
+  </data>
+  <data name="MetreTitleNetworkReceive" xml:space="preserve">
+    <value>Net modt.</value>
+  </data>
+  <data name="MetreTitleNetworkSend" xml:space="preserve">
+    <value>Net sendt</value>
+  </data>
+  <data name="MetreTitleGpuMemory" xml:space="preserve">
+    <value>GPU-hukommelse</value>
+  </data>
+  <data name="MetreTitleGpu" xml:space="preserve">
+    <value>GPU%</value>
+  </data>
+  <data name="MetreTitleNpu" xml:space="preserve">
+    <value>NPU%</value>
+  </data>
+  <data name="HealthDriveSpareLow" xml:space="preserve">
+    <value>lav reserve</value>
+  </data>
+  <data name="HealthDriveOverTemperature" xml:space="preserve">
+    <value>for varm</value>
+  </data>
+  <data name="HealthDriveReliabilityDegraded" xml:space="preserve">
+    <value>nedsat pålidelighed</value>
+  </data>
+  <data name="HealthDriveReadOnly" xml:space="preserve">
+    <value>skrivebeskyttet</value>
+  </data>
+  <data name="HealthDriveBackupFailed" xml:space="preserve">
+    <value>sikkerhedskopi mislykkedes</value>
+  </data>
+  <data name="HealthAppFaultOne" xml:space="preserve">
+    <value>1 appfejl</value>
+  </data>
+  <data name="HealthAppFaults" xml:space="preserve">
+    <value>{0} appfejl</value>
+  </data>
+  <data name="HealthTimeLeftMinutes" xml:space="preserve">
+    <value>{0:0} min</value>
+  </data>
+  <data name="HealthTimeLeftHours" xml:space="preserve">
+    <value>{0:0} t</value>
+  </data>
+  <data name="HealthTimeLeftDays" xml:space="preserve">
+    <value>{0:0} dage</value>
+  </data>
+  <data name="HealthDiskWorn" xml:space="preserve">
+    <value>{0}% slidt</value>
+  </data>
+  <data name="HealthDiskMediaErrors" xml:space="preserve">
+    <value>{0} medie</value>
+  </data>
+  <data name="HealthDiskLoggedErrors" xml:space="preserve">
+    <value>{0} logget</value>
+  </data>
+  <data name="HealthDiskName" xml:space="preserve">
+    <value>Disk {0}</value>
+  </data>
+  <data name="HealthLatency" xml:space="preserve">
+    <value>Latens {0:0.0} ms</value>
+  </data>
+  <data name="HealthLatencyQueue" xml:space="preserve">
+    <value>Latens {0:0.0} ms, kø {1:0}</value>
+  </data>
+  <data name="HealthVolumeFull" xml:space="preserve">
+    <value>{0} {1:0}% fuld</value>
+  </data>
+  <data name="HealthVram" xml:space="preserve">
+    <value>VRAM</value>
+  </data>
+  <data name="HealthGpuMemory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="HealthGpuMemoryUsed" xml:space="preserve">
+    <value>{0} {1:0}% brugt</value>
+  </data>
+  <data name="HealthPressureLevel" xml:space="preserve">
+    <value>Pres {0}</value>
+  </data>
+  <data name="HealthCommit" xml:space="preserve">
+    <value>Allokeret {0:0}%</value>
+  </data>
+  <data name="HealthCommitPagesIn" xml:space="preserve">
+    <value>Allokeret {0:0}%, {1}</value>
+  </data>
+  <data name="HealthPagesIn" xml:space="preserve">
+    <value>{0:0} sider ind/s</value>
+  </data>
+  <data name="HealthSensorTemperature" xml:space="preserve">
+    <value>{0} {1:0} °C</value>
+  </data>
+  <data name="HealthCpuNotLimited" xml:space="preserve">
+    <value>CPU ikke begrænset</value>
+  </data>
+  <data name="HealthCpuLimited" xml:space="preserve">
+    <value>CPU begrænset til {0:0}%</value>
+  </data>
+  <data name="HealthReportAppErrorIn" xml:space="preserve">
+    <value>{0}, i {1}</value>
+  </data>
+  <data name="HealthReportBadBlock" xml:space="preserve">
+    <value>Dårlig blok</value>
+  </data>
+  <data name="HealthReportCpuLimit" xml:space="preserve">
+    <value>{0}: brugte for meget CPU</value>
+  </data>
+  <data name="HealthReportCrash" xml:space="preserve">
+    <value>{0}: gik ned</value>
+  </data>
+  <data name="HealthReportDeviceReset" xml:space="preserve">
+    <value>{0} nulstillede enheden</value>
+  </data>
+  <data name="HealthReportDiskWriteLimit" xml:space="preserve">
+    <value>{0}: skrev for meget til disk</value>
+  </data>
+  <data name="HealthReportHang" xml:space="preserve">
+    <value>{0}: svarer ikke længere</value>
+  </data>
+  <data name="HealthReportHardwareError" xml:space="preserve">
+    <value>WHEA-hændelse {0}</value>
+  </data>
+  <data name="HealthReportJetsam" xml:space="preserve">
+    <value>macOS stoppede processer for at frigøre hukommelse</value>
+  </data>
+  <data name="HealthReportPagingError" xml:space="preserve">
+    <value>Fejl under en sideskiftsoperation</value>
+  </data>
+  <data name="HealthReportRequestRetried" xml:space="preserve">
+    <value>Anmodning forsøgt igen</value>
+  </data>
+  <data name="HealthReportSpin" xml:space="preserve">
+    <value>{0}: optaget uden at svare</value>
+  </data>
+  <data name="HealthReportUnexpectedRestart" xml:space="preserve">
+    <value>Genstart uden korrekt nedlukning</value>
+  </data>
+  <data name="HealthReportVirtualMemoryLow" xml:space="preserve">
+    <value>Windows løb tør for virtuel hukommelse</value>
+  </data>
+  <data name="HealthErrorsPerSecond" xml:space="preserve">
+    <value>{0:0.#} fejl/s</value>
+  </data>
+  <data name="HealthReasonNotResponding" xml:space="preserve">
+    <value>{0} har ikke svaret i {1:0} s</value>
+  </data>
+  <data name="HealthReasonCommit" xml:space="preserve">
+    <value>allokeret {0:0}%</value>
+  </data>
+  <data name="HealthReasonBusy" xml:space="preserve">
+    <value>{0:0}% optaget</value>
+  </data>
+  <data name="HealthReasonActive" xml:space="preserve">
+    <value>{0:0}% aktiv</value>
+  </data>
+  <data name="HealthReasonLatency" xml:space="preserve">
+    <value>latens {0:0} ms</value>
+  </data>
+  <data name="HealthReasonDriverTime" xml:space="preserve">
+    <value>{0:0}% af CPU i drivere</value>
+  </data>
+  <data name="HealthReasonWorn" xml:space="preserve">
+    <value>{0} {1:0}% slidt</value>
+  </data>
+  <data name="HealthReasonHeatLimit" xml:space="preserve">
+    <value>bremset af varme {0:0}%</value>
+  </data>
+  <data name="HealthReasonFree" xml:space="preserve">
+    <value>{0} {1:0}% ledig</value>
+  </data>
+  <data name="HealthReasonPowerLimit" xml:space="preserve">
+    <value>bremset af strøm {0:0}%</value>
+  </data>
+  <data name="HealthReasonAvailable" xml:space="preserve">
+    <value>{0:0}% tilgængelig</value>
+  </data>
+  <data name="HealthReasonKernelPressure" xml:space="preserve">
+    <value>kernepres {0}</value>
+  </data>
+  <data name="HealthReasonDiscards" xml:space="preserve">
+    <value>{0:0.#} kasseret/s</value>
+  </data>
+  <data name="HealthReasonQueue" xml:space="preserve">
+    <value>kø {0:0.0} pr. kerne</value>
+  </data>
+  <data name="HealthReasonNearLimit" xml:space="preserve">
+    <value>{0} nær sin grænse på {1:0} °C</value>
+  </data>
+  <data name="HealthReasonSwappingOut" xml:space="preserve">
+    <value>swapper {0} ud</value>
+  </data>
+  <data name="HealthReasonThermalPressure" xml:space="preserve">
+    <value>termisk pres {0}</value>
+  </data>
+  <data name="HealthNotRespondingCount" xml:space="preserve">
+    <value>{0} svarer ikke</value>
+  </data>
+  <data name="HealthQueuePerCore" xml:space="preserve">
+    <value>Kø {0:0.0} pr. kerne</value>
+  </data>
+  <data name="HealthDiscardsPerSecond" xml:space="preserve">
+    <value>Kasseret {0:0.#}/s</value>
+  </data>
+  <data name="HealthTitleAppCrash" xml:space="preserve">
+    <value>App-nedbrud</value>
+  </data>
+  <data name="HealthTitleAppHang" xml:space="preserve">
+    <value>App svarer ikke</value>
+  </data>
+  <data name="HealthTitleDiskError" xml:space="preserve">
+    <value>Diskfejl</value>
+  </data>
+  <data name="HealthTitleHardwareError" xml:space="preserve">
+    <value>Hardwarefejl</value>
+  </data>
+  <data name="HealthTitleLowMemory" xml:space="preserve">
+    <value>Lav hukommelse</value>
+  </data>
+  <data name="HealthTitleCpuLimit" xml:space="preserve">
+    <value>CPU-grænse</value>
+  </data>
+  <data name="HealthTitleDiskWriteLimit" xml:space="preserve">
+    <value>Skrivegrænse</value>
+  </data>
+  <data name="HealthTitleUnexpectedRestart" xml:space="preserve">
+    <value>Uventet genstart</value>
+  </data>
+  <data name="HealthUsageNotResponding" xml:space="preserve">
+    <value>Har ikke svaret i {0:0} s</value>
+  </data>
+  <data name="HealthUsageCpu" xml:space="preserve">
+    <value>{0:0}% CPU</value>
+  </data>
+  <data name="HealthUsageMemory" xml:space="preserve">
+    <value>{0} hukommelse</value>
+  </data>
+  <data name="HealthUsageMemoryGrowth" xml:space="preserve">
+    <value>+{0:0} MB/min</value>
+  </data>
+  <data name="HealthUsageDisk" xml:space="preserve">
+    <value>{0:0} MB/s disk</value>
+  </data>
+  <data name="HealthUsageGpu" xml:space="preserve">
+    <value>{0:0}% GPU</value>
+  </data>
+  <data name="HealthInUse" xml:space="preserve">
+    <value>{0:0}% i brug</value>
+  </data>
+  <data name="HealthNotChanging" xml:space="preserve">
+    <value>Uændret</value>
+  </data>
+  <data name="HealthPerMinute" xml:space="preserve">
+    <value>{0}/min</value>
+  </data>
+  <data name="HealthFreeing" xml:space="preserve">
+    <value>Frigør {0}</value>
+  </data>
+  <data name="HealthFilling" xml:space="preserve">
+    <value>Fyldes {0}</value>
+  </data>
+  <data name="HealthFillingTimeLeft" xml:space="preserve">
+    <value>Fyldes {0}, ca. {1} tilbage</value>
+  </data>
+  <data name="ThermalComponent_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="ThermalComponent_Gpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="ThermalComponent_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="ThermalComponent_Memory" xml:space="preserve">
+    <value>Hukommelse</value>
+  </data>
+  <data name="ThermalComponent_Battery" xml:space="preserve">
+    <value>Batteri</value>
+  </data>
+  <data name="ThermalComponent_Chipset" xml:space="preserve">
+    <value>Chipsæt</value>
+  </data>
+  <data name="ThermalComponent_Ambient" xml:space="preserve">
+    <value>Omgivelser</value>
+  </data>
+  <data name="ThermalComponent_Other" xml:space="preserve">
+    <value>Andet</value>
+  </data>
+  <data name="CommonEnabled" xml:space="preserve">
+    <value>Aktiveret</value>
+  </data>
+  <data name="CommonDisabled" xml:space="preserve">
+    <value>Deaktiveret</value>
+  </data>
+  <data name="UpdateIntervalDisplay" xml:space="preserve">
+    <value>{0} ({1} ms)</value>
+  </data>
+  <data name="UpdateIntervalCustom" xml:space="preserve">
+    <value>Brugerdefineret ({0} ms)</value>
+  </data>
+  <data name="UpdateInterval_Fast" xml:space="preserve">
+    <value>Hurtig</value>
+  </data>
+  <data name="UpdateInterval_High" xml:space="preserve">
+    <value>Høj</value>
+  </data>
+  <data name="UpdateInterval_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="UpdateInterval_Slow" xml:space="preserve">
+    <value>Langsom</value>
+  </data>
+  <data name="SocGpuIdle" xml:space="preserve">
+    <value>Inaktiv</value>
+  </data>
+  <data name="SocThermalLimit" xml:space="preserve">
+    <value>Termisk {0:0}%</value>
+  </data>
+  <data name="SocPowerLimit" xml:space="preserve">
+    <value>Strøm {0:0}%</value>
+  </data>
+  <data name="SocNoLimit" xml:space="preserve">
+    <value>Ingen</value>
+  </data>
+  <data name="NpuDisplayName" xml:space="preserve">
+    <value>NPU {0}  {1}</value>
+  </data>
+  <data name="NpuDisplayNameShort" xml:space="preserve">
+    <value>NPU {0}</value>
+  </data>
+  <data name="NpuCores" xml:space="preserve">
+    <value>{0} kerner</value>
+  </data>
+  <data name="FanOff" xml:space="preserve">
+    <value>Fra</value>
+  </data>
+  <data name="SnapshotCpuKernelUser" xml:space="preserve">
+    <value>CPU {0:000.0%} Kerne {1:000.0%} Bruger {2:000.0%}</value>
+  </data>
+  <data name="SnapshotDiskLabel" xml:space="preserve">
+    <value>Disk {0} · {1}</value>
+  </data>
+  <data name="SnapshotDiskLabelShort" xml:space="preserve">
+    <value>Disk {0}</value>
+  </data>
+  <data name="SnapshotDiskName" xml:space="preserve">
+    <value>Disk {0}  {1}</value>
+  </data>
+  <data name="SnapshotDiskNameWithVolumes" xml:space="preserve">
+    <value>Disk {0}  {1} ({2})</value>
+  </data>
+  <data name="SnapshotDiskModelUnknown" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="SnapshotGpuName" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+  </data>
+  <data name="SnapshotGpuNameShort" xml:space="preserve">
+    <value>GPU {0}</value>
+  </data>
+  <data name="SnapshotGpuLabel" xml:space="preserve">
+    <value>GPU · {0}</value>
+  </data>
+  <data name="SnapshotGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="SnapshotAdapter" xml:space="preserve">
+    <value>Adapter</value>
+  </data>
+  <data name="SnapshotAdapterNumbered" xml:space="preserve">
+    <value>Adapter {0}</value>
+  </data>
+  <data name="CliUsage" xml:space="preserve">
+    <value>
+{0} version {1}
+
+Brug: {0} [indstillinger]
+
+Indstillinger:
+     --gpu-only           Viser GPU-diagrammer og sorterer processer efter GPU% ved start
+     --cpu-only           Viser CPU-diagrammer og sorterer processer efter CPU% ved start
+     --pid PID            Overvåger processen med det angivne PID
+  -u --username &lt;NAME&gt;    Viser kun processer for brugeren NAME
+  -p --process &lt;NAME&gt;     Viser kun processer, hvis navn matcher NAME
+  -s --sort &lt;COLUMN&gt;      Sorterer proceslisten efter COLUMN
+     --sort-help          Viser de kolonner, der kan bruges med --sort
+  -d --delay &lt;DELAY&gt;      DELAY (i millisekunder) mellem opdateringer af proceslisten
+  -t --theme &lt;NAME&gt;       Indlæser temaet NAME fra konfigurationsfilen
+     --theme-help         Viser de temanavne, der kan bruges med --theme
+
+     --debug              Venter ved start, til en debugger tilknyttes processen {0}
+  -v --version            Viser versionsoplysninger
+  -i --info               Viser konfiguration og miljøoplysninger.
+  -h --help               Viser hjælp
+
+Tryk på F1 i {0} for onlinehjælp. 
+</value>
+  </data>
+  <data name="TipMenuNavigation" xml:space="preserve">
+    <value>Med {→} går du fra menuen ind i en visning, og med {←} tilbage til menuen.</value>
+  </data>
+  <data name="TipSummaryPanes" xml:space="preserve">
+    <value>I OVERSIGT skifter {←} og {→} mellem panelerne.</value>
+  </data>
+  <data name="TipPaging" xml:space="preserve">
+    <value>Med {PgUp} og {PgDn} bladrer du en side ad gangen i enhver liste.</value>
+  </data>
+  <data name="TipFilter" xml:space="preserve">
+    <value>Med {f} filtrerer du den aktuelle liste; {Esc} rydder filteret.</value>
+  </data>
+  <data name="TipSortColumn" xml:space="preserve">
+    <value>Med {s} vælger du den kolonne, en procesliste sorteres efter.</value>
+  </data>
+  <data name="TipSortDirection" xml:space="preserve">
+    <value>Med {a} eller {d} sorterer du en procesliste stigende eller faldende.</value>
+  </data>
+  <data name="TipSortShortcuts" xml:space="preserve">
+    <value>Med {p}, {g} eller {m} sorterer du processer efter CPU, GPU eller hukommelse.</value>
+  </data>
+  <data name="TipFreeze" xml:space="preserve">
+    <value>Med {z} fryser du opdateringen af en procesliste; {z} igen genoptager den.</value>
+  </data>
+  <data name="TipIrix" xml:space="preserve">
+    <value>Med {i} slår du Irix-tilstand for CPU til eller fra i en procesliste.</value>
+  </data>
+  <data name="TipMultiSelect" xml:space="preserve">
+    <value>Med {x} slår du flervalg til, {Space} markerer processer, og {k} afslutter dem alle.</value>
+  </data>
+  <data name="TipUntick" xml:space="preserve">
+    <value>Med {u} fjerner du markeringen fra alle markerede processer.</value>
+  </data>
+  <data name="TipEndTask" xml:space="preserve">
+    <value>Med {k} afslutter du den valgte proces. Dens underprocesser afsluttes også.</value>
+  </data>
+  <data name="TipRefresh" xml:space="preserve">
+    <value>Med {r} eller {F5} opdaterer du listen Opstart, Apps, Tjenester eller Drivere.</value>
+  </data>
+  <data name="TipNextTheme" xml:space="preserve">
+    <value>Med {F3} prøver du næste tema; gem det via {F2} Indstillinger.</value>
+  </data>
+  <data name="TipNextLayout" xml:space="preserve">
+    <value>Med {F4} prøver du næste OVERSIGT-layout; gem det via {F2} Indstillinger.</value>
+  </data>
+  <data name="TipLayouts" xml:space="preserve">
+    <value>I {F2} Indstillinger kan du under LAYOUTS vælge eller designe layoutet for OVERSIGT.</value>
+  </data>
+  <data name="TipHealth" xml:space="preserve">
+    <value>TILSTAND viser, hvilken ressource der er under pres, og hvilke processer der står bag.</value>
+  </data>
+  <data name="TipHealthShowProcess" xml:space="preserve">
+    <value>I TILSTAND åbner {Enter} på en sandsynlig årsag den proces i PROCESSER.</value>
+  </data>
+  <data name="TipNextTip" xml:space="preserve">
+    <value>Med {t} vises næste tip.</value>
+  </data>
+  <data name="TipHideTips" xml:space="preserve">
+    <value>Skjul disse tip ved at fjerne markeringen af »Vis tip i sidefoden« i {F2} Indstillinger.</value>
+  </data>
+  <data name="TipWindowsServices" xml:space="preserve">
+    <value>Windows-tjenester fremhæves i proceslister. Slå det fra i {F2} Indstillinger.</value>
+  </data>
+  <data name="TipStartupToggle" xml:space="preserve">
+    <value>I OPSTART slår {Space} den valgte app til eller fra. Det sker med det samme.</value>
+  </data>
+  <data name="TipServicesToggle" xml:space="preserve">
+    <value>I TJENESTER starter eller stopper {Space} den valgte tjeneste.</value>
+  </data>
+  <data name="TipDaemons" xml:space="preserve">
+    <value>Daemons fremhæves i proceslister. Slå det fra i {F2} Indstillinger.</value>
+  </data>
+  <data name="ConfigSaveParseError" xml:space="preserve">
+    <value>{0} indeholder en fejl og blev ikke gemt.
+{1}</value>
+  </data>
+</root>

@@ -16,12 +16,21 @@ namespace Task.Monitor.Tests.Resources;
 
 public sealed class StringsTests
 {
-    // The German and Italian files are for the language, so every region (de-AT, it-CH) shares them.
-    private const string GermanFile  = "de";
-    private const string ItalianFile = "it";
+    // The Danish, Dutch, French, German, Italian, Polish and Spanish files are for the language, so
+    // every region (nl-BE, fr-CA, de-AT, it-CH, es-MX) shares them. The Brazilian Portuguese file is
+    // for Brazil only.
+    private const string BrazilianPortugueseFile = "pt-BR";
+    private const string DanishFile              = "da";
+    private const string DutchFile               = "nl";
+    private const string FrenchFile              = "fr";
+    private const string GermanFile              = "de";
+    private const string ItalianFile             = "it";
+    private const string PolishFile              = "pl";
+    private const string SpanishFile             = "es";
 
     // The default (British) file and every culture with its own file.
-    public static TheoryData<string> AllCultureFiles() => new() { "", UiCulture.American, GermanFile, ItalianFile };
+    public static TheoryData<string> AllCultureFiles() =>
+        new() { "", UiCulture.American, BrazilianPortugueseFile, DanishFile, DutchFile, FrenchFile, GermanFile, ItalianFile, PolishFile, SpanishFile };
 
     [Theory]
     [MemberData(nameof(FullTranslationCultures))]
@@ -41,17 +50,40 @@ public sealed class StringsTests
         Assert.Equal("Empty", Strings.ResourceManager.GetString("PaneControlType_Empty", CultureInfo.CurrentUICulture));
     }
 
+    // The Brazilian Portuguese file is for Brazil only: pt-PT keeps the British default, as
+    // Cultures_Without_Their_Own_File_Get_The_British_Default checks.
+    [Fact]
+    public void Brazilian_Portuguese_Has_Its_Own_File()
+    {
+        using IDisposable _ = UiCulture.Use(UiCulture.BrazilianPortuguese);
+
+        Assert.Equal("RESUMO", Strings.MainMenuSummary);
+        Assert.Equal("Cancelar", Strings.DialogCancel);
+    }
+
     [Theory]
     [InlineData("en-AU")]
     [InlineData("en-NZ")]
     [InlineData("en-IE")]
     [InlineData("en-CA")]
-    [InlineData("fr-FR")]
+    [InlineData("sv-SE")]
+    [InlineData("pt-PT")]
     public void Cultures_Without_Their_Own_File_Get_The_British_Default(string cultureName)
     {
         using IDisposable _ = UiCulture.Use(cultureName);
 
         Assert.Equal("METRES", Strings.SetupMetresMenuItem);
+    }
+
+    [Theory]
+    [InlineData("da")]
+    [InlineData("da-DK")]
+    public void Danish_Uses_The_Danish_File(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal("MÅLERE", Strings.SetupMetresMenuItem);
+        Assert.Equal("Annuller", Strings.DialogCancel);
     }
 
     // Enums the UI shows through ToDisplayText(); each member needs its <Type>_<Member> entry.
@@ -66,6 +98,17 @@ public sealed class StringsTests
         typeof(ThermalPressure),
         typeof(UpdateInterval)
     };
+
+    [Theory]
+    [InlineData("nl-NL")]
+    [InlineData("nl-BE")]
+    public void Dutch_Regions_Share_The_Dutch_File(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal("METERS", Strings.SetupMetresMenuItem);
+        Assert.Equal("Annuleren", Strings.DialogCancel);
+    }
 
     private static Dictionary<string, string> Entries(CultureInfo culture)
     {
@@ -143,8 +186,14 @@ public sealed class StringsTests
     [Theory]
     [InlineData("")]
     [InlineData(UiCulture.American)]
+    [InlineData(BrazilianPortugueseFile)]
+    [InlineData(DanishFile)]
+    [InlineData(DutchFile)]
+    [InlineData(FrenchFile)]
     [InlineData(GermanFile)]
     [InlineData(ItalianFile)]
+    [InlineData(PolishFile)]
+    [InlineData(SpanishFile)]
     public void Every_Placeholder_Entry_Formats(string cultureName)
     {
         foreach ((string key, string text) in Entries(CultureInfo.GetCultureInfo(cultureName))) {
@@ -162,8 +211,22 @@ public sealed class StringsTests
         }
     }
 
+    [Theory]
+    [InlineData("fr-FR")]
+    [InlineData("fr-BE")]
+    [InlineData("fr-CA")]
+    [InlineData("fr-CH")]
+    public void French_Regions_Share_The_French_File(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal("JAUGES", Strings.SetupMetresMenuItem);
+        Assert.Equal("Annuler", Strings.DialogCancel);
+    }
+
     // Every culture with a full translation: each entry in Strings.resx has one there.
-    public static TheoryData<string> FullTranslationCultures() => new() { GermanFile, ItalianFile };
+    public static TheoryData<string> FullTranslationCultures() =>
+        new() { BrazilianPortugueseFile, DanishFile, DutchFile, FrenchFile, GermanFile, ItalianFile, PolishFile, SpanishFile };
 
     [Theory]
     [InlineData("de-DE")]
@@ -189,7 +252,31 @@ public sealed class StringsTests
     }
 
     // Every culture with its own Strings.<culture>.resx file.
-    public static TheoryData<string> OverrideCultures() => new() { UiCulture.American, GermanFile, ItalianFile };
+    public static TheoryData<string> OverrideCultures() =>
+        new() { UiCulture.American, BrazilianPortugueseFile, DanishFile, DutchFile, FrenchFile, GermanFile, ItalianFile, PolishFile, SpanishFile };
+
+    [Theory]
+    [InlineData("pl")]
+    [InlineData("pl-PL")]
+    public void Polish_Uses_The_Polish_File(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal("WSKAŹNIKI", Strings.SetupMetresMenuItem);
+        Assert.Equal("Anuluj", Strings.DialogCancel);
+    }
+
+    [Theory]
+    [InlineData("es-ES")]
+    [InlineData("es-MX")]
+    [InlineData("es-AR")]
+    public void Spanish_Regions_Share_The_Spanish_File(string cultureName)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal("MEDIDORES", Strings.SetupMetresMenuItem);
+        Assert.Equal("Cancelar", Strings.DialogCancel);
+    }
 
     [Fact]
     public void The_Default_Strings_Are_British() =>

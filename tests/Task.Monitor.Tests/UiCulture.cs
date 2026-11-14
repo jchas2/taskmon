@@ -9,10 +9,16 @@ namespace Task.Monitor.Tests;
 // display language.
 internal static class UiCulture
 {
-    internal const string British  = "en-GB";
-    internal const string American = "en-US";
-    internal const string German   = "de-DE";
-    internal const string Italian  = "it-IT";
+    internal const string British             = "en-GB";
+    internal const string American            = "en-US";
+    internal const string BrazilianPortuguese = "pt-BR";
+    internal const string Danish              = "da-DK";
+    internal const string Dutch               = "nl-NL";
+    internal const string French              = "fr-FR";
+    internal const string German              = "de-DE";
+    internal const string Italian             = "it-IT";
+    internal const string Polish              = "pl-PL";
+    internal const string Spanish             = "es-ES";
 
     private sealed class Scope : IDisposable
     {
