@@ -26,8 +26,8 @@ public sealed class SummaryChartFeederTests
     public void Disk_Chart_Shows_Bytes_On_Its_Axis_And_Label()
     {
         RecordingTerminal terminal = new();
-        SummaryLayoutNode pane     = new() { Id = 0, ControlType = PaneControlType.Disk };
-        SummaryLayoutTree tree     = SummaryLayoutTree.FromNodes([pane], rootId: 0);
+        SummaryPane             pane = new(PaneControlType.Disk);
+        LayoutTree<SummaryPane> tree = new(pane);
 
         Chart chart = Assert.IsType<Chart>(
             SummaryPaneControlFactory.Create(pane, runContext.ServiceController, terminal, runContext.AppConfig));
@@ -51,7 +51,7 @@ public sealed class SummaryChartFeederTests
     [Fact]
     public void Labels_The_Npu_Chart_With_Activity_And_Power()
     {
-        (SummaryLayoutTree tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
+        (LayoutTree<SummaryPane> tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
         runContext.AppConfig.ShowMetreNpuNumerically = true;
 
         SummaryChartFeeder.Feed(tree, panes, SnapshotWithNpu(0.5, watts: 1.3), runContext.AppConfig);
@@ -62,16 +62,16 @@ public sealed class SummaryChartFeederTests
     [Fact]
     public void Leaves_The_Npu_Chart_Alone_Without_An_Npu()
     {
-        (SummaryLayoutTree tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
+        (LayoutTree<SummaryPane> tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
 
         SummaryChartFeeder.Feed(tree, panes, new SystemSnapshot(), runContext.AppConfig);
 
         Assert.Equal(string.Empty, chart.LabelSeries);
     }
 
-    private (SummaryLayoutTree Tree, Dictionary<int, Control> Panes, Chart Chart) NpuChartPane()
+    private (LayoutTree<SummaryPane> Tree, Dictionary<int, Control> Panes, Chart Chart) NpuChartPane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Npu }], rootId: 0);
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Npu));
         Chart chart = new(runContext.Terminal) { Width = 40, Height = 8 };
 
         chart.Resize();
@@ -81,7 +81,7 @@ public sealed class SummaryChartFeederTests
     [Fact]
     public void Omits_The_Npu_Label_When_The_Setting_Is_Off()
     {
-        (SummaryLayoutTree tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
+        (LayoutTree<SummaryPane> tree, Dictionary<int, Control> panes, Chart chart) = NpuChartPane();
         runContext.AppConfig.ShowMetreNpuNumerically = false;
 
         SummaryChartFeeder.Feed(tree, panes, SnapshotWithNpu(0.5, watts: 1.3), runContext.AppConfig);

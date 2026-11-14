@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
@@ -11,13 +12,13 @@ namespace Task.Monitor.Gui.Controls.Summary2;
 
 public sealed class SummaryControl2 : Control
 {
-    private readonly SummaryLayoutRenderer    renderer     = new();
+    private readonly LayoutRenderer           renderer     = new();
     private readonly Dictionary<int, Control> paneControls = new();
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
 
-    private SummaryLayoutTree tree = SummaryLayoutTree.CreateExample();
+    private LayoutTree<SummaryPane> tree;
     
     private SummaryControlLayout? builtFrom;
     private SystemSnapshot?       snapshot;
@@ -35,10 +36,10 @@ public sealed class SummaryControl2 : Control
     }
 
     public SummaryControl2(
-        ServiceController serviceController, 
-        ISystemTerminal   terminal, 
-        AppConfig         appConfig, 
-        SummaryLayoutTree fixedTree) : base(terminal)
+        ServiceController       serviceController,
+        ISystemTerminal         terminal,
+        AppConfig               appConfig,
+        LayoutTree<SummaryPane> fixedTree) : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
@@ -55,27 +56,28 @@ public sealed class SummaryControl2 : Control
         paneControls.Clear();
         focusedPaneId = null;
 
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
+        foreach ((int paneId, SummaryPane pane) in tree.Panes()) {
             Control control = SummaryPaneControlFactory.Create(pane, serviceController, Terminal, appConfig);
-            paneControls[pane.Id] = control;
+            paneControls[paneId] = control;
             Controls.Add(control);
         }
     }
 
+    [MemberNotNull(nameof(tree))]
     private void BuildPanes()
     {
         builtFrom = appConfig.DefaultLayout;
-        tree      = builtFrom?.ToTree() ?? SummaryLayoutTree.CreateExample();
+        tree      = builtFrom?.ToTree() ?? SummaryControlLayout.Fallback();
 
         BuildPaneControls();
     }
 
     private int? FindAdjacentPane(int step)
     {
-        List<SummaryLayoutNode> panes       = tree.Panes().ToList();
-        Control?                focusedPane = FindFocusedPane();
-        
-        int currentIndex = panes.FindIndex(pane => paneControls[pane.Id] == focusedPane);
+        List<int> paneIds     = tree.Panes().Select(pane => pane.Id).ToList();
+        Control?  focusedPane = FindFocusedPane();
+
+        int currentIndex = paneIds.FindIndex(paneId => paneControls[paneId] == focusedPane);
 
         if (currentIndex < 0) {
             return null;
@@ -83,8 +85,8 @@ public sealed class SummaryControl2 : Control
 
         int targetIndex = currentIndex + step;
 
-        return targetIndex >= 0 && targetIndex < panes.Count 
-            ? panes[targetIndex].Id 
+        return targetIndex >= 0 && targetIndex < paneIds.Count
+            ? paneIds[targetIndex]
             : null;
     }
 
@@ -105,8 +107,8 @@ public sealed class SummaryControl2 : Control
     {
         int processCount = snapshot?.Processes?.Metrics.ProcessCount ?? 0;
 
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
-            if (pane.ControlType != PaneControlType.Process || paneControls[pane.Id] is not ProcessControl processControl) {
+        foreach ((int paneId, SummaryPane pane) in tree.Panes()) {
+            if (pane.ControlType != PaneControlType.Process || paneControls[paneId] is not ProcessControl processControl) {
                 continue;
             }
 

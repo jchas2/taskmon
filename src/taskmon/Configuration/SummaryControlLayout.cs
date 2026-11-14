@@ -16,7 +16,18 @@ public sealed class SummaryControlLayout
 
     public SummaryControlLayout(ConfigSection configSection) => layoutSection = configSection;
 
-    public static SummaryControlLayout FromTree(string name, SummaryLayoutTree tree)
+    public static LayoutTree<SummaryPane> Fallback() =>
+        LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.6f, FirstId = 1, SecondId = 2 },
+            new LayoutNode<SummaryPane> { Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 1f / 3f, FirstId = 3, SecondId = 4 },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Process, Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem) },
+            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.Cpu) },
+            new LayoutNode<SummaryPane> { Id = 4, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 5, SecondId = 6 },
+            new LayoutNode<SummaryPane> { Id = 5, Pane = new(PaneControlType.Memory) },
+            new LayoutNode<SummaryPane> { Id = 6, Pane = new(PaneControlType.Gpu) },
+        ], rootId: 0);
+
+    public static SummaryControlLayout FromTree(string name, LayoutTree<SummaryPane> tree)
     {
         ConfigSection section = new(name);
 
@@ -24,7 +35,7 @@ public sealed class SummaryControlLayout
         section.Add(Constants.Keys.SummaryRoot,  tree.RootId.ToString(CultureInfo.InvariantCulture));
         section.Add(Constants.Keys.SummaryNodes, string.Join(FieldSeparator, tree.Nodes.Keys));
 
-        foreach ((int id, SummaryLayoutNode node) in tree.Nodes) {
+        foreach ((int id, LayoutNode<SummaryPane> node) in tree.Nodes) {
             section.Add($"{Constants.Keys.SummaryNodePrefix}{id}", SerializeNode(node));
         }
 
@@ -55,12 +66,12 @@ public sealed class SummaryControlLayout
         return result == 0 ? null : result;
     }
 
-    private static SummaryLayoutNode? ParseNode(int id, string raw)
+    private static LayoutNode<SummaryPane>? ParseNode(int id, string raw)
     {
         string[] parts = raw.Split(FieldSeparator);
 
         if (parts.Length >= 5 && parts[0] == "split") {
-            return new SummaryLayoutNode {
+            return new LayoutNode<SummaryPane> {
                 Id          = id,
                 IsSplit     = true,
                 Orientation = Enum.TryParse(parts[1], ignoreCase: true, out Orientation orientation) ? orientation : Orientation.Row,
@@ -71,10 +82,11 @@ public sealed class SummaryControlLayout
         }
 
         if (parts.Length >= 2 && parts[0] == "pane") {
-            return new SummaryLayoutNode {
-                Id             = id,
-                ControlType    = Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
-                ProcessColumns = parts.Length >= 3 ? ParseColumns(parts[2]) : null,
+            return new LayoutNode<SummaryPane> {
+                Id   = id,
+                Pane = new SummaryPane(
+                    Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
+                    parts.Length >= 3 ? ParseColumns(parts[2]) : null),
             };
         }
 
@@ -86,20 +98,23 @@ public sealed class SummaryControlLayout
             .Where(flag => flag != 0 && columns.HasFlag(flag))
             .Select(flag => flag.ToString()));
 
-    private static string SerializeNode(SummaryLayoutNode node) =>
+    private static string SerializeNode(LayoutNode<SummaryPane> node) =>
         node.IsSplit
             ? string.Join(FieldSeparator, "split", node.Orientation.ToString(),
                 node.Ratio.ToString(CultureInfo.InvariantCulture), node.FirstId, node.SecondId)
-            : node.ProcessColumns is { } columns
-                ? string.Join(FieldSeparator, "pane", node.ControlType.ToString(), SerializeColumns(columns))
-                : string.Join(FieldSeparator, "pane", node.ControlType.ToString());
+            : SerializePane(node.Pane!);
+
+    private static string SerializePane(SummaryPane pane) =>
+        pane.ProcessColumns is { } columns
+            ? string.Join(FieldSeparator, "pane", pane.ControlType.ToString(), SerializeColumns(columns))
+            : string.Join(FieldSeparator, "pane", pane.ControlType.ToString());
 
     public override string ToString() => layoutSection?.ToString() ?? string.Empty;
 
-    public SummaryLayoutTree ToTree()
+    public LayoutTree<SummaryPane> ToTree()
     {
         if (layoutSection == null) {
-            return SummaryLayoutTree.CreateExample();
+            return Fallback();
         }
 
         string nodesCsv = layoutSection.GetString(Constants.Keys.SummaryNodes, string.Empty);
@@ -110,7 +125,7 @@ public sealed class SummaryControlLayout
             .Select(int.Parse)
             .ToList();
 
-        List<SummaryLayoutNode> nodes = new();
+        List<LayoutNode<SummaryPane>> nodes = new();
 
         foreach (int id in nodeIds) {
             string raw = layoutSection.GetString($"{Constants.Keys.SummaryNodePrefix}{id}", string.Empty);
@@ -121,12 +136,12 @@ public sealed class SummaryControlLayout
         }
 
         if (nodes.Count == 0) {
-            return SummaryLayoutTree.CreateExample();
+            return Fallback();
         }
 
         int rootId = layoutSection.GetInt(Constants.Keys.SummaryRoot, nodes[0].Id);
 
-        return SummaryLayoutTree.FromNodes(nodes, rootId);
+        return LayoutTree<SummaryPane>.FromNodes(nodes, rootId);
     }
 
     public void Update(ConfigSection configSection) => layoutSection = configSection;

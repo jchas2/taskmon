@@ -61,14 +61,14 @@ public sealed class LayoutDesignerScreen : Screen
     ];
 
     private readonly RunContext                 runContext;
-    private readonly SummaryLayoutRenderer      renderer           = new();
+    private readonly LayoutRenderer             renderer           = new();
     private readonly Dictionary<int, Control>   paneControls       = new();
     private readonly PickerBoxControl           controlTypePicker;
     private readonly PickerBoxControl           columnPicker;
     private readonly TextInputDialogControl     saveDialog;
     private readonly MessageBoxControl          messageBox;
     private readonly Dictionary<Control, Color> highlightedBorders = new();
-    private SummaryLayoutTree                   tree               = SummaryLayoutTree.CreateEmpty();
+    private LayoutTree<SummaryPane>             tree               = new(SummaryPane.Empty);
 
     private int     selectedNodeId;
     private string? layoutName;
@@ -101,12 +101,12 @@ public sealed class LayoutDesignerScreen : Screen
         RebuildPaneControls();
     }
 
-    private void AddPaneControl(SummaryLayoutNode pane)
+    private void AddPaneControl(int paneId)
     {
-        Control control = SummaryPaneControlFactory.Create(pane, runContext.ServiceController, Terminal, runContext.AppConfig);
+        Control control = SummaryPaneControlFactory.Create(tree.Nodes[paneId].Pane!, runContext.ServiceController, Terminal, runContext.AppConfig);
         control.TabStop = false;
 
-        paneControls[pane.Id] = control;
+        paneControls[paneId] = control;
         Controls.Add(control);
         SummaryPaneTheme.Apply(control, runContext.AppConfig);
 
@@ -117,7 +117,7 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void AdjustSelectedRatio(float delta)
     {
-        if (SummaryLayoutRenderer.FindResizableSplit(tree, paneControls, selectedNodeId) is not { } split) {
+        if (LayoutRenderer.FindResizableSplit(tree, paneControls, selectedNodeId) is not { } split) {
             return;
         }
 
@@ -168,7 +168,7 @@ public sealed class LayoutDesignerScreen : Screen
 
     private int FirstPaneUnder(int nodeId)
     {
-        SummaryLayoutNode node = tree.Nodes[nodeId];
+        LayoutNode<SummaryPane> node = tree.Nodes[nodeId];
         return node.IsSplit ? FirstPaneUnder(node.FirstId) : nodeId;
     }
 
@@ -218,7 +218,7 @@ public sealed class LayoutDesignerScreen : Screen
                 columns |= ToggleableColumns[index];
             }
 
-            tree.Nodes[selectedNodeId].ProcessColumns = columns;
+            SelectedPane = SelectedPane with { ProcessColumns = columns };
 
             if (paneControls[selectedNodeId] is ProcessControl processControl) {
                 processControl.VisibleColumnsOverride = columns;
@@ -474,7 +474,7 @@ public sealed class LayoutDesignerScreen : Screen
         base.OnUnload();
     }
 
-    public void Open(SummaryLayoutTree newTree, string? existingName)
+    public void Open(LayoutTree<SummaryPane> newTree, string? existingName)
     {
         tree       = newTree;
         layoutName = existingName;
@@ -484,13 +484,13 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void OpenColumnPicker()
     {
-        if (tree.Nodes[selectedNodeId].ControlType != PaneControlType.Process) {
+        if (SelectedPane.ControlType != PaneControlType.Process) {
             return;
         }
 
         Control.RedrawEnabled = false;
 
-        Statistics current = tree.Nodes[selectedNodeId].ProcessColumns ?? runContext.AppConfig.VisibleColumns;
+        Statistics current = SelectedPane.ProcessColumns ?? runContext.AppConfig.VisibleColumns;
         List<string> labels = ToggleableColumns.Select(c => c.ToDisplayText()).ToList();
         List<bool> initiallyChecked = ToggleableColumns.Select(c => (current & c) != 0).ToList();
 
@@ -510,7 +510,7 @@ public sealed class LayoutDesignerScreen : Screen
         Control.RedrawEnabled = false;
 
         List<string> labels = AssignableControlTypes.Select(ToDisplayLabel).ToList();
-        int currentIndex    = Array.IndexOf(AssignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
+        int currentIndex    = Array.IndexOf(AssignableControlTypes, SelectedPane.ControlType);
 
         controlTypePicker.Width  = PickerWidth(controlTypePicker);
         controlTypePicker.Height = Math.Clamp( PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
@@ -528,16 +528,13 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void ReassignSelectedPaneControlType(PaneControlType newType)
     {
-        SummaryLayoutNode pane = tree.Nodes[selectedNodeId];
-        
-        pane.ControlType = newType;
-
-        if (newType != PaneControlType.Process) {
-            pane.ProcessColumns = null;
-        }
+        // Process columns only mean something to a Process pane.
+        SelectedPane = newType == PaneControlType.Process
+            ? SelectedPane with { ControlType = newType }
+            : new SummaryPane(newType);
 
         RemovePaneControl(selectedNodeId);
-        AddPaneControl(pane);
+        AddPaneControl(selectedNodeId);
         RefreshSelectionHighlight();
         Relayout();
     }
@@ -554,8 +551,8 @@ public sealed class LayoutDesignerScreen : Screen
         paneControls.Clear();
         highlightedBorders.Clear();
 
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
-            AddPaneControl(pane);
+        foreach ((int paneId, _) in tree.Panes()) {
+            AddPaneControl(paneId);
         }
 
         selectedNodeId = tree.Panes().First().Id;
@@ -602,7 +599,7 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        SummaryLayoutNode parent = tree.Nodes[pid];
+        LayoutNode<SummaryPane> parent = tree.Nodes[pid];
         
         int siblingId       = parent.FirstId == selectedNodeId ? parent.SecondId : parent.FirstId;
         bool siblingWasLeaf = !tree.Nodes[siblingId].IsSplit;
@@ -622,7 +619,7 @@ public sealed class LayoutDesignerScreen : Screen
                 paneControls[pid] = siblingControl;
             }
             else {
-                AddPaneControl(tree.Nodes[pid]);
+                AddPaneControl(pid);
             }
         }
 
@@ -672,6 +669,12 @@ public sealed class LayoutDesignerScreen : Screen
 
     internal int SelectedNodeId => selectedNodeId;
 
+    private SummaryPane SelectedPane
+    {
+        get => tree.Nodes[selectedNodeId].Pane!;
+        set => tree.Nodes[selectedNodeId].Pane = value;
+    }
+
     private void ShowMessageBox(string title, string text)
     {
         Control.RedrawEnabled = false;
@@ -688,11 +691,11 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void SplitSelectedPane(Orientation orientation)
     {
-        (int firstId, int secondId) = tree.Split(selectedNodeId, orientation);
+        (int firstId, int secondId) = tree.Split(selectedNodeId, orientation, SummaryPane.Empty);
 
         RemovePaneControl(selectedNodeId);
-        AddPaneControl(tree.Nodes[firstId]);
-        AddPaneControl(tree.Nodes[secondId]);
+        AddPaneControl(firstId);
+        AddPaneControl(secondId);
 
         // The new empty pane, ready to be assigned straight away.
         selectedNodeId = secondId;
@@ -702,8 +705,7 @@ public sealed class LayoutDesignerScreen : Screen
         Draw();
     }
 
-    // Layout files save the member name; the label is its PaneControlType_<member> entry.
     internal static string ToDisplayLabel(PaneControlType type) => type.ToDisplayText();
 
-    internal SummaryLayoutTree Tree => tree;
+    internal LayoutTree<SummaryPane> Tree => tree;
 }

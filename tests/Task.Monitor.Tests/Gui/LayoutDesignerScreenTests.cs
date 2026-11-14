@@ -13,6 +13,7 @@ using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Gui.Controls.Summary2;
 using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui;
@@ -61,7 +62,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         runContext.AppConfig.ShowLargeMetreGrid = false;
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
-        screen.Open(SummaryLayoutTree.CreateEmpty(), null);
+        screen.Open(new LayoutTree<SummaryPane>(SummaryPane.Empty), null);
         screen.Load();
         screen.Resize();
 
@@ -80,7 +81,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.V), ref handled);
 
-        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
 
         Control emptyPane = screen.Controls.Single(c => c is EmptyPaneControl);
         Assert.Equal(Control.FocusSelectionColour, emptyPane.BorderColour);
@@ -165,7 +166,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Fact]
     public void Cpu_Cores_Can_Be_Assigned_To_A_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
         screen.Open(tree, null);
@@ -175,7 +176,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuCores);
         screen.Draw();
 
-        Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.CpuCores, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
         Assert.Contains("Cpu Cores", CapturedOutput());
 
         screen.Unload();
@@ -184,7 +185,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Fact]
     public void Cpu_Metre_Can_Be_Assigned_To_A_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
         screen.Open(tree, null);
@@ -194,7 +195,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.AssignSelectedPaneControlTypeForTests(PaneControlType.CpuMetre);
         screen.Draw();
 
-        Assert.Equal(PaneControlType.CpuMetre, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.CpuMetre, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
         Assert.Contains(" CPU% ", CapturedOutput());
 
         screen.Unload();
@@ -204,12 +205,12 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     // in tree order) lands on the Process pane.
     private LayoutDesignerScreen CreateCpuProcessScreen()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> {
                 Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
             },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+            new LayoutNode<SummaryPane> { Id = 1, Pane = new(PaneControlType.Cpu) },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Process) },
         ], rootId: 0);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
@@ -217,18 +218,6 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.Load();
         screen.Resize();
         return screen;
-    }
-
-    [Fact]
-    public void CreateEmpty_Is_A_Single_Empty_Root_Pane()
-    {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-
-        SummaryLayoutNode pane = Assert.Single(tree.Nodes.Values);
-        Assert.False(pane.IsSplit);
-        Assert.Equal(PaneControlType.Empty, pane.ControlType);
-        Assert.Equal(tree.RootId, pane.Id);
-        Assert.Equal(1, tree.NextId);
     }
 
     // Opens the multi-pane example tree explicitly - the designer itself now starts on a single
@@ -241,7 +230,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
             Height = height
         };
 
-        screen.Open(SummaryLayoutTree.CreateExample(), null);
+        screen.Open(TestLayouts.Example(), null);
         screen.Load();
         screen.Resize();
         return screen;
@@ -253,7 +242,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         LayoutDesignerScreen screen = CreateScreen();
 
         // The default selection (first pane in tree order) is the Cpu chart, not the Process pane.
-        Assert.NotEqual(PaneControlType.Process, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.NotEqual(PaneControlType.Process, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
 
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.C), ref handled);
@@ -277,15 +266,14 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         // (arrow movement here is spatial, not the tree-order cycling SummaryControl2 uses).
         const int processPaneId = 1;
 
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> {
                 Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = processPaneId, SecondId = 2
             },
-            new SummaryLayoutNode {
-                Id = processPaneId, ControlType = PaneControlType.Process,
-                ProcessColumns = Statistics.Process | Statistics.Pid
+            new LayoutNode<SummaryPane> {
+                Id = processPaneId, Pane = new(PaneControlType.Process, Statistics.Process | Statistics.Pid)
             },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Cpu },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Cpu) },
         ], rootId: 0);
 
         screen.Open(tree, null);
@@ -298,7 +286,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.Spacebar), ref handled);
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Statistics? columns = screen.Tree.Nodes[processPaneId].ProcessColumns;
+        Statistics? columns = screen.Tree.Nodes[processPaneId].Pane!.ProcessColumns;
 
         Assert.NotNull(columns);
         Assert.True((columns!.Value & Statistics.AvgCpu) != 0);
@@ -315,9 +303,9 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.Load();
         screen.Resize();
 
-        SummaryLayoutNode pane = Assert.Single(screen.Tree.Panes());
+        (int paneId, SummaryPane pane) = Assert.Single(screen.Tree.Panes());
         Assert.Equal(PaneControlType.Empty, pane.ControlType);
-        Assert.Equal(screen.Tree.RootId, pane.Id);
+        Assert.Equal(screen.Tree.RootId, paneId);
 
         screen.Unload();
     }
@@ -348,8 +336,8 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     public void Delete_On_The_Root_Pane_Does_Nothing()
     {
         // A tree with a single pane (the root itself) - nothing to merge it into.
-        SummaryLayoutTree singlePaneTree = SummaryLayoutTree.FromNodes(
-            [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Cpu }], rootId: 0);
+        LayoutTree<SummaryPane> singlePaneTree = LayoutTree<SummaryPane>.FromNodes(
+            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(PaneControlType.Cpu) }], rootId: 0);
 
         LayoutDesignerScreen screen = CreateScreen();
         screen.Open(singlePaneTree, null);
@@ -411,7 +399,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         LayoutDesignerScreen screen = CreateScreen();
-        screen.Open(SummaryLayoutTree.CreateExample(), "Original");
+        screen.Open(TestLayouts.Example(), "Original");
 
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.S), ref handled);
@@ -441,7 +429,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.PageUp), ref handled);
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled); // confirm
 
-        Assert.Equal(PaneControlType.Cpu, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Cpu, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
 
         runContextHelper.terminal.Invocations.Clear();
         screen.Draw();
@@ -464,7 +452,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
         screen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
 
-        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[emptyPaneId].ControlType);
+        Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[emptyPaneId].Pane!.ControlType);
 
         screen.Unload();
     }
@@ -522,7 +510,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Fact]
     public void Fans_Can_Be_Assigned_To_A_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
         screen.Open(tree, null);
@@ -532,7 +520,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Fans);
         screen.Draw();
 
-        Assert.Equal(PaneControlType.Fans, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Fans, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
         Assert.Contains("FANS", CapturedOutput());
 
         screen.Unload();
@@ -585,12 +573,12 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Fact]
     public void No_Pane_Holds_Real_Focus_After_Load()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> {
                 Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2
             },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Cpu },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+            new LayoutNode<SummaryPane> { Id = 1, Pane = new(PaneControlType.Cpu) },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Process) },
         ], rootId: 0);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
@@ -610,7 +598,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     {
         LayoutDesignerScreen screen = CreateScreen();
 
-        SummaryLayoutTree freshTree = SummaryLayoutTree.CreateExample();
+        LayoutTree<SummaryPane> freshTree = TestLayouts.Example();
         screen.Open(freshTree, "My Dashboard");
 
         Assert.Same(freshTree, screen.Tree);
@@ -643,12 +631,12 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [InlineData(Orientation.Row,    0.55f)]
     public void Plus_On_A_Metre_Only_Resizes_A_Side_By_Side_Split(Orientation orientation, float expectedRatio)
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> {
                 Id = 0, IsSplit = true, Orientation = orientation, Ratio = 0.5f, FirstId = 1, SecondId = 2
             },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.CpuMetre },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Process },
+            new LayoutNode<SummaryPane> { Id = 1, Pane = new(PaneControlType.CpuMetre) },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Process) },
         ], rootId: 0);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
@@ -670,12 +658,12 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     public void Plus_On_A_Pane_Under_A_Metre_Resizes_The_Split_Above_The_Metre()
     {
         // CpuCores over (Metre over Process): the inner split's ratio is ignored, so the outer one moves.
-        SummaryLayoutTree tree = SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.3f, FirstId = 1, SecondId = 2 },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.CpuCores },
-            new SummaryLayoutNode { Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.1f, FirstId = 3, SecondId = 4 },
-            new SummaryLayoutNode { Id = 3, ControlType = PaneControlType.CpuMetre },
-            new SummaryLayoutNode { Id = 4, ControlType = PaneControlType.Process },
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.3f, FirstId = 1, SecondId = 2 },
+            new LayoutNode<SummaryPane> { Id = 1, Pane = new(PaneControlType.CpuCores) },
+            new LayoutNode<SummaryPane> { Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.1f, FirstId = 3, SecondId = 4 },
+            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.CpuMetre) },
+            new LayoutNode<SummaryPane> { Id = 4, Pane = new(PaneControlType.Process) },
         ], rootId: 0);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
@@ -716,7 +704,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     [Fact]
     public void Power_Can_Be_Assigned_To_A_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
 
         LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
         screen.Open(tree, null);
@@ -726,7 +714,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Power);
         screen.Draw();
 
-        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
         Assert.Contains("POWER", CapturedOutput());
 
         screen.Unload();
@@ -761,7 +749,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.UpArrow), ref handled);    // Process -> Power (sorted)
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].ControlType);
+        Assert.Equal(PaneControlType.Power, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
         Assert.Equal(0, SnapshotSubscriberCount("ProcessControl"));
         Assert.Equal(1, SnapshotSubscriberCount("PowerControl"));
 
@@ -869,7 +857,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         LayoutDesignerScreen screen = CreateScreen();
-        screen.Open(SummaryLayoutTree.CreateExample(), "Already Named");
+        screen.Open(TestLayouts.Example(), "Already Named");
         runContextHelper.terminal.Invocations.Clear();
 
         bool handled = false;
@@ -949,10 +937,10 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         LayoutDesignerScreen screen = CreateScreen();
 
-        screen.Open(SummaryLayoutTree.FromNodes([
-            new SummaryLayoutNode { Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2 },
-            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Process },
-            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Cpu },
+        screen.Open(LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2 },
+            new LayoutNode<SummaryPane> { Id = 1, Pane = new(PaneControlType.Process) },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.Cpu) },
         ], rootId: 0), null);
 
         runContextHelper.terminal.Invocations.Clear();
@@ -1081,13 +1069,13 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         Assert.True(handled);
         Assert.Equal(nodeCountBefore + 2, screen.Tree.Nodes.Count);
 
-        SummaryLayoutNode splitNode = screen.Tree.Nodes[originalPaneId];
+        LayoutNode<SummaryPane> splitNode = screen.Tree.Nodes[originalPaneId];
         Assert.True(splitNode.IsSplit);
         Assert.Equal(Orientation.Row, splitNode.Orientation);
 
-        SummaryLayoutNode selectedPane = screen.Tree.Nodes[screen.SelectedNodeId];
+        LayoutNode<SummaryPane> selectedPane = screen.Tree.Nodes[screen.SelectedNodeId];
         Assert.False(selectedPane.IsSplit);
-        Assert.Equal(PaneControlType.Empty, selectedPane.ControlType);
+        Assert.Equal(SummaryPane.Empty, selectedPane.Pane);
 
         screen.Unload();
     }

@@ -451,7 +451,7 @@ public sealed class MainScreen2Tests : IDisposable
     [Fact]
     public void Holding_Up_On_The_First_Menu_Item_Does_Not_Reload_The_View()
     {
-        // The built-in example tree's percentage charts draw the scale this looks for.
+        // The fallback layout's percentage charts draw the scale this looks for.
         runContext.AppConfig.DefaultLayout = null;
 
         (MainScreen2 mainScreen, _) = ShowMainScreen();
@@ -493,7 +493,7 @@ public sealed class MainScreen2Tests : IDisposable
     [Fact]
     public void Moving_Back_Up_To_Summary_Still_Shows_It()
     {
-        // The built-in example tree's percentage charts draw the scale this looks for.
+        // The fallback layout's percentage charts draw the scale this looks for.
         runContext.AppConfig.DefaultLayout = null;
 
         (MainScreen2 mainScreen, _) = ShowMainScreen();

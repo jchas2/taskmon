@@ -86,11 +86,14 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void A_Fixed_Tree_Ignores_The_Default_Layout()
     {
+        LayoutTree<SummaryPane> fixedTree = new(new SummaryPane(PaneControlType.CpuMetre));
+        fixedTree.Split(fixedTree.RootId, Orientation.Column, new SummaryPane(PaneControlType.Process));
+
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig,
-            SummaryLayoutTree.CreateThemePreview()) {
+            fixedTree) {
             Width  = 60,
             Height = 30
         };
@@ -99,7 +102,7 @@ public sealed class SummaryControl2Tests
 
         Assert.Single(ctrl.Controls.OfType<CpuMetreControl>());
         Assert.Single(ctrl.Controls.OfType<Task.Monitor.Gui.Controls.Processes.ProcessControl>());
-        Assert.Equal(5, ctrl.PaneControls.Count);
+        Assert.Equal(2, ctrl.PaneControls.Count);
 
         ctrl.Unload();
     }
@@ -107,8 +110,7 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void Builds_A_Cpu_Metre_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-        tree.Nodes[tree.RootId].ControlType = PaneControlType.CpuMetre;
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.CpuMetre));
 
         UseSummaryLayout(SummaryControlLayout.FromTree("Cpu Metre Pane Test", tree));
 
@@ -130,10 +132,8 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void Builds_A_Power_Pane_And_A_Charts_Only_Thermals_Pane()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-        (int powerId, int thermalsId) = tree.Split(tree.RootId, Orientation.Row);
-        tree.Nodes[powerId].ControlType    = PaneControlType.Power;
-        tree.Nodes[thermalsId].ControlType = PaneControlType.Thermals;
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Power));
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Thermals));
 
         UseSummaryLayout(SummaryControlLayout.FromTree("Power Pane Test", tree));
 
@@ -161,10 +161,8 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void Builds_Gpu_And_Npu_Chart_Panes_Side_By_Side()
     {
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-        (int gpuId, int npuId) = tree.Split(tree.RootId, Orientation.Row);
-        tree.Nodes[gpuId].ControlType = PaneControlType.Gpu;
-        tree.Nodes[npuId].ControlType = PaneControlType.Npu;
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Gpu));
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Npu));
 
         UseSummaryLayout(SummaryControlLayout.FromTree("Npu Chart Test", tree));
 
@@ -243,9 +241,8 @@ public sealed class SummaryControl2Tests
         themeSection.Add(Task.Monitor.Configuration.Constants.Keys.ChartBorderForeground, "#404040");
         runContext.AppConfig.Theme.Update(themeSection);
 
-        SummaryLayoutTree tree = SummaryLayoutTree.CreateEmpty();
-        (int cpuCoresId, _) = tree.Split(tree.RootId, Orientation.Row);
-        tree.Nodes[cpuCoresId].ControlType = PaneControlType.CpuCores;
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.CpuCores));
+        tree.Split(tree.RootId, Orientation.Row, SummaryPane.Empty);
 
         UseSummaryLayout(SummaryControlLayout.FromTree("CpuCores Border Test", tree));
 
@@ -521,7 +518,7 @@ public sealed class SummaryControl2Tests
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig,
-            SummaryLayoutTree.CreateThemePreview()) {
+            new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.CpuMetre))) {
             Width  = 60,
             Height = 30
         };
@@ -554,7 +551,7 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void Right_Arrow_Cycles_Through_Every_Pane_In_Tree_Order_And_Then_Stops()
     {
-        // The pane count below is the built-in example tree's (Cpu, Memory, Gpu, Process) - clear
+        // The pane count below is the fallback layout's (Cpu, Memory, Gpu, Process) - clear
         // the configured default so that's the tree loaded, not the shipped 9-pane "All Charts".
         runContext.AppConfig.DefaultLayout = null;
 

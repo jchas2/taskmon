@@ -16,13 +16,13 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 public static class SummaryChartFeeder
 {
     public static void Feed(
-        SummaryLayoutTree                 tree,
+        LayoutTree<SummaryPane>           tree,
         IReadOnlyDictionary<int, Control> paneControls,
         SystemSnapshot                    snapshot,
         AppConfig                         appConfig)
     {
-        foreach (SummaryLayoutNode pane in tree.Panes()) {
-            if (!paneControls.TryGetValue(pane.Id, out Control? control) || control is not Chart chart) {
+        foreach ((int paneId, SummaryPane pane) in tree.Panes()) {
+            if (!paneControls.TryGetValue(paneId, out Control? control) || control is not Chart chart) {
                 continue;
             }
 

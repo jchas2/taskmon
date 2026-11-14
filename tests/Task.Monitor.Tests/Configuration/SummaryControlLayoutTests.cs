@@ -2,54 +2,59 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Gui.Controls.Summary2;
 
 namespace Task.Monitor.Tests.Configuration;
 
 public sealed class SummaryControlLayoutTests
 {
     [Fact]
-    public void SummaryLayoutNode_Canary_Test() =>
-        Assert.Equal(8, CanaryTestHelper.GetPropertyCount<SummaryLayoutNode>());
+    public void LayoutNode_Canary_Test() =>
+        Assert.Equal(7, CanaryTestHelper.GetPropertyCount<LayoutNode<SummaryPane>>());
+
+    // A new pane setting has to be written to and read from the layout file too.
+    [Fact]
+    public void SummaryPane_Canary_Test() =>
+        Assert.Equal(2, CanaryTestHelper.GetPropertyCount<SummaryPane>());
 
     // A CpuCores pane is designer-only (no menu or screen builds one), so persistence is the only
     // thing that carries it between sessions.
     [Fact]
     public void CpuCores_Pane_Round_Trips()
     {
-        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
-            [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.CpuCores }], rootId: 0);
+        LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(
+            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(PaneControlType.CpuCores) }], rootId: 0);
 
         string iniText = SummaryControlLayout.FromTree("Cores", original).ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
 
-        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
+        LayoutTree<SummaryPane> tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
-        Assert.Equal(PaneControlType.CpuCores, Assert.Single(tree.Panes()).ControlType);
+        Assert.Equal(PaneControlType.CpuCores, Assert.Single(tree.Panes()).Pane.ControlType);
     }
 
     [Fact]
     public void FromTree_Then_ToTree_Round_Trips_The_Example_Tree()
     {
-        SummaryLayoutTree original = SummaryLayoutTree.CreateExample();
+        LayoutTree<SummaryPane> original = TestLayouts.Example();
         SummaryControlLayout layout = SummaryControlLayout.FromTree("My Dashboard", original);
 
-        SummaryLayoutTree roundTripped = layout.ToTree();
+        LayoutTree<SummaryPane> roundTripped = layout.ToTree();
 
         Assert.Equal(original.RootId, roundTripped.RootId);
         Assert.Equal(original.Nodes.Count, roundTripped.Nodes.Count);
 
-        foreach ((int id, SummaryLayoutNode expected) in original.Nodes) {
-            SummaryLayoutNode actual = roundTripped.Nodes[id];
+        foreach ((int id, LayoutNode<SummaryPane> expected) in original.Nodes) {
+            LayoutNode<SummaryPane> actual = roundTripped.Nodes[id];
 
             Assert.Equal(expected.IsSplit, actual.IsSplit);
             Assert.Equal(expected.Orientation, actual.Orientation);
             Assert.Equal((double)expected.Ratio, actual.Ratio, precision: 5);
             Assert.Equal(expected.FirstId, actual.FirstId);
             Assert.Equal(expected.SecondId, actual.SecondId);
-            Assert.Equal(expected.ControlType, actual.ControlType);
-            Assert.Equal(expected.ProcessColumns, actual.ProcessColumns);
+            Assert.Equal(expected.Pane, actual.Pane);
         }
     }
 
@@ -86,23 +91,23 @@ public sealed class SummaryControlLayoutTests
     [InlineData(PaneControlType.NetworkReceiveMetre)]
     public void Metre_Panes_Round_Trip(PaneControlType type)
     {
-        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
-            [new SummaryLayoutNode { Id = 0, ControlType = type }], rootId: 0);
+        LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(
+            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(type) }], rootId: 0);
 
         string iniText = SummaryControlLayout.FromTree("Metre", original).ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
 
-        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
+        LayoutTree<SummaryPane> tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
-        Assert.Equal(type, Assert.Single(tree.Panes()).ControlType);
+        Assert.Equal(type, Assert.Single(tree.Panes()).Pane.ControlType);
     }
 
     [Fact]
     public void Name_Reflects_The_Backing_Sections_Name()
     {
-        SummaryControlLayout layout = SummaryControlLayout.FromTree("Custom Name", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Custom Name", TestLayouts.Example());
 
         Assert.Equal("Custom Name", layout.Name);
     }
@@ -110,17 +115,17 @@ public sealed class SummaryControlLayoutTests
     [Fact]
     public void Power_Pane_Round_Trips()
     {
-        SummaryLayoutTree original = SummaryLayoutTree.FromNodes(
-            [new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Power }], rootId: 0);
+        LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(
+            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(PaneControlType.Power) }], rootId: 0);
 
         string iniText = SummaryControlLayout.FromTree("Power", original).ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
 
-        SummaryLayoutTree tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
+        LayoutTree<SummaryPane> tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
-        Assert.Equal(PaneControlType.Power, Assert.Single(tree.Panes()).ControlType);
+        Assert.Equal(PaneControlType.Power, Assert.Single(tree.Panes()).Pane.ControlType);
     }
 
     // Confirms the round trip survives an actual reparse of the written text, not just the
@@ -129,7 +134,7 @@ public sealed class SummaryControlLayoutTests
     [Fact]
     public void ToString_Output_Reparses_To_An_Equivalent_Tree()
     {
-        SummaryLayoutTree original = SummaryLayoutTree.CreateExample();
+        LayoutTree<SummaryPane> original = TestLayouts.Example();
         SummaryControlLayout layout = SummaryControlLayout.FromTree("My Dashboard", original);
 
         string iniText = layout.ToString();
@@ -141,12 +146,12 @@ public sealed class SummaryControlLayoutTests
         Assert.Equal("My Dashboard", reparsed.Name);
         Assert.True(reparsed.IsTreeLayout);
 
-        SummaryLayoutTree tree = reparsed.ToTree();
+        LayoutTree<SummaryPane> tree = reparsed.ToTree();
 
         Assert.Equal(original.RootId, tree.RootId);
         Assert.Equal(original.Nodes.Count, tree.Nodes.Count);
 
-        SummaryLayoutNode processPane = tree.Panes().Single(p => p.ControlType == PaneControlType.Process);
+        SummaryPane processPane = tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane;
         Assert.Equal(
             Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem,
             processPane.ProcessColumns);
@@ -165,32 +170,32 @@ public sealed class SummaryControlLayoutTests
             .Add($"{Constants.Keys.SummaryNodePrefix}4", "pane,Cpu")
             .Add($"{Constants.Keys.SummaryNodePrefix}5", "pane,Memory");
 
-        SummaryLayoutTree tree = new SummaryControlLayout(section).ToTree();
+        LayoutTree<SummaryPane> tree = new SummaryControlLayout(section).ToTree();
 
         Assert.Equal(3, tree.RootId);
         Assert.Equal(
             [PaneControlType.Cpu, PaneControlType.Memory],
-            tree.Panes().Select(pane => pane.ControlType).ToArray());
+            tree.Panes().Select(pane => pane.Pane.ControlType).ToArray());
     }
 
     [Fact]
-    public void ToTree_With_No_Backing_Section_Falls_Back_To_The_Example_Tree()
+    public void ToTree_With_No_Backing_Section_Gives_The_Fallback_Layout()
     {
         SummaryControlLayout layout = new();
 
-        SummaryLayoutTree tree = layout.ToTree();
+        LayoutTree<SummaryPane> tree = layout.ToTree();
 
-        Assert.Equal(SummaryLayoutTree.CreateExample().Nodes.Count, tree.Nodes.Count);
+        Assert.Equal(SummaryControlLayout.Fallback().Panes(), tree.Panes());
     }
 
     [Fact]
-    public void ToTree_With_No_Node_Keys_Falls_Back_To_The_Example_Tree()
+    public void ToTree_With_No_Node_Keys_Gives_The_Fallback_Layout()
     {
         ConfigSection section = new ConfigSection("Empty").Add("layout-type", "tree");
         SummaryControlLayout layout = new(section);
 
-        SummaryLayoutTree tree = layout.ToTree();
+        LayoutTree<SummaryPane> tree = layout.ToTree();
 
-        Assert.Equal(SummaryLayoutTree.CreateExample().Nodes.Count, tree.Nodes.Count);
+        Assert.Equal(SummaryControlLayout.Fallback().Panes(), tree.Panes());
     }
 }

@@ -13,6 +13,7 @@ using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Gui.Controls.Summary2;
 
 namespace Task.Monitor.Tests.Gui;
 
@@ -314,7 +315,7 @@ public sealed class SetupScreenTests
         Assert.Equal("Cpu and Memory", designer.LayoutName);
         Assert.Equal(
             [PaneControlType.Cpu, PaneControlType.Memory, PaneControlType.Process],
-            designer.Tree.Panes().Select(p => p.ControlType));
+            designer.Tree.Panes().Select(p => p.Pane.ControlType));
     }
 
     [Fact]
@@ -322,7 +323,7 @@ public sealed class SetupScreenTests
     {
         ScreenApplication localScreenApp = new(runContext.Terminal);
         LayoutDesignerScreen designer = new(runContext);
-        designer.Open(SummaryLayoutTree.CreateExample(), "Leftover From Before");
+        designer.Open(TestLayouts.Example(), "Leftover From Before");
         localScreenApp.RegisterScreen(designer);
 
         SetupScreen setupScreen = new(runContext, localScreenApp) { Width = 100, Height = 30 };
@@ -337,7 +338,7 @@ public sealed class SetupScreenTests
         Assert.True(handled);
         Assert.Null(designer.LayoutName);
         // Replaces the leftover multi-pane tree from the previous visit, not just its name.
-        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
+        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).Pane.ControlType);
     }
 
     // Enter only acts once the list itself has focus (Right arrow into it) - with focus still on
@@ -852,7 +853,7 @@ public sealed class SetupScreenTests
 
         Assert.True(handled);
         Assert.Null(designer.LayoutName);
-        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).ControlType);
+        Assert.Equal(PaneControlType.Empty, Assert.Single(designer.Tree.Panes()).Pane.ControlType);
 
         setupScreen.Unload();
     }

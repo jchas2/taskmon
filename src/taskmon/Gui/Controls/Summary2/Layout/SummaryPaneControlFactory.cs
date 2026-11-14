@@ -25,7 +25,7 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 public static class SummaryPaneControlFactory
 {
     public static Control Create(
-        SummaryLayoutNode pane,
+        SummaryPane       pane,
         ServiceController serviceController,
         ISystemTerminal   terminal,
         AppConfig         appConfig) =>

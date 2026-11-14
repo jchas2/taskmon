@@ -41,8 +41,8 @@ public class SetupScreen : Screen
     private readonly MessageBoxControl messageBox;
     private readonly List<ListView>    tabControls = [];
     
-    private readonly Dictionary<ListView, Func<SummaryLayoutTree>> previewLayouts;
-    private readonly Dictionary<ListView, SummaryControl2>         previews = new();
+    private readonly Dictionary<ListView, Func<LayoutTree<SummaryPane>>> previewLayouts;
+    private readonly Dictionary<ListView, SummaryControl2>                previews = new();
 
     private Theme      previewTheme;
     private AppConfig? previewConfig;
@@ -217,8 +217,8 @@ public class SetupScreen : Screen
         previewTheme = runContext.AppConfig.Theme;
 
         previewLayouts = new() {
-            [themeView] = SummaryLayoutTree.CreateThemePreview,
-            [metreView] = SummaryLayoutTree.CreateMetrePreview
+            [themeView] = ThemePreviewLayout,
+            [metreView] = MetrePreviewLayout
         };
     }
 
@@ -378,9 +378,6 @@ public class SetupScreen : Screen
         headerView.Items.Add(new ListViewItem(string.Format(CultureInfo.CurrentCulture, Strings.SetupConfigFile, ConfigFileDisplayPath)));
     }
 
-    // The highlighted row is the configured language. Its key keeps the value as written (it-IT,
-    // not it), and a value that matches no language gets a row of its own, so F10 never rewrites a
-    // ui-language that wasn't changed here.
     private void LoadLanguageSection()
     {
         string            configured = runContext.AppConfig.UiLanguage;
@@ -545,7 +542,6 @@ public class SetupScreen : Screen
             runContext.AppConfig.DelayInMilliseconds = int.Parse(delay);
         }
 
-        // Saved for the next start: the screens keep the language they started in.
         if (languageView.SelectedItem?.SubItems[1].Text is { } language) {
             runContext.AppConfig.UiLanguage = language;
         }
@@ -567,6 +563,15 @@ public class SetupScreen : Screen
 
         Draw();
     }
+
+    private static LayoutTree<SummaryPane> MetrePreviewLayout() =>
+        LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.5f, FirstId = 1, SecondId = 2 },
+            new LayoutNode<SummaryPane> { Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4 },
+            new LayoutNode<SummaryPane> { Id = 2, Pane = new(PaneControlType.CpuCores) },
+            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.Cpu) },
+            new LayoutNode<SummaryPane> { Id = 4, Pane = new(PaneControlType.Memory) },
+        ], rootId: 0);
 
     private void MetreViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
@@ -822,7 +827,7 @@ public class SetupScreen : Screen
             l => l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
         LayoutDesignerScreen designer = screenApp.GetScreen<LayoutDesignerScreen>();
-        designer.Open(layout?.ToTree() ?? SummaryLayoutTree.CreateEmpty(), layout?.Name);
+        designer.Open(layout?.ToTree() ?? new LayoutTree<SummaryPane>(SummaryPane.Empty), layout?.Name);
 
         returnToLayoutsTab = true;
         screenApp.ShowScreen<LayoutDesignerScreen>();
@@ -929,6 +934,19 @@ public class SetupScreen : Screen
         messageBox.Visible = true;
         messageBox.ShowMessageBox();
     }
+
+    private static LayoutTree<SummaryPane> ThemePreviewLayout() =>
+        LayoutTree<SummaryPane>.FromNodes([
+            new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.2f, FirstId = 1, SecondId = 2 },
+            new LayoutNode<SummaryPane> { Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4 },
+            new LayoutNode<SummaryPane> { Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.4f, FirstId = 5, SecondId = 8 },
+            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.CpuMetre) },
+            new LayoutNode<SummaryPane> { Id = 4, Pane = new(PaneControlType.MemoryMetre) },
+            new LayoutNode<SummaryPane> { Id = 5, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 6, SecondId = 7 },
+            new LayoutNode<SummaryPane> { Id = 6, Pane = new(PaneControlType.Cpu) },
+            new LayoutNode<SummaryPane> { Id = 7, Pane = new(PaneControlType.Memory) },
+            new LayoutNode<SummaryPane> { Id = 8, Pane = new(PaneControlType.Process, Statistics.Process | Statistics.Pid | Statistics.Cpu) },
+        ], rootId: 0);
 
     private void ThemeViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {

@@ -20,7 +20,7 @@ public sealed class SummaryPaneControlFactoryTests
         RunContext runContext = new RunContextHelper().GetRunContext();
 
         Control control = SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Npu },
+            new SummaryPane(PaneControlType.Npu),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
@@ -40,7 +40,7 @@ public sealed class SummaryPaneControlFactoryTests
         RunContext runContext = new RunContextHelper().GetRunContext();
 
         Control control = SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.NpuMetre },
+            new SummaryPane(PaneControlType.NpuMetre),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
@@ -59,7 +59,7 @@ public sealed class SummaryPaneControlFactoryTests
         RunContext runContext = new RunContextHelper().GetRunContext();
 
         Control control = SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.Fans },
+            new SummaryPane(PaneControlType.Fans),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
@@ -86,7 +86,7 @@ public sealed class SummaryPaneControlFactoryTests
         RunContext runContext = new RunContextHelper().GetRunContext();
 
         Control control = SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = type },
+            new SummaryPane(type),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
@@ -104,7 +104,7 @@ public sealed class SummaryPaneControlFactoryTests
         RunContext runContext = new RunContextHelper().GetRunContext();
 
         Chart chart = Assert.IsType<Chart>(SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = type },
+            new SummaryPane(type),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig));

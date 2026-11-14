@@ -9,6 +9,7 @@ using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Gui.Controls.Summary2;
 namespace Task.Monitor.Tests.Configuration;
 
 public sealed class AppConfigTests
@@ -159,7 +160,7 @@ use-irix-cpu-reporting=True
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", TestLayouts.Example());
         appConfig.SaveLayout(layout);
 
         appConfig.DefaultLayout = layout;
@@ -171,7 +172,7 @@ use-irix-cpu-reporting=True
     public void DefaultLayout_Set_To_Invalid_Layout_Throws_InvalidOperationException()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryControlLayout invalid = SummaryControlLayout.FromTree("Not Registered", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout invalid = SummaryControlLayout.FromTree("Not Registered", TestLayouts.Example());
 
         Assert.Throws<InvalidOperationException>(() => appConfig.DefaultLayout = invalid);
     }
@@ -220,7 +221,7 @@ use-irix-cpu-reporting=True
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        appConfig.SaveLayout(SummaryControlLayout.FromTree("My Dashboard", SummaryLayoutTree.CreateExample()));
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("My Dashboard", TestLayouts.Example()));
 
         Assert.Equal(expected, appConfig.IsBuiltInLayout(name));
     }
@@ -233,7 +234,7 @@ use-irix-cpu-reporting=True
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        appConfig.SaveLayout(SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample()));
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("Saved Dashboard", TestLayouts.Example()));
 
         fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "summary-layouts")), Times.Once);
         fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "layouts")), Times.Never);
@@ -301,8 +302,8 @@ node.2=pane,process,process+pid+cpu+mem
 
         AppConfig appConfig = new(fileSystem.Object);
 
-        SummaryLayoutTree tree = appConfig.Layouts.Single(t => t.Name == "My Dashboard").ToTree();
-        SummaryLayoutNode processPane = tree.Panes().Single(p => p.ControlType == PaneControlType.Process);
+        LayoutTree<SummaryPane> tree = appConfig.Layouts.Single(t => t.Name == "My Dashboard").ToTree();
+        SummaryPane processPane = tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane;
 
         Assert.Equal(
             Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem,
@@ -439,11 +440,11 @@ control.foreground=#abcdef
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryControlLayout original = SummaryControlLayout.FromTree("My Dashboard", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout original = SummaryControlLayout.FromTree("My Dashboard", TestLayouts.Example());
         appConfig.SaveLayout(original);
         appConfig.DefaultLayout = original;
 
-        SummaryControlLayout edited = SummaryControlLayout.FromTree(original.Name, SummaryLayoutTree.CreateEmpty());
+        SummaryControlLayout edited = SummaryControlLayout.FromTree(original.Name, new LayoutTree<SummaryPane>(SummaryPane.Empty));
         appConfig.SaveLayout(edited);
 
         Assert.Same(edited, appConfig.DefaultLayout);
@@ -458,7 +459,7 @@ control.foreground=#abcdef
         SummaryControlLayout shipped = appConfig.Layouts.Single(l => l.Name == "All Charts");
         fileSystem.Invocations.Clear();
 
-        bool saved = appConfig.SaveLayout(SummaryControlLayout.FromTree("all charts", SummaryLayoutTree.CreateEmpty()));
+        bool saved = appConfig.SaveLayout(SummaryControlLayout.FromTree("all charts", new LayoutTree<SummaryPane>(SummaryPane.Empty)));
 
         Assert.False(saved);
         Assert.Same(shipped, appConfig.Layouts.Single(l => l.Name.Equals("All Charts", StringComparison.OrdinalIgnoreCase)));
@@ -471,7 +472,7 @@ control.foreground=#abcdef
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", SummaryLayoutTree.CreateExample());
+        SummaryControlLayout layout = SummaryControlLayout.FromTree("Saved Dashboard", TestLayouts.Example());
 
         bool result = appConfig.SaveLayout(layout);
 
@@ -490,7 +491,7 @@ control.foreground=#abcdef
         AppConfig appConfig = new(fileSystem.Object);
         SummaryControlLayout original = appConfig.DefaultLayout!;
 
-        appConfig.SaveLayout(SummaryControlLayout.FromTree("Something Else", SummaryLayoutTree.CreateExample()));
+        appConfig.SaveLayout(SummaryControlLayout.FromTree("Something Else", TestLayouts.Example()));
 
         Assert.Same(original, appConfig.DefaultLayout);
     }
@@ -530,19 +531,19 @@ control.foreground=#abcdef
     public void Shipped_All_Charts_Reproduces_The_Grid_Geometry()
     {
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryLayoutTree tree = appConfig.Layouts.Single(l => l.Name == "All Charts").ToTree();
+        LayoutTree<SummaryPane> tree = appConfig.Layouts.Single(l => l.Name == "All Charts").ToTree();
 
-        SummaryLayoutRenderer renderer = new();
+        LayoutRenderer renderer = new();
         renderer.Layout(tree, new Dictionary<int, Task.Monitor.System.Controls.Control>(), 0, 0, 120, 40);
 
         List<Rectangle> charts = tree.Panes()
-            .Where(p => p.ControlType != PaneControlType.Process)
+            .Where(p => p.Pane.ControlType != PaneControlType.Process)
             .Select(p => renderer.PaneBounds[p.Id])
             .ToList();
 
         Assert.All(charts, r => Assert.Equal(new Size(30, 12), r.Size));
 
-        Rectangle process = renderer.PaneBounds[tree.Panes().Single(p => p.ControlType == PaneControlType.Process).Id];
+        Rectangle process = renderer.PaneBounds[tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Id];
         Assert.Equal(new Rectangle(0, 24, 120, 16), process);
     }
 
@@ -554,12 +555,12 @@ control.foreground=#abcdef
         AppConfig appConfig = new(fileSystem.Object);
 
         SummaryControlLayout layout = appConfig.Layouts.Single(l => l.Name == name);
-        SummaryLayoutTree tree = layout.ToTree();
+        LayoutTree<SummaryPane> tree = layout.ToTree();
 
-        Assert.Equal(expected, tree.Panes().Select(p => p.ControlType).ToArray());
+        Assert.Equal(expected, tree.Panes().Select(p => p.Pane.ControlType).ToArray());
 
         // Like the old grid, the process list uses the app-wide columns - no per-pane override.
-        Assert.Null(tree.Panes().Single(p => p.ControlType == PaneControlType.Process).ProcessColumns);
+        Assert.Null(tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane.ProcessColumns);
     }
 
     [Theory]

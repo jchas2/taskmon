@@ -152,7 +152,7 @@ public sealed class CpuCoresControlTests
     public void Factory_Builds_The_Control_For_A_CpuCores_Pane()
     {
         Control control = SummaryPaneControlFactory.Create(
-            new SummaryLayoutNode { Id = 0, ControlType = PaneControlType.CpuCores },
+            new SummaryPane(PaneControlType.CpuCores),
             runContext.ServiceController,
             runContext.Terminal,
             runContext.AppConfig);
