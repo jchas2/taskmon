@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.LaunchdServices;
 
@@ -7,38 +9,27 @@ namespace Task.Monitor.Gui.Controls.LaunchdServices;
 
 public sealed partial class LaunchdServicesControl
 {
-    private const string NotAvailable = "N/A";
-
-    private static readonly ListSortColumn<LaunchdServiceInfo>[] SortColumns = [
-        ListSortColumn<LaunchdServiceInfo>.ByText("LABEL", 0, service => service.Label),
-        ListSortColumn<LaunchdServiceInfo>.ByText("GROUP", 1, service => service.Group),
-        ListSortColumn<LaunchdServiceInfo>.ByText("STATUS", 2, DescribeStatus),
-        ListSortColumn<LaunchdServiceInfo>.ByText("START", 3, service => DescribeStartType(service.StartType)),
-        ListSortColumn<LaunchdServiceInfo>.ByText("ENABLED", 4, service => service.Disabled ? "No" : "Yes"),
-        ListSortColumn<LaunchdServiceInfo>.ByText("PATH", 5, service => service.ProgramPath)
-    ];
-
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeLastExit(int? status) => status switch {
         null                               => NotAvailable,
-        { } value when (value & 0x7F) != 0 => $"Signal {value & 0x7F}",
-        { } value                          => $"Exit {(value >> 8) & 0xFF}"
+        { } value when (value & 0x7F) != 0 => string.Format(CultureInfo.CurrentCulture, Strings.LaunchdSignal, value & 0x7F),
+        { } value                          => string.Format(CultureInfo.CurrentCulture, Strings.LaunchdExit, (value >> 8) & 0xFF)
     };
 
     private static string DescribeStartType(LaunchdStartType startType) => startType switch {
-        LaunchdStartType.KeepAlive => "Keep Alive",
-        LaunchdStartType.AtLoad    => "At Load",
-        LaunchdStartType.OnDemand  => "On Demand",
+        LaunchdStartType.KeepAlive => Strings.LaunchdStartKeepAlive,
+        LaunchdStartType.AtLoad    => Strings.LaunchdStartAtLoad,
+        LaunchdStartType.OnDemand  => Strings.StartTypeOnDemand,
                                  _ => startType.ToString()
     };
 
     private static string DescribeStatus(LaunchdServiceInfo service) => service.Status switch {
-        LaunchdServiceStatus.Running   => $"Running ({service.Pid})",
-        LaunchdServiceStatus.Waiting   => "Waiting",
-        LaunchdServiceStatus.NotLoaded => "Not Loaded",
-        LaunchdServiceStatus.Unknown   => "Unknown",
+        LaunchdServiceStatus.Running   => string.Format(CultureInfo.CurrentCulture, Strings.LaunchdStatusRunning, service.Pid),
+        LaunchdServiceStatus.Waiting   => Strings.LaunchdStatusWaiting,
+        LaunchdServiceStatus.NotLoaded => Strings.StatusNotLoaded,
+        LaunchdServiceStatus.Unknown   => Strings.CommonUnknown,
                                      _ => service.Status.ToString()
     };
 
@@ -52,6 +43,8 @@ public sealed partial class LaunchdServicesControl
         (int.TryParse(filter.Text, out int pid) && service.Pid == pid) ||
         filter.Matches(service.Label, service.Group, service.ProgramPath, service.Publisher);
 
+    private static string NotAvailable => Strings.CommonNotAvailable;
+
     private void RebuildDetailRows(LaunchdServiceInfo? service)
     {
         detailView.Items.Clear();
@@ -64,17 +57,17 @@ public sealed partial class LaunchdServicesControl
 
         Color lastExitForeground = HasFailed(service) ? theme.RangeHighBackground : theme.PropertyValue;
 
-        detailView.Items.Add(CommonControl.PropertyRow("Label",      service.Label,                          theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Domain",     service.Domain.ToString(),              theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Group",      service.Group,                          theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Status",     DescribeStatus(service),                theme, StatusForeground(service, theme.PropertyValue)));
-        detailView.Items.Add(CommonControl.PropertyRow("Start Type", DescribeStartType(service.StartType),   theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Enabled",    service.Disabled ? "No" : "Yes",        theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Last Exit",  DescribeLastExit(service.LastExitStatus), theme, lastExitForeground));
-        detailView.Items.Add(CommonControl.PropertyRow("Program",    Cell(service.ProgramPath),              theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Arguments",  Cell(service.Arguments),                theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Publisher",  Cell(service.Publisher),                theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Plist",      Cell(service.PlistPath),                theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailLabel,      service.Label,                          theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailDomain, service.Domain.ToDisplayText(),              theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailGroup,      service.Group,                          theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,     DescribeStatus(service),                theme, StatusForeground(service, theme.PropertyValue)));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStartType, DescribeStartType(service.StartType),   theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailEnabled,    service.Disabled ? Strings.CommonNo : Strings.CommonYes,        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailLastExit,  DescribeLastExit(service.LastExitStatus), theme, lastExitForeground));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailProgram,    Cell(service.ProgramPath),              theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailArguments,  Cell(service.Arguments),                theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPublisher,  Cell(service.Publisher),                theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPlist,      Cell(service.PlistPath),                theme));
     }
 
     private void RebuildRows(IReadOnlyList<LaunchdServiceInfo> entries)
@@ -94,7 +87,7 @@ public sealed partial class LaunchdServicesControl
                 new ListViewSubItem(null!, service.Group,                         background, foreground),
                 new ListViewSubItem(null!, DescribeStatus(service),               background, StatusForeground(service, foreground)),
                 new ListViewSubItem(null!, DescribeStartType(service.StartType),  background, foreground),
-                new ListViewSubItem(null!, service.Disabled ? "No" : "Yes",       background, foreground),
+                new ListViewSubItem(null!, service.Disabled ? Strings.CommonNo : Strings.CommonYes,       background, foreground),
                 new ListViewSubItem(null!, Cell(service.ProgramPath),             background, foreground)
             });
 
@@ -103,11 +96,20 @@ public sealed partial class LaunchdServicesControl
 
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, entries.Count);
-        servicesView.HeaderText          = $"{running} running / {entries.Count} total";
+        servicesView.HeaderText          = string.Format(CultureInfo.CurrentCulture, Strings.ListHeaderRunningTotal, running, entries.Count);
         servicesView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
             [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
+
+    private static ListSortColumn<LaunchdServiceInfo>[] SortColumns => [
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.LaunchdColumnLabel, 0, service => service.Label),
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.LaunchdColumnGroup, 1, service => service.Group),
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.ListColumnStatus, 2, DescribeStatus),
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.LaunchdColumnStart, 3, service => DescribeStartType(service.StartType)),
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.LaunchdColumnEnabled, 4, service => service.Disabled ? Strings.CommonNo : Strings.CommonYes),
+        ListSortColumn<LaunchdServiceInfo>.ByText(Strings.ListColumnPath, 5, service => service.ProgramPath)
+    ];
 
     private Color StatusForeground(LaunchdServiceInfo service, Color normalForeground) => service.Status switch {
         _ when HasFailed(service)        => appConfig.Theme.RangeHighBackground,

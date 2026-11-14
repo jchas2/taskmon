@@ -1,4 +1,6 @@
+using System.Globalization;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.TextInputDialog;
@@ -10,8 +12,6 @@ internal sealed class ListFilter
 {
     private const int DialogMaxWidth = 50;
     private const int DialogMinWidth = 30;
-
-    public const string NoMatchesText = "No matches";
 
     private readonly Control         owner;
     private readonly ISystemTerminal terminal;
@@ -25,6 +25,8 @@ internal sealed class ListFilter
             Visible = false,
             Title   = title
         };
+
+        CommonControl.Text(Dialog);
     }
 
     public void ApplyTheme(Theme theme) => CommonControl.Theme(Dialog, theme);
@@ -36,8 +38,8 @@ internal sealed class ListFilter
         }
 
         return showTotal
-            ? $"Filter: {Text} ({matched} of {total})"
-            : $"Filter: {Text} ({matched})";
+            ? string.Format(CultureInfo.CurrentCulture, Strings.FilterHeaderWithTotal, Text, matched, total)
+            : string.Format(CultureInfo.CurrentCulture, Strings.FilterHeader, Text, matched);
     }
 
     public void Close()
@@ -59,7 +61,6 @@ internal sealed class ListFilter
         }
     }
 
-    // The filter's footer hotkeys; Esc to clear only appears while a filter is applied.
     public (string Key, string Label)[] FooterHotKeys =>
         IsActive
             ? [CommonControl.FilterHotKey, CommonControl.ClearFilterHotKey]
@@ -117,6 +118,8 @@ internal sealed class ListFilter
 
         return false;
     }
+
+    public static string NoMatchesText => Strings.FilterNoMatches;
 
     private void Show()
     {

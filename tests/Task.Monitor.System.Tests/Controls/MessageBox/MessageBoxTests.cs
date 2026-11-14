@@ -10,7 +10,7 @@ public sealed class MessageBoxTests
 {
     [Fact]
     public void MessageBox_Canary_Test() =>
-        Assert.Equal(24, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
 
     public static TheoryData<List<ConsoleKey>, MessageBoxResult> KeyPressData()
         => new() {
@@ -146,7 +146,10 @@ public sealed class MessageBoxTests
         
         MessageBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             Buttons = MessageBoxButtons.OkCancel,
+            CancelText = "Cancel",
             Height = 12,
+            HelpText = help,
+            OkText = "OK",
             Text = text,
             Title = title,
             Visible =  true,
@@ -154,7 +157,7 @@ public sealed class MessageBoxTests
             X = 5,
             Y = 10
         };
-        
+
         control.ShowMessageBox();
         
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(title))), Times.Once);
@@ -203,5 +206,33 @@ public sealed class MessageBoxTests
         Assert.Equal(40, control.Width);
         Assert.Equal(5, control.X);
         Assert.Equal(10, control.Y);
+    }
+
+    // The highlighted first letter of each button selects it in any UI language, e.g. the A of
+    // Italian "Annulla", as well as the English O/Y and C/N keys.
+    [Fact]
+    public void The_First_Letter_Of_Each_Label_Selects_Its_Button()
+    {
+        MessageBoxControl control = new(new ForwardingTerminal(TerminalMock.Setup().Object)) {
+            Buttons    = MessageBoxButtons.OkCancel,
+            CancelText = "Annulla",
+            Height     = 12,
+            OkText     = "OK",
+            Visible    = true,
+            Width      = 40
+        };
+
+        control.ShowMessageBox();
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.A), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(MessageBoxResult.Cancel, control.Result);
+
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.O), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(MessageBoxResult.Ok, control.Result);
     }
 }

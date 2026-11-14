@@ -88,6 +88,44 @@ public sealed class CommonControlTests
         Assert.Equal(DialogButtonForeground, textInputDialog.DialogButtonForegroundColour);
     }
 
+    // The dialogs in Task.Monitor.System hold no wording of their own; the app supplies it.
+    [Fact]
+    public void Dialogs_Take_Their_Wording_From_Strings()
+    {
+        RecordingTerminal terminal = new();
+
+        MessageBoxControl messageBox = new(terminal);
+        CommonControl.Text(messageBox);
+
+        Assert.Equal("OK", messageBox.OkText);
+        Assert.Equal("Cancel", messageBox.CancelText);
+        Assert.Equal("Use ← → and ↵ to select", messageBox.HelpText);
+
+        DriveInputBox driveInputBox = new(terminal);
+        CommonControl.Text(driveInputBox);
+
+        Assert.Equal("OK", driveInputBox.OkText);
+        Assert.Equal("Cancel", driveInputBox.CancelText);
+        Assert.Equal("Custom path...", driveInputBox.CustomPathText);
+        Assert.Contains("browse", driveInputBox.HelpText);
+
+        PickerBoxControl pickerBox = new(terminal);
+        CommonControl.Text(pickerBox);
+
+        PickerBoxControl multiSelectPickerBox = new(terminal) { MultiSelect = true };
+        CommonControl.Text(multiSelectPickerBox);
+
+        Assert.Equal("↑ ↓ browse   ↵ select   Esc cancel", pickerBox.HelpText);
+        Assert.Equal("↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel", multiSelectPickerBox.HelpText);
+
+        TextInputDialog textInputDialog = new(terminal);
+        CommonControl.Text(textInputDialog);
+
+        Assert.Equal("OK", textInputDialog.OkText);
+        Assert.Equal("Cancel", textInputDialog.CancelText);
+        Assert.Equal("Tab select button   ↵ confirm   Esc cancel", textInputDialog.HelpText);
+    }
+
     [Fact]
     public void FooterText_Colours_Keys_And_Labels_From_The_Theme()
     {

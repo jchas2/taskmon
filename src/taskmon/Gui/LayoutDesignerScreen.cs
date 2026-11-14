@@ -1,9 +1,10 @@
 using System.Drawing;
-using System.Text.RegularExpressions;
+using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.MessageBox;
 using Task.Monitor.System.Controls.PickerBox;
@@ -19,10 +20,12 @@ namespace Task.Monitor.Gui;
 // A live WYSIWYG editor for the SummaryLayout control.
 public sealed class LayoutDesignerScreen : Screen
 {
-    private const int   BannerHeight    = 1;
-    private const int   FooterHeight    = 1;
-    private const int   MessageBoxWidth = 48;
-    private const float RatioStep       = 0.05f;
+    private const int   BannerHeight         = 1;
+    private const int   FooterHeight         = 1;
+    private const int   MessageBoxWidth      = 48;
+    private const int   PickerMinWidth       = 24;
+    private const int   PickerPreferredWidth = 40;
+    private const float RatioStep            = 0.05f;
 
 #if __APPLE__
     private static readonly PaneControlType[] UnavailableControlTypes = [];
@@ -35,25 +38,26 @@ public sealed class LayoutDesignerScreen : Screen
         .ToArray();
 
     // TODO: Dup of SetupScreen's ToggleableColumns table. Need a CommonControl functions class.
-    private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
+    // Each label is the column's Statistics_<member> entry in Strings.resx.
+    private static readonly Statistics[] ToggleableColumns =
     [
-        (Statistics.User,   "User"),
-        (Statistics.Pri,    "Priority"),
-        (Statistics.Cpu,    "CPU %"),
-        (Statistics.AvgCpu, "Average CPU %"),
-        (Statistics.MaxCpu, "Max CPU %"),
-        (Statistics.Thrd,   "Threads"),
-        (Statistics.Gpu,    "GPU %"),
-        (Statistics.AvgGpu, "Average GPU %"),
-        (Statistics.MaxGpu, "Max GPU %"),
-        (Statistics.Mem,    "Memory"),
-        (Statistics.AvgMem, "Average Memory"),
-        (Statistics.MaxMem, "Max Memory"),
-        (Statistics.Disk,   "Disk"),
-        (Statistics.AvgDisk,"Average Disk"),
-        (Statistics.MaxDisk,"Max Disk"),
-        (Statistics.Power,  "Power"),
-        (Statistics.Path,   "Path"),
+        Statistics.User,
+        Statistics.Pri,
+        Statistics.Cpu,
+        Statistics.AvgCpu,
+        Statistics.MaxCpu,
+        Statistics.Thrd,
+        Statistics.Gpu,
+        Statistics.AvgGpu,
+        Statistics.MaxGpu,
+        Statistics.Mem,
+        Statistics.AvgMem,
+        Statistics.MaxMem,
+        Statistics.Disk,
+        Statistics.AvgDisk,
+        Statistics.MaxDisk,
+        Statistics.Power,
+        Statistics.Path,
     ];
 
     private readonly RunContext                 runContext;
@@ -79,7 +83,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         saveDialog = new TextInputDialogControl(runContext.Terminal) {
             Visible = false,
-            Title = "Save Layout As",
+            Title = Strings.LayoutDesignerSaveTitle,
             CharacterFilter = ch => char.IsLetterOrDigit(ch) || ch is '-' or ' '
         };
 
@@ -88,6 +92,11 @@ public sealed class LayoutDesignerScreen : Screen
             Buttons = MessageBoxButtons.Ok,
             Height  = MessageBoxControl.PreferredHeight
         };
+
+        CommonControl.Text(controlTypePicker);
+        CommonControl.Text(columnPicker);
+        CommonControl.Text(saveDialog);
+        CommonControl.Text(messageBox);
 
         RebuildPaneControls();
     }
@@ -136,7 +145,7 @@ public sealed class LayoutDesignerScreen : Screen
         Terminal.BackgroundColor = runContext.AppConfig.Theme.MenubarBackground;
         Terminal.ForegroundColor = runContext.AppConfig.Theme.MenubarForeground;
 
-        string title = $"LAYOUT DESIGNER - {layoutName ?? "Untitled"}";
+        string title = string.Format(CultureInfo.CurrentCulture, Strings.LayoutDesignerTitle, layoutName ?? Strings.LayoutDesignerUntitled);
         int offsetX = Math.Max(0, Width / 2 - title.Length / 2);
 
         Terminal.WriteEmptyLineTo(offsetX);
@@ -146,9 +155,7 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void DrawFooter()
     {
-        const string help =
-            "←↑→↓ Move  V/H Split  ↵ Assign  C Columns  " +
-            "+/- Resize  Del Remove  S Save  Esc Back";
+        string help = Strings.LayoutDesignerHelp;
 
         Terminal.SetCursorPosition(X, Y + Height - FooterHeight);
         Terminal.BackgroundColor = runContext.AppConfig.Theme.Background;
@@ -208,7 +215,7 @@ public sealed class LayoutDesignerScreen : Screen
             Statistics columns = Statistics.Process | Statistics.Pid;
 
             foreach (int index in checkedIndices) {
-                columns |= ToggleableColumns[index].Statistic;
+                columns |= ToggleableColumns[index];
             }
 
             tree.Nodes[selectedNodeId].ProcessColumns = columns;
@@ -484,14 +491,14 @@ public sealed class LayoutDesignerScreen : Screen
         Control.RedrawEnabled = false;
 
         Statistics current = tree.Nodes[selectedNodeId].ProcessColumns ?? runContext.AppConfig.VisibleColumns;
-        List<string> labels = ToggleableColumns.Select(c => c.Label).ToList();
-        List<bool> initiallyChecked = ToggleableColumns.Select(c => (current & c.Statistic) != 0).ToList();
+        List<string> labels = ToggleableColumns.Select(c => c.ToDisplayText()).ToList();
+        List<bool> initiallyChecked = ToggleableColumns.Select(c => (current & c) != 0).ToList();
 
-        columnPicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        columnPicker.Width  = PickerWidth(columnPicker);
         columnPicker.Height = Math.Clamp(PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
         columnPicker.X      = X + Math.Max(0, (Width - columnPicker.Width) / 2);
         columnPicker.Y      = Y + Math.Max(0, (Height - columnPicker.Height) / 2);
-        columnPicker.Title  = "Columns";
+        columnPicker.Title  = Strings.LayoutDesignerColumnsTitle;
         
         columnPicker.SetItems(labels, initiallyChecked);
         columnPicker.Visible = true;
@@ -505,16 +512,19 @@ public sealed class LayoutDesignerScreen : Screen
         List<string> labels = AssignableControlTypes.Select(ToDisplayLabel).ToList();
         int currentIndex    = Array.IndexOf(AssignableControlTypes, tree.Nodes[selectedNodeId].ControlType);
 
-        controlTypePicker.Width  = Math.Clamp(Width - 4, 24, 40);
+        controlTypePicker.Width  = PickerWidth(controlTypePicker);
         controlTypePicker.Height = Math.Clamp( PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
         controlTypePicker.X      = X + Math.Max(0, (Width - controlTypePicker.Width) / 2);
         controlTypePicker.Y      = Y + Math.Max(0, (Height - controlTypePicker.Height) / 2);
-        controlTypePicker.Title  = "Assign control";
+        controlTypePicker.Title  = Strings.LayoutDesignerAssignTitle;
         
         controlTypePicker.SetItems(labels, initialSelectedIndex: Math.Max(0, currentIndex));
         controlTypePicker.Visible = true;
         controlTypePicker.ShowPickerBox();
     }
+
+    private int PickerWidth(PickerBoxControl picker) =>
+        Math.Max(PickerMinWidth, Math.Min(Math.Max(PickerPreferredWidth, picker.HelpText.Length + 2), Width - 4));
 
     private void ReassignSelectedPaneControlType(PaneControlType newType)
     {
@@ -632,7 +642,7 @@ public sealed class LayoutDesignerScreen : Screen
         saveDialog.Y      = Y + Math.Max(0, (Height - saveDialog.Height) / 2);
 
         saveDialog.SetText(layoutName != null && runContext.AppConfig.IsBuiltInLayout(layoutName)
-            ? $"{layoutName} Copy"
+            ? string.Format(CultureInfo.CurrentCulture, Strings.LayoutDesignerCopyName, layoutName)
             : layoutName ?? string.Empty);
         
         saveDialog.Visible = true;
@@ -643,8 +653,8 @@ public sealed class LayoutDesignerScreen : Screen
     {
         if (runContext.AppConfig.IsBuiltInLayout(name)) {
             ShowMessageBox(
-                "Built-in Layout",
-                $"'{name}'\nis a built-in layout.\nSave it under a new name.");
+                Strings.LayoutDesignerBuiltInTitle,
+                string.Format(CultureInfo.CurrentCulture, Strings.LayoutDesignerBuiltInText, name));
 
             return;
         }
@@ -653,7 +663,7 @@ public sealed class LayoutDesignerScreen : Screen
         bool saved = runContext.AppConfig.SaveLayout(SummaryControlLayout.FromTree(name, tree));
 
         if (!saved) {
-            ShowMessageBox("Save Failed", "An error occurred saving the layout.");
+            ShowMessageBox(Strings.CommonSaveFailedTitle, Strings.LayoutDesignerSaveFailedText);
             return;
         }
 
@@ -692,8 +702,8 @@ public sealed class LayoutDesignerScreen : Screen
         Draw();
     }
 
-    private static string ToDisplayLabel(PaneControlType type) =>
-        Regex.Replace(type.ToString(), "(?<!^)([A-Z])", " $1");
+    // Layout files save the member name; the label is its PaneControlType_<member> entry.
+    internal static string ToDisplayLabel(PaneControlType type) => type.ToDisplayText();
 
     internal SummaryLayoutTree Tree => tree;
 }

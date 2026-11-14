@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  US English overrides. Only entries whose US spelling differs from the British default in
+  Strings.resx belong here; everything else falls back to Strings.resx.
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="SetupMetreStylesHeader" xml:space="preserve">
+    <value>Meter Styles</value>
+  </data>
+  <data name="SetupMetresMenuItem" xml:space="preserve">
+    <value>METERS</value>
+  </data>
+
+  <data name="HelpChartColoursSection" xml:space="preserve">
+    <value>CHART COLORS</value>
+  </data>
+  <data name="HelpProcessColoursSection" xml:space="preserve">
+    <value>PROCESS AND PATH COLORS</value>
+  </data>
+  <data name="HelpF2Description" xml:space="preserve">
+    <value>Show setup: layouts, meter display, visible columns, color themes and other settings.</value>
+  </data>
+  <data name="HelpF3Description" xml:space="preserve">
+    <value>Switch to the next color theme, in the order setup lists them. Save it from setup to keep it.</value>
+  </data>
+
+  <data name="TipSetupOptions" xml:space="preserve">
+    <value>Press {F2} to change the theme, visible columns, meter style and update speed.</value>
+  </data>
+  <data name="TipHelpScreen" xml:space="preserve">
+    <value>Press {F1} for every key and what the colors mean.</value>
+  </data>
+
+  <data name="HealthUtilisationColumn" xml:space="preserve">
+    <value>UTILIZATION</value>
+  </data>
+
+  <data name="DiskSpaceCancellingStatus" xml:space="preserve">
+    <value>Canceling… {0}</value>
+  </data>
+  <data name="DiskSpaceCancelledStatus" xml:space="preserve">
+    <value>Canceled - {0}</value>
+  </data>
+
+  <data name="PaneControlType_CpuMetre" xml:space="preserve">
+    <value>Cpu Meter</value>
+  </data>
+  <data name="PaneControlType_GpuMetre" xml:space="preserve">
+    <value>Gpu Meter</value>
+  </data>
+  <data name="PaneControlType_GpuMemoryMetre" xml:space="preserve">
+    <value>Gpu Memory Meter</value>
+  </data>
+  <data name="PaneControlType_MemoryMetre" xml:space="preserve">
+    <value>Memory Meter</value>
+  </data>
+  <data name="PaneControlType_VirtualMemoryMetre" xml:space="preserve">
+    <value>Virtual Memory Meter</value>
+  </data>
+  <data name="PaneControlType_DiskMetre" xml:space="preserve">
+    <value>Disk Meter</value>
+  </data>
+  <data name="PaneControlType_NetworkSendMetre" xml:space="preserve">
+    <value>Network Send Meter</value>
+  </data>
+  <data name="PaneControlType_NetworkReceiveMetre" xml:space="preserve">
+    <value>Network Receive Meter</value>
+  </data>
+  <data name="PaneControlType_NpuMetre" xml:space="preserve">
+    <value>Npu Meter</value>
+  </data>
+
+  <data name="PerformanceUtilisationColumn" xml:space="preserve">
+    <value>Utilization</value>
+  </data>
+  <data name="LabelVirtualisation" xml:space="preserve">
+    <value>Virtualization:</value>
+  </data>
+</root>

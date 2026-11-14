@@ -45,6 +45,23 @@ public sealed class SetupScreenTests
         return layoutView;
     }
 
+    [Fact]
+    public void A_US_English_UI_Spells_The_Meters_Menu_And_Header_The_US_Way()
+    {
+        using IDisposable _ = UiCulture.Use(UiCulture.American);
+
+        SetupScreen setupScreen = new(runContext, screenApp);
+        setupScreen.Load();
+
+        ListView menuView  = setupScreen.Controls.OfType<ListView>().Single(c => c.Name == "menuView");
+        ListView metreView = setupScreen.Controls.OfType<ListView>().Single(c => c.Name == "metreView");
+
+        Assert.Contains("METERS", menuView.Items.Select(item => item.Text));
+        Assert.Equal("Meter Styles", metreView.ColumnHeaders[0].Text);
+
+        setupScreen.Unload();
+    }
+
     private string CapturedOutput() =>
         string.Concat(runContextHelper.terminal.Invocations
             .Where(invocation => invocation.Method.Name == "Write"

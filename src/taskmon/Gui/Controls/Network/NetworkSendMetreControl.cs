@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -19,5 +20,5 @@ public sealed class NetworkSendMetreControl(
             ? new MetreReading([peak.Add(network.SendBytesPerSecond)], network.ToNetworkSendRate())
             : null;
 
-    protected override string Title => "Net Send";
+    protected override string Title => Strings.MetreTitleNetworkSend;
 }

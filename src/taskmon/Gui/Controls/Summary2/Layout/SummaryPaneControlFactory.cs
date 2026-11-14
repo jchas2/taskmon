@@ -14,6 +14,7 @@ using Task.Monitor.Gui.Controls.Services;
 using Task.Monitor.Gui.Controls.Startup;
 using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.Gui.Controls.Thermals;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -31,53 +32,53 @@ public static class SummaryPaneControlFactory
         
         pane.ControlType switch {
             PaneControlType.Cpu => new Chart(terminal) {
-                Text                      = "Cpu",
+                Text                      = Strings.ChartTitleCpu,
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.Memory => new Chart(terminal) {
-                Text                      = "Memory",
+                Text                      = Strings.ChartTitleMemory,
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.VirtualMemory => new Chart(terminal) {
 #if __WIN32__
-                Text                      = "Virtual",
+                Text                      = Strings.ChartTitleVirtualMemory,
 #endif
 #if __APPLE__
-                Text                      = "Swap",
+                Text                      = Strings.ChartTitleSwap,
 #endif
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.Disk => new Chart(terminal) {
-                Text                      = "Disk",
+                Text                      = Strings.ChartTitleDisk,
                 AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
             PaneControlType.Gpu => new Chart(terminal) {
-                Text                      = "Gpu",
+                Text                      = Strings.ChartTitleGpu,
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.GpuMemory => new Chart(terminal) {
-                Text                      = "Gpu Memory",
+                Text                      = Strings.ChartTitleGpuMemory,
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },
             PaneControlType.NetworkReceived => new Chart(terminal) {
-                Text                      = "Net Rec",
+                Text                      = Strings.ChartTitleNetworkReceived,
                 AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
             PaneControlType.NetworkSent => new Chart(terminal) {
-                Text                      = "Net Sent",
+                Text                      = Strings.ChartTitleNetworkSent,
                 AutoScale                 = true,
                 CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate
             },
 #if __APPLE__
             PaneControlType.Npu => new Chart(terminal) {
-                Text                      = "Npu",
+                Text                      = Strings.ChartTitleNpu,
                 AutoScale                 = false,
                 CustomYAxisScaleFormatter = Chart.FormatYScalePercentage
             },

@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Internal.Abstractions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.Chart;
@@ -123,7 +125,6 @@ public sealed class AppConfig
         }
     }
 
-    // No fallback, unlike the other paths, as old event files are deleted from this folder.
     public string? DefaultEventsPath
     {
         get {
@@ -333,8 +334,6 @@ public sealed class AppConfig
         set => uxSection?.Add(Constants.Keys.HighlightStatsColUpdate, value.ToString());
     }
 
-    // Built-in layouts are read-only: they are refreshed from the embedded copy on every start, so
-    // an edit saved under one of their names would be replaced on the next run.
     public bool IsBuiltInLayout(string name) =>
         allLayouts.Any(t => t.IsBuiltIn && t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
 
@@ -537,6 +536,7 @@ public sealed class AppConfig
             .AddIfMissing(Constants.Keys.ShowLargeMetreGrid,          false.ToString())
             .AddIfMissing(Constants.Keys.ShowTips,                    true.ToString())
             .AddIfMissing(Constants.Keys.ShowYAxisScale,              true.ToString())
+            .AddIfMissing(Constants.Keys.UiLanguage,                  string.Empty)
             .AddIfMissing(Constants.Keys.UseIrixCpuReporting,         useIrixMode.ToString());
 
         if (!iniConfig.ContainsSection(uxSection.Name)) {
@@ -834,8 +834,6 @@ public sealed class AppConfig
         }
     }
 
-    // Layout files need their raw ConfigSection to check they're a tree layout before loading them
-    // (see AddParsedLayout) - unlike TryParseIni<T>, which commits to a concrete type up front.
     private bool TryParseIniSection(string text, out ConfigSection? section)
     {
         section = null;
@@ -860,8 +858,6 @@ public sealed class AppConfig
             bool   fileExists = fileSystem.FileExists(path);
             string fileText   = fileExists ? fileSystem.ReadAllText(path) : string.Empty;
 
-            // A file that doesn't parse is left alone. It holds settings that couldn't be read,
-            // usually one hand-edited typo away from working again.
             _ = Config.FromString(fileText);
 
             string merged = ConfigFileMerger.Merge(fileText, savedConfig, iniConfig);
@@ -875,14 +871,20 @@ public sealed class AppConfig
             return true;
         }
         catch (ConfigParseException ex) {
-            LastSaveError = $"{ConfigFile} has an error and was not saved.\n{ex.Message}";
-            ExceptionHelper.LogException(ex, LastSaveError);
+            LastSaveError = string.Format(CultureInfo.CurrentCulture, Strings.ConfigSaveParseError, ConfigFile, ex.Message);
+            ExceptionHelper.LogException(ex, $"{ConfigFile} has an error and was not saved.\n{ex.Message}");
             return false;
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error saving config: {ex.Message} to path {path}");
             return false;
         }
+    }
+
+    public string UiLanguage
+    {
+        get => uxSection?.GetString(Constants.Keys.UiLanguage, string.Empty) ?? string.Empty;
+        set => uxSection?.Add(Constants.Keys.UiLanguage, value);
     }
 
     public bool UseIrixReporting

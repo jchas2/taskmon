@@ -21,7 +21,7 @@ public sealed class AppConfigTests
 
     [Fact]
     public void AppConfig_Canary_Test() =>
-        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<AppConfig>());
+        Assert.Equal(36, CanaryTestHelper.GetPropertyCount<AppConfig>());
 
     [Fact]
     public void A_New_Config_Starts_With_All_Charts_As_The_Default_Layout()
@@ -98,6 +98,7 @@ show-metre-network-numerically=False
 show-small-metre-grid=True
 show-tips=False
 show-y-axis-scale=False
+ui-language=it-IT
 use-irix-cpu-reporting=False
 ";
 
@@ -630,6 +631,7 @@ control.foreground=#abcdef
         Assert.True(appConfig.ShowYAxisScale);
         Assert.False(appConfig.ShowLargeMetreGrid);
         Assert.False(appConfig.ShowSmallMetreGrid);
+        Assert.Equal(string.Empty, appConfig.UiLanguage);
 
         if (!string.IsNullOrEmpty(iniFileData)) {
             Assert.True(appConfig.UseIrixReporting);
@@ -704,6 +706,7 @@ control.foreground=#abcdef
         Assert.True(appConfig.ShowSmallMetreGrid);
         Assert.False(appConfig.ShowTips);
         Assert.False(appConfig.ShowYAxisScale);
+        Assert.Equal("it-IT", appConfig.UiLanguage);
         Assert.False(appConfig.UseIrixReporting);
 
         Statistics allButPower =

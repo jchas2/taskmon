@@ -2,6 +2,7 @@ using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
@@ -10,16 +11,6 @@ namespace Task.Monitor.Gui;
 
 public class HelpScreen : Screen
 {
-#if __WIN32__
-    private const string SpaceHelpText = "Check/uncheck items; toggle STARTUP or SERVICES";
-#elif __APPLE__
-    private const string SpaceHelpText = "Check/uncheck items; enable/disable in STARTUP";
-#else
-    private const string SpaceHelpText = "Space-bar to check/uncheck items";
-#endif
-
-    private const string Title = "TASK MONITOR HELP";
-
     private const int KeyColumnWidth      = 10;
     private const int KeyDescriptionWidth = 41;
     private const int LabelColumnWidth    = 28;
@@ -41,11 +32,11 @@ public class HelpScreen : Screen
     {
         this.runContext = runContext;
 
-        chartView        = NewSection("CHART COLOURS", columns: 4);
-        processView      = NewSection("PROCESS AND PATH COLOURS", columns: 5);
-        keysView         = NewSection("KEYS", columns: 4);
-        functionKeysView = NewSection("FUNCTION KEYS", columns: 2);
-        otherKeysView    = NewSection("OTHER KEYS", columns: 2);
+        chartView        = NewSection(Strings.HelpChartColoursSection, columns: 4);
+        processView      = NewSection(Strings.HelpProcessColoursSection, columns: 5);
+        keysView         = NewSection(Strings.HelpKeysSection, columns: 4);
+        functionKeysView = NewSection(Strings.HelpFunctionKeysSection, columns: 2);
+        otherKeysView    = NewSection(Strings.HelpOtherKeysSection, columns: 2);
 
         sections = [chartView, processView, keysView, functionKeysView, otherKeysView];
 
@@ -56,6 +47,9 @@ public class HelpScreen : Screen
 
     private static ListViewSubItem Cell(string text, Color foreground, Color background) =>
         new(null!, text, background, foreground);
+
+    private static int FitWidth(int minimum, params string[] texts) =>
+        Math.Max(minimum, texts.Max(text => text.Length) + 1);
 
     private static ListViewItem KeyRow(Theme theme, params string[] cells) =>
         new(cells
@@ -103,7 +97,7 @@ public class HelpScreen : Screen
 
         KeyBindControl.Draw(
             "ESC",
-            "Exit",
+            Strings.KeyBindExit,
             X,
             Height - 1,
             10,
@@ -136,49 +130,48 @@ public class HelpScreen : Screen
         otherKeysView.ColumnHeaders[0].RightAligned    = true;
 
         chartView.Items.Add(new ListViewItem([
-            Cell("Low",  theme.RangeLowBackground,  listBg),
-            Cell("Mid",  theme.RangeMidBackground,  listBg),
-            Cell("High", theme.RangeHighBackground, listBg),
+            Cell(Strings.HelpRangeLow,  theme.RangeLowBackground,  listBg),
+            Cell(Strings.HelpRangeMid,  theme.RangeMidBackground,  listBg),
+            Cell(Strings.HelpRangeHigh, theme.RangeHighBackground, listBg),
             Cell("",     listFg,                    listBg)
         ]));
 
-        processView.Items.Add(new ListViewItem([Cell("Normal process",              theme.ColumnCommandNormalUserSpace, listBg)]));
-        processView.Items.Add(new ListViewItem([Cell("Low priority (nice) process", theme.ColumnCommandLowPriority,     listBg)]));
-        processView.Items.Add(new ListViewItem([Cell("High Cpu usage (> 1 core)",   theme.ColumnCommandHighCpu,         listBg)]));
-        processView.Items.Add(new ListViewItem([Cell("I/O bound process",           theme.ColumnCommandIoBound,         listBg)]));
+        processView.Items.Add(new ListViewItem([Cell(Strings.HelpNormalProcess,      theme.ColumnCommandNormalUserSpace, listBg)]));
+        processView.Items.Add(new ListViewItem([Cell(Strings.HelpLowPriorityProcess, theme.ColumnCommandLowPriority,     listBg)]));
+        processView.Items.Add(new ListViewItem([Cell(Strings.HelpHighCpuProcess,     theme.ColumnCommandHighCpu,         listBg)]));
+        processView.Items.Add(new ListViewItem([Cell(Strings.HelpIoBoundProcess,     theme.ColumnCommandIoBound,         listBg)]));
 
         processView.Items.Add(new ListViewItem([
-            Cell("Metric", listFg,                    listBg),
-            Cell("Low",    theme.RangeLowForeground,  theme.RangeLowBackground),
-            Cell("Mid",    theme.RangeMidForeground,  theme.RangeMidBackground),
-            Cell("High",   theme.RangeHighForeground, theme.RangeHighBackground),
+            Cell(Strings.HelpMetric, listFg,                    listBg),
+            Cell(Strings.HelpRangeLow,    theme.RangeLowForeground,  theme.RangeLowBackground),
+            Cell(Strings.HelpRangeMid,    theme.RangeMidForeground,  theme.RangeMidBackground),
+            Cell(Strings.HelpRangeHigh,   theme.RangeHighForeground, theme.RangeHighBackground),
             Cell("",       listFg,                    listBg)
         ]));
 
-        processView.Items.Add(new ListViewItem([Cell("Metric changed", theme.DeltaHighlightColour, listBg)]));
+        processView.Items.Add(new ListViewItem([Cell(Strings.HelpMetricChanged, theme.DeltaHighlightColour, listBg)]));
 
-        keysView.Items.Add(KeyRow(theme, "←:",        "Move left to next screen component",       "↑:",       "Arrow to scroll list up"));
-        keysView.Items.Add(KeyRow(theme, "→:",        "Move right to next screen component",      "↓:",       "Arrow to scroll list down"));
-        keysView.Items.Add(KeyRow(theme, "Pg Up:",    "Move up one page in list",                 "↵:",       "ENTER to select item in list"));
-        keysView.Items.Add(KeyRow(theme, "Pg Down:",  "Move down one page in list",               "ESC:",     "Close dialog or clear the filter"));
-        keysView.Items.Add(KeyRow(theme, "a:",        "Sort list ascending",                      "d:",       "Sort list descending"));
-        keysView.Items.Add(KeyRow(theme, "s:",        "Select list sort column",                  "p g m:",   "Sort process list on CPU%, GPU%, Memory"));
-        keysView.Items.Add(KeyRow(theme, "f:",        "Filter the list",                          "x:",       "Toggle multiple process list selection"));
-        keysView.Items.Add(KeyRow(theme, "u:",        "Uncheck all selected processes in a list", "␣:",       SpaceHelpText));
-        keysView.Items.Add(KeyRow(theme, "k:",        "End task (checked or selected)",           "r F5:",    "Refresh the current list"));
-        keysView.Items.Add(KeyRow(theme, "z:",        "Freeze process list updates",              "i:",       "Toggle Irix mode CPU reporting in process list"));
-        keysView.Items.Add(KeyRow(theme, "t:",        "Show the next tip in the footer",          "",         ""));
+        keysView.Items.Add(KeyRow(theme, "←:",        Strings.HelpKeyMoveLeft,   "↑:",       Strings.HelpKeyScrollUp));
+        keysView.Items.Add(KeyRow(theme, "→:",        Strings.HelpKeyMoveRight,  "↓:",       Strings.HelpKeyScrollDown));
+        keysView.Items.Add(KeyRow(theme, "Pg Up:",    Strings.HelpKeyPageUp,     "↵:",       Strings.HelpKeyEnter));
+        keysView.Items.Add(KeyRow(theme, "Pg Down:",  Strings.HelpKeyPageDown,   "ESC:",     Strings.HelpKeyEscape));
+        keysView.Items.Add(KeyRow(theme, "a:",        Strings.HelpKeySortAscending, "d:",    Strings.HelpKeySortDescending));
+        keysView.Items.Add(KeyRow(theme, "s:",        Strings.HelpKeySortColumn, "p g m:",   Strings.HelpKeySortProcesses));
+        keysView.Items.Add(KeyRow(theme, "f:",        Strings.HelpKeyFilter,     "x:",       Strings.HelpKeyMultiSelect));
+        keysView.Items.Add(KeyRow(theme, "u:",        Strings.HelpKeyUncheckAll, "␣:",       SpaceHelpText));
+        keysView.Items.Add(KeyRow(theme, "k:",        Strings.HelpKeyEndTask,    "r F5:",    Strings.HelpKeyRefresh));
+        keysView.Items.Add(KeyRow(theme, "z:",        Strings.HelpKeyFreeze,     "i:",       Strings.HelpKeyIrix));
+        keysView.Items.Add(KeyRow(theme, "t:",        Strings.HelpKeyNextTip,    "",         ""));
 
-        functionKeysView.Items.Add(KeyRow(theme, "F1:",  "Show this help screen."));
-        functionKeysView.Items.Add(KeyRow(theme, "F2:",  "Show setup: layouts, metre display, visible columns, colour themes and other settings."));
-        functionKeysView.Items.Add(KeyRow(theme, "F3:",  "Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it."));
-        functionKeysView.Items.Add(KeyRow(theme, "F4:",  "Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it."));
-        functionKeysView.Items.Add(KeyRow(theme, "F5:",  "Refresh the Startup, Apps, Services or Drivers list (same as r)."));
-        functionKeysView.Items.Add(KeyRow(theme, "F10:", "Exit Task Monitor."));
-        functionKeysView.Items.Add(KeyRow(theme, "F12:", "Show the about screen."));
+        functionKeysView.Items.Add(KeyRow(theme, "F1:",  Strings.HelpF1Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F2:",  Strings.HelpF2Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F3:",  Strings.HelpF3Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F4:",  Strings.HelpF4Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F5:",  Strings.HelpF5Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F10:", Strings.HelpF10Description));
+        functionKeysView.Items.Add(KeyRow(theme, "F12:", Strings.HelpF12Description));
 
-        otherKeysView.Items.Add(KeyRow(theme, "k:",
-            "End the selected process, or all checked processes in multiple selection (x), and their child processes."));
+        otherKeysView.Items.Add(KeyRow(theme, "k:", Strings.HelpOtherKeyEndTask));
 
         base.OnLoad();
     }
@@ -202,11 +195,37 @@ public class HelpScreen : Screen
             y += section.Height;
         }
 
-        SetColumnWidths(chartView,        SwatchWidth,      SwatchWidth, WideSwatchWidth);
-        SetColumnWidths(processView,      LabelColumnWidth, SwatchWidth, SwatchWidth, WideSwatchWidth);
-        SetColumnWidths(keysView,         KeyColumnWidth,   KeyDescriptionWidth, KeyColumnWidth);
-        SetColumnWidths(functionKeysView, KeyColumnWidth);
-        SetColumnWidths(otherKeysView,    KeyColumnWidth);
+        // The widths are minimums, widened to fit the labels in the UI language.
+        int lowWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeLow);
+        int midWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeMid);
+        int highWidth  = FitWidth(WideSwatchWidth, Strings.HelpRangeHigh);
+        int labelWidth = FitWidth(
+            LabelColumnWidth,
+            Strings.HelpNormalProcess,
+            Strings.HelpLowPriorityProcess,
+            Strings.HelpHighCpuProcess,
+            Strings.HelpIoBoundProcess,
+            Strings.HelpMetric,
+            Strings.HelpMetricChanged);
+        int descriptionWidth = FitWidth(
+            KeyDescriptionWidth,
+            Strings.HelpKeyMoveLeft,
+            Strings.HelpKeyMoveRight,
+            Strings.HelpKeyPageUp,
+            Strings.HelpKeyPageDown,
+            Strings.HelpKeySortAscending,
+            Strings.HelpKeySortColumn,
+            Strings.HelpKeyFilter,
+            Strings.HelpKeyUncheckAll,
+            Strings.HelpKeyEndTask,
+            Strings.HelpKeyFreeze,
+            Strings.HelpKeyNextTip);
+
+        SetColumnWidths(chartView,        lowWidth,       midWidth,         highWidth                );
+        SetColumnWidths(processView,      labelWidth,     lowWidth,         midWidth,       highWidth);
+        SetColumnWidths(keysView,         KeyColumnWidth, descriptionWidth, KeyColumnWidth           );
+        SetColumnWidths(functionKeysView, KeyColumnWidth                                             );
+        SetColumnWidths(otherKeysView,    KeyColumnWidth                                             );
 
         void SetColumnWidths(ListView section, params int[] leading)
         {
@@ -229,4 +248,14 @@ public class HelpScreen : Screen
         base.OnUnload();
         Terminal.CursorVisible = true;
     }
+
+#if __WIN32__
+    private static string SpaceHelpText => Strings.HelpKeySpaceWindows;
+#elif __APPLE__
+    private static string SpaceHelpText => Strings.HelpKeySpaceMacOS;
+#else
+    private static string SpaceHelpText => Strings.HelpKeySpace;
+#endif
+
+    private static string Title => Strings.HelpTitle;
 }

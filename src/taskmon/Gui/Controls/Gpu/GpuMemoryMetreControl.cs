@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -15,5 +16,5 @@ public sealed class GpuMemoryMetreControl(
             ? new MetreReading([gpu.ToGpuMemoryRatio()], gpu.ToGpuMemoryRatioFormattedBytes())
             : null;
 
-    protected override string Title => "GPU Memory";
+    protected override string Title => Strings.MetreTitleGpuMemory;
 }

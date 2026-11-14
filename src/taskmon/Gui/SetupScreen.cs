@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
@@ -6,6 +7,7 @@ using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
@@ -24,8 +26,6 @@ public class SetupScreen : Screen
     private const int PreviewMinWidth       = 40;
     private const int PreviewMinHeight      = 14;
     private const int SaveErrorWidth        = 72;
-
-    private const string NewLayoutRow = "+ New Layout";
 
     private readonly RunContext        runContext;
     private readonly ScreenApplication screenApp;
@@ -51,25 +51,26 @@ public class SetupScreen : Screen
     private bool returnToLayoutsTab;
     private bool previewFits;
     
-    private static readonly (Statistics Statistic, string Label)[] ToggleableColumns =
+    // Each label is the column's Statistics_<member> entry in Strings.resx.
+    private static readonly Statistics[] ToggleableColumns =
     [
-        (Statistics.User,    "User"),
-        (Statistics.Pri,     "Priority"),
-        (Statistics.Cpu,     "CPU %"),
-        (Statistics.AvgCpu,  "Average CPU %"),
-        (Statistics.MaxCpu,  "Max CPU %"),
-        (Statistics.Thrd,    "Threads"),
-        (Statistics.Gpu,     "GPU %"),
-        (Statistics.AvgGpu,  "Average GPU %"),
-        (Statistics.MaxGpu,  "Max GPU %"),
-        (Statistics.Mem,     "Memory"),
-        (Statistics.AvgMem,  "Average Memory"),
-        (Statistics.MaxMem,  "Max Memory"),
-        (Statistics.Disk,    "Disk"),
-        (Statistics.AvgDisk, "Average Disk"),
-        (Statistics.MaxDisk, "Max Disk"),
-        (Statistics.Power,   "Power"),
-        (Statistics.Path,    "Path"),
+        Statistics.User,
+        Statistics.Pri,
+        Statistics.Cpu,
+        Statistics.AvgCpu,
+        Statistics.MaxCpu,
+        Statistics.Thrd,
+        Statistics.Gpu,
+        Statistics.AvgGpu,
+        Statistics.MaxGpu,
+        Statistics.Mem,
+        Statistics.AvgMem,
+        Statistics.MaxMem,
+        Statistics.Disk,
+        Statistics.AvgDisk,
+        Statistics.MaxDisk,
+        Statistics.Power,
+        Statistics.Path,
     ];
 
     private const int BorderInset = 2;
@@ -84,6 +85,8 @@ public class SetupScreen : Screen
             Buttons = MessageBoxButtons.Ok,
             Height  = MessageBoxControl.PreferredHeight
         };
+
+        CommonControl.Text(messageBox);
 
         headerView = new(runContext.Terminal) {
             Name  = nameof(headerView),
@@ -102,7 +105,7 @@ public class SetupScreen : Screen
             TabStop  = true
         };
         
-        menuView.ColumnHeaders.Add(new ListViewColumnHeader("CATEGORIES"));
+        menuView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupCategoriesHeader));
 
         generalView = new(runContext.Terminal) {
             Name              = nameof(generalView),
@@ -114,7 +117,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        generalView.ColumnHeaders.Add(new ListViewColumnHeader("General Settings"));
+        generalView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupGeneralHeader));
         generalView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
 
         columnsView = new(runContext.Terminal) {
@@ -127,7 +130,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        columnsView.ColumnHeaders.Add(new ListViewColumnHeader("Visible Columns"));
+        columnsView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupColumnsHeader));
         columnsView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
 
         themeView = new(runContext.Terminal) {
@@ -139,7 +142,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        themeView.ColumnHeaders.Add(new ListViewColumnHeader("Available themes"));
+        themeView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupThemesHeader));
 
         layoutView = new(runContext.Terminal) {
             Name              = nameof(layoutView),
@@ -150,7 +153,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        layoutView.ColumnHeaders.Add(new ListViewColumnHeader("Summary layouts - highlighted is used on F10 Done"));
+        layoutView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupLayoutsHeader));
         
         metreView = new(runContext.Terminal) {
             Name              = nameof(metreView),
@@ -161,7 +164,8 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        metreView.ColumnHeaders.Add(new ListViewColumnHeader("Metre Styles"));
+        metreView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupMetreStylesHeader));
+        metreView.ColumnHeaders.Add(new ListViewColumnHeader("key"));
         
         delayView = new(runContext.Terminal) {
             Name              = nameof(delayView),
@@ -172,7 +176,7 @@ public class SetupScreen : Screen
             Visible           = false
         };
 
-        delayView.ColumnHeaders.Add(new ListViewColumnHeader("Time between updates"));
+        delayView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SetupDelayHeader));
         delayView.ColumnHeaders.Add(new ListViewColumnHeader("ms"));
 
         Controls
@@ -205,14 +209,14 @@ public class SetupScreen : Screen
     private string ConfigFileDisplayPath =>
         runContext.AppConfig.DefaultConfigFilePath is { Length: > 0 } path
             ? Path.GetFullPath(path)
-            : "N/A";
+            : Strings.CommonNotAvailable;
 
     private void LoadColumnsSection()
     {
         Statistics visibleColumns = runContext.AppConfig.VisibleColumns;
 
-        foreach ((Statistics statistic, string label) in ToggleableColumns) {
-            columnsView.Items.Add(new ListViewItem([label, statistic.ToString()]));
+        foreach (Statistics statistic in ToggleableColumns) {
+            columnsView.Items.Add(new ListViewItem([statistic.ToDisplayText(), statistic.ToString()]));
             columnsView.Items[^1].Checked = (visibleColumns & statistic) != 0;
         }
     }
@@ -248,106 +252,106 @@ public class SetupScreen : Screen
         }
 
         AddGeneralItem(
-            "Confirm Task delete",
+            Strings.SetupConfirmTaskDelete,
             Constants.Keys.ConfirmTaskDelete,
             runContext.AppConfig.ConfirmTaskDelete);
         
 #if __WIN32__
         AddGeneralItem(
-            "Highlight Windows Services",
+            Strings.SetupHighlightWindowsServices,
             Constants.Keys.HighlightDaemons,
             runContext.AppConfig.HighlightDaemons);
 #endif
 #if __APPLE__
         AddGeneralItem(
-            "Highlight daemons",
+            Strings.SetupHighlightDaemons,
             Constants.Keys.HighlightDaemons,
             runContext.AppConfig.HighlightDaemons);
 #endif
         AddGeneralItem(
-            "Highlight changed values", 
+            Strings.SetupHighlightChangedValues,
             Constants.Keys.HighlightStatsColUpdate,
             runContext.AppConfig.HighlightStatisticsColumnUpdate);
 
         AddGeneralItem(
-            "Enable multiple process selection",
+            Strings.SetupMultiSelectProcesses,
             Constants.Keys.MultiSelectProcesses,
             runContext.AppConfig.MultiSelectProcesses);
 
         AddGeneralItem(
-            "Show Cpu chart label numerically",
+            Strings.SetupShowCpuNumerically,
             Constants.Keys.ShowMetreCpuNumerically,
             runContext.AppConfig.ShowMetreCpuNumerically);
 
         AddGeneralItem(
-            "Show Gpu chart label numerically",
+            Strings.SetupShowGpuNumerically,
             Constants.Keys.ShowMetreGpuNumerically,
             runContext.AppConfig.ShowMetreGpuNumerically);
         
 #if __APPLE__
         AddGeneralItem(
-            "Show Npu chart label numerically",
+            Strings.SetupShowNpuNumerically,
             Constants.Keys.ShowMetreNpuNumerically,
             runContext.AppConfig.ShowMetreNpuNumerically);
 #endif
 
         AddGeneralItem(
-            "Show Memory chart label numerically", 
+            Strings.SetupShowMemoryNumerically,
             Constants.Keys.ShowMetreMemNumerically,
             runContext.AppConfig.ShowMetreMemoryNumerically);
 
         AddGeneralItem(
-            "Show Gpu Memory chart label numerically", 
+            Strings.SetupShowGpuMemoryNumerically,
             Constants.Keys.ShowMetreGpuMemNumerically,
             runContext.AppConfig.ShowMetreGpuMemNumerically);
 #if __WIN32__
         AddGeneralItem(
-            "Show Virtual memory chart label numerically", 
+            Strings.SetupShowVirtualMemoryNumerically,
             Constants.Keys.ShowMetreSwapNumerically,
             runContext.AppConfig.ShowMetreSwapNumerically);
 #endif
 #if __APPLE__
         AddGeneralItem(
-            "Show Swap memory chart label numerically", 
+            Strings.SetupShowSwapNumerically,
             Constants.Keys.ShowMetreSwapNumerically,
             runContext.AppConfig.ShowMetreSwapNumerically);
 #endif
         AddGeneralItem(
-            "Show Disk chart label numerically", 
+            Strings.SetupShowDiskNumerically,
             Constants.Keys.ShowMetreDiskNumerically,
             runContext.AppConfig.ShowMetreDiskNumerically);
 
         AddGeneralItem(
-            "Show Network chart label numerically", 
+            Strings.SetupShowNetworkNumerically,
             Constants.Keys.ShowMetreNetworkNumerically,
             runContext.AppConfig.ShowMetreNetworkNumerically);
 
         AddGeneralItem(
-            "Show chart Y axis scale", 
+            Strings.SetupShowYAxisScale,
             Constants.Keys.ShowYAxisScale,
             runContext.AppConfig.ShowYAxisScale);
 
         AddGeneralItem(
-            "Show grid on large charts", 
+            Strings.SetupShowLargeChartGrid,
             Constants.Keys.ShowLargeMetreGrid,
             runContext.AppConfig.ShowLargeMetreGrid);
 
         AddGeneralItem(
-            "Show grid on small charts (Cpu cores, Performance panels)", 
+            Strings.SetupShowSmallChartGrid,
             Constants.Keys.ShowSmallMetreGrid,
             runContext.AppConfig.ShowSmallMetreGrid);
 
         AddGeneralItem(
-            "Show tips in the footer",
+            Strings.SetupShowTips,
             Constants.Keys.ShowTips,
             runContext.AppConfig.ShowTips);
 
         AddGeneralItem(
 #if __WIN32__
-            "Use Irix mode for per-process CPU% (individual core saturation)",
+            Strings.SetupIrixModeWindows,
 #endif
 #if __APPLE__
-            "Use Irix mode for per-process CPU% (Activity Monitor)",
+            Strings.SetupIrixModeMacOS,
 #endif
             Constants.Keys.UseIrixCpuReporting,
             runContext.AppConfig.UseIrixReporting);
@@ -355,7 +359,7 @@ public class SetupScreen : Screen
 
     private void LoadHeaderView()
     {
-        headerView.Items.Add(new ListViewItem($"Config file: {ConfigFileDisplayPath}"));
+        headerView.Items.Add(new ListViewItem(string.Format(CultureInfo.CurrentCulture, Strings.SetupConfigFile, ConfigFileDisplayPath)));
     }
 
     private void LoadMenuItems()
@@ -363,32 +367,32 @@ public class SetupScreen : Screen
         menuView.Items.Add(
             new MenuListViewItem(
                 generalView,
-                "GENERAL"));
+                Strings.SetupGeneralMenuItem));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 columnsView,
-                "COLUMNS"));
+                Strings.SetupColumnsMenuItem));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 themeView, 
-                "THEMES"));
+                Strings.SetupThemesMenuItem));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 layoutView, 
-                "LAYOUTS"));
+                Strings.SetupLayoutsMenuItem));
         
         menuView.Items.Add(
             new MenuListViewItem(
                 metreView,
-                "METRES"));
+                Strings.SetupMetresMenuItem));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 delayView,
-                "DELAY"));
+                Strings.SetupDelayMenuItem));
     }
 
     private void LoadUxSection()
@@ -411,7 +415,7 @@ public class SetupScreen : Screen
 
         AddItems(themeView, themeNames, val => runContext.AppConfig.Theme.Name.Equals(val));
         
-        layoutView.Items.Add(new ListViewItem(NewLayoutRow));
+        layoutView.Items.Add(new ListViewItem(Strings.SetupNewLayoutRow));
 
         string? defaultLayoutName = runContext.AppConfig.DefaultLayout?.Name;
 
@@ -423,11 +427,13 @@ public class SetupScreen : Screen
             }
         }
         
-        List<string> metreStyles = Enum.GetValues<MetreControlStyle>()
-            .Select(c => c.ToString())
-            .ToList();
+        foreach (MetreControlStyle style in Enum.GetValues<MetreControlStyle>()) {
+            metreView.Items.Add(new ListViewItem([style.ToDisplayText(), style.ToString()]));
 
-        AddItems(metreView, metreStyles, val => runContext.AppConfig.MetreStyle.ToString().Equals(val));
+            if (style == runContext.AppConfig.MetreStyle) {
+                metreView.SelectedIndex = metreView.Items.Count - 1;
+            }
+        }
     }
 
     private void MapControlsToConfig()
@@ -469,7 +475,6 @@ public class SetupScreen : Screen
                 t => t.Name.Equals(themeView.SelectedItem.Text, StringComparison.CurrentCultureIgnoreCase));
         }
 
-        // The "+ New Layout" row matches no layout, so leaving it highlighted keeps the current one.
         SummaryControlLayout? chosenLayout = runContext.AppConfig.Layouts.FirstOrDefault(
             l => l.Name.Equals(layoutView.SelectedItem?.Text, StringComparison.CurrentCultureIgnoreCase));
 
@@ -478,7 +483,7 @@ public class SetupScreen : Screen
         }
 
         runContext.AppConfig.MetreStyle = Enum.GetValues<MetreControlStyle>()
-            .Single(c => c.ToString() == metreView.SelectedItem?.Text);
+            .Single(c => c.ToString() == metreView.SelectedItem?.SubItems[1].Text);
 
         if (delayView.SelectedItem?.SubItems[1].Text is { } delay) {
             runContext.AppConfig.DelayInMilliseconds = int.Parse(delay);
@@ -504,7 +509,7 @@ public class SetupScreen : Screen
 
     private void MetreViewOnItemClicked(object? sender, ListViewItemEventArgs e)
     {
-        if (previewConfig == null || !Enum.TryParse(e.Item.Text, out MetreControlStyle style)) {
+        if (previewConfig == null || !Enum.TryParse(e.Item.SubItems[1].Text, out MetreControlStyle style)) {
             return;
         }
 
@@ -520,7 +525,7 @@ public class SetupScreen : Screen
         Terminal.BackgroundColor = previewTheme.MenubarBackground;
         Terminal.ForegroundColor = previewTheme.MenubarForeground;
 
-        string menubar = "TASK MONITOR SETUP";
+        string menubar = Strings.SetupTitle;
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
         
         Terminal.WriteEmptyLineTo(offsetX);
@@ -538,7 +543,7 @@ public class SetupScreen : Screen
 
         KeyBindControl.Draw(
             "F10",
-            "Done",
+            Strings.SetupDone,
             X,
             Height - ControlGutter,
             CommandLength,
@@ -611,8 +616,8 @@ public class SetupScreen : Screen
                 if (!SaveConfig()) {
                     handled = true;
                     ShowMessageBox(
-                        "Save Failed",
-                        runContext.AppConfig.LastSaveError ?? "An error occurred saving config.");
+                        Strings.CommonSaveFailedTitle,
+                        runContext.AppConfig.LastSaveError ?? Strings.SetupSaveFailedText);
                 }
                 break;
         }
@@ -704,6 +709,7 @@ public class SetupScreen : Screen
         generalView.ColumnHeaders[1].Width = 0;
         delayView.ColumnHeaders[1].Width   = 0;
         columnsView.ColumnHeaders[1].Width = 0;
+        metreView.ColumnHeaders[1].Width   = 0;
 
         ResizePreview();
 
@@ -845,7 +851,6 @@ public class SetupScreen : Screen
         }
     }
 
-    // Themed when shown, so it follows the theme being previewed.
     private void ShowMessageBox(string title, string text)
     {
         Control.RedrawEnabled = false;
@@ -926,7 +931,6 @@ public class SetupScreen : Screen
             CommonControl.Theme(ctrl, previewTheme);
         }
 
-        // Rebuilt with the theme so the hotkey colours follow the theme being previewed.
-        layoutView.FooterText = CommonControl.FooterText(previewTheme, ("↵", "Create/Edit"));
+        layoutView.FooterText = CommonControl.FooterText(previewTheme, ("↵", Strings.SetupLayoutsCreateEdit));
     }
 }

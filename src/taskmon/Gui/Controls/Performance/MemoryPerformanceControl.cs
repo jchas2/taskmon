@@ -1,6 +1,8 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -47,19 +49,19 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         };
 
         memoryMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("In Use"))
-            .Add(new ListViewColumnHeader("Available"))
+            .Add(new ListViewColumnHeader(Strings.PerformanceInUseColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceAvailableColumn))
 #if __WIN32__
-            .Add(new ListViewColumnHeader("Committed"))
+            .Add(new ListViewColumnHeader(Strings.PerformanceCommittedColumn))
 #elif __APPLE__
-            .Add(new ListViewColumnHeader("Swap File"))
+            .Add(new ListViewColumnHeader(Strings.PerformanceSwapFileColumn))
 #endif
-            .Add(new ListViewColumnHeader("Available"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceAvailableColumn));
 
 #if __APPLE__
         memoryMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Swap In"))
-            .Add(new ListViewColumnHeader("Swap Out"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceSwapInColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceSwapOutColumn));
 #endif
         
         memorySpecsListView = new ListView(terminal) {
@@ -88,14 +90,14 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
                 return;
             }
 
-            memoryChart.Text = $"Memory {memoryInfo.Metrics.ToMemoryPercentage()}";
+            memoryChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceMemoryChart, memoryInfo.Metrics.ToMemoryPercentage());
             
             memoryChart.Draw();
 
 #if __WIN32__
-            pageFileChart.Text = $"Committed Memory {memoryInfo.Metrics.ToPageFileMemoryPercentage()}";
+            pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCommittedMemoryChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
 #elif __APPLE__
-            pageFileChart.Text = $"Swap File {memoryInfo.Metrics.ToPageFileMemoryPercentage()}";
+            pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSwapFileChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
 #endif
             pageFileChart.Draw();
 
@@ -147,11 +149,11 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
             memorySpecsListView.Items[0].SubItems[1].Text = stickMemory > 0 && memorySummary != null
                 ? $"{stickMemory.ToMemoryCapacity()} {memorySummary}"
-                : "Unknown";
+                : Strings.CommonUnknown;
             memorySpecsListView.Items[1].SubItems[1].Text = memorySpeed.ToMemorySpeed();
             memorySpecsListView.Items[2].SubItems[1].Text = memoryConfiguredSpeed.ToMemoryConfiguredSpeed();
-            memorySpecsListView.Items[3].SubItems[1].Text = $"{slotsUsed} of {memoryInfo.Specs.Devices.Count}";
-            memorySpecsListView.Items[4].SubItems[1].Text = formFactor ?? "Unknown";
+            memorySpecsListView.Items[3].SubItems[1].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSlotsUsedValue, slotsUsed, memoryInfo.Specs.Devices.Count);
+            memorySpecsListView.Items[4].SubItems[1].Text = formFactor ?? Strings.CommonUnknown;
             memorySpecsListView.Items[5].SubItems[1].Text = memoryInfo.Metrics.InUseBytes.ToFormattedByteSize();
             memorySpecsListView.Items[6].SubItems[1].Text = memoryInfo.Metrics.ModifiedBytes.ToFormattedByteSize();
             memorySpecsListView.Items[7].SubItems[1].Text = memoryInfo.Metrics.StandbyBytes.ToFormattedByteSize();
@@ -179,27 +181,27 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetre.Text                   = string.Empty;
         memoryMetre.ShowLegend             = true;
 
-        memoryMetre.AddSeries("In Use",   appConfig.Theme.PerformanceMemoryInUse);
-        memoryMetre.AddSeries("Modified", appConfig.Theme.PerformanceMemoryModified);
-        memoryMetre.AddSeries("Standby",  appConfig.Theme.PerformanceMemoryStandby);
-        memoryMetre.AddSeries("Free",     appConfig.Theme.PerformanceMemoryFree);
+        memoryMetre.AddSeries(Strings.PerformanceInUseSeries,   appConfig.Theme.PerformanceMemoryInUse);
+        memoryMetre.AddSeries(Strings.PerformanceModifiedSeries, appConfig.Theme.PerformanceMemoryModified);
+        memoryMetre.AddSeries(Strings.PerformanceStandbySeries,  appConfig.Theme.PerformanceMemoryStandby);
+        memoryMetre.AddSeries(Strings.PerformanceFreeSeries,     appConfig.Theme.PerformanceMemoryFree);
         
 #if __APPLE__
-        ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB", "N/A", "N/A" });
+        ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB", Strings.CommonNotAvailable, Strings.CommonNotAvailable });
 #else
         ListViewItem memoryMetricsItem = new(new[] { "0.0 GB", "0.0 GB", "0.0 GB", "0.0 GB" });
 #endif
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Memory:",            string.Empty, appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Speed:",             "0 GHz", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Configured speed:",  "0 GHz", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Slots used:",        "0", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Form factor:",       string.Empty, appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("In use:",            "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Modified:",          "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Standby (cached):",  "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow("Free:",              "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelMemory,            string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelSpeed,             "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceConfiguredSpeed,  "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSlotsUsed,        "0", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFormFactor,       string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceInUse,            "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceModified,          "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceStandbyCached,  "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFree,              "0 MB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

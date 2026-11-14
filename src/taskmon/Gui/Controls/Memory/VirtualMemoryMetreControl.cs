@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -16,8 +17,8 @@ public sealed class VirtualMemoryMetreControl(
             : null;
 
 #if __APPLE__
-    protected override string Title => "Swap";
+    protected override string Title => Strings.MetreTitleSwap;
 #else
-    protected override string Title => "Virtual";
+    protected override string Title => Strings.MetreTitleVirtual;
 #endif
 }

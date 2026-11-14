@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -11,14 +12,12 @@ namespace Task.Monitor.Gui.Controls.Services;
 public sealed partial class ServicesControl : Control
 {
     private const int NameColumnWidth        = 30;
-    private const int StatusColumnWidth      = 16;
+    private const int StatusColumnWidth      = 17;
     private const int StartupTypeColumnWidth = 26;
     private const int LogOnAsColumnWidth     = 20;
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 8; 
-
-    private const string GatheringText = "Gathering Windows services…";
 
     private readonly ServiceController              serviceController;
     private readonly AppConfig                      appConfig;
@@ -58,11 +57,11 @@ public sealed partial class ServicesControl : Control
         };
 
         servicesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("NAME"))
-            .Add(new ListViewColumnHeader("STATUS"))
-            .Add(new ListViewColumnHeader("STARTUP TYPE"))
-            .Add(new ListViewColumnHeader("LOG ON AS"))
-            .Add(new ListViewColumnHeader("DESCRIPTION"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnName))
+            .Add(new ListViewColumnHeader(Strings.ListColumnStatus))
+            .Add(new ListViewColumnHeader(Strings.ServicesColumnStartupType))
+            .Add(new ListViewColumnHeader(Strings.ServicesColumnLogOnAs))
+            .Add(new ListViewColumnHeader(Strings.ListColumnDescription));
 
         detailView = new ListView(terminal) {
             EnableScroll      = false,
@@ -71,20 +70,22 @@ public sealed partial class ServicesControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "DETAIL"
+            HeaderText        = Strings.ListDetailHeader
         };
 
         detailView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FIELD"))
-            .Add(new ListViewColumnHeader("VALUE"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnField))
+            .Add(new ListViewColumnHeader(Strings.ListColumnValue));
 
-        filter = new ListFilter(this, terminal, "Filter Services");
+        filter = new ListFilter(this, terminal, Strings.ServicesFilterTitle);
         sorter = new ListSorter<WindowsServiceInfo>(terminal, servicesView, SortColumns, defaultColumn: 0);
 
         toggleDialog = new MessageBox(terminal) {
             Visible = false,
             Height  = MessageBox.PreferredHeight
         };
+
+        CommonControl.Text(toggleDialog);
 
         Controls.Add(servicesView);
         Controls.Add(detailView);
@@ -115,6 +116,8 @@ public sealed partial class ServicesControl : Control
         lastSignature = signature;
         RebuildRows(info.Specs.Services);
     }
+
+    private static string GatheringText => Strings.ServicesGathering;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 

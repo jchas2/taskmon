@@ -12,6 +12,7 @@ public partial class ProcessControl
         public ConsoleKey Key { get; } = key;
     }
 
+    // Strings.resx entry holding the column's title.
     public class ColumnTitleAttribute(string title) : Attribute
     {
         public string Title { get; } = title;

@@ -4,8 +4,21 @@
         <OutputType>Exe</OutputType>
         <RootNamespace>Task.Monitor</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- The UI text in Resources\Strings.resx is British English. Strings.<culture>.resx
+             files override it, and NativeAOT compiles them into the executable. -->
+        <NeutralLanguage>en-GB</NeutralLanguage>
     </PropertyGroup>
-    
+
+    <ItemGroup>
+      <!-- Generates the Strings class at build time, with no Visual Studio custom tool. -->
+      <EmbeddedResource Update="Resources\Strings.resx">
+        <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+        <StronglyTypedNamespace>Task.Monitor.Resources</StronglyTypedNamespace>
+        <StronglyTypedClassName>Strings</StronglyTypedClassName>
+        <StronglyTypedFileName>$(IntermediateOutputPath)Strings.g.cs</StronglyTypedFileName>
+      </EmbeddedResource>
+    </ItemGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\Task.Monitor.System.Services\Task.Monitor.System.Services.csproj" />
       <ProjectReference Include="..\Task.Monitor.System\Task.Monitor.System.csproj" />

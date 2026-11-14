@@ -1,7 +1,9 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -89,13 +91,13 @@ public sealed class HeaderControl2 : Control
 
     private void OnDrawInternal()
     {
-        const string MachineLabel = "Machine: ";
-        const string OSLabel      = " OS: ";
-        const string IpLabel      = " Ip: ";
-        const string CpuLabel     = "Cpu: ";
-        const string TasksLabel   = " Tasks: ";
-        const string ThreadsLabel = " Threads: ";
-        const string RunningLabel = " running";
+        string MachineLabel = $"{Strings.HeaderMachineLabel} ";
+        string OSLabel      = $" {Strings.HeaderOsLabel} ";
+        string IpLabel      = $" {Strings.HeaderIpLabel} ";
+        string CpuLabel     = $"{Strings.HeaderCpuLabel} ";
+        string TasksLabel   = $" {Strings.HeaderTasksLabel} ";
+        string ThreadsLabel = $" {Strings.HeaderThreadsLabel} ";
+        string RunningLabel = $" {Strings.HeaderRunning}";
 
         BackgroundColour = appConfig.Theme.Background;
         ForegroundColour = appConfig.Theme.Foreground;
@@ -104,7 +106,7 @@ public sealed class HeaderControl2 : Control
         Terminal.BackgroundColor = appConfig.Theme.MenubarBackground;
         Terminal.ForegroundColor = appConfig.Theme.MenubarForeground;
 
-        string menubar = "TASK MONITOR";
+        string menubar = Strings.HeaderTitle;
         int offsetX = Terminal.WindowWidth / 2 - menubar.Length / 2;
 
         Terminal.WriteEmptyLineTo(offsetX);
@@ -156,25 +158,25 @@ public sealed class HeaderControl2 : Control
         EndRow(remaining, borderColour, bgColour);
         
         CpuSpecs cpuSpecs = cpuInfo?.Specs ?? default;
-        string coreBreakdown = $"{cpuSpecs.CpuCores} Cores";
+        string coreBreakdown = string.Format(CultureInfo.CurrentCulture, Strings.HeaderCores, cpuSpecs.CpuCores);
         
 #if __APPLE__
         if (cpuSpecs.CpuPerformanceCores > 0) {
-            coreBreakdown += $" · {cpuSpecs.CpuPerformanceCores}P";
+            coreBreakdown += " · " + string.Format(CultureInfo.CurrentCulture, Strings.HeaderPerformanceCores, cpuSpecs.CpuPerformanceCores);
         }
 
         if (cpuSpecs.CpuEfficiencyCores > 0) {
-            coreBreakdown += $" · {cpuSpecs.CpuEfficiencyCores}E";
+            coreBreakdown += " · " + string.Format(CultureInfo.CurrentCulture, Strings.HeaderEfficiencyCores, cpuSpecs.CpuEfficiencyCores);
         }
 
         if (cpuSpecs.CpuSuperCores > 0) {
-            coreBreakdown += $" · {cpuSpecs.CpuSuperCores}S";
+            coreBreakdown += " · " + string.Format(CultureInfo.CurrentCulture, Strings.HeaderSuperCores, cpuSpecs.CpuSuperCores);
         }
 
         int gpuCores = gpuInfo?.Specs.GpuCores ?? 0;
 
         if (gpuCores > 0) {
-            coreBreakdown += $" · {gpuCores} Gpu";
+            coreBreakdown += " · " + string.Format(CultureInfo.CurrentCulture, Strings.HeaderGpuCores, gpuCores);
         }
 #endif
         string cpuName = cpuSpecs.CpuName ?? string.Empty;
@@ -188,10 +190,10 @@ public sealed class HeaderControl2 : Control
         bool irixMode = processInfo?.Specs.IrixMode ?? appConfig.UseIrixReporting;
 
         if (irixMode) {
-            cpuInfoText += " Irix Mode";
+            cpuInfoText += " " + Strings.HeaderIrixMode;
         }
         else {
-            cpuInfoText += " Solaris Mode";
+            cpuInfoText += " " + Strings.HeaderSolarisMode;
         }
 
         ProcessMetrics processMetrics = processInfo?.Metrics ?? EmptyProcessMetrics;

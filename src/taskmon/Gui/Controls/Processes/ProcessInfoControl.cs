@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -14,11 +16,6 @@ public partial class ProcessInfoControl : Control
 {
     private const int MenuViewWidth = 10;
     private const int NoProcessId   = -1;
-
-    private const string MsgNotYetImplemented = "Not yet implemented on this OS";
-    private const string MsgThreadsNotLoaded  = "Threads could not be loaded";
-    private const string MsgModulesNotLoaded  = "Modules could not be loaded";
-    private const string MsgLoading           = "Loading, please wait...";
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
@@ -50,7 +47,7 @@ public partial class ProcessInfoControl : Control
             Visible  = true
         };
 
-        menuView.ColumnHeaders.Add(new ListViewColumnHeader("SELECT"));
+        menuView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.ProcessInfoMenuHeader));
         
         processInfoView = new ListView(terminal) {
             EnableScroll      = false,
@@ -62,7 +59,7 @@ public partial class ProcessInfoControl : Control
         };
 
         processInfoView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Pid:"))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoPidLabel))
             .Add(new ListViewColumnHeader(""));
 
         threadsView = new ListView(terminal) {
@@ -73,14 +70,14 @@ public partial class ProcessInfoControl : Control
         };
 
         threadsView.ColumnHeaders
-            .Add(new ListViewColumnHeader("THREAD ID"))
-            .Add(new ListViewColumnHeader("STATE"))
-            .Add(new ListViewColumnHeader("REASON"))
-            .Add(new ListViewColumnHeader("PRI"))
-            .Add(new ListViewColumnHeader("START ADDRESS"))
-            .Add(new ListViewColumnHeader("KERNEL TIME"))
-            .Add(new ListViewColumnHeader("USER TIME"))
-            .Add(new ListViewColumnHeader("TOTAL TIME"));
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoThreadId))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoState))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoReason))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoPriority))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoStartAddress))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoKernelTime))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoUserTime))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoTotalTime));
         
         modulesView = new ListView(terminal) {
             EmptyListViewText = MsgModulesNotLoaded,
@@ -90,8 +87,8 @@ public partial class ProcessInfoControl : Control
         };
 
         modulesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("MODULE"))
-            .Add(new ListViewColumnHeader("PATH"));
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoModule))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoPath));
 
         handlesView = new ListView(terminal) {
             EmptyListViewText = MsgNotYetImplemented,
@@ -101,8 +98,8 @@ public partial class ProcessInfoControl : Control
         };
 
         handlesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("ID"))
-            .Add(new ListViewColumnHeader("NAME"));
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoId))
+            .Add(new ListViewColumnHeader(Strings.ProcessInfoName));
 
         Controls
             .Add(processInfoView)
@@ -162,6 +159,13 @@ public partial class ProcessInfoControl : Control
         Draw();
     }
 
+    private static string MsgLoading           => Strings.ProcessInfoLoading;
+
+    private static string MsgModulesNotLoaded  => Strings.ProcessInfoModulesNotLoaded;
+
+    private static string MsgNotYetImplemented => Strings.ProcessInfoNotImplemented;
+    private static string MsgThreadsNotLoaded  => Strings.ProcessInfoThreadsNotLoaded;
+
     protected override void OnDraw()
     {
         ListView activeControl = tabControls.Single(ctrl => ctrl.Visible);
@@ -216,20 +220,20 @@ public partial class ProcessInfoControl : Control
         menuView.Items.Add(
             new MenuListViewItem(
                 processInfoView,
-                "DETAIL",
+                Strings.ProcessInfoMenuDetail,
                 appConfig.Theme.ListViewBackground,
                 appConfig.Theme.ListViewForeground));
 
         menuView.Items.Add(
             new MenuListViewItem(
                 threadsView,
-                "THREADS",
+                Strings.ProcessInfoMenuThreads,
                 appConfig.Theme.ListViewBackground,
                 appConfig.Theme.ListViewForeground));
 
         menuView.Items.Add(
             new MenuListViewItem(
-                modulesView, "MODULES",
+                modulesView, Strings.ProcessInfoMenuModules,
                 appConfig.Theme.ListViewBackground,
                 appConfig.Theme.ListViewForeground) {
                 LoadItems = TryUpdateListViewModuleItems
@@ -238,7 +242,7 @@ public partial class ProcessInfoControl : Control
         menuView.Items.Add(
             new MenuListViewItem(
                 handlesView,
-                "HANDLES",
+                Strings.ProcessInfoMenuHandles,
                 appConfig.Theme.ListViewBackground,
                 appConfig.Theme.ListViewForeground));
 
@@ -383,21 +387,21 @@ public partial class ProcessInfoControl : Control
             FileInfo finfo = new(sample.FileName);
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(finfo.FullName);
 
-            processInfoView.ColumnHeaders[0].Text = "Pid:";
+            processInfoView.ColumnHeaders[0].Text = Strings.ProcessInfoPidLabel;
             processInfoView.ColumnHeaders[1].Text = SelectedProcessId.ToString();
             
-            processInfoView.Items.Add(CommonControl.PropertyRow("File:",         sample.ModuleName,                   appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("Description:",  sample.FileDescription,              appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("Path:",         sample.CmdLine,                      appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("User:",         sample.UserName,                     appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("Version:",      fvi.FileVersion ?? string.Empty,     appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("Size:",         finfo.Length.ToFormattedByteSize(),  appConfig.Theme));
-            processInfoView.Items.Add(CommonControl.PropertyRow("Size on disk:", $"{finfo.Length} bytes",             appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoFile,        sample.ModuleName,                   appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoDescription, sample.FileDescription,              appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoPathLabel,   sample.CmdLine,                      appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoUser,        sample.UserName,                     appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoVersion,     fvi.FileVersion ?? string.Empty,     appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoSize,        finfo.Length.ToFormattedByteSize(),  appConfig.Theme));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoSizeOnDisk,  string.Format(CultureInfo.CurrentCulture, Strings.ProcessInfoBytes, finfo.Length), appConfig.Theme));
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error loading ProcessInfo for pid {SelectedProcessId}.");
 
-            processInfoView.Items.Add(CommonControl.PropertyRow("Error:", ex.Message, appConfig.Theme, appConfig.Theme.Error));
+            processInfoView.Items.Add(CommonControl.PropertyRow(Strings.ProcessInfoError, ex.Message, appConfig.Theme, appConfig.Theme.Error));
         }
     }
     

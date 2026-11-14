@@ -20,4 +20,10 @@
       <ProjectReference Include="..\Task.Monitor.Tests.Common\Task.Monitor.Tests.Common.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <!-- The fixed-width limits ("Max N characters.") live in the default file's comments, which
+           aren't compiled into the assembly; StringsTests reads them from this copy. -->
+      <None Include="..\..\src\taskmon\Resources\Strings.resx" Link="Resources\Strings.resx" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

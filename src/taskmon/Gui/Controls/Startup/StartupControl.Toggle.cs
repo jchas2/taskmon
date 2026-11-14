@@ -1,3 +1,5 @@
+using System.Globalization;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.MessageBox;
@@ -11,18 +13,10 @@ public sealed partial class StartupControl
     private const int ToggleDialogMaxWidth = 60;
     private const int ToggleDialogMinWidth = 40;
 
-    internal static readonly (string Key, string Label) ToggleHotKey = ("Space", "Enable/Disable");
-
 #if __APPLE__
     private const string PlatformName = "macOS";
-
-    private static readonly string[] ElevationReason  = ["It needs root.", "Run taskmon with sudo."];
-    private static readonly string[] NotSupportedHint = ["Use System Settings > Login Items."];
 #else
     private const string PlatformName = "Windows";
-
-    private static readonly string[] ElevationReason  = ["It needs administrator rights.", "Run taskmon as administrator."];
-    private static readonly string[] NotSupportedHint = [];
 #endif
 
     internal static string BuildToggleFailureText(
@@ -32,22 +26,21 @@ public sealed partial class StartupControl
         bool                isElevated,
         int                 width)
     {
-        string action  = enable ? "enable" : "disable";
-        string heading = $"Couldn't {action} {entry.Name}";
+        string heading = string.Format(CultureInfo.CurrentCulture, enable ? Strings.StartupCouldNotEnable : Strings.StartupCouldNotDisable, entry.Name);
 
         if (heading.Length > width) {
             heading = heading[..Math.Max(0, width - 1)] + "…";
         }
 
         string[] reason = result switch {
-            StartupToggleResult.AccessDenied when isElevated => [$"{PlatformName} refused the change."],
+            StartupToggleResult.AccessDenied when isElevated => [string.Format(CultureInfo.CurrentCulture, Strings.StartupRefused, PlatformName)],
             StartupToggleResult.AccessDenied                 => ElevationReason,
-            StartupToggleResult.NotFound                     => ["It no longer exists."],
+            StartupToggleResult.NotFound                     => [Strings.CommonNoLongerExists],
             StartupToggleResult.NotSupported when entry.State == StartupEntryState.Unknown
-                                                             => ["Its current state can't be read."],
-            StartupToggleResult.NotSupported                 => [$"{DescribeType(entry.Source)} items can't be {action}d.", .. NotSupportedHint],
-            StartupToggleResult.RequiresApproval             => ["Allow it in System Settings,", "General > Login Items."],
-                                                           _ => [$"{PlatformName} couldn't change it."]
+                                                             => [Strings.StartupStateUnreadable],
+            StartupToggleResult.NotSupported                 => [string.Format(CultureInfo.CurrentCulture, enable ? Strings.StartupCannotEnableType : Strings.StartupCannotDisableType, DescribeType(entry.Source)), .. NotSupportedHint],
+            StartupToggleResult.RequiresApproval             => [Strings.StartupAllowInSettings, Strings.StartupAllowInLoginItems],
+                                                           _ => [string.Format(CultureInfo.CurrentCulture, Strings.StartupCouldNotChange, PlatformName)]
         };
 
         return string.Join('\n', [heading, .. reason]);
@@ -68,6 +61,18 @@ public sealed partial class StartupControl
         toggleDialog.Visible  = false;
         Control.RedrawEnabled = true;
     }
+
+#if __APPLE__
+    private static string[] ElevationReason => [Strings.StartupNeedsRoot, Strings.StartupRunWithSudo];
+#else
+    private static string[] ElevationReason => [Strings.CommonNeedsAdministrator, Strings.CommonRunAsAdministrator];
+#endif
+
+#if __APPLE__
+    private static string[] NotSupportedHint => [Strings.StartupUseLoginItems];
+#else
+    private static string[] NotSupportedHint => [];
+#endif
 
     private void OnToggleDialogKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
@@ -107,12 +112,14 @@ public sealed partial class StartupControl
         toggleDialog.X       = Math.Clamp(X + (Width - toggleDialog.Width) / 2, 0, Math.Max(0, Terminal.WindowWidth - toggleDialog.Width));
         toggleDialog.Y       = Math.Clamp(Y + (Height - toggleDialog.Height) / 2, 0, Math.Max(0, Terminal.WindowHeight - toggleDialog.Height));
         toggleDialog.Buttons = MessageBoxButtons.Ok;
-        toggleDialog.Title   = enable ? "Enable Startup App" : "Disable Startup App";
+        toggleDialog.Title   = enable ? Strings.StartupToggleTitleEnable : Strings.StartupToggleTitleDisable;
         toggleDialog.Text    = BuildToggleFailureText(entry, enable, result, SystemInfo.IsRunningAsRoot(), toggleDialog.Width - 4);
 
         toggleDialog.Visible = true;
         toggleDialog.ShowMessageBox();
     }
+
+    internal static (string Key, string Label) ToggleHotKey => ("Space", Strings.StartupToggleHotKey);
 
     private void ToggleSelectedEntry()
     {

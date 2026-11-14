@@ -8,17 +8,21 @@ public sealed class MessageBox : Control
 {
     public const int PreferredHeight = 11;
 
-    private const int MinWidth     = 40;
-    private const int MaxTextLines = 3;
-    private const int ButtonWidth  = 10;
-    private const int ButtonHeight = 1;
-    private const int ButtonGap    = 6;
+    private const int MinWidth       = 40;
+    private const int MaxTextLines   = 3;
+    private const int MinButtonWidth = 10;
+    private const int ButtonHeight   = 1;
+    private const int ButtonGap      = 6;
 
     private bool okFocused = true;
     
     public MessageBox(ISystemTerminal terminal) : base(terminal) { }
 
     public MessageBoxButtons Buttons { get; set; } = MessageBoxButtons.OkCancel;
+
+    private int ButtonWidth => Math.Max(MinButtonWidth, Math.Max(OkText.Length, CancelText.Length) + 2);
+
+    public string CancelText { get; set; } = string.Empty;
 
     public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
@@ -70,7 +74,10 @@ public sealed class MessageBox : Control
             }
         }
     }
-    
+
+    public string HelpText { get; set; } = string.Empty;
+    public string OkText { get; set; } = string.Empty;
+
     protected override void OnDraw()
     {
         if (Width < MinWidth || Height < PreferredHeight) {
@@ -137,7 +144,7 @@ public sealed class MessageBox : Control
                 buttonY,
                 ButtonWidth,
                 ButtonHeight,
-                "OK", 
+                OkText,
                 selected: okFocused);
         }
          
@@ -147,7 +154,7 @@ public sealed class MessageBox : Control
                 buttonY, 
                 ButtonWidth,
                 ButtonHeight,
-                "Cancel",
+                CancelText,
                 selected: !okFocused);
         }
 
@@ -156,9 +163,8 @@ public sealed class MessageBox : Control
         Terminal.SetCursorPosition(X, ++y);
         Terminal.Write($"\u2502{spacer}\u2502");
 
-        string help = "Use \u2190 \u2192 and \u21B5 to select";
         Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write($"\u2502{help.CentreWithLength(dialogWidth)}\u2502");
+        Terminal.Write($"\u2502{HelpText.CentreWithLength(dialogWidth)}\u2502");
         
         Terminal.SetCursorPosition(X, ++y);
         Terminal.Write('\u2570');
@@ -191,6 +197,14 @@ public sealed class MessageBox : Control
             case ConsoleKey.Escape:
                 Result = MessageBoxResult.Cancel;
                 break;
+
+            case var _ when StartsWithKey(OkText, keyInfo):
+                okFocused = true;
+                break;
+
+            case var _ when StartsWithKey(CancelText, keyInfo):
+                okFocused = Buttons == MessageBoxButtons.Ok;
+                break;
         }
 
         OnDraw();
@@ -204,6 +218,11 @@ public sealed class MessageBox : Control
         OnDraw();
     }
     
+    private static bool StartsWithKey(string label, ConsoleKeyInfo keyInfo) =>
+        label.Length > 0 &&
+        keyInfo.KeyChar != '\0' &&
+        char.ToUpperInvariant(label[0]) == char.ToUpperInvariant(keyInfo.KeyChar);
+
     public string Text { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
 }

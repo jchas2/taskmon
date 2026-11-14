@@ -2,6 +2,7 @@
 using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.DriveInputBox;
@@ -15,13 +16,10 @@ namespace Task.Monitor.Gui.Controls;
 
 public static class CommonControl
 {
-    public const string FooterSeparator = "   ";
+    public const string FooterSeparator = ListView.FooterItemGap;
 
-    public static readonly (string Key, string Label) ClearFilterHotKey = ("Esc", "Clear Filter");
-    public static readonly (string Key, string Label) FilterHotKey      = ("f", "Filter");
-    public static readonly (string Key, string Label) RefreshHotKey     = ("r", "Refresh");
-    public static readonly (string Key, string Label) ScrollHotKey      = ("↑ ↓ PgUp PgDn", "Scroll");
-    public static readonly (string Key, string Label) SortHotKey        = ("s", "Sort");
+    public static (string Key, string Label) ClearFilterHotKey => ("Esc", Strings.HotKeyClearFilter);
+    public static (string Key, string Label) FilterHotKey      => ("f", Strings.HotKeyFilter);
 
     public static string FooterText(Theme theme, params (string Key, string Label)[] hotKeys)
     {
@@ -60,14 +58,40 @@ public static class CommonControl
         int.TryParse(key.AsSpan(1), out int number) &&
         number is >= 1 and <= 24;
 
-    // A key/value list row: the key in the theme's property.key colour and the value in
-    // property.value, or in valueColour for a value that flags a state (stopped, failed, an error).
-    // Both sit on the list view background. Updating SubItems[1].Text later keeps the colours.
     public static ListViewItem PropertyRow(string key, string value, Theme theme, Color? valueColour = null) =>
         new([
             new ListViewSubItem(null!, key,   theme.ListViewBackground, theme.PropertyKey),
             new ListViewSubItem(null!, value, theme.ListViewBackground, valueColour ?? theme.PropertyValue)
         ]);
+
+    public static (string Key, string Label) RefreshHotKey     => ("r", Strings.HotKeyRefresh);
+    public static (string Key, string Label) ScrollHotKey      => ("↑ ↓ PgUp PgDn", Strings.HotKeyScroll);
+    public static (string Key, string Label) SortHotKey        => ("s", Strings.HotKeySort);
+
+    public static void Text(DriveInputBox control)
+    {
+        control.CancelText     = Strings.DialogCancel;
+        control.CustomPathText = Strings.DriveInputBoxCustomPath;
+        control.HelpText       = Strings.DriveInputBoxHelp;
+        control.OkText         = Strings.DialogOk;
+    }
+
+    public static void Text(MessageBoxControl control)
+    {
+        control.CancelText = Strings.DialogCancel;
+        control.HelpText   = Strings.MessageBoxHelp;
+        control.OkText     = Strings.DialogOk;
+    }
+
+    public static void Text(PickerBoxControl control) =>
+        control.HelpText = control.MultiSelect ? Strings.PickerBoxMultiSelectHelp : Strings.PickerBoxHelp;
+
+    public static void Text(TextInputDialog control)
+    {
+        control.CancelText = Strings.DialogCancel;
+        control.HelpText   = Strings.TextInputDialogHelp;
+        control.OkText     = Strings.DialogOk;
+    }
 
     public static void Theme(Chart control, Theme theme)
     {

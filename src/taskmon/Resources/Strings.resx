@@ -1,0 +1,3332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  UI text in British English, the default. Strings.<culture>.resx files override entries for
+  another culture, e.g. Strings.en-US.resx holds only the entries whose US spelling differs.
+  An entry missing from a culture's file falls back to the one here.
+
+  Keep {0}-style placeholders and {F2}-style key markup unchanged in every culture's file.
+-->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Setup screen -->
+  <data name="SetupMetreStylesHeader" xml:space="preserve">
+    <value>Metre Styles</value>
+    <comment>Column header of the Setup list that picks how metres are drawn.</comment>
+  </data>
+  <data name="SetupMetresMenuItem" xml:space="preserve">
+    <value>METRES</value>
+    <comment>Setup menu item, upper case like the other menu items. Max 19 characters.</comment>
+  </data>
+
+  <!-- Help screen -->
+  <data name="HelpChartColoursSection" xml:space="preserve">
+    <value>CHART COLOURS</value>
+    <comment>Help screen section title, upper case.</comment>
+  </data>
+  <data name="HelpProcessColoursSection" xml:space="preserve">
+    <value>PROCESS AND PATH COLOURS</value>
+    <comment>Help screen section title, upper case.</comment>
+  </data>
+  <data name="HelpF2Description" xml:space="preserve">
+    <value>Show setup: layouts, metre display, visible columns, colour themes and other settings.</value>
+    <comment>Help screen description of the F2 key. Max 105 characters.</comment>
+  </data>
+  <data name="HelpF3Description" xml:space="preserve">
+    <value>Switch to the next colour theme, in the order setup lists them. Save it from setup to keep it.</value>
+    <comment>Help screen description of the F3 key. Max 105 characters.</comment>
+  </data>
+
+  <!-- Footer tips -->
+  <data name="TipSetupOptions" xml:space="preserve">
+    <value>Press {F2} to change the theme, visible columns, metre style and update speed.</value>
+    <comment>Footer tip. {F2} marks a key: keep the braces and the key name.</comment>
+  </data>
+  <data name="TipHelpScreen" xml:space="preserve">
+    <value>Press {F1} for every key and what the colours mean.</value>
+    <comment>Footer tip. {F1} marks a key: keep the braces and the key name.</comment>
+  </data>
+
+  <!-- HEALTH view -->
+  <data name="HealthUtilisationColumn" xml:space="preserve">
+    <value>UTILISATION</value>
+    <comment>HEALTH resources list column header, upper case.</comment>
+  </data>
+
+  <!-- DISK SPACE view -->
+  <data name="DiskSpaceCancellingStatus" xml:space="preserve">
+    <value>Cancelling… {0}</value>
+    <comment>Scan status while a scan stops. {0} is the files and bytes scanned so far, e.g. "1,024 files / 2.1 GB".</comment>
+  </data>
+  <data name="DiskSpaceCancelledStatus" xml:space="preserve">
+    <value>Cancelled - {0}</value>
+    <comment>Scan status once a scan has stopped. {0} is the files and bytes scanned, e.g. "1,024 files / 2.1 GB".</comment>
+  </data>
+
+  <!-- Layout designer: one label per PaneControlType member, named PaneControlType_<member>. -->
+  <data name="PaneControlType_Empty" xml:space="preserve">
+    <value>Empty</value>
+  </data>
+  <data name="PaneControlType_Cpu" xml:space="preserve">
+    <value>Cpu</value>
+  </data>
+  <data name="PaneControlType_Memory" xml:space="preserve">
+    <value>Memory</value>
+  </data>
+  <data name="PaneControlType_Gpu" xml:space="preserve">
+    <value>Gpu</value>
+  </data>
+  <data name="PaneControlType_Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="PaneControlType_NetworkSent" xml:space="preserve">
+    <value>Network Sent</value>
+  </data>
+  <data name="PaneControlType_NetworkReceived" xml:space="preserve">
+    <value>Network Received</value>
+  </data>
+  <data name="PaneControlType_GpuMemory" xml:space="preserve">
+    <value>Gpu Memory</value>
+  </data>
+  <data name="PaneControlType_VirtualMemory" xml:space="preserve">
+    <value>Virtual Memory</value>
+  </data>
+  <data name="PaneControlType_Process" xml:space="preserve">
+    <value>Process</value>
+  </data>
+  <data name="PaneControlType_Drivers" xml:space="preserve">
+    <value>Drivers</value>
+  </data>
+  <data name="PaneControlType_Services" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="PaneControlType_Startup" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="PaneControlType_InstalledApps" xml:space="preserve">
+    <value>Installed Apps</value>
+  </data>
+  <data name="PaneControlType_SystemInfo" xml:space="preserve">
+    <value>System Info</value>
+  </data>
+  <data name="PaneControlType_DiskSpace" xml:space="preserve">
+    <value>Disk Space</value>
+  </data>
+  <data name="PaneControlType_Thermals" xml:space="preserve">
+    <value>Thermals</value>
+  </data>
+  <data name="PaneControlType_CpuCores" xml:space="preserve">
+    <value>Cpu Cores</value>
+  </data>
+  <data name="PaneControlType_Power" xml:space="preserve">
+    <value>Power</value>
+  </data>
+  <data name="PaneControlType_CpuMetre" xml:space="preserve">
+    <value>Cpu Metre</value>
+  </data>
+  <data name="PaneControlType_GpuMetre" xml:space="preserve">
+    <value>Gpu Metre</value>
+  </data>
+  <data name="PaneControlType_GpuMemoryMetre" xml:space="preserve">
+    <value>Gpu Memory Metre</value>
+  </data>
+  <data name="PaneControlType_MemoryMetre" xml:space="preserve">
+    <value>Memory Metre</value>
+  </data>
+  <data name="PaneControlType_VirtualMemoryMetre" xml:space="preserve">
+    <value>Virtual Memory Metre</value>
+  </data>
+  <data name="PaneControlType_DiskMetre" xml:space="preserve">
+    <value>Disk Metre</value>
+  </data>
+  <data name="PaneControlType_NetworkSendMetre" xml:space="preserve">
+    <value>Network Send Metre</value>
+  </data>
+  <data name="PaneControlType_NetworkReceiveMetre" xml:space="preserve">
+    <value>Network Receive Metre</value>
+  </data>
+  <data name="PaneControlType_Fans" xml:space="preserve">
+    <value>Fans</value>
+  </data>
+  <data name="PaneControlType_NpuMetre" xml:space="preserve">
+    <value>Npu Metre</value>
+  </data>
+  <data name="PaneControlType_Npu" xml:space="preserve">
+    <value>Npu</value>
+  </data>
+
+  <!-- Dialogs and footer hotkeys -->
+  <data name="DialogOk" xml:space="preserve">
+    <value>OK</value>
+    <comment>Dialog button.</comment>
+  </data>
+  <data name="DialogCancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Dialog button.</comment>
+  </data>
+  <data name="DriveInputBoxCustomPath" xml:space="preserve">
+    <value>Custom path...</value>
+    <comment>Last row of the drive list; picks a path typed by hand.</comment>
+  </data>
+  <data name="DriveInputBoxHelp" xml:space="preserve">
+    <value>↑ ↓ browse   ← → select button   ↵ confirm   Esc cancel</value>
+    <comment>Key help under the drive list. Arrows, ↵ and Esc are keys; keep three spaces between hints. Max 56 characters.</comment>
+  </data>
+  <data name="MessageBoxHelp" xml:space="preserve">
+    <value>Use ← → and ↵ to select</value>
+    <comment>Key help under a message box&apos;s buttons. The arrows and ↵ are keys. Max 38 characters.</comment>
+  </data>
+  <data name="PickerBoxHelp" xml:space="preserve">
+    <value>↑ ↓ browse   ↵ select   Esc cancel</value>
+    <comment>Key help under a single-choice list. Keep three spaces between hints. Max 38 characters.</comment>
+  </data>
+  <data name="PickerBoxMultiSelectHelp" xml:space="preserve">
+    <value>↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel</value>
+    <comment>Key help under a tick-box list. Keep three spaces between hints.</comment>
+  </data>
+  <data name="TextInputDialogHelp" xml:space="preserve">
+    <value>Tab select button   ↵ confirm   Esc cancel</value>
+    <comment>Key help under a text field. Keep three spaces between hints. Max 46 characters.</comment>
+  </data>
+  <data name="HotKeyClearFilter" xml:space="preserve">
+    <value>Clear Filter</value>
+    <comment>Footer label for the Esc key.</comment>
+  </data>
+  <data name="HotKeyFilter" xml:space="preserve">
+    <value>Filter</value>
+    <comment>Footer label for the f key.</comment>
+  </data>
+  <data name="HotKeyRefresh" xml:space="preserve">
+    <value>Refresh</value>
+    <comment>Footer label for the r key.</comment>
+  </data>
+  <data name="HotKeyScroll" xml:space="preserve">
+    <value>Scroll</value>
+    <comment>Footer label for the arrow and page keys.</comment>
+  </data>
+  <data name="HotKeySort" xml:space="preserve">
+    <value>Sort</value>
+    <comment>Footer label for the s key.</comment>
+  </data>
+
+  <!-- Setup screen, layout designer and shared labels -->
+  <data name="CommonNotAvailable" xml:space="preserve">
+    <value>N/A</value>
+    <comment>Shown in place of a value that can&apos;t be read.</comment>
+  </data>
+  <data name="CommonSaveFailedTitle" xml:space="preserve">
+    <value>Save Failed</value>
+    <comment>Message box title.</comment>
+  </data>
+  <data name="SetupTitle" xml:space="preserve">
+    <value>TASK MONITOR SETUP</value>
+    <comment>Setup screen title bar, upper case.</comment>
+  </data>
+  <data name="SetupDone" xml:space="preserve">
+    <value>Done</value>
+    <comment>Label of the F10 key on the Setup screen.</comment>
+  </data>
+  <data name="SetupConfigFile" xml:space="preserve">
+    <value>Config file: {0}</value>
+    <comment>{0} is the config file&apos;s full path.</comment>
+  </data>
+  <data name="SetupSaveFailedText" xml:space="preserve">
+    <value>An error occurred saving config.</value>
+    <comment>Shown when the config file can&apos;t be saved and no other reason is known.</comment>
+  </data>
+  <data name="SetupCategoriesHeader" xml:space="preserve">
+    <value>CATEGORIES</value>
+    <comment>Column header of the Setup menu, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupGeneralMenuItem" xml:space="preserve">
+    <value>GENERAL</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupColumnsMenuItem" xml:space="preserve">
+    <value>COLUMNS</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupThemesMenuItem" xml:space="preserve">
+    <value>THEMES</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupLayoutsMenuItem" xml:space="preserve">
+    <value>LAYOUTS</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupDelayMenuItem" xml:space="preserve">
+    <value>DELAY</value>
+    <comment>Setup menu item, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="SetupGeneralHeader" xml:space="preserve">
+    <value>General Settings</value>
+    <comment>Column header.</comment>
+  </data>
+  <data name="SetupColumnsHeader" xml:space="preserve">
+    <value>Visible Columns</value>
+    <comment>Column header.</comment>
+  </data>
+  <data name="SetupThemesHeader" xml:space="preserve">
+    <value>Available themes</value>
+    <comment>Column header.</comment>
+  </data>
+  <data name="SetupLayoutsHeader" xml:space="preserve">
+    <value>Summary layouts - highlighted is used on F10 Done</value>
+    <comment>Column header. &quot;Done&quot; is the F10 key&apos;s label (SetupDone).</comment>
+  </data>
+  <data name="SetupDelayHeader" xml:space="preserve">
+    <value>Time between updates</value>
+    <comment>Column header.</comment>
+  </data>
+  <data name="SetupNewLayoutRow" xml:space="preserve">
+    <value>+ New Layout</value>
+    <comment>First row of the layouts list; opens the designer on a new layout.</comment>
+  </data>
+  <data name="SetupLayoutsCreateEdit" xml:space="preserve">
+    <value>Create/Edit</value>
+    <comment>Footer label for the ↵ key on the layouts list.</comment>
+  </data>
+  <data name="SetupConfirmTaskDelete" xml:space="preserve">
+    <value>Confirm Task delete</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupHighlightWindowsServices" xml:space="preserve">
+    <value>Highlight Windows Services</value>
+    <comment>General setting (Windows).</comment>
+  </data>
+  <data name="SetupHighlightDaemons" xml:space="preserve">
+    <value>Highlight daemons</value>
+    <comment>General setting (macOS).</comment>
+  </data>
+  <data name="SetupHighlightChangedValues" xml:space="preserve">
+    <value>Highlight changed values</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupMultiSelectProcesses" xml:space="preserve">
+    <value>Enable multiple process selection</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowCpuNumerically" xml:space="preserve">
+    <value>Show Cpu chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowGpuNumerically" xml:space="preserve">
+    <value>Show Gpu chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowNpuNumerically" xml:space="preserve">
+    <value>Show Npu chart label numerically</value>
+    <comment>General setting (macOS).</comment>
+  </data>
+  <data name="SetupShowMemoryNumerically" xml:space="preserve">
+    <value>Show Memory chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowGpuMemoryNumerically" xml:space="preserve">
+    <value>Show Gpu Memory chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowVirtualMemoryNumerically" xml:space="preserve">
+    <value>Show Virtual memory chart label numerically</value>
+    <comment>General setting (Windows).</comment>
+  </data>
+  <data name="SetupShowSwapNumerically" xml:space="preserve">
+    <value>Show Swap memory chart label numerically</value>
+    <comment>General setting (macOS).</comment>
+  </data>
+  <data name="SetupShowDiskNumerically" xml:space="preserve">
+    <value>Show Disk chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowNetworkNumerically" xml:space="preserve">
+    <value>Show Network chart label numerically</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowYAxisScale" xml:space="preserve">
+    <value>Show chart Y axis scale</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowLargeChartGrid" xml:space="preserve">
+    <value>Show grid on large charts</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowSmallChartGrid" xml:space="preserve">
+    <value>Show grid on small charts (Cpu cores, Performance panels)</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupShowTips" xml:space="preserve">
+    <value>Show tips in the footer</value>
+    <comment>General setting.</comment>
+  </data>
+  <data name="SetupIrixModeWindows" xml:space="preserve">
+    <value>Use Irix mode for per-process CPU% (individual core saturation)</value>
+    <comment>General setting (Windows). Irix mode is a name; keep it.</comment>
+  </data>
+  <data name="SetupIrixModeMacOS" xml:space="preserve">
+    <value>Use Irix mode for per-process CPU% (Activity Monitor)</value>
+    <comment>General setting (macOS). Irix mode and Activity Monitor are names; keep them.</comment>
+  </data>
+  <data name="MetreControlStyle_Blocks" xml:space="preserve">
+    <value>Blocks</value>
+    <comment>Metre style.</comment>
+  </data>
+  <data name="MetreControlStyle_Bars" xml:space="preserve">
+    <value>Bars</value>
+    <comment>Metre style.</comment>
+  </data>
+  <data name="MetreControlStyle_Dots" xml:space="preserve">
+    <value>Dots</value>
+    <comment>Metre style.</comment>
+  </data>
+  <data name="Statistics_User" xml:space="preserve">
+    <value>User</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Pri" xml:space="preserve">
+    <value>Priority</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Cpu" xml:space="preserve">
+    <value>CPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_AvgCpu" xml:space="preserve">
+    <value>Average CPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_MaxCpu" xml:space="preserve">
+    <value>Max CPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Thrd" xml:space="preserve">
+    <value>Threads</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Gpu" xml:space="preserve">
+    <value>GPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_AvgGpu" xml:space="preserve">
+    <value>Average GPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_MaxGpu" xml:space="preserve">
+    <value>Max GPU %</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Mem" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_AvgMem" xml:space="preserve">
+    <value>Average Memory</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_MaxMem" xml:space="preserve">
+    <value>Max Memory</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Disk" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_AvgDisk" xml:space="preserve">
+    <value>Average Disk</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_MaxDisk" xml:space="preserve">
+    <value>Max Disk</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Power" xml:space="preserve">
+    <value>Power</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="Statistics_Path" xml:space="preserve">
+    <value>Path</value>
+    <comment>Process list column, as listed in Setup and the layout designer.</comment>
+  </data>
+  <data name="LayoutDesignerTitle" xml:space="preserve">
+    <value>LAYOUT DESIGNER - {0}</value>
+    <comment>Title bar. {0} is the layout&apos;s name, or LayoutDesignerUntitled.</comment>
+  </data>
+  <data name="LayoutDesignerUntitled" xml:space="preserve">
+    <value>Untitled</value>
+    <comment>Name shown for a layout not saved yet.</comment>
+  </data>
+  <data name="LayoutDesignerHelp" xml:space="preserve">
+    <value>←↑→↓ Move  V/H Split  ↵ Assign  C Columns  +/- Resize  Del Remove  S Save  Esc Back</value>
+    <comment>Key help along the bottom. The arrows, V/H, ↵, C, +/-, Del, S and Esc are keys; keep two spaces between hints.</comment>
+  </data>
+  <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
+    <value>Columns</value>
+    <comment>Title of the process column picker.</comment>
+  </data>
+  <data name="LayoutDesignerAssignTitle" xml:space="preserve">
+    <value>Assign control</value>
+    <comment>Title of the pane type picker.</comment>
+  </data>
+  <data name="LayoutDesignerSaveTitle" xml:space="preserve">
+    <value>Save Layout As</value>
+    <comment>Title of the save dialog.</comment>
+  </data>
+  <data name="LayoutDesignerCopyName" xml:space="preserve">
+    <value>{0} Copy</value>
+    <comment>Suggested name when saving a copy of a built-in layout. {0} is the built-in layout&apos;s name.</comment>
+  </data>
+  <data name="LayoutDesignerBuiltInTitle" xml:space="preserve">
+    <value>Built-in Layout</value>
+    <comment>Message box title.</comment>
+  </data>
+  <data name="LayoutDesignerBuiltInText" xml:space="preserve">
+    <value>&apos;{0}&apos;
+is a built-in layout.
+Save it under a new name.</value>
+    <comment>Message box text over three lines. {0} is the name typed.</comment>
+  </data>
+  <data name="LayoutDesignerSaveFailedText" xml:space="preserve">
+    <value>An error occurred saving the layout.</value>
+    <comment>Message box text.</comment>
+  </data>
+
+  <!-- List filter -->
+  <data name="FilterNoMatches" xml:space="preserve">
+    <value>No matches</value>
+    <comment>Shown in a list when the filter matches nothing.</comment>
+  </data>
+  <data name="FilterHeader" xml:space="preserve">
+    <value>Filter: {0} ({1})</value>
+    <comment>List header while a filter is applied. {0} is the filter text, {1} the number of rows matched.</comment>
+  </data>
+  <data name="FilterHeaderWithTotal" xml:space="preserve">
+    <value>Filter: {0} ({1} of {2})</value>
+    <comment>List header while a filter is applied. {0} is the filter text, {1} the rows matched, {2} the rows in total.</comment>
+  </data>
+
+  <!-- Help screen -->
+  <data name="KeyBindExit" xml:space="preserve">
+    <value>Exit</value>
+    <comment>Label beside a key that leaves the screen, e.g. ESC Exit.</comment>
+  </data>
+  <data name="HelpTitle" xml:space="preserve">
+    <value>TASK MONITOR HELP</value>
+    <comment>Help screen title bar, upper case.</comment>
+  </data>
+  <data name="HelpKeysSection" xml:space="preserve">
+    <value>KEYS</value>
+    <comment>Help screen section title, upper case.</comment>
+  </data>
+  <data name="HelpFunctionKeysSection" xml:space="preserve">
+    <value>FUNCTION KEYS</value>
+    <comment>Help screen section title, upper case.</comment>
+  </data>
+  <data name="HelpOtherKeysSection" xml:space="preserve">
+    <value>OTHER KEYS</value>
+    <comment>Help screen section title, upper case.</comment>
+  </data>
+  <data name="HelpRangeLow" xml:space="preserve">
+    <value>Low</value>
+    <comment>Colour key for low chart values.</comment>
+  </data>
+  <data name="HelpRangeMid" xml:space="preserve">
+    <value>Mid</value>
+    <comment>Colour key for mid-range chart values.</comment>
+  </data>
+  <data name="HelpRangeHigh" xml:space="preserve">
+    <value>High</value>
+    <comment>Colour key for high chart values.</comment>
+  </data>
+  <data name="HelpNormalProcess" xml:space="preserve">
+    <value>Normal process</value>
+    <comment>Colour key in the process list.</comment>
+  </data>
+  <data name="HelpLowPriorityProcess" xml:space="preserve">
+    <value>Low priority (nice) process</value>
+    <comment>Colour key in the process list. &quot;nice&quot; is the Unix term; keep it.</comment>
+  </data>
+  <data name="HelpHighCpuProcess" xml:space="preserve">
+    <value>High Cpu usage (&gt; 1 core)</value>
+    <comment>Colour key in the process list.</comment>
+  </data>
+  <data name="HelpIoBoundProcess" xml:space="preserve">
+    <value>I/O bound process</value>
+    <comment>Colour key in the process list.</comment>
+  </data>
+  <data name="HelpMetric" xml:space="preserve">
+    <value>Metric</value>
+    <comment>Colour key: the label before the Low/Mid/High swatches.</comment>
+  </data>
+  <data name="HelpMetricChanged" xml:space="preserve">
+    <value>Metric changed</value>
+    <comment>Colour key: a value that just changed.</comment>
+  </data>
+  <data name="HelpKeyMoveLeft" xml:space="preserve">
+    <value>Move left to next screen component</value>
+    <comment>What the ← key does.</comment>
+  </data>
+  <data name="HelpKeyScrollUp" xml:space="preserve">
+    <value>Arrow to scroll list up</value>
+    <comment>What the ↑ key does.</comment>
+  </data>
+  <data name="HelpKeyMoveRight" xml:space="preserve">
+    <value>Move right to next screen component</value>
+    <comment>What the → key does.</comment>
+  </data>
+  <data name="HelpKeyScrollDown" xml:space="preserve">
+    <value>Arrow to scroll list down</value>
+    <comment>What the ↓ key does.</comment>
+  </data>
+  <data name="HelpKeyPageUp" xml:space="preserve">
+    <value>Move up one page in list</value>
+    <comment>What the Page Up key does.</comment>
+  </data>
+  <data name="HelpKeyEnter" xml:space="preserve">
+    <value>ENTER to select item in list</value>
+    <comment>What the Enter key does.</comment>
+  </data>
+  <data name="HelpKeyPageDown" xml:space="preserve">
+    <value>Move down one page in list</value>
+    <comment>What the Page Down key does.</comment>
+  </data>
+  <data name="HelpKeyEscape" xml:space="preserve">
+    <value>Close dialog or clear the filter</value>
+    <comment>What the Esc key does.</comment>
+  </data>
+  <data name="HelpKeySortAscending" xml:space="preserve">
+    <value>Sort list ascending</value>
+    <comment>What the a key does.</comment>
+  </data>
+  <data name="HelpKeySortDescending" xml:space="preserve">
+    <value>Sort list descending</value>
+    <comment>What the d key does.</comment>
+  </data>
+  <data name="HelpKeySortColumn" xml:space="preserve">
+    <value>Select list sort column</value>
+    <comment>What the s key does.</comment>
+  </data>
+  <data name="HelpKeySortProcesses" xml:space="preserve">
+    <value>Sort process list on CPU%, GPU%, Memory</value>
+    <comment>What the p, g and m keys do, in that order.</comment>
+  </data>
+  <data name="HelpKeyFilter" xml:space="preserve">
+    <value>Filter the list</value>
+    <comment>What the f key does.</comment>
+  </data>
+  <data name="HelpKeyMultiSelect" xml:space="preserve">
+    <value>Toggle multiple process list selection</value>
+    <comment>What the x key does.</comment>
+  </data>
+  <data name="HelpKeyUncheckAll" xml:space="preserve">
+    <value>Uncheck all selected processes in a list</value>
+    <comment>What the u key does.</comment>
+  </data>
+  <data name="HelpKeySpace" xml:space="preserve">
+    <value>Space-bar to check/uncheck items</value>
+    <comment>What the Space key does.</comment>
+  </data>
+  <data name="HelpKeySpaceWindows" xml:space="preserve">
+    <value>Check/uncheck items; toggle STARTUP or SERVICES</value>
+    <comment>What the Space key does on Windows. STARTUP and SERVICES are view names.</comment>
+  </data>
+  <data name="HelpKeySpaceMacOS" xml:space="preserve">
+    <value>Check/uncheck items; enable/disable in STARTUP</value>
+    <comment>What the Space key does on macOS. STARTUP is a view name.</comment>
+  </data>
+  <data name="HelpKeyEndTask" xml:space="preserve">
+    <value>End task (checked or selected)</value>
+    <comment>What the k key does.</comment>
+  </data>
+  <data name="HelpKeyRefresh" xml:space="preserve">
+    <value>Refresh the current list</value>
+    <comment>What the r and F5 keys do.</comment>
+  </data>
+  <data name="HelpKeyFreeze" xml:space="preserve">
+    <value>Freeze process list updates</value>
+    <comment>What the z key does.</comment>
+  </data>
+  <data name="HelpKeyIrix" xml:space="preserve">
+    <value>Toggle Irix mode CPU reporting in process list</value>
+    <comment>What the i key does. Irix mode is a name; keep it.</comment>
+  </data>
+  <data name="HelpKeyNextTip" xml:space="preserve">
+    <value>Show the next tip in the footer</value>
+    <comment>What the t key does.</comment>
+  </data>
+  <data name="HelpF1Description" xml:space="preserve">
+    <value>Show this help screen.</value>
+    <comment>Help screen description of the F1 key. Max 105 characters.</comment>
+  </data>
+  <data name="HelpF4Description" xml:space="preserve">
+    <value>Switch SUMMARY to the next layout, in the order setup lists them. Save it from setup to keep it.</value>
+    <comment>Help screen description of the F4 key. SUMMARY is a view name. Max 105 characters.</comment>
+  </data>
+  <data name="HelpF5Description" xml:space="preserve">
+    <value>Refresh the Startup, Apps, Services or Drivers list (same as r).</value>
+    <comment>Help screen description of the F5 key. Max 105 characters.</comment>
+  </data>
+  <data name="HelpF10Description" xml:space="preserve">
+    <value>Exit Task Monitor.</value>
+    <comment>Help screen description of the F10 key. Max 105 characters.</comment>
+  </data>
+  <data name="HelpF12Description" xml:space="preserve">
+    <value>Show the about screen.</value>
+    <comment>Help screen description of the F12 key. Max 105 characters.</comment>
+  </data>
+  <data name="HelpOtherKeyEndTask" xml:space="preserve">
+    <value>End the selected process, or all checked processes in multiple selection (x), and their child processes.</value>
+    <comment>Help screen description of the k key. Max 105 characters.</comment>
+  </data>
+
+  <!-- Main screen, About, header, footer and SUMMARY -->
+  <data name="MainMenuTitle" xml:space="preserve">
+    <value>VIEW MENU</value>
+    <comment>Banner over the main menu, upper case. Max 14 characters.</comment>
+  </data>
+  <data name="MainMenuSummary" xml:space="preserve">
+    <value>SUMMARY</value>
+    <comment>Main menu item, upper case. Tips and help refer to it by this name. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuHealth" xml:space="preserve">
+    <value>HEALTH</value>
+    <comment>Main menu item, upper case. Tips and help refer to it by this name. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuPerformance" xml:space="preserve">
+    <value>PERFORMANCE</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuProcesses" xml:space="preserve">
+    <value>PROCESSES</value>
+    <comment>Main menu item, upper case. Tips and help refer to it by this name. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuThermals" xml:space="preserve">
+    <value>THERMALS</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuDiskSpace" xml:space="preserve">
+    <value>DISK SPACE</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuStartup" xml:space="preserve">
+    <value>STARTUP</value>
+    <comment>Main menu item, upper case. Tips and help refer to it by this name. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuApps" xml:space="preserve">
+    <value>APPS</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuServices" xml:space="preserve">
+    <value>SERVICES</value>
+    <comment>Main menu item, upper case. Tips and help refer to it by this name. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuDrivers" xml:space="preserve">
+    <value>DRIVERS</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="MainMenuSystemInfo" xml:space="preserve">
+    <value>SYSTEM INFO</value>
+    <comment>Main menu item, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>ABOUT TASK MONITOR</value>
+    <comment>About screen title bar, upper case.</comment>
+  </data>
+  <data name="AboutProductName" xml:space="preserve">
+    <value>Task Monitor</value>
+    <comment>Product name under the mascot. Usually kept as is.</comment>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version {0}</value>
+    <comment>Under the product name. {0} is the version number.</comment>
+  </data>
+  <data name="HeaderTitle" xml:space="preserve">
+    <value>TASK MONITOR</value>
+    <comment>Main screen title bar, upper case.</comment>
+  </data>
+  <data name="HeaderMachineLabel" xml:space="preserve">
+    <value>Machine:</value>
+    <comment>Header label before the computer&apos;s name.</comment>
+  </data>
+  <data name="HeaderOsLabel" xml:space="preserve">
+    <value>OS:</value>
+    <comment>Header label before the operating system version.</comment>
+  </data>
+  <data name="HeaderIpLabel" xml:space="preserve">
+    <value>Ip:</value>
+    <comment>Header label before the IP address.</comment>
+  </data>
+  <data name="HeaderCpuLabel" xml:space="preserve">
+    <value>Cpu:</value>
+    <comment>Header label before the processor&apos;s name.</comment>
+  </data>
+  <data name="HeaderTasksLabel" xml:space="preserve">
+    <value>Tasks:</value>
+    <comment>Header label before the process count.</comment>
+  </data>
+  <data name="HeaderThreadsLabel" xml:space="preserve">
+    <value>Threads:</value>
+    <comment>Header label before the thread count.</comment>
+  </data>
+  <data name="HeaderRunning" xml:space="preserve">
+    <value>running</value>
+    <comment>Header text after the count of running threads, e.g. &quot;Threads: 3000, 12 running&quot;.</comment>
+  </data>
+  <data name="HeaderCores" xml:space="preserve">
+    <value>{0} Cores</value>
+    <comment>Processor core count. {0} is the number of cores.</comment>
+  </data>
+  <data name="HeaderPerformanceCores" xml:space="preserve">
+    <value>{0}P</value>
+    <comment>Apple performance core count, abbreviated. {0} is the number.</comment>
+  </data>
+  <data name="HeaderEfficiencyCores" xml:space="preserve">
+    <value>{0}E</value>
+    <comment>Apple efficiency core count, abbreviated. {0} is the number.</comment>
+  </data>
+  <data name="HeaderSuperCores" xml:space="preserve">
+    <value>{0}S</value>
+    <comment>Apple super core count, abbreviated. {0} is the number.</comment>
+  </data>
+  <data name="HeaderGpuCores" xml:space="preserve">
+    <value>{0} Gpu</value>
+    <comment>GPU core count. {0} is the number.</comment>
+  </data>
+  <data name="HeaderIrixMode" xml:space="preserve">
+    <value>Irix Mode</value>
+    <comment>How per-process CPU % is counted. Irix is a name; keep it.</comment>
+  </data>
+  <data name="HeaderSolarisMode" xml:space="preserve">
+    <value>Solaris Mode</value>
+    <comment>How per-process CPU % is counted. Solaris is a name; keep it.</comment>
+  </data>
+  <data name="FooterBanner" xml:space="preserve">
+    <value>Task Monitor v{0}</value>
+    <comment>Footer banner. {0} is the version number.</comment>
+  </data>
+  <data name="FooterReceived" xml:space="preserve">
+    <value>{0} Rx</value>
+    <comment>Footer count of snapshots received. {0} is the count; Rx means received.</comment>
+  </data>
+  <data name="FooterTip" xml:space="preserve">
+    <value>Tip:</value>
+    <comment>Footer label before a tip.</comment>
+  </data>
+  <data name="FooterServicesRunning" xml:space="preserve">
+    <value>Services: Running</value>
+    <comment>Footer status of the sampling services.</comment>
+  </data>
+  <data name="FooterServiceErrored" xml:space="preserve">
+    <value>Service status: Errored</value>
+    <comment>Footer status of the sampling services.</comment>
+  </data>
+  <data name="FooterServiceStopping" xml:space="preserve">
+    <value>Service status: Stopping</value>
+    <comment>Footer status of the sampling services.</comment>
+  </data>
+  <data name="FooterServiceUnknown" xml:space="preserve">
+    <value>Service status: Unknown</value>
+    <comment>Footer status of the sampling services.</comment>
+  </data>
+  <data name="FooterKeyHelp" xml:space="preserve">
+    <value>Help</value>
+    <comment>Footer label for the F1 key.</comment>
+  </data>
+  <data name="FooterKeySetup" xml:space="preserve">
+    <value>Setup</value>
+    <comment>Footer label for the F2 key.</comment>
+  </data>
+  <data name="FooterKeyTheme" xml:space="preserve">
+    <value>Theme</value>
+    <comment>Footer label for the F3 key.</comment>
+  </data>
+  <data name="FooterKeyLayout" xml:space="preserve">
+    <value>Layout</value>
+    <comment>Footer label for the F4 key.</comment>
+  </data>
+  <data name="FooterKeyNextTip" xml:space="preserve">
+    <value>Next Tip</value>
+    <comment>Footer label for the t key.</comment>
+  </data>
+  <data name="SortByHeader" xml:space="preserve">
+    <value>SORT BY</value>
+    <comment>Column header of the sort column picker, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="SummaryTopProcesses" xml:space="preserve">
+    <value>Top {0} Processes    {1} Total</value>
+    <comment>SUMMARY process list header. {0} is the sort column&apos;s short name in upper case, {1} the number of processes.</comment>
+  </data>
+  <data name="SummaryEmptyPane" xml:space="preserve">
+    <value>empty</value>
+    <comment>Shown in a SUMMARY pane with nothing assigned to it.</comment>
+  </data>
+  <data name="SummaryCpuChartLabel" xml:space="preserve">
+    <value>{0:000.0%} Kernel {1:000.0%} User {2:000.0%}</value>
+    <comment>CPU chart label. {0} is total CPU, {1} kernel time and {2} user time; keep the :000.0% formats.</comment>
+  </data>
+  <data name="ChartTitleCpu" xml:space="preserve">
+    <value>Cpu</value>
+    <comment>Chart title.</comment>
+  </data>
+  <data name="ChartTitleMemory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Chart title.</comment>
+  </data>
+  <data name="ChartTitleVirtualMemory" xml:space="preserve">
+    <value>Virtual</value>
+    <comment>Chart title for virtual memory (Windows).</comment>
+  </data>
+  <data name="ChartTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+    <comment>Chart title for swap (macOS).</comment>
+  </data>
+  <data name="ChartTitleDisk" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Chart title.</comment>
+  </data>
+  <data name="ChartTitleGpu" xml:space="preserve">
+    <value>Gpu</value>
+    <comment>Chart title.</comment>
+  </data>
+  <data name="ChartTitleGpuMemory" xml:space="preserve">
+    <value>Gpu Memory</value>
+    <comment>Chart title.</comment>
+  </data>
+  <data name="ChartTitleNetworkReceived" xml:space="preserve">
+    <value>Net Rec</value>
+    <comment>Chart title for network bytes received.</comment>
+  </data>
+  <data name="ChartTitleNetworkSent" xml:space="preserve">
+    <value>Net Sent</value>
+    <comment>Chart title for network bytes sent.</comment>
+  </data>
+  <data name="ChartTitleNpu" xml:space="preserve">
+    <value>Npu</value>
+    <comment>Chart title.</comment>
+  </data>
+
+  <!-- PROCESSES -->
+  <data name="ProcessColumnProcess" xml:space="preserve">
+    <value>PROCESS</value>
+    <comment>Process list column header, upper case. Keep column headers short: the columns are narrow. Max 30 characters.</comment>
+  </data>
+  <data name="ProcessColumnPid" xml:space="preserve">
+    <value>PID</value>
+    <comment>Process list column header: process ID. Max 5 characters.</comment>
+  </data>
+  <data name="ProcessColumnUser" xml:space="preserve">
+    <value>USER</value>
+    <comment>Process list column header. Max 14 characters.</comment>
+  </data>
+  <data name="ProcessColumnPriorityWindows" xml:space="preserve">
+    <value>PRI</value>
+    <comment>Process list column header: base priority (Windows). Max 3 characters.</comment>
+  </data>
+  <data name="ProcessColumnPriorityMacOS" xml:space="preserve">
+    <value>NI</value>
+    <comment>Process list column header: nice value (macOS). Max 3 characters.</comment>
+  </data>
+  <data name="ProcessColumnCpu" xml:space="preserve">
+    <value>CPU%</value>
+    <comment>Process list column header. Max 5 characters.</comment>
+  </data>
+  <data name="ProcessColumnAvgCpu" xml:space="preserve">
+    <value>AVG CPU%</value>
+    <comment>Process list column header: average CPU %. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnMaxCpu" xml:space="preserve">
+    <value>MAX CPU%</value>
+    <comment>Process list column header: highest CPU %. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnThreads" xml:space="preserve">
+    <value>THRDS</value>
+    <comment>Process list column header: thread count. Max 5 characters.</comment>
+  </data>
+  <data name="ProcessColumnGpu" xml:space="preserve">
+    <value>GPU%</value>
+    <comment>Process list column header. Max 5 characters.</comment>
+  </data>
+  <data name="ProcessColumnAvgGpu" xml:space="preserve">
+    <value>AVG GPU%</value>
+    <comment>Process list column header: average GPU %. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnMaxGpu" xml:space="preserve">
+    <value>MAX GPU%</value>
+    <comment>Process list column header: highest GPU %. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnMemory" xml:space="preserve">
+    <value>MEM</value>
+    <comment>Process list column header: memory used. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnAvgMemory" xml:space="preserve">
+    <value>AVG MEM</value>
+    <comment>Process list column header: average memory used. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnMaxMemory" xml:space="preserve">
+    <value>MAX MEM</value>
+    <comment>Process list column header: most memory used. Max 8 characters.</comment>
+  </data>
+  <data name="ProcessColumnDisk" xml:space="preserve">
+    <value>DISK</value>
+    <comment>Process list column header: disk bytes per second. Max 10 characters.</comment>
+  </data>
+  <data name="ProcessColumnAvgDisk" xml:space="preserve">
+    <value>AVG DISK</value>
+    <comment>Process list column header: average disk use. Max 10 characters.</comment>
+  </data>
+  <data name="ProcessColumnMaxDisk" xml:space="preserve">
+    <value>MAX DISK</value>
+    <comment>Process list column header: highest disk use. Max 10 characters.</comment>
+  </data>
+  <data name="ProcessColumnPower" xml:space="preserve">
+    <value>POWER</value>
+    <comment>Process list column header: power use. Max 9 characters.</comment>
+  </data>
+  <data name="ProcessColumnPath" xml:space="preserve">
+    <value>PATH</value>
+    <comment>Process list column header: command line. Max 30 characters.</comment>
+  </data>
+  <data name="HotKeyEndTask" xml:space="preserve">
+    <value>End Task</value>
+    <comment>Footer label for the k key.</comment>
+  </data>
+  <data name="ProcessesFilterTitle" xml:space="preserve">
+    <value>Filter Processes</value>
+    <comment>Title of the process filter dialog.</comment>
+  </data>
+  <data name="ProcessesFrozen" xml:space="preserve">
+    <value>Frozen</value>
+    <comment>Process list header while updates are frozen with the z key.</comment>
+  </data>
+  <data name="EndTaskTitleOne" xml:space="preserve">
+    <value>End Task</value>
+    <comment>Title of the end-task dialog for one process.</comment>
+  </data>
+  <data name="EndTaskTitleMany" xml:space="preserve">
+    <value>End Tasks</value>
+    <comment>Title of the end-task dialog for several processes.</comment>
+  </data>
+  <data name="EndTaskHeadingOne" xml:space="preserve">
+    <value>End this task?</value>
+    <comment>First line of the end-task dialog for one process.</comment>
+  </data>
+  <data name="EndTaskHeadingMany" xml:space="preserve">
+    <value>End these {0} tasks?</value>
+    <comment>First line of the end-task dialog. {0} is the number of processes (2 or more).</comment>
+  </data>
+  <data name="EndTaskMore" xml:space="preserve">
+    <value>and {0} more</value>
+    <comment>Follows the first few process names. {0} is how many more are not listed.</comment>
+  </data>
+  <data name="EndTaskChildren" xml:space="preserve">
+    <value>Child processes are also ended.</value>
+    <comment>Last line of the end-task dialog.</comment>
+  </data>
+  <data name="ProcessInfoNotImplemented" xml:space="preserve">
+    <value>Not yet implemented on this OS</value>
+    <comment>Shown in a process detail tab that this platform doesn&apos;t support.</comment>
+  </data>
+  <data name="ProcessInfoThreadsNotLoaded" xml:space="preserve">
+    <value>Threads could not be loaded</value>
+    <comment>Shown in the THREADS tab when it fails to load.</comment>
+  </data>
+  <data name="ProcessInfoModulesNotLoaded" xml:space="preserve">
+    <value>Modules could not be loaded</value>
+    <comment>Shown in the MODULES tab when it fails to load.</comment>
+  </data>
+  <data name="ProcessInfoLoading" xml:space="preserve">
+    <value>Loading, please wait...</value>
+    <comment>Shown while a process detail tab loads.</comment>
+  </data>
+  <data name="ProcessInfoMenuHeader" xml:space="preserve">
+    <value>SELECT</value>
+    <comment>Column header of the process detail menu, upper case. Max 7 characters.</comment>
+  </data>
+  <data name="ProcessInfoMenuDetail" xml:space="preserve">
+    <value>DETAIL</value>
+    <comment>Process detail menu item, upper case. Max 7 characters.</comment>
+  </data>
+  <data name="ProcessInfoMenuThreads" xml:space="preserve">
+    <value>THREADS</value>
+    <comment>Process detail menu item, upper case. Max 7 characters.</comment>
+  </data>
+  <data name="ProcessInfoMenuModules" xml:space="preserve">
+    <value>MODULES</value>
+    <comment>Process detail menu item, upper case. Max 7 characters.</comment>
+  </data>
+  <data name="ProcessInfoMenuHandles" xml:space="preserve">
+    <value>HANDLES</value>
+    <comment>Process detail menu item, upper case. Max 7 characters.</comment>
+  </data>
+  <data name="ProcessInfoPidLabel" xml:space="preserve">
+    <value>Pid:</value>
+    <comment>Label before the process ID. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoThreadId" xml:space="preserve">
+    <value>THREAD ID</value>
+    <comment>Thread list column header. Max 11 characters.</comment>
+  </data>
+  <data name="ProcessInfoState" xml:space="preserve">
+    <value>STATE</value>
+    <comment>Thread list column header. Max 15 characters.</comment>
+  </data>
+  <data name="ProcessInfoReason" xml:space="preserve">
+    <value>REASON</value>
+    <comment>Thread list column header: why a thread is waiting. Max 23 characters.</comment>
+  </data>
+  <data name="ProcessInfoPriority" xml:space="preserve">
+    <value>PRI</value>
+    <comment>Thread list column header: priority. Max 3 characters.</comment>
+  </data>
+  <data name="ProcessInfoStartAddress" xml:space="preserve">
+    <value>START ADDRESS</value>
+    <comment>Thread list column header. Max 19 characters.</comment>
+  </data>
+  <data name="ProcessInfoKernelTime" xml:space="preserve">
+    <value>KERNEL TIME</value>
+    <comment>Thread list column header. Max 19 characters.</comment>
+  </data>
+  <data name="ProcessInfoUserTime" xml:space="preserve">
+    <value>USER TIME</value>
+    <comment>Thread list column header. Max 19 characters.</comment>
+  </data>
+  <data name="ProcessInfoTotalTime" xml:space="preserve">
+    <value>TOTAL TIME</value>
+    <comment>Thread list column header. Max 19 characters.</comment>
+  </data>
+  <data name="ProcessInfoModule" xml:space="preserve">
+    <value>MODULE</value>
+    <comment>Module list column header. Max 31 characters.</comment>
+  </data>
+  <data name="ProcessInfoPath" xml:space="preserve">
+    <value>PATH</value>
+    <comment>Module list column header.</comment>
+  </data>
+  <data name="ProcessInfoId" xml:space="preserve">
+    <value>ID</value>
+    <comment>Handle list column header.</comment>
+  </data>
+  <data name="ProcessInfoName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>Handle list column header.</comment>
+  </data>
+  <data name="ProcessInfoFile" xml:space="preserve">
+    <value>File:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoDescription" xml:space="preserve">
+    <value>Description:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoPathLabel" xml:space="preserve">
+    <value>Path:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoUser" xml:space="preserve">
+    <value>User:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoVersion" xml:space="preserve">
+    <value>Version:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoSize" xml:space="preserve">
+    <value>Size:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoSizeOnDisk" xml:space="preserve">
+    <value>Size on disk:</value>
+    <comment>Process detail label. Max 13 characters.</comment>
+  </data>
+  <data name="ProcessInfoBytes" xml:space="preserve">
+    <value>{0} bytes</value>
+    <comment>Exact file size. {0} is the number of bytes.</comment>
+  </data>
+  <data name="ProcessInfoError" xml:space="preserve">
+    <value>Error:</value>
+    <comment>Process detail label before an error message. Max 13 characters.</comment>
+  </data>
+
+  <!-- PERFORMANCE and shared labels -->
+  <data name="CommonYes" xml:space="preserve">
+    <value>Yes</value>
+    <comment>A yes/no value. Max 8 characters.</comment>
+  </data>
+  <data name="CommonNo" xml:space="preserve">
+    <value>No</value>
+    <comment>A yes/no value. Max 8 characters.</comment>
+  </data>
+  <data name="CommonUnknown" xml:space="preserve">
+    <value>Unknown</value>
+    <comment>Shown in place of a value that isn&apos;t known. Max 8 characters.</comment>
+  </data>
+  <data name="CpuKernel" xml:space="preserve">
+    <value>Kernel</value>
+    <comment>CPU time spent in the kernel; a chart series and label.</comment>
+  </data>
+  <data name="CpuUser" xml:space="preserve">
+    <value>User</value>
+    <comment>CPU time spent in user programs; a chart series and label.</comment>
+  </data>
+  <data name="LabelName" xml:space="preserve">
+    <value>Name:</value>
+    <comment>Property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelDescription" xml:space="preserve">
+    <value>Description:</value>
+    <comment>Property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelVendor" xml:space="preserve">
+    <value>Vendor:</value>
+    <comment>Property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelModel" xml:space="preserve">
+    <value>Model:</value>
+    <comment>Property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelManufacturer" xml:space="preserve">
+    <value>Manufacturer:</value>
+    <comment>Property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelCores" xml:space="preserve">
+    <value>Cores:</value>
+    <comment>Property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelVersion" xml:space="preserve">
+    <value>Version:</value>
+    <comment>Property label. Max 17 characters.</comment>
+  </data>
+  <data name="PerformanceUtilisationColumn" xml:space="preserve">
+    <value>Utilisation</value>
+    <comment>PERFORMANCE column header. Max 14 characters.</comment>
+  </data>
+  <data name="PerformanceSpeedColumn" xml:space="preserve">
+    <value>Speed</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformanceTasksColumn" xml:space="preserve">
+    <value>Tasks</value>
+    <comment>PERFORMANCE column header. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceThreadsColumn" xml:space="preserve">
+    <value>Threads</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformancePowerDrawColumn" xml:space="preserve">
+    <value>Power Draw</value>
+    <comment>PERFORMANCE column header. Max 11 characters.</comment>
+  </data>
+  <data name="PerformanceCoreChart" xml:space="preserve">
+    <value>CPU {0}</value>
+    <comment>Per-core chart title. {0} is the core&apos;s name or number.</comment>
+  </data>
+  <data name="PerformanceBaseSpeed" xml:space="preserve">
+    <value>Base speed:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSockets" xml:space="preserve">
+    <value>Sockets:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceLogicalProcessors" xml:space="preserve">
+    <value>Logical processors:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelVirtualisation" xml:space="preserve">
+    <value>Virtualisation:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceL1Cache" xml:space="preserve">
+    <value>L1 cache:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceL2Cache" xml:space="preserve">
+    <value>L2 cache:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceL3Cache" xml:space="preserve">
+    <value>L3 cache:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceActiveTimeColumn" xml:space="preserve">
+    <value>Active Time</value>
+    <comment>PERFORMANCE column header. Max 14 characters.</comment>
+  </data>
+  <data name="PerformanceReadSpeedColumn" xml:space="preserve">
+    <value>Read Speed</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformanceWriteSpeedColumn" xml:space="preserve">
+    <value>Write Speed</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformancePowerColumn" xml:space="preserve">
+    <value>Power</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformanceActiveTimeChart" xml:space="preserve">
+    <value>Active Time {0}</value>
+    <comment>Disk chart title. {0} is the active time, e.g. 12.0%.</comment>
+  </data>
+  <data name="PerformanceDiskTransferChart" xml:space="preserve">
+    <value>Disk Transfer Rate {0}</value>
+    <comment>Disk chart title. {0} is the transfer rate.</comment>
+  </data>
+  <data name="LabelFirmwareRevision" xml:space="preserve">
+    <value>Firmware Revision:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelSerialNumber" xml:space="preserve">
+    <value>Serial Number:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelBusType" xml:space="preserve">
+    <value>Bus Type:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelMediaType" xml:space="preserve">
+    <value>Media Type:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelCapacity" xml:space="preserve">
+    <value>Capacity:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelRemovable" xml:space="preserve">
+    <value>Removable:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceTotalBytesRead" xml:space="preserve">
+    <value>Total Bytes Read:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceTotalBytesWritten" xml:space="preserve">
+    <value>Total Bytes Written:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceNumberOfDisks" xml:space="preserve">
+    <value>Number of Disks:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelTotalCapacity" xml:space="preserve">
+    <value>Total Capacity:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceRatedWatts" xml:space="preserve">
+    <value>{0:0.0} W (rated)</value>
+    <comment>A drive&apos;s rated power rather than a measured one. {0} is watts; keep the :0.0 format.</comment>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryColumn" xml:space="preserve">
+    <value>Dedicated GPU Memory</value>
+    <comment>PERFORMANCE column header. Max 23 characters.</comment>
+  </data>
+  <data name="PerformanceGpuMemoryColumn" xml:space="preserve">
+    <value>GPU Memory</value>
+    <comment>PERFORMANCE column header. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSharedGpuMemoryColumn" xml:space="preserve">
+    <value>Shared GPU Memory</value>
+    <comment>PERFORMANCE column header. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceFrequencyColumn" xml:space="preserve">
+    <value>Frequency</value>
+    <comment>PERFORMANCE column header. Max 11 characters.</comment>
+  </data>
+  <data name="PerformanceThrottlingColumn" xml:space="preserve">
+    <value>Throttling</value>
+    <comment>PERFORMANCE column header. Max 23 characters.</comment>
+  </data>
+  <data name="PerformanceGpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>GPU panel title, and the GPU chart label when the adapter has no name.</comment>
+  </data>
+  <data name="PerformanceDedicatedGpuMemoryChart" xml:space="preserve">
+    <value>Dedicated GPU Memory {0}</value>
+    <comment>GPU chart title. {0} is the memory in use.</comment>
+  </data>
+  <data name="PerformanceGpuMemoryChart" xml:space="preserve">
+    <value>GPU Memory {0}</value>
+    <comment>GPU chart title. {0} is the memory in use.</comment>
+  </data>
+  <data name="LabelAdapterType" xml:space="preserve">
+    <value>Adapter Type:</value>
+    <comment>Device property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelDriverVersion" xml:space="preserve">
+    <value>Driver Version:</value>
+    <comment>Device property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelDriverDate" xml:space="preserve">
+    <value>Driver Date:</value>
+    <comment>Device property label. Max 17 characters.</comment>
+  </data>
+  <data name="PerformanceInUseColumn" xml:space="preserve">
+    <value>In Use</value>
+    <comment>PERFORMANCE column header. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceAvailableColumn" xml:space="preserve">
+    <value>Available</value>
+    <comment>PERFORMANCE column header. Max 15 characters.</comment>
+  </data>
+  <data name="PerformanceCommittedColumn" xml:space="preserve">
+    <value>Committed</value>
+    <comment>PERFORMANCE column header (Windows). Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSwapFileColumn" xml:space="preserve">
+    <value>Swap File</value>
+    <comment>PERFORMANCE column header (macOS). Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSwapInColumn" xml:space="preserve">
+    <value>Swap In</value>
+    <comment>PERFORMANCE column header (macOS). Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSwapOutColumn" xml:space="preserve">
+    <value>Swap Out</value>
+    <comment>PERFORMANCE column header (macOS). Max 15 characters.</comment>
+  </data>
+  <data name="PerformanceMemoryChart" xml:space="preserve">
+    <value>Memory {0}</value>
+    <comment>Memory chart title. {0} is the memory in use.</comment>
+  </data>
+  <data name="PerformanceCommittedMemoryChart" xml:space="preserve">
+    <value>Committed Memory {0}</value>
+    <comment>Memory chart title (Windows). {0} is the committed memory.</comment>
+  </data>
+  <data name="PerformanceSwapFileChart" xml:space="preserve">
+    <value>Swap File {0}</value>
+    <comment>Memory chart title (macOS). {0} is the swap in use.</comment>
+  </data>
+  <data name="PerformanceInUseSeries" xml:space="preserve">
+    <value>In Use</value>
+    <comment>Memory metre series.</comment>
+  </data>
+  <data name="PerformanceModifiedSeries" xml:space="preserve">
+    <value>Modified</value>
+    <comment>Memory metre series.</comment>
+  </data>
+  <data name="PerformanceStandbySeries" xml:space="preserve">
+    <value>Standby</value>
+    <comment>Memory metre series.</comment>
+  </data>
+  <data name="PerformanceFreeSeries" xml:space="preserve">
+    <value>Free</value>
+    <comment>Memory metre series.</comment>
+  </data>
+  <data name="LabelMemory" xml:space="preserve">
+    <value>Memory:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="LabelSpeed" xml:space="preserve">
+    <value>Speed:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceConfiguredSpeed" xml:space="preserve">
+    <value>Configured speed:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSlotsUsed" xml:space="preserve">
+    <value>Slots used:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSlotsUsedValue" xml:space="preserve">
+    <value>{0} of {1}</value>
+    <comment>Memory slots in use. {0} is the slots used, {1} the slots in total.</comment>
+  </data>
+  <data name="PerformanceFormFactor" xml:space="preserve">
+    <value>Form factor:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceInUse" xml:space="preserve">
+    <value>In use:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceModified" xml:space="preserve">
+    <value>Modified:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceStandbyCached" xml:space="preserve">
+    <value>Standby (cached):</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceFree" xml:space="preserve">
+    <value>Free:</value>
+    <comment>Device property label. Max 21 characters.</comment>
+  </data>
+  <data name="PerformanceSendColumn" xml:space="preserve">
+    <value>Send</value>
+    <comment>PERFORMANCE column header. Max 17 characters.</comment>
+  </data>
+  <data name="PerformanceReceiveColumn" xml:space="preserve">
+    <value>Receive</value>
+    <comment>PERFORMANCE column header. Max 17 characters.</comment>
+  </data>
+  <data name="PerformanceSendChart" xml:space="preserve">
+    <value>Send {0}</value>
+    <comment>Network chart title. {0} is the send rate.</comment>
+  </data>
+  <data name="PerformanceReceiveChart" xml:space="preserve">
+    <value>Receive {0}</value>
+    <comment>Network chart title. {0} is the receive rate.</comment>
+  </data>
+  <data name="PerformanceFriendlyName" xml:space="preserve">
+    <value>Friendly Name:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelConnectionType" xml:space="preserve">
+    <value>Connection Type:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelPhysicalMedium" xml:space="preserve">
+    <value>Physical Medium:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelMacAddress" xml:space="preserve">
+    <value>MAC Address:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelIpv4Addresses" xml:space="preserve">
+    <value>IPv4 Addresses:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelIpv6Addresses" xml:space="preserve">
+    <value>IPv6 Addresses:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelTransmitLinkSpeed" xml:space="preserve">
+    <value>Transmit Link Speed:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelReceiveLinkSpeed" xml:space="preserve">
+    <value>Receive Link Speed:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="LabelOperationalStatus" xml:space="preserve">
+    <value>Operational Status:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="PerformanceTotalBytesSent" xml:space="preserve">
+    <value>Total Bytes Sent:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="PerformanceTotalBytesReceived" xml:space="preserve">
+    <value>Total Bytes Received:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="PerformanceTotalPacketsSent" xml:space="preserve">
+    <value>Total Packets Sent:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="PerformanceTotalPacketsReceived" xml:space="preserve">
+    <value>Total Packets Received:</value>
+    <comment>Device property label. Max 24 characters.</comment>
+  </data>
+  <data name="PerformancePeakPowerColumn" xml:space="preserve">
+    <value>Peak Power</value>
+    <comment>PERFORMANCE column header. Max 11 characters.</comment>
+  </data>
+  <data name="PerformancePowerChart" xml:space="preserve">
+    <value>Power {0}</value>
+    <comment>NPU chart title. {0} is the power draw.</comment>
+  </data>
+  <data name="LabelChip" xml:space="preserve">
+    <value>Chip:</value>
+    <comment>Device property label. Max 17 characters.</comment>
+  </data>
+  <data name="LabelArchitecture" xml:space="preserve">
+    <value>Architecture:</value>
+    <comment>Device property label. Max 17 characters.</comment>
+  </data>
+  <data name="PerformanceCpuPanel" xml:space="preserve">
+    <value>CPU</value>
+    <comment>PERFORMANCE side panel title.</comment>
+  </data>
+  <data name="PerformanceMemoryPanel" xml:space="preserve">
+    <value>MEMORY</value>
+    <comment>PERFORMANCE side panel title.</comment>
+  </data>
+  <data name="PerformanceDisksPanel" xml:space="preserve">
+    <value>DISKS</value>
+    <comment>PERFORMANCE side panel title when no single disk is listed.</comment>
+  </data>
+  <data name="PerformanceDiskPanel" xml:space="preserve">
+    <value>Disk {0}</value>
+    <comment>PERFORMANCE side panel title for a disk with no name. {0} is the disk&apos;s number.</comment>
+  </data>
+  <data name="PerformanceGpuPanel" xml:space="preserve">
+    <value>GPU {0}</value>
+    <comment>PERFORMANCE side panel title for a GPU with no name. {0} is the GPU&apos;s number.</comment>
+  </data>
+  <data name="PerformanceNetworkPanel" xml:space="preserve">
+    <value>NETWORK</value>
+    <comment>PERFORMANCE side panel title when no single adapter is listed.</comment>
+  </data>
+  <data name="PerformanceGpuCores" xml:space="preserve">
+    <value>{0} cores</value>
+    <comment>GPU side panel line. {0} is the number of GPU cores.</comment>
+  </data>
+  <data name="PerformanceLogicalProcessorsCount" xml:space="preserve">
+    <value>{0} logical processors</value>
+    <comment>CPU side panel line. {0} is the number of logical processors.</comment>
+  </data>
+  <data name="PerformanceSendShort" xml:space="preserve">
+    <value>S: {0}</value>
+    <comment>Network side panel line: send rate, abbreviated. {0} is the rate.</comment>
+  </data>
+  <data name="PerformanceReceiveShort" xml:space="preserve">
+    <value>R: {0}</value>
+    <comment>Network side panel line: receive rate, abbreviated. {0} is the rate.</comment>
+  </data>
+
+  <!-- STARTUP, APPS, SERVICES, DRIVERS and launchd services -->
+  <data name="ListColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="ListColumnStatus" xml:space="preserve">
+    <value>STATUS</value>
+    <comment>List column header, upper case. Max 8 characters.</comment>
+  </data>
+  <data name="ListColumnVersion" xml:space="preserve">
+    <value>VERSION</value>
+    <comment>List column header, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="ListColumnPublisher" xml:space="preserve">
+    <value>PUBLISHER</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="ListColumnScope" xml:space="preserve">
+    <value>SCOPE</value>
+    <comment>List column header, upper case: whether an item is for the machine or one user. Max 8 characters.</comment>
+  </data>
+  <data name="ListColumnPath" xml:space="preserve">
+    <value>PATH</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="ListColumnDescription" xml:space="preserve">
+    <value>DESCRIPTION</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="ListColumnField" xml:space="preserve">
+    <value>FIELD</value>
+    <comment>Detail list column header, upper case. Max 13 characters.</comment>
+  </data>
+  <data name="ListColumnValue" xml:space="preserve">
+    <value>VALUE</value>
+    <comment>Detail list column header, upper case.</comment>
+  </data>
+  <data name="ListDetailHeader" xml:space="preserve">
+    <value>DETAIL</value>
+    <comment>Title of the detail list beside a list, upper case.</comment>
+  </data>
+  <data name="ListHeaderRunningTotal" xml:space="preserve">
+    <value>{0} running / {1} total</value>
+    <comment>List header. {0} is the number running, {1} the number listed.</comment>
+  </data>
+  <data name="DetailName" xml:space="preserve">
+    <value>Name</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailStatus" xml:space="preserve">
+    <value>Status</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailVersion" xml:space="preserve">
+    <value>Version</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailPublisher" xml:space="preserve">
+    <value>Publisher</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailPath" xml:space="preserve">
+    <value>Path</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailScope" xml:space="preserve">
+    <value>Scope</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailDescription" xml:space="preserve">
+    <value>Description</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailStartupType" xml:space="preserve">
+    <value>Startup Type</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailLogOnAs" xml:space="preserve">
+    <value>Log On As</value>
+    <comment>Detail list label: the account a service runs as. Max 13 characters.</comment>
+  </data>
+  <data name="DetailType" xml:space="preserve">
+    <value>Type</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailCommand" xml:space="preserve">
+    <value>Command</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailInstalled" xml:space="preserve">
+    <value>Installed</value>
+    <comment>Detail list label: install date. Max 13 characters.</comment>
+  </data>
+  <data name="DetailSize" xml:space="preserve">
+    <value>Size</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailLocation" xml:space="preserve">
+    <value>Location</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailLabel" xml:space="preserve">
+    <value>Label</value>
+    <comment>Detail list label: a launchd service&apos;s label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailDomain" xml:space="preserve">
+    <value>Domain</value>
+    <comment>Detail list label: a launchd service&apos;s domain. Max 13 characters.</comment>
+  </data>
+  <data name="DetailGroup" xml:space="preserve">
+    <value>Group</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailStartType" xml:space="preserve">
+    <value>Start Type</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailEnabled" xml:space="preserve">
+    <value>Enabled</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailLastExit" xml:space="preserve">
+    <value>Last Exit</value>
+    <comment>Detail list label: how a launchd service last exited. Max 13 characters.</comment>
+  </data>
+  <data name="DetailProgram" xml:space="preserve">
+    <value>Program</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailArguments" xml:space="preserve">
+    <value>Arguments</value>
+    <comment>Detail list label. Max 13 characters.</comment>
+  </data>
+  <data name="DetailPlist" xml:space="preserve">
+    <value>Plist</value>
+    <comment>Detail list label: a launchd property list file. Max 13 characters.</comment>
+  </data>
+  <data name="ScopeMachine" xml:space="preserve">
+    <value>Machine</value>
+    <comment>Scope of an item installed for every user. Max 8 characters.</comment>
+  </data>
+  <data name="ScopeUser" xml:space="preserve">
+    <value>User</value>
+    <comment>Scope of an item installed for one user. Max 8 characters.</comment>
+  </data>
+  <data name="ServiceStatusStopped" xml:space="preserve">
+    <value>Stopped</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusStartPending" xml:space="preserve">
+    <value>Start Pending</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusStopPending" xml:space="preserve">
+    <value>Stop Pending</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusRunning" xml:space="preserve">
+    <value>Running</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusContinuePending" xml:space="preserve">
+    <value>Continue Pending</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusPausePending" xml:space="preserve">
+    <value>Pause Pending</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="ServiceStatusPaused" xml:space="preserve">
+    <value>Paused</value>
+    <comment>Service or driver status. Max 16 characters.</comment>
+  </data>
+  <data name="StatusNotLoaded" xml:space="preserve">
+    <value>Not Loaded</value>
+    <comment>Driver or launchd service status. Max 16 characters.</comment>
+  </data>
+  <data name="StartTypeAutomaticDelayed" xml:space="preserve">
+    <value>Automatic (Delayed Start)</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeAutomatic" xml:space="preserve">
+    <value>Automatic</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeManual" xml:space="preserve">
+    <value>Manual</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeDisabled" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeBootStart" xml:space="preserve">
+    <value>Boot Start</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeSystemStart" xml:space="preserve">
+    <value>System Start</value>
+    <comment>Service or driver start type. Max 25 characters.</comment>
+  </data>
+  <data name="StartTypeOnDemand" xml:space="preserve">
+    <value>On Demand</value>
+    <comment>Driver or launchd service start type. Max 11 characters.</comment>
+  </data>
+  <data name="CommonNeedsAdministrator" xml:space="preserve">
+    <value>It needs administrator rights.</value>
+    <comment>Why a change failed (Windows).</comment>
+  </data>
+  <data name="CommonRunAsAdministrator" xml:space="preserve">
+    <value>Run taskmon as administrator.</value>
+    <comment>How to fix it (Windows). taskmon is the program&apos;s name.</comment>
+  </data>
+  <data name="CommonNoLongerExists" xml:space="preserve">
+    <value>It no longer exists.</value>
+    <comment>Why a change failed.</comment>
+  </data>
+  <data name="ServicesGathering" xml:space="preserve">
+    <value>Gathering Windows services…</value>
+    <comment>Shown while the services list loads.</comment>
+  </data>
+  <data name="ServicesFilterTitle" xml:space="preserve">
+    <value>Filter Services</value>
+    <comment>Title of the services filter dialog.</comment>
+  </data>
+  <data name="ServicesColumnStartupType" xml:space="preserve">
+    <value>STARTUP TYPE</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="ServicesColumnLogOnAs" xml:space="preserve">
+    <value>LOG ON AS</value>
+    <comment>List column header, upper case: the account a service runs as. Max 17 characters.</comment>
+  </data>
+  <data name="ServicesLocalSystem" xml:space="preserve">
+    <value>Local System</value>
+    <comment>Windows built-in account name. Max 19 characters.</comment>
+  </data>
+  <data name="ServicesLocalService" xml:space="preserve">
+    <value>Local Service</value>
+    <comment>Windows built-in account name. Max 19 characters.</comment>
+  </data>
+  <data name="ServicesNetworkService" xml:space="preserve">
+    <value>Network Service</value>
+    <comment>Windows built-in account name. Max 19 characters.</comment>
+  </data>
+  <data name="ServicesStarting" xml:space="preserve">
+    <value>Starting…</value>
+    <comment>Status while a service is being started. Max 16 characters.</comment>
+  </data>
+  <data name="ServicesStopping" xml:space="preserve">
+    <value>Stopping…</value>
+    <comment>Status while a service is being stopped. Max 16 characters.</comment>
+  </data>
+  <data name="ServicesToggleHotKey" xml:space="preserve">
+    <value>Start/Stop</value>
+    <comment>Footer label for the Space key.</comment>
+  </data>
+  <data name="ServicesToggleTitleStart" xml:space="preserve">
+    <value>Start Service</value>
+    <comment>Title of the dialog when a service fails to start.</comment>
+  </data>
+  <data name="ServicesToggleTitleStop" xml:space="preserve">
+    <value>Stop Service</value>
+    <comment>Title of the dialog when a service fails to stop.</comment>
+  </data>
+  <data name="ServicesCouldNotStart" xml:space="preserve">
+    <value>Couldn&apos;t start {0}</value>
+    <comment>{0} is the service&apos;s name.</comment>
+  </data>
+  <data name="ServicesCouldNotStop" xml:space="preserve">
+    <value>Couldn&apos;t stop {0}</value>
+    <comment>{0} is the service&apos;s name.</comment>
+  </data>
+  <data name="ServicesRefused" xml:space="preserve">
+    <value>Windows refused the change.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesBusy" xml:space="preserve">
+    <value>It&apos;s busy. Try again in a moment.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesCannotStop" xml:space="preserve">
+    <value>It doesn&apos;t accept a stop request.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesDependencyFailed" xml:space="preserve">
+    <value>A service it depends on couldn&apos;t start.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesDidNotStop" xml:space="preserve">
+    <value>It&apos;s still running.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesDisabled" xml:space="preserve">
+    <value>Its startup type is Disabled.</value>
+    <comment>Why a service change failed. &quot;Disabled&quot; is the start type (StartTypeDisabled).</comment>
+  </data>
+  <data name="ServicesNotSupported" xml:space="preserve">
+    <value>Services can&apos;t be started or stopped here.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesStillStarting" xml:space="preserve">
+    <value>It&apos;s still starting after a minute.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesStillStopping" xml:space="preserve">
+    <value>It&apos;s still stopping after a minute.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesStoppedAfterStarting" xml:space="preserve">
+    <value>It started and then stopped.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesTimedOut" xml:space="preserve">
+    <value>It didn&apos;t respond in time.</value>
+    <comment>Why a service change failed.</comment>
+  </data>
+  <data name="ServicesWindowsError" xml:space="preserve">
+    <value>Windows error {0}.</value>
+    <comment>Why a service change failed. {0} is the Windows error code.</comment>
+  </data>
+  <data name="ServicesDependentsRunning" xml:space="preserve">
+    <value>Other running services depend on it.</value>
+    <comment>Why a service can&apos;t stop.</comment>
+  </data>
+  <data name="ServicesDependentsList" xml:space="preserve">
+    <value>Running services depend on it:</value>
+    <comment>Followed by the names of those services on the next line.</comment>
+  </data>
+  <data name="ServicesDependentsMore" xml:space="preserve">
+    <value>and {0} more</value>
+    <comment>Follows the first few service names. {0} is how many more are not listed.</comment>
+  </data>
+  <data name="StartupGathering" xml:space="preserve">
+    <value>Gathering startup applications…</value>
+    <comment>Shown while the startup list loads.</comment>
+  </data>
+  <data name="StartupFilterTitle" xml:space="preserve">
+    <value>Filter Startup</value>
+    <comment>Title of the startup filter dialog.</comment>
+  </data>
+  <data name="StartupColumnType" xml:space="preserve">
+    <value>TYPE</value>
+    <comment>List column header, upper case. Max 15 characters.</comment>
+  </data>
+  <data name="StartupColumnCommand" xml:space="preserve">
+    <value>COMMAND</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="StartupHeader" xml:space="preserve">
+    <value>{0} enabled / {1} total</value>
+    <comment>List header. {0} is the number enabled, {1} the number listed.</comment>
+  </data>
+  <data name="StartupStateEnabled" xml:space="preserve">
+    <value>Enabled</value>
+    <comment>Startup item state. Max 8 characters.</comment>
+  </data>
+  <data name="StartupStateDisabled" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>Startup item state. Max 8 characters.</comment>
+  </data>
+  <data name="StartupTypeRun" xml:space="preserve">
+    <value>Run</value>
+    <comment>Startup item type: the Windows Run registry key. Usually kept as is. Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeRunOnce" xml:space="preserve">
+    <value>RunOnce</value>
+    <comment>Startup item type: the Windows RunOnce registry key. Usually kept as is. Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeStartupFolder" xml:space="preserve">
+    <value>Startup Folder</value>
+    <comment>Startup item type (Windows). Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeScheduledTask" xml:space="preserve">
+    <value>Scheduled Task</value>
+    <comment>Startup item type (Windows). Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeOpenAtLogin" xml:space="preserve">
+    <value>Open at Login</value>
+    <comment>Startup item type (macOS). Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeLoginHelper" xml:space="preserve">
+    <value>Login Helper</value>
+    <comment>Startup item type (macOS). Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeLaunchAgent" xml:space="preserve">
+    <value>Launch Agent</value>
+    <comment>Startup item type (macOS). Max 15 characters.</comment>
+  </data>
+  <data name="StartupTypeLaunchDaemon" xml:space="preserve">
+    <value>Launch Daemon</value>
+    <comment>Startup item type (macOS). Max 15 characters.</comment>
+  </data>
+  <data name="StartupToggleHotKey" xml:space="preserve">
+    <value>Enable/Disable</value>
+    <comment>Footer label for the Space key.</comment>
+  </data>
+  <data name="StartupToggleTitleEnable" xml:space="preserve">
+    <value>Enable Startup App</value>
+    <comment>Title of the dialog when a startup item fails to enable.</comment>
+  </data>
+  <data name="StartupToggleTitleDisable" xml:space="preserve">
+    <value>Disable Startup App</value>
+    <comment>Title of the dialog when a startup item fails to disable.</comment>
+  </data>
+  <data name="StartupCouldNotEnable" xml:space="preserve">
+    <value>Couldn&apos;t enable {0}</value>
+    <comment>{0} is the startup item&apos;s name.</comment>
+  </data>
+  <data name="StartupCouldNotDisable" xml:space="preserve">
+    <value>Couldn&apos;t disable {0}</value>
+    <comment>{0} is the startup item&apos;s name.</comment>
+  </data>
+  <data name="StartupRefused" xml:space="preserve">
+    <value>{0} refused the change.</value>
+    <comment>Why a startup change failed. {0} is the operating system&apos;s name.</comment>
+  </data>
+  <data name="StartupCouldNotChange" xml:space="preserve">
+    <value>{0} couldn&apos;t change it.</value>
+    <comment>Why a startup change failed. {0} is the operating system&apos;s name.</comment>
+  </data>
+  <data name="StartupNeedsRoot" xml:space="preserve">
+    <value>It needs root.</value>
+    <comment>Why a startup change failed (macOS).</comment>
+  </data>
+  <data name="StartupRunWithSudo" xml:space="preserve">
+    <value>Run taskmon with sudo.</value>
+    <comment>How to fix it (macOS). taskmon and sudo are names.</comment>
+  </data>
+  <data name="StartupUseLoginItems" xml:space="preserve">
+    <value>Use System Settings &gt; Login Items.</value>
+    <comment>Where to make the change instead (macOS). Use the names macOS shows.</comment>
+  </data>
+  <data name="StartupStateUnreadable" xml:space="preserve">
+    <value>Its current state can&apos;t be read.</value>
+    <comment>Why a startup change failed.</comment>
+  </data>
+  <data name="StartupCannotEnableType" xml:space="preserve">
+    <value>{0} items can&apos;t be enabled.</value>
+    <comment>Why a startup change failed. {0} is the item type, e.g. Scheduled Task.</comment>
+  </data>
+  <data name="StartupCannotDisableType" xml:space="preserve">
+    <value>{0} items can&apos;t be disabled.</value>
+    <comment>Why a startup change failed. {0} is the item type, e.g. Scheduled Task.</comment>
+  </data>
+  <data name="StartupAllowInSettings" xml:space="preserve">
+    <value>Allow it in System Settings,</value>
+    <comment>First line of where to approve an item (macOS). Use the names macOS shows.</comment>
+  </data>
+  <data name="StartupAllowInLoginItems" xml:space="preserve">
+    <value>General &gt; Login Items.</value>
+    <comment>Second line of where to approve an item (macOS). Use the names macOS shows.</comment>
+  </data>
+  <data name="DriversGathering" xml:space="preserve">
+    <value>Gathering drivers…</value>
+    <comment>Shown while the drivers list loads.</comment>
+  </data>
+  <data name="DriversFilterTitle" xml:space="preserve">
+    <value>Filter Drivers</value>
+    <comment>Title of the drivers filter dialog.</comment>
+  </data>
+  <data name="DriversColumnStartType" xml:space="preserve">
+    <value>START TYPE</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="DriverStatusLoaded" xml:space="preserve">
+    <value>Loaded</value>
+    <comment>Driver status. Max 16 characters.</comment>
+  </data>
+  <data name="AppsGathering" xml:space="preserve">
+    <value>Gathering installed applications…</value>
+    <comment>Shown while the apps list loads.</comment>
+  </data>
+  <data name="AppsFilterTitle" xml:space="preserve">
+    <value>Filter Apps</value>
+    <comment>Title of the apps filter dialog.</comment>
+  </data>
+  <data name="AppsColumnInstalled" xml:space="preserve">
+    <value>INSTALLED</value>
+    <comment>List column header, upper case: install date. Max 11 characters.</comment>
+  </data>
+  <data name="ListColumnSize" xml:space="preserve">
+    <value>SIZE</value>
+    <comment>List column header, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="AppsColumnLocation" xml:space="preserve">
+    <value>LOCATION</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="AppsHeader" xml:space="preserve">
+    <value>{0} installed</value>
+    <comment>List header. {0} is the number of apps.</comment>
+  </data>
+  <data name="LaunchdGathering" xml:space="preserve">
+    <value>Gathering launchd services…</value>
+    <comment>Shown while the launchd services list loads. launchd is a name.</comment>
+  </data>
+  <data name="LaunchdColumnLabel" xml:space="preserve">
+    <value>LABEL</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="LaunchdColumnGroup" xml:space="preserve">
+    <value>GROUP</value>
+    <comment>List column header, upper case. Max 17 characters.</comment>
+  </data>
+  <data name="LaunchdColumnStart" xml:space="preserve">
+    <value>START</value>
+    <comment>List column header, upper case: when the service starts. Max 11 characters.</comment>
+  </data>
+  <data name="LaunchdColumnEnabled" xml:space="preserve">
+    <value>ENABLED</value>
+    <comment>List column header, upper case. Max 8 characters.</comment>
+  </data>
+  <data name="LaunchdStatusRunning" xml:space="preserve">
+    <value>Running ({0})</value>
+    <comment>launchd service status. {0} is the process ID. Max 14 characters.</comment>
+  </data>
+  <data name="LaunchdStatusWaiting" xml:space="preserve">
+    <value>Waiting</value>
+    <comment>launchd service status. Max 17 characters.</comment>
+  </data>
+  <data name="LaunchdStartKeepAlive" xml:space="preserve">
+    <value>Keep Alive</value>
+    <comment>launchd service start type. Max 11 characters.</comment>
+  </data>
+  <data name="LaunchdStartAtLoad" xml:space="preserve">
+    <value>At Load</value>
+    <comment>launchd service start type. Max 11 characters.</comment>
+  </data>
+  <data name="LaunchdSignal" xml:space="preserve">
+    <value>Signal {0}</value>
+    <comment>How a service last exited. {0} is the signal number.</comment>
+  </data>
+  <data name="LaunchdExit" xml:space="preserve">
+    <value>Exit {0}</value>
+    <comment>How a service last exited. {0} is the exit code.</comment>
+  </data>
+  <data name="LaunchdDomain_System" xml:space="preserve">
+    <value>System</value>
+    <comment>launchd domain.</comment>
+  </data>
+  <data name="LaunchdDomain_User" xml:space="preserve">
+    <value>User</value>
+    <comment>launchd domain.</comment>
+  </data>
+
+  <!-- SYSTEM INFO -->
+  <data name="SystemInfoGathering" xml:space="preserve">
+    <value>Gathering…</value>
+    <comment>Shown in a SYSTEM INFO section while it loads.</comment>
+  </data>
+  <data name="SystemInfoGatheringSystem" xml:space="preserve">
+    <value>Gathering system information…</value>
+    <comment>Shown while SYSTEM INFO loads.</comment>
+  </data>
+  <data name="SystemInfoMenuCpu" xml:space="preserve">
+    <value>CPU</value>
+    <comment>SYSTEM INFO section, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoMenuMemory" xml:space="preserve">
+    <value>MEMORY</value>
+    <comment>SYSTEM INFO section, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoMenuGpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>SYSTEM INFO section, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoMenuNpu" xml:space="preserve">
+    <value>NPU</value>
+    <comment>SYSTEM INFO section, upper case (macOS). Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoMenuDisk" xml:space="preserve">
+    <value>DISK</value>
+    <comment>SYSTEM INFO section, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoMenuNetwork" xml:space="preserve">
+    <value>NETWORK</value>
+    <comment>SYSTEM INFO section, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="SystemInfoNoNeuralEngine" xml:space="preserve">
+    <value>No Neural Engine found</value>
+    <comment>Shown when a Mac has no Neural Engine. Neural Engine is Apple&apos;s name; keep it.</comment>
+  </data>
+  <data name="SystemInfoProcessor" xml:space="preserve">
+    <value>Processor:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoLogicalProcessors" xml:space="preserve">
+    <value>Logical Processors:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoBaseFrequency" xml:space="preserve">
+    <value>Base Frequency:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoPerformanceCores" xml:space="preserve">
+    <value>Performance Cores:</value>
+    <comment>Property label (Apple silicon). Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoEfficiencyCores" xml:space="preserve">
+    <value>Efficiency Cores:</value>
+    <comment>Property label (Apple silicon). Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoCoresAtFrequency" xml:space="preserve">
+    <value>{0} @ {1:0.00} GHz</value>
+    <comment>{0} is a number of cores, {1} their frequency in GHz; keep the :0.00 format.</comment>
+  </data>
+  <data name="SystemInfoL1Cache" xml:space="preserve">
+    <value>L1 Cache:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoL2Cache" xml:space="preserve">
+    <value>L2 Cache:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoL3Cache" xml:space="preserve">
+    <value>L3 Cache:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoInstalledDrives" xml:space="preserve">
+    <value>Installed Drives:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoDiskHeader" xml:space="preserve">
+    <value>DISK {0}  {1}</value>
+    <comment>Disk heading, upper case. {0} is the disk&apos;s number, {1} its model.</comment>
+  </data>
+  <data name="SystemInfoUnattachedVolumes" xml:space="preserve">
+    <value>UNATTACHED VOLUMES</value>
+    <comment>Heading for volumes not on a listed disk, upper case.</comment>
+  </data>
+  <data name="SystemInfoInstalledAdapters" xml:space="preserve">
+    <value>Installed Adapters:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoTotalDedicatedMemory" xml:space="preserve">
+    <value>Total Dedicated Memory:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoGpuHeader" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+    <comment>GPU heading, upper case. {0} is the GPU&apos;s number, {1} its description.</comment>
+  </data>
+  <data name="SystemInfoDedicatedVideoMemory" xml:space="preserve">
+    <value>Dedicated Video Memory:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoDedicatedSystemMemory" xml:space="preserve">
+    <value>Dedicated System Memory:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoSharedSystemMemory" xml:space="preserve">
+    <value>Shared System Memory:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoVendorDeviceId" xml:space="preserve">
+    <value>Vendor / Device ID:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoInstalledModules" xml:space="preserve">
+    <value>Installed Modules:</value>
+    <comment>Property label: memory modules. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoSlotHeader" xml:space="preserve">
+    <value>SLOT {0}  {1}</value>
+    <comment>Memory slot heading, upper case. {0} is the slot number, {1} its locator name.</comment>
+  </data>
+  <data name="SystemInfoType" xml:space="preserve">
+    <value>Type:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoFormFactor" xml:space="preserve">
+    <value>Form Factor:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoTransferRate" xml:space="preserve">
+    <value>{0} MT/s</value>
+    <comment>Memory speed. {0} is millions of transfers per second.</comment>
+  </data>
+  <data name="SystemInfoConfiguredSpeed" xml:space="preserve">
+    <value>Configured Speed:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoPartNumber" xml:space="preserve">
+    <value>Part Number:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoBankLocator" xml:space="preserve">
+    <value>Bank Locator:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoAdapters" xml:space="preserve">
+    <value>Adapters:</value>
+    <comment>Property label: network adapters. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoNeuralEngines" xml:space="preserve">
+    <value>Neural Engines:</value>
+    <comment>Property label (macOS). Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoMachineName" xml:space="preserve">
+    <value>Machine Name:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoOperatingSystem" xml:space="preserve">
+    <value>Operating System:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoCpu" xml:space="preserve">
+    <value>CPU:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoSummaryLogicalProcessors" xml:space="preserve">
+    <value>Logical Processors</value>
+    <comment>Property label in the summary panel. Max 27 characters.</comment>
+  </data>
+  <data name="SystemInfoBaseSpeed" xml:space="preserve">
+    <value>Base Speed:</value>
+    <comment>Property label. Max 27 characters.</comment>
+  </data>
+
+  <!-- THERMALS, HEALTH, DISK SPACE and metres -->
+  <data name="ThermalsCpu" xml:space="preserve">
+    <value>CPU</value>
+    <comment>Temperature chart title.</comment>
+  </data>
+  <data name="ThermalsCpuNumbered" xml:space="preserve">
+    <value>CPU {0}</value>
+    <comment>Temperature chart title. {0} is the CPU&apos;s number.</comment>
+  </data>
+  <data name="ThermalsBattery" xml:space="preserve">
+    <value>Battery</value>
+    <comment>Temperature chart title.</comment>
+  </data>
+  <data name="ThermalsChipset" xml:space="preserve">
+    <value>Chipset</value>
+    <comment>Temperature chart title.</comment>
+  </data>
+  <data name="ThermalsAmbient" xml:space="preserve">
+    <value>Ambient</value>
+    <comment>Temperature chart title: the air inside the case.</comment>
+  </data>
+  <data name="ThermalsSystem" xml:space="preserve">
+    <value>System</value>
+    <comment>Temperature chart title for any other sensor.</comment>
+  </data>
+  <data name="ThermalsPressure" xml:space="preserve">
+    <value>Pressure: {0}</value>
+    <comment>After the CPU temperature. {0} is the thermal pressure level, e.g. Nominal.</comment>
+  </data>
+  <data name="ThermalsNoSensors" xml:space="preserve">
+    <value>No thermal sensors detected.</value>
+    <comment>First line when no temperatures can be read.</comment>
+  </data>
+  <data name="ThermalsMacUnreadable" xml:space="preserve">
+    <value>The SMC and HID temperature sensors could not be read.</value>
+    <comment>Second line when no temperatures can be read (macOS). SMC and HID are names.</comment>
+  </data>
+  <data name="ThermalsWindowsAppearHere" xml:space="preserve">
+    <value>GPU and NVMe drive temperatures appear here when available.</value>
+    <comment>Second line when no temperatures can be read (Windows).</comment>
+  </data>
+  <data name="ThermalsWindowsNeedsDriver" xml:space="preserve">
+    <value>Accurate CPU temperature needs a signed kernel helper driver.</value>
+    <comment>Third line when no temperatures can be read (Windows).</comment>
+  </data>
+  <data name="ThermalPressure_Nominal" xml:space="preserve">
+    <value>Nominal</value>
+    <comment>Thermal pressure level (macOS).</comment>
+  </data>
+  <data name="ThermalPressure_Moderate" xml:space="preserve">
+    <value>Moderate</value>
+    <comment>Thermal pressure level (macOS).</comment>
+  </data>
+  <data name="ThermalPressure_Heavy" xml:space="preserve">
+    <value>Heavy</value>
+    <comment>Thermal pressure level (macOS).</comment>
+  </data>
+  <data name="ThermalPressure_Trapping" xml:space="preserve">
+    <value>Trapping</value>
+    <comment>Thermal pressure level (macOS): the system is limiting work to cool down.</comment>
+  </data>
+  <data name="ThermalPressure_Sleeping" xml:space="preserve">
+    <value>Sleeping</value>
+    <comment>Thermal pressure level (macOS): the system is about to sleep to cool down.</comment>
+  </data>
+  <data name="MemoryPressure_Normal" xml:space="preserve">
+    <value>Normal</value>
+    <comment>Memory pressure level (macOS).</comment>
+  </data>
+  <data name="MemoryPressure_Warning" xml:space="preserve">
+    <value>Warning</value>
+    <comment>Memory pressure level (macOS).</comment>
+  </data>
+  <data name="MemoryPressure_Critical" xml:space="preserve">
+    <value>Critical</value>
+    <comment>Memory pressure level (macOS).</comment>
+  </data>
+  <data name="PowerHeader" xml:space="preserve">
+    <value>POWER</value>
+    <comment>Title of the power list, upper case.</comment>
+  </data>
+  <data name="PowerNone" xml:space="preserve">
+    <value>No power readings available.</value>
+    <comment>Shown when no power readings can be made.</comment>
+  </data>
+  <data name="PowerColumnComponent" xml:space="preserve">
+    <value>COMPONENT</value>
+    <comment>List column header, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="PowerColumnRail" xml:space="preserve">
+    <value>RAIL</value>
+    <comment>List column header, upper case: the power rail measured. Max 17 characters.</comment>
+  </data>
+  <data name="PowerColumnPower" xml:space="preserve">
+    <value>POWER</value>
+    <comment>List column header, upper case.</comment>
+  </data>
+  <data name="PowerCpu" xml:space="preserve">
+    <value>CPU</value>
+    <comment>Power component. Max 19 characters.</comment>
+  </data>
+  <data name="PowerBattery" xml:space="preserve">
+    <value>Battery</value>
+    <comment>Power component. Max 19 characters.</comment>
+  </data>
+  <data name="PowerNeuralEngine" xml:space="preserve">
+    <value>Neural Engine</value>
+    <comment>Power component (Apple&apos;s name; keep it). Max 19 characters.</comment>
+  </data>
+  <data name="PowerMemory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Power component. Max 19 characters.</comment>
+  </data>
+  <data name="PowerDisplay" xml:space="preserve">
+    <value>Display</value>
+    <comment>Power component. Max 19 characters.</comment>
+  </data>
+  <data name="PowerSystem" xml:space="preserve">
+    <value>System</value>
+    <comment>Power component for any other rail. Max 19 characters.</comment>
+  </data>
+  <data name="PowerRated" xml:space="preserve">
+    <value>{0} (rated)</value>
+    <comment>A rated rather than measured power. {0} is the watts.</comment>
+  </data>
+  <data name="FansHeader" xml:space="preserve">
+    <value>FANS</value>
+    <comment>Title of the fan list, upper case.</comment>
+  </data>
+  <data name="FansNone" xml:space="preserve">
+    <value>No fans.</value>
+    <comment>Shown when no fans are found.</comment>
+  </data>
+  <data name="FansColumnFan" xml:space="preserve">
+    <value>FAN</value>
+    <comment>List column header, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="FansColumnRpm" xml:space="preserve">
+    <value>RPM</value>
+    <comment>List column header: revolutions per minute. Max 9 characters.</comment>
+  </data>
+  <data name="FansColumnMin" xml:space="preserve">
+    <value>MIN</value>
+    <comment>List column header: lowest speed. Max 9 characters.</comment>
+  </data>
+  <data name="FansColumnMax" xml:space="preserve">
+    <value>MAX</value>
+    <comment>List column header: highest speed. Max 9 characters.</comment>
+  </data>
+  <data name="FansColumnLoad" xml:space="preserve">
+    <value>LOAD</value>
+    <comment>List column header: speed as a share of the range.</comment>
+  </data>
+  <data name="HealthShowProcessHotKey" xml:space="preserve">
+    <value>Show Process</value>
+    <comment>Footer label for the Enter key on a likely cause.</comment>
+  </data>
+  <data name="HealthWaiting" xml:space="preserve">
+    <value>Gathering metrics…</value>
+    <comment>Shown while HEALTH waits for its first readings.</comment>
+  </data>
+  <data name="HealthNoCauses" xml:space="preserve">
+    <value>Nothing under pressure.</value>
+    <comment>Shown when no resource is under pressure.</comment>
+  </data>
+  <data name="HealthNoEvents" xml:space="preserve">
+    <value>No events recorded yet.</value>
+    <comment>Shown when the event list is empty.</comment>
+  </data>
+  <data name="HealthNoProcess" xml:space="preserve">
+    <value>No process stands out.</value>
+    <comment>Shown when no process is behind the pressure.</comment>
+  </data>
+  <data name="HealthGatheringMetrics" xml:space="preserve">
+    <value>Gathering metrics</value>
+    <comment>Headline while HEALTH waits for its first readings.</comment>
+  </data>
+  <data name="HealthHealthy" xml:space="preserve">
+    <value>Healthy</value>
+    <comment>Headline when nothing is under pressure.</comment>
+  </data>
+  <data name="HealthUnderPressure" xml:space="preserve">
+    <value>Under pressure: {0}</value>
+    <comment>Headline. {0} lists the resources under pressure, e.g. CPU, Memory.</comment>
+  </data>
+  <data name="HealthUnderPressureSince" xml:space="preserve">
+    <value>{0}, since {1:HH:mm:ss}</value>
+    <comment>{0} is the HealthUnderPressure headline, {1} the local time it started; keep the :HH:mm:ss format.</comment>
+  </data>
+  <data name="HealthDurationSeconds" xml:space="preserve">
+    <value>{0} s</value>
+    <comment>A duration in seconds.</comment>
+  </data>
+  <data name="HealthDurationMinutes" xml:space="preserve">
+    <value>{0} min</value>
+    <comment>A duration in minutes.</comment>
+  </data>
+  <data name="HealthDurationHoursMinutes" xml:space="preserve">
+    <value>{0} h {1} min</value>
+    <comment>A duration. {0} is hours, {1} minutes.</comment>
+  </data>
+  <data name="HealthEventInterrupted" xml:space="preserve">
+    <value>interrupted</value>
+    <comment>An event that ended when taskmon stopped.</comment>
+  </data>
+  <data name="HealthEventOngoing" xml:space="preserve">
+    <value>ongoing</value>
+    <comment>An event still in progress.</comment>
+  </data>
+  <data name="HealthEventWithPeak" xml:space="preserve">
+    <value>{0}, peak {1}</value>
+    <comment>Event detail. {0} is its duration, {1} its worst reading, e.g. &quot;92% busy&quot;.</comment>
+  </data>
+  <data name="HealthLikelyCauses" xml:space="preserve">
+    <value>LIKELY CAUSES</value>
+    <comment>List title, upper case.</comment>
+  </data>
+  <data name="HealthRecentEvents" xml:space="preserve">
+    <value>RECENT EVENTS</value>
+    <comment>List title, upper case.</comment>
+  </data>
+  <data name="HealthColumnResource" xml:space="preserve">
+    <value>RESOURCE</value>
+    <comment>List column header, upper case. Max 9 characters.</comment>
+  </data>
+  <data name="HealthColumnSaturation" xml:space="preserve">
+    <value>SATURATION</value>
+    <comment>List column header, upper case.</comment>
+  </data>
+  <data name="HealthColumnErrors" xml:space="preserve">
+    <value>ERRORS</value>
+    <comment>List column header, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="HealthColumnProcess" xml:space="preserve">
+    <value>PROCESS</value>
+    <comment>List column header, upper case. Max 15 characters.</comment>
+  </data>
+  <data name="HealthColumnUsing" xml:space="preserve">
+    <value>USING</value>
+    <comment>List column header, upper case: what a process is using.</comment>
+  </data>
+  <data name="HealthColumnBehind" xml:space="preserve">
+    <value>BEHIND</value>
+    <comment>List column header, upper case: the resources a process is behind. Max 11 characters.</comment>
+  </data>
+  <data name="HealthColumnTime" xml:space="preserve">
+    <value>TIME</value>
+    <comment>List column header, upper case. Max 12 characters.</comment>
+  </data>
+  <data name="HealthColumnEvent" xml:space="preserve">
+    <value>EVENT</value>
+    <comment>List column header, upper case. Max 19 characters.</comment>
+  </data>
+  <data name="HealthColumnDetail" xml:space="preserve">
+    <value>DETAIL</value>
+    <comment>List column header, upper case.</comment>
+  </data>
+  <data name="HealthColumnProcesses" xml:space="preserve">
+    <value>PROCESSES</value>
+    <comment>List column header, upper case.</comment>
+  </data>
+  <data name="HealthLevel_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+    <comment>Health level. Max 9 characters.</comment>
+  </data>
+  <data name="HealthLevel_Ok" xml:space="preserve">
+    <value>OK</value>
+    <comment>Health level. Max 9 characters.</comment>
+  </data>
+  <data name="HealthLevel_Warning" xml:space="preserve">
+    <value>Warning</value>
+    <comment>Health level. Max 9 characters.</comment>
+  </data>
+  <data name="HealthLevel_Critical" xml:space="preserve">
+    <value>Critical</value>
+    <comment>Health level. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Cpu" xml:space="preserve">
+    <value>CPU</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Memory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Disk" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Volumes" xml:space="preserve">
+    <value>Volumes</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Gpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Network" xml:space="preserve">
+    <value>Network</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Thermal" xml:space="preserve">
+    <value>Thermal</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="HealthResource_Apps" xml:space="preserve">
+    <value>Apps</value>
+    <comment>Health resource. Max 9 characters.</comment>
+  </data>
+  <data name="DiskSpaceFilesTitle" xml:space="preserve">
+    <value>LARGEST FILES</value>
+    <comment>List title, upper case.</comment>
+  </data>
+  <data name="DiskSpaceFilesHeader" xml:space="preserve">
+    <value>{0} ({1} of top {2})</value>
+    <comment>List title. {0} is DiskSpaceFilesTitle, {1} the files listed, {2} the most that are kept.</comment>
+  </data>
+  <data name="DiskSpaceNoFiles" xml:space="preserve">
+    <value>No files scanned yet - press s to start a scan.</value>
+    <comment>Shown before the first scan. s is a key.</comment>
+  </data>
+  <data name="DiskSpaceColumnFile" xml:space="preserve">
+    <value>FILE</value>
+    <comment>List column header, upper case. Max 15 characters.</comment>
+  </data>
+  <data name="DiskSpaceScanned" xml:space="preserve">
+    <value>{0:N0} files / {1}</value>
+    <comment>Scan progress. {0} is the files scanned, {1} the bytes; keep the :N0 format.</comment>
+  </data>
+  <data name="DiskSpaceScanningStatus" xml:space="preserve">
+    <value>Scanning… {0}</value>
+    <comment>Scan status. {0} is DiskSpaceScanned.</comment>
+  </data>
+  <data name="DiskSpaceCompletedStatus" xml:space="preserve">
+    <value>Completed - {0} in {1:0.0}s</value>
+    <comment>Scan status. {0} is DiskSpaceScanned, {1} the seconds taken; keep the :0.0 format.</comment>
+  </data>
+  <data name="DiskSpaceFailedStatus" xml:space="preserve">
+    <value>Failed: {0}</value>
+    <comment>Scan status. {0} is the reason.</comment>
+  </data>
+  <data name="DiskSpaceScanFailed" xml:space="preserve">
+    <value>Scan failed.</value>
+    <comment>Reason shown when no other is known.</comment>
+  </data>
+  <data name="DiskSpaceRootFolders" xml:space="preserve">
+    <value>Root Folders</value>
+    <comment>Metre legend before a scan has a root path.</comment>
+  </data>
+  <data name="DiskSpaceSelectDrive" xml:space="preserve">
+    <value>Select a drive</value>
+    <comment>Title of the drive picker.</comment>
+  </data>
+  <data name="DiskSpaceScanPath" xml:space="preserve">
+    <value>Scan path:</value>
+    <comment>Label of the typed scan path field.</comment>
+  </data>
+  <data name="DiskSpaceBorderHint" xml:space="preserve">
+    <value>s Start scanning   c Cancel</value>
+    <comment>Key hints on the heat map border. s and c are keys; keep three spaces between hints.</comment>
+  </data>
+  <data name="CpuCoresTitle" xml:space="preserve">
+    <value>Cpu Cores</value>
+    <comment>Pane title.</comment>
+  </data>
+  <data name="CpuCoresNoData" xml:space="preserve">
+    <value>Per-core CPU data is not available on this OS</value>
+    <comment>Shown when per-core data can&apos;t be read.</comment>
+  </data>
+  <data name="CpuCoresLabel" xml:space="preserve">
+    <value>C{0}</value>
+    <comment>Core label beside each bar. {0} is the core&apos;s name or number.</comment>
+  </data>
+  <data name="MetreTitleCpu" xml:space="preserve">
+    <value>CPU%</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleDisk" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleMemory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleSwap" xml:space="preserve">
+    <value>Swap</value>
+    <comment>Metre title (macOS).</comment>
+  </data>
+  <data name="MetreTitleVirtual" xml:space="preserve">
+    <value>Virtual</value>
+    <comment>Metre title (Windows): virtual memory.</comment>
+  </data>
+  <data name="MetreTitleNetworkReceive" xml:space="preserve">
+    <value>Net Receive</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleNetworkSend" xml:space="preserve">
+    <value>Net Send</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleGpuMemory" xml:space="preserve">
+    <value>GPU Memory</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleGpu" xml:space="preserve">
+    <value>GPU%</value>
+    <comment>Metre title.</comment>
+  </data>
+  <data name="MetreTitleNpu" xml:space="preserve">
+    <value>NPU%</value>
+    <comment>Metre title.</comment>
+  </data>
+
+  <!-- HEALTH wording -->
+  <data name="HealthDriveSpareLow" xml:space="preserve">
+    <value>spare space low</value>
+    <comment>Drive warning, lower case; several are joined with commas.</comment>
+  </data>
+  <data name="HealthDriveOverTemperature" xml:space="preserve">
+    <value>over temperature</value>
+    <comment>Drive warning, lower case; several are joined with commas.</comment>
+  </data>
+  <data name="HealthDriveReliabilityDegraded" xml:space="preserve">
+    <value>reliability degraded</value>
+    <comment>Drive warning, lower case; several are joined with commas.</comment>
+  </data>
+  <data name="HealthDriveReadOnly" xml:space="preserve">
+    <value>read-only</value>
+    <comment>Drive warning, lower case; several are joined with commas.</comment>
+  </data>
+  <data name="HealthDriveBackupFailed" xml:space="preserve">
+    <value>backup failed</value>
+    <comment>Drive warning, lower case; several are joined with commas.</comment>
+  </data>
+  <data name="HealthAppFaultOne" xml:space="preserve">
+    <value>1 app fault</value>
+    <comment>ERRORS column when one app has faulted.</comment>
+  </data>
+  <data name="HealthAppFaults" xml:space="preserve">
+    <value>{0} app faults</value>
+    <comment>ERRORS column. {0} is the number of app faults (2 or more).</comment>
+  </data>
+  <data name="HealthTimeLeftMinutes" xml:space="preserve">
+    <value>{0:0} min</value>
+    <comment>Time left before a volume fills. {0} is minutes.</comment>
+  </data>
+  <data name="HealthTimeLeftHours" xml:space="preserve">
+    <value>{0:0} h</value>
+    <comment>Time left before a volume fills. {0} is hours.</comment>
+  </data>
+  <data name="HealthTimeLeftDays" xml:space="preserve">
+    <value>{0:0} days</value>
+    <comment>Time left before a volume fills. {0} is days.</comment>
+  </data>
+  <data name="HealthDiskWorn" xml:space="preserve">
+    <value>{0}% worn</value>
+    <comment>Drive wear. {0} is the percentage used up.</comment>
+  </data>
+  <data name="HealthDiskMediaErrors" xml:space="preserve">
+    <value>{0} media</value>
+    <comment>Drive media error count. {0} is the count.</comment>
+  </data>
+  <data name="HealthDiskLoggedErrors" xml:space="preserve">
+    <value>{0} logged</value>
+    <comment>Drive logged error count. {0} is the count.</comment>
+  </data>
+  <data name="HealthDiskName" xml:space="preserve">
+    <value>Disk {0}</value>
+    <comment>{0} is the disk&apos;s number.</comment>
+  </data>
+  <data name="HealthLatency" xml:space="preserve">
+    <value>Latency {0:0.0} ms</value>
+    <comment>SATURATION column. {0} is the disk latency in milliseconds.</comment>
+  </data>
+  <data name="HealthLatencyQueue" xml:space="preserve">
+    <value>Latency {0:0.0} ms, queue {1:0}</value>
+    <comment>SATURATION column. {0} is the disk latency in milliseconds, {1} the queue length.</comment>
+  </data>
+  <data name="HealthVolumeFull" xml:space="preserve">
+    <value>{0} {1:0}% full</value>
+    <comment>{0} is the volume&apos;s name, {1} how full it is.</comment>
+  </data>
+  <data name="HealthVram" xml:space="preserve">
+    <value>VRAM</value>
+    <comment>A GPU&apos;s own video memory.</comment>
+  </data>
+  <data name="HealthGpuMemory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>A GPU&apos;s memory when it shares system memory.</comment>
+  </data>
+  <data name="HealthGpuMemoryUsed" xml:space="preserve">
+    <value>{0} {1:0}% used</value>
+    <comment>SATURATION column. {0} is HealthVram or HealthGpuMemory, {1} the share used.</comment>
+  </data>
+  <data name="HealthPressureLevel" xml:space="preserve">
+    <value>Pressure {0}</value>
+    <comment>SATURATION column. {0} is a pressure level, e.g. Warning.</comment>
+  </data>
+  <data name="HealthCommit" xml:space="preserve">
+    <value>Commit {0:0}%</value>
+    <comment>SATURATION column. {0} is the commit charge.</comment>
+  </data>
+  <data name="HealthCommitPagesIn" xml:space="preserve">
+    <value>Commit {0:0}%, {1}</value>
+    <comment>SATURATION column. {0} is the commit charge, {1} the HealthPagesIn text.</comment>
+  </data>
+  <data name="HealthPagesIn" xml:space="preserve">
+    <value>{0:0} pages in/s</value>
+    <comment>Pages read in from disk per second.</comment>
+  </data>
+  <data name="HealthSensorTemperature" xml:space="preserve">
+    <value>{0} {1:0} °C</value>
+    <comment>A sensor&apos;s temperature. {0} is the component, e.g. CPU, {1} degrees Celsius.</comment>
+  </data>
+  <data name="HealthCpuNotLimited" xml:space="preserve">
+    <value>CPU not limited</value>
+    <comment>SATURATION column.</comment>
+  </data>
+  <data name="HealthCpuLimited" xml:space="preserve">
+    <value>CPU limited to {0:0}%</value>
+    <comment>The CPU is being slowed. {0} is the share of full speed allowed.</comment>
+  </data>
+  <data name="HealthReportAppErrorIn" xml:space="preserve">
+    <value>{0}, in {1}</value>
+    <comment>Report detail. {0} is the app, {1} the module that failed.</comment>
+  </data>
+  <data name="HealthReportBadBlock" xml:space="preserve">
+    <value>Bad block</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthReportCpuLimit" xml:space="preserve">
+    <value>{0}: Used too much CPU</value>
+    <comment>Report detail. {0} is the app.</comment>
+  </data>
+  <data name="HealthReportCrash" xml:space="preserve">
+    <value>{0}: Crashed</value>
+    <comment>Report detail. {0} is the app.</comment>
+  </data>
+  <data name="HealthReportDeviceReset" xml:space="preserve">
+    <value>{0} reset the device</value>
+    <comment>Report detail. {0} is the driver.</comment>
+  </data>
+  <data name="HealthReportDiskWriteLimit" xml:space="preserve">
+    <value>{0}: Wrote too much to disk</value>
+    <comment>Report detail. {0} is the app.</comment>
+  </data>
+  <data name="HealthReportHang" xml:space="preserve">
+    <value>{0}: Stopped responding</value>
+    <comment>Report detail. {0} is the app.</comment>
+  </data>
+  <data name="HealthReportHardwareError" xml:space="preserve">
+    <value>WHEA event {0}</value>
+    <comment>Report detail. {0} is the Windows Hardware Error Architecture event ID.</comment>
+  </data>
+  <data name="HealthReportJetsam" xml:space="preserve">
+    <value>macOS stopped processes to free memory</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthReportPagingError" xml:space="preserve">
+    <value>Error during a paging operation</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthReportRequestRetried" xml:space="preserve">
+    <value>Request retried</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthReportSpin" xml:space="preserve">
+    <value>{0}: Spun without responding</value>
+    <comment>Report detail. {0} is the app.</comment>
+  </data>
+  <data name="HealthReportUnexpectedRestart" xml:space="preserve">
+    <value>Restarted without shutting down cleanly</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthReportVirtualMemoryLow" xml:space="preserve">
+    <value>Windows ran low on virtual memory</value>
+    <comment>Report detail.</comment>
+  </data>
+  <data name="HealthErrorsPerSecond" xml:space="preserve">
+    <value>{0:0.#} errors/s</value>
+    <comment>Network errors per second.</comment>
+  </data>
+  <data name="HealthReasonNotResponding" xml:space="preserve">
+    <value>{0} not responding for {1:0} s</value>
+    <comment>Why an app is flagged. {0} is the app, {1} seconds.</comment>
+  </data>
+  <data name="HealthReasonCommit" xml:space="preserve">
+    <value>commit {0:0}%</value>
+    <comment>Why memory is flagged, lower case. {0} is the commit charge.</comment>
+  </data>
+  <data name="HealthReasonBusy" xml:space="preserve">
+    <value>{0:0}% busy</value>
+    <comment>Why the CPU or GPU is flagged.</comment>
+  </data>
+  <data name="HealthReasonActive" xml:space="preserve">
+    <value>{0:0}% active</value>
+    <comment>Why a disk is flagged.</comment>
+  </data>
+  <data name="HealthReasonLatency" xml:space="preserve">
+    <value>latency {0:0} ms</value>
+    <comment>Why a disk is flagged, lower case. {0} is milliseconds.</comment>
+  </data>
+  <data name="HealthReasonDriverTime" xml:space="preserve">
+    <value>{0:0}% of CPU in drivers</value>
+    <comment>Why the CPU is flagged.</comment>
+  </data>
+  <data name="HealthReasonWorn" xml:space="preserve">
+    <value>{0} {1:0}% worn</value>
+    <comment>Why a drive is flagged. {0} is the disk&apos;s name, {1} the wear.</comment>
+  </data>
+  <data name="HealthReasonHeatLimit" xml:space="preserve">
+    <value>held back by heat {0:0}%</value>
+    <comment>Why the GPU is flagged, lower case.</comment>
+  </data>
+  <data name="HealthReasonFree" xml:space="preserve">
+    <value>{0} {1:0}% free</value>
+    <comment>Why GPU memory is flagged. {0} is HealthVram or HealthGpuMemory, {1} the share free.</comment>
+  </data>
+  <data name="HealthReasonPowerLimit" xml:space="preserve">
+    <value>held back by power {0:0}%</value>
+    <comment>Why the GPU is flagged, lower case.</comment>
+  </data>
+  <data name="HealthReasonAvailable" xml:space="preserve">
+    <value>{0:0}% available</value>
+    <comment>Why memory is flagged.</comment>
+  </data>
+  <data name="HealthReasonKernelPressure" xml:space="preserve">
+    <value>kernel pressure {0}</value>
+    <comment>Why memory is flagged, lower case. {0} is the pressure level in lower case.</comment>
+  </data>
+  <data name="HealthReasonDiscards" xml:space="preserve">
+    <value>{0:0.#} discards/s</value>
+    <comment>Network packets discarded per second.</comment>
+  </data>
+  <data name="HealthReasonQueue" xml:space="preserve">
+    <value>queue {0:0.0} per core</value>
+    <comment>Why the CPU is flagged, lower case. {0} is runnable threads per core.</comment>
+  </data>
+  <data name="HealthReasonNearLimit" xml:space="preserve">
+    <value>{0} near its {1:0} °C limit</value>
+    <comment>Why a sensor is flagged. {0} is the sensor and its temperature, {1} its limit.</comment>
+  </data>
+  <data name="HealthReasonSwappingOut" xml:space="preserve">
+    <value>swapping out {0}</value>
+    <comment>Why memory is flagged, lower case. {0} is the rate.</comment>
+  </data>
+  <data name="HealthReasonThermalPressure" xml:space="preserve">
+    <value>thermal pressure {0}</value>
+    <comment>Why the system is flagged. {0} is the pressure level.</comment>
+  </data>
+  <data name="HealthNotRespondingCount" xml:space="preserve">
+    <value>{0} not responding</value>
+    <comment>SATURATION column. {0} is the number of apps not responding.</comment>
+  </data>
+  <data name="HealthQueuePerCore" xml:space="preserve">
+    <value>Queue {0:0.0} per core</value>
+    <comment>SATURATION column. {0} is runnable threads per core.</comment>
+  </data>
+  <data name="HealthDiscardsPerSecond" xml:space="preserve">
+    <value>Discards {0:0.#}/s</value>
+    <comment>SATURATION column. {0} is packets discarded per second.</comment>
+  </data>
+  <data name="HealthTitleAppCrash" xml:space="preserve">
+    <value>App crash</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleAppHang" xml:space="preserve">
+    <value>App hang</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleDiskError" xml:space="preserve">
+    <value>Disk error</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleHardwareError" xml:space="preserve">
+    <value>Hardware error</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleLowMemory" xml:space="preserve">
+    <value>Low memory</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleCpuLimit" xml:space="preserve">
+    <value>CPU limit</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleDiskWriteLimit" xml:space="preserve">
+    <value>Disk write limit</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthTitleUnexpectedRestart" xml:space="preserve">
+    <value>Unexpected restart</value>
+    <comment>Report title. Max 19 characters.</comment>
+  </data>
+  <data name="HealthUsageNotResponding" xml:space="preserve">
+    <value>Not responding for {0:0} s</value>
+    <comment>USING column. {0} is seconds.</comment>
+  </data>
+  <data name="HealthUsageCpu" xml:space="preserve">
+    <value>{0:0}% CPU</value>
+    <comment>USING column.</comment>
+  </data>
+  <data name="HealthUsageMemory" xml:space="preserve">
+    <value>{0} memory</value>
+    <comment>USING column. {0} is the memory used.</comment>
+  </data>
+  <data name="HealthUsageMemoryGrowth" xml:space="preserve">
+    <value>+{0:0} MB/min</value>
+    <comment>USING column: memory growth.</comment>
+  </data>
+  <data name="HealthUsageDisk" xml:space="preserve">
+    <value>{0:0} MB/s disk</value>
+    <comment>USING column.</comment>
+  </data>
+  <data name="HealthUsageGpu" xml:space="preserve">
+    <value>{0:0}% GPU</value>
+    <comment>USING column.</comment>
+  </data>
+  <data name="HealthInUse" xml:space="preserve">
+    <value>{0:0}% in use</value>
+    <comment>UTILISATION column for memory.</comment>
+  </data>
+  <data name="HealthNotChanging" xml:space="preserve">
+    <value>Not changing</value>
+    <comment>SATURATION column for volumes.</comment>
+  </data>
+  <data name="HealthPerMinute" xml:space="preserve">
+    <value>{0}/min</value>
+    <comment>A rate per minute. {0} is a size.</comment>
+  </data>
+  <data name="HealthFreeing" xml:space="preserve">
+    <value>Freeing {0}</value>
+    <comment>SATURATION column for volumes. {0} is a rate.</comment>
+  </data>
+  <data name="HealthFilling" xml:space="preserve">
+    <value>Filling {0}</value>
+    <comment>SATURATION column for volumes. {0} is a rate.</comment>
+  </data>
+  <data name="HealthFillingTimeLeft" xml:space="preserve">
+    <value>Filling {0}, about {1} left</value>
+    <comment>SATURATION column for volumes. {0} is a rate, {1} the time left.</comment>
+  </data>
+  <data name="ThermalComponent_Cpu" xml:space="preserve">
+    <value>CPU</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Gpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Disk" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Memory" xml:space="preserve">
+    <value>Memory</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Battery" xml:space="preserve">
+    <value>Battery</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Chipset" xml:space="preserve">
+    <value>Chipset</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+  <data name="ThermalComponent_Ambient" xml:space="preserve">
+    <value>Ambient</value>
+    <comment>Temperature sensor component: the air inside the case.</comment>
+  </data>
+  <data name="ThermalComponent_Other" xml:space="preserve">
+    <value>Other</value>
+    <comment>Temperature sensor component.</comment>
+  </data>
+
+  <!-- Shared device and metric text -->
+  <data name="CommonEnabled" xml:space="preserve">
+    <value>Enabled</value>
+    <comment>An on/off value.</comment>
+  </data>
+  <data name="CommonDisabled" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>An on/off value.</comment>
+  </data>
+  <data name="UpdateIntervalDisplay" xml:space="preserve">
+    <value>{0} ({1} ms)</value>
+    <comment>Update speed choice. {0} is its name, e.g. Normal, {1} milliseconds.</comment>
+  </data>
+  <data name="UpdateIntervalCustom" xml:space="preserve">
+    <value>Custom ({0} ms)</value>
+    <comment>An update speed set in the config file. {0} is milliseconds.</comment>
+  </data>
+  <data name="UpdateInterval_Fast" xml:space="preserve">
+    <value>Fast</value>
+    <comment>Update speed name.</comment>
+  </data>
+  <data name="UpdateInterval_High" xml:space="preserve">
+    <value>High</value>
+    <comment>Update speed name.</comment>
+  </data>
+  <data name="UpdateInterval_Normal" xml:space="preserve">
+    <value>Normal</value>
+    <comment>Update speed name.</comment>
+  </data>
+  <data name="UpdateInterval_Slow" xml:space="preserve">
+    <value>Slow</value>
+    <comment>Update speed name.</comment>
+  </data>
+  <data name="SocGpuIdle" xml:space="preserve">
+    <value>Idle</value>
+    <comment>GPU frequency when the GPU is idle (Apple silicon).</comment>
+  </data>
+  <data name="SocThermalLimit" xml:space="preserve">
+    <value>Thermal {0:0}%</value>
+    <comment>How much heat is limiting the GPU. {0} is a percentage.</comment>
+  </data>
+  <data name="SocPowerLimit" xml:space="preserve">
+    <value>Power {0:0}%</value>
+    <comment>How much power is limiting the GPU. {0} is a percentage.</comment>
+  </data>
+  <data name="SocNoLimit" xml:space="preserve">
+    <value>None</value>
+    <comment>Shown when nothing is limiting the GPU.</comment>
+  </data>
+  <data name="NpuDisplayName" xml:space="preserve">
+    <value>NPU {0}  {1}</value>
+    <comment>{0} is the NPU&apos;s number, {1} its description.</comment>
+  </data>
+  <data name="NpuDisplayNameShort" xml:space="preserve">
+    <value>NPU {0}</value>
+    <comment>{0} is the NPU&apos;s number.</comment>
+  </data>
+  <data name="NpuCores" xml:space="preserve">
+    <value>{0} cores</value>
+    <comment>{0} is the number of NPU cores.</comment>
+  </data>
+  <data name="FanOff" xml:space="preserve">
+    <value>Off</value>
+    <comment>Fan speed when the fan is stopped.</comment>
+  </data>
+  <data name="SnapshotCpuKernelUser" xml:space="preserve">
+    <value>CPU {0:000.0%} Kernel {1:000.0%} User {2:000.0%}</value>
+    <comment>CPU chart title. {0} is total CPU, {1} kernel time and {2} user time; keep the :000.0% formats.</comment>
+  </data>
+  <data name="SnapshotDiskLabel" xml:space="preserve">
+    <value>Disk {0} · {1}</value>
+    <comment>{0} is the disk&apos;s number, {1} its model.</comment>
+  </data>
+  <data name="SnapshotDiskLabelShort" xml:space="preserve">
+    <value>Disk {0}</value>
+    <comment>{0} is the disk&apos;s number or ID.</comment>
+  </data>
+  <data name="SnapshotDiskName" xml:space="preserve">
+    <value>Disk {0}  {1}</value>
+    <comment>{0} is the disk&apos;s number, {1} its model.</comment>
+  </data>
+  <data name="SnapshotDiskNameWithVolumes" xml:space="preserve">
+    <value>Disk {0}  {1} ({2})</value>
+    <comment>{0} is the disk&apos;s number, {1} its model, {2} its volumes.</comment>
+  </data>
+  <data name="SnapshotDiskModelUnknown" xml:space="preserve">
+    <value>Disk</value>
+    <comment>Model shown for a disk with no model name.</comment>
+  </data>
+  <data name="SnapshotGpuName" xml:space="preserve">
+    <value>GPU {0}  {1}</value>
+    <comment>{0} is the GPU&apos;s number, {1} its description.</comment>
+  </data>
+  <data name="SnapshotGpuNameShort" xml:space="preserve">
+    <value>GPU {0}</value>
+    <comment>{0} is the GPU&apos;s number.</comment>
+  </data>
+  <data name="SnapshotGpuLabel" xml:space="preserve">
+    <value>GPU · {0}</value>
+    <comment>{0} is the GPU&apos;s description.</comment>
+  </data>
+  <data name="SnapshotGpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>A GPU with no description.</comment>
+  </data>
+  <data name="SnapshotAdapter" xml:space="preserve">
+    <value>Adapter</value>
+    <comment>A network adapter with no name.</comment>
+  </data>
+  <data name="SnapshotAdapterNumbered" xml:space="preserve">
+    <value>Adapter {0}</value>
+    <comment>A network adapter with no name. {0} is its interface number.</comment>
+  </data>
+
+  <!-- Command line -->
+  <data name="CliUsage" xml:space="preserve">
+    <value>
+{0} version {1}
+
+Usage: {0} [options]
+
+Options:
+     --gpu-only           Show Gpu Charts and sort process list by Gpu% on startup
+     --cpu-only           Show Cpu Charts and sort process list by Cpu% on startup
+     --pid PID            Monitor the given process PID
+  -u --username &lt;NAME&gt;    Only show processes for the the given user NAME
+  -p --process &lt;NAME&gt;     Only show processes with matching process NAME
+  -s --sort &lt;COLUMN&gt;      Sort by COLUMN in the process list view
+     --sort-help          Displays the list of columns available for the --sort option
+  -d --delay &lt;DELAY&gt;      DELAY (in milliseconds) between process list view updates
+  -t --theme &lt;NAME&gt;       Load theme NAME from the config file
+     --theme-help         Displays the list of available theme names for the --theme option
+
+     --debug              Pause execution on startup until a debugger attaches to the {0} process
+  -v --version            Print version information
+  -i --info               Print configuration and environment information.
+  -h --help               Print help
+
+Press F1 inside {0} for online help. 
+</value>
+    <comment>Command-line help printed by --help. {0} is the program name, {1} its version. Keep the option flags and the column layout; translate only the descriptions.</comment>
+  </data>
+
+  <!-- Footer tips -->
+  <data name="TipMenuNavigation" xml:space="preserve">
+    <value>Press {→} to move from the menu into a view, and {←} to go back to the menu.</value>
+    <comment>Footer tip. Text in braces is a key: keep the braces and the key unchanged.</comment>
+  </data>
+  <data name="TipSummaryPanes" xml:space="preserve">
+    <value>On SUMMARY, {←} and {→} move between the panes.</value>
+    <comment>Footer tip. Keep {keys} unchanged; SUMMARY is a view name (MainMenuSummary).</comment>
+  </data>
+  <data name="TipPaging" xml:space="preserve">
+    <value>Use {PgUp} and {PgDn} to move a page at a time in any list.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipFilter" xml:space="preserve">
+    <value>Press {f} to filter the current list; {Esc} clears the filter.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipSortColumn" xml:space="preserve">
+    <value>Press {s} to choose the column a process list is sorted on.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipSortDirection" xml:space="preserve">
+    <value>Press {a} or {d} to sort a process list ascending or descending.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipSortShortcuts" xml:space="preserve">
+    <value>Press {p}, {g} or {m} to sort processes by CPU, GPU or memory.</value>
+    <comment>Footer tip. Keep {keys} unchanged, in that order.</comment>
+  </data>
+  <data name="TipFreeze" xml:space="preserve">
+    <value>Press {z} in a process list to freeze updates; press {z} again to resume.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipIrix" xml:space="preserve">
+    <value>Press {i} in a process list to toggle Irix mode CPU reporting.</value>
+    <comment>Footer tip. Keep {keys} unchanged; Irix mode is a name.</comment>
+  </data>
+  <data name="TipMultiSelect" xml:space="preserve">
+    <value>Press {x} for multi-select, {Space} to tick processes, then {k} to end them all.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipUntick" xml:space="preserve">
+    <value>Press {u} to untick every ticked process.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipEndTask" xml:space="preserve">
+    <value>Press {k} to end the selected process. Its child processes are ended too.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipRefresh" xml:space="preserve">
+    <value>Press {r} or {F5} to refresh the Startup, Apps, Services or Drivers list.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipNextTheme" xml:space="preserve">
+    <value>Press {F3} to try the next theme, and save it from {F2} Setup.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipNextLayout" xml:space="preserve">
+    <value>Press {F4} to try the next SUMMARY layout, and save it from {F2} Setup.</value>
+    <comment>Footer tip. Keep {keys} unchanged; SUMMARY is a view name.</comment>
+  </data>
+  <data name="TipLayouts" xml:space="preserve">
+    <value>In {F2} Setup, LAYOUTS lets you choose or design the SUMMARY layout.</value>
+    <comment>Footer tip. Keep {keys} unchanged; LAYOUTS and SUMMARY are menu names.</comment>
+  </data>
+  <data name="TipHealth" xml:space="preserve">
+    <value>HEALTH shows which resource is under pressure and the processes behind it.</value>
+    <comment>Footer tip. HEALTH is a view name.</comment>
+  </data>
+  <data name="TipHealthShowProcess" xml:space="preserve">
+    <value>On HEALTH, press {Enter} on a likely cause to open that process in PROCESSES.</value>
+    <comment>Footer tip. Keep {keys} unchanged; HEALTH and PROCESSES are view names.</comment>
+  </data>
+  <data name="TipNextTip" xml:space="preserve">
+    <value>Press {t} to show the next tip.</value>
+    <comment>Footer tip. Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipHideTips" xml:space="preserve">
+    <value>Hide these tips by unticking Show tips in the footer in {F2} Setup.</value>
+    <comment>Footer tip. Keep {keys} unchanged; &quot;Show tips in the footer&quot; is the setting&apos;s name (SetupShowTips).</comment>
+  </data>
+  <data name="TipWindowsServices" xml:space="preserve">
+    <value>Windows services are highlighted in process lists. Switch this off in {F2} Setup.</value>
+    <comment>Footer tip (Windows). Keep {keys} unchanged.</comment>
+  </data>
+  <data name="TipStartupToggle" xml:space="preserve">
+    <value>In STARTUP, press {Space} to enable or disable the selected app. It applies at once.</value>
+    <comment>Footer tip. Keep {keys} unchanged; STARTUP is a view name.</comment>
+  </data>
+  <data name="TipServicesToggle" xml:space="preserve">
+    <value>In SERVICES, press {Space} to start or stop the selected service.</value>
+    <comment>Footer tip (Windows). Keep {keys} unchanged; SERVICES is a view name.</comment>
+  </data>
+  <data name="TipDaemons" xml:space="preserve">
+    <value>Daemons are highlighted in process lists. Switch this off in {F2} Setup.</value>
+    <comment>Footer tip (macOS). Keep {keys} unchanged.</comment>
+  </data>
+
+  <!-- Config file -->
+  <data name="ConfigSaveParseError" xml:space="preserve">
+    <value>{0} has an error and was not saved.
+{1}</value>
+    <comment>Shown in Setup when the config file can&apos;t be saved. {0} is the file&apos;s name, {1} the parser&apos;s reason.</comment>
+  </data>
+</root>

@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls.ListView;
 
@@ -33,7 +34,7 @@ internal sealed class ListSorter<T>
             TabIndex = 1
         };
 
-        SortView.ColumnHeaders.Add(new ListViewColumnHeader("SORT BY"));
+        SortView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SortByHeader));
         SortView.ItemSelected += OnSortViewItemSelected;
     }
 

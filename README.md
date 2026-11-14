@@ -50,6 +50,7 @@ Originally inspired by tools like <b>top</b>, <b>htop</b> and the <b>Windows Tas
 - **Power**: GPU power draw (NVIDIA via NVML, AMD via ADL) and an NVMe drive's rated peak appear on the respective performance panels; whole-system power is read while on battery. A qualitative power-usage rating (`Very Low` … `Very High`, like Task Manager) is available as a process-list column. Per-process watts and CPU package power need a kernel driver and are not read.
 - **Service health**: The footer shows a live, colour-coded status indicator for each sampling service (running, starting, errored, stopped).
 - **Health**: Shows which part of the machine is under pressure and why (`HEALTH` menu). Each resource is rated OK, Warning or Critical on how busy it is, how much work is waiting for it and any errors, with the processes most likely behind it and a history of recent events. Windows that stop responding are shown as they happen, and crashes, hangs and hardware errors the system recorded in the last 24 hours are listed alongside. Press `Enter` on a likely cause to open that process. All thresholds can be changed in `taskmon.ini`.
+- **Languages**: British English (the default), US English, German and Italian, picked from your system settings or chosen in `taskmon.ini`. See [Language](#language).
 
 **Cross-Platform Native Performance**
 - Platform-specific optimizations using C APIs (Win32,  Mach kernel). 
@@ -168,6 +169,50 @@ Task Monitor stores configuration and log files in the following system director
 `taskmon.ini` can be edited by hand. Saving from Setup (`F2`) only changes the settings changed there, so comments (lines starting with `;` or `#`), blank lines, ordering and edits made while Task Monitor is running are all kept. Settings added by a new version are added to the end of their section the next time Task Monitor starts, and the previous file is kept as `taskmon.ini.bak`.
 
 If the file can't be read, Task Monitor starts with its default settings and leaves the file alone. Saving from Setup then shows the line at fault, and works again once that line is fixed.
+
+### Language
+
+Task Monitor's screens are in British English by default, and also in US English, German and Italian.
+
+| Language | Code | Used for |
+| :--- | :--- | :--- |
+| British English | `en-GB` | The default, and any language without its own translation, such as `en-AU` or `fr-FR`. |
+| US English | `en-US` | US English only. |
+| German | `de` | Any German region, such as `de-DE`, `de-AT` or `de-CH`. |
+| Italian | `it` | Any Italian region, such as `it-IT` or `it-CH`. |
+
+Task Monitor picks the language when it starts, from the first of these that names one:
+
+1. The `TASKMON_UI_LANGUAGE` environment variable, for a one-off change.
+2. The `ui-language` setting in the `[ux]` section of `taskmon.ini`, to keep a choice.
+3. Your region, when both it and your display language are English. Windows often has an English (United States) display language on UK and Australian machines, while the region says where you are and so which spelling you'd expect.
+4. Your display language on Windows, or the `LANG` environment variable on macOS.
+
+To keep Task Monitor in Italian, set this in `taskmon.ini`:
+
+```ini
+[ux]
+ui-language=it-IT
+```
+
+`ui-language` is empty by default, which leaves the choice to steps 3 and 4. A change takes effect the next time Task Monitor starts.
+
+For a single session, set the environment variable instead. It overrides `ui-language`:
+
+```powershell
+# Windows (PowerShell)
+$env:TASKMON_UI_LANGUAGE = "it-IT"; taskmon
+```
+
+```bash
+# macOS
+TASKMON_UI_LANGUAGE=it-IT taskmon
+```
+
+- Only the text changes. Numbers, dates and times keep following your region settings.
+- A code Task Monitor doesn't recognise, such as `italian`, is ignored, and the next step decides.
+- `taskmon.ini`, theme files, layout files and log files stay in English whatever the language.
+- The log file records the choice at startup, for example `ui-language = it-IT` followed by `UI culture = it-IT, region culture = en-AU`.
 
 ### Health Settings
 

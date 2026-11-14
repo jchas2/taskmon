@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -55,7 +57,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "disk", "DISKS", autoScaleChart: false, Chart.FormatYScalePercentage,
+                "disk", Strings.PerformanceDisksPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     if (s.Disk is not { } disk) {
                         return;
@@ -73,7 +75,7 @@ public sealed class PerformanceControl : Control
 
         foreach (DiskDeviceMetrics device in devices) {
             DiskDevice? spec  = snapshot?.Disk?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
-            string      title = spec?.ToDisplayName() ?? $"Disk {device.Index}";
+            string      title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDiskPanel, device.Index);
 
             panels.Add(MakePanel(
                 $"disk:{device.Index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
@@ -99,7 +101,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "gpu", "GPU", autoScaleChart: false, Chart.FormatYScalePercentage,
+                "gpu", Strings.PerformanceGpu, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     if (s.Gpu is not { } gpu) {
                         return;
@@ -107,7 +109,7 @@ public sealed class PerformanceControl : Control
 
                     panel.Line1 = string.Empty;
                     panel.Line2 = gpu.Metrics.ToGpuPercentage();
-                    panel.Line3 = $"{gpu.Specs.GpuCores} cores";
+                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuCores, gpu.Specs.GpuCores);
                     panel.Line4 = string.Empty;
                     panel.Chart.Add(gpu.Metrics.GpuPercentTime);
                 }));
@@ -117,7 +119,7 @@ public sealed class PerformanceControl : Control
 
         foreach (GpuDeviceMetrics device in devices) {
             GpuDevice? spec  = snapshot?.Gpu?.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
-            string     title = spec?.ToDisplayName() ?? $"GPU {device.Index}";
+            string     title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuPanel, device.Index);
 
             panels.Add(MakePanel(
                 $"gpu:{device.AdapterLuid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
@@ -143,15 +145,15 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "net", "NETWORK", autoScaleChart: true, Chart.FormatYScaleByteRate,
+                "net", Strings.PerformanceNetworkPanel, autoScaleChart: true, Chart.FormatYScaleByteRate,
                 (panel, s) => {
                     if (s.Network is not { } network) {
                         return;
                     }
 
                     panel.Line1 = string.Empty;
-                    panel.Line2 = $"S: {network.Metrics.ToNetworkSendRate()}";
-                    panel.Line3 = $"R: {network.Metrics.ToNetworkReceiveRate()}";
+                    panel.Line2 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendShort, network.Metrics.ToNetworkSendRate());
+                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveShort, network.Metrics.ToNetworkReceiveRate());
                     panel.Line4 = string.Empty;
                     panel.Chart.Add(network.Metrics.ToNetworkThroughputBytesPerSecond());
                 }));
@@ -173,8 +175,8 @@ public sealed class PerformanceControl : Control
                     }
 
                     panel.Line1 = string.Empty;
-                    panel.Line2 = $"S: {match.ToNetworkSendRate()}";
-                    panel.Line3 = $"R: {match.ToNetworkReceiveRate()}";
+                    panel.Line2 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendShort, match.ToNetworkSendRate());
+                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveShort, match.ToNetworkReceiveRate());
                     panel.Line4 = string.Empty;
                     panel.Chart.Add(match.ToNetworkThroughputBytesPerSecond());
                 }));
@@ -238,7 +240,7 @@ public sealed class PerformanceControl : Control
         List<PerformancePanelControl> panels = new();
 
         panels.Add(MakePanel(
-            "cpu", $"CPU", autoScaleChart: false, Chart.FormatYScalePercentage,
+            "cpu", Strings.PerformanceCpuPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
             (panel, s) => {
                 if (s.Cpu is not { } cpu) {
                     return;
@@ -246,13 +248,13 @@ public sealed class PerformanceControl : Control
 
                 panel.Line1 = string.Empty;
                 panel.Line2 = $"{cpu.Metrics.ToCpuPercentage()} {cpu.Specs.ToCpuFrequencyGhz()}";
-                panel.Line3 = $"{cpu.Specs.CpuCores} logical processors";
+                panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceLogicalProcessorsCount, cpu.Specs.CpuCores);
                 panel.Line4 = string.Empty;
                 panel.Chart.Add(cpu.Metrics.CpuTotalTime);
             }));
 
         panels.Add(MakePanel(
-            "memory", "MEMORY", autoScaleChart: false, Chart.FormatYScalePercentage,
+            "memory", Strings.PerformanceMemoryPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
             (panel, s) => {
                 if (s.Memory is not { } memory) {
                     return;

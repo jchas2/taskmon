@@ -1,6 +1,7 @@
 using System.Drawing;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -12,8 +13,6 @@ public sealed partial class SystemInfoControl : Control
 {
     private const int LabelColumnWidth = 32;
     private const int NavWidth         = 12;
-    
-    private const string GatheringText = "Gathering…";
 
     private enum Section
     {
@@ -62,7 +61,7 @@ public sealed partial class SystemInfoControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "Gathering system information…"
+            EmptyListViewText = Strings.SystemInfoGatheringSystem
         };
 
         systemInfoView.ColumnHeaders
@@ -80,7 +79,7 @@ public sealed partial class SystemInfoControl : Control
             ShowBorder        = false,
             TabStop           = false,
             Visible           = true,
-            EmptyListViewText = "Gathering system information…"
+            EmptyListViewText = Strings.SystemInfoGatheringSystem
         };
 
         systemSummaryView.ColumnHeaders
@@ -139,6 +138,8 @@ public sealed partial class SystemInfoControl : Control
         RebuildSummaryRows(snapshot);
     }
 
+    private static string GatheringText => Strings.SystemInfoGathering;
+
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
     protected override void OnDraw()
@@ -182,14 +183,14 @@ public sealed partial class SystemInfoControl : Control
         CommonControl.ThemeDefaults(this, appConfig.Theme);
 
         navMenu.MenuItems = new() {
-            new MenuListViewItem(systemInfoView, "CPU")     { LoadItems = () => SelectSection(Section.Cpu)     },
-            new MenuListViewItem(systemInfoView, "MEMORY")  { LoadItems = () => SelectSection(Section.Memory)  },
-            new MenuListViewItem(systemInfoView, "GPU")     { LoadItems = () => SelectSection(Section.Gpu)     },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuCpu)     { LoadItems = () => SelectSection(Section.Cpu)     },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuMemory)  { LoadItems = () => SelectSection(Section.Memory)  },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuGpu)     { LoadItems = () => SelectSection(Section.Gpu)     },
 #if __APPLE__
-            new MenuListViewItem(systemInfoView, "NPU")     { LoadItems = () => SelectSection(Section.Npu)     },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuNpu)     { LoadItems = () => SelectSection(Section.Npu)     },
 #endif
-            new MenuListViewItem(systemInfoView, "DISK")    { LoadItems = () => SelectSection(Section.Disk)    },
-            new MenuListViewItem(systemInfoView, "NETWORK") { LoadItems = () => SelectSection(Section.Network) },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuDisk)    { LoadItems = () => SelectSection(Section.Disk)    },
+            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuNetwork) { LoadItems = () => SelectSection(Section.Network) },
         };
 
         CommonControl.Theme(systemInfoView, appConfig.Theme);

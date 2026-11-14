@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -17,8 +18,6 @@ public sealed partial class LaunchdServicesControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 14;  // border (2) + column headers (1) + 11 field rows
-
-    private const string GatheringText = "Gathering launchd services…";
 
     private readonly ServiceController              serviceController;
     private readonly AppConfig                      appConfig;
@@ -53,12 +52,12 @@ public sealed partial class LaunchdServicesControl : Control
         };
 
         servicesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("LABEL"))
-            .Add(new ListViewColumnHeader("GROUP"))
-            .Add(new ListViewColumnHeader("STATUS"))
-            .Add(new ListViewColumnHeader("START"))
-            .Add(new ListViewColumnHeader("ENABLED"))
-            .Add(new ListViewColumnHeader("PATH"));
+            .Add(new ListViewColumnHeader(Strings.LaunchdColumnLabel))
+            .Add(new ListViewColumnHeader(Strings.LaunchdColumnGroup))
+            .Add(new ListViewColumnHeader(Strings.ListColumnStatus))
+            .Add(new ListViewColumnHeader(Strings.LaunchdColumnStart))
+            .Add(new ListViewColumnHeader(Strings.LaunchdColumnEnabled))
+            .Add(new ListViewColumnHeader(Strings.ListColumnPath));
 
         detailView = new ListView(terminal) {
             EnableScroll      = false,
@@ -67,14 +66,14 @@ public sealed partial class LaunchdServicesControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "DETAIL"
+            HeaderText        = Strings.ListDetailHeader
         };
 
         detailView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FIELD"))
-            .Add(new ListViewColumnHeader("VALUE"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnField))
+            .Add(new ListViewColumnHeader(Strings.ListColumnValue));
 
-        filter = new ListFilter(this, terminal, "Filter Services");
+        filter = new ListFilter(this, terminal, Strings.ServicesFilterTitle);
         sorter = new ListSorter<LaunchdServiceInfo>(terminal, servicesView, SortColumns, defaultColumn: 1);
 
         Controls.Add(servicesView);
@@ -99,6 +98,8 @@ public sealed partial class LaunchdServicesControl : Control
         lastSignature = signature;
         RebuildRows(info.Specs.Services);
     }
+
+    private static string GatheringText => Strings.LaunchdGathering;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 

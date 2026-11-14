@@ -1,7 +1,9 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Mascot;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Screens;
 
@@ -9,8 +11,6 @@ namespace Task.Monitor.Gui;
 
 public sealed class AboutScreen : Screen
 {
-    private const string Title = "ABOUT TASK MONITOR";
-
     private const int ReservedRows = 2;
 
     private readonly AnsiScreenBuffer frame = new();
@@ -22,7 +22,7 @@ public sealed class AboutScreen : Screen
         this.runContext = runContext;
 
         mascot = new MascotControl(runContext.Terminal, MascotAnimation.LoadEmbedded()) {
-            Caption = ["Task Monitor", $"Version {AssemblyVersionInfo.GetVersion()}"],
+            Caption = [Strings.AboutProductName, string.Format(CultureInfo.CurrentCulture, Strings.AboutVersion, AssemblyVersionInfo.GetVersion())],
             Visible = true
         };
 
@@ -47,7 +47,7 @@ public sealed class AboutScreen : Screen
 
         KeyBindControl.Draw(
             "ESC",
-            "Exit",
+            Strings.KeyBindExit,
             X,
             Y + Height - 1,
             10,
@@ -103,4 +103,6 @@ public sealed class AboutScreen : Screen
 
         base.OnUnload();
     }
+
+    private static string Title => Strings.AboutTitle;
 }

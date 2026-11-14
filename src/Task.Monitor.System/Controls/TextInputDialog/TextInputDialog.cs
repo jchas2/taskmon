@@ -9,7 +9,7 @@ public sealed class TextInputDialog : Control
     public const int PreferredHeight = 8;
     
     private const int MinWidth    = 30;
-    private const int ButtonWidth = 10;
+    private const int MinButtonWidth = 10;
     private const int ButtonGap   = 6;
     private const int FieldRow    = 2;
     private const int ButtonRow   = 4;
@@ -21,6 +21,10 @@ public sealed class TextInputDialog : Control
     private int  viewStart;
 
     public TextInputDialog(ISystemTerminal terminal) : base(terminal) { }
+
+    private int ButtonWidth => Math.Max(MinButtonWidth, Math.Max(OkText.Length, CancelText.Length) + 2);
+
+    public string CancelText { get; set; } = string.Empty;
 
     public Func<char, bool>? CharacterFilter { get; set; }
 
@@ -61,8 +65,8 @@ public sealed class TextInputDialog : Control
         int buttonX = X + (Width / 2 - (ButtonWidth + ButtonGap + ButtonWidth) / 2);
         int buttonY = Y + ButtonRow;
 
-        DrawButton(buttonX, buttonY, "OK", selected: okFocused);
-        DrawButton(buttonX + ButtonWidth + ButtonGap, buttonY, "Cancel", selected: !okFocused);
+        DrawButton(buttonX, buttonY, OkText, selected: okFocused);
+        DrawButton(buttonX + ButtonWidth + ButtonGap, buttonY, CancelText, selected: !okFocused);
     }
 
     private void DrawField()
@@ -122,12 +126,10 @@ public sealed class TextInputDialog : Control
 
     private void DrawHelp()
     {
-        const string help = "Tab select button   ↵ confirm   Esc cancel";
-
         Terminal.SetCursorPosition(X + 1, Y + HelpRow);
         Terminal.BackgroundColor = DialogBackgroundColour;
         Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.Write(help.CentreWithLength(Width - 2));
+        Terminal.Write(HelpText.CentreWithLength(Width - 2));
     }
 
     public Color FieldBackgroundColour { get; set; } = ConsolePalette.Black;
@@ -137,7 +139,11 @@ public sealed class TextInputDialog : Control
 
     private int FieldX => X + 2;
 
+    public string HelpText { get; set; } = string.Empty;
+
     public int MaxLength { get; set; } = 64;
+
+    public string OkText { get; set; } = string.Empty;
 
     protected override void OnDraw()
     {

@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -9,11 +10,6 @@ namespace Task.Monitor.Gui.Controls.Health;
 
 public sealed partial class HealthControl : Control
 {
-    private const string NoCausesText  = "Nothing under pressure.";
-    private const string NoEventsText  = "No events recorded yet.";
-    private const string NoProcessText = "No process stands out.";
-    private const string WaitingText   = "Gathering metrics…";
-
     private const int MinPaneHeight = 4;
 
     private const int BorderWidth                = 3;
@@ -64,11 +60,11 @@ public sealed partial class HealthControl : Control
         };
 
         resourcesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("RESOURCE"))
-            .Add(new ListViewColumnHeader("STATUS"))
-            .Add(new ListViewColumnHeader("UTILISATION"))
-            .Add(new ListViewColumnHeader("SATURATION"))
-            .Add(new ListViewColumnHeader("ERRORS"));
+            .Add(new ListViewColumnHeader(Strings.HealthColumnResource))
+            .Add(new ListViewColumnHeader(Strings.ListColumnStatus))
+            .Add(new ListViewColumnHeader(Strings.HealthUtilisationColumn))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnSaturation))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnErrors));
 
         causesView = new ListView(terminal) {
             EnableScroll      = true,
@@ -78,14 +74,14 @@ public sealed partial class HealthControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            HeaderText        = "LIKELY CAUSES",
+            HeaderText        = Strings.HealthLikelyCauses,
             EmptyListViewText = NoCausesText
         };
 
         causesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("PROCESS"))
-            .Add(new ListViewColumnHeader("USING"))
-            .Add(new ListViewColumnHeader("BEHIND"));
+            .Add(new ListViewColumnHeader(Strings.HealthColumnProcess))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnUsing))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnBehind));
 
         eventsView = new ListView(terminal) {
             EnableScroll      = true,
@@ -95,15 +91,15 @@ public sealed partial class HealthControl : Control
             TabStop           = true,
             TabIndex          = 3,
             Visible           = true,
-            HeaderText        = "RECENT EVENTS",
+            HeaderText        = Strings.HealthRecentEvents,
             EmptyListViewText = NoEventsText
         };
 
         eventsView.ColumnHeaders
-            .Add(new ListViewColumnHeader("TIME"))
-            .Add(new ListViewColumnHeader("EVENT"))
-            .Add(new ListViewColumnHeader("DETAIL"))
-            .Add(new ListViewColumnHeader("PROCESSES"));
+            .Add(new ListViewColumnHeader(Strings.HealthColumnTime))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnEvent))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnDetail))
+            .Add(new ListViewColumnHeader(Strings.HealthColumnProcesses));
 
         panes = [causesView, eventsView];
 
@@ -128,6 +124,10 @@ public sealed partial class HealthControl : Control
     private int FocusedPaneIndex => Array.FindIndex(panes, pane => pane.Focused);
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+
+    private static string NoCausesText  => Strings.HealthNoCauses;
+    private static string NoEventsText  => Strings.HealthNoEvents;
+    private static string NoProcessText => Strings.HealthNoProcess;
 
     protected override void OnDraw()
     {
@@ -270,5 +270,7 @@ public sealed partial class HealthControl : Control
         eventsView.ColumnHeaders[2].Width = Math.Max(1, Width - EventTimeColumnWidth - EventTitleColumnWidth - processesWidth - BorderWidth);
         eventsView.ColumnHeaders[3].Width = processesWidth;
     }
+
+    private static string WaitingText   => Strings.HealthWaiting;
 }
 

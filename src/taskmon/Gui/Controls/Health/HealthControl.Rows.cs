@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Globalization;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Health;
 
@@ -12,50 +13,48 @@ public sealed partial class HealthControl
     private const string EmptyCell   = "—";
     private const char   StatusGlyph = '●';
 
-    public static readonly (string Key, string Label) ShowProcessHotKey = ("Enter", "Show Process");
-
     private static string Cell(string text) => string.IsNullOrEmpty(text) ? EmptyCell : text;
 
     private static string DescribeDuration(TimeSpan duration)
     {
         if (duration.TotalMinutes < 1.0) {
-            return $"{Math.Max(0, (int)duration.TotalSeconds)} s";
+            return string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationSeconds, Math.Max(0, (int)duration.TotalSeconds));
         }
 
         return duration.TotalHours < 1.0
-            ? $"{(int)duration.TotalMinutes} min"
-            : $"{(int)duration.TotalHours} h {duration.Minutes} min";
+            ? string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationMinutes, (int)duration.TotalMinutes)
+            : string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationHoursMinutes, (int)duration.TotalHours, duration.Minutes);
     }
 
     private static string DescribeEvent(HealthEvent healthEvent)
     {
         string duration = healthEvent.EndUtc is { } end ? DescribeDuration(end - healthEvent.StartUtc)
-                        : healthEvent.IsInterrupted     ? "interrupted"
-                                                        : "ongoing";
+                        : healthEvent.IsInterrupted     ? Strings.HealthEventInterrupted
+                                                        : Strings.HealthEventOngoing;
 
         return healthEvent.PeakCause is { } cause
-            ? $"{duration}, peak {cause.ToReasonText()}"
+            ? string.Format(CultureInfo.CurrentCulture, Strings.HealthEventWithPeak, duration, cause.ToReasonText())
             : duration;
     }
 
     internal static string DescribeHeadline(HealthInfo info)
     {
         if (info.Level == HealthLevel.Unknown) {
-            return "Gathering metrics";
+            return Strings.HealthGatheringMetrics;
         }
 
         if (info.Level == HealthLevel.Ok) {
-            return "Healthy";
+            return Strings.HealthHealthy;
         }
 
         IEnumerable<string> pressured = info.Resources
             .Where(reading => reading.Level >= HealthLevel.Warning)
             .Select(reading => ResourceName(reading.Resource));
 
-        string headline = $"Under pressure: {string.Join(", ", pressured)}";
+        string headline = string.Format(CultureInfo.CurrentCulture, Strings.HealthUnderPressure, string.Join(", ", pressured));
 
         return info.SinceUtc is { } since
-            ? $"{headline}, since {since.ToLocalTime():HH:mm:ss}"
+            ? string.Format(CultureInfo.CurrentCulture, Strings.HealthUnderPressureSince, headline, since.ToLocalTime())
             : headline;
     }
 
@@ -78,7 +77,7 @@ public sealed partial class HealthControl
 
         return new ListViewItem(
             [new ListViewSubItem(null!, DescribeTime(healthEvent.StartUtc, DateTime.UtcNow), background, foreground),
-             new ListViewSubItem(null!, $"{ResourceName(healthEvent.Resource)} → {healthEvent.Level}", background, StatusColour(healthEvent.Level)),
+             new ListViewSubItem(null!, $"{ResourceName(healthEvent.Resource)} → {healthEvent.Level.ToDisplayText()}", background, StatusColour(healthEvent.Level)),
              new ListViewSubItem(null!, DescribeEvent(healthEvent), background, foreground),
              new ListViewSubItem(null!, Cell(string.Join(", ", healthEvent.Culprits)), background, foreground)]);
     }
@@ -214,11 +213,9 @@ public sealed partial class HealthControl
              new ListViewSubItem(null!, Cell(report.App), background, foreground)]);
     }
 
-    internal static string ResourceName(HealthResource resource) => resource switch {
-        HealthResource.Cpu => "CPU",
-        HealthResource.Gpu => "GPU",
-                         _ => resource.ToString()
-    };
+    internal static string ResourceName(HealthResource resource) => resource.ToDisplayText();
+
+    public static (string Key, string Label) ShowProcessHotKey => ("Enter", Strings.HealthShowProcessHotKey);
 
     private Color StatusColour(HealthLevel level) => level switch {
         HealthLevel.Ok       => appConfig.Theme.RangeLowBackground,
@@ -228,9 +225,9 @@ public sealed partial class HealthControl
     };
 
     private static string StatusText(HealthLevel level) => level switch {
-        HealthLevel.Ok       => $"{StatusGlyph} OK",
-        HealthLevel.Warning  => $"{StatusGlyph} Warning",
-        HealthLevel.Critical => $"{StatusGlyph} Critical",
+        HealthLevel.Ok       => $"{StatusGlyph} {level.ToDisplayText()}",
+        HealthLevel.Warning  => $"{StatusGlyph} {level.ToDisplayText()}",
+        HealthLevel.Critical => $"{StatusGlyph} {level.ToDisplayText()}",
                            _ => EmptyCell
     };
 }

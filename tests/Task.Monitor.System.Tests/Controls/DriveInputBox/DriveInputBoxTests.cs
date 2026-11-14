@@ -10,19 +10,24 @@ public sealed class DriveInputBoxTests
 {
     [Fact]
     public void DriveInputBox_Canary_Test() =>
-        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
+        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
 
     private static DriveInputBoxControl CreateBox(Mock<ISystemTerminal>? terminal = null)
     {
         terminal ??= TerminalMock.Setup();
 
+        // The app supplies the dialog's wording; these are its British defaults.
         DriveInputBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
-            Height = 12,
-            Title = "Select a drive",
-            Visible = true,
-            Width = 40,
-            X = 5,
-            Y = 10
+            CancelText     = "Cancel",
+            CustomPathText = "Custom path...",
+            Height         = 12,
+            HelpText       = "↑ ↓ browse   ← → select button   ↵ confirm   Esc cancel",
+            OkText         = "OK",
+            Title          = "Select a drive",
+            Visible        = true,
+            Width          = 40,
+            X              = 5,
+            Y              = 10
         };
 
         control.SetCandidates(["C:\\", "D:\\"]);

@@ -1,6 +1,8 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -29,7 +31,7 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     private double? temperature;
     private int?    scopedDiskIndex;
 
-    private string  powerText = "N/A";
+    private string  powerText = Strings.CommonNotAvailable;
 
     public DiskPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
     {
@@ -49,10 +51,10 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         };
         
         diskMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Active Time"))
-            .Add(new ListViewColumnHeader("Read Speed"))
-            .Add(new ListViewColumnHeader("Write Speed"))
-            .Add(new ListViewColumnHeader("Power"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceActiveTimeColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceReadSpeedColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceWriteSpeedColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformancePowerColumn));
 
         diskSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -88,12 +90,12 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             string transferText = device?.ToDiskTransferRate() ?? metrics.ToDiskTransferRate();
 
             activeTimeChart.Text = temperature is { } diskTemp
-                ? $"Active Time {activeText}   ·   {diskTemp.ToTemperatureText()}"
-                : $"Active Time {activeText}";
+                ? $"{string.Format(CultureInfo.CurrentCulture, Strings.PerformanceActiveTimeChart, activeText)}   ·   {diskTemp.ToTemperatureText()}"
+                : string.Format(CultureInfo.CurrentCulture, Strings.PerformanceActiveTimeChart, activeText);
             
             activeTimeChart.Draw();
 
-            transferRateChart.Text = $"Disk Transfer Rate {transferText}";
+            transferRateChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDiskTransferChart, transferText);
             transferRateChart.Draw();
 
             diskMetricsListView.Items[0].SubItems[0].Text = activeText;
@@ -103,22 +105,22 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
             diskMetricsListView.Draw();
 
             if (device != null) {
-                SetSpecsRow(0, "Model:",               deviceSpec?.Model            ?? Constants.NotAvailable);
-                SetSpecsRow(1, "Manufacturer:",        deviceSpec?.Manufacturer     ?? Constants.NotAvailable);
-                SetSpecsRow(2, "Firmware Revision:",   deviceSpec?.FirmwareRevision ?? Constants.NotAvailable);
-                SetSpecsRow(3, "Serial Number:",       deviceSpec?.SerialNumber     ?? Constants.NotAvailable);
-                SetSpecsRow(4, "Bus Type:",            deviceSpec?.BusType          ?? Constants.NotAvailable);
-                SetSpecsRow(5, "Media Type:",          deviceSpec?.MediaType        ?? Constants.NotAvailable);
-                SetSpecsRow(6, "Capacity:",            (deviceSpec?.Capacity ?? 0L).ToFormattedByteSize());
-                SetSpecsRow(7, "Removable:",           deviceSpec is { IsRemovable: true } ? "Yes" : "No");
-                SetSpecsRow(8, "Total Bytes Read:",    device.TotalBytesRead.ToFormattedByteSize());
-                SetSpecsRow(9, "Total Bytes Written:", device.TotalBytesWritten.ToFormattedByteSize());
+                SetSpecsRow(0, Strings.LabelModel,               deviceSpec?.Model            ?? Constants.NotAvailable);
+                SetSpecsRow(1, Strings.LabelManufacturer,        deviceSpec?.Manufacturer     ?? Constants.NotAvailable);
+                SetSpecsRow(2, Strings.LabelFirmwareRevision,   deviceSpec?.FirmwareRevision ?? Constants.NotAvailable);
+                SetSpecsRow(3, Strings.LabelSerialNumber,       deviceSpec?.SerialNumber     ?? Constants.NotAvailable);
+                SetSpecsRow(4, Strings.LabelBusType,            deviceSpec?.BusType          ?? Constants.NotAvailable);
+                SetSpecsRow(5, Strings.LabelMediaType,          deviceSpec?.MediaType        ?? Constants.NotAvailable);
+                SetSpecsRow(6, Strings.LabelCapacity,            (deviceSpec?.Capacity ?? 0L).ToFormattedByteSize());
+                SetSpecsRow(7, Strings.LabelRemovable,           deviceSpec is { IsRemovable: true } ? Strings.CommonYes : Strings.CommonNo);
+                SetSpecsRow(8, Strings.PerformanceTotalBytesRead,    device.TotalBytesRead.ToFormattedByteSize());
+                SetSpecsRow(9, Strings.PerformanceTotalBytesWritten, device.TotalBytesWritten.ToFormattedByteSize());
             }
             else {
-                SetSpecsRow(0, "Number of Disks:",     diskInfo.Specs.Devices.Count.ToString());
-                SetSpecsRow(1, "Total Capacity:",      diskInfo.Specs.ToDiskTotalCapacity().ToFormattedByteSize());
-                SetSpecsRow(2, "Total Bytes Read:",    metrics.TotalBytesRead.ToFormattedByteSize());
-                SetSpecsRow(3, "Total Bytes Written:", metrics.TotalBytesWritten.ToFormattedByteSize());
+                SetSpecsRow(0, Strings.PerformanceNumberOfDisks,     diskInfo.Specs.Devices.Count.ToString());
+                SetSpecsRow(1, Strings.LabelTotalCapacity,      diskInfo.Specs.ToDiskTotalCapacity().ToFormattedByteSize());
+                SetSpecsRow(2, Strings.PerformanceTotalBytesRead,    metrics.TotalBytesRead.ToFormattedByteSize());
+                SetSpecsRow(3, Strings.PerformanceTotalBytesWritten, metrics.TotalBytesWritten.ToFormattedByteSize());
 
                 for (int row = 4; row < diskSpecsListView.Items.Count; row++) {
                     SetSpecsRow(row, string.Empty, string.Empty);
@@ -138,19 +140,19 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
         OnLoadChart(activeTimeChart, autoScale: false, Chart.FormatYScalePercentage);
         OnLoadChart(transferRateChart, autoScale: true, Chart.FormatYScaleByteRate);
 
-        ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", "N/A" });
+        ListViewItem diskMetricsItem = new(new[] { "0.0%", "0.0 B/s", "0.0 B/s", Strings.CommonNotAvailable });
         diskMetricsListView.Items.Add(diskMetricsItem);
         
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Model:",               Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Manufacturer:",        Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Firmware Revision:",   Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Serial Number:",       Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Bus Type:",            Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Media Type:",          Constants.NotAvailable, appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Capacity:",            "0.0 GB", appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Removable:",           "No", appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Total Bytes Read:",    "0.0 GB", appConfig.Theme));
-        diskSpecsListView.Items.Add(CommonControl.PropertyRow("Total Bytes Written:", "0.0 GB", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelModel,               Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelManufacturer,        Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelFirmwareRevision,   Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelSerialNumber,       Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelBusType,            Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelMediaType,          Constants.NotAvailable, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelCapacity,            "0.0 GB", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelRemovable,           Strings.CommonNo, appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceTotalBytesRead,    "0.0 GB", appConfig.Theme));
+        diskSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceTotalBytesWritten, "0.0 GB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> yAxisScaleFormatter)
@@ -220,15 +222,15 @@ public sealed class DiskPerformanceControl : Control, IPerformanceDetail
     private string ResolvePowerText(SystemSnapshot snapshot)
     {
         if (scopedDiskIndex is not { } index || snapshot.Power is not { } power) {
-            return "N/A";
+            return Strings.CommonNotAvailable;
         }
 
         if (power.Metrics.DiskPower(index) is not { } reading) {
-            return "N/A";
+            return Strings.CommonNotAvailable;
         }
 
         return reading.IsRated
-            ? $"{reading.Watts:0.0} W (rated)"
+            ? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceRatedWatts, reading.Watts)
             : reading.Watts.ToWattText();
     }
 

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Processes;
 
 namespace Task.Monitor.Tests.Gui.Controls;
@@ -98,8 +99,9 @@ public sealed class ColumnsEnumTests
     {
         ProcessControl.ColumnTitleAttribute? attr = GetAttribute<ProcessControl.ColumnTitleAttribute>(column);
 
+        // The attribute names a Strings.resx entry; the title is that entry's British default.
         Assert.NotNull(attr);
-        Assert.Equal(expectedTitle, attr.Title);
+        Assert.Equal(expectedTitle, column.GetTitle());
     }
 
     private static T? GetAttribute<T>(ProcessControl.Columns column) where T : Attribute
@@ -114,6 +116,6 @@ public sealed class ColumnsEnumTests
         ProcessControl.ColumnTitleAttribute? attr = GetAttribute<ProcessControl.ColumnTitleAttribute>(ProcessControl.Columns.Priority);
 
         Assert.NotNull(attr);
-        Assert.True(attr.Title == "PRI" || attr.Title == "NI");
+        Assert.True(ProcessControl.Columns.Priority.GetTitle() is "PRI" or "NI");
     }
 }

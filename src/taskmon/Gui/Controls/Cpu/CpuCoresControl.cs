@@ -1,6 +1,8 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Metre;
@@ -11,9 +13,6 @@ namespace Task.Monitor.Gui.Controls.Cpu;
 
 public sealed class  CpuCoresControl : Control
 {
-    private const string Title         = "Cpu Cores";
-    private const string MsgNoCoreData = "Per-core CPU data is not available on this OS";
-
     private const int MinBarWidth  = 6;
     private const int PercentWidth = 4;
     private const int ColumnGutter = 2;
@@ -142,7 +141,7 @@ public sealed class  CpuCoresControl : Control
         CoreGrid     grid)
     {
         double value = coreValues[coreIndex];
-        string label = $"C{coreNames[coreIndex]}";
+        string label = string.Format(CultureInfo.CurrentCulture, Strings.CpuCoresLabel, coreNames[coreIndex]);
 
         frame.Clear();
         frame.MoveTo(left, top);
@@ -196,6 +195,8 @@ public sealed class  CpuCoresControl : Control
         >= MidLoadThreshold  => appConfig.Theme.RangeMidBackground,
                            _ => appConfig.Theme.RangeLowBackground
     };
+
+    private static string MsgNoCoreData => Strings.CpuCoresNoData;
 
     protected override void OnDraw()
     {
@@ -315,4 +316,6 @@ public sealed class  CpuCoresControl : Control
 
         Draw();
     }
+
+    private static string Title => Strings.CpuCoresTitle;
 }

@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -14,5 +15,5 @@ public sealed class GpuMetreControl(
             ? new MetreReading([gpu.GpuPercentTime], FormatPercentage(gpu.GpuPercentTime))
             : null;
 
-    protected override string Title => "GPU%";
+    protected override string Title => Strings.MetreTitleGpu;
 }

@@ -1,5 +1,7 @@
+using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -13,7 +15,6 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
 {
     private const int    MetricsHeight = 4;
     private const int    SpecsRowCount = 6;
-    private const string NotAvailable  = "N/A";
 
     private readonly AppConfig appConfig;
 
@@ -49,9 +50,9 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
         };
 
         metricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Utilization"))
-            .Add(new ListViewColumnHeader("Power Draw"))
-            .Add(new ListViewColumnHeader("Peak Power"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceUtilisationColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformancePowerDrawColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformancePeakPowerColumn));
 
         specsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -68,6 +69,8 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
+    private static string NotAvailable => Strings.CommonNotAvailable;
+
     protected override void OnDraw()
     {
         lock (@lock) {
@@ -80,7 +83,7 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
             activityChart.Text = $"{device.ToDisplayName()} {utilization}";
             activityChart.Draw();
 
-            powerChart.Text = $"Power {powerWatts.ToWattText()}";
+            powerChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformancePowerChart, powerWatts.ToWattText());
             powerChart.Draw();
 
             metricsListView.Items[0].SubItems[0].Text = utilization;
@@ -109,12 +112,12 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
 
         metricsListView.Items.Add(new ListViewItem(new[] { NotAvailable, NotAvailable, NotAvailable }));
 
-        specsListView.Items.Add(CommonControl.PropertyRow("Name:",         NotAvailable, appConfig.Theme));
-        specsListView.Items.Add(CommonControl.PropertyRow("Vendor:",       NotAvailable, appConfig.Theme));
-        specsListView.Items.Add(CommonControl.PropertyRow("Chip:",         NotAvailable, appConfig.Theme));
-        specsListView.Items.Add(CommonControl.PropertyRow("Cores:",        NotAvailable, appConfig.Theme));
-        specsListView.Items.Add(CommonControl.PropertyRow("Architecture:", NotAvailable, appConfig.Theme));
-        specsListView.Items.Add(CommonControl.PropertyRow("Version:",      NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelName,         NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVendor,       NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelChip,         NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelCores,        NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelArchitecture, NotAvailable, appConfig.Theme));
+        specsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVersion,      NotAvailable, appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart, bool autoScale, Func<double, string> formatter)

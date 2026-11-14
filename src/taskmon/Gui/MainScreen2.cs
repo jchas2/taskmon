@@ -13,6 +13,7 @@ using Task.Monitor.Gui.Controls.Startup;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.Gui.Controls.Thermals;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.InputBox;
 using Task.Monitor.System.Controls.ListView;
@@ -74,7 +75,7 @@ public sealed class MainScreen2 : Screen
             Visible       = true,
             TabStop       = false,
             HalfCellEdges = true,
-            Text          = "VIEW MENU"
+            Text          = Strings.MainMenuTitle
         };
 
         bannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
@@ -341,17 +342,17 @@ public sealed class MainScreen2 : Screen
         ApplyThemeDefaults();
 
         menuControl.MenuItems = new() {
-            new MenuListViewItem(summaryControl,       "SUMMARY"),
-            new MenuListViewItem(healthControl,        "HEALTH"),
-            new MenuListViewItem(performanceControl,   "PERFORMANCE"),
-            new MenuListViewItem(processesControl,     "PROCESSES"),
-            new MenuListViewItem(thermalsControl,      "THERMALS"),
-            new MenuListViewItem(diskSpaceControl,     "DISK SPACE"),
-            new MenuListViewItem(startupControl,       "STARTUP"),
-            new MenuListViewItem(installedAppsControl, "APPS"),
-            new MenuListViewItem(servicesControl,      "SERVICES"),
-            new MenuListViewItem(driversControl,       "DRIVERS"),
-            new MenuListViewItem(systemInfoControl,    "SYSTEM INFO"),
+            new MenuListViewItem(summaryControl,       Strings.MainMenuSummary),
+            new MenuListViewItem(healthControl,        Strings.MainMenuHealth),
+            new MenuListViewItem(performanceControl,   Strings.MainMenuPerformance),
+            new MenuListViewItem(processesControl,     Strings.MainMenuProcesses),
+            new MenuListViewItem(thermalsControl,      Strings.MainMenuThermals),
+            new MenuListViewItem(diskSpaceControl,     Strings.MainMenuDiskSpace),
+            new MenuListViewItem(startupControl,       Strings.MainMenuStartup),
+            new MenuListViewItem(installedAppsControl, Strings.MainMenuApps),
+            new MenuListViewItem(servicesControl,      Strings.MainMenuServices),
+            new MenuListViewItem(driversControl,       Strings.MainMenuDrivers),
+            new MenuListViewItem(systemInfoControl,    Strings.MainMenuSystemInfo),
         };
         
         activeControl      = summaryControl;

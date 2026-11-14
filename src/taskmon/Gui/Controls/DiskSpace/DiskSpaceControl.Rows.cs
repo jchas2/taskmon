@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.DiskSpace;
 
@@ -75,7 +77,7 @@ public sealed partial class DiskSpaceControl
     
     private void SetFilesViewBorderText(IReadOnlyList<DiskSpaceFileEntry> files)
     {
-        filesView.HeaderText = $"{FilesViewTitle} ({files.Count} of top {DiskSpaceAccumulator.MaxTrackedFiles})";
+        filesView.HeaderText = string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceFilesHeader, FilesViewTitle, files.Count, DiskSpaceAccumulator.MaxTrackedFiles);
         filesView.FooterText = CommonControl.FooterText(appConfig.Theme, CommonControl.ScrollHotKey);
     }
 }

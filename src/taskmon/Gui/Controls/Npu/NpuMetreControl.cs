@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Npu;
@@ -24,5 +25,5 @@ public sealed class NpuMetreControl(
         return new MetreReading([device.ActiveRatio], text);
     }
 
-    protected override string Title => "NPU%";
+    protected override string Title => Strings.MetreTitleNpu;
 }

@@ -1,6 +1,8 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -37,27 +39,27 @@ public sealed class PowerControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "POWER",
-            EmptyListViewText = "No power readings available."
+            HeaderText        = Strings.PowerHeader,
+            EmptyListViewText = Strings.PowerNone
         };
 
         powerView.ColumnHeaders
-            .Add(new ListViewColumnHeader("COMPONENT"))
-            .Add(new ListViewColumnHeader("RAIL"))
-            .Add(new ListViewColumnHeader("POWER"));
+            .Add(new ListViewColumnHeader(Strings.PowerColumnComponent))
+            .Add(new ListViewColumnHeader(Strings.PowerColumnRail))
+            .Add(new ListViewColumnHeader(Strings.PowerColumnPower));
 
         Controls.Add(powerView);
     }
 
     private string BuildComponentLabel(PowerReading reading) => reading.Component switch {
-        PowerComponent.Cpu          => "CPU",
+        PowerComponent.Cpu          => Strings.PowerCpu,
         PowerComponent.Gpu          => snapshot.ToGpuLabel(reading.ComponentId),
         PowerComponent.Disk         => snapshot.ToDiskLabel(reading.ComponentId),
-        PowerComponent.Battery      => "Battery",
-        PowerComponent.NeuralEngine => "Neural Engine",
-        PowerComponent.Memory       => "Memory",
-        PowerComponent.Display      => "Display",
-                                  _ => "System"
+        PowerComponent.Battery      => Strings.PowerBattery,
+        PowerComponent.NeuralEngine => Strings.PowerNeuralEngine,
+        PowerComponent.Memory       => Strings.PowerMemory,
+        PowerComponent.Display      => Strings.PowerDisplay,
+                                  _ => Strings.PowerSystem
     };
 
     private static int ComponentOrder(PowerComponent component) => component switch {
@@ -140,7 +142,7 @@ public sealed class PowerControl : Control
 
         foreach (PowerReading reading in metrics.Readings.OrderBy(reading => ComponentOrder(reading.Component))) {
             string watts = reading.IsRated
-                ? $"{reading.Watts.ToWattText()} (rated)"
+                ? string.Format(CultureInfo.CurrentCulture, Strings.PowerRated, reading.Watts.ToWattText())
                 : reading.Watts.ToWattText();
 
             powerView.Items.Add(new ListViewItem([BuildComponentLabel(reading), reading.Rail, watts], background, foreground));

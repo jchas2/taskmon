@@ -10,7 +10,7 @@ public sealed class TextInputDialogTests
 {
     [Fact]
     public void TextInputDialog_Canary_Test() =>
-        Assert.Equal(26, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
+        Assert.Equal(29, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
 
     // Buttons are written one character at a time (so the first letter of the focused one can be
     // highlighted), so assert on everything written, in order, rather than any single Write.
@@ -18,6 +18,19 @@ public sealed class TextInputDialogTests
         string.Concat(terminal.Invocations
             .Where(i => i.Method.Name == "Write" && i.Arguments.Count == 1)
             .Select(i => i.Arguments[0]?.ToString() ?? string.Empty));
+
+    // A label longer than the usual 10-column button widens both buttons rather than being cut.
+    [Fact]
+    public void A_Long_Button_Label_Widens_The_Buttons()
+    {
+        Mock<ISystemTerminal> terminal = TerminalMock.Setup();
+        TextInputDialogControl control = CreateDialog(terminal);
+        control.CancelText = "Annulla tutto";
+
+        control.ShowTextInputDialog();
+
+        Assert.Contains("Annulla tutto", AllWritten(terminal));
+    }
 
     [Fact]
     public void Backspace_Removes_The_Character_Before_The_Caret()
@@ -53,8 +66,12 @@ public sealed class TextInputDialogTests
     {
         terminal ??= TerminalMock.Setup();
 
+        // The app supplies the dialog's wording; these are its British defaults.
         TextInputDialogControl control = new(new ForwardingTerminal(terminal.Object)) {
+            CancelText = "Cancel",
             Height = TextInputDialogControl.PreferredHeight,
+            HelpText = "Tab select button   ↵ confirm   Esc cancel",
+            OkText = "OK",
             Title = "Save Layout As",
             Visible = true,
             Width = 44,

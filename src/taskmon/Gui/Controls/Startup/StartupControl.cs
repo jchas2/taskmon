@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -18,8 +19,6 @@ public sealed partial class StartupControl : Control
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 9;
-
-    private const string GatheringText = "Gathering startup applications…";
 
     private readonly ServiceController        serviceController;
     private readonly AppConfig                appConfig;
@@ -54,12 +53,12 @@ public sealed partial class StartupControl : Control
         };
 
         startupView.ColumnHeaders
-            .Add(new ListViewColumnHeader("NAME"))
-            .Add(new ListViewColumnHeader("PUBLISHER"))
-            .Add(new ListViewColumnHeader("TYPE"))
-            .Add(new ListViewColumnHeader("SCOPE"))
-            .Add(new ListViewColumnHeader("STATUS"))
-            .Add(new ListViewColumnHeader("COMMAND"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnName))
+            .Add(new ListViewColumnHeader(Strings.ListColumnPublisher))
+            .Add(new ListViewColumnHeader(Strings.StartupColumnType))
+            .Add(new ListViewColumnHeader(Strings.ListColumnScope))
+            .Add(new ListViewColumnHeader(Strings.ListColumnStatus))
+            .Add(new ListViewColumnHeader(Strings.StartupColumnCommand));
 
         detailView = new ListView(terminal) {
             EnableScroll      = false,
@@ -68,20 +67,22 @@ public sealed partial class StartupControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "DETAIL"
+            HeaderText        = Strings.ListDetailHeader
         };
 
         detailView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FIELD"))
-            .Add(new ListViewColumnHeader("VALUE"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnField))
+            .Add(new ListViewColumnHeader(Strings.ListColumnValue));
 
-        filter = new ListFilter(this, terminal, "Filter Startup");
+        filter = new ListFilter(this, terminal, Strings.StartupFilterTitle);
         sorter = new ListSorter<StartupEntry>(terminal, startupView, SortColumns, defaultColumn: 2);
 
         toggleDialog = new MessageBox(terminal) {
             Visible = false,
             Height  = MessageBox.PreferredHeight
         };
+
+        CommonControl.Text(toggleDialog);
 
         Controls.Add(startupView);
         Controls.Add(detailView);
@@ -108,6 +109,8 @@ public sealed partial class StartupControl : Control
         lastSignature = signature;
         RebuildRows(info.Specs.Entries, info.Specs.Notes);
     }
+
+    private static string GatheringText => Strings.StartupGathering;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 

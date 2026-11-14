@@ -1,3 +1,4 @@
+using Task.Monitor.Resources;
 using Task.Monitor.System.Services.Power;
 
 namespace Task.Monitor.Extensions;
@@ -40,5 +41,5 @@ public static class PowerMetricsExtensions
     public static string ToWattText(this double watts) => $"{watts:0.0} W";
 
     public static string ToWattText(this double? watts) =>
-        watts is { } value ? value.ToWattText() : "N/A";
+        watts is { } value ? value.ToWattText() : Strings.CommonNotAvailable;
 }

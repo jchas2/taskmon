@@ -1,4 +1,6 @@
+using System.Globalization;
 using Task.Monitor.Gui.Tips;
+using Task.Monitor.Resources;
 
 namespace Task.Monitor.Tests.Gui.Tips;
 
@@ -8,12 +10,25 @@ public sealed class TipCatalogueTests
     // next-tip hint. A longer tip is cut short, so fail here rather than in front of a user.
     private const int MaxVisibleLength = 100;
 
-    [Fact]
-    public void Every_Tip_Fits_The_Footer()
+    // A longer "Tip:" label or next-tip hint in another language leaves less room for the tip.
+    [Theory]
+    [InlineData(UiCulture.British)]
+    [InlineData(UiCulture.American)]
+    [InlineData(UiCulture.German)]
+    [InlineData(UiCulture.Italian)]
+    public void Every_Tip_Fits_The_Footer(string cultureName)
     {
+        CultureInfo british = CultureInfo.GetCultureInfo(UiCulture.British);
+        int         room    = MaxVisibleLength;
+
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        room -= Strings.FooterTip.Length - Strings.ResourceManager.GetString(nameof(Strings.FooterTip), british)!.Length;
+        room -= Strings.FooterKeyNextTip.Length - Strings.ResourceManager.GetString(nameof(Strings.FooterKeyNextTip), british)!.Length;
+
         foreach (string tip in TipCatalogue.Tips) {
             int length = TipCatalogue.VisibleText(tip).Length;
-            Assert.True(length <= MaxVisibleLength, $"{length} characters: {tip}");
+            Assert.True(length <= room, $"{cultureName}: {length} characters, room for {room}: {tip}");
         }
     }
 

@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
@@ -12,8 +13,8 @@ public sealed class CpuMetreControl(
 {
     protected override void AddSeries(MetreControl metre, Theme theme)
     {
-        metre.AddSeries("Kernel", theme.PerformanceCpuKernel);
-        metre.AddSeries("User",   theme.PerformanceCpuUser);
+        metre.AddSeries(Strings.CpuKernel, theme.PerformanceCpuKernel);
+        metre.AddSeries(Strings.CpuUser,   theme.PerformanceCpuUser);
     }
 
     protected override MetreReading? Read(SystemSnapshot snapshot) =>
@@ -23,5 +24,5 @@ public sealed class CpuMetreControl(
                 FormatPercentage(cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime))
             : null;
 
-    protected override string Title => "CPU%";
+    protected override string Title => Strings.MetreTitleCpu;
 }

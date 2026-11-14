@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Drivers;
 
@@ -7,39 +9,29 @@ namespace Task.Monitor.Gui.Controls.Drivers;
 
 public sealed partial class DriversControl
 {
-    private const string NotAvailable = "N/A";
-
-    private static readonly ListSortColumn<DriverInfo>[] SortColumns = [
-        ListSortColumn<DriverInfo>.ByText("NAME", 0, driver => driver.DisplayName),
-        ListSortColumn<DriverInfo>.ByVersion("VERSION", 1, driver => driver.Version),
-        ListSortColumn<DriverInfo>.ByText("STATUS", 2, driver => DescribeStatus(driver.Status)),
-        ListSortColumn<DriverInfo>.ByText("START TYPE", 3, DescribeStartType),
-        ListSortColumn<DriverInfo>.ByText("PATH", 4, driver => driver.ImagePath)
-    ];
-
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeStartType(DriverInfo driver) => driver.StartType switch {
-        DriverStartType.AutomaticStart => driver.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
-        DriverStartType.ManualStart    => "Manual",
-        DriverStartType.Disabled       => "Disabled",
-        DriverStartType.BootStart      => "Boot Start",
-        DriverStartType.SystemStart    => "System Start",
-        DriverStartType.OnDemand       => "On Demand",
+        DriverStartType.AutomaticStart => driver.DelayedAutoStart ? Strings.StartTypeAutomaticDelayed : Strings.StartTypeAutomatic,
+        DriverStartType.ManualStart    => Strings.StartTypeManual,
+        DriverStartType.Disabled       => Strings.StartTypeDisabled,
+        DriverStartType.BootStart      => Strings.StartTypeBootStart,
+        DriverStartType.SystemStart    => Strings.StartTypeSystemStart,
+        DriverStartType.OnDemand       => Strings.StartTypeOnDemand,
                                      _ => driver.StartType.ToString()
     };
 
     private static string DescribeStatus(DriverStatus status) => status switch {
-        DriverStatus.Stopped         => "Stopped",
-        DriverStatus.StartPending    => "Start Pending",
-        DriverStatus.StopPending     => "Stop Pending",
-        DriverStatus.Running         => "Running",
-        DriverStatus.ContinuePending => "Continue Pending",
-        DriverStatus.PausePending    => "Pause Pending",
-        DriverStatus.Paused          => "Paused",
-        DriverStatus.Loaded          => "Loaded",
-        DriverStatus.NotLoaded       => "Not Loaded",
+        DriverStatus.Stopped         => Strings.ServiceStatusStopped,
+        DriverStatus.StartPending    => Strings.ServiceStatusStartPending,
+        DriverStatus.StopPending     => Strings.ServiceStatusStopPending,
+        DriverStatus.Running         => Strings.ServiceStatusRunning,
+        DriverStatus.ContinuePending => Strings.ServiceStatusContinuePending,
+        DriverStatus.PausePending    => Strings.ServiceStatusPausePending,
+        DriverStatus.Paused          => Strings.ServiceStatusPaused,
+        DriverStatus.Loaded          => Strings.DriverStatusLoaded,
+        DriverStatus.NotLoaded       => Strings.StatusNotLoaded,
                                    _ => status.ToString()
     };
 
@@ -48,6 +40,8 @@ public sealed partial class DriversControl
 
     private bool MatchesFilter(DriverInfo driver) =>
         filter.Matches(driver.Name, driver.DisplayName, driver.Publisher, driver.ImagePath);
+
+    private static string NotAvailable => Strings.CommonNotAvailable;
 
     private void RebuildDetailRows(DriverInfo? driver)
     {
@@ -63,12 +57,12 @@ public sealed partial class DriversControl
             ? theme.RangeLowBackground
             : theme.RangeMidBackground;
 
-        detailView.Items.Add(CommonControl.PropertyRow("Name",         Cell(driver.DisplayName),      theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Status",       DescribeStatus(driver.Status), theme, statusForeground));
-        detailView.Items.Add(CommonControl.PropertyRow("Startup Type", DescribeStartType(driver),     theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Version",      Cell(driver.Version),          theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Publisher",    Cell(driver.Publisher),        theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Path",         Cell(driver.ImagePath),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,         Cell(driver.DisplayName),      theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,       DescribeStatus(driver.Status), theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStartupType, DescribeStartType(driver),     theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailVersion,      Cell(driver.Version),          theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPublisher,    Cell(driver.Publisher),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPath,         Cell(driver.ImagePath),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<DriverInfo> drivers)
@@ -101,9 +95,17 @@ public sealed partial class DriversControl
 
         driversView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         driversView.HeaderHighlightText = filter.BuildHeaderText(visibleDrivers.Count, drivers.Count);
-        driversView.HeaderText          = $"{running} running / {drivers.Count} total";
+        driversView.HeaderText          = string.Format(CultureInfo.CurrentCulture, Strings.ListHeaderRunningTotal, running, drivers.Count);
         driversView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
             [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
+
+    private static ListSortColumn<DriverInfo>[] SortColumns => [
+        ListSortColumn<DriverInfo>.ByText(Strings.ListColumnName, 0, driver => driver.DisplayName),
+        ListSortColumn<DriverInfo>.ByVersion(Strings.ListColumnVersion, 1, driver => driver.Version),
+        ListSortColumn<DriverInfo>.ByText(Strings.ListColumnStatus, 2, driver => DescribeStatus(driver.Status)),
+        ListSortColumn<DriverInfo>.ByText(Strings.DriversColumnStartType, 3, DescribeStartType),
+        ListSortColumn<DriverInfo>.ByText(Strings.ListColumnPath, 4, driver => driver.ImagePath)
+    ];
 }

@@ -1,3 +1,4 @@
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 
@@ -5,9 +6,9 @@ namespace Task.Monitor.Gui.Controls.Summary2.Layout;
 
 public sealed class EmptyPaneControl : Control
 {
-    private const string Label = "empty";
-
     public EmptyPaneControl(ISystemTerminal terminal) : base(terminal) { }
+
+    private static string Label => Strings.SummaryEmptyPane;
 
     protected override void OnDraw()
     {

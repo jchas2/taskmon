@@ -61,6 +61,7 @@ public sealed class Constants
         public const string ShowMetreNpuNumerically     = "show-metre-npu-numerically";
         public const string ShowTips                    = "show-tips";
         public const string ShowYAxisScale              = "show-y-axis-scale";
+        public const string UiLanguage                  = "ui-language";
         public const string UseIrixCpuReporting         = "use-irix-cpu-reporting";
 
         // Health keys.
@@ -181,9 +182,7 @@ public sealed class Constants
         public const string CommandBackground = "command.background";
         public const string CommandForeground = "command.foreground";
         
-        // SummaryControlLayout (recursive split-tree) keys. LayoutType is what tells a tree layout
-        // apart from a version 1 fixed-grid layout file, which is no longer loaded (see
-        // SummaryControlLayout.IsTreeLayout / AppConfig.LoadLayouts).
+        // SummaryControlLayout (recursive split-tree) keys. 
         public const string LayoutType        = "layout-type";
         public const string SummaryRoot       = "root";
         public const string SummaryNodes      = "nodes";

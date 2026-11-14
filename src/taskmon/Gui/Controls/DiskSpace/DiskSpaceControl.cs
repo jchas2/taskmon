@@ -1,6 +1,8 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.DriveInputBox;
@@ -18,8 +20,6 @@ public sealed partial class DiskSpaceControl : Control
     private const int PreferredVisibleDriveRows = 5;
     private const int SizeColumnWidth           = 12;
     private const int StatusRowHeight           = 1;
-
-    private const string FilesViewTitle = "LARGEST FILES";
 
     private readonly ServiceController       serviceController;
     private readonly AppConfig               appConfig;
@@ -66,14 +66,14 @@ public sealed partial class DiskSpaceControl : Control
             TabStop           = true,
             TabIndex          = 2,
             Visible           = true,
-            EmptyListViewText = "No files scanned yet - press s to start a scan.",
+            EmptyListViewText = Strings.DiskSpaceNoFiles,
             HeaderText        = FilesViewTitle
         };
 
         filesView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FILE"))
-            .Add(new ListViewColumnHeader("SIZE"))
-            .Add(new ListViewColumnHeader("PATH"));
+            .Add(new ListViewColumnHeader(Strings.DiskSpaceColumnFile))
+            .Add(new ListViewColumnHeader(Strings.ListColumnSize))
+            .Add(new ListViewColumnHeader(Strings.ListColumnPath));
 
         driveInputBox = new DriveInputBox(terminal) {
             Visible = false
@@ -91,16 +91,16 @@ public sealed partial class DiskSpaceControl : Control
     }
 
     private static string BuildStatusText(DiskSpaceSpecs? specs) => specs?.State switch {
-        DiskSpaceScanState.Scanning   => $"Scanning… {DescribeScanned(specs)}",
-        DiskSpaceScanState.Cancelling => $"Cancelling… {DescribeScanned(specs)}",
-        DiskSpaceScanState.Completed  => $"Completed - {DescribeScanned(specs)} in {specs.ElapsedMilliseconds / 1000.0:0.0}s",
-        DiskSpaceScanState.Cancelled  => $"Cancelled - {DescribeScanned(specs)}",
-        DiskSpaceScanState.Faulted    => $"Failed: {specs.ErrorMessage ?? "Scan failed."}",
+        DiskSpaceScanState.Scanning   => string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceScanningStatus, DescribeScanned(specs)),
+        DiskSpaceScanState.Cancelling => string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceCancellingStatus, DescribeScanned(specs)),
+        DiskSpaceScanState.Completed  => string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceCompletedStatus, DescribeScanned(specs), specs.ElapsedMilliseconds / 1000.0),
+        DiskSpaceScanState.Cancelled  => string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceCancelledStatus, DescribeScanned(specs)),
+        DiskSpaceScanState.Faulted    => string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceFailedStatus, specs.ErrorMessage ?? Strings.DiskSpaceScanFailed),
                                     _ => string.Empty
     };
 
     private static string DescribeScanned(DiskSpaceSpecs specs) =>
-        $"{specs.FilesScanned:N0} files / {specs.TotalBytesScanned.ToFormattedByteSize()}";
+        string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceScanned, specs.FilesScanned, specs.TotalBytesScanned.ToFormattedByteSize());
 
     private void DrawStatusRow(DiskSpaceSpecs? specs)
     {
@@ -127,6 +127,8 @@ public sealed partial class DiskSpaceControl : Control
         lastFileListSignature = signature;
         RebuildFileRows(specs.TopFiles);
     }
+
+    private static string FilesViewTitle => Strings.DiskSpaceFilesTitle;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 
@@ -223,7 +225,7 @@ public sealed partial class DiskSpaceControl : Control
         CommonControl.Theme(driveInputBox, appConfig.Theme);
 
         progressMetre.MetreStyle = appConfig.MetreStyle;
-        rootFoldersSeries = progressMetre.AddSeries("Root Folders", appConfig.Theme.RangeLowBackground);
+        rootFoldersSeries = progressMetre.AddSeries(Strings.DiskSpaceRootFolders, appConfig.Theme.RangeLowBackground);
         
         driveInputBox.Load();
         scanPathInputBox.Load();
@@ -334,7 +336,7 @@ public sealed partial class DiskSpaceControl : Control
         driveInputBox.Height = Math.Clamp(DriveInputBox.GetPreferredHeight(PreferredVisibleDriveRows), 8, Math.Max(8, Height - 2));
         driveInputBox.X      = X + Math.Max(0, (Width - driveInputBox.Width) / 2);
         driveInputBox.Y      = Y + Math.Max(0, (Height - driveInputBox.Height) / 2);
-        driveInputBox.Title  = "Select a drive";
+        driveInputBox.Title  = Strings.DiskSpaceSelectDrive;
         
         driveInputBox.SetCandidates(candidates);
         driveInputBox.Visible = true;
@@ -351,7 +353,7 @@ public sealed partial class DiskSpaceControl : Control
         scanPathInputBox.X       = driveInputBox.ListX;
         scanPathInputBox.Y       = driveInputBox.ListY;
         scanPathInputBox.Width   = driveInputBox.ListWidth;
-        scanPathInputBox.Title   = "Scan path:";
+        scanPathInputBox.Title   = Strings.DiskSpaceScanPath;
         scanPathInputBox.Visible = true;
         
         scanPathInputBox.SetText(defaultRoot);
@@ -397,7 +399,7 @@ public sealed partial class DiskSpaceControl : Control
 
         if (rootFoldersSeries is not null) {
             rootFoldersSeries.Label = string.IsNullOrEmpty(specs?.RootPath) 
-                ? "Root Folders" 
+                ? Strings.DiskSpaceRootFolders
                 : specs.RootPath;
         }
 

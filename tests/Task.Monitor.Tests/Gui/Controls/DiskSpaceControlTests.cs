@@ -451,6 +451,23 @@ public sealed class DiskSpaceControlTests : IDisposable
     }
 
     [Theory]
+    [InlineData(DiskSpaceScanState.Cancelling, "Canceling… 2 files / {0}")]
+    [InlineData(DiskSpaceScanState.Cancelled,  "Canceled - 2 files / {0}")]
+    public void Status_Row_Spells_Cancelled_For_A_US_English_UI(DiskSpaceScanState state, string expected)
+    {
+        using IDisposable _ = UiCulture.Use(UiCulture.American);
+
+        DiskSpaceControl ctrl = CreateControl();
+
+        ctrl.Sample(SnapshotWith(ScanSpecs(state)));
+        ctrl.Draw();
+
+        Assert.Contains(string.Format(expected, 1_001_000L.ToFormattedByteSize()), CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Theory]
     [InlineData(DiskSpaceScanState.Scanning,   "Scanning… ")]
     [InlineData(DiskSpaceScanState.Cancelling, "Cancelling… ")]
     [InlineData(DiskSpaceScanState.Completed,  "Completed - ")]

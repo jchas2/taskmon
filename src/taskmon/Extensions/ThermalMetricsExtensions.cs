@@ -1,3 +1,4 @@
+using Task.Monitor.Resources;
 using Task.Monitor.System.Services.Thermal;
 
 namespace Task.Monitor.Extensions;
@@ -75,15 +76,15 @@ public static class ThermalMetricsExtensions
             : $"{componentLabel} — {sensor.SensorName}";
 
     public static string ToLoadText(this FanReading fan) =>
-        fan.MaxRpm > 0 ? $"{Math.Clamp(fan.Rpm / fan.MaxRpm, 0, 1) * 100:0}%" : "N/A";
+        fan.MaxRpm > 0 ? $"{Math.Clamp(fan.Rpm / fan.MaxRpm, 0, 1) * 100:0}%" : Strings.CommonNotAvailable;
 
     public static string ToRpmText(this double rpm) => $"{rpm:N0}";
 
     public static string ToSpeedText(this FanReading fan) =>
-        fan.Rpm < 1 ? "Off" : fan.Rpm.ToRpmText();
+        fan.Rpm < 1 ? Strings.FanOff : fan.Rpm.ToRpmText();
 
     public static string ToTemperatureText(this double celsius) => $"{celsius:0}°C";
 
     public static string ToTemperatureText(this double? celsius) =>
-        celsius is { } value ? value.ToTemperatureText() : "N/A";
+        celsius is { } value ? value.ToTemperatureText() : Strings.CommonNotAvailable;
 }

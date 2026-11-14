@@ -1,6 +1,7 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services.DiskSpace;
@@ -11,8 +12,6 @@ public sealed class DiskSpaceHeatMapControl : Control
 {
     private const int FadeSteps            = 4;
     private const int MinCellWidthForLabel = 6;
-
-    private const string BorderHint = "s Start scanning   c Cancel";
 
     private readonly AppConfig appConfig;
     
@@ -38,6 +37,8 @@ public sealed class DiskSpaceHeatMapControl : Control
         
         return Lerp(BackgroundColour, targetColour, t);
     }
+
+    private static string BorderHint => Strings.DiskSpaceBorderHint;
 
     private void DrawCell(
         TreemapCell         cell, 

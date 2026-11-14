@@ -137,11 +137,17 @@ public sealed class HelpScreenTests
         Assert.DoesNotContain(Sections(helpScreen), section => section.HeaderText.Contains("END TASK"));
     }
 
-    // At 120 columns no text is cut short: each fits its column, less the trailing space every
-    // cell keeps.
-    [Fact]
-    public void OnResize_Fits_Every_Text_At_120_Columns()
+    // At 120 columns no text is cut short in any UI language: each fits its column, less the
+    // trailing space every cell keeps.
+    [Theory]
+    [InlineData(UiCulture.British)]
+    [InlineData(UiCulture.American)]
+    [InlineData(UiCulture.German)]
+    [InlineData(UiCulture.Italian)]
+    public void OnResize_Fits_Every_Text_At_120_Columns(string cultureName)
     {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
         HelpScreen helpScreen = Sized(new HelpScreen(runContext));
 
         Assert.All(Sections(helpScreen), section =>
@@ -230,5 +236,26 @@ public sealed class HelpScreenTests
         helpScreen.Resize();
 
         return helpScreen;
+    }
+
+    // The swatch, label and key description columns widen to fit the UI language, so text longer
+    // than the English isn't cut short.
+    [Theory]
+    [InlineData(UiCulture.German,  "Niedrig")]
+    [InlineData(UiCulture.German,  "Prozess mit niedriger Priorität (nice)")]
+    [InlineData(UiCulture.German,  "Aktualisierung der Prozessliste anhalten")]
+    [InlineData(UiCulture.German,  "Irix-Modus der CPU-Werte in Prozesslisten umschalten")]
+    [InlineData(UiCulture.Italian, "Basso")]
+    [InlineData(UiCulture.Italian, "Processo a bassa priorità (nice)")]
+    [InlineData(UiCulture.Italian, "Termina attività (spuntate o selezionata)")]
+    public void Translated_Help_Text_Shows_In_Full(string cultureName, string helpText)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        HelpScreen helpScreen = Sized(new HelpScreen(runContext));
+
+        helpScreen.Draw();
+
+        Assert.Contains(helpText, CapturedOutput());
     }
 }

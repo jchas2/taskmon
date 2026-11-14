@@ -1,3 +1,5 @@
+using System.Globalization;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.MessageBox;
@@ -12,8 +14,6 @@ public sealed partial class ServicesControl
     private const int ToggleDialogMaxWidth = 60;
     private const int ToggleDialogMinWidth = 40;
 
-    internal static readonly (string Key, string Label) ToggleHotKey = ("Space", "Start/Stop");
-
     private sealed record ToggleFailure(string DisplayName, bool Start, ServiceControlOutcome Outcome);
 
     private readonly Dictionary<string, bool> inFlight = new(StringComparer.OrdinalIgnoreCase);
@@ -27,24 +27,23 @@ public sealed partial class ServicesControl
         bool                  isElevated,
         int                   width)
     {
-        string action  = start ? "start" : "stop";
-        string heading = Fit($"Couldn't {action} {displayName}", width);
+        string heading = Fit(string.Format(CultureInfo.CurrentCulture, start ? Strings.ServicesCouldNotStart : Strings.ServicesCouldNotStop, displayName), width);
 
         string[] reason = outcome.Result switch {
-            ServiceControlResult.AccessDenied when isElevated => ["Windows refused the change."],
-            ServiceControlResult.AccessDenied                 => ["It needs administrator rights.", "Run taskmon as administrator."],
-            ServiceControlResult.Busy                         => ["It's busy. Try again in a moment."],
-            ServiceControlResult.CannotStop                   => ["It doesn't accept a stop request."],
-            ServiceControlResult.DependencyFailed             => ["A service it depends on couldn't start."],
+            ServiceControlResult.AccessDenied when isElevated => [Strings.ServicesRefused],
+            ServiceControlResult.AccessDenied                 => [Strings.CommonNeedsAdministrator, Strings.CommonRunAsAdministrator],
+            ServiceControlResult.Busy                         => [Strings.ServicesBusy],
+            ServiceControlResult.CannotStop                   => [Strings.ServicesCannotStop],
+            ServiceControlResult.DependencyFailed             => [Strings.ServicesDependencyFailed],
             ServiceControlResult.DependentsRunning            => DescribeDependents(outcome.Dependents ?? [], width),
-            ServiceControlResult.DidNotStop                   => ["It's still running."],
-            ServiceControlResult.Disabled                     => ["Its startup type is Disabled."],
-            ServiceControlResult.NotFound                     => ["It no longer exists."],
-            ServiceControlResult.NotSupported                 => ["Services can't be started or stopped here."],
-            ServiceControlResult.StillPending                 => [$"It's still {(start ? "starting" : "stopping")} after a minute."],
-            ServiceControlResult.StoppedAfterStarting         => ["It started and then stopped."],
-            ServiceControlResult.TimedOut                     => ["It didn't respond in time."],
-                                                            _ => [$"Windows error {outcome.Win32Error}."]
+            ServiceControlResult.DidNotStop                   => [Strings.ServicesDidNotStop],
+            ServiceControlResult.Disabled                     => [Strings.ServicesDisabled],
+            ServiceControlResult.NotFound                     => [Strings.CommonNoLongerExists],
+            ServiceControlResult.NotSupported                 => [Strings.ServicesNotSupported],
+            ServiceControlResult.StillPending                 => [start ? Strings.ServicesStillStarting : Strings.ServicesStillStopping],
+            ServiceControlResult.StoppedAfterStarting         => [Strings.ServicesStoppedAfterStarting],
+            ServiceControlResult.TimedOut                     => [Strings.ServicesTimedOut],
+                                                            _ => [string.Format(CultureInfo.CurrentCulture, Strings.ServicesWindowsError, outcome.Win32Error)]
         };
 
         return string.Join('\n', [heading, .. reason]);
@@ -69,16 +68,16 @@ public sealed partial class ServicesControl
     private static string[] DescribeDependents(IReadOnlyList<string> dependents, int width)
     {
         if (dependents.Count == 0) {
-            return ["Other running services depend on it."];
+            return [Strings.ServicesDependentsRunning];
         }
 
         string names = string.Join(", ", dependents.Take(MaxDependentsShown));
 
         if (dependents.Count > MaxDependentsShown) {
-            names += $" and {dependents.Count - MaxDependentsShown} more";
+            names += " " + string.Format(CultureInfo.CurrentCulture, Strings.ServicesDependentsMore, dependents.Count - MaxDependentsShown);
         }
 
-        return ["Running services depend on it:", Fit(names, width)];
+        return [Strings.ServicesDependentsList, Fit(names, width)];
     }
 
     private static string Fit(string text, int width) =>
@@ -152,7 +151,7 @@ public sealed partial class ServicesControl
         toggleDialog.X       = Math.Clamp(X + (Width - toggleDialog.Width) / 2, 0, Math.Max(0, Terminal.WindowWidth - toggleDialog.Width));
         toggleDialog.Y       = Math.Clamp(Y + (Height - toggleDialog.Height) / 2, 0, Math.Max(0, Terminal.WindowHeight - toggleDialog.Height));
         toggleDialog.Buttons = MessageBoxButtons.Ok;
-        toggleDialog.Title   = failure.Start ? "Start Service" : "Stop Service";
+        toggleDialog.Title   = failure.Start ? Strings.ServicesToggleTitleStart : Strings.ServicesToggleTitleStop;
         toggleDialog.Text    = BuildToggleFailureText(
             failure.DisplayName, failure.Start, failure.Outcome, SystemInfo.IsRunningAsRoot(), toggleDialog.Width - 4);
 
@@ -162,6 +161,8 @@ public sealed partial class ServicesControl
 
     private static bool ShowsAsRunning(WindowsServiceStatus status) =>
         status is not (WindowsServiceStatus.Stopped or WindowsServiceStatus.StopPending);
+
+    internal static (string Key, string Label) ToggleHotKey => ("Space", Strings.ServicesToggleHotKey);
 
     private void ToggleSelectedService()
     {

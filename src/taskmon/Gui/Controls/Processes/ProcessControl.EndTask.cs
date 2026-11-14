@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.MessageBox;
@@ -18,10 +20,14 @@ public sealed partial class ProcessControl
 
     private static string BuildEndTaskText(IReadOnlyList<(int Pid, string Name)> targets, int width)
     {
-        string heading = targets.Count == 1 ? "End this task?" : $"End these {targets.Count} tasks?";
+        string heading = targets.Count == 1
+            ? Strings.EndTaskHeadingOne
+            : string.Format(CultureInfo.CurrentCulture, Strings.EndTaskHeadingMany, targets.Count);
+        
         string more    = targets.Count > MaxEndTaskNamesShown
-            ? $" and {targets.Count - MaxEndTaskNamesShown} more"
+            ? " " + string.Format(CultureInfo.CurrentCulture, Strings.EndTaskMore, targets.Count - MaxEndTaskNamesShown)
             : string.Empty;
+        
         string names   = string.Join(", ", targets.Take(MaxEndTaskNamesShown).Select(target => $"{target.Name} ({target.Pid})"));
         int    room    = Math.Max(1, width - more.Length);
 
@@ -29,7 +35,7 @@ public sealed partial class ProcessControl
             names = names[..Math.Max(0, room - 1)] + "…";
         }
 
-        return string.Join('\n', heading, names + more, "Child processes are also ended.");
+        return string.Join('\n', heading, names + more, Strings.EndTaskChildren);
     }
 
     private void CloseEndTaskDialog()
@@ -125,7 +131,7 @@ public sealed partial class ProcessControl
         endTaskDialog.X       = Math.Clamp(X + (Width - endTaskDialog.Width) / 2, 0, Math.Max(0, Terminal.WindowWidth - endTaskDialog.Width));
         endTaskDialog.Y       = Math.Clamp(Y + (Height - endTaskDialog.Height) / 2, 0, Math.Max(0, Terminal.WindowHeight - endTaskDialog.Height));
         endTaskDialog.Buttons = MessageBoxButtons.OkCancel;
-        endTaskDialog.Title   = targets.Count == 1 ? "End Task" : "End Tasks";
+        endTaskDialog.Title   = targets.Count == 1 ? Strings.EndTaskTitleOne : Strings.EndTaskTitleMany;
         endTaskDialog.Text    = BuildEndTaskText(targets, endTaskDialog.Width - 4);
 
         endTaskDialog.Visible = true;

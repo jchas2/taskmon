@@ -1,6 +1,7 @@
 using System.Drawing;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -33,16 +34,16 @@ public sealed class FansControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "FANS",
-            EmptyListViewText = "No fans."
+            HeaderText        = Strings.FansHeader,
+            EmptyListViewText = Strings.FansNone
         };
 
         fansView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FAN"))
-            .Add(new ListViewColumnHeader("RPM"))
-            .Add(new ListViewColumnHeader("MIN"))
-            .Add(new ListViewColumnHeader("MAX"))
-            .Add(new ListViewColumnHeader("LOAD"));
+            .Add(new ListViewColumnHeader(Strings.FansColumnFan))
+            .Add(new ListViewColumnHeader(Strings.FansColumnRpm))
+            .Add(new ListViewColumnHeader(Strings.FansColumnMin))
+            .Add(new ListViewColumnHeader(Strings.FansColumnMax))
+            .Add(new ListViewColumnHeader(Strings.FansColumnLoad));
 
         Controls.Add(fansView);
     }

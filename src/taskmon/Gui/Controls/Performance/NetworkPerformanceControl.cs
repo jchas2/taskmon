@@ -1,6 +1,8 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -44,8 +46,8 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         };
         
         networkMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Send"))
-            .Add(new ListViewColumnHeader("Receive"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceSendColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceReceiveColumn));
 
         networkSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -80,10 +82,10 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             string sendText    = device?.ToNetworkSendRate() ?? metrics.ToNetworkSendRate();
             string receiveText = device?.ToNetworkReceiveRate() ?? metrics.ToNetworkReceiveRate();
 
-            sendChart.Text = $"Send {sendText}";
+            sendChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendChart, sendText);
             sendChart.Draw();
 
-            receiveChart.Text = $"Receive {receiveText}";
+            receiveChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveChart, receiveText);
             receiveChart.Draw();
 
             networkMetricsListView.Items[0].SubItems[0].Text = sendText;
@@ -96,27 +98,27 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             string totalPacketsReceived = (device?.TotalPacketsReceived ?? metrics.TotalPacketsReceived).ToNetworkPacketCount();
 
             if (device != null) {
-                SetSpecsRow(0,  "Name:",                   spec?.Name               ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(1,  "Friendly Name:",          spec?.FriendlyName       ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(2,  "Description:",            spec?.Description        ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(3,  "Connection Type:",        spec?.ConnectionType     ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(4,  "Physical Medium:",        spec?.PhysicalMedium     ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(5,  "MAC Address:",            spec?.MacAddress         ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(6,  "IPv4 Addresses:",         (spec?.IPv4Addresses     ?? []).ToAddressList());
-                SetSpecsRow(7,  "IPv6 Addresses:",         (spec?.IPv6Addresses     ?? []).ToAddressList());
-                SetSpecsRow(8,  "Transmit Link Speed:",    (spec?.TransmitLinkSpeed ?? 0UL).ToLinkSpeed());
-                SetSpecsRow(9,  "Receive Link Speed:",     (spec?.ReceiveLinkSpeed  ?? 0UL).ToLinkSpeed());
-                SetSpecsRow(10, "Operational Status:",     spec?.OperationalStatus  ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(11, "Total Bytes Sent:",       totalBytesSent);
-                SetSpecsRow(12, "Total Bytes Received:",   totalBytesReceived);
-                SetSpecsRow(13, "Total Packets Sent:",     totalPacketsSent);
-                SetSpecsRow(14, "Total Packets Received:", totalPacketsReceived);
+                SetSpecsRow(0,  Strings.LabelName,                   spec?.Name               ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(1,  Strings.PerformanceFriendlyName,          spec?.FriendlyName       ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(2,  Strings.LabelDescription,            spec?.Description        ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(3,  Strings.LabelConnectionType,        spec?.ConnectionType     ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(4,  Strings.LabelPhysicalMedium,        spec?.PhysicalMedium     ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(5,  Strings.LabelMacAddress,            spec?.MacAddress         ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(6,  Strings.LabelIpv4Addresses,         (spec?.IPv4Addresses     ?? []).ToAddressList());
+                SetSpecsRow(7,  Strings.LabelIpv6Addresses,         (spec?.IPv6Addresses     ?? []).ToAddressList());
+                SetSpecsRow(8,  Strings.LabelTransmitLinkSpeed,    (spec?.TransmitLinkSpeed ?? 0UL).ToLinkSpeed());
+                SetSpecsRow(9,  Strings.LabelReceiveLinkSpeed,     (spec?.ReceiveLinkSpeed  ?? 0UL).ToLinkSpeed());
+                SetSpecsRow(10, Strings.LabelOperationalStatus,     spec?.OperationalStatus  ?? NetworkDeviceParser.NotAvailable);
+                SetSpecsRow(11, Strings.PerformanceTotalBytesSent,       totalBytesSent);
+                SetSpecsRow(12, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
+                SetSpecsRow(13, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
+                SetSpecsRow(14, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
             }
             else {
-                SetSpecsRow(0, "Total Bytes Sent:",       totalBytesSent);
-                SetSpecsRow(1, "Total Bytes Received:",   totalBytesReceived);
-                SetSpecsRow(2, "Total Packets Sent:",     totalPacketsSent);
-                SetSpecsRow(3, "Total Packets Received:", totalPacketsReceived);
+                SetSpecsRow(0, Strings.PerformanceTotalBytesSent,       totalBytesSent);
+                SetSpecsRow(1, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
+                SetSpecsRow(2, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
+                SetSpecsRow(3, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
 
                 for (int row = 4; row < networkSpecsListView.Items.Count; row++) {
                     SetSpecsRow(row, string.Empty, string.Empty);
@@ -140,21 +142,21 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         networkMetricsListView.Items.Add(networkMetricsItem);
 
         foreach (string label in new[] {
-            "Name:", 
-            "Friendly Name:", 
-            "Description:", 
-            "Connection Type:", 
-            "Physical Medium:",
-            "MAC Address:", 
-            "IPv4 Addresses:", 
-            "IPv6 Addresses:", 
-            "Transmit Link Speed:",
-            "Receive Link Speed:", 
-            "Operational Status:", 
-            "Total Bytes Sent:",
-            "Total Bytes Received:",
-            "Total Packets Sent:", 
-            "Total Packets Received:" }) {
+            Strings.LabelName, 
+            Strings.PerformanceFriendlyName, 
+            Strings.LabelDescription, 
+            Strings.LabelConnectionType, 
+            Strings.LabelPhysicalMedium,
+            Strings.LabelMacAddress, 
+            Strings.LabelIpv4Addresses, 
+            Strings.LabelIpv6Addresses, 
+            Strings.LabelTransmitLinkSpeed,
+            Strings.LabelReceiveLinkSpeed, 
+            Strings.LabelOperationalStatus, 
+            Strings.PerformanceTotalBytesSent,
+            Strings.PerformanceTotalBytesReceived,
+            Strings.PerformanceTotalPacketsSent, 
+            Strings.PerformanceTotalPacketsReceived }) {
 
             networkSpecsListView.Items.Add(CommonControl.PropertyRow(label, NetworkDeviceParser.NotAvailable, appConfig.Theme));
         }

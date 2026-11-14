@@ -114,7 +114,7 @@ public sealed class GpuPerformanceControlTests
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains($"{1244:N0} MHz"))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Thermal 30%"))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(
-            t => t.Write(It.Is<string>(s => s.Contains("Utilization") && s.Contains("Dedicated GPU Memory"))), Times.Never);
+            t => t.Write(It.Is<string>(s => s.Contains("Utilisation") && s.Contains("Dedicated GPU Memory"))), Times.Never);
 
         ctrl.Unload();
     }

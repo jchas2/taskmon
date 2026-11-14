@@ -30,6 +30,8 @@ public class ListView : Control
 
     public const int CheckboxWidth = 4;
 
+    public const string FooterItemGap = "   ";
+
     private Color? borderBackgroundColour;
 
     public event EventHandler<ListViewItemEventArgs>? ItemClicked;
@@ -232,7 +234,7 @@ public class ListView : Control
         // FooterText may carry SGR colour sequences, which take no columns: centre and truncate the
         // label by its visible width rather than its length.
         string footerLabel    = string.IsNullOrEmpty(FooterText) ? string.Empty : $" {FooterText} ";
-        int footerLabelLen    = TruncateToVisibleWidth(footerLabel, innerWidth, out int footerLabelWidth);
+        int footerLabelLen    = FitFooterLabel(footerLabel, innerWidth, out int footerLabelWidth);
         int footerLeftDashes  = (innerWidth - footerLabelWidth) / 2;
         int footerRightDashes = innerWidth - footerLabelWidth - footerLeftDashes;
 
@@ -264,15 +266,13 @@ public class ListView : Control
             return;
         }
 
-        if (EmptyListViewText.Length > Width) {
-            EmptyListViewText = EmptyListViewText[..Width];
-        }
-
-        Point p = new Point((X + (Width - EmptyListViewText.Length)) / 2, Y + (Height / 2));
+        int    width = Math.Max(0, viewPort.Bounds.Width);
+        string text  = EmptyListViewText.Length > width ? EmptyListViewText[..width] : EmptyListViewText;
+        Point  p     = new(viewPort.Bounds.X + (width - text.Length) / 2, Y + (Height / 2));
 
         frame.MoveTo(p.X, p.Y);
         frame.SetColour(ForegroundColour, BackgroundColour);
-        frame.Append(EmptyListViewText);
+        frame.Append(text);
     }
 
     private void DrawHeader()
@@ -448,6 +448,22 @@ public class ListView : Control
     public bool EnableRowSelect { get; set; }
     
     public bool EnableScroll { get; set; }
+
+    internal static int FitFooterLabel(string label, int maxWidth, out int visibleWidth)
+    {
+        int length = TruncateToVisibleWidth(label, maxWidth, out visibleWidth);
+
+        if (length >= label.Length || label.AsSpan(length).IsWhiteSpace()) {
+            return length;
+        }
+
+        int searched = Math.Min(label.Length, length + FooterItemGap.Length);
+        int gap      = label.AsSpan(0, searched).LastIndexOf(FooterItemGap, StringComparison.Ordinal);
+
+        return gap <= 0
+            ? length
+            : TruncateToVisibleWidth(label[..(gap + 1)], maxWidth, out visibleWidth);
+    }
 
     public string FooterText { get; set; } = string.Empty;
 

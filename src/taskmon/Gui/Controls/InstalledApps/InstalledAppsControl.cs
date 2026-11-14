@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -7,9 +8,6 @@ using Task.Monitor.System.Services.InstalledApps;
 
 namespace Task.Monitor.Gui.Controls.InstalledApps;
 
-// The installed applications in one selectable, scrolling table: on Windows, those registered
-// under the Uninstall registry keys (the source Settings > Apps reads); on macOS, the app bundles in
-// /Applications, /System/Applications and ~/Applications.
 public sealed partial class InstalledAppsControl : Control
 {
     private const int NameColumnWidth        = 30;
@@ -22,8 +20,6 @@ public sealed partial class InstalledAppsControl : Control
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 10; // border (2) + column headers (1) + 7 field rows
 
-    private const string GatheringText = "Gathering installed applications…";
-    
     private readonly ServiceController        serviceController;
     private readonly AppConfig                appConfig;
     private readonly ListView                 installedAppsView;
@@ -56,13 +52,13 @@ public sealed partial class InstalledAppsControl : Control
         };
 
         installedAppsView.ColumnHeaders
-            .Add(new ListViewColumnHeader("NAME"))
-            .Add(new ListViewColumnHeader("VERSION"))
-            .Add(new ListViewColumnHeader("PUBLISHER"))
-            .Add(new ListViewColumnHeader("SCOPE"))
-            .Add(new ListViewColumnHeader("INSTALLED"))
-            .Add(new ListViewColumnHeader("SIZE"))
-            .Add(new ListViewColumnHeader("LOCATION"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnName))
+            .Add(new ListViewColumnHeader(Strings.ListColumnVersion))
+            .Add(new ListViewColumnHeader(Strings.ListColumnPublisher))
+            .Add(new ListViewColumnHeader(Strings.ListColumnScope))
+            .Add(new ListViewColumnHeader(Strings.AppsColumnInstalled))
+            .Add(new ListViewColumnHeader(Strings.ListColumnSize))
+            .Add(new ListViewColumnHeader(Strings.AppsColumnLocation));
 
         detailView = new ListView(terminal) {
             EnableScroll      = false,
@@ -71,14 +67,14 @@ public sealed partial class InstalledAppsControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "DETAIL"
+            HeaderText        = Strings.ListDetailHeader
         };
 
         detailView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FIELD"))
-            .Add(new ListViewColumnHeader("VALUE"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnField))
+            .Add(new ListViewColumnHeader(Strings.ListColumnValue));
 
-        filter = new ListFilter(this, terminal, "Filter Apps");
+        filter = new ListFilter(this, terminal, Strings.AppsFilterTitle);
         sorter = new ListSorter<InstalledApp>(terminal, installedAppsView, SortColumns, defaultColumn: 0);
 
         Controls.Add(installedAppsView);
@@ -87,7 +83,6 @@ public sealed partial class InstalledAppsControl : Control
         Controls.Add(filter.Dialog);
     }
 
-    // Includes sizes, which on macOS arrive after the rows as each bundle is measured.
     private static string BuildSignature(IReadOnlyList<InstalledApp> apps) =>
         apps.Count + "|" + 
         string.Join("|", apps.Select(app =>
@@ -105,6 +100,8 @@ public sealed partial class InstalledAppsControl : Control
         
         RebuildRows(info.Specs.Apps);
     }
+
+    private static string GatheringText => Strings.AppsGathering;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 

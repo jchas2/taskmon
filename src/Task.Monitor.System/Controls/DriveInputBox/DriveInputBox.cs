@@ -10,7 +10,7 @@ public sealed class DriveInputBox : Control
 {
     private const int MinWidth     = 30;
     private const int MinHeight    = 8;
-    private const int ButtonWidth  = 10;
+    private const int MinButtonWidth = 10;
     private const int ButtonHeight = 1;
     private const int ButtonGap    = 6;
 
@@ -51,7 +51,13 @@ public sealed class DriveInputBox : Control
         SelectedPath         = isCustomPathRow ? null : paths[index];
     }
 
+    private int ButtonWidth => Math.Max(MinButtonWidth, Math.Max(OkText.Length, CancelText.Length) + 2);
+
+    public string CancelText { get; set; } = string.Empty;
+
     public bool CustomPathRequested { get; private set; }
+
+    public string CustomPathText { get; set; } = string.Empty;
 
     public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
@@ -116,16 +122,16 @@ public sealed class DriveInputBox : Control
             buttonX, 
             buttonY, 
             ButtonWidth, 
-            ButtonHeight, 
-            "OK",
+            ButtonHeight,
+            OkText,
             selected: okFocused);
         
         DrawButton(
             buttonX + ButtonWidth + ButtonGap, 
             buttonY, 
             ButtonWidth, 
-            ButtonHeight, 
-            "Cancel", 
+            ButtonHeight,
+            CancelText,
             selected: !okFocused);
 
         Terminal.BackgroundColor = DialogBackgroundColour;
@@ -133,10 +139,8 @@ public sealed class DriveInputBox : Control
         Terminal.SetCursorPosition(X, ++y);
         Terminal.Write($"│{spacer}│");
 
-        string help = "↑ ↓ browse   ← → select button   ↵ confirm   Esc cancel";
-        
         Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write($"│{help.CentreWithLength(dialogWidth)}│");
+        Terminal.Write($"│{HelpText.CentreWithLength(dialogWidth)}│");
 
         Terminal.SetCursorPosition(X, ++y);
         Terminal.Write('╰');
@@ -195,6 +199,8 @@ public sealed class DriveInputBox : Control
 
     public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
 
+    public string HelpText { get; set; } = string.Empty;
+
     public Color ListBackgroundHighlightColour
     {
         get => list.BackgroundHighlightColour;
@@ -223,6 +229,8 @@ public sealed class DriveInputBox : Control
 
     public int ListX => list.X;
     public int ListY => list.Y;
+
+    public string OkText { get; set; } = string.Empty;
 
     protected override void OnDraw()
     {
@@ -287,7 +295,7 @@ public sealed class DriveInputBox : Control
     {
         paths.Clear();
         paths.AddRange(candidatePaths);
-        paths.Add("Custom path...");
+        paths.Add(CustomPathText);
 
         list.Items.Clear();
 

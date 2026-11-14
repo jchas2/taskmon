@@ -1,4 +1,6 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Thermal;
@@ -14,18 +16,10 @@ public static class HealthExtensions
     private const double NoLimitPercent   = 100.0;
     private const double NotChangingBytes = 1024.0 * 1024.0;
 
-    private static readonly (byte Bit, string Text)[] DriveWarnings = [
-        (0x01, "spare space low"),
-        (0x02, "over temperature"),
-        (0x04, "reliability degraded"),
-        (0x08, "read-only"),
-        (0x10, "backup failed")
-    ];
-
     private static string AppsErrorsText(int faults) => faults switch {
         0 => string.Empty,
-        1 => "1 app fault",
-        _ => $"{faults} app faults"
+        1 => Strings.HealthAppFaultOne,
+        _ => Format(Strings.HealthAppFaults, faults)
     };
 
     private static string DescribeDriveWarning(double bits) =>
@@ -34,14 +28,14 @@ public static class HealthExtensions
     private static string DescribeTimeLeft(double minutes)
     {
         if (minutes < MinutesPerHour) {
-            return $"{Math.Max(1.0, minutes):0} min";
+            return Format(Strings.HealthTimeLeftMinutes, Math.Max(1.0, minutes));
         }
 
         double hours = minutes / MinutesPerHour;
 
         return hours < HoursPerDay
-            ? $"{hours:0} h"
-            : $"{hours / HoursPerDay:0} days";
+            ? Format(Strings.HealthTimeLeftHours, hours)
+            : Format(Strings.HealthTimeLeftDays, hours / HoursPerDay);
     }
 
     private static string DiskErrorsText(DiskHealthMeasures disk)
@@ -49,21 +43,21 @@ public static class HealthExtensions
         List<string> parts = [];
 
         if (disk.WornPercent is { } worn) {
-            parts.Add($"{worn}% worn");
+            parts.Add(Format(Strings.HealthDiskWorn, worn));
         }
 
         if (disk.MediaErrors > 0) {
-            parts.Add($"{disk.MediaErrors} media");
+            parts.Add(Format(Strings.HealthDiskMediaErrors, disk.MediaErrors));
         }
 
         if (disk.LoggedErrors > 0) {
-            parts.Add($"{disk.LoggedErrors} logged");
+            parts.Add(Format(Strings.HealthDiskLoggedErrors, disk.LoggedErrors));
         }
 
         return string.Join(", ", parts);
     }
 
-    private static string DiskName(string index) => $"Disk {index}";
+    private static string DiskName(string index) => Format(Strings.HealthDiskName, index);
 
     private static string DiskSaturationText(DiskHealthMeasures disk)
     {
@@ -72,17 +66,28 @@ public static class HealthExtensions
         }
 
         return disk.QueueLength is > 0.0 and var queue
-            ? $"Latency {latency:0.0} ms, queue {queue:0}"
-            : $"Latency {latency:0.0} ms";
+            ? Format(Strings.HealthLatencyQueue, latency, queue)
+            : Format(Strings.HealthLatency, latency);
     }
 
-    private static string FullText(string volume, double fullPercent) => $"{volume} {fullPercent:0}% full";
+    private static (byte Bit, string Text)[] DriveWarnings => [
+        (0x01, Strings.HealthDriveSpareLow),
+        (0x02, Strings.HealthDriveOverTemperature),
+        (0x04, Strings.HealthDriveReliabilityDegraded),
+        (0x08, Strings.HealthDriveReadOnly),
+        (0x10, Strings.HealthDriveBackupFailed)
+    ];
 
-    private static string GpuMemoryName(bool isDedicated) => isDedicated ? "VRAM" : "Memory";
+    private static string Format(string format, params object[] args) =>
+        string.Format(CultureInfo.CurrentCulture, format, args);
+
+    private static string FullText(string volume, double fullPercent) => Format(Strings.HealthVolumeFull, volume, fullPercent);
+
+    private static string GpuMemoryName(bool isDedicated) => isDedicated ? Strings.HealthVram : Strings.HealthGpuMemory;
 
     private static string GpuSaturationText(GpuHealthMeasures gpu) =>
         gpu.MemoryUsedPercent is { } used
-            ? $"{GpuMemoryName(gpu.IsDedicatedMemory)} {used:0}% used"
+            ? Format(Strings.HealthGpuMemoryUsed, GpuMemoryName(gpu.IsDedicatedMemory), used)
             : string.Empty;
 
     public static bool IsShownInUtilisation(this HealthCause cause) => cause.Kind == HealthCauseKind.VolumeFull;
@@ -90,38 +95,32 @@ public static class HealthExtensions
     private static string MemorySaturationText(MemoryHealthMeasures memory)
     {
         if (memory.Pressure is { } pressure) {
-            return $"Pressure {pressure}";
+            return Format(Strings.HealthPressureLevel, pressure.ToDisplayText());
         }
 
         if (memory.PagesInPerSecond is not { } pagesIn) {
-            return memory.CommitPercent is { } commit ? $"Commit {commit:0}%" : string.Empty;
+            return memory.CommitPercent is { } commit ? Format(Strings.HealthCommit, commit) : string.Empty;
         }
 
         return memory.CommitPercent is { } percent
-            ? $"Commit {percent:0}%, {PagesInText(pagesIn)}"
+            ? Format(Strings.HealthCommitPagesIn, percent, PagesInText(pagesIn))
             : PagesInText(pagesIn);
     }
 
-    private static string PagesInText(double pagesIn) => $"{pagesIn:0} pages in/s";
+    private static string PagesInText(double pagesIn) => Format(Strings.HealthPagesIn, pagesIn);
 
     private static string SensorText(string component, double celsius) =>
         Enum.TryParse(component, out ThermalComponent parsed)
             ? SensorText(parsed, celsius)
-            : $"{component} {celsius:0} °C";
+            : Format(Strings.HealthSensorTemperature, component, celsius);
 
-    private static string SensorText(ThermalComponent component, double celsius)
-    {
-        string name = component is ThermalComponent.Cpu or ThermalComponent.Gpu
-            ? component.ToString().ToUpperInvariant()
-            : component.ToString();
-
-        return $"{name} {celsius:0} °C";
-    }
+    private static string SensorText(ThermalComponent component, double celsius) =>
+        Format(Strings.HealthSensorTemperature, component.ToDisplayText(), celsius);
 
     private static string ThermalSaturationText(ThermalHealthMeasures thermal)
     {
         if (thermal.Pressure is { } level) {
-            return $"Pressure {level}";
+            return Format(Strings.HealthPressureLevel, level.ToDisplayText());
         }
 
         if (thermal.PerformanceLimitPercent is not { } percent) {
@@ -129,33 +128,33 @@ public static class HealthExtensions
         }
 
         return Math.Round(percent) >= NoLimitPercent
-            ? "CPU not limited"
-            : $"CPU limited to {percent:0}%";
+            ? Strings.HealthCpuNotLimited
+            : Format(Strings.HealthCpuLimited, percent);
     }
 
     public static string ToDetailText(this HealthReport report) => report.Cause switch {
-        HealthReportCause.AppError             => report.Module.Length > 0 ? $"{report.App}, in {report.Module}" : report.App,
+        HealthReportCause.AppError             => report.Module.Length > 0 ? Format(Strings.HealthReportAppErrorIn, report.App, report.Module) : report.App,
         HealthReportCause.AppHang              => report.App,
-        HealthReportCause.BadBlock             => "Bad block",
-        HealthReportCause.CpuLimitReport       => $"{report.App}: Used too much CPU",
-        HealthReportCause.CrashReport          => $"{report.App}: Crashed",
-        HealthReportCause.DeviceReset          => $"{report.Driver} reset the device",
-        HealthReportCause.DiskWriteLimitReport => $"{report.App}: Wrote too much to disk",
-        HealthReportCause.HangReport           => $"{report.App}: Stopped responding",
-        HealthReportCause.HardwareError        => $"WHEA event {report.EventId}",
-        HealthReportCause.JetsamReport         => "macOS stopped processes to free memory",
-        HealthReportCause.PagingError          => "Error during a paging operation",
-        HealthReportCause.RequestRetried       => "Request retried",
-        HealthReportCause.SpinReport           => $"{report.App}: Spun without responding",
-        HealthReportCause.UnexpectedRestart    => "Restarted without shutting down cleanly",
-        HealthReportCause.VirtualMemoryLow     => "Windows ran low on virtual memory",
+        HealthReportCause.BadBlock             => Strings.HealthReportBadBlock,
+        HealthReportCause.CpuLimitReport       => Format(Strings.HealthReportCpuLimit, report.App),
+        HealthReportCause.CrashReport          => Format(Strings.HealthReportCrash, report.App),
+        HealthReportCause.DeviceReset          => Format(Strings.HealthReportDeviceReset, report.Driver),
+        HealthReportCause.DiskWriteLimitReport => Format(Strings.HealthReportDiskWriteLimit, report.App),
+        HealthReportCause.HangReport           => Format(Strings.HealthReportHang, report.App),
+        HealthReportCause.HardwareError        => Format(Strings.HealthReportHardwareError, report.EventId),
+        HealthReportCause.JetsamReport         => Strings.HealthReportJetsam,
+        HealthReportCause.PagingError          => Strings.HealthReportPagingError,
+        HealthReportCause.RequestRetried       => Strings.HealthReportRequestRetried,
+        HealthReportCause.SpinReport           => Format(Strings.HealthReportSpin, report.App),
+        HealthReportCause.UnexpectedRestart    => Strings.HealthReportUnexpectedRestart,
+        HealthReportCause.VirtualMemoryLow     => Strings.HealthReportVirtualMemoryLow,
                                              _ => report.App
     };
 
     public static string ToErrorsText(this HealthMeasures? measures) => measures switch {
         AppsHealthMeasures apps       => AppsErrorsText(apps.Faults),
         DiskHealthMeasures disk       => DiskErrorsText(disk),
-        NetworkHealthMeasures network => $"{network.ErrorsPerSecond:0.#} errors/s",
+        NetworkHealthMeasures network => Format(Strings.HealthErrorsPerSecond, network.ErrorsPerSecond),
                                     _ => string.Empty
     };
 
@@ -168,82 +167,82 @@ public static class HealthExtensions
         double value = cause.Value;
 
         return cause.Kind switch {
-            HealthCauseKind.AppNotResponding    => $"{cause.Subject} not responding for {value:0} s",
-            HealthCauseKind.CommitCharge        => $"commit {value:0}%",
-            HealthCauseKind.CpuBusy             => $"{value:0}% busy",
-            HealthCauseKind.CpuPerformanceLimit => $"CPU limited to {value:0}%",
-            HealthCauseKind.DiskActive          => $"{value:0}% active",
-            HealthCauseKind.DiskLatency         => $"latency {value:0} ms",
-            HealthCauseKind.DriverTime          => $"{value:0}% of CPU in drivers",
+            HealthCauseKind.AppNotResponding    => Format(Strings.HealthReasonNotResponding, cause.Subject, value),
+            HealthCauseKind.CommitCharge        => Format(Strings.HealthReasonCommit, value),
+            HealthCauseKind.CpuBusy             => Format(Strings.HealthReasonBusy, value),
+            HealthCauseKind.CpuPerformanceLimit => Format(Strings.HealthCpuLimited, value),
+            HealthCauseKind.DiskActive          => Format(Strings.HealthReasonActive, value),
+            HealthCauseKind.DiskLatency         => Format(Strings.HealthReasonLatency, value),
+            HealthCauseKind.DriverTime          => Format(Strings.HealthReasonDriverTime, value),
             HealthCauseKind.DriveWarning        => $"{DiskName(cause.Subject)}: {DescribeDriveWarning(value)}",
-            HealthCauseKind.DriveWear           => $"{DiskName(cause.Subject)} {value:0}% worn",
-            HealthCauseKind.GpuHeatLimit        => $"held back by heat {value:0}%",
-            HealthCauseKind.GpuMemoryFree       => $"{GpuMemoryName(false)} {value:0}% free",
-            HealthCauseKind.GpuPowerLimit       => $"held back by power {value:0}%",
-            HealthCauseKind.MemoryAvailable     => $"{value:0}% available",
-            HealthCauseKind.MemoryPressure      => $"kernel pressure {((MemoryPressure)(int)value).ToString().ToLowerInvariant()}",
-            HealthCauseKind.NetworkDiscards     => $"{value:0.#} discards/s",
-            HealthCauseKind.NetworkErrors       => $"{value:0.#} errors/s",
+            HealthCauseKind.DriveWear           => Format(Strings.HealthReasonWorn, DiskName(cause.Subject), value),
+            HealthCauseKind.GpuHeatLimit        => Format(Strings.HealthReasonHeatLimit, value),
+            HealthCauseKind.GpuMemoryFree       => Format(Strings.HealthReasonFree, GpuMemoryName(false), value),
+            HealthCauseKind.GpuPowerLimit       => Format(Strings.HealthReasonPowerLimit, value),
+            HealthCauseKind.MemoryAvailable     => Format(Strings.HealthReasonAvailable, value),
+            HealthCauseKind.MemoryPressure      => Format(Strings.HealthReasonKernelPressure, ((MemoryPressure)(int)value).ToDisplayText().ToLower(CultureInfo.CurrentCulture)),
+            HealthCauseKind.NetworkDiscards     => Format(Strings.HealthReasonDiscards, value),
+            HealthCauseKind.NetworkErrors       => Format(Strings.HealthErrorsPerSecond, value),
             HealthCauseKind.PagesIn             => PagesInText(value),
-            HealthCauseKind.RunQueue            => $"queue {value:0.0} per core",
-            HealthCauseKind.SensorNearLimit     => $"{SensorText(cause.Subject, value)} near its {cause.Limit:0} °C limit",
-            HealthCauseKind.SwapOut             => $"swapping out {value.ToFormattedByteRate()}",
-            HealthCauseKind.ThermalPressure     => $"thermal pressure {(ThermalPressure)(int)value}",
+            HealthCauseKind.RunQueue            => Format(Strings.HealthReasonQueue, value),
+            HealthCauseKind.SensorNearLimit     => Format(Strings.HealthReasonNearLimit, SensorText(cause.Subject, value), cause.Limit),
+            HealthCauseKind.SwapOut             => Format(Strings.HealthReasonSwappingOut, value.ToFormattedByteRate()),
+            HealthCauseKind.ThermalPressure     => Format(Strings.HealthReasonThermalPressure, ((ThermalPressure)(int)value).ToDisplayText()),
             HealthCauseKind.VolumeFull          => FullText(cause.Subject, value),
-            HealthCauseKind.VramFree            => $"{GpuMemoryName(true)} {value:0}% free",
+            HealthCauseKind.VramFree            => Format(Strings.HealthReasonFree, GpuMemoryName(true), value),
                                               _ => string.Empty
         };
     }
 
     public static string ToSaturationText(this HealthMeasures? measures) => measures switch {
-        AppsHealthMeasures apps       => apps.NotResponding is { } count ? $"{count} not responding" : string.Empty,
-        CpuHealthMeasures cpu         => cpu.RunQueuePerCore is { } queue ? $"Queue {queue:0.0} per core" : string.Empty,
+        AppsHealthMeasures apps       => apps.NotResponding is { } count ? Format(Strings.HealthNotRespondingCount, count) : string.Empty,
+        CpuHealthMeasures cpu         => cpu.RunQueuePerCore is { } queue ? Format(Strings.HealthQueuePerCore, queue) : string.Empty,
         DiskHealthMeasures disk       => DiskSaturationText(disk),
         GpuHealthMeasures gpu         => GpuSaturationText(gpu),
         MemoryHealthMeasures memory   => MemorySaturationText(memory),
-        NetworkHealthMeasures network => $"Discards {network.DiscardsPerSecond:0.#}/s",
+        NetworkHealthMeasures network => Format(Strings.HealthDiscardsPerSecond, network.DiscardsPerSecond),
         ThermalHealthMeasures thermal => ThermalSaturationText(thermal),
         VolumesHealthMeasures volume  => VolumeTrendText(volume),
                                     _ => string.Empty
     };
 
     public static string ToTitle(this HealthReport report) => report.Kind switch {
-        HealthReportKind.AppCrash          => "App crash",
-        HealthReportKind.AppHang           => "App hang",
-        HealthReportKind.DiskError         => "Disk error",
-        HealthReportKind.HardwareError     => "Hardware error",
-        HealthReportKind.LowMemory         => "Low memory",
-        HealthReportKind.ResourceLimit     => report.Cause == HealthReportCause.CpuLimitReport ? "CPU limit" : "Disk write limit",
-        HealthReportKind.UnexpectedRestart => "Unexpected restart",
+        HealthReportKind.AppCrash          => Strings.HealthTitleAppCrash,
+        HealthReportKind.AppHang           => Strings.HealthTitleAppHang,
+        HealthReportKind.DiskError         => Strings.HealthTitleDiskError,
+        HealthReportKind.HardwareError     => Strings.HealthTitleHardwareError,
+        HealthReportKind.LowMemory         => Strings.HealthTitleLowMemory,
+        HealthReportKind.ResourceLimit     => report.Cause == HealthReportCause.CpuLimitReport ? Strings.HealthTitleCpuLimit : Strings.HealthTitleDiskWriteLimit,
+        HealthReportKind.UnexpectedRestart => Strings.HealthTitleUnexpectedRestart,
                                          _ => report.Kind.ToString()
     };
 
     public static string ToUsageText(this HealthCulprit culprit)
     {
         if (culprit.NotRespondingSeconds is { } seconds) {
-            return $"Not responding for {seconds:0} s";
+            return Format(Strings.HealthUsageNotResponding, seconds);
         }
 
         List<string> parts = [];
 
         if (culprit.CpuPercent is { } cpu) {
-            parts.Add($"{cpu:0}% CPU");
+            parts.Add(Format(Strings.HealthUsageCpu, cpu));
         }
 
         if (culprit.MemoryBytes is { } memory) {
-            parts.Add($"{memory.ToFormattedByteSize()} memory");
+            parts.Add(Format(Strings.HealthUsageMemory, memory.ToFormattedByteSize()));
         }
 
         if (culprit.MemoryGrowthBytesPerMinute is { } growth) {
-            parts.Add($"+{growth / BytesPerMegabyte:0} MB/min");
+            parts.Add(Format(Strings.HealthUsageMemoryGrowth, growth / BytesPerMegabyte));
         }
 
         if (culprit.DiskBytesPerSecond is { } disk) {
-            parts.Add($"{disk / BytesPerMegabyte:0} MB/s disk");
+            parts.Add(Format(Strings.HealthUsageDisk, disk / BytesPerMegabyte));
         }
 
         if (culprit.GpuPercent is { } gpu) {
-            parts.Add($"{gpu:0}% GPU");
+            parts.Add(Format(Strings.HealthUsageGpu, gpu));
         }
 
         return string.Join(", ", parts);
@@ -251,9 +250,9 @@ public static class HealthExtensions
 
     public static string ToUtilisationText(this HealthMeasures? measures) => measures switch {
         CpuHealthMeasures cpu         => $"{cpu.BusyPercent:0}%",
-        DiskHealthMeasures disk       => $"{disk.ActivePercent:0}% active",
+        DiskHealthMeasures disk       => Format(Strings.HealthReasonActive, disk.ActivePercent),
         GpuHealthMeasures gpu         => $"{gpu.BusyPercent:0}%",
-        MemoryHealthMeasures memory   => $"{memory.InUsePercent:0}% in use",
+        MemoryHealthMeasures memory   => Format(Strings.HealthInUse, memory.InUsePercent),
         NetworkHealthMeasures network => $"↓ {network.ReceiveBytesPerSecond.ToFormattedByteRate()} ↑ {network.SendBytesPerSecond.ToFormattedByteRate()}",
         ThermalHealthMeasures thermal => thermal.HottestCelsius is { } celsius ? SensorText(thermal.HottestComponent, celsius) : string.Empty,
         VolumesHealthMeasures volume  => FullText(volume.Name, volume.FullPercent),
@@ -267,19 +266,19 @@ public static class HealthExtensions
         }
 
         if (Math.Abs(rate) < NotChangingBytes) {
-            return "Not changing";
+            return Strings.HealthNotChanging;
         }
 
-        string speed = $"{((long)Math.Abs(rate)).ToFormattedByteSize()}/min";
+        string speed = Format(Strings.HealthPerMinute, ((long)Math.Abs(rate)).ToFormattedByteSize());
 
         if (rate < 0.0) {
-            return $"Freeing {speed}";
+            return Format(Strings.HealthFreeing, speed);
         }
 
         double minutesLeft = volume.FreeBytes / rate;
 
         return minutesLeft <= MaxDaysToShow * HoursPerDay * MinutesPerHour
-            ? $"Filling {speed}, about {DescribeTimeLeft(minutesLeft)} left"
-            : $"Filling {speed}";
+            ? Format(Strings.HealthFillingTimeLeft, speed, DescribeTimeLeft(minutesLeft))
+            : Format(Strings.HealthFilling, speed);
     }
 }

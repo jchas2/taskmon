@@ -1,6 +1,8 @@
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -60,16 +62,16 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         };
         
         gpuMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Utilization"))
-            .Add(new ListViewColumnHeader("Dedicated GPU Memory"))
-            .Add(new ListViewColumnHeader("GPU Memory"))
-            .Add(new ListViewColumnHeader("Shared GPU Memory"))
-            .Add(new ListViewColumnHeader("Power Draw"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceUtilisationColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceDedicatedGpuMemoryColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceGpuMemoryColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceSharedGpuMemoryColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformancePowerDrawColumn));
 
 #if __APPLE__
         gpuMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Frequency"))
-            .Add(new ListViewColumnHeader("Throttling"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceFrequencyColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceThrottlingColumn));
 #endif
 
         gpuSpecsListView = new ListView(terminal) {
@@ -100,7 +102,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
                 return;
             }
 
-            string utilLabel = deviceSpec?.ToDisplayName() ?? "GPU";
+            string utilLabel = deviceSpec?.ToDisplayName() ?? Strings.PerformanceGpu;
             string utilText  = device?.ToGpuPercentage() ?? gpuInfo.Metrics.ToGpuPercentage();
 
             string dedicatedText = device != null
@@ -117,10 +119,10 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             
             gpuChart.Draw();
 
-            gpuDedicatedMemChart.Text = $"Dedicated GPU Memory {dedicatedText}";
+            gpuDedicatedMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDedicatedGpuMemoryChart, dedicatedText);
             gpuDedicatedMemChart.Draw();
 
-            gpuMemChart.Text = $"GPU Memory {combinedText}";
+            gpuMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuMemoryChart, combinedText);
             gpuMemChart.Draw();
 
             gpuMetricsListView.Items[0].SubItems[0].Text = utilText;
@@ -129,8 +131,8 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
             gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
 #if __APPLE__
-            gpuMetricsListView.Items[0].SubItems[5].Text = socMetrics?.ToGpuFrequencyText() ?? "N/A";
-            gpuMetricsListView.Items[0].SubItems[6].Text = socMetrics?.ToGpuLimitText() ?? "N/A";
+            gpuMetricsListView.Items[0].SubItems[5].Text = socMetrics?.ToGpuFrequencyText() ?? Strings.CommonNotAvailable;
+            gpuMetricsListView.Items[0].SubItems[6].Text = socMetrics?.ToGpuLimitText() ?? Strings.CommonNotAvailable;
 #endif
             gpuMetricsListView.Draw();
 
@@ -164,20 +166,20 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         OnLoadChart(gpuMemChart);
         
 #if __APPLE__
-        ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A", "N/A", "N/A" });
+        ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", Strings.CommonNotAvailable, Strings.CommonNotAvailable, Strings.CommonNotAvailable });
 #else
-        ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", "N/A" });
+        ListViewItem memoryMetricsItem = new(new[] { "0.0%", "0.0/0.0 GB", "0.0/0.0 GB", "0.0/0.0 GB", Strings.CommonNotAvailable });
 #endif
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Vendor:",         GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Description:",    GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Adapter Type:",   GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVendor,         GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDescription,    GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelAdapterType,   GpuDeviceParser.NotAvailable, appConfig.Theme));
 #if __APPLE__
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Cores:",          GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelCores,          GpuDeviceParser.NotAvailable, appConfig.Theme));
 #endif
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Driver Version:", GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow("Driver Date:",    GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverVersion, GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverDate,    GpuDeviceParser.NotAvailable, appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

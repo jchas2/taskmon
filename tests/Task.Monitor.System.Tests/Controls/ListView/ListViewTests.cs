@@ -33,6 +33,46 @@ public sealed class ListViewTests
     public void ListView_Canary_Test() =>
         Assert.Equal(37, CanaryTestHelper.GetPropertyCount<ListViewControl>());
 
+    // An empty list's message is centred inside the list wherever the list sits, and a message
+    // longer than the list is cut before the right border instead of drawing over it.
+    [Theory]
+    [InlineData("Gathering…")]
+    [InlineData("Raccolta delle informazioni di sistema…")]
+    public void An_Empty_Lists_Message_Is_Centred_And_Cut_Inside_The_Border(string message)
+    {
+        const int x = 30, y = 2, width = 24, height = 6;
+
+        // Colours outside the 16-colour palette, so the output is 24-bit codes AnsiScreen reads.
+        ListViewControl listView = new(terminal) {
+            BackgroundColour       = Color.FromArgb(10, 20, 30),
+            BorderBackgroundColour = Color.FromArgb(10, 20, 30),
+            BorderForegroundColour = Color.FromArgb(200, 210, 220),
+            EmptyListViewText      = message,
+            ForegroundColour       = Color.FromArgb(200, 210, 220),
+            Height            = height,
+            ShowBorder        = true,
+            ShowColumnHeaders = false,
+            Visible           = true,
+            Width             = width,
+            X                 = x,
+            Y                 = y
+        };
+
+        listView.ColumnHeaders.Add(new ListViewColumnHeader("NAME"));
+        listView.Draw();
+
+        AnsiScreen screen  = new(terminal.Output);
+        int        inner   = width - 2;
+        string     shown   = message.Length > inner ? message[..inner] : message;
+        int        start   = x + 1 + (inner - shown.Length) / 2;
+        int        row     = y + height / 2;
+        string     written = string.Concat(Enumerable.Range(start, shown.Length).Select(column => screen[column, row].Glyph));
+
+        Assert.Equal(shown, written);
+        Assert.Equal('│', screen[x + width - 1, row].Glyph);
+        Assert.Equal(message, listView.EmptyListViewText);
+    }
+
     public static TheoryData<ConsoleKeyInfo, int> ArrowKeyNoScrollData()
         => new()
         {
@@ -423,6 +463,23 @@ public sealed class ListViewTests
         Assert.Equal(0, terminal.BackgroundColorSets);
     }
 
+    // A footer of hot keys too wide for the border drops the ones that don't fit, rather than
+    // cutting a label in half ("k B").
+    [Fact]
+    public void OnDraw_Drops_The_Footer_Hot_Keys_That_Do_Not_Fit()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Width      = 20;
+        listView.FooterText =
+            Fg(ConsolePalette.Cyan) + "s" + Fg(ConsolePalette.White) + " Sortieren" + ListViewControl.FooterItemGap +
+            Fg(ConsolePalette.Cyan) + "k" + Fg(ConsolePalette.White) + " Beenden";
+
+        listView.Draw();
+
+        // " s Sortieren " is 13 of the 18 inner columns: 2 dashes before it and 3 after.
+        Assert.Equal("╰──" + " s Sortieren " + "───╯", VisibleBottomBorder());
+    }
+
     [Fact]
     public void OnDraw_Emits_The_Header_Cursor_Move_Header_Colour_And_Trailing_Reset()
     {
@@ -450,6 +507,21 @@ public sealed class ListViewTests
         // and the highlight foreground is Black.
         Assert.Contains(Fg(ConsolePalette.Black), output);
         Assert.Contains(Bg(ConsolePalette.Gray), output);
+    }
+
+    // Hot keys that exactly fill the border keep them all and lose only the trailing padding.
+    [Fact]
+    public void OnDraw_Keeps_Every_Footer_Hot_Key_That_Fits_Without_Its_Padding()
+    {
+        ListViewControl listView = CreatePopulatedListView(terminal);
+        listView.Width      = 20;
+        listView.FooterText =
+            Fg(ConsolePalette.Cyan) + "s" + Fg(ConsolePalette.White) + " Sort" + ListViewControl.FooterItemGap +
+            Fg(ConsolePalette.Cyan) + "k" + Fg(ConsolePalette.White) + " Ending";
+
+        listView.Draw();
+
+        Assert.Equal("╰ s Sort   k Ending╯", VisibleBottomBorder());
     }
 
     [Fact]

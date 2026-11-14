@@ -1,7 +1,9 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -58,18 +60,18 @@ public sealed class ThermalsControl : Control
         string text = $"{row.Title}   {celsius.ToTemperatureText()}";
 
         return row.Component == ThermalComponent.Cpu && metrics.Pressure is { } pressure
-            ? $"{text}   Pressure: {pressure}"
+            ? $"{text}   {string.Format(CultureInfo.CurrentCulture, Strings.ThermalsPressure, pressure.ToDisplayText())}"
             : text;
     }
 
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
-        ThermalComponent.Cpu     => string.IsNullOrEmpty(componentId) ? "CPU" : $"CPU {componentId}",
+        ThermalComponent.Cpu     => string.IsNullOrEmpty(componentId) ? Strings.ThermalsCpu : string.Format(CultureInfo.CurrentCulture, Strings.ThermalsCpuNumbered, componentId),
         ThermalComponent.Gpu     => snapshot.ToGpuLabel(componentId),
         ThermalComponent.Disk    => snapshot.ToDiskLabel(componentId),
-        ThermalComponent.Battery => "Battery",
-        ThermalComponent.Chipset => "Chipset",
-        ThermalComponent.Ambient => "Ambient",
-        _ => "System"
+        ThermalComponent.Battery => Strings.ThermalsBattery,
+        ThermalComponent.Chipset => Strings.ThermalsChipset,
+        ThermalComponent.Ambient => Strings.ThermalsAmbient,
+        _ => Strings.ThermalsSystem
     };
 
     internal IReadOnlyDictionary<string, Chart> Charts => chartCache;
@@ -101,14 +103,14 @@ public sealed class ThermalsControl : Control
     {
 #if __APPLE__
         string[] lines = [
-            "No thermal sensors detected.",
-            "The SMC and HID temperature sensors could not be read.",
+            Strings.ThermalsNoSensors,
+            Strings.ThermalsMacUnreadable,
         ];
 #else
         string[] lines = [
-            "No thermal sensors detected.",
-            "GPU and NVMe drive temperatures appear here when available.",
-            "Accurate CPU temperature needs a signed kernel helper driver.",
+            Strings.ThermalsNoSensors,
+            Strings.ThermalsWindowsAppearHere,
+            Strings.ThermalsWindowsNeedsDriver,
         ];
 #endif
 

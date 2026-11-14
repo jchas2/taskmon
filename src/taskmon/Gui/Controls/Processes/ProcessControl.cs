@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -17,8 +18,6 @@ public sealed partial class ProcessControl : Control
     private const int InvalidSelectedItemIndex = -1;
 
     private int lastKnownProcessId = InvalidSelectedItemIndex;
-
-    public static readonly (string Key, string Label) EndTaskHotKey = ("k", "End Task");
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
@@ -80,7 +79,7 @@ public sealed partial class ProcessControl : Control
             TabIndex = 1
         };
 
-        sortView.ColumnHeaders.Add(new ListViewColumnHeader("SORT BY"));
+        sortView.ColumnHeaders.Add(new ListViewColumnHeader(Strings.SortByHeader));
 
         processView = new ListView(terminal) {
             Visible  = true,
@@ -109,12 +108,14 @@ public sealed partial class ProcessControl : Control
             .Add(new ListViewColumnHeader(Columns.Power.GetTitle()))
             .Add(new ListViewColumnHeader(Columns.CommandLine.GetTitle()));
 
-        filter = new ListFilter(this, terminal, "Filter Processes");
+        filter = new ListFilter(this, terminal, Strings.ProcessesFilterTitle);
 
         endTaskDialog = new MessageBox(terminal) {
             Visible = false,
             Height  = MessageBox.PreferredHeight
         };
+
+        CommonControl.Text(endTaskDialog);
 
         Controls
             .Add(sortView)
@@ -128,7 +129,7 @@ public sealed partial class ProcessControl : Control
         List<string> parts = [];
 
         if (freezeUpdates) {
-            parts.Add("Frozen");
+            parts.Add(Strings.ProcessesFrozen);
         }
 
         if (IsFiltered) {
@@ -137,6 +138,8 @@ public sealed partial class ProcessControl : Control
 
         return string.Join(" · ", parts);
     }
+
+    public static (string Key, string Label) EndTaskHotKey => ("k", Strings.HotKeyEndTask);
 
     public string FilterText
     {
@@ -453,8 +456,7 @@ public sealed partial class ProcessControl : Control
     }
 
     // The selection stays on its process as the list re-sorts, not on its row, so a re-sort never
-    // moves it onto another process. A process that has gone, or that the filter hides, leaves the
-    // selection on the same row.
+    // moves it onto another process. 
     private void SelectFollowedProcess(int? selectedPid, int selectedIndex)
     {
         int index = IndexOfPid(pendingSelectionPid);
@@ -475,8 +477,6 @@ public sealed partial class ProcessControl : Control
         processView.ScrollSelectedIntoView();
     }
 
-    // Applied when the list is next built, as it may have no rows yet. A process that has gone, or
-    // that the filter hides, leaves the selection where it was.
     public void SelectProcess(int pid)
     {
         lock (DrawingLock) {

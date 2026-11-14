@@ -1,6 +1,8 @@
+using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -194,5 +196,5 @@ public sealed class SummaryControl2 : Control
     internal IReadOnlyDictionary<int, Control> PaneControls => paneControls;
 
     internal static string ProcessHeaderText(Statistics sortColumn, int processCount) =>
-        $"Top {sortColumn.ToString().ToUpper()} Processes    {processCount} Total";
+        string.Format(CultureInfo.CurrentCulture, Strings.SummaryTopProcesses, sortColumn.ToString().ToUpperInvariant(), processCount);
 }

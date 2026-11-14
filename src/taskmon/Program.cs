@@ -3,6 +3,7 @@ using System.Reflection;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Internal.Abstractions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -17,6 +18,8 @@ class Program
 
     private static int Main(string[] args)
     {
+        UiLanguage.Apply();
+
         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => {
             RestoreConsole();
         };

@@ -10,7 +10,7 @@ public sealed class PickerBoxTests
 {
     [Fact]
     public void PickerBox_Canary_Test() =>
-        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+        Assert.Equal(28, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
 
     private static PickerBoxControl CreateBox(
         Mock<ISystemTerminal>? terminal = null,
@@ -20,8 +20,12 @@ public sealed class PickerBoxTests
     {
         terminal ??= TerminalMock.Setup();
 
+        // The app supplies the key help; these are its British defaults.
         PickerBoxControl control = new(new ForwardingTerminal(terminal.Object)) {
             Height = 10,
+            HelpText = multiSelect
+                ? "↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel"
+                : "↑ ↓ browse   ↵ select   Esc cancel",
             MultiSelect = multiSelect,
             Title = "Choose a control",
             Visible = true,

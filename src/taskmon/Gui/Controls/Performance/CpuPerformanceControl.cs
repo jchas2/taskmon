@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
@@ -58,11 +60,11 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         };
         
         cpuMetricsListView.ColumnHeaders
-            .Add(new ListViewColumnHeader("Utilization"))
-            .Add(new ListViewColumnHeader("Speed"))
-            .Add(new ListViewColumnHeader("Tasks"))
-            .Add(new ListViewColumnHeader("Threads"))
-            .Add(new ListViewColumnHeader("Power Draw"));
+            .Add(new ListViewColumnHeader(Strings.PerformanceUtilisationColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceSpeedColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceTasksColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformanceThreadsColumn))
+            .Add(new ListViewColumnHeader(Strings.PerformancePowerDrawColumn));
         
         cpuSpecsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -95,7 +97,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             int numCores = Math.Min(Environment.ProcessorCount, cpuInfo.CoreMetrics.Length);
 
             for (int i = 0; i < numCores; i++) {
-                coreCharts[i].Text = $"CPU {cpuInfo.CoreMetrics[i].Name}";
+                coreCharts[i].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCoreChart, cpuInfo.CoreMetrics[i].Name);
                 coreCharts[i].Draw();
             }
 
@@ -151,20 +153,20 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetre.ShowLegend = true;
         cpuMetre.Rows       = 3;
         
-        cpuMetre.AddSeries("Kernel", appConfig.Theme.PerformanceCpuKernel);
-        cpuMetre.AddSeries("User",   appConfig.Theme.PerformanceCpuUser);
+        cpuMetre.AddSeries(Strings.CpuKernel, appConfig.Theme.PerformanceCpuKernel);
+        cpuMetre.AddSeries(Strings.CpuUser,   appConfig.Theme.PerformanceCpuUser);
         
-        ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", "N/A" });
+        ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", Strings.CommonNotAvailable });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Name:",                string.Empty, appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Base speed:",          "0 GHz", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Sockets:",             "0", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Logical processors:",  "0", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("Virtualization:",      string.Empty, appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L1 cache:",            "0 KB", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L2 cache:",            "0 KB", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow("L3 cache:",            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelName,                string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceBaseSpeed,          "0 GHz", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSockets,             "0", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceLogicalProcessors,  "0", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVirtualisation,      string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL1Cache,            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL2Cache,            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL3Cache,            "0 KB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

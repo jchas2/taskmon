@@ -25,6 +25,9 @@ public static class KeyBindControl
         terminal.Write(keyBinding + " ");
         int nchars = keyBinding.Length + 1;
         
+        // A label longer than the given width in the UI language widens it rather than being cut.
+        width = Math.Max(width, text.Length + 2);
+
         terminal.BackgroundColor = theme.CommandBackground;
         terminal.ForegroundColor = enabled ? theme.CommandForeground : ConsolePalette.DarkGray;
         terminal.Write(text.CentreWithLength(width).ToBold());

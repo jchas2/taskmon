@@ -45,14 +45,10 @@ public sealed class PickerBox : Control
         int dialogWidth = Width - 2;
         int y = list.Y + list.Height;
 
-        string help = MultiSelect
-            ? "↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel"
-            : "↑ ↓ browse   ↵ select   Esc cancel";
-
         Terminal.BackgroundColor = DialogBackgroundColour;
         Terminal.ForegroundColor = DialogForegroundColour;
         Terminal.SetCursorPosition(X, y);
-        Terminal.Write($"│{help.CentreWithLength(dialogWidth)}│");
+        Terminal.Write($"│{HelpText.CentreWithLength(dialogWidth)}│");
 
         Terminal.SetCursorPosition(X, ++y);
         Terminal.Write('╰');
@@ -121,6 +117,8 @@ public sealed class PickerBox : Control
     }
 
     public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
+
+    public string HelpText { get; set; } = string.Empty;
 
     public Color ListBackgroundHighlightColour
     {

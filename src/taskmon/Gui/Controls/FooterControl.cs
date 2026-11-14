@@ -1,8 +1,10 @@
 using System.Drawing;
+using System.Globalization;
 using System.Net;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Tips;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -27,33 +29,13 @@ public class FooterControl : Control
     private DateTime?             tipShownAt;
 
     private const char   Ellipsis                  = '…';
-    private const string ErroredStatusText         = " Service status: Errored ";
     private const int    GlyphWidth                = 3;
     private const int    MissedCyclesBeforeUnknown = 3;
     private const int    RxTextWidth               = 11;
-    private const string RunningStatusText         = " Services: Running ";
     private const char   StatusGlyph               = '●';
-    private const string StoppingStatusText        = " Service status: Stopping ";
-    private const string TipLabel                  = " Tip: ";
     private const int    TipRows                   = 2;
-    private const string UnknownStatusText         = " Service status: Unknown ";
-
-    // A footer too narrow for every hint drops F3 and F4 first, so it can still show how to get
-    // help and exit.
-    private static readonly (string Key, string Label)[] KeyHints =
-        [("F1", "Help"), ("F2", "Setup"), ("F3", "Theme"), ("F4", "Layout"), ("F10", "Exit")];
-
-    private static readonly (string Key, string Label)[] CoreKeyHints = [("F1", "Help"), ("F2", "Setup"), ("F10", "Exit")];
-
-    public static readonly (string Key, string Label) NextTipHotKey = ("t", "Next Tip");
 
     internal static readonly TimeSpan TipRotationInterval = TimeSpan.FromMinutes(5);
-
-    private static readonly int KeyHintsWidth     = HintsWidth(KeyHints);
-    private static readonly int CoreKeyHintsWidth = HintsWidth(CoreKeyHints);
-
-    private static readonly int StatusTextWidth = new[] {
-        ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
 
     public FooterControl(
         ServiceController serviceController,
@@ -89,8 +71,6 @@ public class FooterControl : Control
         frame.Append(text.PadRight(StatusTextWidth));
     }
 
-    // "● Tip: <tip>" with the next-tip hint right-aligned when the whole tip and the hint fit;
-    // otherwise the hint is dropped and the tip cut short with an ellipsis.
     private void AppendTipRow(Color foreground, Color background)
     {
         Theme theme       = appConfig.Theme;
@@ -155,13 +135,30 @@ public class FooterControl : Control
         return written;
     }
 
+    private static (string Key, string Label)[] CoreKeyHints =>
+        [("F1", Strings.FooterKeyHelp), ("F2", Strings.FooterKeySetup), ("F10", Strings.KeyBindExit)];
+
+    private static int CoreKeyHintsWidth => HintsWidth(CoreKeyHints);
+
     internal string CurrentTip => tips[tipIndex];
 
-    // Shows the next tip and restarts the rotation interval, so it isn't replaced moments later.
+    private static string ErroredStatusText  => $" {Strings.FooterServiceErrored} ";
+
     private static int HintsWidth((string Key, string Label)[] hints) =>
         hints.Sum(hint => CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
 
     private bool IsStale => missedCycles >= MissedCyclesBeforeUnknown;
+
+    private static (string Key, string Label)[] KeyHints =>
+    [
+        ("F1",  Strings.FooterKeyHelp),
+        ("F2",  Strings.FooterKeySetup),
+        ("F3",  Strings.FooterKeyTheme),
+        ("F4",  Strings.FooterKeyLayout),
+        ("F10", Strings.KeyBindExit)
+    ];
+
+    private static int KeyHintsWidth     => HintsWidth(KeyHints);
 
     public void NextTip()
     {
@@ -173,12 +170,14 @@ public class FooterControl : Control
         Draw();
     }
 
+    public static (string Key, string Label) NextTipHotKey => ("t", Strings.FooterKeyNextTip);
+
     protected override void OnDraw()
     {
         Color background = appConfig.Theme.Background;
         Color foreground = appConfig.Theme.Foreground;
 
-        string banner = $" Task Monitor v{AssemblyVersionInfo.GetVersion()} ";
+        string banner = $" {string.Format(CultureInfo.CurrentCulture, Strings.FooterBanner, AssemblyVersionInfo.GetVersion())} ";
 
         frame.Clear();
 
@@ -215,7 +214,7 @@ public class FooterControl : Control
             }
 
             string rxText = snapshot != null
-                ? $" {snapshot.Sequence} Rx".PadRight(RxTextWidth)
+                ? $" {string.Format(CultureInfo.CurrentCulture, Strings.FooterReceived, snapshot.Sequence)}".PadRight(RxTextWidth)
                 : new string(' ', RxTextWidth);
 
             frame.SetColour(foreground, background);
@@ -324,11 +323,21 @@ public class FooterControl : Control
     // The footer's height: a tip row above the status row when tips are on.
     public int Rows => appConfig.ShowTips ? TipRows : 1;
 
+    private static string RunningStatusText  => $" {Strings.FooterServicesRunning} ";
+
+    private static int StatusTextWidth => new[] {
+        ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
+
+    private static string StoppingStatusText => $" {Strings.FooterServiceStopping} ";
+
     internal int TipIndex
     {
         get => tipIndex;
         set => tipIndex = value;
     }
+
+    private static string TipLabel           => $" {Strings.FooterTip} ";
+    private static string UnknownStatusText  => $" {Strings.FooterServiceUnknown} ";
 
     internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
 }

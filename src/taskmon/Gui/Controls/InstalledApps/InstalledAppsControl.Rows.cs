@@ -1,6 +1,8 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.InstalledApps;
 
@@ -8,17 +10,6 @@ namespace Task.Monitor.Gui.Controls.InstalledApps;
 
 public sealed partial class InstalledAppsControl
 {
-    private const string NotAvailable = "N/A";
-
-    private static readonly ListSortColumn<InstalledApp>[] SortColumns = [
-        ListSortColumn<InstalledApp>.ByText("NAME", 0, app => app.Name),
-        ListSortColumn<InstalledApp>.ByVersion("VERSION", 1, app => app.Version),
-        ListSortColumn<InstalledApp>.ByText("PUBLISHER", 2, app => app.Publisher),
-        ListSortColumn<InstalledApp>.ByText("SCOPE", 3, app => DescribeScope(app.Scope)),
-        ListSortColumn<InstalledApp>.ByValue<DateTime>("INSTALLED", 4, app => app.InstallDate),
-        ListSortColumn<InstalledApp>.ByValue<long>("SIZE", 5, app => app.EstimatedSizeKb),
-        ListSortColumn<InstalledApp>.ByText("LOCATION", 6, app => app.InstallLocation)
-    ];
     private const string Measuring    = "...";
 
     private static string Cell(string? value) =>
@@ -33,10 +24,9 @@ public sealed partial class InstalledAppsControl
 
     private static string DescribeScope(InstalledAppScope scope) =>
         scope == InstalledAppScope.Machine 
-            ? "Machine" 
-            : "User";
+            ? Strings.ScopeMachine
+            : Strings.ScopeUser;
 
-    // On macOS a bundle's size is measured after the scan, so it reads "..." until then.
     private static string DescribeSize(InstalledApp app) => app switch {
         { SizePending: true }           => Measuring,
         { EstimatedSizeKb: { } sizeKb } => (sizeKb * 1024L).ToFormattedByteSize(),
@@ -45,6 +35,8 @@ public sealed partial class InstalledAppsControl
 
     private bool MatchesFilter(InstalledApp app) =>
         filter.Matches(app.Name, app.Publisher, app.Version, app.InstallLocation);
+
+    private static string NotAvailable => Strings.CommonNotAvailable;
 
     private void RebuildDetailRows(InstalledApp? app)
     {
@@ -56,13 +48,13 @@ public sealed partial class InstalledAppsControl
 
         Theme theme = appConfig.Theme;
 
-        detailView.Items.Add(CommonControl.PropertyRow("Name",      Cell(app.Name),                       theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Version",   Cell(app.Version),                    theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Publisher", Cell(app.Publisher),                  theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Scope",     DescribeScope(app.Scope),             theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Installed", DescribeInstallDate(app.InstallDate), theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Size",      DescribeSize(app),                    theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Location",  Cell(app.InstallLocation),            theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,      Cell(app.Name),                       theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailVersion,   Cell(app.Version),                    theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPublisher, Cell(app.Publisher),                  theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailScope,     DescribeScope(app.Scope),             theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailInstalled, DescribeInstallDate(app.InstallDate), theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailSize,      DescribeSize(app),                    theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailLocation,  Cell(app.InstallLocation),            theme));
     }
 
     private void RebuildRows(IReadOnlyList<InstalledApp> apps)
@@ -90,9 +82,19 @@ public sealed partial class InstalledAppsControl
 
         installedAppsView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         installedAppsView.HeaderHighlightText = filter.BuildHeaderText(visibleApps.Count, apps.Count);
-        installedAppsView.HeaderText          = $"{apps.Count} installed";
+        installedAppsView.HeaderText          = string.Format(CultureInfo.CurrentCulture, Strings.AppsHeader, apps.Count);
         installedAppsView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
             [CommonControl.RefreshHotKey, CommonControl.SortHotKey, .. filter.FooterHotKeys, CommonControl.ScrollHotKey]);
     }
+
+    private static ListSortColumn<InstalledApp>[] SortColumns => [
+        ListSortColumn<InstalledApp>.ByText(Strings.ListColumnName, 0, app => app.Name),
+        ListSortColumn<InstalledApp>.ByVersion(Strings.ListColumnVersion, 1, app => app.Version),
+        ListSortColumn<InstalledApp>.ByText(Strings.ListColumnPublisher, 2, app => app.Publisher),
+        ListSortColumn<InstalledApp>.ByText(Strings.ListColumnScope, 3, app => DescribeScope(app.Scope)),
+        ListSortColumn<InstalledApp>.ByValue<DateTime>(Strings.AppsColumnInstalled, 4, app => app.InstallDate),
+        ListSortColumn<InstalledApp>.ByValue<long>(Strings.ListColumnSize, 5, app => app.EstimatedSizeKb),
+        ListSortColumn<InstalledApp>.ByText(Strings.AppsColumnLocation, 6, app => app.InstallLocation)
+    ];
 }

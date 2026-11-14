@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using Task.Monitor.Actions;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
@@ -12,6 +14,9 @@ namespace Task.Monitor;
 
 public sealed class TaskMonApp(RunContext runContext)
 {
+    private static string CultureName(CultureInfo culture) =>
+        string.IsNullOrEmpty(culture.Name) ? "invariant" : culture.Name;
+
     private void InitialiseProcess()
     {
         string? logPath = runContext.AppConfig.DefaultLogPath;
@@ -35,7 +40,8 @@ public sealed class TaskMonApp(RunContext runContext)
         Trace.WriteLine(new string('-', 10));
 
         Trace.WriteLine($"{TerminalCapabilities.ColourModeEnvVar} = {Environment.GetEnvironmentVariable(TerminalCapabilities.ColourModeEnvVar)}");
-        
+        Trace.WriteLine($"{UiLanguage.UiLanguageEnvVar} = {Environment.GetEnvironmentVariable(UiLanguage.UiLanguageEnvVar) ?? string.Empty}");
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             Trace.WriteLine($"WT_SESSION = {Environment.GetEnvironmentVariable("WT_SESSION") ?? string.Empty}");
             Trace.WriteLine($"Host is legacy conhost window = {SystemTerminal.IsLegacyConsoleHost}");
@@ -73,6 +79,11 @@ public sealed class TaskMonApp(RunContext runContext)
         else {
             Trace.WriteLine($"Unresolved config path, running with default in-memory AppConfig.");
         }
+
+        UiLanguage.Apply(runContext.AppConfig.UiLanguage);
+
+        Trace.WriteLine($"{Configuration.Constants.Keys.UiLanguage} = {runContext.AppConfig.UiLanguage}");
+        Trace.WriteLine($"UI culture = {CultureName(CultureInfo.CurrentUICulture)}, region culture = {CultureName(CultureInfo.CurrentCulture)}");
     }
     
     internal bool ProcessArgs(string[] args, out List<IAction> actions)

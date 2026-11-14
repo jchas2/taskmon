@@ -1,4 +1,6 @@
-﻿using Task.Monitor.Cli.Utils;
+﻿using System.Globalization;
+using Task.Monitor.Cli.Utils;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
@@ -67,7 +69,7 @@ public static class SystemSnapshotExtensions
     public static string ToCpuKernelUserPercentage(this CpuMetrics metrics)
     {
         double totalCpu = metrics.CpuPercentKernelTime + metrics.CpuPercentUserTime;
-        return $"CPU {totalCpu:000.0%} Kernel {metrics.CpuPercentKernelTime:000.0%} User {metrics.CpuPercentUserTime:000.0%}";
+        return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotCpuKernelUser, totalCpu, metrics.CpuPercentKernelTime, metrics.CpuPercentUserTime);
     }
 
     public static string ToCpuL1Cache(this CpuSpecs specs) => specs.CpuL1CacheBytes.ToFormattedByteSize();
@@ -84,7 +86,7 @@ public static class SystemSnapshotExtensions
         specs.CpuSockets == 0 ? "1" : specs.CpuSockets.ToString();
 
     public static string ToCpuVirtualization(this CpuSpecs specs) =>
-        specs.CpuVirtualizationFirmwareEnabled ? "Enabled" : "Disabled";
+        specs.CpuVirtualizationFirmwareEnabled ? Strings.CommonEnabled : Strings.CommonDisabled;
 
     public static string ToDiskActiveTimePercentage(this DiskMetrics metrics) =>
         $"{metrics.ToDiskActiveTimeRatio():000.0%}";
@@ -103,10 +105,10 @@ public static class SystemSnapshotExtensions
         if (int.TryParse(componentId, out int index) &&
             snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
 
-            return $"Disk {index} · {disk.Model}";
+            return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabel, index, disk.Model);
         }
 
-        return $"Disk {componentId}";
+        return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabelShort, componentId);
     }
 
     public static string ToDiskReadRate(this DiskMetrics metrics) =>
@@ -146,8 +148,8 @@ public static class SystemSnapshotExtensions
 
     public static string ToDisplayName(this GpuDevice device) =>
         device.Description is { Length: > 0 } and not "N/A"
-            ? $"GPU {device.Index}  {device.Description}"
-            : $"GPU {device.Index}";
+            ? string.Format(CultureInfo.CurrentCulture, Strings.SnapshotGpuName, device.Index, device.Description)
+            : string.Format(CultureInfo.CurrentCulture, Strings.SnapshotGpuNameShort, device.Index);
 
     public static string ToDisplayName(this DiskDevice device)
     {
@@ -158,11 +160,11 @@ public static class SystemSnapshotExtensions
                 .Select(mountPoint => mountPoint.TrimEnd('\\'))
                 .Where(mountPoint => mountPoint.Length > 0));
 
-        string model = device.Model is { Length: > 0 } and not "N/A" ? device.Model : "Disk";
+        string model = device.Model is { Length: > 0 } and not "N/A" ? device.Model : Strings.SnapshotDiskModelUnknown;
 
         return volumes.Length > 0
-            ? $"Disk {device.Index}  {model} ({volumes})"
-            : $"Disk {device.Index}  {model}";
+            ? string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskNameWithVolumes, device.Index, model, volumes)
+            : string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskName, device.Index, model);
     }
 
     public static string ToDisplayName(this NetworkDevice device)
@@ -171,14 +173,16 @@ public static class SystemSnapshotExtensions
             return device.FriendlyName;
         }
 
-        return device.Description is { Length: > 0 } ? device.Description : "Adapter";
+        return device.Description is { Length: > 0 } ? device.Description : Strings.SnapshotAdapter;
     }
 
     public static string ToDisplayName(this NetworkDeviceMetrics device) =>
-        device.FriendlyName is { Length: > 0 } ? device.FriendlyName : $"Adapter {device.InterfaceIndex}";
+        device.FriendlyName is { Length: > 0 }
+            ? device.FriendlyName
+            : string.Format(CultureInfo.CurrentCulture, Strings.SnapshotAdapterNumbered, device.InterfaceIndex);
 
     public static string ToFormattedByteRate(this double? bytesPerSecond) =>
-        bytesPerSecond is { } rate ? rate.ToFormattedByteRate() : "N/A";
+        bytesPerSecond is { } rate ? rate.ToFormattedByteRate() : Strings.CommonNotAvailable;
 
     public static string ToFormattedByteRate(this double bytesPerSecond)
     {
@@ -199,10 +203,10 @@ public static class SystemSnapshotExtensions
         if (long.TryParse(componentId, out long luid) &&
             snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
 
-            return $"GPU · {gpu.Description}";
+            return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotGpuLabel, gpu.Description);
         }
 
-        return "GPU";
+        return Strings.SnapshotGpu;
     }
 
     public static string ToGpuMemoryAvailableFormattedBytes(this GpuMetrics metrics) =>

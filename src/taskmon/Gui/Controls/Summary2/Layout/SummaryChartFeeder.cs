@@ -1,5 +1,7 @@
+using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
@@ -30,7 +32,7 @@ public static class SummaryChartFeeder
                     double totalCpu = cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime;
 
                     chart.LabelSeries = appConfig.ShowMetreCpuNumerically
-                        ? $"{totalCpu:000.0%} Kernel {cpu.CpuPercentKernelTime:000.0%} User {cpu.CpuPercentUserTime:000.0%}"
+                        ? string.Format(CultureInfo.CurrentCulture, Strings.SummaryCpuChartLabel, totalCpu, cpu.CpuPercentKernelTime, cpu.CpuPercentUserTime)
                         : string.Empty;
 
                     chart.Add(totalCpu);

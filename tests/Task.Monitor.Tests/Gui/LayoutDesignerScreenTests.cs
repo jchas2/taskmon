@@ -1,11 +1,14 @@
 using System.Drawing;
+using System.Globalization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
@@ -14,7 +17,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.Tests.Gui;
 
-public sealed class LayoutDesignerScreenTests
+public sealed class LayoutDesignerScreenTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
     private readonly RunContextHelper runContextHelper;
@@ -108,6 +111,15 @@ public sealed class LayoutDesignerScreenTests
         Assert.Contains("Kernel", CapturedOutput());
 
         screen.Unload();
+    }
+
+    // The labels used to be the member names split into words, so British users see no change.
+    [Fact]
+    public void British_Labels_Are_The_Member_Names_Split_Into_Words()
+    {
+        foreach (PaneControlType type in Enum.GetValues<PaneControlType>()) {
+            Assert.Equal(Regex.Replace(type.ToString(), "(?<!^)([A-Z])", " $1"), LayoutDesignerScreen.ToDisplayLabel(type));
+        }
     }
 
     private string CapturedOutput() =>
@@ -371,6 +383,10 @@ public sealed class LayoutDesignerScreenTests
         screen.Unload();
     }
 
+    // The pickers and dialogs turn off the process-wide Control.RedrawEnabled while they are open.
+    // A test that leaves one open would stop every test after it from drawing.
+    public void Dispose() => Control.RedrawEnabled = true;
+
     [Fact]
     public void Draws_The_Example_Trees_Panes_And_Banner()
     {
@@ -479,6 +495,14 @@ public sealed class LayoutDesignerScreenTests
         Assert.NotEqual(before, screen.SelectedNodeId);
 
         screen.Unload();
+    }
+
+    [Fact]
+    public void Every_Pane_Control_Type_Has_A_Label_In_Strings()
+    {
+        foreach (PaneControlType type in Enum.GetValues<PaneControlType>()) {
+            Assert.NotNull(Strings.ResourceManager.GetString($"PaneControlType_{type}", CultureInfo.InvariantCulture));
+        }
     }
 
     [Theory]
@@ -912,6 +936,45 @@ public sealed class LayoutDesignerScreenTests
         Assert.DoesNotContain(runContext.AppConfig.Layouts, l => l.Name == "Nope");
 
         screen.Unload();
+    }
+
+    // The picker widens past 40 columns to show its whole key help when the screen has room; at 40
+    // the multi-select help was cut short. German has the longest help.
+    [Theory]
+    [InlineData(UiCulture.British, "↑ ↓ browse   Space toggle   ↵ confirm   Esc cancel")]
+    [InlineData(UiCulture.German,  "↑ ↓ blättern   Leertaste an/aus   ↵ bestätigen   Esc Abbruch")]
+    public void The_Column_Picker_Shows_Its_Whole_Key_Help(string cultureName, string help)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        LayoutDesignerScreen screen = CreateScreen();
+
+        screen.Open(SummaryLayoutTree.FromNodes([
+            new SummaryLayoutNode { Id = 0, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 1, SecondId = 2 },
+            new SummaryLayoutNode { Id = 1, ControlType = PaneControlType.Process },
+            new SummaryLayoutNode { Id = 2, ControlType = PaneControlType.Cpu },
+        ], rootId: 0), null);
+
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.C), ref handled);
+
+        Assert.Contains(help, CapturedOutput());
+
+        screen.Unload();
+    }
+
+    [Theory]
+    [InlineData(UiCulture.British,  "Cpu Metre")]
+    [InlineData(UiCulture.American, "Cpu Meter")]
+    [InlineData(UiCulture.German,   "CPU-Anzeige")]
+    [InlineData(UiCulture.Italian,  "Indicatore CPU")]
+    public void The_Control_Type_Label_Follows_The_UI_Language(string cultureName, string expected)
+    {
+        using IDisposable _ = UiCulture.Use(cultureName);
+
+        Assert.Equal(expected, LayoutDesignerScreen.ToDisplayLabel(PaneControlType.CpuMetre));
     }
 
     // The flicker the user saw happened on exactly this path: a tick redraws the Process pane by

@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.WindowsServices;
 
@@ -7,62 +9,54 @@ namespace Task.Monitor.Gui.Controls.Services;
 
 public sealed partial class ServicesControl
 {
-    private const string NotAvailable = "N/A";
-
-    private static readonly ListSortColumn<WindowsServiceInfo>[] SortColumns = [
-        ListSortColumn<WindowsServiceInfo>.ByText("NAME", 0, service => service.DisplayName),
-        ListSortColumn<WindowsServiceInfo>.ByText("STATUS", 1, service => DescribeStatus(service.Status)),
-        ListSortColumn<WindowsServiceInfo>.ByText("STARTUP TYPE", 2, DescribeStartType),
-        ListSortColumn<WindowsServiceInfo>.ByText("LOG ON AS", 3, service => DescribeLogOnAs(service.LogOnAs)),
-        ListSortColumn<WindowsServiceInfo>.ByText("DESCRIPTION", 4, service => service.Description)
-    ];
-
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeLogOnAs(string? logOnAs)
     {
         if (string.IsNullOrEmpty(logOnAs)) {
-            return "Local System";
+            return Strings.ServicesLocalSystem;
         }
 
         if (logOnAs.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)) {
-            return "Local System";
+            return Strings.ServicesLocalSystem;
         }
 
         if (logOnAs.Equals(@"NT AUTHORITY\LocalService", StringComparison.OrdinalIgnoreCase)) {
-            return "Local Service";
+            return Strings.ServicesLocalService;
         }
 
         if (logOnAs.Equals(@"NT AUTHORITY\NetworkService", StringComparison.OrdinalIgnoreCase)) {
-            return "Network Service";
+            return Strings.ServicesNetworkService;
         }
 
         return logOnAs;
     }
 
     private static string DescribeStartType(WindowsServiceInfo service) => service.StartType switch {
-        WindowsServiceStartType.AutomaticStart => service.DelayedAutoStart ? "Automatic (Delayed Start)" : "Automatic",
-        WindowsServiceStartType.ManualStart    => "Manual",
-        WindowsServiceStartType.Disabled       => "Disabled",
-        WindowsServiceStartType.BootStart      => "Boot Start",
-        WindowsServiceStartType.SystemStart    => "System Start",
+        WindowsServiceStartType.AutomaticStart => service.DelayedAutoStart ? Strings.StartTypeAutomaticDelayed : Strings.StartTypeAutomatic,
+        WindowsServiceStartType.ManualStart    => Strings.StartTypeManual,
+        WindowsServiceStartType.Disabled       => Strings.StartTypeDisabled,
+        WindowsServiceStartType.BootStart      => Strings.StartTypeBootStart,
+        WindowsServiceStartType.SystemStart    => Strings.StartTypeSystemStart,
                                              _ => service.StartType.ToString()
     };
 
     private static string DescribeStatus(WindowsServiceStatus status) => status switch {
-        WindowsServiceStatus.Stopped         => "Stopped",
-        WindowsServiceStatus.StartPending    => "Start Pending",
-        WindowsServiceStatus.StopPending     => "Stop Pending",
-        WindowsServiceStatus.Running         => "Running",
-        WindowsServiceStatus.ContinuePending => "Continue Pending",
-        WindowsServiceStatus.PausePending    => "Pause Pending",
-        WindowsServiceStatus.Paused          => "Paused",
+        WindowsServiceStatus.Stopped         => Strings.ServiceStatusStopped,
+        WindowsServiceStatus.StartPending    => Strings.ServiceStatusStartPending,
+        WindowsServiceStatus.StopPending     => Strings.ServiceStatusStopPending,
+        WindowsServiceStatus.Running         => Strings.ServiceStatusRunning,
+        WindowsServiceStatus.ContinuePending => Strings.ServiceStatusContinuePending,
+        WindowsServiceStatus.PausePending    => Strings.ServiceStatusPausePending,
+        WindowsServiceStatus.Paused          => Strings.ServiceStatusPaused,
                                            _ => status.ToString()
     };
 
     private bool MatchesFilter(WindowsServiceInfo service) =>
         filter.Matches(service.ServiceName, service.DisplayName, service.Description, service.LogOnAs);
+
+    private static string NotAvailable => Strings.CommonNotAvailable;
 
     private void RebuildDetailRows(WindowsServiceInfo? service)
     {
@@ -78,11 +72,11 @@ public sealed partial class ServicesControl
             ? theme.RangeLowBackground
             : theme.RangeMidBackground;
 
-        detailView.Items.Add(CommonControl.PropertyRow("Name",         Cell(service.DisplayName),        theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Status",       StatusText(service),              theme, statusForeground));
-        detailView.Items.Add(CommonControl.PropertyRow("Startup Type", DescribeStartType(service),       theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Log On As",    DescribeLogOnAs(service.LogOnAs), theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Description",  Cell(service.Description),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,         Cell(service.DisplayName),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,       StatusText(service),              theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStartupType, DescribeStartType(service),       theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailLogOnAs,    DescribeLogOnAs(service.LogOnAs), theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailDescription,  Cell(service.Description),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<WindowsServiceInfo> services)
@@ -127,7 +121,7 @@ public sealed partial class ServicesControl
 
         servicesView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         servicesView.HeaderHighlightText = filter.BuildHeaderText(visibleServices.Count, services.Count);
-        servicesView.HeaderText          = $"{running} running / {services.Count} total";
+        servicesView.HeaderText          = string.Format(CultureInfo.CurrentCulture, Strings.ListHeaderRunningTotal, running, services.Count);
         servicesView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
             [
@@ -165,8 +159,16 @@ public sealed partial class ServicesControl
         servicesView.ScrollSelectedIntoView();
     }
 
+    private static ListSortColumn<WindowsServiceInfo>[] SortColumns => [
+        ListSortColumn<WindowsServiceInfo>.ByText(Strings.ListColumnName, 0, service => service.DisplayName),
+        ListSortColumn<WindowsServiceInfo>.ByText(Strings.ListColumnStatus, 1, service => DescribeStatus(service.Status)),
+        ListSortColumn<WindowsServiceInfo>.ByText(Strings.ServicesColumnStartupType, 2, DescribeStartType),
+        ListSortColumn<WindowsServiceInfo>.ByText(Strings.ServicesColumnLogOnAs, 3, service => DescribeLogOnAs(service.LogOnAs)),
+        ListSortColumn<WindowsServiceInfo>.ByText(Strings.ListColumnDescription, 4, service => service.Description)
+    ];
+
     private string StatusText(WindowsServiceInfo service) =>
         inFlight.TryGetValue(service.ServiceName, out bool start)
-            ? start ? "Starting…" : "Stopping…"
+            ? start ? Strings.ServicesStarting : Strings.ServicesStopping
             : DescribeStatus(service.Status);
 }

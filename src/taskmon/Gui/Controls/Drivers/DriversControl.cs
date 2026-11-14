@@ -1,4 +1,5 @@
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
@@ -11,13 +12,11 @@ public sealed partial class DriversControl : Control
 {
     private const int NameColumnWidth        = 30;
     private const int VersionColumnWidth     = 16;
-    private const int StatusColumnWidth      = 16;
+    private const int StatusColumnWidth      = 17;
     private const int StartupTypeColumnWidth = 26;
 
     private const int DetailFieldColumnWidth = 14;
     private const int DetailViewHeight       = 9;   // border (2) + column headers (1) + 6 field rows
-
-    private const string GatheringText = "Gathering drivers…";
 
     private readonly ServiceController      serviceController;
     private readonly AppConfig              appConfig;
@@ -51,11 +50,11 @@ public sealed partial class DriversControl : Control
         };
 
         driversView.ColumnHeaders
-            .Add(new ListViewColumnHeader("NAME"))
-            .Add(new ListViewColumnHeader("VERSION"))
-            .Add(new ListViewColumnHeader("STATUS"))
-            .Add(new ListViewColumnHeader("START TYPE"))
-            .Add(new ListViewColumnHeader("PATH"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnName))
+            .Add(new ListViewColumnHeader(Strings.ListColumnVersion))
+            .Add(new ListViewColumnHeader(Strings.ListColumnStatus))
+            .Add(new ListViewColumnHeader(Strings.DriversColumnStartType))
+            .Add(new ListViewColumnHeader(Strings.ListColumnPath));
 
         detailView = new ListView(terminal) {
             EnableScroll      = false,
@@ -64,14 +63,14 @@ public sealed partial class DriversControl : Control
             ShowBorder        = true,
             TabStop           = false,
             Visible           = true,
-            HeaderText        = "DETAIL"
+            HeaderText        = Strings.ListDetailHeader
         };
 
         detailView.ColumnHeaders
-            .Add(new ListViewColumnHeader("FIELD"))
-            .Add(new ListViewColumnHeader("VALUE"));
+            .Add(new ListViewColumnHeader(Strings.ListColumnField))
+            .Add(new ListViewColumnHeader(Strings.ListColumnValue));
 
-        filter = new ListFilter(this, terminal, "Filter Drivers");
+        filter = new ListFilter(this, terminal, Strings.DriversFilterTitle);
         sorter = new ListSorter<DriverInfo>(terminal, driversView, SortColumns, defaultColumn: 0);
 
         Controls.Add(driversView);
@@ -96,6 +95,8 @@ public sealed partial class DriversControl : Control
         lastSignature = signature;
         RebuildRows(info.Specs.Drivers);
     }
+
+    private static string GatheringText => Strings.DriversGathering;
 
     public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
 

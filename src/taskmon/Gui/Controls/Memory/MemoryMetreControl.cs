@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -15,5 +16,5 @@ public sealed class MemoryMetreControl(
             ? new MetreReading([memory.ToMemoryRatio()], memory.ToMemoryRatioFormattedBytes())
             : null;
 
-    protected override string Title => "Memory";
+    protected override string Title => Strings.MetreTitleMemory;
 }

@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Globalization;
 using Task.Monitor.Configuration;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services.Startup;
 
@@ -7,43 +9,32 @@ namespace Task.Monitor.Gui.Controls.Startup;
 
 public sealed partial class StartupControl
 {
-    private const string NotAvailable = "N/A";
-
-    private static readonly ListSortColumn<StartupEntry>[] SortColumns = [
-        ListSortColumn<StartupEntry>.ByText("NAME", 0, entry => entry.Name),
-        ListSortColumn<StartupEntry>.ByText("PUBLISHER", 1, entry => entry.Publisher),
-        ListSortColumn<StartupEntry>.ByValue<StartupEntrySource>("TYPE", 2, entry => entry.Source),
-        ListSortColumn<StartupEntry>.ByText("SCOPE", 3, entry => DescribeScope(entry.Scope)),
-        ListSortColumn<StartupEntry>.ByText("STATUS", 4, entry => DescribeState(entry.State)),
-        ListSortColumn<StartupEntry>.ByText("COMMAND", 5, entry => entry.Command)
-    ];
-
     private static string Cell(string? value) =>
         string.IsNullOrWhiteSpace(value) ? NotAvailable : value;
 
     private static string DescribeScope(StartupEntryScope scope) =>
         scope == StartupEntryScope.Machine 
-            ? "Machine" 
-            : "User";
+            ? Strings.ScopeMachine
+            : Strings.ScopeUser;
 
     private static string DescribeState(StartupEntryState state) => state switch {
-        StartupEntryState.Enabled  => "Enabled",
-        StartupEntryState.Disabled => "Disabled",
-                                 _ => "Unknown"
+        StartupEntryState.Enabled  => Strings.StartupStateEnabled,
+        StartupEntryState.Disabled => Strings.StartupStateDisabled,
+                                 _ => Strings.CommonUnknown
     };
 
     private static string DescribeType(StartupEntrySource source) => source switch {
 #if __WIN32__
-        StartupEntrySource.RunKey        => "Run",
-        StartupEntrySource.RunOnceKey    => "RunOnce",
-        StartupEntrySource.StartupFolder => "Startup Folder",
-        StartupEntrySource.ScheduledTask => "Scheduled Task",
+        StartupEntrySource.RunKey        => Strings.StartupTypeRun,
+        StartupEntrySource.RunOnceKey    => Strings.StartupTypeRunOnce,
+        StartupEntrySource.StartupFolder => Strings.StartupTypeStartupFolder,
+        StartupEntrySource.ScheduledTask => Strings.StartupTypeScheduledTask,
 #endif
 #if __APPLE__
-        StartupEntrySource.OpenAtLogin  => "Open at Login",
-        StartupEntrySource.LoginHelper  => "Login Helper",
-        StartupEntrySource.LaunchAgent  => "Launch Agent",
-        StartupEntrySource.LaunchDaemon => "Launch Daemon",
+        StartupEntrySource.OpenAtLogin  => Strings.StartupTypeOpenAtLogin,
+        StartupEntrySource.LoginHelper  => Strings.StartupTypeLoginHelper,
+        StartupEntrySource.LaunchAgent  => Strings.StartupTypeLaunchAgent,
+        StartupEntrySource.LaunchDaemon => Strings.StartupTypeLaunchDaemon,
 #endif
                                       _ => source.ToString()
     };
@@ -54,6 +45,8 @@ public sealed partial class StartupControl
     private bool MatchesFilter(StartupEntry entry) =>
         filter.Matches(
             entry.Name, entry.Publisher, entry.Command, entry.Origin, DescribeType(entry.Source), DescribeScope(entry.Scope));
+
+    private static string NotAvailable => Strings.CommonNotAvailable;
 
     private void RebuildDetailRows(StartupEntry? entry)
     {
@@ -69,12 +62,12 @@ public sealed partial class StartupControl
             ? theme.RangeMidBackground
             : theme.PropertyValue;
 
-        detailView.Items.Add(CommonControl.PropertyRow("Name",      Cell(entry.Name),           theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Publisher", Cell(entry.Publisher),      theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Type",      DescribeType(entry.Source), theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Scope",     DescribeScope(entry.Scope), theme));
-        detailView.Items.Add(CommonControl.PropertyRow("Status",    DescribeState(entry.State), theme, statusForeground));
-        detailView.Items.Add(CommonControl.PropertyRow("Command",   Cell(entry.Command),        theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,      Cell(entry.Name),           theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailPublisher, Cell(entry.Publisher),      theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailType,      DescribeType(entry.Source), theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailScope,     DescribeScope(entry.Scope), theme));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,    DescribeState(entry.State), theme, statusForeground));
+        detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailCommand,   Cell(entry.Command),        theme));
     }
 
     private void RebuildRows(IReadOnlyList<StartupEntry> entries, IReadOnlyList<string> notes)
@@ -119,7 +112,7 @@ public sealed partial class StartupControl
 
         startupView.EmptyListViewText   = filter.IsActive ? ListFilter.NoMatchesText : GatheringText;
         startupView.HeaderHighlightText = filter.BuildHeaderText(visibleEntries.Count, entries.Count);
-        startupView.HeaderText          = $"{enabled} enabled / {entries.Count} total{headerNotes}";
+        startupView.HeaderText          = string.Format(CultureInfo.CurrentCulture, Strings.StartupHeader, enabled, entries.Count) + headerNotes;
         startupView.FooterText          = CommonControl.FooterText(
             appConfig.Theme,
             [
@@ -157,4 +150,13 @@ public sealed partial class StartupControl
         
         startupView.ScrollSelectedIntoView();
     }
+
+    private static ListSortColumn<StartupEntry>[] SortColumns => [
+        ListSortColumn<StartupEntry>.ByText(Strings.ListColumnName, 0, entry => entry.Name),
+        ListSortColumn<StartupEntry>.ByText(Strings.ListColumnPublisher, 1, entry => entry.Publisher),
+        ListSortColumn<StartupEntry>.ByValue<StartupEntrySource>(Strings.StartupColumnType, 2, entry => entry.Source),
+        ListSortColumn<StartupEntry>.ByText(Strings.ListColumnScope, 3, entry => DescribeScope(entry.Scope)),
+        ListSortColumn<StartupEntry>.ByText(Strings.ListColumnStatus, 4, entry => DescribeState(entry.State)),
+        ListSortColumn<StartupEntry>.ByText(Strings.StartupColumnCommand, 5, entry => entry.Command)
+    ];
 }   

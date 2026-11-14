@@ -1,5 +1,6 @@
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
 
@@ -17,5 +18,5 @@ public sealed class DiskMetreControl(
                 $"{FormatPercentage(disk.ToDiskActiveTimeRatio())} · {disk.ToDiskTransferRate()}")
             : null;
 
-    protected override string Title => "Disk";
+    protected override string Title => Strings.MetreTitleDisk;
 }

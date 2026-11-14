@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Task.Monitor.Resources;
 
 namespace Task.Monitor.Gui.Controls.Processes;
 
@@ -26,71 +27,71 @@ public partial class ProcessControl
 
     public enum Columns
     {
-        [ColumnTitle("PROCESS")]
+        [ColumnTitle(nameof(Strings.ProcessColumnProcess))]
         [ColumnProperty("FileDescription")]
         Process = 0,
-        [ColumnTitle("PID")]
+        [ColumnTitle(nameof(Strings.ProcessColumnPid))]
         [ColumnProperty("Pid")]
         [ColumnSortKey(ConsoleKey.N)]
         Pid,
-        [ColumnTitle("USER")]
+        [ColumnTitle(nameof(Strings.ProcessColumnUser))]
         [ColumnProperty("UserName")]
         [ColumnSortKey(ConsoleKey.U)]
         User,
 #if __WIN32__        
-        [ColumnTitle("PRI")]
+        [ColumnTitle(nameof(Strings.ProcessColumnPriorityWindows))]
 #elif __APPLE__
-        [ColumnTitle("NI")]
+        [ColumnTitle(nameof(Strings.ProcessColumnPriorityMacOS))]
 #endif
         [ColumnProperty("BasePriority")]
         Priority,
-        [ColumnTitle("CPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnCpu))]
         [ColumnProperty("CpuTimePercent")]
         [ColumnSortKey(ConsoleKey.P)]
         Cpu,
-        [ColumnTitle("AVG CPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnAvgCpu))]
         [ColumnProperty("CpuTimePercentAvg")]
         AvgCpu,
-        [ColumnTitle("MAX CPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnMaxCpu))]
         [ColumnProperty("CpuTimePercentMax")]
         MaxCpu,
-        [ColumnTitle("THRDS")]
+        [ColumnTitle(nameof(Strings.ProcessColumnThreads))]
         [ColumnProperty("ThreadCount")]
         Threads,
-        [ColumnTitle("GPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnGpu))]
         [ColumnProperty("GpuTimePercent")]
         [ColumnSortKey(ConsoleKey.G)]
         Gpu,
-        [ColumnTitle("AVG GPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnAvgGpu))]
         [ColumnProperty("GpuTimePercentAvg")]
         AvgGpu,
-        [ColumnTitle("MAX GPU%")]
+        [ColumnTitle(nameof(Strings.ProcessColumnMaxGpu))]
         [ColumnProperty("GpuTimePercentMax")]
         MaxGpu,
-        [ColumnTitle("MEM")]
+        [ColumnTitle(nameof(Strings.ProcessColumnMemory))]
         [ColumnProperty("UsedMemory")]
         [ColumnSortKey(ConsoleKey.M)]
         Memory,
-        [ColumnTitle("AVG MEM")]
+        [ColumnTitle(nameof(Strings.ProcessColumnAvgMemory))]
         [ColumnProperty("UsedMemoryAvg")]
         AvgMemory,
-        [ColumnTitle("MAX MEM")]
+        [ColumnTitle(nameof(Strings.ProcessColumnMaxMemory))]
         [ColumnProperty("UsedMemoryMax")]
         MaxMemory,
-        [ColumnTitle("DISK")]
+        [ColumnTitle(nameof(Strings.ProcessColumnDisk))]
         [ColumnProperty("DiskUsage")]
         [ColumnSortKey(ConsoleKey.D)]
         Disk,
-        [ColumnTitle("AVG DISK")]
+        [ColumnTitle(nameof(Strings.ProcessColumnAvgDisk))]
         [ColumnProperty("DiskUsageAvg")]
         AvgDisk,
-        [ColumnTitle("MAX DISK")]
+        [ColumnTitle(nameof(Strings.ProcessColumnMaxDisk))]
         [ColumnProperty("DiskUsageMax")]
         MaxDisk,
-        [ColumnTitle("POWER")]
+        [ColumnTitle(nameof(Strings.ProcessColumnPower))]
         [ColumnProperty("PowerBucket")]
         Power,
-        [ColumnTitle("PATH")]
+        [ColumnTitle(nameof(Strings.ProcessColumnPath))]
         [ColumnProperty("CmdLine")]
         CommandLine,
         [ColumnTitle("")]
