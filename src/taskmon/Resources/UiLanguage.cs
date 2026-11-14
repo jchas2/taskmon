@@ -13,8 +13,6 @@ internal static class UiLanguage
 
     private static readonly UiLanguageChoice British = new("en-GB", "English (United Kingdom)");
 
-    // British English and every Strings.<code>.resx file, in the order Setup lists them. The
-    // names stay out of Strings.resx because they read the same in every language.
     internal static readonly IReadOnlyList<UiLanguageChoice> Choices =
     [
         new("da",    "Dansk"),
@@ -41,8 +39,6 @@ internal static class UiLanguage
         CultureInfo.CurrentUICulture              = culture;
     }
 
-    // The choice a ui-language value gives, through its parent cultures: it-IT gives Italiano and
-    // de-AT gives Deutsch. A value with no translation of its own, such as en-AU, gives none.
     internal static UiLanguageChoice? Find(string? configured)
     {
         if (!TryGetCulture(configured, out CultureInfo? culture)) {
@@ -89,8 +85,6 @@ internal static class UiLanguage
         return null;
     }
 
-    // The language an empty ui-language gives: the system's, or British English when the system's
-    // has no translation.
     internal static UiLanguageChoice SystemChoice() => SystemChoice(SystemUiCulture, CultureInfo.CurrentCulture);
 
     internal static UiLanguageChoice SystemChoice(CultureInfo displayCulture, CultureInfo regionCulture)
