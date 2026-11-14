@@ -34,7 +34,14 @@ public sealed class PerformanceControl : Control
     private int panelColumnWidth  = 0;
     private int visiblePanelCount = 0;
 
-    private const int PanelHeight = 7;
+    private const int    PanelHeight = 7;
+
+    private const string KeyCpu      = "cpu";
+    private const string KeyMemory   = "memory";
+    private const string KeyGpu      = "gpu";
+    private const string KeyNpu      = "npu";
+    private const string KeyDisk     = "disk";
+    private const string KeyNetwork  = "net";
 
     public PerformanceControl(
         ServiceController serviceController,
@@ -44,11 +51,51 @@ public sealed class PerformanceControl : Control
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
 
-        panelControls = BuildPanels(snapshot: null);
+        panelControls = AddAllPanels(snapshot: null);
         AttachPanels();
 
         activeControl = panelControls[0];
         activeControl.IsSelected = true;
+    }
+
+    private List<PerformancePanelControl> AddAllPanels(SystemSnapshot? snapshot)
+    {
+        List<PerformancePanelControl> panels = new();
+
+        panels.Add(MakePanel(
+            KeyCpu, Strings.PerformanceCpuPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
+            (panel, s) => {
+                if (s.Cpu is not { } cpu) {
+                    return;
+                }
+
+                panel.Line1 = string.Empty;
+                panel.Line2 = $"{cpu.Metrics.ToCpuPercentage()} {cpu.Specs.ToCpuFrequencyGhz()}";
+                panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceLogicalProcessorsCount, cpu.Specs.CpuCores);
+                panel.Line4 = string.Empty;
+                panel.Chart.Add(cpu.Metrics.CpuTotalTime);
+            }));
+
+        panels.Add(MakePanel(
+            KeyMemory, Strings.PerformanceMemoryPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
+            (panel, s) => {
+                if (s.Memory is not { } memory) {
+                    return;
+                }
+
+                panel.Line1 = string.Empty;
+                panel.Line2 = memory.Metrics.ToMemoryRatioFormattedBytes();
+                panel.Line3 = memory.Metrics.ToMemoryPercentage();
+                panel.Line4 = string.Empty;
+                panel.Chart.Add(memory.Metrics.AvailablePhysicalRatio);
+            }));
+
+        AddGpuPanels(panels, snapshot);
+        AddNpuPanels(panels, snapshot);
+        AddDiskPanels(panels, snapshot);
+        AddNetworkPanels(panels, snapshot);
+
+        return panels;
     }
 
     private void AddDiskPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
@@ -57,7 +104,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "disk", Strings.PerformanceDisksPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
+                KeyDisk, Strings.PerformanceDisksPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     if (s.Disk is not { } disk) {
                         return;
@@ -78,7 +125,7 @@ public sealed class PerformanceControl : Control
             string      title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDiskPanel, device.Index);
 
             panels.Add(MakePanel(
-                $"disk:{device.Index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
+                $"{KeyDisk}:{device.Index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     DiskDeviceMetrics? match = s.Disk?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
 
@@ -101,7 +148,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "gpu", Strings.PerformanceGpu, autoScaleChart: false, Chart.FormatYScalePercentage,
+                KeyGpu, Strings.PerformanceGpu, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     if (s.Gpu is not { } gpu) {
                         return;
@@ -122,7 +169,7 @@ public sealed class PerformanceControl : Control
             string     title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuPanel, device.Index);
 
             panels.Add(MakePanel(
-                $"gpu:{device.AdapterLuid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
+                $"{KeyGpu}:{device.AdapterLuid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     GpuDeviceMetrics? match = s.Gpu?.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
 
@@ -145,7 +192,7 @@ public sealed class PerformanceControl : Control
 
         if (devices.Count == 0) {
             panels.Add(MakePanel(
-                "net", Strings.PerformanceNetworkPanel, autoScaleChart: true, Chart.FormatYScaleByteRate,
+                KeyNetwork, Strings.PerformanceNetworkPanel, autoScaleChart: true, Chart.FormatYScaleByteRate,
                 (panel, s) => {
                     if (s.Network is not { } network) {
                         return;
@@ -166,7 +213,7 @@ public sealed class PerformanceControl : Control
             string title = spec?.ToDisplayName() ?? device.ToDisplayName();
 
             panels.Add(MakePanel(
-                $"net:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleByteRate,
+                $"{KeyNetwork}:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleByteRate,
                 (panel, s) => {
                     NetworkDeviceMetrics? match = s.Network?.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
 
@@ -187,7 +234,7 @@ public sealed class PerformanceControl : Control
     {
         foreach (NpuDevice device in snapshot?.Npu?.Specs.Devices ?? []) {
             panels.Add(MakePanel(
-                $"npu:{device.Index}", device.ToDisplayName(), autoScaleChart: false, Chart.FormatYScalePercentage,
+                $"{KeyNpu}:{device.Index}", device.ToDisplayName(), autoScaleChart: false, Chart.FormatYScalePercentage,
                 (panel, s) => {
                     NpuDeviceMetrics? match = s.Npu?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
 
@@ -235,46 +282,6 @@ public sealed class PerformanceControl : Control
         }
     }
 
-    private List<PerformancePanelControl> BuildPanels(SystemSnapshot? snapshot)
-    {
-        List<PerformancePanelControl> panels = new();
-
-        panels.Add(MakePanel(
-            "cpu", Strings.PerformanceCpuPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
-            (panel, s) => {
-                if (s.Cpu is not { } cpu) {
-                    return;
-                }
-
-                panel.Line1 = string.Empty;
-                panel.Line2 = $"{cpu.Metrics.ToCpuPercentage()} {cpu.Specs.ToCpuFrequencyGhz()}";
-                panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceLogicalProcessorsCount, cpu.Specs.CpuCores);
-                panel.Line4 = string.Empty;
-                panel.Chart.Add(cpu.Metrics.CpuTotalTime);
-            }));
-
-        panels.Add(MakePanel(
-            "memory", Strings.PerformanceMemoryPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
-            (panel, s) => {
-                if (s.Memory is not { } memory) {
-                    return;
-                }
-
-                panel.Line1 = string.Empty;
-                panel.Line2 = memory.Metrics.ToMemoryRatioFormattedBytes();
-                panel.Line3 = memory.Metrics.ToMemoryPercentage();
-                panel.Line4 = string.Empty;
-                panel.Chart.Add(memory.Metrics.AvailablePhysicalRatio);
-            }));
-
-        AddGpuPanels(panels, snapshot);
-        AddNpuPanels(panels, snapshot);
-        AddDiskPanels(panels, snapshot);
-        AddNetworkPanels(panels, snapshot);
-
-        return panels;
-    }
-
     internal static int ClampScrollOffset(
         int selectedIndex, 
         int scrollOffset, 
@@ -310,11 +317,11 @@ public sealed class PerformanceControl : Control
 
     private Control CreateDetail(string key)
     {
-        if (key == "cpu") {
+        if (key == KeyCpu) {
             return new CpuPerformanceControl(Terminal, appConfig);
         }
 
-        if (key == "memory") {
+        if (key == KeyMemory) {
             return new MemoryPerformanceControl(Terminal, appConfig);
         }
 
@@ -323,7 +330,7 @@ public sealed class PerformanceControl : Control
         string? id    = separator < 0 ? null : key[(separator + 1)..];
 
         switch (prefix) {
-            case "gpu": {
+            case KeyGpu: {
                 GpuPerformanceControl control = new(Terminal, appConfig);
                 control.SetScope(id != null && long.TryParse(id, out long luid) 
                     ? luid 
@@ -331,7 +338,7 @@ public sealed class PerformanceControl : Control
                 return control;
             }
 
-            case "npu": {
+            case KeyNpu: {
                 NpuPerformanceControl control = new(Terminal, appConfig);
                 control.SetScope(id != null && int.TryParse(id, out int npuIndex) 
                     ? npuIndex 
@@ -339,7 +346,7 @@ public sealed class PerformanceControl : Control
                 return control;
             }
 
-            case "disk": {
+            case KeyDisk: {
                 DiskPerformanceControl control = new(Terminal, appConfig);
                 control.SetScope(id != null && int.TryParse(id, out int index) 
                     ? index 
@@ -347,7 +354,7 @@ public sealed class PerformanceControl : Control
                 return control;
             }
 
-            case "net": {
+            case KeyNetwork: {
                 NetworkPerformanceControl control = new(Terminal, appConfig);
                 control.SetScope(id != null && ulong.TryParse(id, out ulong luid) 
                     ? luid 
@@ -362,18 +369,17 @@ public sealed class PerformanceControl : Control
 
     internal static List<string> DesiredPanelKeys(SystemSnapshot? snapshot)
     {
-        List<string> keys = new() { "cpu", "memory" };
+        List<string> keys = new() { KeyCpu, KeyMemory };
 
-        AppendDeviceKeys(keys, "gpu",
+        AppendDeviceKeys(keys, KeyGpu,
             snapshot?.Gpu?.Metrics.Devices.Select(device => device.AdapterLuid.ToString()));
 
-        // Unlike the GPU there is no placeholder panel: machines without an NPU show none.
-        keys.AddRange(snapshot?.Npu?.Specs.Devices.Select(device => $"npu:{device.Index}") ?? []);
+        keys.AddRange(snapshot?.Npu?.Specs.Devices.Select(device => $"{KeyNpu}:{device.Index}") ?? []);
 
-        AppendDeviceKeys(keys, "disk",
+        AppendDeviceKeys(keys, KeyDisk,
             snapshot?.Disk?.Metrics.Devices.Select(device => device.Index.ToString()));
 
-        AppendDeviceKeys(keys, "net",
+        AppendDeviceKeys(keys, KeyNetwork,
             snapshot?.Network?.Metrics.Devices.Select(device => device.InterfaceLuid.ToString()));
 
         return keys;
@@ -663,7 +669,7 @@ public sealed class PerformanceControl : Control
         activeControl.IsSelected = false;
 
         DetachPanels();
-        panelControls = BuildPanels(snapshot);
+        panelControls = AddAllPanels(snapshot);
         AttachPanels();
         PruneCaches();
 
