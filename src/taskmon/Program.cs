@@ -59,12 +59,14 @@ class Program
             return ExitSuccess;
         }
 
-        ServiceController serviceController = new();
-        FileSystem fileSystem               = new();
-        SystemTerminal terminal             = new();
-        AppConfig appConfig                 = new(fileSystem);
-
         try {
+            ServiceController serviceController = new();
+            FileSystem fileSystem               = new();
+            SystemTerminal terminal             = new();
+
+            TaskMonApp.InitialiseLog(fileSystem);
+            AppConfig appConfig = new(fileSystem);
+
             RunContext runContext = new(
                 serviceController,
                 fileSystem,

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,10 +17,6 @@ namespace Task.Monitor.Configuration;
 public sealed class AppConfig
 {
     private const string ConfigFile = $"{Constants.AppName}.ini";
-
-    private const string HealthSectionComment =
-        "Thresholds for the HEALTH view, as whole numbers. Takes effect the next time taskmon starts.\n" +
-        "Each setting is described in the README.";
 
     private readonly IFileSystem                fileSystem;
     private readonly List<Theme>                allThemes  = new();
@@ -63,6 +58,8 @@ public sealed class AppConfig
         LoadSections();
         LoadThemes();
         LoadLayouts();
+        SelectConfiguredTheme();
+        SelectConfiguredLayout();
         savedConfig = CopyConfig();
     }
 
@@ -109,14 +106,14 @@ public sealed class AppConfig
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                     userPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config",
-                        Constants.AppName);
+                        Constants.AppName, Constants.ConfigVersionDirectory);
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                    userPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
-                        Constants.AppName);
+                    userPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        Constants.AppName, Constants.ConfigVersionDirectory);
                 }
 
-                return DefaultPath(userPath);
+                return DefaultPath(fileSystem, userPath);
             }
             catch (Exception ex) {
                 ExceptionHelper.LogException(ex);
@@ -141,7 +138,7 @@ public sealed class AppConfig
                 }
 
                 if (eventsPath.Length == 0 ||
-                    !(fileSystem.DirectoryExists(eventsPath) || fileSystem.TryCreateDirectory(eventsPath))) {
+                    !(fileSystem.DirectoryExists(eventsPath) || TryCreateOwnedDirectory(fileSystem, eventsPath))) {
 
                     return null;
                 }
@@ -169,35 +166,15 @@ public sealed class AppConfig
         }
     }
 
-    public string? DefaultLogPath
-    {
-        get {
-            try {
-                string logPath = string.Empty;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                    logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library",
-                        "Logs", Constants.AppName);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                    logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        Constants.AppName, "Logs");
-                }
-
-                return DefaultPath(logPath);
-            }
-            catch (Exception ex) {
-                ExceptionHelper.LogException(ex);
-                return null;
-            }
-        }
-    }
-
-    private string? DefaultPath(string desiredPath)
+    private static string? DefaultPath(IFileSystem fileSystem, string desiredPath)
     {
         try {
-            if (fileSystem.DirectoryExists(desiredPath) || fileSystem.TryCreateDirectory(desiredPath)) {
+            if (fileSystem.DirectoryExists(desiredPath)) {
                 PathPermissions.EnsureUserOwnership(desiredPath);
+                return desiredPath;
+            }
+
+            if (TryCreateOwnedDirectory(fileSystem, desiredPath)) {
                 return desiredPath;
             }
                 
@@ -222,6 +199,33 @@ public sealed class AppConfig
         get => statsSection?.GetInt(Constants.Keys.Delay, WorkerService.DefaultDelayInMilliseconds) ??
                WorkerService.DefaultDelayInMilliseconds;
         set => statsSection?.Add(Constants.Keys.Delay, value.ToString());
+    }
+
+    private void DeployBuiltInCopies(string? folderPath, string extension, Dictionary<string, string> builtIns)
+    {
+        if (folderPath == null ||
+            GetOrCreateDirectory(Path.Combine(folderPath, Constants.BuiltInDirectory)) is not { } builtInPath) {
+
+            return;
+        }
+
+        foreach ((string fileName, string text) in builtIns) {
+            DeployIfChanged(Path.Combine(builtInPath, fileName), text);
+        }
+
+        foreach (string file in fileSystem.GetFiles(builtInPath, $"*{extension}")) {
+            if (builtIns.ContainsKey(Path.GetFileName(file))) {
+                continue;
+            }
+
+            try {
+                Trace.WriteLine($"Deleting {file}: not a built-in");
+                fileSystem.DeleteFile(file);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                Trace.WriteLine($"Failed to delete {file}: {ex.Message}");
+            }
+        }
     }
 
     private void DeployIfChanged(string filePath, string text)
@@ -253,27 +257,37 @@ public sealed class AppConfig
         set => filterSection?.Add(Constants.Keys.UserName, value);
     }
 
-    private string? GetConfigSubdirectory(string directoryName)
+    private string? GetConfigSubdirectory(string directoryName) =>
+        DefaultConfigPath is { Length: > 0 } configPath
+            ? GetOrCreateDirectory(Path.Combine(configPath, directoryName))
+            : null;
+
+    public static string? GetDefaultLogPath(IFileSystem fileSystem)
     {
-        string? configPath = DefaultConfigPath;
+        try {
+            string logPath = string.Empty;
 
-        if (string.IsNullOrEmpty(configPath)) {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library",
+                    "Logs", Constants.AppName);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    Constants.AppName, "Logs");
+            }
+
+            return DefaultPath(fileSystem, logPath);
+        }
+        catch (Exception ex) {
+            ExceptionHelper.LogException(ex);
             return null;
         }
-
-        string path = Path.Combine(configPath, directoryName);
-
-        if (fileSystem.DirectoryExists(path)) {
-            return path;
-        }
-
-        if (!fileSystem.TryCreateDirectory(path)) {
-            return null;
-        }
-
-        PathPermissions.EnsureUserOwnership(path);
-        return path;
     }
+
+    private string? GetOrCreateDirectory(string path) =>
+        fileSystem.DirectoryExists(path) || TryCreateOwnedDirectory(fileSystem, path)
+            ? path
+            : null;
 
     public HealthThresholds HealthThresholds
     {
@@ -337,8 +351,28 @@ public sealed class AppConfig
     public bool IsBuiltInLayout(string name) =>
         allLayouts.Any(t => t.IsBuiltIn && t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
 
+    private static bool IsCurrentVersion(ConfigSection section, int currentVersion, string source)
+    {
+        string version = section.GetString(Constants.Keys.Version);
+
+        if (int.TryParse(version, NumberStyles.None, CultureInfo.InvariantCulture, out int found) &&
+            found == currentVersion) {
+
+            return true;
+        }
+
+        Trace.WriteLine(version.Length == 0
+            ? $"Skipping {source}: no version, expected {currentVersion}"
+            : $"Skipping {source}: version {version}, expected {currentVersion}");
+
+        return false;
+    }
+
     private bool IsLayoutNameTaken(string name) =>
         allLayouts.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+
+    private bool IsThemeNameTaken(string name) =>
+        allThemes.Any(t => t.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
 
     public string? LastSaveError { get; private set; }
 
@@ -347,84 +381,37 @@ public sealed class AppConfig
     private void LoadLayouts()
     {
         string? layoutPath = GetConfigSubdirectory(Constants.LayoutDirectory);
-        Assembly asm       = Assembly.GetExecutingAssembly();
 
-        foreach (string name in asm.GetManifestResourceNames()) {
-            if (!name.EndsWith(Constants.LayoutExtension)) {
-                continue;
-            }
+        Dictionary<string, string> builtIns = new(StringComparer.OrdinalIgnoreCase);
 
-            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
-            
-            string layoutText = reader.ReadToEnd();
-            Trace.WriteLine($"Parsing asset {name}");
+        foreach ((string asset, string layoutText) in ReadAssets(Constants.LayoutExtension)) {
+            if (!TryParseIniSection(layoutText, out ConfigSection? section) ||
+                !IsCurrentVersion(section!, SummaryControlLayout.CurrentVersion, asset)) {
 
-            if (!TryParseIniSection(layoutText, out ConfigSection? section)) {
-                Debug.Fail($"Failed to parse manifest asset {name}");
+                Debug.Fail($"Failed to load manifest asset {asset}");
                 continue;
             }
 
             SummaryControlLayout layout = new(section!) { IsBuiltIn = true };
 
-            if (!layout.IsTreeLayout) {
-                Debug.Fail($"Manifest asset {name} is not a tree layout");
-                continue;
-            }
-
-            if (!allLayouts.Any(t => t.Name.Equals(layout.Name))) {
+            if (!IsLayoutNameTaken(layout.Name)) {
                 allLayouts.Add(layout);
             }
 
-            if (layoutPath != null) {
-                DeployIfChanged(Path.Combine(layoutPath, $"{layout.Name}{Constants.LayoutExtension}"), layoutText);
+            builtIns[$"{layout.Name}{Constants.LayoutExtension}"] = layoutText;
+        }
+
+        DeployBuiltInCopies(layoutPath, Constants.LayoutExtension, builtIns);
+
+        foreach ((string layoutFile, ConfigSection section) in ReadUserFiles(
+            layoutPath, Constants.LayoutExtension, SummaryControlLayout.CurrentVersion)) {
+
+            if (IsLayoutNameTaken(section.Name)) {
+                Trace.WriteLine($"Skipping {layoutFile}: a layout named {section.Name} is already loaded");
+                continue;
             }
-        }
 
-        if (layoutPath != null) {
-            foreach (string layoutFile in fileSystem.GetFiles(layoutPath)) {
-                if (!layoutFile.EndsWith(Constants.LayoutExtension, StringComparison.OrdinalIgnoreCase)) {
-                    continue;
-                }
-
-                if (IsLayoutNameTaken(Path.GetFileNameWithoutExtension(layoutFile))) {
-                    continue;
-                }
-
-                string layoutText = fileSystem.ReadAllText(layoutFile);
-                Trace.WriteLine($"Parsing file {layoutFile}");
-
-                if (!TryParseIniSection(layoutText, out ConfigSection? section)) {
-                    Trace.WriteLine($"Failed to parse: \n{layoutText}\n");
-                    continue;
-                }
-
-                SummaryControlLayout layout = new(section!);
-
-                if (!layout.IsTreeLayout) {
-                    Trace.WriteLine($"Skipping {layoutFile}: not a tree layout");
-                    continue;
-                }
-
-                if (!IsLayoutNameTaken(layout.Name)) {
-                    allLayouts.Add(layout);
-                }
-            }
-        }
-
-        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
-
-        string preferredTree = uxSection.GetString(Constants.Keys.DefaultSummaryLayout);
-
-        SummaryControlLayout? configured = allLayouts.FirstOrDefault(
-            t => t.Name.Equals(preferredTree, StringComparison.CurrentCultureIgnoreCase));
-
-        if (configured != null) {
-            DefaultLayout = configured;
-        }
-        else if (allLayouts.Count > 0 && defaultLayout == null) {
-            DefaultLayout = allLayouts.FirstOrDefault(
-                t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
-                ?? allLayouts[0];
+            allLayouts.Add(new SummaryControlLayout(section));
         }
     }
 
@@ -445,7 +432,7 @@ public sealed class AppConfig
 
         healthSection = iniConfig.ContainsSection(Constants.Sections.Health)
             ? iniConfig.GetConfigSection(Constants.Sections.Health)
-            : new ConfigSection(Constants.Sections.Health) { Comment = HealthSectionComment };
+            : new ConfigSection(Constants.Sections.Health);
 
         HealthThresholds defaults = new();
 
@@ -546,75 +533,41 @@ public sealed class AppConfig
 
     private void LoadThemes()
     {
-        string?  themePath = GetConfigSubdirectory(Constants.ThemeDirectory);
-        Assembly asm       = Assembly.GetExecutingAssembly();
-        
-        // Load default/shipped themes.
-        foreach (string name in asm.GetManifestResourceNames()) {
-            if (!name.EndsWith(Constants.ThemeExtension)) {
+        string? themePath = GetConfigSubdirectory(Constants.ThemeDirectory);
+
+        Dictionary<string, string> builtIns = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach ((string asset, string themeText) in ReadAssets(Constants.ThemeExtension)) {
+            if (!TryParseIniSection(themeText, out ConfigSection? section) ||
+                !IsCurrentVersion(section!, Theme.CurrentVersion, asset)) {
+
+                Debug.Fail($"Failed to load manifest asset {asset}");
                 continue;
             }
 
-            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
-            
-            string themeText = reader.ReadToEnd();
-            Trace.WriteLine($"Parsing asset {name}");
+            Theme theme = new(section!);
+            theme.Normalize();
 
-            if (!TryParseIni(themeText, out Theme? theme)) {
-                Debug.Fail($"Failed to parse manifest asset {name}");
-                continue;
-            }
-            
-            theme!.Normalize();
-            
-            if (!allThemes.Any(t => t.Name.Equals(theme.Name))) {
+            if (!IsThemeNameTaken(theme.Name)) {
                 allThemes.Add(theme);
             }
 
-            if (themePath != null) {
-                DeployIfChanged(Path.Combine(themePath, $"{theme.Name}{Constants.ThemeExtension}"), themeText);
-            }
+            builtIns[$"{theme.Name}{Constants.ThemeExtension}"] = themeText;
         }
 
-        if (themePath != null) {
-            // Load custom theme files from disk into allThemes array.
-            string[] themeFiles = fileSystem.GetFiles(themePath, "*.theme");
-            
-            foreach (string themeFile in themeFiles) {
-                string themeName = Path.GetFileNameWithoutExtension(themeFile);
+        DeployBuiltInCopies(themePath, Constants.ThemeExtension, builtIns);
 
-                if (allThemes.Any(t => t.Name.Equals(themeName))) {
-                    continue;
-                }
-                
-                string themeText = fileSystem.ReadAllText(themeFile);
-                Trace.WriteLine($"Parsing file {themeFile}");
+        foreach ((string themeFile, ConfigSection section) in ReadUserFiles(
+            themePath, Constants.ThemeExtension, Theme.CurrentVersion)) {
 
-                if (!TryParseIni(themeText, out Theme? theme)) {
-                    Trace.WriteLine($"Failed to parse: \n{themeText}\n");
-                    continue;
-                }
-
-                theme!.Normalize();
-                allThemes.Add(theme!);
-            }
-        }
-
-        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
-
-        if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
-            Theme = allThemes.First(t => t.Name.Equals(
-                uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase));
-        }
-        else {
-            // Handle the case where the config file has been edited with a default-theme name that has not been loaded.
-            Debug.Assert(allThemes.Contains(defaultTheme));
-            
-            if (!allThemes.Contains(defaultTheme)) {
-                allThemes.Add(defaultTheme);
+            if (IsThemeNameTaken(section.Name)) {
+                Trace.WriteLine($"Skipping {themeFile}: a theme named {section.Name} is already loaded");
+                continue;
             }
 
-            Theme = defaultTheme;
+            Theme theme = new(section);
+            theme.Normalize();
+            allThemes.Add(theme);
         }
     }
 
@@ -628,6 +581,62 @@ public sealed class AppConfig
     {
         get => uxSection?.GetBool(Constants.Keys.MultiSelectProcesses, false) ?? false;
         set => uxSection?.Add(Constants.Keys.MultiSelectProcesses, value.ToString());
+    }
+
+    private static IEnumerable<(string Name, string Text)> ReadAssets(string extension)
+    {
+        Assembly asm = Assembly.GetExecutingAssembly();
+
+        foreach (string name in asm.GetManifestResourceNames()) {
+            if (!name.EndsWith(extension)) {
+                continue;
+            }
+
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+
+            Trace.WriteLine($"Parsing asset {name}");
+            yield return (name, reader.ReadToEnd());
+        }
+    }
+
+    private List<(string File, ConfigSection Section)> ReadUserFiles(string? folderPath, string extension, int currentVersion)
+    {
+        List<(string File, ConfigSection Section)> files = new();
+
+        if (folderPath == null) {
+            return files;
+        }
+
+        foreach (string file in fileSystem.GetFiles(folderPath, $"*{extension}")) {
+            string text;
+
+            try {
+                text = fileSystem.ReadAllText(file);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) {
+                Trace.WriteLine($"Skipping {file}: {ex.Message}");
+                continue;
+            }
+
+            Trace.WriteLine($"Parsing file {file}");
+
+            if (!TryParseIniSection(text, out ConfigSection? section)) {
+                Trace.WriteLine($"Failed to parse: \n{text}\n");
+                continue;
+            }
+
+            if (!IsCurrentVersion(section!, currentVersion, file)) {
+                continue;
+            }
+
+            if (!Path.GetFileNameWithoutExtension(file).Equals(section!.Name, StringComparison.OrdinalIgnoreCase)) {
+                Trace.WriteLine($"{file} is named {section.Name} by its header");
+            }
+
+            files.Add((file, section));
+        }
+
+        return files;
     }
 
     public bool SaveLayout(SummaryControlLayout layout)
@@ -656,9 +665,8 @@ public sealed class AppConfig
 
             allLayouts.Add(layout);
 
-            // Re-saving the layout currently in use replaces its entry above - repoint the default
-            // at the new instance, or it would keep serving the pre-edit copy (SummaryControl2
-            // reloads when the default instance changes, so this is also what shows the edits).
+            // Re-saving the layout currently in use replaces its entry above - re-point the default
+            // at the new instance, or it would keep serving the pre-edit copy.
             if (existing != null && existing == defaultLayout) {
                 defaultLayout = layout;
             }
@@ -668,6 +676,45 @@ public sealed class AppConfig
         catch (Exception ex) {
             ExceptionHelper.LogException(ex, $"Error saving summary layout: {ex.Message}");
             return false;
+        }
+    }
+
+    private void SelectConfiguredLayout()
+    {
+        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
+
+        string preferredTree = uxSection.GetString(Constants.Keys.DefaultSummaryLayout);
+
+        SummaryControlLayout? configured = allLayouts.FirstOrDefault(
+            t => t.Name.Equals(preferredTree, StringComparison.CurrentCultureIgnoreCase));
+
+        if (configured != null) {
+            DefaultLayout = configured;
+        }
+        else if (allLayouts.Count > 0 && defaultLayout == null) {
+            DefaultLayout = allLayouts.FirstOrDefault(
+                t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
+                ?? allLayouts[0];
+        }
+    }
+
+    private void SelectConfiguredTheme()
+    {
+        uxSection = iniConfig.GetConfigSection(Constants.Sections.UX);
+
+        if (allThemes.Any(t => t.Name.Equals(uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase))) {
+            Theme = allThemes.First(t => t.Name.Equals(
+                uxSection.GetString(Constants.Keys.DefaultTheme), StringComparison.CurrentCultureIgnoreCase));
+        }
+        else {
+            // Handle the case where the config file has been edited with a default-theme name that has not been loaded.
+            Debug.Assert(allThemes.Contains(defaultTheme));
+            
+            if (!allThemes.Contains(defaultTheme)) {
+                allThemes.Add(defaultTheme);
+            }
+
+            Theme = defaultTheme;
         }
     }
 
@@ -785,13 +832,41 @@ public sealed class AppConfig
         return buffer.ToString();
     } 
 
+    private static bool TryCreateOwnedDirectory(IFileSystem fileSystem, string path)
+    {
+        if (path.Length == 0) {
+            return false;
+        }
+
+        // Undo sudo we have to apply user ownership at each level of the dir path,
+        // to ensure none is owned by root, otherwise non-root will fail on next startup.
+        Stack<string> missing = new();
+
+        for (string? folder = path;
+            !string.IsNullOrEmpty(folder) && !fileSystem.DirectoryExists(folder);
+            folder = Path.GetDirectoryName(folder)) {
+
+            missing.Push(folder);
+        }
+
+        while (missing.TryPop(out string? folder)) {
+            if (!fileSystem.TryCreateDirectory(folder)) {
+                return false;
+            }
+            
+            PathPermissions.EnsureUserOwnership(folder);
+        }
+
+        return true;
+    }
+
     public bool TryLoad(Config config)
     {
         try {
             iniConfig = config;
             LoadSections();
-            LoadThemes();
-            LoadLayouts();
+            SelectConfiguredTheme();
+            SelectConfiguredLayout();
             savedConfig = CopyConfig();
             return true;
         }
@@ -815,23 +890,6 @@ public sealed class AppConfig
         }
 
         return false;
-    }
-
-    private bool TryParseIni<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(
-        string text, out T? instance) where T : class
-    {
-        instance = null;
-
-        try {
-            ConfigParser parser = new(text);
-            parser.Parse();
-            instance = (T?)Activator.CreateInstance(typeof(T), parser.Sections[0]);
-            return true;
-        }
-        catch (Exception ex) {
-            ExceptionHelper.LogException(ex, $"Error parsing Ini: {ex.Message}");
-            return false;
-        }
     }
 
     private bool TryParseIniSection(string text, out ConfigSection? section)

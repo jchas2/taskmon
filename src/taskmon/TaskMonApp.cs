@@ -5,6 +5,7 @@ using System.Text;
 using Task.Monitor.Actions;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Services;
@@ -17,15 +18,15 @@ public sealed class TaskMonApp(RunContext runContext)
     private static string CultureName(CultureInfo culture) =>
         string.IsNullOrEmpty(culture.Name) ? "invariant" : culture.Name;
 
-    private void InitialiseProcess()
+    internal static void InitialiseLog(IFileSystem fileSystem)
     {
-        string? logPath = runContext.AppConfig.DefaultLogPath;
-        
+        string? logPath = AppConfig.GetDefaultLogPath(fileSystem);
+
         if (!string.IsNullOrEmpty(logPath)) {
-            if (runContext.FileSystem.DirectoryExists(logPath)) {
+            if (fileSystem.DirectoryExists(logPath)) {
                 FormattedTextWriterTraceListener.Initialise(
-                    logPath, 
-                    maxBytes: 2 * 1024 * 1024, 
+                    logPath,
+                    maxBytes: 2 * 1024 * 1024,
                     maxFiles: 16,
                     Configuration.Constants.AppName);
             }
@@ -38,7 +39,10 @@ public sealed class TaskMonApp(RunContext runContext)
         Trace.WriteLine($"OS Version = {SystemInfo.GetOsVersion()}");
         Trace.WriteLine($"Log Path = {logPath ?? string.Empty}");
         Trace.WriteLine(new string('-', 10));
+    }
 
+    private void InitialiseProcess()
+    {
         Trace.WriteLine($"{TerminalCapabilities.ColourModeEnvVar} = {Environment.GetEnvironmentVariable(TerminalCapabilities.ColourModeEnvVar)}");
         Trace.WriteLine($"{UiLanguage.UiLanguageEnvVar} = {Environment.GetEnvironmentVariable(UiLanguage.UiLanguageEnvVar) ?? string.Empty}");
 

@@ -6,9 +6,17 @@ public sealed class Constants
     public const string EventsFolder    = "Events";
     public const string ThemeDirectory  = "themes";
     public const string ThemeExtension  = ".theme";
-    public const string LayoutDirectory = "summary-layouts";
+    public const string LayoutDirectory = "layouts";
     public const string LayoutExtension = ".layout";
-    
+
+    // Version 2 keeps its config in a folder of its own inside version 1's, so neither version
+    // reads or writes the other's files.
+    public const string ConfigVersionDirectory = "v2";
+
+    // Inside the themes and layouts folders: reference copies of the built-in ones, which taskmon
+    // rewrites as shipped and never loads.
+    public const string BuiltInDirectory = "built-in";
+
     public sealed class Sections
     {
         public const string Filter                     = "filter";
@@ -182,8 +190,10 @@ public sealed class Constants
         public const string CommandBackground = "command.background";
         public const string CommandForeground = "command.foreground";
         
-        // SummaryControlLayout (recursive split-tree) keys. 
-        public const string LayoutType        = "layout-type";
+        // Theme and layout file key: the version of the file's format.
+        public const string Version = "version";
+
+        // SummaryControlLayout (recursive split-tree) keys.
         public const string SummaryRoot       = "root";
         public const string SummaryNodes      = "nodes";
         public const string SummaryNodePrefix = "node.";

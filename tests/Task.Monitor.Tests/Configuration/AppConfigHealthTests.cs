@@ -69,7 +69,7 @@ public sealed class AppConfigHealthTests
     }
 
     [Fact]
-    public void A_New_Health_Section_Is_Added_To_A_File_With_Its_Comment()
+    public void A_New_Health_Section_Is_Added_To_A_File()
     {
         string? saved = null;
 
@@ -82,7 +82,7 @@ public sealed class AppConfigHealthTests
 
         Assert.True(appConfig.TryLoad(ConfigPath));
         Assert.True(appConfig.TrySave(ConfigPath));
-        Assert.Contains("; Thresholds for the HEALTH view", saved);
+        Assert.DoesNotContain(";", saved);
         Assert.Contains("[health]\nwarning-sustain-seconds=30\n", saved);
     }
 

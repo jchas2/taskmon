@@ -6,9 +6,12 @@ namespace Task.Monitor.Configuration;
 
 public sealed class SummaryControlLayout
 {
-    private const string LayoutTypeTree  = "tree";
-    private const char   FieldSeparator  = ',';
-    private const char   ColumnSeparator = '+';
+    // The version of the layout file format, written as the file's version key. It changes only
+    // when an older taskmon would misread a file, and a file at any other version isn't loaded.
+    public const int CurrentVersion = 2;
+
+    private const char FieldSeparator  = ',';
+    private const char ColumnSeparator = '+';
 
     private ConfigSection? layoutSection;
 
@@ -31,7 +34,7 @@ public sealed class SummaryControlLayout
     {
         ConfigSection section = new(name);
 
-        section.Add(Constants.Keys.LayoutType,   LayoutTypeTree);
+        section.Add(Constants.Keys.Version,      CurrentVersion.ToString(CultureInfo.InvariantCulture));
         section.Add(Constants.Keys.SummaryRoot,  tree.RootId.ToString(CultureInfo.InvariantCulture));
         section.Add(Constants.Keys.SummaryNodes, string.Join(FieldSeparator, tree.Nodes.Keys));
 
@@ -43,9 +46,6 @@ public sealed class SummaryControlLayout
     }
 
     public bool IsBuiltIn { get; init; }
-
-    public bool IsTreeLayout =>
-        layoutSection?.GetString(Constants.Keys.LayoutType, string.Empty) == LayoutTypeTree;
 
     public string Name => layoutSection?.Name ?? string.Empty;
 

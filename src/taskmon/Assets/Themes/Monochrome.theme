@@ -2,15 +2,21 @@
 ; Task Monitor (taskmon) - Built-in Theme
 ;=============================================================================
 ; IMPORTANT:
-; Any modifications to default/shipped theme files will be reset automatically
-; when taskmon runs or updates.
+; This is a reference copy of a theme built into taskmon. taskmon doesn't
+; load it, and puts it back as shipped each time it starts, so any changes
+; made here are lost.
 ;
 ; How to create a custom theme:
-;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
-;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
-;   Step 3: Customize color hex values (#RRGGBB).
+;   Step 1: Copy this file into the themes folder, one level up, under a new
+;           name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]". A
+;           custom theme can't use the name of a built-in theme.
+;   Step 3: Change the colours (#RRGGBB, or transparent).
+;   Step 4: Keep "version=2". A theme file without it, or with another
+;           version, is skipped.
 ;=============================================================================
 [Monochrome]
+version=2
 colour-mode=indexed
 
 control.background=transparent

@@ -139,8 +139,8 @@ Task Monitor stores configuration and log files in the following system director
 | Config | Description |
 |--------|-------------|
 | `taskmon.ini` | Primary config file in .ini format. |
-| Theme files | One config file per theme. |
-| Layout files | One layout file per TUI layout. Controls size and types of charts on display. | 
+| Theme files | One file per custom theme. Copies of the built-in themes are kept in its `built-in` folder. |
+| Layout files | One file per custom SUMMARY layout. Copies of the built-in layouts are kept in its `built-in` folder. |
 | Log files | One log file per session; logs are rotated > 2MB and routinely deleted. |
 | Event files | One .ini file per `HEALTH` event, reloaded into Recent events at startup. The oldest are deleted once there are more than `event-history-size`. |
 
@@ -148,21 +148,69 @@ Task Monitor stores configuration and log files in the following system director
 
 | Config | Path |
 |--------|------|
-| `taskmon.ini` | `~\.config\taskmon` |
-| Theme files |  `~\.config\taskmon\themes` |
-| Layout files | `~\.config\taskmon\layouts` | 
-| Log files | `~\Library\Logs\taskmon` |
-| Event files | `~\Library\Logs\taskmon\Events` |
+| `taskmon.ini` | `~/.config/taskmon/v2` |
+| Theme files | `~/.config/taskmon/v2/themes` |
+| Layout files | `~/.config/taskmon/v2/layouts` |
+| Log files | `~/Library/Logs/taskmon` |
+| Event files | `~/Library/Logs/taskmon/Events` |
 
 ### Windows
 
 | Config | Path |
 |--------|------|
-| `taskmon.ini` | `~\AppData\Roaming\taskmon` |
-| Theme files |  `~\AppData\Roaming\taskmon\themes` |
-| Layout files | `~\AppData\Roaming\taskmon\layouts` | 
-| Log files | `~\AppData\Local\taskmon\Logs` | 
-| Event files | `~\AppData\Local\taskmon\Events` | 
+| `taskmon.ini` | `~\AppData\Roaming\taskmon\v2` |
+| Theme files | `~\AppData\Roaming\taskmon\v2\themes` |
+| Layout files | `~\AppData\Roaming\taskmon\v2\layouts` |
+| Log files | `~\AppData\Local\taskmon\Logs` |
+| Event files | `~\AppData\Local\taskmon\Events` |
+
+The files directly in the `taskmon` folder, outside `v2`, belong to version 1. See [Upgrading from version 1](#upgrading-from-version-1).
+
+### Built-in themes and layouts
+
+The built-in themes and layouts are part of the program. Each time Task Monitor starts it writes a copy of each one to the `built-in` folder inside `themes` and `layouts`, for reference and for copying, and deletes any other theme or layout file it finds there. It never loads those copies, so changes made to them are lost.
+
+Your own themes and layouts go in `themes` and `layouts` themselves, and Task Monitor only writes there when you save a layout from the Layout Designer. A theme or layout is named by its `[header]`, not its file name. The names of built-in themes and layouts are reserved: a file whose header uses one is skipped, and the Layout Designer won't save a layout under one.
+
+Every theme and layout file starts its section with `version=2`, the version of its format. A file without it, or with another version, is skipped, and the log says which file and why.
+
+### Upgrading from version 1
+
+Version 2 starts with its default settings, and doesn't read or change anything version 1 saved. Version 1's `taskmon.ini`, `themes` and `layouts` stay as they were in the `taskmon` folder, outside `v2`, so going back to version 1 finds them untouched. Once you no longer need version 1, you can delete them. Logs and event files stay where they were.
+
+- **Settings**: choose them again in Setup (`F2`).
+- **Custom layouts**: version 2's layouts are a different format, so build them again in the Layout Designer.
+- **Custom themes**: version 2 renamed the theme keys, and has many more. To bring a version 1 theme across, copy a theme from `themes\built-in` into `themes`, give it a new name and header, and copy your colours across using the table below. `colour-mode` is unchanged.
+
+| Version 1 key | Version 2 key |
+| :--- | :--- |
+| `background` | `control.background` |
+| `background-highlight` | `control.background.highlight.focused` |
+| `col-cmd-high-cpu` | `process.list.highcpu` |
+| `col-cmd-io-bound` | `process.list.iobound` |
+| `col-cmd-low-priority` | `process.list.lowpriority` |
+| `col-cmd-normal-user-space` | `process.list.normaluserspace` |
+| `col-cmd-script` | `process.list.script` |
+| `col-user-current-non-root` | `process.list.user.currentnonroot` |
+| `col-user-other-non-root` | `process.list.user.othernonroot` |
+| `col-user-root` | `process.list.user.root` |
+| `col-user-system` | `process.list.user.system` |
+| `command-background` | `command.background` |
+| `command-foreground` | `command.foreground` |
+| `delta-highlight-colour` | `process.list.deltahighlight` |
+| `error` | `app.error` |
+| `foreground` | `control.foreground` |
+| `foreground-highlight` | `control.foreground.highlight.focused` |
+| `header-background` | `listview.header.background` |
+| `header-foreground` | `listview.header.foreground` |
+| `menubar-background` | `menubar.background` |
+| `menubar-foreground` | `menubar.foreground` |
+| `range-high-background` | `chart.range.high.background` |
+| `range-high-foreground` | `chart.range.high.foreground` |
+| `range-low-background` | `chart.range.low.background` |
+| `range-low-foreground` | `chart.range.low.foreground` |
+| `range-mid-background` | `chart.range.mid.background` |
+| `range-mid-foreground` | `chart.range.mid.foreground` |
 
 ### Editing taskmon.ini
 
@@ -266,136 +314,128 @@ A resource moves to Warning or Critical after staying over its threshold for the
 
 ## Theme Files
 
-Theme files control the color palette behavior for color desaturation, background opacity, and the colors applied to the TUI screen elements.
-Theme files use the ini file format (see example below). Any modifications to default/shjpped theme files will be reset automatically when 
-taskmon updates. To create new, custom themes, simply copy an existing theme and modify the settings as required.
-These files will automatically be available next time Task Monitor starts.
+Theme files control the colour palette behaviour for colour desaturation, background opacity, and the colours applied to the TUI screen elements.
+Theme files use the ini file format (see example below). To create a custom theme, copy one of the built-in themes from `themes/built-in` into `themes`, give it a new file name and `[header]`, and change the colours as required. Keep its `version=2` line.
+Custom themes are available the next time Task Monitor starts. See [Built-in themes and layouts](#built-in-themes-and-layouts) for how the two folders are used.
 
 On the main screen, `F3` switches to the next theme, in the order Setup lists them. The change lasts until Task Monitor exits; to keep it, open Setup (`F2`), where it is already selected, and save.
 
-Below is an example theme file:
+Below is the start of an example theme file. The copies in `themes/built-in` list every key.
 ```
 ;=============================================================================
 ; Task Monitor (taskmon) - Built-in Theme
 ;=============================================================================
 ; IMPORTANT:
-; Any modifications to default/shipped theme files will be reset automatically
-; when taskmon runs or updates.
+; This is a reference copy of a theme built into taskmon. taskmon doesn't
+; load it, and puts it back as shipped each time it starts, so any changes
+; made here are lost.
 ;
 ; How to create a custom theme:
-;   Step 1: Copy this file to a new name (e.g. "Tokyo Night Custom.theme").
-;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]".
-;   Step 3: Customize color hex values (#RRGGBB).
+;   Step 1: Copy this file into the themes folder, one level up, under a new
+;           name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]". A
+;           custom theme can't use the name of a built-in theme.
+;   Step 3: Change the colours (#RRGGBB, or transparent).
+;   Step 4: Keep "version=2". A theme file without it, or with another
+;           version, is skipped.
 ;=============================================================================
-
 [Dracula Official]
+version=2
 colour-mode=indexed
 
-background=transparent
-background-highlight=#3b5070
+control.background=transparent
+control.background.highlight.focused=#3b5070
+control.background.highlight.inactive=#708090
+control.foreground=#f8f8f2
+control.foreground.highlight.focused=#ffb86c
+control.foreground.highlight.inactive=#ffb86c
+control.border=#f8f8f2
+control.border.focused=#ff79c6
 
-chart-border=#a9b1d6
-chart-y-axis=#9ece6a
-
-col-cmd-normal-user-space=#50fa7b
-col-cmd-low-priority=#0000FF
-col-cmd-high-cpu=#ff79c6
-col-cmd-io-bound=#bd93f9
-col-cmd-script=#e3b341
-col-user-current-non-root=#f8f8f2
-col-user-other-non-root=#f1fa8c
-col-user-system=#ff79c6
-col-user-root=#50fa7b
-
-command-foreground=#bd93f9
-command-background=#282a36
-
-delta-highlight-colour=#ffb86c
-
-error=#db61a2
-
-foreground=#f8f8f2
-foreground-highlight=#ffb86c
-
-menubar-foreground=#f1fa8c
-menubar-background=#282a36
-
-range-high-background=#bd93f9
-range-low-background=#f1fa8c
-range-mid-background=#ffb86c
-range-high-foreground=#000000
-range-low-foreground=#000000
-range-mid-foreground=#000000
-
-header-background=#282a36
-header-foreground=#f1fa8c
+chart.background=transparent
+chart.borderforeground=#f8f8f2
+chart.borderbackground=transparent
+chart.yaxis=#50fa7b
+chart.title=#f8f8f2
+chart.grid=#A9A9A9
+chart.range.low.background=#f1fa8c
+chart.range.low.foreground=#000000
+chart.range.mid.background=#ffb86c
+chart.range.mid.foreground=#000000
+chart.range.high.background=#bd93f9
+chart.range.high.foreground=#000000
+...
 ```
 
 | Example Theme | Description |
 | --- | --- |
-| `[Dracula Official]` | Theme name, used to identify the theme. |
-| `colour-mode=indexed` | `Indexed` means use the color palette that supports color desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
-| `background=transparent` | `transparent` honors background color opacity settings in the terminal. Otherwise specify a custom background color to override the terminal default. |
-| `background-highlight=#3b5070` | Row selection background color in a list. |
-| `chart-border=#f8f8f2` | Chart border color. |
-| `chart-y-axis=#50fa7b` | Text color for chart Y-axis scale. |
-| `col-cmd-normal-user-space=#50fa7b` | Text color for user-mode applications. |
-| `col-cmd-low-priority=#0000FF` | Text color for applications running at a low priority. |
-| `col-cmd-high-cpu=#ff79c6` | Text color for a process running at high CPU%. |
-| `col-cmd-io-bound=#bd93f9` | Text color for a process that is IO bound. |
-| `col-cmd-script=#e3b341` | Text color for script/shell processes. (not supported yet) |
-| `col-user-current-non-root=#f8f8f2` | Username color for current user if not running as root. |
-| `col-user-other-non-root=#f1fa8c` | Username color for other non-root users. |
-| `col-user-system=#ff79c6` | Text color for system users. |
-| `col-user-root=#50fa7b` | Text color for root/admin users. |
-| `command-foreground=#bd93f9` | Function Key text color. |
-| `command-background=#282a36` | Function key background color. |
-| `delta-highlight-colour=#ffb86c` | Flash color when a metric updates in the process list. |
-| `error=#db61a2` | Text error color. |
-| `foreground=#f8f8f2` | Text foreground color. |
-| `foreground-highlight=#ffb86c` | Row selection foreground color in a list. |
-| `menubar-foreground=#f1fa8c` | Menubar text color. |
-| `menubar-background=#282a36` | Menubar background color. |
-| `range-high-background=#bd93f9` | Chart color for high-range values. |
-| `range-low-background=#f1fa8c` | Chart color for low-range values. |
-| `range-mid-background=#ffb86c` | Chart color for mid-range values. |
-| `range-high-foreground=#000000` | Text color for high-range values. |
-| `range-low-foreground=#000000` | Text color for low-range values. |
-| `range-mid-foreground=#000000` | Text color for mid-range values. |
-| `header-background=#282a36` | Column header background color in a list. |
-| `header-foreground=#f1fa8c` | Column header foreground color in a list. |
+| `[Dracula Official]` | Theme name, used to identify the theme. It can't be the name of a built-in theme. |
+| `version=2` | The version of the theme file format. A theme file without it, or with another version, is skipped. |
+| `colour-mode=indexed` | `Indexed` means use the colour palette that supports colour desaturation on modern terminals. `Truecolour` prevents desaturation (by emitting ARGB) escape codes. `Auto` detects terminal support. |
+| `control.background=transparent` | `transparent` honours background colour opacity settings in the terminal. Otherwise specify a custom background colour to override the terminal default. |
+| `control.background.highlight.focused=#3b5070` | Row selection background colour in a list. |
+| `control.foreground=#f8f8f2` | Text foreground colour. |
+| `control.foreground.highlight.focused=#ffb86c` | Row selection foreground colour in a list. |
+| `chart.borderforeground=#f8f8f2` | Chart border colour. |
+| `chart.yaxis=#50fa7b` | Text colour for chart Y-axis scale. |
+| `chart.range.high.background=#bd93f9` | Chart colour for high-range values. |
+| `chart.range.low.background=#f1fa8c` | Chart colour for low-range values. |
+| `chart.range.mid.background=#ffb86c` | Chart colour for mid-range values. |
+| `chart.range.high.foreground=#000000` | Text colour for high-range values. |
+| `chart.range.low.foreground=#000000` | Text colour for low-range values. |
+| `chart.range.mid.foreground=#000000` | Text colour for mid-range values. |
+| `listview.header.background=#282a36` | Column header background colour in a list. |
+| `listview.header.foreground=#f1fa8c` | Column header foreground colour in a list. |
+| `process.list.normaluserspace=#50fa7b` | Text colour for user-mode applications. |
+| `process.list.lowpriority=#0000FF` | Text colour for applications running at a low priority. |
+| `process.list.highcpu=#bd93f9` | Text colour for a process running at high CPU%. |
+| `process.list.iobound=#bd93f9` | Text colour for a process that is IO bound. |
+| `process.list.script=#e3b341` | Text colour for script/shell processes. (not supported yet) |
+| `process.list.user.currentnonroot=#f8f8f2` | Username colour for current user if not running as root. |
+| `process.list.user.othernonroot=#f1fa8c` | Username colour for other non-root users. |
+| `process.list.user.system=#ff79c6` | Text colour for system users. |
+| `process.list.user.root=#50fa7b` | Text colour for root/admin users. |
+| `process.list.deltahighlight=#ffb86c` | Flash colour when a metric updates in the process list. |
+| `app.error=#db61a2` | Text error colour. |
+| `menubar.foreground=#f1fa8c` | Menubar text colour. |
+| `menubar.background=#282a36` | Menubar background colour. |
+| `command.foreground=#bd93f9` | Function key text colour. |
+| `command.background=#282a36` | Function key background colour. |
 
 Note: ```colour-mode``` can be temporarily overridden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
 
 ## Layout Files
 
-Layout files control the number, sequence, rows and columns of the chart layouts on the main process screen. There are a number of default layouts that are pre-loaded when Task Monitor starts. 
-These layouts are kept in .ini files and can be customized as required. Additionally, new layout
-files can be authored and copied to the layout files directory and will automatically be available next time Task Monitor starts.
+Layout files control what SUMMARY shows on the main screen: which charts, metres and lists, and how the screen is split between them. Task Monitor ships with a number of built-in layouts.
+The easiest way to make your own is the Layout Designer, from the layouts list in Setup (`F2`), which saves it to the `layouts` folder. A layout file can also be written by hand, or copied from `layouts/built-in` into `layouts` under a new file name and `[header]`, and is available the next time Task Monitor starts.
+See [Built-in themes and layouts](#built-in-themes-and-layouts) for how the two folders are used.
 
 On the main screen, `F4` switches SUMMARY to the next layout, in the order Setup lists them, and opens SUMMARY if another view is showing. The change lasts until Task Monitor exits; to keep it, open Setup (`F2`), where it is already selected, and save.
 
-Below is an example Layout file:
+A layout is a tree. Each node either splits its space in two or holds one pane. Below is the built-in `Cpu and Memory` layout, without its comments:
 
 ```
-[All Charts]
-ratio=0.4
-num-rows=2
-num-cols=4
-; Chart index
-; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec 
-charts=0,1,2,3,4,5,6,7
+[Cpu and Memory]
+version=2
+root=0
+nodes=0,1,2,3,4
+node.0=split,Column,0.6,1,2
+node.1=split,Row,0.5,3,4
+node.2=pane,Process
+node.3=pane,Cpu
+node.4=pane,Memory
 ```
 
 | Example Layout | Description |
 | :--- | :--- |
-| `[All Charts]` | Layout name, used to identify the layout. |
-| `ratio=0.4` | Percentage of the screen Y-axis used to display chart content i.e. 40%. |
-| `num-rows=2` | Number of rows to split the charts across. |
-| `num-cols=4` | Number of columns to show each chart. |
-| `; Chart index` | |
-| `; 0=Cpu, 1=Gpu, 2=Disk, 3=NetworkSent, 4=Memory, 5=GpUMemory, 6=VirtualMemory, 7=NetworkRec` | Chart identifiers. |
-| `charts=0,1,2,3,4,5,6,7` | Array of chart identifiers to render across the rows and columns. |
+| `[Cpu and Memory]` | Layout name, used to identify the layout. It can't be the name of a built-in layout. |
+| `version=2` | The version of the layout file format. A layout file without it, or with another version, is skipped. |
+| `root=0` | The node that fills the whole SUMMARY screen. |
+| `nodes=0,1,2,3,4` | The ids of every node in the layout. |
+| `node.0=split,Column,0.6,1,2` | A split: `Column` stacks node 1 above node 2, `Row` puts them side by side. `0.6` is the first node's share of the space, here 60%. |
+| `node.2=pane,Process` | A pane showing one control. The process list can name its own columns, joined with `+`, e.g. `pane,Process,Process+Pid+Cpu+Mem`. Without them it uses the columns chosen in Setup. |
+
+Pane controls are `Cpu`, `CpuCores`, `Memory`, `VirtualMemory`, `Gpu`, `GpuMemory`, `Disk`, `DiskSpace`, `NetworkSent`, `NetworkReceived`, `Power`, `Thermals`, `Fans`, `Npu`, the metres `CpuMetre`, `MemoryMetre`, `VirtualMemoryMetre`, `GpuMetre`, `GpuMemoryMetre`, `DiskMetre`, `NetworkSendMetre`, `NetworkReceiveMetre` and `NpuMetre`, the lists `Process`, `Services`, `Drivers`, `Startup`, `InstalledApps` and `SystemInfo`, and `Empty`. `Fans`, `Npu` and `NpuMetre` are macOS only, and are shown empty on Windows, as is a pane with a control name Task Monitor doesn't know.
 
 ## Development Guide
 

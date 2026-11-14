@@ -579,6 +579,26 @@ public sealed class ThemeTests
     }
 
     [Fact]
+    public void Shipped_Themes_Are_At_The_Current_Version()
+    {
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+        Assert.Equal(2, Theme.CurrentVersion);
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+
+            Assert.Equal("2", parser.Sections[0].GetString(Constants.Keys.Version));
+        }
+    }
+
+    [Fact]
     public void Shipped_Themes_Define_Dialog_Colours()
     {
         Assembly asm = typeof(Theme).Assembly;

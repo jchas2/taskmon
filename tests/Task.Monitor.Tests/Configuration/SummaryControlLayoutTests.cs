@@ -58,26 +58,16 @@ public sealed class SummaryControlLayoutTests
         }
     }
 
+    // The version key is what lets a later taskmon tell this format from its own, so a saved
+    // layout is written at the current version, as "version=2" for this format.
     [Fact]
-    public void IsTreeLayout_Is_False_For_An_Unrecognised_LayoutType_Value()
+    public void FromTree_Writes_The_Current_Version()
     {
-        ConfigSection section = new ConfigSection("Something Else").Add("layout-type", "grid");
-        SummaryControlLayout layout = new(section);
+        ConfigParser parser = new(SummaryControlLayout.FromTree("My Dashboard", TestLayouts.Example()).ToString());
+        parser.Parse();
 
-        Assert.False(layout.IsTreeLayout);
-    }
-
-    [Fact]
-    public void IsTreeLayout_Is_False_For_A_Section_With_No_LayoutType_Key()
-    {
-        ConfigSection gridSection = new ConfigSection("All Charts")
-            .Add("ratio", "0.6")
-            .Add("num-rows", "2")
-            .Add("num-cols", "4");
-
-        SummaryControlLayout layout = new(gridSection);
-
-        Assert.False(layout.IsTreeLayout);
+        Assert.Equal(2, SummaryControlLayout.CurrentVersion);
+        Assert.Equal("2", parser.Sections[0].GetString(Constants.Keys.Version));
     }
 
     [Theory]
@@ -144,7 +134,6 @@ public sealed class SummaryControlLayoutTests
         SummaryControlLayout reparsed = new(parser.Sections[0]);
 
         Assert.Equal("My Dashboard", reparsed.Name);
-        Assert.True(reparsed.IsTreeLayout);
 
         LayoutTree<SummaryPane> tree = reparsed.ToTree();
 
@@ -164,7 +153,7 @@ public sealed class SummaryControlLayoutTests
     public void ToTree_Without_A_Root_Key_Roots_The_Tree_At_The_First_Node()
     {
         ConfigSection section = new ConfigSection("No Root")
-            .Add(Constants.Keys.LayoutType, "tree")
+            .Add(Constants.Keys.Version, "2")
             .Add(Constants.Keys.SummaryNodes, "3,4,5")
             .Add($"{Constants.Keys.SummaryNodePrefix}3", "split,Row,0.5,4,5")
             .Add($"{Constants.Keys.SummaryNodePrefix}4", "pane,Cpu")
@@ -191,7 +180,7 @@ public sealed class SummaryControlLayoutTests
     [Fact]
     public void ToTree_With_No_Node_Keys_Gives_The_Fallback_Layout()
     {
-        ConfigSection section = new ConfigSection("Empty").Add("layout-type", "tree");
+        ConfigSection section = new ConfigSection("Empty").Add(Constants.Keys.Version, "2");
         SummaryControlLayout layout = new(section);
 
         LayoutTree<SummaryPane> tree = layout.ToTree();

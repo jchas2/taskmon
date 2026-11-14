@@ -1,3 +1,16 @@
+;=============================================================================
+; Task Monitor (taskmon) - Built-in Layout
+;=============================================================================
+; IMPORTANT:
+; This is a reference copy of a layout built into taskmon. taskmon doesn't
+; load it, and puts it back as shipped each time it starts, so any changes
+; made here are lost.
+;
+; To make your own layout, use the Layout Designer in Setup (F2), or copy
+; this file into the layouts folder, one level up, under a new name and
+; header. A custom layout can't use the name of a built-in layout, and a
+; layout file without "version=2", or with another version, is skipped.
+;=============================================================================
 [Network Send and Receive Bytes]
 ; A split tree (see SummaryControlLayout). Each node is one of:
 ;   split,<Row|Column>,<ratio>,<first>,<second>  - Row = side by side, Column = stacked,
@@ -5,7 +18,7 @@
 ;   pane,<control>[,<process columns joined with +>]
 ; Network Sent and Received side by side over the process list, the charts taking 60% of the
 ; height.
-layout-type=tree
+version=2
 root=0
 nodes=0,1,2,3,4
 node.0=split,Column,0.6,1,2

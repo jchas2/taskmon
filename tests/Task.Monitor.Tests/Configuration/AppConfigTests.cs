@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Cli.Utils;
@@ -22,7 +23,7 @@ public sealed class AppConfigTests
 
     [Fact]
     public void AppConfig_Canary_Test() =>
-        Assert.Equal(36, CanaryTestHelper.GetPropertyCount<AppConfig>());
+        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<AppConfig>());
 
     [Fact]
     public void A_New_Config_Starts_With_All_Charts_As_The_Default_Layout()
@@ -114,6 +115,72 @@ use-irix-cpu-reporting=False
 
         Assert.NotNull(result);
         Assert.Contains("taskmon.ini", result);
+    }
+
+    // Each missing folder is created on its own, from the top down, which is what lets every one
+    // of them be handed to the user under sudo. Creating v2 in one go would leave the taskmon
+    // folder above it owned by root.
+    [Fact]
+    public void DefaultConfigPath_Creates_Each_Missing_Folder_From_The_Top_Down()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        string configPath   = appConfig.DefaultConfigPath!;
+        string appPath      = Path.GetDirectoryName(configPath)!;
+
+        List<string> created = new();
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>()))
+            .Returns((string? path) => path != appPath && path != configPath);
+        fileSystem.Setup(fs => fs.TryCreateDirectory(It.IsAny<string>()))
+            .Callback<string>(created.Add)
+            .Returns(true);
+
+        Assert.Equal(configPath, appConfig.DefaultConfigPath);
+        Assert.Equal([appPath, configPath], created);
+    }
+
+    // Version 2's files live in a folder of their own, so a version 1 install alongside, or one
+    // rolled back to, finds its files exactly as it left them.
+    [Fact]
+    public void DefaultConfigPath_Holds_Every_Config_File_Read_Or_Written()
+    {
+        string[] fileMethods = [
+            nameof(IFileSystem.DeleteFile),
+            nameof(IFileSystem.FileExists),
+            nameof(IFileSystem.GetFiles),
+            nameof(IFileSystem.ReadAllText),
+            nameof(IFileSystem.ReplaceAllText),
+            nameof(IFileSystem.WriteAllText),
+            nameof(IFileSystem.WriteAllTextAtomic)
+        ];
+
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.SaveLayout(SummaryControlLayout.FromTree("Saved Dashboard", TestLayouts.Example())));
+        Assert.True(appConfig.TrySave(appConfig.DefaultConfigFilePath!));
+
+        string configPath = appConfig.DefaultConfigPath!;
+
+        List<string> paths = fileSystem.Invocations
+            .Where(invocation => fileMethods.Contains(invocation.Method.Name))
+            .Select(invocation => (string)invocation.Arguments[0])
+            .ToList();
+
+        Assert.NotEmpty(paths);
+        Assert.All(paths, path => Assert.StartsWith($"{configPath}{Path.DirectorySeparatorChar}", path));
+    }
+
+    [Fact]
+    public void DefaultConfigPath_Is_A_Version_2_Folder_Inside_Version_1s()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        string? configPath = new AppConfig(fileSystem.Object).DefaultConfigPath;
+
+        Assert.Equal("v2", Path.GetFileName(configPath));
+        Assert.Equal("taskmon", Path.GetFileName(Path.GetDirectoryName(configPath)));
     }
 
     private static string DefaultIniFile => @"
@@ -212,6 +279,10 @@ use-irix-cpu-reporting=True
             string.Empty        // Empty file forces AppConfig to use defaults for all property getters.
         };
 
+    private static bool IsBuiltInFolder(string path, string parentFolder) =>
+        Path.GetFileName(path) == Constants.BuiltInDirectory &&
+        Path.GetFileName(Path.GetDirectoryName(path)) == parentFolder;
+
     [Theory]
     [InlineData("All Charts", true)]
     [InlineData("all charts", true)]
@@ -226,26 +297,6 @@ use-irix-cpu-reporting=True
         Assert.Equal(expected, appConfig.IsBuiltInLayout(name));
     }
 
-    // Version 1's layouts folder holds fixed-grid layouts this version can't read. It is left as
-    // it is, so a version 1 install alongside keeps working.
-    [Fact]
-    public void Layouts_Are_Never_Read_From_Or_Written_To_The_Version_1_Layouts_Folder()
-    {
-        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-
-        AppConfig appConfig = new(fileSystem.Object);
-        appConfig.SaveLayout(SummaryControlLayout.FromTree("Saved Dashboard", TestLayouts.Example()));
-
-        fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "summary-layouts")), Times.Once);
-        fileSystem.Verify(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == "layouts")), Times.Never);
-        fileSystem.Verify(fs => fs.WriteAllText(
-            It.Is<string>(p => Path.GetFileName(Path.GetDirectoryName(p)) == "layouts"),
-            It.IsAny<string>()), Times.Never);
-        fileSystem.Verify(fs => fs.WriteAllText(
-            It.Is<string>(p => p.EndsWith(Path.Combine("summary-layouts", $"Saved Dashboard{Constants.LayoutExtension}"))),
-            It.IsAny<string>()), Times.Once);
-    }
-
     private AppConfig LoadFromIni(string iniText)
     {
         fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
@@ -255,6 +306,26 @@ use-irix-cpu-reporting=True
         Assert.True(appConfig.TryLoad(Config.FromFile(fileSystem.Object, testConfigPath)));
 
         return appConfig;
+    }
+
+    // The built-in folder is taskmon's: a file there that isn't a built-in's copy, such as one for a
+    // layout that no longer ships, is deleted. The match ignores case, as a built-in renamed only
+    // by case keeps the old file name on a case-insensitive disk.
+    [Fact]
+    public void LoadLayouts_Deletes_Files_In_The_Built_In_Folder_That_Are_Not_Built_Ins()
+    {
+        const string RetiredFile   = "/fake/path/layouts/built-in/Retired Layout.layout";
+        const string AllChartsFile = "/fake/path/layouts/built-in/all charts.layout";
+
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        fileSystem.Setup(fs => fs.GetFiles(It.Is<string>(p => IsBuiltInFolder(p, "layouts")), It.IsAny<string>()))
+            .Returns([AllChartsFile, RetiredFile]);
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        fileSystem.Verify(fs => fs.DeleteFile(RetiredFile), Times.Once);
+        fileSystem.Verify(fs => fs.DeleteFile(AllChartsFile), Times.Never);
+        Assert.DoesNotContain(appConfig.Layouts, l => l.Name == "Retired Layout");
     }
 
     [Fact]
@@ -267,16 +338,15 @@ use-irix-cpu-reporting=True
         _ = new AppConfig(fileSystem.Object);
 
         fileSystem.Verify(fs => fs.WriteAllText(
-            It.Is<string>(p => p.EndsWith($"All Charts{Constants.LayoutExtension}")),
-            It.IsAny<string>()), Times.AtLeastOnce);
+            It.Is<string>(p => p.EndsWith(Path.Combine("layouts", "built-in", $"All Charts{Constants.LayoutExtension}"))),
+            It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
     public void LoadLayouts_Flags_Shipped_Layouts_As_Built_In_And_Custom_Ones_As_Not()
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Dashboard.layout"]);
-        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Dashboard.layout")).Returns(TreeLayoutIni("My Dashboard"));
+        SetupUserFiles("layouts", ("My Dashboard.layout", TreeLayoutIni("My Dashboard")));
 
         AppConfig appConfig = new(fileSystem.Object);
 
@@ -289,7 +359,7 @@ use-irix-cpu-reporting=True
     {
         string treeLayoutIni = @"
 [My Dashboard]
-layout-type=tree
+version=2
 root=0
 nodes=0,1,2
 node.0=split,row,0.5,1,2
@@ -297,8 +367,7 @@ node.1=pane,cpu
 node.2=pane,process,process+pid+cpu+mem
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Dashboard.layout"]);
-        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Dashboard.layout")).Returns(treeLayoutIni);
+        SetupUserFiles("layouts", ("My Dashboard.layout", treeLayoutIni));
 
         AppConfig appConfig = new(fileSystem.Object);
 
@@ -310,8 +379,27 @@ node.2=pane,process,process+pid+cpu+mem
             processPane.ProcessColumns);
     }
 
-    // A version 1 fixed-grid layout file (no layout-type key) copied into the folder is skipped,
-    // not loaded as a tree with default contents.
+    // A layout file is loaded only at the version this build writes. One with no version, or
+    // another version, isn't loaded as a tree with whatever it happens to contain.
+    [Theory]
+    [InlineData("")]
+    [InlineData("version=1")]
+    [InlineData("version=3")]
+    [InlineData("version=2.0")]
+    public void LoadLayouts_Skips_A_Layout_File_Not_At_Version_2(string versionLine)
+    {
+        string layoutIni = $"[My Layout]\n{versionLine}\nroot=0\nnodes=0\nnode.0=pane,cpu\n";
+
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        SetupUserFiles("layouts", ("My Layout.layout", layoutIni));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.DoesNotContain(appConfig.Layouts, t => t.Name == "My Layout");
+    }
+
+    // A version 1 fixed-grid layout file copied into the folder has no version, so it is skipped
+    // rather than translated.
     [Fact]
     public void LoadLayouts_Skips_A_Version_1_Grid_Layout_On_Disk()
     {
@@ -323,8 +411,7 @@ num-cols=4
 charts=0,1,2,3,4,5,6,7
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(["/fake/path/summary-layouts/My Grid.layout"]);
-        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/summary-layouts/My Grid.layout")).Returns(gridLayoutIni);
+        SetupUserFiles("layouts", ("My Grid.layout", gridLayoutIni));
 
         AppConfig appConfig = new(fileSystem.Object);
 
@@ -332,16 +419,16 @@ charts=0,1,2,3,4,5,6,7
         Assert.Contains(appConfig.Layouts, t => t.Name == "All Charts");
     }
 
-    // The file on disk under a shipped layout's name is its deployed copy, so the shipped layout is
-    // what loads - an edited copy doesn't shadow it, the same as a shipped theme.
+    // Built-in names are reserved: a file whose header names a built-in layout is skipped, whatever
+    // the file is called, so the Layout Designer, which won't save under a built-in's name, and
+    // the files on disk agree.
     [Theory]
-    [InlineData("/fake/path/summary-layouts/All Charts.layout")]
-    [InlineData("/fake/path/summary-layouts/Renamed File.layout")]
-    public void LoadLayouts_The_Shipped_Layout_Wins_Over_A_File_On_Disk_With_Its_Name(string layoutFile)
+    [InlineData("All Charts.layout")]
+    [InlineData("Renamed File.layout")]
+    public void LoadLayouts_The_Shipped_Layout_Wins_Over_A_File_On_Disk_With_Its_Name(string fileName)
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns([layoutFile]);
-        fileSystem.Setup(fs => fs.ReadAllText(layoutFile)).Returns(TreeLayoutIni("All Charts"));
+        SetupUserFiles("layouts", (fileName, TreeLayoutIni("All Charts")));
 
         AppConfig appConfig = new(fileSystem.Object);
 
@@ -355,13 +442,13 @@ charts=0,1,2,3,4,5,6,7
     {
         string customThemeIni = @"
 [My Custom Theme]
+version=2
 colour-mode=truecolour
 control.background=#123456
 control.foreground=#abcdef
 ";
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>())).Returns(["/fake/path/themes/My Custom Theme.theme"]);
-        fileSystem.Setup(fs => fs.ReadAllText("/fake/path/themes/My Custom Theme.theme")).Returns(customThemeIni);
+        SetupUserFiles("themes", ("My Custom Theme.theme", customThemeIni));
 
         AppConfig appConfig = new(fileSystem.Object);
 
@@ -370,18 +457,68 @@ control.foreground=#abcdef
         Assert.Equal(ColorTranslator.FromHtml("#123456"), customTheme.Background);
     }
 
+    // Each built-in theme's copy goes in the built-in folder, never the folder people's own themes
+    // are in, so it can't overwrite one of theirs that has the same name.
     [Fact]
     public void LoadThemes_ManifestThemes_Write_To_Disk_On_Load()
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        
+
         AppConfig appConfig = new(fileSystem.Object);
 
         Assert.NotEmpty(appConfig.Themes);
         Assert.Contains(appConfig.Themes, t => t.Name == "Taskmon Default");
         fileSystem.Verify(fs => fs.WriteAllText(
-            It.Is<string>(p => p.EndsWith($"Taskmon Default{Constants.ThemeExtension}")),
-            It.IsAny<string>()), Times.AtLeastOnce);
+            It.Is<string>(p => p.EndsWith(Path.Combine("themes", "built-in", $"Taskmon Default{Constants.ThemeExtension}"))),
+            It.IsAny<string>()), Times.Once);
+        fileSystem.Verify(fs => fs.WriteAllText(
+            It.Is<string>(p => Path.GetFileName(Path.GetDirectoryName(p)) == "themes"),
+            It.IsAny<string>()), Times.Never);
+    }
+
+    // A theme is named by its [header], not its file name: that is the name Setup lists and the
+    // default-theme setting stores.
+    [Fact]
+    public void LoadThemes_Names_A_Theme_By_Its_Header()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        SetupUserFiles("themes", ("Old File Name.theme", "[Header Name]\nversion=2\ncontrol.background=#123456\n"));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.Contains(appConfig.Themes, t => t.Name == "Header Name");
+        Assert.DoesNotContain(appConfig.Themes, t => t.Name == "Old File Name");
+    }
+
+    // A version 1 theme (no version, and the old key names) or a theme of another version is
+    // skipped rather than loaded with fallback colours for every key it doesn't know.
+    [Theory]
+    [InlineData("background=#123456\nforeground=#abcdef\n")]
+    [InlineData("version=1\ncontrol.background=#123456\n")]
+    [InlineData("version=3\ncontrol.background=#123456\n")]
+    public void LoadThemes_Skips_A_Theme_File_Not_At_Version_2(string keys)
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        SetupUserFiles("themes", ("My Theme.theme", $"[My Theme]\n{keys}"));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.DoesNotContain(appConfig.Themes, t => t.Name == "My Theme");
+    }
+
+    // Built-in names are reserved, ignoring case: a file whose header names a built-in theme is
+    // skipped, so the built-in is what loads.
+    [Fact]
+    public void LoadThemes_Skips_A_Theme_Named_Like_A_Built_In()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+        SetupUserFiles("themes", ("My Nord.theme", "[nord]\nversion=2\ncontrol.background=#123456\n"));
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Theme nord = Assert.Single(appConfig.Themes, t => t.Name.Equals("Nord", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("Nord", nord.Name);
+        Assert.NotEqual(ColorTranslator.FromHtml("#123456"), nord.Background);
     }
 
     [Theory]
@@ -496,6 +633,20 @@ control.foreground=#abcdef
         Assert.Same(original, appConfig.DefaultLayout);
     }
 
+    // Puts files in the folder people keep their own themes or layouts in, leaving the built-in
+    // folder inside it empty.
+    private void SetupUserFiles(string folder, params (string FileName, string Text)[] files)
+    {
+        string[] paths = files.Select(file => $"/fake/path/{folder}/{file.FileName}").ToArray();
+
+        fileSystem.Setup(fs => fs.GetFiles(It.Is<string>(p => Path.GetFileName(p) == folder), It.IsAny<string>()))
+            .Returns(paths);
+
+        foreach ((string path, string text) in paths.Zip(files.Select(file => file.Text))) {
+            fileSystem.Setup(fs => fs.ReadAllText(path)).Returns(text);
+        }
+    }
+
     // Every shipped layout, and the charts each row held under the old grid format (row by row,
     // left to right) - the trees they were converted to must reproduce exactly that order, with
     // the process list last.
@@ -545,6 +696,27 @@ control.foreground=#abcdef
 
         Rectangle process = renderer.PaneBounds[tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Id];
         Assert.Equal(new Rectangle(0, 24, 120, 16), process);
+    }
+
+    [Fact]
+    public void Shipped_Layouts_Are_At_The_Current_Version()
+    {
+        Assembly asm = typeof(AppConfig).Assembly;
+        string[] layoutNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.LayoutExtension))
+            .ToArray();
+
+        Assert.NotEmpty(layoutNames);
+
+        foreach (string name in layoutNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+
+            Assert.Equal(
+                SummaryControlLayout.CurrentVersion.ToString(),
+                parser.Sections[0].GetString(Constants.Keys.Version));
+        }
     }
 
     [Theory]
@@ -753,7 +925,7 @@ control.foreground=#abcdef
 
     private static string TreeLayoutIni(string name) => $@"
 [{name}]
-layout-type=tree
+version=2
 root=0
 nodes=0,1,2
 node.0=split,row,0.5,1,2
@@ -787,6 +959,24 @@ node.2=pane,memory
     //     Assert.Equal(themeName, appConfig.DefaultTheme.Name);
     // }
     
+    // The theme and layout files are read once, when AppConfig is constructed. Reading them again
+    // when the config loads would log every skipped file twice at start-up.
+    [Fact]
+    public void TryLoad_Does_Not_Read_The_Theme_And_Layout_Folders_Again()
+    {
+        fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        fileSystem.Invocations.Clear();
+
+        Assert.True(appConfig.TryLoad(Config.FromString("[ux]\ndefault-theme=Nord\ndefault-summary-layout=Cpu and Memory\n")!));
+
+        fileSystem.Verify(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        fileSystem.Verify(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        Assert.Equal("Nord", appConfig.Theme.Name);
+        Assert.Equal("Cpu and Memory", appConfig.DefaultLayout?.Name);
+    }
+
     [Fact]
     public void TryLoad_With_Empty_Config_Returns_True()
     {
@@ -847,8 +1037,8 @@ node.2=pane,memory
         Assert.True(result);
     }
 
-    // Version 1's keys belong to a version 1 install alongside: left alone when present, and not
-    // added to a config that doesn't have them.
+    // Version 2 never reads version 1's taskmon.ini, but one copied in by hand keeps its version 1
+    // keys untouched, and they are not added to a config that doesn't have them.
     [Fact]
     public void Version_1_Layout_Keys_Are_Left_Alone_But_Not_Added()
     {

@@ -6,6 +6,10 @@ namespace Task.Monitor.Configuration;
 
 public sealed class Theme
 {
+    // The version of the theme file format, written as the file's version key. It changes only
+    // when an older taskmon would misread a file, and a file at any other version isn't loaded.
+    public const int CurrentVersion = 2;
+
     private ConfigSection? themeSection;
 
     internal static readonly string[] ColourKeys =
