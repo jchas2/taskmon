@@ -9,12 +9,8 @@ public sealed class Constants
     public const string LayoutDirectory = "layouts";
     public const string LayoutExtension = ".layout";
 
-    // Version 2 keeps its config in a folder of its own inside version 1's, so neither version
-    // reads or writes the other's files.
     public const string ConfigVersionDirectory = "v2";
 
-    // Inside the themes and layouts folders: reference copies of the built-in ones, which taskmon
-    // rewrites as shipped and never loads.
     public const string BuiltInDirectory = "built-in";
 
     public sealed class Sections
@@ -166,6 +162,7 @@ public sealed class Constants
         public const string ColCmdLowPriority     = "process.list.lowpriority";
         public const string ColCmdHighCpu         = "process.list.highcpu";
         public const string ColCmdIoBound         = "process.list.iobound";
+        // Not used yet: kept for script process detection, to come.
         public const string ColCmdScript          = "process.list.script";
         public const string ColUserCurrentNonRoot = "process.list.user.currentnonroot";
         public const string ColUserOtherNonRoot   = "process.list.user.othernonroot";
@@ -179,6 +176,18 @@ public sealed class Constants
 
         public const string Error = "app.error";
 
+        public const string StatusOk      = "status.ok";
+        public const string StatusWarning = "status.warning";
+        public const string StatusError   = "status.error";
+
+        public const string StatusbarBannerBackground = "statusbar.banner.background";
+        public const string StatusbarBannerForeground = "statusbar.banner.foreground";
+        public const string StatusbarStatusForeground = "statusbar.status.foreground";
+        public const string StatusbarStatusOk         = "statusbar.status.ok";
+        public const string StatusbarStatusWarning    = "statusbar.status.warning";
+        public const string StatusbarStatusError      = "statusbar.status.error";
+        public const string StatusbarPulse            = "statusbar.pulse";
+
         public const string HotKey     = "hotkey.key";
         public const string HotKeyName = "hotkey.name";
 
@@ -187,8 +196,9 @@ public sealed class Constants
         public const string MenubarForeground = "menubar.foreground";
         public const string MenubarBackground = "menubar.background";
 
-        public const string CommandBackground = "command.background";
-        public const string CommandForeground = "command.foreground";
+        public const string CommandBackground         = "command.background";
+        public const string CommandForeground         = "command.foreground";
+        public const string CommandForegroundDisabled = "command.foreground.disabled";
         
         // Theme and layout file key: the version of the file's format.
         public const string Version = "version";

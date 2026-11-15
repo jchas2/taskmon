@@ -21,7 +21,7 @@ public static class KeyBindControl
         
         terminal.SetCursorPosition(x, y);
         terminal.BackgroundColor = theme.Background;
-        terminal.ForegroundColor = enabled ? theme.Foreground : ConsolePalette.DarkGray;
+        terminal.ForegroundColor = enabled ? theme.Foreground : theme.CommandForegroundDisabled;
         terminal.Write(keyBinding + " ");
         int nchars = keyBinding.Length + 1;
         
@@ -29,7 +29,7 @@ public static class KeyBindControl
         width = Math.Max(width, text.Length + 2);
 
         terminal.BackgroundColor = theme.CommandBackground;
-        terminal.ForegroundColor = enabled ? theme.CommandForeground : ConsolePalette.DarkGray;
+        terminal.ForegroundColor = enabled ? theme.CommandForeground : theme.CommandForegroundDisabled;
         terminal.Write(text.CentreWithLength(width).ToBold());
         terminal.BackgroundColor = theme.Background;
         terminal.ForegroundColor = theme.Foreground;

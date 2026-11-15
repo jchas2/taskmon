@@ -457,6 +457,30 @@ Sla deze op onder een andere naam.</value>
   <data name="HelpMetricChanged" xml:space="preserve">
     <value>Gewijzigde meetwaarde</value>
   </data>
+  <data name="HelpStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="HelpStatusOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="HelpStatusWarning" xml:space="preserve">
+    <value>Let op</value>
+  </data>
+  <data name="HelpStatusError" xml:space="preserve">
+    <value>Fout</value>
+  </data>
+  <data name="HelpUserCurrent" xml:space="preserve">
+    <value>Huidige gebruiker</value>
+  </data>
+  <data name="HelpUserOther" xml:space="preserve">
+    <value>Andere gebruiker</value>
+  </data>
+  <data name="HelpUserSystem" xml:space="preserve">
+    <value>Systeemaccount</value>
+  </data>
+  <data name="HelpUserRoot" xml:space="preserve">
+    <value>Root of SYSTEM</value>
+  </data>
   <data name="HelpKeyMoveLeft" xml:space="preserve">
     <value>Naar het onderdeel links</value>
   </data>

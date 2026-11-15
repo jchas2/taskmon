@@ -95,7 +95,7 @@ public partial class ProcessService
             BasePriority    = sample.BasePriority,
             IsDaemon        = sample.IsDaemon,
             IsLowPriority   = sample.IsLowPriority,
-            IsRunningAsRoot = sample.IsRunningAsRoot,
+            Account         = sample.Account,
             ProcessName     = sample.ProcessName,
             FileDescription = sample.FileDescription,
             UserName        = sample.UserName,

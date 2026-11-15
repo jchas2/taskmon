@@ -48,26 +48,28 @@ public class FooterControl : Control
 
     private void AppendServiceStatus(SystemSnapshot current)
     {
+        Theme theme = appConfig.Theme;
+
         if (current.Services.Count == current.Services.Count(s => s.Status == ServiceStatus.Running)) {
-            AppendStatus(Color.Green, RunningStatusText);
+            AppendStatus(theme.StatusbarStatusOk, RunningStatusText);
         }
         else if (current.Services.Any(s => s.Status == ServiceStatus.Errored)) {
-            AppendStatus(Color.OrangeRed, ErroredStatusText);
+            AppendStatus(theme.StatusbarStatusError, ErroredStatusText);
         }
         else if (current.Services.Any(s => s.Status
                      is ServiceStatus.Stopping
                      or ServiceStatus.Stopped
                      or ServiceStatus.None)) {
-            AppendStatus(Color.Orange, StoppingStatusText);
+            AppendStatus(theme.StatusbarStatusWarning, StoppingStatusText);
         }
         else {
-            AppendStatus(Color.Orange, UnknownStatusText);
+            AppendStatus(theme.StatusbarStatusWarning, UnknownStatusText);
         }
     }
 
     private void AppendStatus(Color statusColour, string text)
     {
-        frame.SetColour(Color.Black, statusColour);
+        frame.SetColour(appConfig.Theme.StatusbarStatusForeground, statusColour);
         frame.Append(text.PadRight(StatusTextWidth));
     }
 
@@ -187,20 +189,20 @@ public class FooterControl : Control
 
         // The status row is always the bottom row, with the tip row above it when there is one.
         frame.MoveTo(X, Y + Height - 1);
-        frame.SetColour(Color.Black, Color.DeepSkyBlue);
+        frame.SetColour(appConfig.Theme.StatusbarBannerForeground, appConfig.Theme.StatusbarBannerBackground);
         frame.Append(banner);
 
         lock (@lock) {
             if (IsStale) {
-                AppendStatus(Color.Orange, UnknownStatusText);
-                frame.SetColour(Color.Orange, background);
+                AppendStatus(appConfig.Theme.StatusbarStatusWarning, UnknownStatusText);
+                frame.SetColour(appConfig.Theme.StatusbarStatusWarning, background);
                 frame.Append($"  {StatusGlyph}");
             }
             else if (snapshot != null) {
                 AppendServiceStatus(snapshot);
 
                 if (snapshot.Sequence % 2 == 0) {
-                    frame.SetColour(Color.DeepSkyBlue, background);
+                    frame.SetColour(appConfig.Theme.StatusbarPulse, background);
                     frame.Append($"  {StatusGlyph}");
                 }
                 else {

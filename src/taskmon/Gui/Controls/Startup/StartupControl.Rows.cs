@@ -59,7 +59,7 @@ public sealed partial class StartupControl
         Theme theme = appConfig.Theme;
 
         Color statusForeground = entry.State == StartupEntryState.Disabled
-            ? theme.RangeMidBackground
+            ? theme.StatusWarning
             : theme.PropertyValue;
 
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,      Cell(entry.Name),           theme));
@@ -84,7 +84,7 @@ public sealed partial class StartupControl
 
         Color background         = appConfig.Theme.ListViewBackground;
         Color foreground         = appConfig.Theme.ListViewForeground;
-        Color disabledForeground = appConfig.Theme.RangeMidBackground;
+        Color disabledForeground = appConfig.Theme.StatusWarning;
 
         int enabled = entries.Count(entry => entry.State != StartupEntryState.Disabled);
 

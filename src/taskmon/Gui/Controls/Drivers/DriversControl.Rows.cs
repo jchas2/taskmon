@@ -54,8 +54,8 @@ public sealed partial class DriversControl
         Theme theme = appConfig.Theme;
 
         Color statusForeground = IsActive(driver.Status)
-            ? theme.RangeLowBackground
-            : theme.RangeMidBackground;
+            ? theme.StatusOk
+            : theme.StatusWarning;
 
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,         Cell(driver.DisplayName),      theme));
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,       DescribeStatus(driver.Status), theme, statusForeground));
@@ -73,8 +73,8 @@ public sealed partial class DriversControl
 
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
-        Color runningForeground = appConfig.Theme.RangeLowBackground;
-        Color stoppedForeground = appConfig.Theme.RangeMidBackground;
+        Color runningForeground = appConfig.Theme.StatusOk;
+        Color stoppedForeground = appConfig.Theme.StatusWarning;
 
         int running = drivers.Count(driver => IsActive(driver.Status));
 

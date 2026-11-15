@@ -392,17 +392,32 @@ chart.range.high.foreground=#000000
 | `process.list.lowpriority=#0000FF` | Text colour for applications running at a low priority. |
 | `process.list.highcpu=#bd93f9` | Text colour for a process running at high CPU%. |
 | `process.list.iobound=#bd93f9` | Text colour for a process that is IO bound. |
-| `process.list.script=#e3b341` | Text colour for script/shell processes. (not supported yet) |
-| `process.list.user.currentnonroot=#f8f8f2` | Username colour for current user if not running as root. |
-| `process.list.user.othernonroot=#f1fa8c` | Username colour for other non-root users. |
-| `process.list.user.system=#ff79c6` | Text colour for system users. |
-| `process.list.user.root=#50fa7b` | Text colour for root/admin users. |
+| `process.list.script=#e3b341` | Text colour for script and shell processes. Not used yet: kept for script detection, to come. |
+| `process.list.user.currentnonroot=#f8f8f2` | User column colour for the user running Task Monitor. |
+| `process.list.user.othernonroot=#f1fa8c` | User column colour for other people's accounts. |
+| `process.list.user.system=#ff79c6` | User column colour for system and service accounts: on Windows LOCAL SERVICE, NETWORK SERVICE and service accounts, on macOS the `_`-prefixed accounts. |
+| `process.list.user.root=#50fa7b` | User column colour for SYSTEM on Windows and root on macOS. |
 | `process.list.deltahighlight=#ffb86c` | Flash colour when a metric updates in the process list. |
+| `performance.panel.background=transparent` | Background of the panels down the side of PERFORMANCE. If not set, `control.background` is used. |
+| `performance.panel.foreground=#f8f8f2` | Text colour of those panels. If not set, `control.foreground` is used. |
+| `performance.panel.titlebar.background=#282a36` | Background of a panel's title strip. If not set, `menubar.background` is used. |
+| `performance.panel.titlebar.foreground=#f1fa8c` | Text colour of a panel's title strip. If not set, `menubar.foreground` is used. |
 | `app.error=#db61a2` | Text error colour. |
+| `status.ok=#f1fa8c` | Status text in lists for running, enabled or OK, e.g. in SERVICES, DRIVERS, STARTUP and HEALTH. If not set, `chart.range.low.background` is used. |
+| `status.warning=#ffb86c` | Status text for stopped, disabled or a warning. If not set, `chart.range.mid.background` is used. |
+| `status.error=#bd93f9` | Status text for failed or critical. If not set, `chart.range.high.background` is used. |
 | `menubar.foreground=#f1fa8c` | Menubar text colour. |
 | `menubar.background=#282a36` | Menubar background colour. |
 | `command.foreground=#bd93f9` | Function key text colour. |
 | `command.background=#282a36` | Function key background colour. |
+| `command.foreground.disabled=#808080` | Function key text colour when the key can't be used. |
+| `statusbar.banner.background=#00bfff` | Background of the Task Monitor version at the bottom left. |
+| `statusbar.banner.foreground=#000000` | Text colour of the version. |
+| `statusbar.status.foreground=#000000` | Text colour of the services status beside it. |
+| `statusbar.status.ok=#008000` | Background of the services status when every service is running. |
+| `statusbar.status.warning=#ffa500` | Background when a service is stopping or stopped, or the status is unknown. Also the dot shown when data stops arriving. |
+| `statusbar.status.error=#ff4500` | Background when a service has failed. |
+| `statusbar.pulse=#00bfff` | The dot that blinks as data arrives. |
 
 Note: ```colour-mode``` can be temporarily overridden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
 

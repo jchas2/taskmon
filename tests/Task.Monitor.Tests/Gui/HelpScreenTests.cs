@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Reflection;
 using Moq;
 using Task.Monitor.Cli.Utils;
+using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.Tests.Common;
@@ -274,6 +275,36 @@ public sealed class HelpScreenTests
         helpScreen.Resize();
 
         return helpScreen;
+    }
+
+    [Fact]
+    public void The_Process_Colours_Show_The_User_And_Status_Colours()
+    {
+        Theme theme = runContext.AppConfig.Theme;
+
+        theme.ColumnUserCurrentNonRoot = Color.FromArgb(1, 1, 1);
+        theme.ColumnUserOtherNonRoot   = Color.FromArgb(2, 2, 2);
+        theme.ColumnUserSystem         = Color.FromArgb(3, 3, 3);
+        theme.ColumnUserRoot           = Color.FromArgb(4, 4, 4);
+        theme.StatusOk                 = Color.FromArgb(5, 5, 5);
+        theme.StatusWarning            = Color.FromArgb(6, 6, 6);
+        theme.StatusError              = Color.FromArgb(7, 7, 7);
+
+        List<ListViewItem> rows = Rows(Section(Sized(new HelpScreen(runContext)), "PROCESS AND PATH COLOURS"));
+
+        // The User column's colours beside the first four process colours.
+        Assert.Equal(
+            [("Current user", 1), ("Other user", 2), ("System account", 3), ("Root or SYSTEM", 4)],
+            rows.Take(4).Select(row => (row.SubItems[4].Text, (int)row.SubItems[4].ForegroundColor.R)));
+
+        // The status colours in the last row, like the Metric row's swatches.
+        ListViewItem status = rows[^1];
+
+        Assert.Equal("Status", status.SubItems[0].Text);
+        Assert.Equal(
+            [("OK", 5), ("Warning", 6), ("Error", 7)],
+            Enumerable.Range(1, 3).Select(i => (status.SubItems[i].Text, (int)status.SubItems[i].ForegroundColor.R)));
+        Assert.All(Enumerable.Range(1, 3), i => Assert.Equal(theme.ListViewBackground, status.SubItems[i].BackgroundColor));
     }
 
     // The swatch, label and key description columns widen to fit the UI language, so text longer

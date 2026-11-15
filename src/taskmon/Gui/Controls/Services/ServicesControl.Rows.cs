@@ -69,8 +69,8 @@ public sealed partial class ServicesControl
         Theme theme = appConfig.Theme;
 
         Color statusForeground = service.Status == WindowsServiceStatus.Running
-            ? theme.RangeLowBackground
-            : theme.RangeMidBackground;
+            ? theme.StatusOk
+            : theme.StatusWarning;
 
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailName,         Cell(service.DisplayName),        theme));
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailStatus,       StatusText(service),              theme, statusForeground));
@@ -93,8 +93,8 @@ public sealed partial class ServicesControl
 
         Color background        = appConfig.Theme.ListViewBackground;
         Color foreground        = appConfig.Theme.ListViewForeground;
-        Color runningForeground = appConfig.Theme.RangeLowBackground;
-        Color stoppedForeground = appConfig.Theme.RangeMidBackground;
+        Color runningForeground = appConfig.Theme.StatusOk;
+        Color stoppedForeground = appConfig.Theme.StatusWarning;
 
         int running = services.Count(service => service.Status == WindowsServiceStatus.Running);
 

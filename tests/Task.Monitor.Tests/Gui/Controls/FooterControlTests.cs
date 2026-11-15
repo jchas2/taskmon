@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Task.Monitor.Cli.Utils;
@@ -276,6 +277,23 @@ public sealed class FooterControlTests : IDisposable
     private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
         new() { Services = services };
 
+    // Every part of the status row has its own key, set here to distinct colours so a part drawn
+    // in another part's colour, or a fixed one, fails.
+    private Theme StatusbarTheme()
+    {
+        Theme theme = runContext.AppConfig.Theme;
+
+        theme.StatusbarBannerBackground = Color.FromArgb(1, 1, 1);
+        theme.StatusbarBannerForeground = Color.FromArgb(2, 2, 2);
+        theme.StatusbarStatusForeground = Color.FromArgb(3, 3, 3);
+        theme.StatusbarStatusOk         = Color.FromArgb(4, 4, 4);
+        theme.StatusbarStatusWarning    = Color.FromArgb(5, 5, 5);
+        theme.StatusbarStatusError      = Color.FromArgb(6, 6, 6);
+        theme.StatusbarPulse            = Color.FromArgb(7, 7, 7);
+
+        return theme;
+    }
+
     // Regression test: the hints went as one block, so adding F3 hid F1, F2 and F10 as well on
     // terminals narrower than about 107 columns.
     [Fact]
@@ -290,6 +308,38 @@ public sealed class FooterControlTests : IDisposable
         Assert.DoesNotContain("F3 Theme", text);
         Assert.DoesNotContain("F4 Layout", text);
         Assert.True(text.Length <= 105);
+    }
+
+    [Theory]
+    [InlineData(ServiceStatus.Errored,  6)]
+    [InlineData(ServiceStatus.Stopping, 5)]
+    public void The_Services_Status_Takes_The_Theme_Colour_For_Its_State(ServiceStatus status, int shade)
+    {
+        StatusbarTheme();
+
+        CreateControl();
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", status)));
+
+        Assert.Contains(ConsolePalette.BackgroundSgr(Color.FromArgb(shade, shade, shade)) + ConsolePalette.ForegroundSgr(Color.FromArgb(3, 3, 3)), CapturedOutput());
+    }
+
+    [Fact]
+    public void The_Status_Row_Takes_Its_Colours_From_The_Theme()
+    {
+        Theme theme = StatusbarTheme();
+
+        CreateControl();
+        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+
+        string output = CapturedOutput();
+
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(theme.StatusbarBannerBackground) + ConsolePalette.ForegroundSgr(theme.StatusbarBannerForeground) + " Task Monitor v",
+            output);
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(theme.StatusbarStatusOk) + ConsolePalette.ForegroundSgr(theme.StatusbarStatusForeground) + " Services: Running",
+            output);
+        Assert.Contains(ConsolePalette.ForegroundSgr(theme.StatusbarPulse) + "  ●", output);
     }
 
     [Fact]

@@ -34,7 +34,7 @@ public sealed class StartupControlTests : IDisposable
         ctrl.Sample(SnapshotWith(Entry("OneDrive", state: StartupEntryState.Disabled)));
 
         Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
+            runContext.AppConfig.Theme.StatusWarning,
             ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();
@@ -225,7 +225,7 @@ public sealed class StartupControlTests : IDisposable
 
         ListViewItem status = detail.Items.Cast<ListViewItem>().Single(row => row.SubItems[0].Text == "Status");
         Assert.Equal(ConsolePalette.Cyan, status.SubItems[0].ForegroundColor);
-        Assert.Equal(runContext.AppConfig.Theme.RangeMidBackground, status.SubItems[1].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.StatusWarning, status.SubItems[1].ForegroundColor);
 
         ctrl.Unload();
     }

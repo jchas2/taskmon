@@ -90,11 +90,24 @@ heatmap.state.faulted=#000000
 
 app.error=#db61a2
 
+status.ok=#bae67e
+status.warning=#ffa759
+status.error=#ffa759
+
 menubar.foreground=#bae67e
 menubar.background=#1f2430
 
 command.foreground=#bae67e
 command.background=#1f2430
+command.foreground.disabled=#808080
+
+statusbar.banner.background=#00bfff
+statusbar.banner.foreground=#000000
+statusbar.status.foreground=#000000
+statusbar.status.ok=#008000
+statusbar.status.warning=#ffa500
+statusbar.status.error=#ff4500
+statusbar.pulse=#00bfff
 
 hotkey.key=#00BFFF
 hotkey.name=#bae67e

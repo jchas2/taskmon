@@ -87,8 +87,8 @@ public sealed class PerformancePanelControl : Control
             ? highlightBgColour
             : BackgroundColour;
 
-        Color fgMenuColour = appConfig.Theme.MenubarForeground;
-        Color bgMenuColour = appConfig.Theme.MenubarBackground;
+        Color fgMenuColour = appConfig.Theme.PerformancePanelTitlebarForeground;
+        Color bgMenuColour = appConfig.Theme.PerformancePanelTitlebarBackground;
 
         if (!IsSelected) {
             DrawHorizontalLine(

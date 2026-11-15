@@ -59,7 +59,10 @@ public partial class ProcessService
         sample.ModuleName    = Path.GetFileName(exeFile);
         sample.IsDaemon      = WindowsServiceLookup.GetService((int)entry->th32ProcessID, out WindowsServiceInfo? _);
         sample.IsLowPriority = entry->pcPriClassBase < 8;
-        sample.UserName      = GetProcessUserName(processHandle);
+        SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
+
+        sample.UserName      = sid == null ? string.Empty : GetAccountName(sid);
+        sample.Account       = sid == null ? ProcessAccount.User : ProcessAccounts.FromSid(sid.Value);
         sample.CmdLine       = GetProcessCommandLine((int)entry->th32ProcessID, sample.FileName);
         sample.ThreadCount   = (int)entry->cntThreads;
         sample.HandleCount   = 0;
@@ -365,15 +368,6 @@ public partial class ProcessService
             ExceptionHelper.LogException(ex);
             return result;
         }
-    }
-
-    private static string GetProcessUserName(SafeProcessHandle processHandle)
-    {
-        SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
-
-        return sid == null
-            ? string.Empty
-            : GetAccountName(sid);
     }
 #endif
 }

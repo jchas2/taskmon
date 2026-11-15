@@ -156,7 +156,7 @@ public sealed class LaunchdServicesControlTests : IDisposable
         foreach (string field in new[] { "Status", "Last Exit" }) {
             ListViewItem row = detail.Items.Cast<ListViewItem>().Single(item => item.SubItems[0].Text == field);
             Assert.Equal(ConsolePalette.Cyan, row.SubItems[0].ForegroundColor);
-            Assert.Equal(runContext.AppConfig.Theme.RangeHighBackground, row.SubItems[1].ForegroundColor);
+            Assert.Equal(runContext.AppConfig.Theme.StatusError, row.SubItems[1].ForegroundColor);
         }
 
         ctrl.Unload();
@@ -261,14 +261,14 @@ public sealed class LaunchdServicesControlTests : IDisposable
         ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 1 << 8)));
 
         Assert.Equal(
-            runContext.AppConfig.Theme.RangeHighBackground,
+            runContext.AppConfig.Theme.StatusError,
             ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         // Not running, but it exited cleanly.
         ctrl.Sample(SnapshotWith(Service("com.apple.example", status: LaunchdServiceStatus.NotLoaded, lastExitStatus: 0)));
 
         Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
+            runContext.AppConfig.Theme.StatusWarning,
             ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();

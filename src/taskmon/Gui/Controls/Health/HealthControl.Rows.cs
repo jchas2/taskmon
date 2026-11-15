@@ -218,9 +218,9 @@ public sealed partial class HealthControl
     public static (string Key, string Label) ShowProcessHotKey => ("Enter", Strings.HealthShowProcessHotKey);
 
     private Color StatusColour(HealthLevel level) => level switch {
-        HealthLevel.Ok       => appConfig.Theme.RangeLowBackground,
-        HealthLevel.Warning  => appConfig.Theme.RangeMidBackground,
-        HealthLevel.Critical => appConfig.Theme.RangeHighBackground,
+        HealthLevel.Ok       => appConfig.Theme.StatusOk,
+        HealthLevel.Warning  => appConfig.Theme.StatusWarning,
+        HealthLevel.Critical => appConfig.Theme.StatusError,
                            _ => appConfig.Theme.ListViewForeground
     };
 

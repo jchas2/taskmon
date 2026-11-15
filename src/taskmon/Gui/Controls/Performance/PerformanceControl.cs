@@ -516,9 +516,10 @@ public sealed class PerformanceControl : Control
             title, 
             appConfig);
 
-        panel.Bind = snapshot => bind(panel, snapshot);
-        ConfigureColours(panel);
-        
+        panel.Bind             = snapshot => bind(panel, snapshot);
+        panel.BackgroundColour = appConfig.Theme.PerformancePanelBackground;
+        panel.ForegroundColour = appConfig.Theme.PerformancePanelForeground;
+
         return panel;
     }
 

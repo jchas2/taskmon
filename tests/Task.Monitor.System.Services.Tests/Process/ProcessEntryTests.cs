@@ -21,7 +21,7 @@ public sealed class ProcessEntryTests
         Assert.Equal(0, entry.BasePriority);
         Assert.False(entry.IsDaemon);
         Assert.False(entry.IsLowPriority);
-        Assert.False(entry.IsRunningAsRoot);
+        Assert.Equal(ProcessAccount.User, entry.Account);
         Assert.Equal(string.Empty, entry.ProcessName);
         Assert.Equal(string.Empty, entry.FileDescription);
         Assert.Equal(string.Empty, entry.UserName);
@@ -57,7 +57,7 @@ public sealed class ProcessEntryTests
             BasePriority          = 8,
             IsDaemon              = true,
             IsLowPriority         = true,
-            IsRunningAsRoot       = true,
+            Account               = ProcessAccount.Root,
             ProcessName           = "test.exe",
             FileDescription       = "Test Process",
             UserName              = "testuser",
@@ -89,7 +89,7 @@ public sealed class ProcessEntryTests
         Assert.Equal(8, entry.BasePriority);
         Assert.True(entry.IsDaemon);
         Assert.True(entry.IsLowPriority);
-        Assert.True(entry.IsRunningAsRoot);
+        Assert.Equal(ProcessAccount.Root, entry.Account);
         Assert.Equal("test.exe", entry.ProcessName);
         Assert.Equal("Test Process", entry.FileDescription);
         Assert.Equal("testuser", entry.UserName);

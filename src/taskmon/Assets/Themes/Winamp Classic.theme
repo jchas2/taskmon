@@ -61,7 +61,7 @@ dialog.button.foreground=#000000
 
 performance.panel.background=#7e7d8b
 performance.panel.foreground=#000000
-performance.panel.titlebar.background=#5c5b65
+performance.panel.titlebar.background=#2e2c35
 performance.panel.titlebar.foreground=#ffffff
 performance.cpu.kernel=#ef3110
 performance.cpu.user=#dea518
@@ -90,11 +90,24 @@ heatmap.state.faulted=#560000
 
 app.error=#ef3110
 
+status.ok=#29ce10
+status.warning=#dea518
+status.error=#ef3110
+
 menubar.foreground=#ffffff
 menubar.background=#2e2c35
 
 command.foreground=#000000
 command.background=#aea8a2
+command.foreground.disabled=#5c5b65
+
+statusbar.banner.background=#00bfff
+statusbar.banner.foreground=#000000
+statusbar.status.foreground=#000000
+statusbar.status.ok=#008000
+statusbar.status.warning=#ffa500
+statusbar.status.error=#ff4500
+statusbar.pulse=#00bfff
 
 hotkey.key=#ccffcc
 hotkey.name=#000000

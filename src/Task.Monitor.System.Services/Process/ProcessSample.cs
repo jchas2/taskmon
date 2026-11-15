@@ -10,7 +10,7 @@ public sealed class ProcessSample
     public string FileDescription { get; internal set; } = string.Empty;
     public bool   IsDaemon        { get; internal set; }
     public bool   IsLowPriority   { get; internal set; }
-    public bool   IsRunningAsRoot { get; internal set; }
+    public ProcessAccount Account { get; internal set; }
     public string UserName        { get; internal set; } = string.Empty;
     public string CmdLine         { get; internal set; } = string.Empty;
     public int    ThreadCount     { get; internal set; }

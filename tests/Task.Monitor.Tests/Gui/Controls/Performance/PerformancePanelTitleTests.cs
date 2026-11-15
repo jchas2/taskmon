@@ -24,8 +24,8 @@ public sealed class PerformancePanelTitleTests
         RecordingTerminal terminal = new();
         AppConfig appConfig        = new RunContextHelper().GetRunContext().AppConfig;
 
-        appConfig.Theme.MenubarBackground = stripBg;
-        appConfig.Theme.MenubarForeground = TextColour;
+        appConfig.Theme.PerformancePanelTitlebarBackground = stripBg;
+        appConfig.Theme.PerformancePanelTitlebarForeground = TextColour;
 
         PerformancePanelControl panel = new(
             terminal,

@@ -16,7 +16,7 @@ public sealed class ThemeTests
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(70, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(81, CanaryTestHelper.GetPropertyCount<Theme>());
 
     private void AssertThemeColours(Theme theme)
     {
@@ -168,6 +168,11 @@ public sealed class ThemeTests
 
         Assert.Equal(expected, theme.ColourMode);
     }
+
+    // A theme without these keys keeps the look it had before they were read.
+    [Fact]
+    public void CommandForegroundDisabled_Falls_Back_To_Dark_Grey_When_Not_Set() =>
+        Assert.Equal(ConsolePalette.DarkGray, new Theme(new ConfigSection("theme-test")).CommandForegroundDisabled);
 
     [Fact]
     public void Constructor_Initialises_Successfully()
@@ -335,6 +340,23 @@ public sealed class ThemeTests
         new Theme(section).Normalize();
 
         Assert.Equal("transparent", section.GetString(Constants.Keys.Background));
+    }
+
+    [Fact]
+    public void PerformancePanel_Colours_Fall_Back_To_Control_And_Menubar_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Background,        "#111111");
+        section.Add(Constants.Keys.Foreground,        "#222222");
+        section.Add(Constants.Keys.MenubarBackground, "#333333");
+        section.Add(Constants.Keys.MenubarForeground, "#444444");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#111111"), theme.PerformancePanelBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.PerformancePanelForeground);
+        Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.PerformancePanelTitlebarBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#444444"), theme.PerformancePanelTitlebarForeground);
     }
 
     [Fact]
@@ -665,6 +687,35 @@ public sealed class ThemeTests
             Assert.True(section.Contains(Constants.Keys.HotKeyName), $"{name} is missing {Constants.Keys.HotKeyName}");
             Assert.True(section.Contains(Constants.Keys.TipGlyph), $"{name} is missing {Constants.Keys.TipGlyph}");
         }
+    }
+
+    [Fact]
+    public void Statusbar_Colours_Fall_Back_To_The_Colours_It_Had_When_Not_Set()
+    {
+        Theme theme = new(new ConfigSection("theme-test"));
+
+        Assert.Equal(Color.DeepSkyBlue.ToArgb(), theme.StatusbarBannerBackground.ToArgb());
+        Assert.Equal(Color.Black.ToArgb(),       theme.StatusbarBannerForeground.ToArgb());
+        Assert.Equal(Color.Black.ToArgb(),       theme.StatusbarStatusForeground.ToArgb());
+        Assert.Equal(Color.Green.ToArgb(),       theme.StatusbarStatusOk.ToArgb());
+        Assert.Equal(Color.Orange.ToArgb(),      theme.StatusbarStatusWarning.ToArgb());
+        Assert.Equal(Color.OrangeRed.ToArgb(),   theme.StatusbarStatusError.ToArgb());
+        Assert.Equal(Color.DeepSkyBlue.ToArgb(), theme.StatusbarPulse.ToArgb());
+    }
+
+    [Fact]
+    public void Status_Colours_Fall_Back_To_The_Range_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.RangeLowBackground,  "#111111");
+        section.Add(Constants.Keys.RangeMidBackground,  "#222222");
+        section.Add(Constants.Keys.RangeHighBackground, "#333333");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#111111"), theme.StatusOk);
+        Assert.Equal(ColorTranslator.FromHtml("#222222"), theme.StatusWarning);
+        Assert.Equal(ColorTranslator.FromHtml("#333333"), theme.StatusError);
     }
 
     private static string ThemeIni => @"

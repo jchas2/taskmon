@@ -28,9 +28,9 @@ public sealed class DriversControlTests : IDisposable
     [Theory]
     [InlineData(DriverStatus.Running)]
     [InlineData(DriverStatus.Loaded)]
-    public void A_Running_Driver_Shows_Its_Status_In_The_Low_Range_Colour(DriverStatus running)
+    public void A_Running_Driver_Shows_Its_Status_In_The_Ok_Status_Colour(DriverStatus running)
     {
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.StatusOk = ConsolePalette.Magenta;
 
         DriversControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: running)));
@@ -43,13 +43,13 @@ public sealed class DriversControlTests : IDisposable
     // Regression test: a stopped driver's STATUS was drawn in chart.range.mid.foreground - the dark
     // text that goes on the mid colour block - so "Stopped" showed black on the list background.
     [Fact]
-    public void A_Stopped_Driver_Shows_Its_Status_In_The_Mid_Range_Colour()
+    public void A_Stopped_Driver_Shows_Its_Status_In_The_Warning_Status_Colour()
     {
         DriversControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Driver("Disk Driver", status: DriverStatus.Stopped)));
 
         Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
+            runContext.AppConfig.Theme.StatusWarning,
             ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();
@@ -139,8 +139,8 @@ public sealed class DriversControlTests : IDisposable
     {
         runContext.AppConfig.Theme.PropertyKey        = ConsolePalette.Cyan;
         runContext.AppConfig.Theme.PropertyValue      = ConsolePalette.Yellow;
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
-        runContext.AppConfig.Theme.RangeMidBackground = ConsolePalette.Red;
+        runContext.AppConfig.Theme.StatusOk           = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.StatusWarning      = ConsolePalette.Red;
 
         DriversControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Driver("Disk Driver", publisher: "Microsoft Corporation")));

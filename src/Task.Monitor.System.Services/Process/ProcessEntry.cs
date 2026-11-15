@@ -10,7 +10,7 @@ public sealed class ProcessEntry
 
     public bool   IsDaemon              { get; set; }
     public bool   IsLowPriority         { get; set; }
-    public bool   IsRunningAsRoot       { get; set; }
+    public ProcessAccount Account       { get; set; }
 
     public string ProcessName           { get; set; } = string.Empty;
     public string FileDescription       { get; set; } = string.Empty;

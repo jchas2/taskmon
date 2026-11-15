@@ -457,6 +457,30 @@ Guárdalo con otro nombre.</value>
   <data name="HelpMetricChanged" xml:space="preserve">
     <value>Métrica cambiada</value>
   </data>
+  <data name="HelpStatus" xml:space="preserve">
+    <value>Estado</value>
+  </data>
+  <data name="HelpStatusOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="HelpStatusWarning" xml:space="preserve">
+    <value>Aviso</value>
+  </data>
+  <data name="HelpStatusError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="HelpUserCurrent" xml:space="preserve">
+    <value>Usuario actual</value>
+  </data>
+  <data name="HelpUserOther" xml:space="preserve">
+    <value>Otro usuario</value>
+  </data>
+  <data name="HelpUserSystem" xml:space="preserve">
+    <value>Cuenta del sistema</value>
+  </data>
+  <data name="HelpUserRoot" xml:space="preserve">
+    <value>Root o SYSTEM</value>
+  </data>
   <data name="HelpKeyMoveLeft" xml:space="preserve">
     <value>Ir al componente de la izquierda</value>
   </data>

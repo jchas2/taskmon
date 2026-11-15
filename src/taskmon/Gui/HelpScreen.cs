@@ -15,6 +15,7 @@ public class HelpScreen : Screen
     private const int KeyDescriptionWidth = 41;
     private const int LabelColumnWidth    = 28;
     private const int SwatchWidth         = 4;
+    private const int UserColumnWidth     = 16;
     private const int WideSwatchWidth     = 5;
 
     private readonly AnsiScreenBuffer frame = new();
@@ -33,7 +34,7 @@ public class HelpScreen : Screen
         this.runContext = runContext;
 
         chartView        = NewSection(Strings.HelpChartColoursSection, columns: 4);
-        processView      = NewSection(Strings.HelpProcessColoursSection, columns: 5);
+        processView      = NewSection(Strings.HelpProcessColoursSection, columns: 6);
         keysView         = NewSection(Strings.HelpKeysSection, columns: 4);
         functionKeysView = NewSection(Strings.HelpFunctionKeysSection, columns: 2);
         otherKeysView    = NewSection(Strings.HelpOtherKeysSection, columns: 2);
@@ -51,8 +52,6 @@ public class HelpScreen : Screen
     private static int FitWidth(int minimum, params string[] texts) =>
         Math.Max(minimum, texts.Max(text => text.Length) + 1);
 
-    // Key names take the hot key colour, as in the footer: it is chosen to read on the window and
-    // list backgrounds, where the range colours are chosen for the chart background.
     private static ListViewItem KeyRow(Theme theme, params string[] cells) =>
         new(cells
             .Select((text, i) => Cell(
@@ -131,7 +130,6 @@ public class HelpScreen : Screen
         functionKeysView.ColumnHeaders[0].RightAligned = true;
         otherKeysView.ColumnHeaders[0].RightAligned    = true;
 
-        // The range colours on the chart background, as the charts draw them.
         chartView.Items.Add(new ListViewItem([
             Cell(Strings.HelpRangeLow,  theme.RangeLowBackground,  theme.ChartBackground),
             Cell(Strings.HelpRangeMid,  theme.RangeMidBackground,  theme.ChartBackground),
@@ -139,20 +137,41 @@ public class HelpScreen : Screen
             Cell("",     listFg,                    listBg)
         ]));
 
-        processView.Items.Add(new ListViewItem([Cell(Strings.HelpNormalProcess,      theme.ColumnCommandNormalUserSpace, listBg)]));
-        processView.Items.Add(new ListViewItem([Cell(Strings.HelpLowPriorityProcess, theme.ColumnCommandLowPriority,     listBg)]));
-        processView.Items.Add(new ListViewItem([Cell(Strings.HelpHighCpuProcess,     theme.ColumnCommandHighCpu,         listBg)]));
-        processView.Items.Add(new ListViewItem([Cell(Strings.HelpIoBoundProcess,     theme.ColumnCommandIoBound,         listBg)]));
+        // Process name colours down the left, and the User column's colours beside the first four.
+        processView.Items.Add(ProcessRow(Strings.HelpNormalProcess,      theme.ColumnCommandNormalUserSpace, Strings.HelpUserCurrent, theme.ColumnUserCurrentNonRoot));
+        processView.Items.Add(ProcessRow(Strings.HelpLowPriorityProcess, theme.ColumnCommandLowPriority,     Strings.HelpUserOther,   theme.ColumnUserOtherNonRoot));
+        processView.Items.Add(ProcessRow(Strings.HelpHighCpuProcess,     theme.ColumnCommandHighCpu,         Strings.HelpUserSystem,  theme.ColumnUserSystem));
+        processView.Items.Add(ProcessRow(Strings.HelpIoBoundProcess,     theme.ColumnCommandIoBound,         Strings.HelpUserRoot,    theme.ColumnUserRoot));
 
         processView.Items.Add(new ListViewItem([
             Cell(Strings.HelpMetric, listFg,                    listBg),
             Cell(Strings.HelpRangeLow,    theme.RangeLowForeground,  theme.RangeLowBackground),
             Cell(Strings.HelpRangeMid,    theme.RangeMidForeground,  theme.RangeMidBackground),
             Cell(Strings.HelpRangeHigh,   theme.RangeHighForeground, theme.RangeHighBackground),
+            Cell("",       listFg,                    listBg),
             Cell("",       listFg,                    listBg)
         ]));
 
         processView.Items.Add(new ListViewItem([Cell(Strings.HelpMetricChanged, theme.DeltaHighlightColour, listBg)]));
+
+        processView.Items.Add(new ListViewItem([
+            Cell(Strings.HelpStatus,        listFg,              listBg),
+            Cell(Strings.HelpStatusOk,      theme.StatusOk,      listBg),
+            Cell(Strings.HelpStatusWarning, theme.StatusWarning, listBg),
+            Cell(Strings.HelpStatusError,   theme.StatusError,   listBg),
+            Cell("",                        listFg,              listBg),
+            Cell("",                        listFg,              listBg)
+        ]));
+
+        ListViewItem ProcessRow(string label, Color labelColour, string user, Color userColour) =>
+            new([
+                Cell(label, labelColour, listBg),
+                Cell("",    listFg,      listBg),
+                Cell("",    listFg,      listBg),
+                Cell("",    listFg,      listBg),
+                Cell(user,  userColour,  listBg),
+                Cell("",    listFg,      listBg)
+            ]);
 
         keysView.Items.Add(KeyRow(theme, "←:",        Strings.HelpKeyMoveLeft,   "↑:",       Strings.HelpKeyScrollUp));
         keysView.Items.Add(KeyRow(theme, "→:",        Strings.HelpKeyMoveRight,  "↓:",       Strings.HelpKeyScrollDown));
@@ -198,10 +217,17 @@ public class HelpScreen : Screen
             y += section.Height;
         }
 
-        // The widths are minimums, widened to fit the labels in the UI language.
-        int lowWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeLow);
-        int midWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeMid);
-        int highWidth  = FitWidth(WideSwatchWidth, Strings.HelpRangeHigh);
+        int lowWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeLow,  Strings.HelpStatusOk);
+        int midWidth   = FitWidth(SwatchWidth,     Strings.HelpRangeMid,  Strings.HelpStatusWarning);
+        int highWidth  = FitWidth(WideSwatchWidth, Strings.HelpRangeHigh, Strings.HelpStatusError);
+        
+        int userWidth  = FitWidth(
+            UserColumnWidth,
+            Strings.HelpUserCurrent,
+            Strings.HelpUserOther,
+            Strings.HelpUserSystem,
+            Strings.HelpUserRoot);
+        
         int labelWidth = FitWidth(
             LabelColumnWidth,
             Strings.HelpNormalProcess,
@@ -209,7 +235,9 @@ public class HelpScreen : Screen
             Strings.HelpHighCpuProcess,
             Strings.HelpIoBoundProcess,
             Strings.HelpMetric,
-            Strings.HelpMetricChanged);
+            Strings.HelpMetricChanged,
+            Strings.HelpStatus);
+        
         int descriptionWidth = FitWidth(
             KeyDescriptionWidth,
             Strings.HelpKeyMoveLeft,
@@ -224,11 +252,11 @@ public class HelpScreen : Screen
             Strings.HelpKeyFreeze,
             Strings.HelpKeyNextTip);
 
-        SetColumnWidths(chartView,        lowWidth,       midWidth,         highWidth                );
-        SetColumnWidths(processView,      labelWidth,     lowWidth,         midWidth,       highWidth);
-        SetColumnWidths(keysView,         KeyColumnWidth, descriptionWidth, KeyColumnWidth           );
-        SetColumnWidths(functionKeysView, KeyColumnWidth                                             );
-        SetColumnWidths(otherKeysView,    KeyColumnWidth                                             );
+        SetColumnWidths(chartView,        lowWidth,       midWidth,         highWidth                           );
+        SetColumnWidths(processView,      labelWidth,     lowWidth,         midWidth,       highWidth, userWidth);
+        SetColumnWidths(keysView,         KeyColumnWidth, descriptionWidth, KeyColumnWidth                      );
+        SetColumnWidths(functionKeysView, KeyColumnWidth                                                        );
+        SetColumnWidths(otherKeysView,    KeyColumnWidth                                                        );
 
         void SetColumnWidths(ListView section, params int[] leading)
         {

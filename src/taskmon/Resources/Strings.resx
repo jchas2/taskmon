@@ -595,6 +595,38 @@ Save it under a new name.</value>
     <value>Metric changed</value>
     <comment>Colour key: a value that just changed.</comment>
   </data>
+  <data name="HelpStatus" xml:space="preserve">
+    <value>Status</value>
+    <comment>Colour key: the label before the OK/Warning/Error status colours.</comment>
+  </data>
+  <data name="HelpStatusOk" xml:space="preserve">
+    <value>OK</value>
+    <comment>Colour key: status text for running, enabled or healthy.</comment>
+  </data>
+  <data name="HelpStatusWarning" xml:space="preserve">
+    <value>Warning</value>
+    <comment>Colour key: status text for stopped, disabled or a warning.</comment>
+  </data>
+  <data name="HelpStatusError" xml:space="preserve">
+    <value>Error</value>
+    <comment>Colour key: status text for failed or critical.</comment>
+  </data>
+  <data name="HelpUserCurrent" xml:space="preserve">
+    <value>Current user</value>
+    <comment>Colour key: the User column for the user running Task Monitor.</comment>
+  </data>
+  <data name="HelpUserOther" xml:space="preserve">
+    <value>Other user</value>
+    <comment>Colour key: the User column for another person's account.</comment>
+  </data>
+  <data name="HelpUserSystem" xml:space="preserve">
+    <value>System account</value>
+    <comment>Colour key: the User column for a system or service account.</comment>
+  </data>
+  <data name="HelpUserRoot" xml:space="preserve">
+    <value>Root or SYSTEM</value>
+    <comment>Colour key: the User column for root (macOS) or SYSTEM (Windows).</comment>
+  </data>
   <data name="HelpKeyMoveLeft" xml:space="preserve">
     <value>Move left to next screen component</value>
     <comment>What the ← key does.</comment>

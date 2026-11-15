@@ -457,6 +457,30 @@ Gem det under et nyt navn.</value>
   <data name="HelpMetricChanged" xml:space="preserve">
     <value>Ændret måling</value>
   </data>
+  <data name="HelpStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="HelpStatusOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="HelpStatusWarning" xml:space="preserve">
+    <value>Advarsel</value>
+  </data>
+  <data name="HelpStatusError" xml:space="preserve">
+    <value>Fejl</value>
+  </data>
+  <data name="HelpUserCurrent" xml:space="preserve">
+    <value>Aktuel bruger</value>
+  </data>
+  <data name="HelpUserOther" xml:space="preserve">
+    <value>Anden bruger</value>
+  </data>
+  <data name="HelpUserSystem" xml:space="preserve">
+    <value>Systemkonto</value>
+  </data>
+  <data name="HelpUserRoot" xml:space="preserve">
+    <value>Root eller SYSTEM</value>
+  </data>
   <data name="HelpKeyMoveLeft" xml:space="preserve">
     <value>Gå til komponenten til venstre</value>
   </data>

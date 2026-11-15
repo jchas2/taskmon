@@ -110,9 +110,9 @@ public sealed class ServicesControlTests : IDisposable
     }
 
     [Fact]
-    public void A_Running_Service_Shows_Its_Status_In_The_Low_Range_Colour()
+    public void A_Running_Service_Shows_Its_Status_In_The_Ok_Status_Colour()
     {
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.StatusOk = ConsolePalette.Magenta;
 
         ServicesControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Running)));
@@ -160,13 +160,13 @@ public sealed class ServicesControlTests : IDisposable
     // Regression test: a stopped service's STATUS was drawn in chart.range.mid.foreground - the dark
     // text that goes on the mid colour block - so "Stopped" showed black on the list background.
     [Fact]
-    public void A_Stopped_Service_Shows_Its_Status_In_The_Mid_Range_Colour()
+    public void A_Stopped_Service_Shows_Its_Status_In_The_Warning_Status_Colour()
     {
         ServicesControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Service("Print Spooler", status: WindowsServiceStatus.Stopped)));
 
         Assert.Equal(
-            runContext.AppConfig.Theme.RangeMidBackground,
+            runContext.AppConfig.Theme.StatusWarning,
             ListPaneTestHelper.SelectedStatusCell(ctrl).ForegroundColor);
 
         ctrl.Unload();
@@ -291,8 +291,8 @@ public sealed class ServicesControlTests : IDisposable
     {
         runContext.AppConfig.Theme.PropertyKey        = ConsolePalette.Cyan;
         runContext.AppConfig.Theme.PropertyValue      = ConsolePalette.Yellow;
-        runContext.AppConfig.Theme.RangeLowBackground = ConsolePalette.Magenta;
-        runContext.AppConfig.Theme.RangeMidBackground = ConsolePalette.Red;
+        runContext.AppConfig.Theme.StatusOk           = ConsolePalette.Magenta;
+        runContext.AppConfig.Theme.StatusWarning      = ConsolePalette.Red;
 
         ServicesControl ctrl = CreateControl();
         ctrl.Sample(SnapshotWith(Service("Print Spooler")));

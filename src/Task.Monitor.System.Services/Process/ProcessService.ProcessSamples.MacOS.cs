@@ -92,7 +92,7 @@ public partial class ProcessService
         sample.ParentPid       = (int)procBsdInfo.pbi_ppid;
         sample.IsDaemon        = IsDaemon(pid, (int)procBsdInfo.pbi_ppid, procBsdInfo.pbi_uid);
         sample.IsLowPriority   = procBsdInfo.pbi_nice > 0;
-        sample.IsRunningAsRoot = procBsdInfo.pbi_uid == 0;
+        sample.Account         = ProcessAccounts.FromUid(procBsdInfo.pbi_uid);
         sample.UserName        = GetProcessUserName(ref procTaskInfo);
         sample.CmdLine         = sample.FileName;
         sample.ThreadCount     = procTaskInfo.ptinfo.pti_threadnum;

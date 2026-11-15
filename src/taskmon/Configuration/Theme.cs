@@ -36,6 +36,7 @@ public sealed class Theme
         Constants.Keys.ColUserRoot,
         Constants.Keys.CommandBackground,
         Constants.Keys.CommandForeground,
+        Constants.Keys.CommandForegroundDisabled,
         Constants.Keys.ControlBorder,
         Constants.Keys.DeltaHighlightColour,
         Constants.Keys.DialogBackground,
@@ -80,6 +81,16 @@ public sealed class Theme
         Constants.Keys.RangeHighForeground,
         Constants.Keys.RangeLowForeground,
         Constants.Keys.RangeMidForeground,
+        Constants.Keys.StatusOk,
+        Constants.Keys.StatusWarning,
+        Constants.Keys.StatusError,
+        Constants.Keys.StatusbarBannerBackground,
+        Constants.Keys.StatusbarBannerForeground,
+        Constants.Keys.StatusbarStatusForeground,
+        Constants.Keys.StatusbarStatusOk,
+        Constants.Keys.StatusbarStatusWarning,
+        Constants.Keys.StatusbarStatusError,
+        Constants.Keys.StatusbarPulse,
     ];
 
     public Theme() { }
@@ -166,6 +177,7 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ColCmdNormalUserSpace, value);
     }
 
+    // Not used yet: kept for script process detection, to come.
     public Color ColumnCommandScript
     {
         get => GetColour(Constants.Keys.ColCmdScript, ConsolePalette.Yellow);
@@ -206,6 +218,12 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.CommandForeground, ConsolePalette.Black);
         set => SetColour(Constants.Keys.CommandForeground, value);
+    }
+
+    public Color CommandForegroundDisabled
+    {
+        get => GetColour(Constants.Keys.CommandForegroundDisabled, ConsolePalette.DarkGray);
+        set => SetColour(Constants.Keys.CommandForegroundDisabled, value);
     }
 
     public Color ControlBorder
@@ -441,25 +459,25 @@ public sealed class Theme
 
     public Color PerformancePanelBackground
     {
-        get => GetColour(Constants.Keys.PerformancePanelBackground, ConsolePalette.Black);
+        get => GetColour(Constants.Keys.PerformancePanelBackground, Background);
         set => SetColour(Constants.Keys.PerformancePanelBackground, value);
     }
 
     public Color PerformancePanelForeground
     {
-        get => GetColour(Constants.Keys.PerformancePanelForeground, ConsolePalette.White);
+        get => GetColour(Constants.Keys.PerformancePanelForeground, Foreground);
         set => SetColour(Constants.Keys.PerformancePanelForeground, value);
     }
 
     public Color PerformancePanelTitlebarBackground
     {
-        get => GetColour(Constants.Keys.PerformancePanelTitlebarBackground, ConsolePalette.DarkBlue);
+        get => GetColour(Constants.Keys.PerformancePanelTitlebarBackground, MenubarBackground);
         set => SetColour(Constants.Keys.PerformancePanelTitlebarBackground, value);
     }
 
     public Color PerformancePanelTitlebarForeground
     {
-        get => GetColour(Constants.Keys.PerformancePanelTitlebarForeground, ConsolePalette.White);
+        get => GetColour(Constants.Keys.PerformancePanelTitlebarForeground, MenubarForeground);
         set => SetColour(Constants.Keys.PerformancePanelTitlebarForeground, value);
     }
 
@@ -513,6 +531,66 @@ public sealed class Theme
 
     private void SetColour(string key, Color value) =>
         themeSection?.Add(key, ConsolePalette.ToHex(value));
+
+    public Color StatusbarBannerBackground
+    {
+        get => GetColour(Constants.Keys.StatusbarBannerBackground, Color.DeepSkyBlue);
+        set => SetColour(Constants.Keys.StatusbarBannerBackground, value);
+    }
+
+    public Color StatusbarBannerForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarBannerForeground, Color.Black);
+        set => SetColour(Constants.Keys.StatusbarBannerForeground, value);
+    }
+
+    public Color StatusbarPulse
+    {
+        get => GetColour(Constants.Keys.StatusbarPulse, Color.DeepSkyBlue);
+        set => SetColour(Constants.Keys.StatusbarPulse, value);
+    }
+
+    public Color StatusbarStatusError
+    {
+        get => GetColour(Constants.Keys.StatusbarStatusError, Color.OrangeRed);
+        set => SetColour(Constants.Keys.StatusbarStatusError, value);
+    }
+
+    public Color StatusbarStatusForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarStatusForeground, Color.Black);
+        set => SetColour(Constants.Keys.StatusbarStatusForeground, value);
+    }
+
+    public Color StatusbarStatusOk
+    {
+        get => GetColour(Constants.Keys.StatusbarStatusOk, Color.Green);
+        set => SetColour(Constants.Keys.StatusbarStatusOk, value);
+    }
+
+    public Color StatusbarStatusWarning
+    {
+        get => GetColour(Constants.Keys.StatusbarStatusWarning, Color.Orange);
+        set => SetColour(Constants.Keys.StatusbarStatusWarning, value);
+    }
+
+    public Color StatusError
+    {
+        get => GetColour(Constants.Keys.StatusError, RangeHighBackground);
+        set => SetColour(Constants.Keys.StatusError, value);
+    }
+
+    public Color StatusOk
+    {
+        get => GetColour(Constants.Keys.StatusOk, RangeLowBackground);
+        set => SetColour(Constants.Keys.StatusOk, value);
+    }
+
+    public Color StatusWarning
+    {
+        get => GetColour(Constants.Keys.StatusWarning, RangeMidBackground);
+        set => SetColour(Constants.Keys.StatusWarning, value);
+    }
 
     public Color TipGlyph
     {

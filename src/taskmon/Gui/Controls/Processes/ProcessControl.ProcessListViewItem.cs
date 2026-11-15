@@ -90,14 +90,13 @@ public partial class ProcessControl
                 SubItems[i].ForegroundColor = AppConfig.Theme.ListViewForeground;
             }
             
-            if (!processEntry.IsRunningAsRoot) {
-                SubItems[(int)Columns.User].ForegroundColor = SubItems[(int)Columns.User].Text.Equals(currThreadUser, StringComparison.OrdinalIgnoreCase)
-                    ? SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserCurrentNonRoot
-                    : SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserOtherNonRoot; 
-            }
-            else {
-                SubItems[(int)Columns.User].ForegroundColor = AppConfig.Theme.ColumnUserRoot;
-            }
+            SubItems[(int)Columns.User].ForegroundColor = processEntry.Account switch {
+                ProcessAccount.Root   => AppConfig.Theme.ColumnUserRoot,
+                ProcessAccount.System => AppConfig.Theme.ColumnUserSystem,
+                _ when SubItems[(int)Columns.User].Text.Equals(currThreadUser, StringComparison.OrdinalIgnoreCase)
+                                      => AppConfig.Theme.ColumnUserCurrentNonRoot,
+                                    _ => AppConfig.Theme.ColumnUserOtherNonRoot
+            };
             
             if (AppConfig.HighlightStatisticsColumnUpdate) {
                 FormatSubItem(
@@ -108,7 +107,6 @@ public partial class ProcessControl
             bool cpuHighCoreUsage = SystemInfo.GetCpuHighCoreUsage(processEntry.CpuTimePercent);
             
             if (cpuHighCoreUsage) {
-                SubItems[(int)Columns.Process].ForegroundColor = AppConfig.Theme.RangeHighBackground;
                 SubItems[(int)Columns.Cpu].ForegroundColor = AppConfig.Theme.RangeHighForeground;
                 SubItems[(int)Columns.Cpu].BackgroundColor = AppConfig.Theme.RangeHighBackground;
             }
@@ -204,14 +202,14 @@ public partial class ProcessControl
 
             if (processEntry.PowerBucket == ProcessPowerBucket.VeryLow ||
                 processEntry.PowerBucket == ProcessPowerBucket.Low) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeLowBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.StatusOk;
             }
             else if (processEntry.PowerBucket == ProcessPowerBucket.Moderate) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeMidBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.StatusWarning;
             }
             else if (processEntry.PowerBucket == ProcessPowerBucket.High ||
                 processEntry.PowerBucket == ProcessPowerBucket.VeryHigh) {
-                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.RangeHighBackground;
+                SubItems[(int)Columns.Power].ForegroundColor = AppConfig.Theme.StatusError;
             }
             
             lastCpu                = processEntry.CpuTimePercent;

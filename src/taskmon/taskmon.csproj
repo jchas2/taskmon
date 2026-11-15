@@ -35,6 +35,7 @@
       <None Remove="Assets\Themes\Winamp Classic.theme" />
       <EmbeddedResource Include="Assets\Themes\Winamp Classic.theme" />
       <None Remove="Assets\Themes\Fedora Light.theme" />
+      <EmbeddedResource Include="Assets\Themes\Fedora Light.theme" />
     </ItemGroup>
 
     <ItemGroup>

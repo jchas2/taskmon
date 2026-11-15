@@ -55,7 +55,7 @@ public sealed partial class LaunchdServicesControl
 
         Theme theme = appConfig.Theme;
 
-        Color lastExitForeground = HasFailed(service) ? theme.RangeHighBackground : theme.PropertyValue;
+        Color lastExitForeground = HasFailed(service) ? theme.StatusError : theme.PropertyValue;
 
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailLabel,      service.Label,                          theme));
         detailView.Items.Add(CommonControl.PropertyRow(Strings.DetailDomain, service.Domain.ToDisplayText(),              theme));
@@ -112,9 +112,9 @@ public sealed partial class LaunchdServicesControl
     ];
 
     private Color StatusForeground(LaunchdServiceInfo service, Color normalForeground) => service.Status switch {
-        _ when HasFailed(service)        => appConfig.Theme.RangeHighBackground,
+        _ when HasFailed(service)        => appConfig.Theme.StatusError,
         LaunchdServiceStatus.Running or
         LaunchdServiceStatus.Waiting     => normalForeground,
-                                       _ => appConfig.Theme.RangeMidBackground
+                                       _ => appConfig.Theme.StatusWarning
     };
 }
