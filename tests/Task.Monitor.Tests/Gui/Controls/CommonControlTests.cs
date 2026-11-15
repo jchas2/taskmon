@@ -7,6 +7,7 @@ using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
+using ChartControl = Task.Monitor.System.Controls.Chart.Chart;
 using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
 
@@ -19,6 +20,23 @@ public sealed class CommonControlTests
     private static readonly Color DialogButtonBackground = ColorTranslator.FromHtml("#303030");
     private static readonly Color DialogButtonForeground = ColorTranslator.FromHtml("#404040");
     private static readonly Color DialogForeground       = ColorTranslator.FromHtml("#505050");
+
+    // Every chart is themed here, so the title and grid keys reach the SUMMARY, Performance and
+    // Thermals charts alike. The title differs from control.foreground, which it falls back to.
+    [Fact]
+    public void Charts_Take_Their_Title_And_Grid_Colours_From_The_Theme()
+    {
+        ConfigSection section = new("chart-theme-test");
+        section.Add(Constants.Keys.Foreground, "#aaaaaa");
+        section.Add(Constants.Keys.ChartTitle, "#101010");
+        section.Add(Constants.Keys.ChartGrid, "#202020");
+
+        ChartControl chart = new(new RecordingTerminal());
+        CommonControl.Theme(chart, new Theme(section));
+
+        Assert.Equal(ColorTranslator.FromHtml("#101010"), chart.TitleColour);
+        Assert.Equal(ColorTranslator.FromHtml("#202020"), chart.GridColour);
+    }
 
     // Dialog colours that differ from the header and highlight colours they fall back to, so a
     // dialog themed from those instead would fail.

@@ -1,0 +1,102 @@
+;=============================================================================
+; Task Monitor (taskmon) - Built-in Theme
+;=============================================================================
+; IMPORTANT:
+; This is a reference copy of a theme built into taskmon. taskmon doesn't
+; load it, and puts it back as shipped each time it starts, so any changes
+; made here are lost.
+;
+; How to create a custom theme:
+;   Step 1: Copy this file into the themes folder, one level up, under a new
+;           name (e.g. "Tokyo Night Custom.theme").
+;   Step 2: Rename the header "[Tokyo Night]" to "[Tokyo Night Custom]". A
+;           custom theme can't use the name of a built-in theme.
+;   Step 3: Change the colours (#RRGGBB, or transparent).
+;   Step 4: Keep "version=2". A theme file without it, or with another
+;           version, is skipped.
+;=============================================================================
+[Windows 95]
+version=2
+colour-mode=truecolour
+
+control.background=#c0c0c0
+control.background.highlight.focused=#000080
+control.background.highlight.inactive=#c0c0c0
+control.foreground=#000000
+control.foreground.highlight.focused=#ffffff
+control.foreground.highlight.inactive=#000000
+control.border=#808080
+control.border.focused=#000080
+
+chart.background=#000000
+chart.borderforeground=#808080
+chart.borderbackground=#c0c0c0
+chart.yaxis=#00ff00
+chart.title=#000000
+chart.grid=#008000
+chart.range.low.background=#00ff00
+chart.range.low.foreground=#000000
+chart.range.mid.background=#ffff00
+chart.range.mid.foreground=#000000
+chart.range.high.background=#ff0000
+chart.range.high.foreground=#000000
+
+metre.background=#000000
+metre.foreground=#00ff00
+metre.borderforeground=#808080
+metre.borderbackground=#c0c0c0
+
+listview.background=#ffffff
+listview.foreground=#000000
+listview.borderforeground=#808080
+listview.borderbackground=#c0c0c0
+listview.header.background=#c0c0c0
+listview.header.foreground=#000000
+
+dialog.background=#c0c0c0
+dialog.foreground=#000000
+dialog.border=#000080
+dialog.button.background=#000080
+dialog.button.foreground=#ffffff
+
+performance.panel.background=#c0c0c0
+performance.panel.foreground=#000000
+performance.panel.titlebar.background=#c0c0c0
+performance.panel.titlebar.foreground=#000000
+performance.cpu.kernel=#ff0000
+performance.cpu.user=#ffff00
+performance.memory.inuse=#ff0000
+performance.memory.modified=#ffff00
+performance.memory.standby=#00ffff
+performance.memory.free=#00ff00
+
+property.key=#000080
+property.value=#000000
+
+process.list.normaluserspace=#000000
+process.list.lowpriority=#808080
+process.list.highcpu=#800000
+process.list.iobound=#806000
+process.list.script=#006400
+process.list.user.currentnonroot=#006400
+process.list.user.othernonroot=#800080
+process.list.user.system=#808080
+process.list.user.root=#800000
+process.list.deltahighlight=#0000ff
+
+heatmap.state.scanning=#806000
+heatmap.state.completed=#006400
+heatmap.state.faulted=#800000
+
+app.error=#800000
+
+menubar.foreground=#ffffff
+menubar.background=#000080
+
+command.foreground=#ffffff
+command.background=#000080
+
+hotkey.key=#000080
+hotkey.name=#000000
+
+tip.glyph=#806000

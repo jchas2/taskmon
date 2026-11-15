@@ -29,6 +29,23 @@ public sealed class HelpScreenTests
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
 
+    // Regression test: the key used the low range colour on the list background, which a theme
+    // with a light list and dark charts (Windows XP, Windows 95) couldn't make readable.
+    [Fact]
+    public void Chart_Colours_Are_Shown_On_The_Chart_Background()
+    {
+        runContext.AppConfig.Theme.ChartBackground    = Color.FromArgb(1, 2, 3);
+        runContext.AppConfig.Theme.ListViewBackground = Color.FromArgb(4, 5, 6);
+
+        HelpScreen    helpScreen = Sized(new HelpScreen(runContext));
+        List<ListViewSubItem> cells = Rows(Section(helpScreen, "CHART COLOURS"))[0].SubItems.Cast<ListViewSubItem>().ToList();
+
+        Assert.Equal(runContext.AppConfig.Theme.RangeLowBackground,  cells[0].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.RangeMidBackground,  cells[1].ForegroundColor);
+        Assert.Equal(runContext.AppConfig.Theme.RangeHighBackground, cells[2].ForegroundColor);
+        Assert.All(cells.Take(3), cell => Assert.Equal(Color.FromArgb(1, 2, 3), cell.BackgroundColor));
+    }
+
     [Fact]
     public void Constructor_With_Null_RunContext_Throws_ArgumentNullException() =>
         Assert.Throws<NullReferenceException>(() => new HelpScreen(null!));
@@ -102,6 +119,21 @@ public sealed class HelpScreenTests
             "Show the about screen",
             "Show the next tip in the footer"
         };
+
+    // Key names are coloured as in the footer, and their descriptions as list text.
+    [Fact]
+    public void Key_Names_Use_The_HotKey_Colour()
+    {
+        runContext.AppConfig.Theme.HotKey = Color.FromArgb(7, 8, 9);
+
+        HelpScreen helpScreen = Sized(new HelpScreen(runContext));
+
+        Assert.All(new[] { "KEYS", "FUNCTION KEYS", "OTHER KEYS" }, title =>
+            Assert.All(Rows(Section(helpScreen, title)), row => {
+                Assert.Equal(Color.FromArgb(7, 8, 9), row.SubItems[0].ForegroundColor);
+                Assert.Equal(runContext.AppConfig.Theme.ListViewForeground, row.SubItems[1].ForegroundColor);
+            }));
+    }
 
     [Fact]
     public void Load_Calls_OnLoad_Sets_CursorVisible_False()

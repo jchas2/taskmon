@@ -138,6 +138,20 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.ChartBorderBackground);
     }
 
+    // A theme without these keys keeps the look charts had before they were read: titles in the
+    // control foreground and the grid in #A9A9A9.
+    [Fact]
+    public void ChartTitle_And_ChartGrid_Fall_Back_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.Foreground, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.ChartTitle);
+        Assert.Equal(Color.DarkGray.ToArgb(), theme.ChartGrid.ToArgb());
+    }
+
     [Fact]
     public void ColourMode_Defaults_To_Auto_When_Not_Set() =>
         Assert.Equal(ColourMode.Auto, new Theme(new ConfigSection("theme-test")).ColourMode);

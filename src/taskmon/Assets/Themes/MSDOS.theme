@@ -19,84 +19,84 @@
 version=2
 colour-mode=truecolour
 
-control.background=#000080
-control.background.highlight.focused=#00FFFF
-control.background.highlight.inactive=#708090
-control.foreground=#808080
+control.background=#0000aa
+control.background.highlight.focused=#00aaaa
+control.background.highlight.inactive=#aaaaaa
+control.foreground=#aaaaaa
 control.foreground.highlight.focused=#000000
-control.foreground.highlight.inactive=#000000
-control.border=#808080
-control.border.focused=#FFFF00
+control.foreground.highlight.inactive=#0000aa
+control.border=#aaaaaa
+control.border.focused=#ffffff
 
-chart.background=#000080
-chart.borderforeground=#808080
-chart.borderbackground=#000080
-chart.yaxis=#FFFF00
-chart.title=#808080
-chart.grid=#A9A9A9
-chart.range.low.background=#00FF00
+chart.background=#0000aa
+chart.borderforeground=#aaaaaa
+chart.borderbackground=#0000aa
+chart.yaxis=#55ffff
+chart.title=#ffffff
+chart.grid=#5555ff
+chart.range.low.background=#55ff55
 chart.range.low.foreground=#000000
-chart.range.mid.background=#FFFF00
+chart.range.mid.background=#ffff55
 chart.range.mid.foreground=#000000
-chart.range.high.background=#FF0000
+chart.range.high.background=#ff5555
 chart.range.high.foreground=#000000
 
-metre.background=#000080
-metre.foreground=#808080
-metre.borderforeground=#808080
-metre.borderbackground=#000080
+metre.background=#0000aa
+metre.foreground=#55ffff
+metre.borderforeground=#aaaaaa
+metre.borderbackground=#0000aa
 
-listview.background=#000080
-listview.foreground=#808080
-listview.borderforeground=#808080
-listview.borderbackground=#000080
-listview.header.background=#008080
-listview.header.foreground=#FFFF00
+listview.background=#0000aa
+listview.foreground=#aaaaaa
+listview.borderforeground=#aaaaaa
+listview.borderbackground=#0000aa
+listview.header.background=#0000aa
+listview.header.foreground=#ffff55
 
-dialog.background=#008080
-dialog.foreground=#FFFF00
-dialog.border=#FFFF00
-dialog.button.background=#00FFFF
+dialog.background=#aaaaaa
+dialog.foreground=#000000
+dialog.border=#ffffff
+dialog.button.background=#00aa00
 dialog.button.foreground=#000000
 
-performance.panel.background=#000080
-performance.panel.foreground=#808080
-performance.panel.titlebar.background=#008080
-performance.panel.titlebar.foreground=#FFFF00
-performance.cpu.kernel=#FF0000
-performance.cpu.user=#FFFF00
-performance.memory.inuse=#FF0000
-performance.memory.modified=#FFFF00
-performance.memory.standby=#FFFF00
-performance.memory.free=#00FF00
+performance.panel.background=#0000aa
+performance.panel.foreground=#aaaaaa
+performance.panel.titlebar.background=#0000aa
+performance.panel.titlebar.foreground=#ffff55
+performance.cpu.kernel=#ff5555
+performance.cpu.user=#ffff55
+performance.memory.inuse=#ff5555
+performance.memory.modified=#ffff55
+performance.memory.standby=#55ffff
+performance.memory.free=#55ff55
 
-property.key=#FFFF00
-property.value=#808080
+property.key=#ffff55
+property.value=#ffffff
 
-process.list.normaluserspace=#FFFF00
-process.list.lowpriority=#C0C0C0
-process.list.highcpu=#FF0000
-process.list.iobound=#FF0000
-process.list.script=#FFFF00
-process.list.user.currentnonroot=#C0C0C0
-process.list.user.othernonroot=#808080
-process.list.user.system=#FFFF00
-process.list.user.root=#FF0000
-process.list.deltahighlight=#FFFF00
+process.list.normaluserspace=#aaaaaa
+process.list.lowpriority=#00aaaa
+process.list.highcpu=#ff5555
+process.list.iobound=#ffff55
+process.list.script=#55ff55
+process.list.user.currentnonroot=#55ff55
+process.list.user.othernonroot=#55ffff
+process.list.user.system=#00aaaa
+process.list.user.root=#ff5555
+process.list.deltahighlight=#ffffff
 
-heatmap.state.scanning=#000000
-heatmap.state.completed=#000000
-heatmap.state.faulted=#000000
+heatmap.state.scanning=#ffff55
+heatmap.state.completed=#55ff55
+heatmap.state.faulted=#ff5555
 
-app.error=#FF0000
+app.error=#ff5555
 
-menubar.foreground=#FFFF00
-menubar.background=#008080
+menubar.foreground=#000000
+menubar.background=#aaaaaa
 
-command.foreground=#FFFF00
-command.background=#008080
+command.foreground=#000000
+command.background=#aaaaaa
 
-hotkey.key=#00BFFF
-hotkey.name=#808080
+hotkey.key=#ffff55
+hotkey.name=#aaaaaa
 
-tip.glyph=#FFA500
+tip.glyph=#ffff55

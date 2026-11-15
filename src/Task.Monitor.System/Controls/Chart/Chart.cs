@@ -30,6 +30,7 @@ public sealed class Chart : Control
     private readonly AnsiScreenBuffer frame = new();
 
     private Color? borderBackgroundColour;
+    private Color? titleColour;
 
     public Chart(ISystemTerminal terminal) : base(terminal) { }
 
@@ -185,7 +186,9 @@ public sealed class Chart : Control
             : $"{value:0.#}{units[index]}";
     }
 
-    private bool IsYAxisScaleVisible => ShowYAxisScale && (Height - 2) > 6;
+    public Color GridColour { get; set; } = Color.DarkGray;
+
+    private bool IsYAxisScaleVisible =>ShowYAxisScale && (Height - 2) > 6;
 
     public string LabelSeries { get; set; } = string.Empty;
 
@@ -282,7 +285,7 @@ public sealed class Chart : Control
                     SetCellColour(chartColour);
                 }
                 else {
-                    frame.SetColour(Color.DarkGray, BackgroundColour);
+                    frame.SetColour(GridColour, BackgroundColour);
 
                     if (col % 2 == 0 && ShowGrid) {
                         ch = GridChar;
@@ -339,7 +342,7 @@ public sealed class Chart : Control
         SetBorderColour();
         frame.Append('\u2570');
         frame.Append('\u2500', leftDashes);
-        frame.SetColour(ForegroundColour, BorderBackgroundColour);
+        frame.SetColour(TitleColour, BorderBackgroundColour);
         frame.Append(labelLen < labelPadded.Length ? labelPadded[..labelLen] : labelPadded);
         SetBorderColour();
         frame.Append('\u2500', rightDashes);
@@ -397,6 +400,12 @@ public sealed class Chart : Control
     }
 
     public string Text { get; set; } = string.Empty;
-    
+
+    public Color TitleColour
+    {
+        get => titleColour ?? ForegroundColour;
+        set => titleColour = value;
+    }
+
     public Color YAxisColour { get; set; } = ConsolePalette.White;
 }

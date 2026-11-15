@@ -51,11 +51,13 @@ public class HelpScreen : Screen
     private static int FitWidth(int minimum, params string[] texts) =>
         Math.Max(minimum, texts.Max(text => text.Length) + 1);
 
+    // Key names take the hot key colour, as in the footer: it is chosen to read on the window and
+    // list backgrounds, where the range colours are chosen for the chart background.
     private static ListViewItem KeyRow(Theme theme, params string[] cells) =>
         new(cells
             .Select((text, i) => Cell(
                 text,
-                i % 2 == 0 ? theme.RangeLowBackground : theme.ListViewForeground,
+                i % 2 == 0 ? theme.HotKey : theme.ListViewForeground,
                 theme.ListViewBackground))
             .ToArray());
 
@@ -129,10 +131,11 @@ public class HelpScreen : Screen
         functionKeysView.ColumnHeaders[0].RightAligned = true;
         otherKeysView.ColumnHeaders[0].RightAligned    = true;
 
+        // The range colours on the chart background, as the charts draw them.
         chartView.Items.Add(new ListViewItem([
-            Cell(Strings.HelpRangeLow,  theme.RangeLowBackground,  listBg),
-            Cell(Strings.HelpRangeMid,  theme.RangeMidBackground,  listBg),
-            Cell(Strings.HelpRangeHigh, theme.RangeHighBackground, listBg),
+            Cell(Strings.HelpRangeLow,  theme.RangeLowBackground,  theme.ChartBackground),
+            Cell(Strings.HelpRangeMid,  theme.RangeMidBackground,  theme.ChartBackground),
+            Cell(Strings.HelpRangeHigh, theme.RangeHighBackground, theme.ChartBackground),
             Cell("",     listFg,                    listBg)
         ]));
 

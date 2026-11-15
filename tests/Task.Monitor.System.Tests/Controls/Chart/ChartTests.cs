@@ -179,6 +179,54 @@ public sealed class ChartTests
     }
 
     [Fact]
+    public void OnDraw_Draws_The_Grid_In_GridColour()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 10, height: 6);
+        Color grid = Color.FromArgb(10, 20, 30);
+
+        chart.BackgroundColour       = ConsolePalette.Black;
+        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        chart.GridColour             = grid;
+        chart.ShowGrid               = true;
+
+        // The grid shows only behind samples, so fill the plot with zeros.
+        for (int i = 0; i < 8; i++) {
+            chart.AddData(0.0);
+        }
+
+        terminal.Reset();
+        chart.Draw();
+
+        string output = terminal.Output;
+
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.Black) + ConsolePalette.ForegroundSgr(grid) + ".", output);
+        Assert.DoesNotContain(ConsolePalette.ForegroundSgr(Color.DarkGray), output);
+    }
+
+    // The whole label is the title colour, the reading as well as the name.
+    [Fact]
+    public void OnDraw_Draws_The_Title_In_TitleColour()
+    {
+        RecordingTerminal terminal = new();
+        ChartControl chart = CreateChart(terminal, width: 16, height: 6);
+        Color title = Color.FromArgb(10, 20, 30);
+
+        chart.Text                   = "CPU";
+        chart.LabelSeries            = "42%";
+        chart.ForegroundColour       = ConsolePalette.White;
+        chart.BorderBackgroundColour = ConsolePalette.DarkBlue;
+        chart.TitleColour            = title;
+
+        terminal.Reset();
+        chart.Draw();
+
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(title) + " CPU 42% ",
+            terminal.Output);
+    }
+
+    [Fact]
     public void OnDraw_Draws_YAxisScale_When_Chart_Height_Is_Greater_Than_6()
     {
         RecordingTerminal terminal = new();
@@ -274,7 +322,8 @@ public sealed class ChartTests
         Assert.Contains(border + "╭", output);
         Assert.Contains(border + "│", output);
 
-        // The bottom label sits on the border line: chart foreground on the border background.
+        // The bottom label sits on the border line: the title colour, which follows the chart
+        // foreground until set, on the border background.
         Assert.Contains(
             ConsolePalette.BackgroundSgr(ConsolePalette.DarkBlue) + ConsolePalette.ForegroundSgr(ConsolePalette.White) + " CPU ",
             output);
@@ -297,6 +346,19 @@ public sealed class ChartTests
         string output = terminal.Output;
         Assert.Contains("10v", output);
         Assert.Contains("0v", output);
+    }
+
+    [Fact]
+    public void TitleColour_Follows_ForegroundColour_Until_Set()
+    {
+        ChartControl chart = CreateChart(new RecordingTerminal(), width: 10, height: 6);
+
+        chart.ForegroundColour = ConsolePalette.Yellow;
+        Assert.Equal(ConsolePalette.Yellow, chart.TitleColour);
+
+        chart.TitleColour      = ConsolePalette.Cyan;
+        chart.ForegroundColour = ConsolePalette.Red;
+        Assert.Equal(ConsolePalette.Cyan, chart.TitleColour);
     }
 
     // Regression test: a label longer than the scale is cut short, so "150.5k" showed as "150.5".

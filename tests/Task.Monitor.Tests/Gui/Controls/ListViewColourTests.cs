@@ -84,11 +84,15 @@ public sealed class ListViewColourTests
         return rows;
     }
 
-    // The Metric row's Low / Mid / High swatches show how metric cells look in the process list, so
-    // they are drawn on the range colours; every other cell uses the list background.
+    // Two sets of Low / Mid / High swatches leave the list background. The CHART COLOURS key shows
+    // the range colours as the charts draw them, on the chart background. The Metric row's swatches
+    // show how metric cells look in the process list, on the range colours. Every other cell uses
+    // the list background.
     [Fact]
     public void HelpScreen_Rows_Use_The_ListView_Background()
     {
+        runContext.AppConfig.Theme.ChartBackground = ConsolePalette.Gray;
+
         HelpScreen screen = Loaded(new HelpScreen(runContext));
 
         List<ListViewSubItem> swatches = ThemedListViews(screen)
@@ -97,9 +101,12 @@ public sealed class ListViewColourTests
             .Where(subItem => subItem.BackgroundColor.ToArgb() != ListViewBackground.ToArgb())
             .ToList();
 
-        Assert.Equal(new[] { "Low", "Mid", "High" }, swatches.Select(swatch => swatch.Text));
+        Assert.Equal(new[] { "Low", "Mid", "High", "Low", "Mid", "High" }, swatches.Select(swatch => swatch.Text));
         Assert.Equal(
             new[] {
+                ConsolePalette.Gray.ToArgb(),
+                ConsolePalette.Gray.ToArgb(),
+                ConsolePalette.Gray.ToArgb(),
                 runContext.AppConfig.Theme.RangeLowBackground.ToArgb(),
                 runContext.AppConfig.Theme.RangeMidBackground.ToArgb(),
                 runContext.AppConfig.Theme.RangeHighBackground.ToArgb()

@@ -6,8 +6,6 @@ namespace Task.Monitor.Configuration;
 
 public sealed class Theme
 {
-    // The version of the theme file format, written as the file's version key. It changes only
-    // when an older taskmon would misread a file, and a file at any other version isn't loaded.
     public const int CurrentVersion = 2;
 
     private ConfigSection? themeSection;
@@ -126,13 +124,13 @@ public sealed class Theme
 
     public Color ChartGrid
     {
-        get => GetColour(Constants.Keys.ChartGrid, ConsolePalette.DarkGray);
+        get => GetColour(Constants.Keys.ChartGrid, Color.DarkGray);
         set => SetColour(Constants.Keys.ChartGrid, value);
     }
 
     public Color ChartTitle
     {
-        get => GetColour(Constants.Keys.ChartTitle, ConsolePalette.White);
+        get => GetColour(Constants.Keys.ChartTitle, Foreground);
         set => SetColour(Constants.Keys.ChartTitle, value);
     }
 
@@ -222,8 +220,6 @@ public sealed class Theme
         set => SetColour(Constants.Keys.DeltaHighlightColour, value);
     }
 
-    // The dialog colours fall back to the list view header and highlight colours dialogs used
-    // before they had keys of their own, so a theme without dialog.* keys looks the same.
     public Color DialogBackground
     {
         get => GetColour(Constants.Keys.DialogBackground, HeaderBackground);

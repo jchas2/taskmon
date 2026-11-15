@@ -142,7 +142,7 @@ public sealed class AppConfigSaveTests
     {
         AppConfig appConfig = new(new Mock<IFileSystem>().Object);
 
-        Assert.Equal(18, appConfig.Themes.Count);
+        Assert.Equal(26, appConfig.Themes.Count);
         Assert.Contains(appConfig.Layouts, layout => layout.Name == "All Charts");
     }
 

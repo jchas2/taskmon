@@ -22,6 +22,19 @@
       </EmbeddedResource>
       <None Remove="Assets\Themes\Windows XP.theme" />
       <EmbeddedResource Include="Assets\Themes\Windows XP.theme" />
+      <None Remove="Assets\Themes\Windows 11 Dark.theme" />
+      <EmbeddedResource Include="Assets\Themes\Windows 11 Dark.theme" />
+      <None Remove="Assets\Themes\Windows 95.theme" />
+      <EmbeddedResource Include="Assets\Themes\Windows 95.theme" />
+      <None Remove="Assets\Themes\GNOME Dark.theme" />
+      <EmbeddedResource Include="Assets\Themes\GNOME Dark.theme" />
+      <None Remove="Assets\Themes\Amiga Workbench.theme" />
+      <EmbeddedResource Include="Assets\Themes\Amiga Workbench.theme" />
+      <None Remove="Assets\Themes\Ubuntu Dark.theme" />
+      <EmbeddedResource Include="Assets\Themes\Ubuntu Dark.theme" />
+      <None Remove="Assets\Themes\Winamp Classic.theme" />
+      <EmbeddedResource Include="Assets\Themes\Winamp Classic.theme" />
+      <None Remove="Assets\Themes\Fedora Light.theme" />
     </ItemGroup>
 
     <ItemGroup>
@@ -84,8 +97,8 @@
       <EmbeddedResource Include="Assets\Themes\Alien Blood.theme" />
       <None Remove="Assets\Themes\macOS Classic Light" />
       <None Remove="Assets\Themes\macOS Classic Light.theme" />
-      <None Remove="Assets\Themes\macOS Classic.theme" />
-      <EmbeddedResource Include="Assets\Themes\macOS Classic.theme" />
+      <None Remove="Assets\Themes\macOS Dark.theme" />
+      <EmbeddedResource Include="Assets\Themes\macOS Dark.theme" />
       <None Remove="Assets\Themes\Shades of Purple.theme" />
       <EmbeddedResource Include="Assets\Themes\Shades of Purple.theme" />
       <None Remove="Assets\Themes\SynthWave 84.theme" />

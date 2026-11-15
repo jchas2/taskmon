@@ -981,7 +981,7 @@ public sealed class AppConfig
         if (fileExists) {
             fileSystem.ReplaceAllText(path, text);
         }
-        else {git stat
+        else {
             fileSystem.WriteAllText(path, text);
         }
 
