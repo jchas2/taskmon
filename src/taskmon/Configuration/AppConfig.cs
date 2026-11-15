@@ -16,7 +16,8 @@ namespace Task.Monitor.Configuration;
 
 public sealed class AppConfig
 {
-    private const string ConfigFile = $"{Constants.AppName}.ini";
+    private const string ConfigFile             = $"{Constants.AppName}.ini";
+    private const string ConfigTemplateResource = $"Task.Monitor.Assets.Config.{ConfigFile}";
 
     private readonly IFileSystem                fileSystem;
     private readonly List<Theme>                allThemes  = new();
@@ -599,6 +600,19 @@ public sealed class AppConfig
         }
     }
 
+    private static string ReadTemplate()
+    {
+        using Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ConfigTemplateResource);
+
+        if (stream == null) {
+            Debug.Fail($"Missing manifest asset {ConfigTemplateResource}");
+            return string.Empty;
+        }
+
+        using StreamReader reader = new(stream);
+        return reader.ReadToEnd().ReplaceLineEndings();
+    }
+
     private List<(string File, ConfigSection Section)> ReadUserFiles(string? folderPath, string extension, int currentVersion)
     {
         List<(string File, ConfigSection Section)> files = new();
@@ -914,14 +928,19 @@ public sealed class AppConfig
 
         try {
             bool   fileExists = fileSystem.FileExists(path);
-            string fileText   = fileExists ? fileSystem.ReadAllText(path) : string.Empty;
+            string template   = ReadTemplate();
+            string fileText   = fileExists ? fileSystem.ReadAllText(path) : template;
 
-            _ = Config.FromString(fileText);
+            Config fileConfig = Config.FromString(fileText) ?? new();
 
-            string merged = ConfigFileMerger.Merge(fileText, savedConfig, iniConfig);
+            if (!fileExists) {
+                Trace.WriteLine($"Creating {path} from the built-in template");
+            }
+
+            string merged = ConfigFileMerger.Merge(fileText, fileExists ? savedConfig : fileConfig, iniConfig, template);
             _ = Config.FromString(merged);
 
-            if (merged != fileText) {
+            if (!fileExists || merged != fileText) {
                 WriteConfigFile(path, merged, fileExists);
             }
 
@@ -962,7 +981,7 @@ public sealed class AppConfig
         if (fileExists) {
             fileSystem.ReplaceAllText(path, text);
         }
-        else {
+        else {git stat
             fileSystem.WriteAllText(path, text);
         }
 

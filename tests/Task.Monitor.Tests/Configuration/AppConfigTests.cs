@@ -34,6 +34,14 @@ public sealed class AppConfigTests
         Assert.Equal("All Charts", appConfig.DefaultLayout?.Name);
     }
 
+    private static string ConfigTemplate()
+    {
+        using Stream stream = typeof(AppConfig).Assembly.GetManifestResourceStream("Task.Monitor.Assets.Config.taskmon.ini")!;
+        using StreamReader reader = new(stream);
+
+        return reader.ReadToEnd();
+    }
+
     [Fact]
     public void Constructor_With_FileSystem_Initialises_Successfully()
     {
@@ -633,6 +641,11 @@ control.foreground=#abcdef
         Assert.Same(original, appConfig.DefaultLayout);
     }
 
+    private static Dictionary<string, string> Settings(string iniText) =>
+        Config.FromString(iniText)!.ConfigSections
+            .SelectMany(section => section.Entries.Select(entry => (Key: $"[{section.Name}] {entry.Key}", entry.Value)))
+            .ToDictionary(setting => setting.Key, setting => setting.Value);
+
     // Puts files in the folder people keep their own themes or layouts in, leaving the built-in
     // folder inside it empty.
     private void SetupUserFiles(string folder, params (string FileName, string Text)[] files)
@@ -1011,6 +1024,102 @@ node.2=pane,memory
         bool result = appConfig.TryLoad(testConfigPath);
 
         Assert.True(result);
+    }
+
+    // A setting a newer version adds to an existing file arrives with the comment the template has
+    // for it, while the settings already there are left as they were.
+    [Fact]
+    public void TrySave_Adds_A_Missing_Setting_With_Its_Template_Comment()
+    {
+        const string existing = "[ux]\nshow-tips=False\n";
+
+        string? saved = null;
+        fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
+        fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Returns(existing);
+        fileSystem.Setup(fs => fs.ReplaceAllText(testConfigPath, It.IsAny<string>()))
+            .Callback<string, string?>((_, text) => saved = text);
+
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.True(appConfig.TryLoad(testConfigPath));
+        Assert.True(appConfig.TrySave(testConfigPath));
+
+        Assert.StartsWith(existing, saved);
+        Assert.Contains("\n\n; How metres are drawn: Blocks, Bars or Dots.\nmetre-style=Dots\n", saved);
+    }
+
+    // A missing file is created from the commented template, with every setting at its current
+    // value: a value that differs from the template's, such as a platform's default, is written
+    // in beside its comment.
+    [Fact]
+    public void TrySave_Creates_A_Missing_File_From_The_Template()
+    {
+        string? saved = null;
+        fileSystem.Setup(fs => fs.WriteAllText(testConfigPath, It.IsAny<string>()))
+            .Callback<string, string?>((_, text) => saved = text);
+
+        AppConfig appConfig = new(fileSystem.Object) {
+            MetreStyle       = MetreControlStyle.Blocks,
+            UseIrixReporting = true
+        };
+
+        Assert.True(appConfig.TrySave(testConfigPath));
+        Assert.NotNull(saved);
+
+        string nl = Environment.NewLine;
+        Assert.StartsWith(";============", saved);
+        Assert.Contains($"; How metres are drawn: Blocks, Bars or Dots.{nl}metre-style=Blocks{nl}", saved);
+        Assert.Contains($"Activity Monitor shows it.{nl}use-irix-cpu-reporting=True{nl}", saved);
+        Assert.Equal(Settings(appConfig.ToString()), Settings(saved));
+    }
+
+    // A later save from Setup changes only the setting changed, so the template's comments stay.
+    [Fact]
+    public void TrySave_Keeps_The_Template_Comments_When_Saving_Again()
+    {
+        string? created = null;
+        string? resaved = null;
+        fileSystem.Setup(fs => fs.WriteAllText(testConfigPath, It.IsAny<string>()))
+            .Callback<string, string?>((_, text) => created = text);
+
+        AppConfig appConfig = new(fileSystem.Object);
+        Assert.True(appConfig.TrySave(testConfigPath));
+
+        fileSystem.Setup(fs => fs.FileExists(testConfigPath)).Returns(true);
+        fileSystem.Setup(fs => fs.ReadAllText(testConfigPath)).Returns(created!);
+        fileSystem.Setup(fs => fs.ReplaceAllText(testConfigPath, It.IsAny<string>()))
+            .Callback<string, string?>((_, text) => resaved = text);
+
+        appConfig.ShowTips = false;
+        Assert.True(appConfig.TrySave(testConfigPath));
+
+        Assert.Equal(created!.Replace("show-tips=True", "show-tips=False"), resaved);
+    }
+
+    // Every setting the code creates is in the template, so none is written without its comment,
+    // and the template has no setting the code doesn't know.
+    [Fact]
+    public void TrySave_Template_Has_Every_Setting_And_No_Others()
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+
+        Assert.Equal(
+            Settings(appConfig.ToString()).Keys.Order(),
+            Settings(ConfigTemplate()).Keys.Order());
+    }
+
+    // The template documents the defaults, so each value it shows is the default, except one
+    // that depends on the platform, which a new file is given anyway.
+    [Fact]
+    public void TrySave_Template_Values_Are_The_Defaults()
+    {
+        Dictionary<string, string> defaults = Settings(new AppConfig(fileSystem.Object).ToString());
+        Dictionary<string, string> template = Settings(ConfigTemplate());
+
+        defaults.Remove("[ux] use-irix-cpu-reporting");
+        template.Remove("[ux] use-irix-cpu-reporting");
+
+        Assert.Equal(defaults, template);
     }
 
     [Fact]

@@ -214,7 +214,7 @@ Version 2 starts with its default settings, and doesn't read or change anything 
 
 ### Editing taskmon.ini
 
-`taskmon.ini` can be edited by hand. Saving from Setup (`F2`) only changes the settings changed there, so comments (lines starting with `;` or `#`), blank lines, ordering and edits made while Task Monitor is running are all kept. Settings added by a new version are added to the end of their section the next time Task Monitor starts, and the previous file is kept as `taskmon.ini.bak`.
+`taskmon.ini` can be edited by hand. Task Monitor creates it the first time it starts, with a comment above each setting saying what it does and showing its default. Saving from Setup (`F2`) only changes the settings changed there, so comments (lines starting with `;` or `#`), blank lines, ordering and edits made while Task Monitor is running are all kept. Settings added by a new version are added to the end of their section, with their comment, the next time Task Monitor starts, and the previous file is kept as `taskmon.ini.bak`.
 
 If the file can't be read, Task Monitor starts with its default settings and leaves the file alone. Saving from Setup then shows the line at fault, and works again once that line is fixed.
 

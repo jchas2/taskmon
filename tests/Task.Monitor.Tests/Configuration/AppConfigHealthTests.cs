@@ -68,8 +68,10 @@ public sealed class AppConfigHealthTests
         }
     }
 
+    // An existing file without the section gets it as the built-in template has it, comments
+    // included, so it reads as it would in a new file.
     [Fact]
-    public void A_New_Health_Section_Is_Added_To_A_File()
+    public void A_New_Health_Section_Is_Added_To_A_File_With_Its_Template_Comments()
     {
         string? saved = null;
 
@@ -82,8 +84,9 @@ public sealed class AppConfigHealthTests
 
         Assert.True(appConfig.TryLoad(ConfigPath));
         Assert.True(appConfig.TrySave(ConfigPath));
-        Assert.DoesNotContain(";", saved);
-        Assert.Contains("[health]\nwarning-sustain-seconds=30\n", saved);
+        Assert.Contains("[health]\n; Thresholds for the HEALTH view, as whole numbers.", saved);
+        Assert.Contains("; for the sustain period, so a short spike doesn't raise a status.\nwarning-sustain-seconds=30\n", saved);
+        Assert.Contains("; recorded. They appear under Recent events and never change a status.\nreport-lookback-hours=24\n", saved);
     }
 
     [Fact]

@@ -20,6 +20,8 @@
         <StronglyTypedClassName>Strings</StronglyTypedClassName>
         <StronglyTypedFileName>$(IntermediateOutputPath)Strings.g.cs</StronglyTypedFileName>
       </EmbeddedResource>
+      <None Remove="Assets\Themes\Windows XP.theme" />
+      <EmbeddedResource Include="Assets\Themes\Windows XP.theme" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,6 +34,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <!-- The commented taskmon.ini a new config file is created from. -->
+      <None Remove="Assets\Config\taskmon.ini" />
+      <EmbeddedResource Include="Assets\Config\taskmon.ini" />
       <None Remove="Assets\Mascot\Mascot.anim" />
       <EmbeddedResource Include="Assets\Mascot\Mascot.anim" />
       <None Remove="Assets\Themes\Classic HTop.theme" />

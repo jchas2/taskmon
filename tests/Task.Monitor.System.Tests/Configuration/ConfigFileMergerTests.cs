@@ -19,6 +19,22 @@ public sealed class ConfigFileMergerTests
         "[my-notes]\n" +
         "anything=goes\n";
 
+    private const string Template =
+        "; banner\n" +
+        "\n" +
+        "[ux]\n" +
+        "; Shows tips.\n" +
+        "; True or False.\n" +
+        "show-tips=True\n" +
+        "theme=Nord\n" +
+        "\n" +
+        "; About the health section.\n" +
+        "[health]\n" +
+        "; Thresholds.\n" +
+        "\n" +
+        "; Busy CPU.\n" +
+        "cpu=90\n";
+
     [Fact]
     public void An_Empty_File_Gets_Every_Section()
     {
@@ -108,6 +124,21 @@ public sealed class ConfigFileMergerTests
         Assert.Contains("Default-Theme=Nord\nshow-graphs=True\n\n; stats live here\n[stats]", merged);
     }
 
+    // A key with no comment directly above it in the template, such as the second of a pair that
+    // share one, or a key the template doesn't have, is added on its own.
+    [Theory]
+    [InlineData("theme", "Nord")]
+    [InlineData("not-in-template", "1")]
+    public void A_Missing_Key_Not_Commented_In_The_Template_Is_Added_Without_A_Comment(string key, string value)
+    {
+        Config current = Parse("[ux]\nshow-tips=True\n");
+        current.GetConfigSection("ux").Add(key, value);
+
+        string merged = ConfigFileMerger.Merge("[ux]\nshow-tips=True\n", Parse("[ux]\nshow-tips=True\n"), current, Template);
+
+        Assert.Equal($"[ux]\nshow-tips=True\n{key}={value}\n", merged);
+    }
+
     [Fact]
     public void A_Missing_Key_On_The_Last_Line_Starts_A_New_Line()
     {
@@ -116,6 +147,36 @@ public sealed class ConfigFileMergerTests
         Assert.Single(merged.ConfigSections);
         Assert.Equal("1", merged.GetConfigSection("ux").GetString("a"));
         Assert.Equal("2", merged.GetConfigSection("ux").GetString("b"));
+    }
+
+    // A key a newer version adds reads as it would in a file created from the template: after a
+    // blank line, below the comment the template has for it, with the current value.
+    [Fact]
+    public void A_Missing_Key_Takes_Its_Comment_From_The_Template()
+    {
+        Config current = Parse("[ux]\ntheme=Dracula\n");
+        current.GetConfigSection("ux").Add("show-tips", "False");
+
+        string merged = ConfigFileMerger.Merge("[ux]\ntheme=Dracula\n", Parse("[ux]\ntheme=Dracula\n"), current, Template);
+
+        Assert.Equal("[ux]\ntheme=Dracula\n\n; Shows tips.\n; True or False.\nshow-tips=False\n", merged);
+    }
+
+    // A section a newer version adds is written as the template has it, with the comments above
+    // and inside it, the current values, and any key the template lacks at the end.
+    [Fact]
+    public void A_Missing_Section_Is_Added_As_The_Template_Has_It()
+    {
+        const string fileText = "[ux]\nshow-tips=True\ntheme=Nord\n";
+
+        Config current = Parse(fileText);
+        current.AddConfigSection(new ConfigSection("health").Add("cpu", "95").Add("extra", "1"));
+
+        string merged = ConfigFileMerger.Merge(fileText, Parse(fileText), current, Template);
+
+        Assert.Equal(
+            fileText + "\n; About the health section.\n[health]\n; Thresholds.\n\n; Busy CPU.\ncpu=95\nextra=1\n",
+            merged);
     }
 
     [Fact]
@@ -194,6 +255,23 @@ public sealed class ConfigFileMergerTests
         string merged = ConfigFileMerger.Merge(text, Parse(text), current);
 
         Assert.Equal("[ux]\r\na=9\r\nc=3\r\n\r\n[stats]\r\nb=2\r\n\r\n[new]\r\nd=4\r\n", merged);
+    }
+
+    [Fact]
+    public void Crlf_Files_Stay_Crlf_With_Template_Comments()
+    {
+        const string text = "[ux]\r\ntheme=Nord\r\n";
+
+        Config current = Parse(text);
+        current.GetConfigSection("ux").Add("show-tips", "True");
+        current.AddConfigSection(new ConfigSection("health").Add("cpu", "90"));
+
+        string merged = ConfigFileMerger.Merge(text, Parse(text), current, Template);
+
+        Assert.Equal(
+            "[ux]\r\ntheme=Nord\r\n\r\n; Shows tips.\r\n; True or False.\r\nshow-tips=True\r\n" +
+            "\r\n; About the health section.\r\n[health]\r\n; Thresholds.\r\n\r\n; Busy CPU.\r\ncpu=90\r\n",
+            merged);
     }
 
     private static string MergeChange(string fileText, string section, string key, string value)

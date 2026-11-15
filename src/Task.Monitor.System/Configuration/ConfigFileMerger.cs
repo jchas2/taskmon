@@ -2,24 +2,59 @@ using System.Text;
 
 namespace Task.Monitor.System.Configuration;
 
-// Applies config changes to the text of an ini file and leaves everything else as it was typed, so
-// comments, blank lines, ordering, line endings and hand edits all survive a save.
 public static class ConfigFileMerger
 {
     private const string CommentPrefix = "; ";
 
     private sealed class FileSection(int headerLine)
     {
+        public int HeaderLine { get; } = headerLine;
+
         public Dictionary<string, int> Keys { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public int LastLine { get; set; } = headerLine;
     }
 
-    private static void AppendSection(StringBuilder text, ConfigSection section, string newLine)
+    private sealed class Template(List<string> lines)
+    {
+        public List<string> Lines { get; } = lines;
+
+        public Dictionary<string, FileSection> Sections { get; } = ReadSections(lines);
+    }
+
+    private static List<string> AddedKeyLines(Template? template, string sectionName, string key, string value, string newLine)
+    {
+        List<string> added = new();
+
+        if (template != null &&
+            template.Sections.TryGetValue(sectionName, out FileSection? templateSection) &&
+            templateSection.Keys.TryGetValue(key, out int keyLine)) {
+
+            int commentStart = CommentStart(template.Lines, keyLine);
+
+            if (commentStart < keyLine) {
+                added.Add(newLine);
+
+                for (int i = commentStart; i < keyLine; i++) {
+                    added.Add(WithoutNewLine(template.Lines[i]) + newLine);
+                }
+            }
+        }
+
+        added.Add(FormatEntry(key, value) + newLine);
+        return added;
+    }
+
+    private static void AppendBlankLines(StringBuilder text, string newLine)
     {
         for (int count = TrailingNewLines(text); count < 2 && text.Length > 0; count++) {
             text.Append(newLine);
         }
+    }
+
+    private static void AppendSection(StringBuilder text, ConfigSection section, string newLine)
+    {
+        AppendBlankLines(text, newLine);
 
         if (section.Comment.Length > 0) {
             foreach (string commentLine in section.Comment.Split('\n')) {
@@ -34,6 +69,54 @@ public static class ConfigFileMerger
         }
     }
 
+    private static void AppendTemplateSection(
+        StringBuilder text,
+        ConfigSection section,
+        Template      template,
+        FileSection   templateSection,
+        string        newLine)
+    {
+        AppendBlankLines(text, newLine);
+
+        int start = CommentStart(template.Lines, templateSection.HeaderLine);
+        int end   = template.Sections.Values
+            .Where(other => other.HeaderLine > templateSection.HeaderLine)
+            .Select(other => CommentStart(template.Lines, other.HeaderLine))
+            .DefaultIfEmpty(template.Lines.Count)
+            .Min();
+
+        while (end > start && template.Lines[end - 1].Trim().Length == 0) {
+            end--;
+        }
+
+        Dictionary<int, string> keyLines = templateSection.Keys.ToDictionary(entry => entry.Value, entry => entry.Key);
+
+        for (int i = start; i < end; i++) {
+            string line = WithoutNewLine(template.Lines[i]);
+
+            if (keyLines.TryGetValue(i, out string? key) && section.Contains(key)) {
+                line = ReplaceValue(line, section.GetString(key));
+            }
+
+            text.Append(line).Append(newLine);
+        }
+
+        foreach ((string key, string value) in section.Entries) {
+            if (!templateSection.Keys.ContainsKey(key)) {
+                text.Append(FormatEntry(key, value)).Append(newLine);
+            }
+        }
+    }
+
+    private static int CommentStart(List<string> lines, int line)
+    {
+        while (line > 0 && IsComment(lines[line - 1])) {
+            line--;
+        }
+
+        return line;
+    }
+
     private static string DetectNewLine(string fileText)
     {
         if (fileText.Contains("\r\n")) {
@@ -45,6 +128,8 @@ public static class ConfigFileMerger
 
     private static string FormatEntry(string key, string value) => $"{key}={value}";
 
+    private static bool IsComment(string line) => line.TrimStart() is [';' or '#', ..];
+
     private static bool IsUnchanged(Config savedConfig, string sectionName, string key, string value)
     {
         if (!savedConfig.ContainsSection(sectionName)) {
@@ -55,16 +140,14 @@ public static class ConfigFileMerger
         return section.Contains(key) && section.GetString(key) == value;
     }
 
-    // A key is only rewritten when currentConfig differs from savedConfig, the values as last
-    // loaded or saved, so a key edited by hand since then keeps the edit. Missing keys and sections
-    // are added. fileText must already have parsed.
-    public static string Merge(string fileText, Config savedConfig, Config currentConfig)
+    public static string Merge(string fileText, Config savedConfig, Config currentConfig, string? templateText = null)
     {
         string                          newLine       = DetectNewLine(fileText);
         List<string>                    lines         = SplitLines(fileText);
         Dictionary<string, FileSection> fileSections  = ReadSections(lines);
         Dictionary<int, List<string>>   addedKeys     = new();
         List<ConfigSection>             addedSections = new();
+        Template?                       template      = string.IsNullOrEmpty(templateText) ? null : new(SplitLines(templateText));
 
         foreach (ConfigSection section in currentConfig.ConfigSections) {
             if (!fileSections.TryGetValue(section.Name, out FileSection? fileSection)) {
@@ -78,7 +161,7 @@ public static class ConfigFileMerger
                         added = addedKeys[fileSection.LastLine] = new();
                     }
 
-                    added.Add(FormatEntry(key, value) + newLine);
+                    added.AddRange(AddedKeyLines(template, section.Name, key, value, newLine));
                 }
                 else if (!IsUnchanged(savedConfig, section.Name, key, value)) {
                     lines[line] = ReplaceValue(lines[line], value);
@@ -86,7 +169,6 @@ public static class ConfigFileMerger
             }
         }
 
-        // Bottom up, so inserting doesn't move the lines still to be inserted after.
         foreach ((int line, List<string> added) in addedKeys.OrderByDescending(entry => entry.Key)) {
             if (!lines[line].EndsWith('\n')) {
                 lines[line] += newLine;
@@ -98,7 +180,12 @@ public static class ConfigFileMerger
         StringBuilder text = new(string.Concat(lines));
 
         foreach (ConfigSection section in addedSections) {
-            AppendSection(text, section, newLine);
+            if (template != null && template.Sections.TryGetValue(section.Name, out FileSection? templateSection)) {
+                AppendTemplateSection(text, section, template, templateSection, newLine);
+            }
+            else {
+                AppendSection(text, section, newLine);
+            }
         }
 
         return text.ToString();
@@ -175,4 +262,6 @@ public static class ConfigFileMerger
 
         return count;
     }
+
+    private static string WithoutNewLine(string line) => line.TrimEnd('\r', '\n');
 }
