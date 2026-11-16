@@ -184,6 +184,15 @@ public sealed class ThemeTests
         AssertThemeColours(theme);
     }
 
+    // WCAG contrast ratio: 1 for the same colour, 21 for black on white.
+    private static double ContrastRatio(Color first, Color second)
+    {
+        double a = RelativeLuminance(first);
+        double b = RelativeLuminance(second);
+
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+    }
+
     // Red marked the focused dialog button before the colour was themed.
     [Fact]
     public void DialogButtonFocus_Falls_Back_To_Red_When_Not_Set() =>
@@ -420,6 +429,17 @@ public sealed class ThemeTests
 
         Assert.Equal(ColorTranslator.FromHtml("#123abc"), theme.PropertyKey);
         Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.PropertyValue);
+    }
+
+    private static double RelativeLuminance(Color colour)
+    {
+        static double Linear(int channel)
+        {
+            double value = channel / 255.0;
+            return value <= 0.03928 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
+        }
+
+        return 0.2126 * Linear(colour.R) + 0.7152 * Linear(colour.G) + 0.0722 * Linear(colour.B);
     }
 
     [Fact]
@@ -726,6 +746,49 @@ public sealed class ThemeTests
             Assert.True(section.Contains(Constants.Keys.HotKeyName), $"{name} is missing {Constants.Keys.HotKeyName}");
             Assert.True(section.Contains(Constants.Keys.TipGlyph), $"{name} is missing {Constants.Keys.TipGlyph}");
         }
+    }
+
+    // The DISK SPACE status line is drawn in the heatmap.state colours on the window background.
+    // A transparent window shows the terminal's own background, and every theme with one is dark,
+    // so it counts as black.
+    [Fact]
+    public void Shipped_Themes_Draw_The_Disk_Scan_Status_Readably()
+    {
+        const double minContrast = 3.0;
+
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+
+        List<string> unreadable = [];
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+            Theme theme = new(parser.Sections[0]);
+
+            Color window = theme.Background.IsTransparent() ? ConsolePalette.Black : theme.Background;
+
+            (string Key, Color Colour)[] states = [
+                (Constants.Keys.HeatmapStateScanning,  theme.HeatmapStateScanning),
+                (Constants.Keys.HeatmapStateCompleted, theme.HeatmapStateCompleted),
+                (Constants.Keys.HeatmapStateFaulted,   theme.HeatmapStateFaulted)
+            ];
+
+            foreach ((string key, Color colour) in states) {
+                double contrast = ContrastRatio(colour, window);
+
+                if (contrast < minContrast) {
+                    unreadable.Add($"{name} {key} {contrast:0.00}:1");
+                }
+            }
+        }
+
+        Assert.True(unreadable.Count == 0, string.Join(Environment.NewLine, unreadable));
     }
 
     [Fact]

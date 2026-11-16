@@ -87,9 +87,9 @@ process.list.user.system=#ccff00
 process.list.user.root=#ccff00
 process.list.deltahighlight=#FFB347
 
-heatmap.state.scanning=#000000
-heatmap.state.completed=#000000
-heatmap.state.faulted=#000000
+heatmap.state.scanning=#FFB347
+heatmap.state.completed=#8dd06c
+heatmap.state.faulted=#ba55d3
 
 app.error=#db61a2
 

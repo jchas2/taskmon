@@ -87,9 +87,9 @@ process.list.user.system=#d9f5dd                ; tokenColors: punctuation.defin
 process.list.user.root=#d9f5dd                  ; tokenColors: punctuation.definition.parameters
 process.list.deltahighlight=#ffcb8b             ; tokencolors: meta
 
-heatmap.state.scanning=#222222
-heatmap.state.completed=#222222
-heatmap.state.faulted=#222222
+heatmap.state.scanning=#c792ea
+heatmap.state.completed=#637777
+heatmap.state.faulted=#F78C6C
 
 app.error=#db61a2
 
