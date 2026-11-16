@@ -10,7 +10,7 @@ public sealed class PickerBoxTests
 {
     [Fact]
     public void PickerBox_Canary_Test() =>
-        Assert.Equal(28, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
+        Assert.Equal(30, CanaryTestHelper.GetPropertyCount<PickerBoxControl>());
 
     private static PickerBoxControl CreateBox(
         Mock<ISystemTerminal>? terminal = null,
@@ -226,6 +226,8 @@ public sealed class PickerBoxTests
         Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
         Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, control.ListBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ListForegroundColour);
         Assert.Equal(ConsolePalette.White, control.ListBackgroundHighlightColour);
         Assert.Equal(ConsolePalette.Gray, control.ListBackgroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.Cyan, control.ListForegroundHighlightColour);
@@ -259,5 +261,26 @@ public sealed class PickerBoxTests
         control.ShowPickerBox();
 
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("[ ]") || s.Contains("[x]"))), Times.Never);
+    }
+
+    // The picker has every key while it's open, so its list shows the focused highlight rather
+    // than the faint inactive one, which in some themes matches the dialog background.
+    [Fact]
+    public void The_Selected_Row_Uses_The_Focused_Highlight()
+    {
+        RecordingTerminal terminal = new();
+
+        PickerBoxControl control = new(terminal) {
+            Height                                = 10,
+            ListBackgroundHighlightColour         = ConsolePalette.DarkMagenta,
+            ListBackgroundHighlightInactiveColour = ConsolePalette.DarkYellow,
+            Width                                 = 40
+        };
+
+        control.SetItems(["Cpu"]);
+        control.ShowPickerBox();
+
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.DarkMagenta), terminal.Output);
+        Assert.DoesNotContain(ConsolePalette.BackgroundSgr(ConsolePalette.DarkYellow), terminal.Output);
     }
 }

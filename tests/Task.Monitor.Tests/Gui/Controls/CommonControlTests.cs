@@ -8,6 +8,7 @@ using Task.Monitor.System.Controls.TextInputDialog;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using ChartControl = Task.Monitor.System.Controls.Chart.Chart;
+using InputBoxControl = Task.Monitor.System.Controls.InputBox.InputBox;
 using MessageBoxControl = Task.Monitor.System.Controls.MessageBox.MessageBox;
 using PickerBoxControl = Task.Monitor.System.Controls.PickerBox.PickerBox;
 
@@ -18,8 +19,11 @@ public sealed class CommonControlTests
     private static readonly Color DialogBackground       = ColorTranslator.FromHtml("#101010");
     private static readonly Color DialogBorder           = ColorTranslator.FromHtml("#202020");
     private static readonly Color DialogButtonBackground = ColorTranslator.FromHtml("#303030");
+    private static readonly Color DialogButtonFocus      = ColorTranslator.FromHtml("#808080");
     private static readonly Color DialogButtonForeground = ColorTranslator.FromHtml("#404040");
     private static readonly Color DialogForeground       = ColorTranslator.FromHtml("#505050");
+    private static readonly Color ListBackground         = ColorTranslator.FromHtml("#606060");
+    private static readonly Color ListForeground         = ColorTranslator.FromHtml("#707070");
 
     // Every chart is themed here, so the title and grid keys reach the SUMMARY, Performance and
     // Thermals charts alike. The title differs from control.foreground, which it falls back to.
@@ -51,7 +55,10 @@ public sealed class CommonControlTests
         section.Add(Constants.Keys.DialogBorder, "#202020");
         section.Add(Constants.Keys.DialogButtonBackground, "#303030");
         section.Add(Constants.Keys.DialogButtonForeground, "#404040");
+        section.Add(Constants.Keys.DialogButtonFocus, "#808080");
         section.Add(Constants.Keys.DialogForeground, "#505050");
+        section.Add(Constants.Keys.DialogListBackground, "#606060");
+        section.Add(Constants.Keys.DialogListForeground, "#707070");
 
         return new Theme(section);
     }
@@ -80,6 +87,7 @@ public sealed class CommonControlTests
         Assert.Equal(DialogForeground, messageBox.DialogForegroundColour);
         Assert.Equal(DialogButtonBackground, messageBox.DialogButtonBackgroundColour);
         Assert.Equal(DialogButtonForeground, messageBox.DialogButtonForegroundColour);
+        Assert.Equal(DialogButtonFocus, messageBox.DialogButtonFocusColour);
 
         DriveInputBox driveInputBox = new(terminal);
         CommonControl.Theme(driveInputBox, theme);
@@ -89,6 +97,9 @@ public sealed class CommonControlTests
         Assert.Equal(DialogForeground, driveInputBox.DialogForegroundColour);
         Assert.Equal(DialogButtonBackground, driveInputBox.DialogButtonBackgroundColour);
         Assert.Equal(DialogButtonForeground, driveInputBox.DialogButtonForegroundColour);
+        Assert.Equal(DialogButtonFocus, driveInputBox.DialogButtonFocusColour);
+        Assert.Equal(ListBackground, driveInputBox.ListBackgroundColour);
+        Assert.Equal(ListForeground, driveInputBox.ListForegroundColour);
 
         PickerBoxControl pickerBox = new(terminal);
         CommonControl.Theme(pickerBox, theme);
@@ -96,6 +107,8 @@ public sealed class CommonControlTests
         Assert.Equal(DialogBackground, pickerBox.DialogBackgroundColour);
         Assert.Equal(DialogBorder, pickerBox.DialogBorderColour);
         Assert.Equal(DialogForeground, pickerBox.DialogForegroundColour);
+        Assert.Equal(ListBackground, pickerBox.ListBackgroundColour);
+        Assert.Equal(ListForeground, pickerBox.ListForegroundColour);
 
         TextInputDialog textInputDialog = new(terminal);
         CommonControl.Theme(textInputDialog, theme);
@@ -104,6 +117,10 @@ public sealed class CommonControlTests
         Assert.Equal(DialogForeground, textInputDialog.DialogForegroundColour);
         Assert.Equal(DialogButtonBackground, textInputDialog.DialogButtonBackgroundColour);
         Assert.Equal(DialogButtonForeground, textInputDialog.DialogButtonForegroundColour);
+        Assert.Equal(DialogButtonFocus, textInputDialog.DialogButtonFocusColour);
+        Assert.Equal(DialogBorder, textInputDialog.DialogBorderColour);
+        Assert.Equal(ListBackground, textInputDialog.FieldBackgroundColour);
+        Assert.Equal(ListForeground, textInputDialog.FieldForegroundColour);
     }
 
     // The dialogs in Task.Monitor.System hold no wording of their own; the app supplies it.
@@ -194,4 +211,15 @@ public sealed class CommonControlTests
     [InlineData("F",   "f")]
     public void FormatHotKey_Lower_Cases_All_But_Function_Keys(string key, string expected) =>
         Assert.Equal(expected, CommonControl.FormatHotKey(key));
+
+    // The scan path field edits the highlighted row of the drive dialog in place, so it matches that row.
+    [Fact]
+    public void The_Text_Field_Takes_The_Highlighted_Row_Colours()
+    {
+        InputBoxControl inputBox = new(new RecordingTerminal());
+        CommonControl.Theme(inputBox, CreateDialogTheme());
+
+        Assert.Equal(ColorTranslator.FromHtml("#cccccc"), inputBox.FieldBackgroundColour);
+        Assert.Equal(ColorTranslator.FromHtml("#dddddd"), inputBox.FieldForegroundColour);
+    }
 }

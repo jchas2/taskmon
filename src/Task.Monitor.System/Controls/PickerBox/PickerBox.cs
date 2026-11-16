@@ -6,7 +6,7 @@ using ListViewItem = Task.Monitor.System.Controls.ListView.ListViewItem;
 
 namespace Task.Monitor.System.Controls.PickerBox;
 
-public sealed class PickerBox : Control
+public sealed class PickerBox : Dialog
 {
     private const int MinWidth     = 20;
     private const int MinHeight    = 6;
@@ -20,10 +20,13 @@ public sealed class PickerBox : Control
     {
         list = new ListViewControl(terminal) {
             EnableScroll      = true,
+            Focused           = true,
             EnableRowSelect   = true,
             ShowColumnHeaders = false,
             ShowBorder        = false,
-            Visible           = true
+            Visible           = true,
+            BackgroundColour  = ConsolePalette.Gray,
+            ForegroundColour  = ConsolePalette.Black
         };
 
         list.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty));
@@ -36,52 +39,22 @@ public sealed class PickerBox : Control
             .Select(pair => order[pair.index])
             .Order();
 
-    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
-    public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
-    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
-
     private void DrawFooter()
     {
-        int dialogWidth = Width - 2;
         int y = list.Y + list.Height;
 
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, y);
-        Terminal.Write($"│{HelpText.CentreWithLength(dialogWidth)}│");
-
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write('╰');
-        Terminal.Write('─', dialogWidth);
-        Terminal.Write('╯');
+        DrawRow(y, HelpText);
+        DrawBottomLine(++y);
     }
 
     private void DrawFrame()
     {
-        DrawRectangle(X, Y, Width, Height, DialogBackgroundColour);
-
-        int dialogWidth = Width - 2;
-        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen    = Math.Min(title.Length, dialogWidth);
-        int leftDashes  = (dialogWidth - titleLen) / 2;
-        int rightDashes = dialogWidth - titleLen - leftDashes;
-
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, Y);
-        Terminal.Write('╭');
-        Terminal.Write('─', leftDashes);
-        Terminal.Write(titleLen < title.Length ? title[..titleLen] : title);
-        Terminal.Write('─', rightDashes);
-        Terminal.Write('╮');
-
-        string spacer = new(' ', dialogWidth);
-        Terminal.SetCursorPosition(X, Y + 1);
-        Terminal.Write($"│{spacer}│");
+        DrawBackground();
+        DrawTopLine();
+        DrawRow(Y + 1, string.Empty);
 
         for (int row = 0; row < list.Height; row++) {
-            Terminal.SetCursorPosition(X, list.Y + row);
-            Terminal.Write('│');
+            DrawSide(X, list.Y + row);
         }
 
         DrawScrollIndicators();
@@ -105,20 +78,30 @@ public sealed class PickerBox : Control
     {
         (int upRow, int downRow) = list.GetScrollIndicatorRows();
 
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-
         for (int row = 0; row < list.Height; row++) {
             int y = list.Y + row;
 
-            Terminal.SetCursorPosition(X + Width - 1, y);
-            Terminal.Write(y == upRow ? '▲' : y == downRow ? '▼' : '│');
+            if (y == upRow || y == downRow) {
+                Terminal.BackgroundColor = DialogBackgroundColour;
+                Terminal.ForegroundColor = DialogForegroundColour;
+                Terminal.SetCursorPosition(X + Width - 1, y);
+                Terminal.Write(y == upRow ? '▲' : '▼');
+                continue;
+            }
+
+            DrawSide(X + Width - 1, y);
         }
     }
 
     public static int GetPreferredHeight(int rowCount) => Math.Max(MinHeight, rowCount + ChromeHeight);
 
     public string HelpText { get; set; } = string.Empty;
+
+    public Color ListBackgroundColour
+    {
+        get => list.BackgroundColour;
+        set => list.BackgroundColour = value;
+    }
 
     public Color ListBackgroundHighlightColour
     {
@@ -130,6 +113,12 @@ public sealed class PickerBox : Control
     {
         get => list.BackgroundHighlightInactiveColour;
         set => list.BackgroundHighlightInactiveColour = value;
+    }
+
+    public Color ListForegroundColour
+    {
+        get => list.ForegroundColour;
+        set => list.ForegroundColour = value;
     }
 
     public Color ListForegroundHighlightColour
@@ -233,6 +222,4 @@ public sealed class PickerBox : Control
         OnResize();
         OnDraw();
     }
-
-    public string Title { get; set; } = string.Empty;
 }

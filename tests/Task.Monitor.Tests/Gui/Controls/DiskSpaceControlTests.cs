@@ -524,6 +524,35 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // The dialog holds no wording of its own, so without the app's text its buttons are blank
+    // blocks, the help line is empty and the custom path row is an invisible blank row.
+    [Fact]
+    public void S_Opens_A_Drive_Selection_Prompt_With_Its_Buttons_Help_And_Custom_Path_Row()
+    {
+        DiskSpaceControl ctrl = CreateControl();
+        ctrl.Draw();
+        runContextHelper.terminal.Invocations.Clear();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false), ref handled);
+
+        // The buttons are written a character at a time, so single characters are kept too.
+        string output = string.Concat(runContextHelper.terminal.Invocations
+            .Where(invocation => invocation.Method.Name == "Write" && invocation.Arguments.Count == 1)
+            .Select(invocation => invocation.Arguments[0] switch {
+                string text => text,
+                char ch     => ch.ToString(),
+                _           => string.Empty
+            }));
+
+        Assert.Contains("OK", output);
+        Assert.Contains("Cancel", output);
+        Assert.Contains("Custom path...", output);
+        Assert.Contains("↵ confirm", output);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void The_Scan_Control_Hints_Live_On_The_Heat_Map_Border_Not_The_File_List_Footer()
     {

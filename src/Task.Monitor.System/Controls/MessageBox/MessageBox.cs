@@ -4,14 +4,13 @@ using Task.Monitor.System.Screens;
 
 namespace Task.Monitor.System.Controls.MessageBox;
 
-public sealed class MessageBox : Control
+public sealed class MessageBox : Dialog
 {
     public const int PreferredHeight = 11;
 
     private const int MinWidth       = 40;
     private const int MaxTextLines   = 3;
     private const int MinButtonWidth = 10;
-    private const int ButtonHeight   = 1;
     private const int ButtonGap      = 6;
 
     private bool okFocused = true;
@@ -24,56 +23,20 @@ public sealed class MessageBox : Control
 
     public string CancelText { get; set; } = string.Empty;
 
-    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
-    public Color DialogBorderColour { get; set; } = ConsolePalette.Black;
     public Color DialogButtonBackgroundColour { get; set; } = ConsolePalette.DarkGray;
+    public Color DialogButtonFocusColour { get; set; } = ConsolePalette.Red;
     public Color DialogButtonForegroundColour { get; set; } = ConsolePalette.Black;
-    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
-    
-    private void DrawButton(
-        int    x,
-        int    y,
-        int    width,
-        int    height,
-        string text,
-        bool   selected)
-    {
-        DrawRectangle(
+
+    private void DrawButton(int x, int y, string text, bool selected) =>
+        base.DrawButton(
             x,
             y,
-            width,
-            height,
-            DialogBackgroundColour);
-        
-        string centredText = text.CentreWithLength(width);
-        
-        Terminal.BackgroundColor = DialogButtonBackgroundColour;
-        Terminal.ForegroundColor = DialogButtonForegroundColour;
-        
-        Terminal.SetCursorPosition(x, y);
-
-        bool isHighlightChar = true;
-        
-        foreach (char ch in centredText) {
-            
-            if (char.IsWhiteSpace(ch)) {
-                Terminal.Write(ch);                
-            }
-            else {
-                
-                if (isHighlightChar && selected) {
-                    Terminal.ForegroundColor = ConsolePalette.Red;
-                    Terminal.Write(ch);
-                    Terminal.ForegroundColor = DialogButtonForegroundColour;
-                    
-                    isHighlightChar = false;
-                    continue;
-                }
-                
-                Terminal.Write(ch);
-            }
-        }
-    }
+            ButtonWidth,
+            text,
+            selected,
+            DialogButtonBackgroundColour,
+            DialogButtonForegroundColour,
+            DialogButtonFocusColour);
 
     public string HelpText { get; set; } = string.Empty;
     public string OkText { get; set; } = string.Empty;
@@ -84,50 +47,21 @@ public sealed class MessageBox : Control
             return;
         }
     
-        DrawRectangle(
-            X,
-            Y,
-            Width,
-            Height,
-            DialogBackgroundColour);
-        
+        DrawBackground();
+
         int y = Y;
 
-        int dialogWidth = Width - 2;
-        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen    = Math.Min(title.Length, dialogWidth);
-        int leftDashes  = (dialogWidth - titleLen) / 2;
-        int rightDashes = dialogWidth - titleLen - leftDashes;
+        DrawTopLine();
+        DrawRow(++y, string.Empty);
 
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, y);
-        Terminal.Write('\u256D');
-        Terminal.Write('\u2500', leftDashes);
-        Terminal.Write(titleLen < title.Length ? title[..titleLen] : title);
-        Terminal.Write('\u2500', rightDashes);
-        Terminal.Write('\u256E');
-        
-        string spacer = new(' ', dialogWidth);
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write($"\u2502{spacer}\u2502");
-        
         string[] lines = Text.Split('\n');
-        
-        for (int n = 0; n < MaxTextLines; n++) { 
-            Terminal.SetCursorPosition(X, ++y);
-         
-            if (n < lines.Length) { 
-                Terminal.Write($"\u2502{lines[n].CentreWithLength(dialogWidth)}\u2502");
-                continue;
-            }
-         
-            Terminal.Write($"\u2502{spacer}\u2502");
+
+        for (int n = 0; n < MaxTextLines; n++) {
+            DrawRow(++y, n < lines.Length ? lines[n] : string.Empty);
         }
 
         for (int n = 0; n < 2; n++) {
-            Terminal.SetCursorPosition(X, ++y);
-            Terminal.Write($"\u2502{spacer}\u2502");
+            DrawRow(++y, string.Empty);
         }
 
         int buttonX = Buttons == MessageBoxButtons.Ok
@@ -135,41 +69,19 @@ public sealed class MessageBox : Control
             : X + (Width / 2 - (ButtonWidth + ButtonGap + ButtonWidth) / 2);
 
         int buttonY = ++y;
-        Terminal.SetCursorPosition(X, buttonY);
-        Terminal.Write($"\u2502{spacer}\u2502");
-         
+        DrawRow(buttonY, string.Empty);
+
         if (Buttons == MessageBoxButtons.Ok || Buttons == MessageBoxButtons.OkCancel) {
-            DrawButton(
-                buttonX,
-                buttonY,
-                ButtonWidth,
-                ButtonHeight,
-                OkText,
-                selected: okFocused);
+            DrawButton(buttonX, buttonY, OkText, selected: okFocused);
         }
-         
+
         if (Buttons == MessageBoxButtons.OkCancel) {
-            DrawButton(
-                buttonX + ButtonWidth + ButtonGap,
-                buttonY, 
-                ButtonWidth,
-                ButtonHeight,
-                CancelText,
-                selected: !okFocused);
+            DrawButton(buttonX + ButtonWidth + ButtonGap, buttonY, CancelText, selected: !okFocused);
         }
 
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write($"\u2502{spacer}\u2502");
-
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write($"\u2502{HelpText.CentreWithLength(dialogWidth)}\u2502");
-        
-        Terminal.SetCursorPosition(X, ++y);
-        Terminal.Write('\u2570');
-        Terminal.Write('\u2500', dialogWidth);
-        Terminal.Write('\u256F');
+        DrawRow(++y, string.Empty);
+        DrawRow(++y, HelpText);
+        DrawBottomLine(++y);
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -224,5 +136,4 @@ public sealed class MessageBox : Control
         char.ToUpperInvariant(label[0]) == char.ToUpperInvariant(keyInfo.KeyChar);
 
     public string Text { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
 }

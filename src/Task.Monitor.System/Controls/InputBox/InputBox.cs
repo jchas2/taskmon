@@ -9,7 +9,9 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
     private const int MinHeight = 1;
 
     private readonly TextBuffer textBuffer = new();
-    private readonly Color      boxColour  = ConsolePalette.Gray;
+
+    public Color FieldBackgroundColour { get; set; } = ConsolePalette.Gray;
+    public Color FieldForegroundColour { get; set; } = ConsolePalette.Black;
 
     protected override void OnDraw()
     {
@@ -22,13 +24,13 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
             Y,
             Width,
             Height,
-            boxColour);
+            FieldBackgroundColour);
          
         Terminal.SetCursorPosition(X, Y);
 
         if (!string.IsNullOrEmpty(Text)) {
-            Terminal.BackgroundColor = boxColour;
-            Terminal.ForegroundColor = ConsolePalette.Black;
+            Terminal.BackgroundColor = FieldBackgroundColour;
+            Terminal.ForegroundColor = FieldForegroundColour;
             Terminal.Write(Text);
         }
     }
@@ -38,8 +40,8 @@ public sealed class InputBox(ISystemTerminal terminal) : Control(terminal)
         Result  = InputBoxResult.None;
         handled = true;
 
-        Terminal.BackgroundColor = boxColour;
-        Terminal.ForegroundColor = ConsolePalette.Black;
+        Terminal.BackgroundColor = FieldBackgroundColour;
+        Terminal.ForegroundColor = FieldForegroundColour;
         
         switch (keyInfo.Key) {
             case ConsoleKey.Enter:

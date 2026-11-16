@@ -58,6 +58,9 @@ dialog.foreground=#f97e72
 dialog.border=#f97e72
 dialog.button.background=#fede5d
 dialog.button.foreground=#34294f88
+dialog.button.focus=#ff0000
+dialog.list.background=#181622
+dialog.list.foreground=#f97e72
 
 performance.panel.background=transparent
 performance.panel.foreground=#ff7edb            ; tokenColors: entity

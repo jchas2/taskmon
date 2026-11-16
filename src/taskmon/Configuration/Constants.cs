@@ -143,6 +143,9 @@ public sealed class Constants
         public const string DialogBorder           = "dialog.border";
         public const string DialogButtonBackground = "dialog.button.background";
         public const string DialogButtonForeground = "dialog.button.foreground";
+        public const string DialogButtonFocus      = "dialog.button.focus";
+        public const string DialogListBackground   = "dialog.list.background";
+        public const string DialogListForeground   = "dialog.list.foreground";
 
         public const string PerformancePanelBackground         = "performance.panel.background";
         public const string PerformancePanelForeground         = "performance.panel.foreground";

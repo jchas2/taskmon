@@ -218,11 +218,12 @@ public sealed partial class DiskSpaceControl : Control
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
-        CommonControl.ThemeDefaults(scanPathInputBox, appConfig.Theme);
+        CommonControl.Theme(scanPathInputBox, appConfig.Theme);
         CommonControl.ThemeDefaults(heatMap, appConfig.Theme);
         CommonControl.Theme(progressMetre, appConfig.Theme);
         CommonControl.Theme(filesView, appConfig.Theme);
         CommonControl.Theme(driveInputBox, appConfig.Theme);
+        CommonControl.Text(driveInputBox);
 
         progressMetre.MetreStyle = appConfig.MetreStyle;
         rootFoldersSeries = progressMetre.AddSeries(Strings.DiskSpaceRootFolders, appConfig.Theme.RangeLowBackground);
@@ -349,9 +350,8 @@ public sealed partial class DiskSpaceControl : Control
         
         Control.RedrawEnabled = false;
 
-        // Overlay so it looks like an in-place edit to the user.
         scanPathInputBox.X       = driveInputBox.ListX;
-        scanPathInputBox.Y       = driveInputBox.ListY;
+        scanPathInputBox.Y       = driveInputBox.SelectedRowY;
         scanPathInputBox.Width   = driveInputBox.ListWidth;
         scanPathInputBox.Title   = Strings.DiskSpaceScanPath;
         scanPathInputBox.Visible = true;

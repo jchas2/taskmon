@@ -58,6 +58,9 @@ dialog.foreground=#000000
 dialog.border=#ffffff
 dialog.button.background=#00aa00
 dialog.button.foreground=#000000
+dialog.button.focus=#ffffff
+dialog.list.background=#0000aa
+dialog.list.foreground=#aaaaaa
 
 performance.panel.background=#0000aa
 performance.panel.foreground=#aaaaaa

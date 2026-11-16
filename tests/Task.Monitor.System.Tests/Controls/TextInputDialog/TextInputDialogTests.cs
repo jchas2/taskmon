@@ -10,7 +10,7 @@ public sealed class TextInputDialogTests
 {
     [Fact]
     public void TextInputDialog_Canary_Test() =>
-        Assert.Equal(29, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
+        Assert.Equal(31, CanaryTestHelper.GetPropertyCount<TextInputDialogControl>());
 
     // Buttons are written one character at a time (so the first letter of the focused one can be
     // highlighted), so assert on everything written, in order, rather than any single Write.
@@ -157,6 +157,8 @@ public sealed class TextInputDialogTests
         TextInputDialogControl control = new(new ForwardingTerminal(TerminalMock.Setup().Object));
 
         Assert.Empty(control.Title);
+        Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
+        Assert.Equal(ConsolePalette.Red, control.DialogButtonFocusColour);
         Assert.Empty(control.Text);
         Assert.Equal(TextInputDialogResult.None, control.Result);
         Assert.Null(control.CharacterFilter);

@@ -54,7 +54,7 @@ public sealed class ListViewColourTests
         Assert.NotEqual(runContext.AppConfig.Theme.Foreground, runContext.AppConfig.Theme.ListViewForeground);
     }
 
-    // Pop-up dialogs (DriveInputBox, PickerBox) own a private list drawn on the dialog's own
+    // Pop-up dialogs (DriveInputBox, PickerBox) own a private list drawn in the dialog.list.*
     // colours, not a themed pane, so their lists are left out.
     private static void AssertListViewsUseListViewColours(Control host)
     {

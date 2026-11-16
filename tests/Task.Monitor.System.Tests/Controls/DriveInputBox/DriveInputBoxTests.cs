@@ -10,7 +10,7 @@ public sealed class DriveInputBoxTests
 {
     [Fact]
     public void DriveInputBox_Canary_Test() =>
-        Assert.Equal(35, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
+        Assert.Equal(39, CanaryTestHelper.GetPropertyCount<DriveInputBoxControl>());
 
     private static DriveInputBoxControl CreateBox(Mock<ISystemTerminal>? terminal = null)
     {
@@ -155,6 +155,22 @@ public sealed class DriveInputBoxTests
         Assert.False(control.CustomPathRequested);
     }
 
+    // The scan path field is placed on this row, over "Custom path...".
+    [Fact]
+    public void SelectedRowY_Follows_The_Highlighted_Entry()
+    {
+        DriveInputBoxControl control = CreateBox();
+        control.ShowDriveInputBox();
+
+        Assert.Equal(control.ListY, control.SelectedRowY);
+
+        bool handled = false;
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+        control.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+
+        Assert.Equal(control.ListY + 2, control.SelectedRowY);
+    }
+
     [Fact]
     public void SetCandidates_Always_Appends_A_Custom_Path_Row()
     {
@@ -199,8 +215,11 @@ public sealed class DriveInputBoxTests
         Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);
         Assert.Equal(ConsolePalette.DarkGray, control.DialogButtonBackgroundColour);
+        Assert.Equal(ConsolePalette.Red, control.DialogButtonFocusColour);
         Assert.Equal(ConsolePalette.Black, control.DialogButtonForegroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogForegroundColour);
+        Assert.Equal(ConsolePalette.Gray, control.ListBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.ListForegroundColour);
         Assert.Equal(ConsolePalette.White, control.ListBackgroundHighlightColour);
         Assert.Equal(ConsolePalette.Gray, control.ListBackgroundHighlightInactiveColour);
         Assert.Equal(ConsolePalette.Cyan, control.ListForegroundHighlightColour);
@@ -225,5 +244,26 @@ public sealed class DriveInputBoxTests
 
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains(title))), Times.Once);
         terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Custom path..."))), Times.AtLeastOnce);
+    }
+
+    // The dialog has every key while it's open, so its list shows the focused highlight rather
+    // than the faint inactive one, which in some themes matches the dialog background.
+    [Fact]
+    public void The_Selected_Drive_Uses_The_Focused_Highlight()
+    {
+        RecordingTerminal terminal = new();
+
+        DriveInputBoxControl control = new(terminal) {
+            Height                                = 12,
+            ListBackgroundHighlightColour         = ConsolePalette.DarkMagenta,
+            ListBackgroundHighlightInactiveColour = ConsolePalette.DarkYellow,
+            Width                                 = 40
+        };
+
+        control.SetCandidates(["C:\\"]);
+        control.ShowDriveInputBox();
+
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.DarkMagenta), terminal.Output);
+        Assert.DoesNotContain(ConsolePalette.BackgroundSgr(ConsolePalette.DarkYellow), terminal.Output);
     }
 }

@@ -10,7 +10,7 @@ public sealed class MessageBoxTests
 {
     [Fact]
     public void MessageBox_Canary_Test() =>
-        Assert.Equal(27, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
+        Assert.Equal(28, CanaryTestHelper.GetPropertyCount<MessageBoxControl>());
 
     public static TheoryData<List<ConsoleKey>, MessageBoxResult> KeyPressData()
         => new() {
@@ -113,6 +113,7 @@ public sealed class MessageBoxTests
 
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
         Assert.Equal(MessageBoxButtons.OkCancel, control.Buttons);
+        Assert.Equal(ConsolePalette.Red, control.DialogButtonFocusColour);
         Assert.Empty(control.Controls);
         Assert.Equal(ConsolePalette.Gray, control.DialogBackgroundColour);
         Assert.Equal(ConsolePalette.Black, control.DialogBorderColour);

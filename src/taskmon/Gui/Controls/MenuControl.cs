@@ -90,11 +90,11 @@ public sealed class MenuControl : Control
         base.OnUnload();
     }
 
-    // Moves the highlight without raising MenuItemClicked, for a caller making the change itself.
     public MenuListViewItem Select(Control associatedControl)
     {
         ArgumentNullException.ThrowIfNull(MenuItems);
 
+        // Moves the highlight without raising MenuItemClicked.
         int index = MenuItems.FindIndex(item => item.AssociatedControl == associatedControl);
         menuControl.SelectedIndex = index;
 

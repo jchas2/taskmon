@@ -42,8 +42,11 @@ public sealed class Theme
         Constants.Keys.DialogBackground,
         Constants.Keys.DialogBorder,
         Constants.Keys.DialogButtonBackground,
+        Constants.Keys.DialogButtonFocus,
         Constants.Keys.DialogButtonForeground,
         Constants.Keys.DialogForeground,
+        Constants.Keys.DialogListBackground,
+        Constants.Keys.DialogListForeground,
         Constants.Keys.Error,
         Constants.Keys.Foreground,
         Constants.Keys.ForegroundHighlight,
@@ -177,7 +180,6 @@ public sealed class Theme
         set => SetColour(Constants.Keys.ColCmdNormalUserSpace, value);
     }
 
-    // Not used yet: kept for script process detection, to come.
     public Color ColumnCommandScript
     {
         get => GetColour(Constants.Keys.ColCmdScript, ConsolePalette.Yellow);
@@ -256,6 +258,12 @@ public sealed class Theme
         set => SetColour(Constants.Keys.DialogButtonBackground, value);
     }
 
+    public Color DialogButtonFocus
+    {
+        get => GetColour(Constants.Keys.DialogButtonFocus, ConsolePalette.Red);
+        set => SetColour(Constants.Keys.DialogButtonFocus, value);
+    }
+
     public Color DialogButtonForeground
     {
         get => GetColour(Constants.Keys.DialogButtonForeground, ForegroundHighlight);
@@ -266,6 +274,18 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.DialogForeground, HeaderForeground);
         set => SetColour(Constants.Keys.DialogForeground, value);
+    }
+
+    public Color DialogListBackground
+    {
+        get => GetColour(Constants.Keys.DialogListBackground, ListViewBackground.IsTransparent() ? DialogBackground : ListViewBackground);
+        set => SetColour(Constants.Keys.DialogListBackground, value);
+    }
+
+    public Color DialogListForeground
+    {
+        get => GetColour(Constants.Keys.DialogListForeground, ListViewBackground.IsTransparent() ? DialogForeground : ListViewForeground);
+        set => SetColour(Constants.Keys.DialogListForeground, value);
     }
 
     public Color Error

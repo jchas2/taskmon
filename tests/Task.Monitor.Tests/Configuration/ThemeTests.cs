@@ -16,7 +16,7 @@ public sealed class ThemeTests
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(81, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(84, CanaryTestHelper.GetPropertyCount<Theme>());
 
     private void AssertThemeColours(Theme theme)
     {
@@ -182,6 +182,42 @@ public sealed class ThemeTests
         Theme theme = new(parser.Sections[0]);
         
         AssertThemeColours(theme);
+    }
+
+    // Red marked the focused dialog button before the colour was themed.
+    [Fact]
+    public void DialogButtonFocus_Falls_Back_To_Red_When_Not_Set() =>
+        Assert.Equal(ConsolePalette.Red, new Theme(new ConfigSection("theme-test")).DialogButtonFocus);
+
+    // A transparent list would show the terminal's own background inside the dialog.
+    [Fact]
+    public void DialogList_Colours_Fall_Back_To_The_Dialog_Colours_When_The_List_Is_Transparent()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.ListViewBackground, "transparent");
+        section.Add(Constants.Keys.ListViewForeground, "#202020");
+        section.Add(Constants.Keys.DialogBackground, "#303030");
+        section.Add(Constants.Keys.DialogForeground, "#404040");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#303030"), theme.DialogListBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#404040"), theme.DialogListForeground);
+    }
+
+    [Fact]
+    public void DialogList_Colours_Fall_Back_To_The_List_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.ListViewBackground, "#101010");
+        section.Add(Constants.Keys.ListViewForeground, "#202020");
+        section.Add(Constants.Keys.DialogBackground, "#303030");
+        section.Add(Constants.Keys.DialogForeground, "#404040");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#101010"), theme.DialogListBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#202020"), theme.DialogListForeground);
     }
 
     // Themes without dialog.* keys keep the colours dialogs had before the keys existed.
@@ -648,8 +684,11 @@ public sealed class ThemeTests
             Constants.Keys.DialogBackground,
             Constants.Keys.DialogBorder,
             Constants.Keys.DialogButtonBackground,
+            Constants.Keys.DialogButtonFocus,
             Constants.Keys.DialogButtonForeground,
-            Constants.Keys.DialogForeground
+            Constants.Keys.DialogForeground,
+            Constants.Keys.DialogListBackground,
+            Constants.Keys.DialogListForeground
         ];
 
         foreach (string name in themeNames) {

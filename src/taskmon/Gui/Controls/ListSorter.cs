@@ -79,7 +79,6 @@ internal sealed class ListSorter<T>
 
     public bool IsSelectionActive => SortView.Visible;
 
-    // Returns true when the sort or the layout changed and the owner must resize and redraw.
     public bool KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         switch (keyInfo.Key) {

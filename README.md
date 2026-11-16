@@ -418,6 +418,14 @@ chart.range.high.foreground=#000000
 | `statusbar.status.warning=#ffa500` | Background when a service is stopping or stopped, or the status is unknown. Also the dot shown when data stops arriving. |
 | `statusbar.status.error=#ff4500` | Background when a service has failed. |
 | `statusbar.pulse=#00bfff` | The dot that blinks as data arrives. |
+| `dialog.background=#282a36` | Background of pop-up dialogs, such as the drive picker in DISK SPACE. If not set, `listview.header.background` is used. |
+| `dialog.foreground=#f1fa8c` | Text colour in a dialog, including its title. If not set, `listview.header.foreground` is used. |
+| `dialog.border=#f1fa8c` | Colour of a dialog's frame. If not set, `listview.header.foreground` is used. |
+| `dialog.button.background=#3b5070` | Background of a dialog's OK and Cancel buttons. If not set, `control.background.highlight.focused` is used. |
+| `dialog.button.foreground=#ffb86c` | Text colour of the buttons. If not set, `control.foreground.highlight.focused` is used. |
+| `dialog.button.focus=#ff0000` | Colour of the first letter of the focused button. If not set, red is used. |
+| `dialog.list.background=#1a1b23` | Background of the list or text box inside a dialog. If not set, `listview.background` is used, or `dialog.background` when the list is transparent. |
+| `dialog.list.foreground=#f1fa8c` | Text colour of that list or text box. If not set, `listview.foreground` is used, or `dialog.foreground` when the list is transparent. |
 
 Note: ```colour-mode``` can be temporarily overridden for ALL theme files by setting the environment variable ```TASKMON_COLOUR_MODE``` to one of ```Indexed```, ```Truecolour``` or ```Auto```. ```Auto``` will support the theme setting if the terminal supports it.
 

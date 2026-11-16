@@ -11,7 +11,24 @@ public sealed class InputBoxTests
 {
     [Fact]
     public void InputBox_Canary_Test() =>
-        Assert.Equal(18, CanaryTestHelper.GetPropertyCount<InputBoxControl>());
+        Assert.Equal(20, CanaryTestHelper.GetPropertyCount<InputBoxControl>());
+
+    [Fact]
+    public void Draws_In_The_Field_Colours()
+    {
+        RecordingTerminal terminal = new();
+
+        InputBoxControl control = new(terminal) {
+            FieldBackgroundColour = ConsolePalette.DarkCyan,
+            Height                = 1,
+            Width                 = 20
+        };
+
+        control.ShowInputBox();
+
+        Assert.Contains(ConsolePalette.BackgroundSgr(ConsolePalette.DarkCyan), terminal.Output);
+        Assert.DoesNotContain(ConsolePalette.BackgroundSgr(ConsolePalette.Gray), terminal.Output);
+    }
 
     public static TheoryData<ConsoleKeyInfo, InputBoxResult> KeyPressData()
         => new()
@@ -53,6 +70,8 @@ public sealed class InputBoxTests
         InputBoxControl control = new(new ForwardingTerminal(terminal.Object));
 
         Assert.Equal(ConsolePalette.Black, control.BackgroundColour);
+        Assert.Equal(ConsolePalette.Gray, control.FieldBackgroundColour);
+        Assert.Equal(ConsolePalette.Black, control.FieldForegroundColour);
         Assert.Empty(control.Controls);
         Assert.Equal(ConsolePalette.White, control.ForegroundColour);
         Assert.Equal(0, control.Height);

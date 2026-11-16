@@ -4,7 +4,7 @@ using Task.Monitor.System.Controls.InputBox;
 
 namespace Task.Monitor.System.Controls.TextInputDialog;
 
-public sealed class TextInputDialog : Control
+public sealed class TextInputDialog : Dialog
 {
     public const int PreferredHeight = 8;
     
@@ -28,37 +28,20 @@ public sealed class TextInputDialog : Control
 
     public Func<char, bool>? CharacterFilter { get; set; }
 
-    public Color DialogBackgroundColour { get; set; } = ConsolePalette.Gray;
     public Color DialogButtonBackgroundColour { get; set; } = ConsolePalette.DarkGray;
+    public Color DialogButtonFocusColour { get; set; } = ConsolePalette.Red;
     public Color DialogButtonForegroundColour { get; set; } = ConsolePalette.Black;
-    public Color DialogForegroundColour { get; set; } = ConsolePalette.Black;
 
-    private void DrawButton(int x, int y, string label, bool selected)
-    {
-        string centredText = label.CentreWithLength(ButtonWidth);
-        Terminal.BackgroundColor = DialogButtonBackgroundColour;
-        Terminal.ForegroundColor = DialogButtonForegroundColour;
-        Terminal.SetCursorPosition(x, y);
-
-        bool isHighlightChar = true;
-
-        foreach (char ch in centredText) {
-            if (char.IsWhiteSpace(ch)) {
-                Terminal.Write(ch);
-                continue;
-            }
-
-            if (isHighlightChar && selected) {
-                Terminal.ForegroundColor = ConsolePalette.Red;
-                Terminal.Write(ch);
-                Terminal.ForegroundColor = DialogButtonForegroundColour;
-                isHighlightChar = false;
-                continue;
-            }
-
-            Terminal.Write(ch);
-        }
-    }
+    private void DrawButton(int x, int y, string label, bool selected) =>
+        base.DrawButton(
+            x,
+            y,
+            ButtonWidth,
+            label,
+            selected,
+            DialogButtonBackgroundColour,
+            DialogButtonForegroundColour,
+            DialogButtonFocusColour);
 
     private void DrawButtons()
     {
@@ -94,34 +77,14 @@ public sealed class TextInputDialog : Control
 
     private void DrawFrame()
     {
-        DrawRectangle(X, Y, Width, Height, DialogBackgroundColour);
-
-        int dialogWidth = Width - 2;
-        string title    = Title.Length > 0 ? $" {Title} " : string.Empty;
-        int titleLen    = Math.Min(title.Length, dialogWidth);
-        int leftDashes  = (dialogWidth - titleLen) / 2;
-        int rightDashes = dialogWidth - titleLen - leftDashes;
-
-        Terminal.BackgroundColor = DialogBackgroundColour;
-        Terminal.ForegroundColor = DialogForegroundColour;
-        Terminal.SetCursorPosition(X, Y);
-        Terminal.Write('╭');
-        Terminal.Write('─', leftDashes);
-        Terminal.Write(titleLen < title.Length ? title[..titleLen] : title);
-        Terminal.Write('─', rightDashes);
-        Terminal.Write('╮');
-
-        string spacer = new(' ', dialogWidth);
+        DrawBackground();
+        DrawTopLine();
 
         for (int row = 1; row < Height - 1; row++) {
-            Terminal.SetCursorPosition(X, Y + row);
-            Terminal.Write($"│{spacer}│");
+            DrawRow(Y + row, string.Empty);
         }
 
-        Terminal.SetCursorPosition(X, Y + Height - 1);
-        Terminal.Write('╰');
-        Terminal.Write('─', dialogWidth);
-        Terminal.Write('╯');
+        DrawBottomLine(Y + Height - 1);
     }
 
     private void DrawHelp()
@@ -240,8 +203,6 @@ public sealed class TextInputDialog : Control
     }
 
     public string Text => text.Text;
-
-    public string Title { get; set; } = string.Empty;
 
     public override bool Visible
     {
