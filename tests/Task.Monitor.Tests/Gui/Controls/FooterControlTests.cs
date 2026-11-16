@@ -6,6 +6,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Tips;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Xunit.Abstractions;
@@ -48,17 +49,26 @@ public sealed class FooterControlTests : IDisposable
     public void A_Snapshot_After_Unknown_Resets_The_Status()
     {
         FooterControl ctrl = CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
         Tick(ctrl, 3);
 
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
         ClearOutput();
         Tick(ctrl, 2);
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("Services: Running", output);
-        Assert.DoesNotContain("Service status: Unknown", output);
+        Assert.Contains("Health: OK", output);
+        Assert.DoesNotContain("Health: Unknown", output);
+    }
+
+    [Fact]
+    public void A_Snapshot_Without_Health_Shows_Unknown()
+    {
+        CreateControl();
+        RaiseSnapshotUpdated(new SystemSnapshot());
+
+        Assert.Contains(" Health: Unknown ", VisibleText());
     }
 
     [Fact]
@@ -120,12 +130,12 @@ public sealed class FooterControlTests : IDisposable
     public void Draws_The_Key_Hints_After_The_Status_And_Rx_Count()
     {
         CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
 
         string text = VisibleText();
 
         Assert.Contains(KeyHintsText, text);
-        Assert.True(text.IndexOf("Services: Running", StringComparison.Ordinal) < text.IndexOf(" Rx", StringComparison.Ordinal));
+        Assert.True(text.IndexOf("Health: OK", StringComparison.Ordinal) < text.IndexOf(" Rx", StringComparison.Ordinal));
         Assert.True(text.IndexOf(" Rx", StringComparison.Ordinal) < text.IndexOf(KeyHintsText, StringComparison.Ordinal));
     }
 
@@ -144,7 +154,7 @@ public sealed class FooterControlTests : IDisposable
     public void Key_Hints_Are_Coloured_With_The_Theme_HotKey_Colours()
     {
         CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
 
         Theme theme = runContext.AppConfig.Theme;
         string hint = ConsolePalette.ForegroundSgr(theme.HotKey) + "F1" + ConsolePalette.ForegroundSgr(theme.HotKeyName) + " Help";
@@ -156,7 +166,7 @@ public sealed class FooterControlTests : IDisposable
     public void Key_Hints_Are_Dropped_When_The_Footer_Is_Too_Narrow()
     {
         CreateControl(width: 80);
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
 
         string text = VisibleText();
 
@@ -172,13 +182,13 @@ public sealed class FooterControlTests : IDisposable
         int withoutSnapshot = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
 
         ClearOutput();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
         int running = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
 
         ClearOutput();
         RaiseSnapshotUpdated(new SystemSnapshot {
             Sequence = 1_234_567,
-            Services = [new ServiceHealth("Cpu", ServiceStatus.Stopping)]
+            Health   = new HealthInfo { Level = HealthLevel.Critical }
         });
         int stopping = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
 
@@ -198,14 +208,14 @@ public sealed class FooterControlTests : IDisposable
         CreateControl();
         RaiseSnapshotUpdated(new SystemSnapshot {
             Sequence = 9_999_999,
-            Services = [new ServiceHealth("Cpu", ServiceStatus.Running)]
+            Health   = new HealthInfo { Level = HealthLevel.Ok }
         });
         int sevenDigits = VisibleText().IndexOf(KeyHintsText, StringComparison.Ordinal);
 
         ClearOutput();
         RaiseSnapshotUpdated(new SystemSnapshot {
             Sequence = 10_000_000,
-            Services = [new ServiceHealth("Cpu", ServiceStatus.Running)]
+            Health   = new HealthInfo { Level = HealthLevel.Ok }
         });
         string text = VisibleText();
 
@@ -274,8 +284,8 @@ public sealed class FooterControlTests : IDisposable
         Assert.Equal(1, ctrl.Rows);
     }
 
-    private static SystemSnapshot SnapshotWith(params ServiceHealth[] services) =>
-        new() { Services = services };
+    private static SystemSnapshot SnapshotWith(HealthLevel level) =>
+        new() { Health = new HealthInfo { Level = level } };
 
     // Every part of the status row has its own key, set here to distinct colours so a part drawn
     // in another part's colour, or a fixed one, fails.
@@ -291,36 +301,63 @@ public sealed class FooterControlTests : IDisposable
         theme.StatusbarStatusError      = Color.FromArgb(6, 6, 6);
         theme.StatusbarPulse            = Color.FromArgb(7, 7, 7);
 
+        theme.StatusbarHealthOkBackground       = Color.FromArgb(8, 8, 8);
+        theme.StatusbarHealthOkForeground       = Color.FromArgb(9, 9, 9);
+        theme.StatusbarHealthWarningBackground  = Color.FromArgb(10, 10, 10);
+        theme.StatusbarHealthWarningForeground  = Color.FromArgb(11, 11, 11);
+        theme.StatusbarHealthCriticalBackground = Color.FromArgb(12, 12, 12);
+        theme.StatusbarHealthCriticalForeground = Color.FromArgb(13, 13, 13);
+        theme.StatusbarHealthUnknownBackground  = Color.FromArgb(14, 14, 14);
+        theme.StatusbarHealthUnknownForeground  = Color.FromArgb(15, 15, 15);
+
         return theme;
     }
 
     // Regression test: the hints went as one block, so adding F3 hid F1, F2 and F10 as well on
-    // terminals narrower than about 107 columns.
+    // narrower terminals. 95 columns has room for the core hints but not the full set.
     [Fact]
     public void Theme_And_Layout_Hints_Are_Dropped_First_On_A_Narrower_Footer()
     {
-        CreateControl(width: 105);
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        CreateControl(width: 95);
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
 
         string text = VisibleText();
 
         Assert.Contains("F1 Help   F2 Setup   F10 Exit", text);
         Assert.DoesNotContain("F3 Theme", text);
         Assert.DoesNotContain("F4 Layout", text);
-        Assert.True(text.Length <= 105);
+        Assert.True(text.Length <= 95);
+    }
+
+    // The footer is short of space: the full version is on the About screen.
+    [Fact]
+    public void The_Banner_Shows_Only_The_Major_And_Minor_Version()
+    {
+        CreateControl().Draw();
+
+        string text = VisibleText();
+
+        Assert.Contains($" Task Monitor v{AssemblyVersionInfo.GetShortVersion()} ", text);
+        Assert.DoesNotContain(AssemblyVersionInfo.GetVersion(), text);
     }
 
     [Theory]
-    [InlineData(ServiceStatus.Errored,  6)]
-    [InlineData(ServiceStatus.Stopping, 5)]
-    public void The_Services_Status_Takes_The_Theme_Colour_For_Its_State(ServiceStatus status, int shade)
+    [InlineData(HealthLevel.Ok,       8,  9,  "OK")]
+    [InlineData(HealthLevel.Warning,  10, 11, "Warning")]
+    [InlineData(HealthLevel.Critical, 12, 13, "Critical")]
+    [InlineData(HealthLevel.Unknown,  14, 15, "Unknown")]
+    public void The_Health_Status_Takes_The_Theme_Colours_For_Its_Level(HealthLevel level, int background, int foreground, string text)
     {
         StatusbarTheme();
 
         CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", status)));
+        RaiseSnapshotUpdated(SnapshotWith(level));
 
-        Assert.Contains(ConsolePalette.BackgroundSgr(Color.FromArgb(shade, shade, shade)) + ConsolePalette.ForegroundSgr(Color.FromArgb(3, 3, 3)), CapturedOutput());
+        Assert.Contains(
+            ConsolePalette.BackgroundSgr(Color.FromArgb(background, background, background)) +
+            ConsolePalette.ForegroundSgr(Color.FromArgb(foreground, foreground, foreground)) +
+            $" Health: {text} ",
+            CapturedOutput());
     }
 
     [Fact]
@@ -329,7 +366,7 @@ public sealed class FooterControlTests : IDisposable
         Theme theme = StatusbarTheme();
 
         CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
 
         string output = CapturedOutput();
 
@@ -337,7 +374,7 @@ public sealed class FooterControlTests : IDisposable
             ConsolePalette.BackgroundSgr(theme.StatusbarBannerBackground) + ConsolePalette.ForegroundSgr(theme.StatusbarBannerForeground) + " Task Monitor v",
             output);
         Assert.Contains(
-            ConsolePalette.BackgroundSgr(theme.StatusbarStatusOk) + ConsolePalette.ForegroundSgr(theme.StatusbarStatusForeground) + " Services: Running",
+            ConsolePalette.BackgroundSgr(theme.StatusbarHealthOkBackground) + ConsolePalette.ForegroundSgr(theme.StatusbarHealthOkForeground) + " Health: OK",
             output);
         Assert.Contains(ConsolePalette.ForegroundSgr(theme.StatusbarPulse) + "  ●", output);
     }
@@ -379,13 +416,13 @@ public sealed class FooterControlTests : IDisposable
     public void Three_Missed_Cycles_Show_Unknown_With_An_Orange_Glyph()
     {
         FooterControl ctrl = CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
         ClearOutput();
 
         Tick(ctrl, 3);
 
         string output = CapturedOutput();
-        Assert.Contains("Service status: Unknown", output);
+        Assert.Contains("Health: Unknown", output);
         Assert.Contains(OrangeGlyph, output);
     }
 
@@ -397,7 +434,7 @@ public sealed class FooterControlTests : IDisposable
         Tick(ctrl, 3);
 
         string output = CapturedOutput();
-        Assert.Contains("Service status: Unknown", output);
+        Assert.Contains("Health: Unknown", output);
         Assert.Contains(OrangeGlyph, output);
         Assert.DoesNotContain(" Rx", output);
     }
@@ -416,15 +453,15 @@ public sealed class FooterControlTests : IDisposable
     public void Two_Missed_Cycles_Keep_The_Normal_Status()
     {
         FooterControl ctrl = CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Running)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Ok));
         ClearOutput();
 
         Tick(ctrl, 2);
         ctrl.Draw();
 
         string output = CapturedOutput();
-        Assert.Contains("Services: Running", output);
-        Assert.DoesNotContain("Service status: Unknown", output);
+        Assert.Contains("Health: OK", output);
+        Assert.DoesNotContain("Health: Unknown", output);
     }
 
     [Fact]
@@ -439,17 +476,17 @@ public sealed class FooterControlTests : IDisposable
     }
 
     [Fact]
-    public void Unknown_Overrides_An_Errored_Service_In_A_Stale_Snapshot()
+    public void Unknown_Overrides_A_Critical_Level_In_A_Stale_Snapshot()
     {
         FooterControl ctrl = CreateControl();
-        RaiseSnapshotUpdated(SnapshotWith(new ServiceHealth("Cpu", ServiceStatus.Errored)));
+        RaiseSnapshotUpdated(SnapshotWith(HealthLevel.Critical));
         ClearOutput();
 
         Tick(ctrl, 3);
 
         string output = CapturedOutput();
-        Assert.Contains("Service status: Unknown", output);
-        Assert.DoesNotContain("Errored", output);
+        Assert.Contains("Health: Unknown", output);
+        Assert.DoesNotContain("Critical", output);
     }
 
     // The visible text written after the cursor moves to the given row, up to the next move.

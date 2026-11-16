@@ -87,6 +87,23 @@ public static class ConsolePalette
         return Esc + $"[48;2;{colour.R};{colour.G};{colour.B}m";
     }
 
+    public static Color ContrastingText(Color background)
+    {
+        if (background.IsTransparent()) {
+            return White;
+        }
+
+        return ContrastRatio(Black, background) >= ContrastRatio(White, background) ? Black : White;
+    }
+
+    public static double ContrastRatio(Color first, Color second)
+    {
+        double a = RelativeLuminance(first);
+        double b = RelativeLuminance(second);
+
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+    }
+
     public static string ForegroundSgr(Color colour)
     {
         if (colour.A == 0) {
@@ -138,6 +155,17 @@ public static class ConsolePalette
     // true colour, so modern terminals can apply their own palette and contrast
     // softening. Any colour outside the standard 16 always stays true colour.
     public static bool PreferIndexedColours { get; set; } = true;
+
+    private static double RelativeLuminance(Color colour)
+    {
+        static double Linear(int channel)
+        {
+            double value = channel / 255.0;
+            return value <= 0.03928 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
+        }
+
+        return 0.2126 * Linear(colour.R) + 0.7152 * Linear(colour.G) + 0.0722 * Linear(colour.B);
+    }
 
     public static string ToHex(Color colour)
     {

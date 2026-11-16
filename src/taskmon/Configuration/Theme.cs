@@ -94,6 +94,14 @@ public sealed class Theme
         Constants.Keys.StatusbarStatusWarning,
         Constants.Keys.StatusbarStatusError,
         Constants.Keys.StatusbarPulse,
+        Constants.Keys.StatusbarHealthOkBackground,
+        Constants.Keys.StatusbarHealthOkForeground,
+        Constants.Keys.StatusbarHealthWarningBackground,
+        Constants.Keys.StatusbarHealthWarningForeground,
+        Constants.Keys.StatusbarHealthCriticalBackground,
+        Constants.Keys.StatusbarHealthCriticalForeground,
+        Constants.Keys.StatusbarHealthUnknownBackground,
+        Constants.Keys.StatusbarHealthUnknownForeground,
     ];
 
     public Theme() { }
@@ -552,16 +560,68 @@ public sealed class Theme
     private void SetColour(string key, Color value) =>
         themeSection?.Add(key, ConsolePalette.ToHex(value));
 
+    // The version banner looks like a selected row unless the theme says otherwise.
     public Color StatusbarBannerBackground
     {
-        get => GetColour(Constants.Keys.StatusbarBannerBackground, Color.DeepSkyBlue);
+        get => GetColour(Constants.Keys.StatusbarBannerBackground, BackgroundHighlight);
         set => SetColour(Constants.Keys.StatusbarBannerBackground, value);
     }
 
     public Color StatusbarBannerForeground
     {
-        get => GetColour(Constants.Keys.StatusbarBannerForeground, Color.Black);
+        get => GetColour(Constants.Keys.StatusbarBannerForeground, ForegroundHighlight);
         set => SetColour(Constants.Keys.StatusbarBannerForeground, value);
+    }
+
+    // The footer's health segment is filled with the colour the HEALTH view's STATUS column gives
+    // the level, and its text is black or white, whichever stands out more.
+    public Color StatusbarHealthCriticalBackground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthCriticalBackground, StatusError);
+        set => SetColour(Constants.Keys.StatusbarHealthCriticalBackground, value);
+    }
+
+    public Color StatusbarHealthCriticalForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthCriticalForeground, ConsolePalette.ContrastingText(StatusbarHealthCriticalBackground));
+        set => SetColour(Constants.Keys.StatusbarHealthCriticalForeground, value);
+    }
+
+    public Color StatusbarHealthOkBackground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthOkBackground, StatusOk);
+        set => SetColour(Constants.Keys.StatusbarHealthOkBackground, value);
+    }
+
+    public Color StatusbarHealthOkForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthOkForeground, ConsolePalette.ContrastingText(StatusbarHealthOkBackground));
+        set => SetColour(Constants.Keys.StatusbarHealthOkForeground, value);
+    }
+
+    // Unknown has no STATUS colour, so it takes the theme's grey for things that aren't available.
+    public Color StatusbarHealthUnknownBackground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthUnknownBackground, CommandForegroundDisabled);
+        set => SetColour(Constants.Keys.StatusbarHealthUnknownBackground, value);
+    }
+
+    public Color StatusbarHealthUnknownForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthUnknownForeground, ConsolePalette.ContrastingText(StatusbarHealthUnknownBackground));
+        set => SetColour(Constants.Keys.StatusbarHealthUnknownForeground, value);
+    }
+
+    public Color StatusbarHealthWarningBackground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthWarningBackground, StatusWarning);
+        set => SetColour(Constants.Keys.StatusbarHealthWarningBackground, value);
+    }
+
+    public Color StatusbarHealthWarningForeground
+    {
+        get => GetColour(Constants.Keys.StatusbarHealthWarningForeground, ConsolePalette.ContrastingText(StatusbarHealthWarningBackground));
+        set => SetColour(Constants.Keys.StatusbarHealthWarningForeground, value);
     }
 
     public Color StatusbarPulse

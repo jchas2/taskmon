@@ -30,6 +30,39 @@ public sealed class ConsolePaletteTests
         Assert.Equal(Esc + "[48;2;255;136;0m", ConsolePalette.BackgroundSgr(Color.FromArgb(255, 255, 136, 0)));
     }
 
+    // Every grey is the hardest case for its luminance, so this covers the worst a colour can get.
+    [Fact]
+    public void ContrastingText_Always_Reaches_At_Least_4_5_To_1()
+    {
+        for (int level = 0; level <= 255; level++) {
+            Color background = Color.FromArgb(level, level, level);
+
+            Assert.True(ConsolePalette.ContrastRatio(ConsolePalette.ContrastingText(background), background) >= 4.5);
+        }
+    }
+
+    [Fact]
+    public void ContrastingText_Is_White_On_A_Transparent_Background() =>
+        Assert.Equal(ConsolePalette.White, ConsolePalette.ContrastingText(ConsolePalette.Transparent));
+
+    [Theory]
+    [InlineData("#ffff00", "#000000")]
+    [InlineData("#808080", "#000000")]
+    [InlineData("#000080", "#ffffff")]
+    [InlineData("#6272a4", "#ffffff")]
+    public void ContrastingText_Picks_Black_Or_White_Whichever_Stands_Out_More(string background, string text) =>
+        Assert.Equal(
+            ConsolePalette.FromHex(text, Fallback).ToArgb(),
+            ConsolePalette.ContrastingText(ConsolePalette.FromHex(background, Fallback)).ToArgb());
+
+    [Fact]
+    public void ContrastRatio_Runs_From_1_For_The_Same_Colour_To_21_For_Black_On_White()
+    {
+        Assert.Equal(1.0,  ConsolePalette.ContrastRatio(Fallback, Fallback), precision: 6);
+        Assert.Equal(21.0, ConsolePalette.ContrastRatio(ConsolePalette.Black, ConsolePalette.White), precision: 6);
+        Assert.Equal(21.0, ConsolePalette.ContrastRatio(ConsolePalette.White, ConsolePalette.Black), precision: 6);
+    }
+
     [Fact]
     public void ForegroundSgr_Emits_Default_When_Transparent()
     {

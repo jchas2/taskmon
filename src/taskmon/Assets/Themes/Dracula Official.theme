@@ -104,13 +104,21 @@ command.foreground=#bd93f9
 command.background=#282a36
 command.foreground.disabled=#808080
 
-statusbar.banner.background=#00bfff
-statusbar.banner.foreground=#000000
+statusbar.banner.background=#3b5070
+statusbar.banner.foreground=#ffb86c
 statusbar.status.foreground=#000000
 statusbar.status.ok=#008000
 statusbar.status.warning=#ffa500
 statusbar.status.error=#ff4500
 statusbar.pulse=#00bfff
+statusbar.health.ok.background=#f1fa8c
+statusbar.health.ok.foreground=#000000
+statusbar.health.warning.background=#ffb86c
+statusbar.health.warning.foreground=#000000
+statusbar.health.critical.background=#bd93f9
+statusbar.health.critical.foreground=#000000
+statusbar.health.unknown.background=#808080
+statusbar.health.unknown.foreground=#000000
 
 hotkey.key=#00BFFF
 hotkey.name=#f8f8f2

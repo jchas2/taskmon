@@ -679,6 +679,9 @@ Salvalo con un altro nome.</value>
   <data name="FooterServiceUnknown" xml:space="preserve">
     <value>Stato servizi: sconosciuto</value>
   </data>
+  <data name="FooterHealth" xml:space="preserve">
+    <value>Integrità: {0}</value>
+  </data>
   <data name="FooterKeyHelp" xml:space="preserve">
     <value>Guida</value>
   </data>

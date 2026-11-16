@@ -191,6 +191,15 @@ public sealed class Constants
         public const string StatusbarStatusError      = "statusbar.status.error";
         public const string StatusbarPulse            = "statusbar.pulse";
 
+        public const string StatusbarHealthOkBackground       = "statusbar.health.ok.background";
+        public const string StatusbarHealthOkForeground       = "statusbar.health.ok.foreground";
+        public const string StatusbarHealthWarningBackground  = "statusbar.health.warning.background";
+        public const string StatusbarHealthWarningForeground  = "statusbar.health.warning.foreground";
+        public const string StatusbarHealthCriticalBackground = "statusbar.health.critical.background";
+        public const string StatusbarHealthCriticalForeground = "statusbar.health.critical.foreground";
+        public const string StatusbarHealthUnknownBackground  = "statusbar.health.unknown.background";
+        public const string StatusbarHealthUnknownForeground  = "statusbar.health.unknown.foreground";
+
         public const string HotKey     = "hotkey.key";
         public const string HotKeyName = "hotkey.name";
 

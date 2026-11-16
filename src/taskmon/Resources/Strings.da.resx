@@ -679,6 +679,9 @@ Gem det under et nyt navn.</value>
   <data name="FooterServiceUnknown" xml:space="preserve">
     <value>Tjenestestatus: ukendt</value>
   </data>
+  <data name="FooterHealth" xml:space="preserve">
+    <value>Tilstand: {0}</value>
+  </data>
   <data name="FooterKeyHelp" xml:space="preserve">
     <value>Hjælp</value>
   </data>

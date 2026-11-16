@@ -8,6 +8,7 @@ using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Health;
 using SysThreading = System.Threading;
 
 namespace Task.Monitor.Gui.Controls;
@@ -46,31 +47,20 @@ public class FooterControl : Control
         this.appConfig         = appConfig;
     }
 
-    private void AppendServiceStatus(SystemSnapshot current)
+    // The highest level in the HEALTH view, in the colour its STATUS column gives that level.
+    private void AppendHealthStatus(HealthLevel level)
     {
         Theme theme = appConfig.Theme;
 
-        if (current.Services.Count == current.Services.Count(s => s.Status == ServiceStatus.Running)) {
-            AppendStatus(theme.StatusbarStatusOk, RunningStatusText);
-        }
-        else if (current.Services.Any(s => s.Status == ServiceStatus.Errored)) {
-            AppendStatus(theme.StatusbarStatusError, ErroredStatusText);
-        }
-        else if (current.Services.Any(s => s.Status
-                     is ServiceStatus.Stopping
-                     or ServiceStatus.Stopped
-                     or ServiceStatus.None)) {
-            AppendStatus(theme.StatusbarStatusWarning, StoppingStatusText);
-        }
-        else {
-            AppendStatus(theme.StatusbarStatusWarning, UnknownStatusText);
-        }
-    }
+        (Color foreground, Color background) = level switch {
+            HealthLevel.Ok       => (theme.StatusbarHealthOkForeground,       theme.StatusbarHealthOkBackground),
+            HealthLevel.Warning  => (theme.StatusbarHealthWarningForeground,  theme.StatusbarHealthWarningBackground),
+            HealthLevel.Critical => (theme.StatusbarHealthCriticalForeground, theme.StatusbarHealthCriticalBackground),
+                               _ => (theme.StatusbarHealthUnknownForeground,  theme.StatusbarHealthUnknownBackground)
+        };
 
-    private void AppendStatus(Color statusColour, string text)
-    {
-        frame.SetColour(appConfig.Theme.StatusbarStatusForeground, statusColour);
-        frame.Append(text.PadRight(StatusTextWidth));
+        frame.SetColour(foreground, background);
+        frame.Append(HealthStatusText(level).PadRight(StatusTextWidth));
     }
 
     private void AppendTipRow(Color foreground, Color background)
@@ -144,7 +134,8 @@ public class FooterControl : Control
 
     internal string CurrentTip => tips[tipIndex];
 
-    private static string ErroredStatusText  => $" {Strings.FooterServiceErrored} ";
+    private static string HealthStatusText(HealthLevel level) =>
+        $" {string.Format(CultureInfo.CurrentCulture, Strings.FooterHealth, level.ToDisplayText())} ";
 
     private static int HintsWidth((string Key, string Label)[] hints) =>
         hints.Sum(hint => CommonControl.FooterSeparator.Length + CommonControl.FormatHotKey(hint.Key).Length + 1 + hint.Label.Length);
@@ -179,7 +170,7 @@ public class FooterControl : Control
         Color background = appConfig.Theme.Background;
         Color foreground = appConfig.Theme.Foreground;
 
-        string banner = $" {string.Format(CultureInfo.CurrentCulture, Strings.FooterBanner, AssemblyVersionInfo.GetVersion())} ";
+        string banner = $" {string.Format(CultureInfo.CurrentCulture, Strings.FooterBanner, AssemblyVersionInfo.GetShortVersion())} ";
 
         frame.Clear();
 
@@ -194,12 +185,13 @@ public class FooterControl : Control
 
         lock (@lock) {
             if (IsStale) {
-                AppendStatus(appConfig.Theme.StatusbarStatusWarning, UnknownStatusText);
+                // Data has stopped arriving, so the last health level can't be trusted.
+                AppendHealthStatus(HealthLevel.Unknown);
                 frame.SetColour(appConfig.Theme.StatusbarStatusWarning, background);
                 frame.Append($"  {StatusGlyph}");
             }
             else if (snapshot != null) {
-                AppendServiceStatus(snapshot);
+                AppendHealthStatus(snapshot.Health?.Level ?? HealthLevel.Unknown);
 
                 if (snapshot.Sequence % 2 == 0) {
                     frame.SetColour(appConfig.Theme.StatusbarPulse, background);
@@ -325,12 +317,9 @@ public class FooterControl : Control
     // The footer's height: a tip row above the status row when tips are on.
     public int Rows => appConfig.ShowTips ? TipRows : 1;
 
-    private static string RunningStatusText  => $" {Strings.FooterServicesRunning} ";
-
-    private static int StatusTextWidth => new[] {
-        ErroredStatusText, RunningStatusText, StoppingStatusText, UnknownStatusText }.Max(text => text.Length);
-
-    private static string StoppingStatusText => $" {Strings.FooterServiceStopping} ";
+    // As wide as the longest level, so the hints don't move when the level changes.
+    private static int StatusTextWidth =>
+        Enum.GetValues<HealthLevel>().Max(level => HealthStatusText(level).Length);
 
     internal int TipIndex
     {
@@ -338,8 +327,7 @@ public class FooterControl : Control
         set => tipIndex = value;
     }
 
-    private static string TipLabel           => $" {Strings.FooterTip} ";
-    private static string UnknownStatusText  => $" {Strings.FooterServiceUnknown} ";
+    private static string TipLabel => $" {Strings.FooterTip} ";
 
     internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
 }

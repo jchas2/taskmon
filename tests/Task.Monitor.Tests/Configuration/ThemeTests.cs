@@ -16,7 +16,7 @@ public sealed class ThemeTests
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(84, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(92, CanaryTestHelper.GetPropertyCount<Theme>());
 
     private void AssertThemeColours(Theme theme)
     {
@@ -182,15 +182,6 @@ public sealed class ThemeTests
         Theme theme = new(parser.Sections[0]);
         
         AssertThemeColours(theme);
-    }
-
-    // WCAG contrast ratio: 1 for the same colour, 21 for black on white.
-    private static double ContrastRatio(Color first, Color second)
-    {
-        double a = RelativeLuminance(first);
-        double b = RelativeLuminance(second);
-
-        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
 
     // Red marked the focused dialog button before the colour was themed.
@@ -431,17 +422,6 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#fedcba"), theme.PropertyValue);
     }
 
-    private static double RelativeLuminance(Color colour)
-    {
-        static double Linear(int channel)
-        {
-            double value = channel / 255.0;
-            return value <= 0.03928 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
-        }
-
-        return 0.2126 * Linear(colour.R) + 0.7152 * Linear(colour.G) + 0.0722 * Linear(colour.B);
-    }
-
     [Fact]
     public void Setters_Initialise_Successfully()
     {
@@ -670,6 +650,24 @@ public sealed class ThemeTests
         Assert.Equal(ColorTranslator.FromHtml("#1b1b1b"), theme.RangeMidForeground);
     }
 
+    private static IEnumerable<(string Name, ConfigSection Section)> ShippedThemes()
+    {
+        Assembly asm = typeof(Theme).Assembly;
+        string[] themeNames = asm.GetManifestResourceNames()
+            .Where(n => n.EndsWith(Constants.ThemeExtension))
+            .ToArray();
+
+        Assert.NotEmpty(themeNames);
+
+        foreach (string name in themeNames) {
+            using StreamReader reader = new(asm.GetManifestResourceStream(name)!);
+            ConfigParser parser = new(reader.ReadToEnd());
+            parser.Parse();
+
+            yield return (name, parser.Sections[0]);
+        }
+    }
+
     [Fact]
     public void Shipped_Themes_Are_At_The_Current_Version()
     {
@@ -748,6 +746,40 @@ public sealed class ThemeTests
         }
     }
 
+    [Fact]
+    public void Shipped_Themes_Define_Readable_Statusbar_Health_Colours()
+    {
+        const double minContrast = 4.5;
+
+        (string Background, string Foreground)[] levels = [
+            (Constants.Keys.StatusbarHealthOkBackground,       Constants.Keys.StatusbarHealthOkForeground),
+            (Constants.Keys.StatusbarHealthWarningBackground,  Constants.Keys.StatusbarHealthWarningForeground),
+            (Constants.Keys.StatusbarHealthCriticalBackground, Constants.Keys.StatusbarHealthCriticalForeground),
+            (Constants.Keys.StatusbarHealthUnknownBackground,  Constants.Keys.StatusbarHealthUnknownForeground)
+        ];
+
+        List<string> problems = [];
+
+        foreach ((string name, ConfigSection section) in ShippedThemes()) {
+            foreach ((string backgroundKey, string foregroundKey) in levels) {
+                if (!section.Contains(backgroundKey) || !section.Contains(foregroundKey)) {
+                    problems.Add($"{name} is missing {backgroundKey} or {foregroundKey}");
+                    continue;
+                }
+
+                Color background = ConsolePalette.FromHex(section.GetString(backgroundKey), ConsolePalette.Transparent);
+                Color foreground = ConsolePalette.FromHex(section.GetString(foregroundKey), ConsolePalette.Transparent);
+                double contrast  = ConsolePalette.ContrastRatio(foreground, background);
+
+                if (contrast < minContrast) {
+                    problems.Add($"{name} {foregroundKey} {contrast:0.00}:1");
+                }
+            }
+        }
+
+        Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
+    }
+
     // The DISK SPACE status line is drawn in the heatmap.state colours on the window background.
     // A transparent window shows the terminal's own background, and every theme with one is dark,
     // so it counts as black.
@@ -780,7 +812,7 @@ public sealed class ThemeTests
             ];
 
             foreach ((string key, Color colour) in states) {
-                double contrast = ContrastRatio(colour, window);
+                double contrast = ConsolePalette.ContrastRatio(colour, window);
 
                 if (contrast < minContrast) {
                     unreadable.Add($"{name} {key} {contrast:0.00}:1");
@@ -791,13 +823,70 @@ public sealed class ThemeTests
         Assert.True(unreadable.Count == 0, string.Join(Environment.NewLine, unreadable));
     }
 
+    // The footer's version banner is drawn like a selected row, so each shipped theme copies its
+    // highlight pair into the banner keys.
     [Fact]
-    public void Statusbar_Colours_Fall_Back_To_The_Colours_It_Had_When_Not_Set()
+    public void Shipped_Themes_Draw_The_Version_Banner_In_Their_Highlight_Colours()
+    {
+        foreach ((string name, ConfigSection section) in ShippedThemes()) {
+            Assert.Equal(section.GetString(Constants.Keys.BackgroundHighlight), section.GetString(Constants.Keys.StatusbarBannerBackground));
+            Assert.Equal(section.GetString(Constants.Keys.ForegroundHighlight), section.GetString(Constants.Keys.StatusbarBannerForeground));
+        }
+    }
+
+    // The banner reads like a selected row: it falls back to the highlight colours.
+    [Fact]
+    public void Statusbar_Banner_Falls_Back_To_The_Highlight_Colours_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.BackgroundHighlight, "#123456");
+        section.Add(Constants.Keys.ForegroundHighlight, "#abcdef");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.StatusbarBannerBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#abcdef"), theme.StatusbarBannerForeground);
+    }
+
+    [Fact]
+    public void Statusbar_Health_Colours_Fall_Back_To_The_Status_Colours_With_Contrasting_Text_When_Not_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.StatusOk,                  "#f1fa8c");
+        section.Add(Constants.Keys.StatusWarning,             "#000080");
+        section.Add(Constants.Keys.StatusError,               "#bd93f9");
+        section.Add(Constants.Keys.CommandForegroundDisabled, "#404040");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#f1fa8c"), theme.StatusbarHealthOkBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#000080"), theme.StatusbarHealthWarningBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#bd93f9"), theme.StatusbarHealthCriticalBackground);
+        Assert.Equal(ColorTranslator.FromHtml("#404040"), theme.StatusbarHealthUnknownBackground);
+
+        Assert.Equal(ConsolePalette.Black, theme.StatusbarHealthOkForeground);
+        Assert.Equal(ConsolePalette.White, theme.StatusbarHealthWarningForeground);
+        Assert.Equal(ConsolePalette.Black, theme.StatusbarHealthCriticalForeground);
+        Assert.Equal(ConsolePalette.White, theme.StatusbarHealthUnknownForeground);
+    }
+
+    [Fact]
+    public void Statusbar_Health_Text_Colours_Override_The_Contrast_Choice_When_Set()
+    {
+        ConfigSection section = new("theme-test");
+        section.Add(Constants.Keys.StatusbarHealthOkBackground, "#ffffff");
+        section.Add(Constants.Keys.StatusbarHealthOkForeground, "#123456");
+
+        Theme theme = new(section);
+
+        Assert.Equal(ColorTranslator.FromHtml("#123456"), theme.StatusbarHealthOkForeground);
+    }
+
+    [Fact]
+    public void Statusbar_Status_Colours_Fall_Back_To_The_Colours_They_Had_When_Not_Set()
     {
         Theme theme = new(new ConfigSection("theme-test"));
 
-        Assert.Equal(Color.DeepSkyBlue.ToArgb(), theme.StatusbarBannerBackground.ToArgb());
-        Assert.Equal(Color.Black.ToArgb(),       theme.StatusbarBannerForeground.ToArgb());
         Assert.Equal(Color.Black.ToArgb(),       theme.StatusbarStatusForeground.ToArgb());
         Assert.Equal(Color.Green.ToArgb(),       theme.StatusbarStatusOk.ToArgb());
         Assert.Equal(Color.Orange.ToArgb(),      theme.StatusbarStatusWarning.ToArgb());

@@ -893,6 +893,10 @@ Save it under a new name.</value>
     <value>Service status: Unknown</value>
     <comment>Footer status of the sampling services.</comment>
   </data>
+  <data name="FooterHealth" xml:space="preserve">
+    <value>Health: {0}</value>
+    <comment>Footer status of the computer's health, the highest level in the HEALTH view. {0} is the level, e.g. OK or Critical.</comment>
+  </data>
   <data name="FooterKeyHelp" xml:space="preserve">
     <value>Help</value>
     <comment>Footer label for the F1 key.</comment>

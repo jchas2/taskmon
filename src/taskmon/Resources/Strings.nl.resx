@@ -679,6 +679,9 @@ Sla deze op onder een andere naam.</value>
   <data name="FooterServiceUnknown" xml:space="preserve">
     <value>Servicestatus: onbekend</value>
   </data>
+  <data name="FooterHealth" xml:space="preserve">
+    <value>Gezondheid: {0}</value>
+  </data>
   <data name="FooterKeyHelp" xml:space="preserve">
     <value>Help</value>
   </data>
