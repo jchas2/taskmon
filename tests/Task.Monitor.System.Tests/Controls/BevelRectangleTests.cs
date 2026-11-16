@@ -29,24 +29,17 @@ public sealed class BevelRectangleTests : IDisposable
             DrawRectangleWithBevel(0, 0, width, height, Fill);
     }
 
-    [Theory]
-    [InlineData(DrawingCapabilities.All, '▗', '▖', '▝', '▘')]
-    [InlineData(Conhost,                 ' ', ' ', ' ', ' ')]
-    public void Corners_Use_Quadrants_Only_When_Supported(
-        DrawingCapabilities capabilities,
-        char                topLeft,
-        char                topRight,
-        char                bottomLeft,
-        char                bottomRight)
+    [Fact]
+    public void Corners_Use_Quadrants_When_Supported()
     {
-        AnsiScreen screen = new(Draw(capabilities, Width, Height));
+        AnsiScreen screen = new(Draw(DrawingCapabilities.All, Width, Height));
 
-        Assert.Equal(topLeft,     screen[0,     0].Glyph);
-        Assert.Equal(topRight,    screen[Right, 0].Glyph);
-        Assert.Equal(bottomLeft,  screen[0,     Bottom].Glyph);
-        Assert.Equal(bottomRight, screen[Right, Bottom].Glyph);
+        Assert.Equal('▗', screen[0,     0].Glyph);
+        Assert.Equal('▖', screen[Right, 0].Glyph);
+        Assert.Equal('▝', screen[0,     Bottom].Glyph);
+        Assert.Equal('▘', screen[Right, Bottom].Glyph);
 
-        // Whatever the glyph, the part of the corner outside the bevel shows the background.
+        // The part of the corner outside the bevel shows the background.
         Assert.Equal(AnsiScreen.Transparent, screen[0, 0].Background);
     }
 
@@ -64,39 +57,13 @@ public sealed class BevelRectangleTests : IDisposable
         return terminal.Output;
     }
 
-    // The blank corners only drop the quarter cell where two edges meet; the edges stay put.
-    [Theory]
-    [InlineData(DrawingCapabilities.All)]
-    [InlineData(Conhost)]
-    public void Edges_Are_The_Same_With_Or_Without_Quadrants(DrawingCapabilities capabilities)
+    [Fact]
+    public void One_Cell_Wide_Bevel_Uses_The_Diagonal_Quadrant_Glyph()
     {
-        AnsiScreen screen = new(Draw(capabilities, Width, Height));
-        string fill       = AnsiScreen.Key(Fill);
-
-        for (int x = 1; x < Right; x++) {
-            Assert.Equal(new AnsiScreen.Cell('▄', fill, AnsiScreen.Transparent), screen[x, 0]);
-            Assert.Equal(new AnsiScreen.Cell('▀', fill, AnsiScreen.Transparent), screen[x, Bottom]);
-        }
-
-        for (int y = 1; y < Bottom; y++) {
-            Assert.Equal((AnsiScreen.Transparent, fill), screen.HalvesAt(0,     y));
-            Assert.Equal((fill, AnsiScreen.Transparent), screen.HalvesAt(Right, y));
-
-            for (int x = 1; x < Right; x++) {
-                Assert.Equal((fill, fill), screen.HalvesAt(x, y));
-            }
-        }
-    }
-
-    [Theory]
-    [InlineData(DrawingCapabilities.All, '▞')]
-    [InlineData(Conhost,                 '█')]
-    public void One_Cell_Wide_Bevel_Uses_A_Full_Block_Without_Quadrants(DrawingCapabilities capabilities, char glyph)
-    {
-        AnsiScreen screen = new(Draw(capabilities, width: 1, Height));
+        AnsiScreen screen = new(Draw(DrawingCapabilities.All, width: 1, Height));
 
         for (int y = 0; y < Height; y++) {
-            Assert.Equal(glyph, screen[0, y].Glyph);
+            Assert.Equal('▞', screen[0, y].Glyph);
         }
     }
 
@@ -109,6 +76,42 @@ public sealed class BevelRectangleTests : IDisposable
         for (int y = 0; y < Height; y++) {
             Assert.Equal((fill, fill), screen.TopAndBottomAt(0, y));
             Assert.Equal(fill, screen[0, y].Background);
+        }
+    }
+
+    [Theory]
+    [InlineData(1,     Height)]
+    [InlineData(2,     Height)]
+    [InlineData(Width, 2)]
+    public void Without_Quadrants_A_Bevel_Too_Small_To_Shrink_Is_Filled(int width, int height)
+    {
+        AnsiScreen screen = new(Draw(Conhost, width, height));
+        string fill       = AnsiScreen.Key(Fill);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Assert.Equal(new AnsiScreen.Cell(' ', fill, fill), screen[x, y]);
+            }
+        }
+    }
+
+    // Regression test: without corner glyphs a selected PERFORMANCE panel's bevel had half-cell edges
+    // meeting at blank corners. It is now a block of whole cells, one cell in from each edge.
+    [Theory]
+    [InlineData(Conhost)]
+    [InlineData(DrawingCapabilities.None)]
+    public void Without_Quadrants_The_Bevel_Is_A_Whole_Cell_Block_One_Cell_In(DrawingCapabilities capabilities)
+    {
+        AnsiScreen screen = new(Draw(capabilities, Width, Height));
+        string fill       = AnsiScreen.Key(Fill);
+
+        for (int y = 0; y <= Bottom; y++) {
+            for (int x = 0; x <= Right; x++) {
+                bool edge = x == 0 || x == Right || y == 0 || y == Bottom;
+
+                Assert.Equal(' ', screen[x, y].Glyph);
+                Assert.Equal(edge ? AnsiScreen.Transparent : fill, screen[x, y].Background);
+            }
         }
     }
 
@@ -152,6 +155,27 @@ public sealed class BevelRectangleTests : IDisposable
 
             for (int y = 1; y < Bottom; y++) {
                 Assert.Equal((fill, fill), screen.TopAndBottomAt(x, y));
+            }
+        }
+    }
+
+    [Fact]
+    public void With_Quadrants_The_Edges_Are_Half_Cells()
+    {
+        AnsiScreen screen = new(Draw(DrawingCapabilities.All, Width, Height));
+        string fill       = AnsiScreen.Key(Fill);
+
+        for (int x = 1; x < Right; x++) {
+            Assert.Equal(new AnsiScreen.Cell('▄', fill, AnsiScreen.Transparent), screen[x, 0]);
+            Assert.Equal(new AnsiScreen.Cell('▀', fill, AnsiScreen.Transparent), screen[x, Bottom]);
+        }
+
+        for (int y = 1; y < Bottom; y++) {
+            Assert.Equal((AnsiScreen.Transparent, fill), screen.HalvesAt(0,     y));
+            Assert.Equal((fill, AnsiScreen.Transparent), screen.HalvesAt(Right, y));
+
+            for (int x = 1; x < Right; x++) {
+                Assert.Equal((fill, fill), screen.HalvesAt(x, y));
             }
         }
     }

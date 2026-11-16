@@ -115,6 +115,43 @@ public class Control
 
     public static DrawingCapabilities DrawingCapabilities { get; set; } = DrawingCapabilities.All;
 
+    private void DrawInsetRectangle(
+        int   x,
+        int   y,
+        int   width,
+        int   height,
+        Color colour)
+    {
+        if (width < 3 || height < 3) {
+            DrawRectangle(x, y, width, height, colour);
+            return;
+        }
+
+        int bottom = y + height - 1;
+
+        frame.Clear();
+        frame.MoveTo(x, y);
+        frame.SetColour(BackgroundColour, BackgroundColour);
+        frame.Append(' ', width);
+
+        for (int row = y + 1; row < bottom; row++) {
+            frame.MoveTo(x, row);
+            frame.SetColour(BackgroundColour, BackgroundColour);
+            frame.Append(' ');
+            frame.SetColour(colour, colour);
+            frame.Append(' ', width - 2);
+            frame.SetColour(BackgroundColour, BackgroundColour);
+            frame.Append(' ');
+        }
+
+        frame.MoveTo(x, bottom);
+        frame.SetColour(BackgroundColour, BackgroundColour);
+        frame.Append(' ', width);
+
+        frame.ResetColour();
+        terminal.Write(frame.AsSpan());
+    }
+
     protected void DrawRectangle(
         int   x, 
         int   y, 
@@ -153,17 +190,21 @@ public class Control
     {
         if (width < 1 || height < 1) return;
 
+        if (!DrawingCapabilities.HasFlag(DrawingCapabilities.QuadrantGlyphs)) {
+            DrawInsetRectangle(x, y, width, height, colour);
+            return;
+        }
+
         frame.Clear();
 
-        bool quadrants = DrawingCapabilities.HasFlag(DrawingCapabilities.QuadrantGlyphs);
-        bool seamless  = DrawingCapabilities.HasFlag(DrawingCapabilities.SeamlessBlockGlyphs);
+        bool seamless = DrawingCapabilities.HasFlag(DrawingCapabilities.SeamlessBlockGlyphs);
 
         if (width == 1) {
             frame.SetColour(colour, seamless ? BackgroundColour : colour);
 
             for (int row = y; row < y + height; row++) {
                 frame.MoveTo(x, row);
-                frame.Append(!seamless ? ' ' : quadrants ? '▞' : '█');
+                frame.Append(seamless ? '▞' : ' ');
             }
 
             frame.ResetColour();
@@ -180,8 +221,8 @@ public class Control
         line.Fill('▄');
 
         if (seamless) {
-            line[0]         = quadrants ? '▗' : ' ';
-            line[width - 1] = quadrants ? '▖' : ' ';
+            line[0]         = '▗';
+            line[width - 1] = '▖';
         }
 
         frame.MoveTo(x, y);
@@ -216,8 +257,8 @@ public class Control
             if (seamless) {
                 line.Fill('▀');
 
-                line[0]         = quadrants ? '▝' : ' ';
-                line[width - 1] = quadrants ? '▘' : ' ';
+                line[0]         = '▝';
+                line[width - 1] = '▘';
 
                 frame.Append(line);
             }
@@ -232,7 +273,7 @@ public class Control
 
         frame.ResetColour();
         terminal.Write(frame.AsSpan());
-    }    
+    }
 
     protected void DrawVerticalLine(
         int   x, 
