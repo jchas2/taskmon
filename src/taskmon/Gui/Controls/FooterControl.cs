@@ -47,7 +47,6 @@ public class FooterControl : Control
         this.appConfig         = appConfig;
     }
 
-    // The highest level in the HEALTH view, in the colour its STATUS column gives that level.
     private void AppendHealthStatus(HealthLevel level)
     {
         Theme theme = appConfig.Theme;
@@ -148,7 +147,8 @@ public class FooterControl : Control
         ("F2",  Strings.FooterKeySetup),
         ("F3",  Strings.FooterKeyTheme),
         ("F4",  Strings.FooterKeyLayout),
-        ("F10", Strings.KeyBindExit)
+        ("F10", Strings.KeyBindExit),
+        ("F12", Strings.FooterKeyAbout)
     ];
 
     private static int KeyHintsWidth     => HintsWidth(KeyHints);
@@ -178,14 +178,12 @@ public class FooterControl : Control
             AppendTipRow(foreground, background);
         }
 
-        // The status row is always the bottom row, with the tip row above it when there is one.
         frame.MoveTo(X, Y + Height - 1);
         frame.SetColour(appConfig.Theme.StatusbarBannerForeground, appConfig.Theme.StatusbarBannerBackground);
         frame.Append(banner);
 
         lock (@lock) {
             if (IsStale) {
-                // Data has stopped arriving, so the last health level can't be trusted.
                 AppendHealthStatus(HealthLevel.Unknown);
                 frame.SetColour(appConfig.Theme.StatusbarStatusWarning, background);
                 frame.Append($"  {StatusGlyph}");
@@ -297,8 +295,6 @@ public class FooterControl : Control
         }
     }
 
-    // Called while drawing, under DrawingLock: the footer redraws on every snapshot, so this
-    // needs no timer of its own.
     private void RotateTipIfDue()
     {
         DateTime now = UtcNow();
@@ -314,10 +310,8 @@ public class FooterControl : Control
         }
     }
 
-    // The footer's height: a tip row above the status row when tips are on.
     public int Rows => appConfig.ShowTips ? TipRows : 1;
 
-    // As wide as the longest level, so the hints don't move when the level changes.
     private static int StatusTextWidth =>
         Enum.GetValues<HealthLevel>().Max(level => HealthStatusText(level).Length);
 

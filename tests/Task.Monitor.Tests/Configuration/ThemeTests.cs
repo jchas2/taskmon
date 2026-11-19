@@ -16,7 +16,7 @@ public sealed class ThemeTests
 
     [Fact]
     public void Theme_Canary_Test() =>
-        Assert.Equal(92, CanaryTestHelper.GetPropertyCount<Theme>());
+        Assert.Equal(91, CanaryTestHelper.GetPropertyCount<Theme>());
 
     private void AssertThemeColours(Theme theme)
     {
@@ -780,6 +780,37 @@ public sealed class ThemeTests
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
 
+    // The About screen's sampler dots, and the footer's dot when data stops, are drawn in these on
+    // the window background. A transparent window counts as black, as every theme with one is dark.
+    [Fact]
+    public void Shipped_Themes_Draw_Readable_Status_Dots()
+    {
+        const double minContrast = 3.0;
+
+        List<string> unreadable = [];
+
+        foreach ((string name, ConfigSection section) in ShippedThemes()) {
+            Theme theme  = new(section);
+            Color window = theme.Background.IsTransparent() ? ConsolePalette.Black : theme.Background;
+
+            (string Key, Color Colour)[] dots = [
+                (Constants.Keys.StatusbarStatusOk,      theme.StatusbarStatusOk),
+                (Constants.Keys.StatusbarStatusWarning, theme.StatusbarStatusWarning),
+                (Constants.Keys.StatusbarStatusError,   theme.StatusbarStatusError)
+            ];
+
+            foreach ((string key, Color colour) in dots) {
+                double contrast = ConsolePalette.ContrastRatio(colour, window);
+
+                if (contrast < minContrast) {
+                    unreadable.Add($"{name} {key} {contrast:0.00}:1");
+                }
+            }
+        }
+
+        Assert.True(unreadable.Count == 0, string.Join(Environment.NewLine, unreadable));
+    }
+
     // The DISK SPACE status line is drawn in the heatmap.state colours on the window background.
     // A transparent window shows the terminal's own background, and every theme with one is dark,
     // so it counts as black.
@@ -887,7 +918,6 @@ public sealed class ThemeTests
     {
         Theme theme = new(new ConfigSection("theme-test"));
 
-        Assert.Equal(Color.Black.ToArgb(),       theme.StatusbarStatusForeground.ToArgb());
         Assert.Equal(Color.Green.ToArgb(),       theme.StatusbarStatusOk.ToArgb());
         Assert.Equal(Color.Orange.ToArgb(),      theme.StatusbarStatusWarning.ToArgb());
         Assert.Equal(Color.OrangeRed.ToArgb(),   theme.StatusbarStatusError.ToArgb());

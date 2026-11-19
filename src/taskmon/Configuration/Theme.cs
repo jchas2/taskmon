@@ -89,7 +89,6 @@ public sealed class Theme
         Constants.Keys.StatusError,
         Constants.Keys.StatusbarBannerBackground,
         Constants.Keys.StatusbarBannerForeground,
-        Constants.Keys.StatusbarStatusForeground,
         Constants.Keys.StatusbarStatusOk,
         Constants.Keys.StatusbarStatusWarning,
         Constants.Keys.StatusbarStatusError,
@@ -560,7 +559,6 @@ public sealed class Theme
     private void SetColour(string key, Color value) =>
         themeSection?.Add(key, ConsolePalette.ToHex(value));
 
-    // The version banner looks like a selected row unless the theme says otherwise.
     public Color StatusbarBannerBackground
     {
         get => GetColour(Constants.Keys.StatusbarBannerBackground, BackgroundHighlight);
@@ -573,8 +571,6 @@ public sealed class Theme
         set => SetColour(Constants.Keys.StatusbarBannerForeground, value);
     }
 
-    // The footer's health segment is filled with the colour the HEALTH view's STATUS column gives
-    // the level, and its text is black or white, whichever stands out more.
     public Color StatusbarHealthCriticalBackground
     {
         get => GetColour(Constants.Keys.StatusbarHealthCriticalBackground, StatusError);
@@ -599,7 +595,6 @@ public sealed class Theme
         set => SetColour(Constants.Keys.StatusbarHealthOkForeground, value);
     }
 
-    // Unknown has no STATUS colour, so it takes the theme's grey for things that aren't available.
     public Color StatusbarHealthUnknownBackground
     {
         get => GetColour(Constants.Keys.StatusbarHealthUnknownBackground, CommandForegroundDisabled);
@@ -634,12 +629,6 @@ public sealed class Theme
     {
         get => GetColour(Constants.Keys.StatusbarStatusError, Color.OrangeRed);
         set => SetColour(Constants.Keys.StatusbarStatusError, value);
-    }
-
-    public Color StatusbarStatusForeground
-    {
-        get => GetColour(Constants.Keys.StatusbarStatusForeground, Color.Black);
-        set => SetColour(Constants.Keys.StatusbarStatusForeground, value);
     }
 
     public Color StatusbarStatusOk

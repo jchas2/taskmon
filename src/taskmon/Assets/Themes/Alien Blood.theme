@@ -106,7 +106,6 @@ command.foreground.disabled=#808080
 
 statusbar.banner.background=#1d4125
 statusbar.banner.foreground=#73fa91
-statusbar.status.foreground=#000000
 statusbar.status.ok=#008000
 statusbar.status.warning=#ffa500
 statusbar.status.error=#ff4500

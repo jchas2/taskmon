@@ -50,12 +50,16 @@ public sealed class MascotControl : Control
 
     private long CaptionEnd => IntroEnd + CaptionLength * CaptionCharMilliseconds;
 
+    public int CaptionHeight => Caption.Count;
+
     private int CaptionLength => Caption.Sum(line => line.Length);
 
-    private void DrawCaption(int captionChars)
+    public bool CaptionOnly { get; set; }
+
+    private void DrawCaption(int firstRow, int captionChars)
     {
         for (int i = 0; i < Caption.Count; i++) {
-            int row = animation.Height + CaptionGap + i;
+            int row = firstRow + i;
 
             if (row >= Height) {
                 return;
@@ -71,9 +75,19 @@ public sealed class MascotControl : Control
             frame.MoveTo(X, Y + row);
             frame.SetColour(ForegroundColour, BackgroundColour);
             frame.Append(' ', left);
+            frame.SetColour(i == 0 ? TitleColour ?? ForegroundColour : ForegroundColour, BackgroundColour);
             frame.Append(text.AsSpan(0, shown));
+            frame.SetColour(ForegroundColour, BackgroundColour);
             frame.Append(' ', Width - left - shown);
         }
+    }
+
+    private void DrawCaptionOnly()
+    {
+        frame.Clear();
+        DrawCaption(0, CaptionLength);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
 
     internal void DrawState(State state)
@@ -109,7 +123,7 @@ public sealed class MascotControl : Control
             }
         }
 
-        DrawCaption(state.CaptionChars);
+        DrawCaption(animation.Height + CaptionGap, state.CaptionChars);
 
         frame.ResetColour();
         Terminal.Write(frame.AsSpan());
@@ -144,9 +158,13 @@ public sealed class MascotControl : Control
         return false;
     }
 
-    public bool IsIntroPlaying => timer is not null && Elapsed < CaptionEnd;
+    public bool IsIntroPlaying => !CaptionOnly && timer is not null && Elapsed < CaptionEnd;
 
     public bool IsPlaying => timer is not null;
+
+    public int MinimumHeight => animation.Height;
+
+    public int MinimumWidth => animation.Width;
 
     internal long NextChangeAfter(long elapsed)
     {
@@ -168,7 +186,10 @@ public sealed class MascotControl : Control
 
     protected override void OnDraw()
     {
-        if (timer is not null) {
+        if (CaptionOnly) {
+            DrawCaptionOnly();
+        }
+        else if (timer is not null) {
             DrawState(StateAt(Elapsed));
         }
     }
@@ -271,6 +292,8 @@ public sealed class MascotControl : Control
             timer = null;
         }
     }
+
+    public Color? TitleColour { get; set; }
 
     private void Update()
     {

@@ -185,7 +185,6 @@ public sealed class Constants
 
         public const string StatusbarBannerBackground = "statusbar.banner.background";
         public const string StatusbarBannerForeground = "statusbar.banner.foreground";
-        public const string StatusbarStatusForeground = "statusbar.status.foreground";
         public const string StatusbarStatusOk         = "statusbar.status.ok";
         public const string StatusbarStatusWarning    = "statusbar.status.warning";
         public const string StatusbarStatusError      = "statusbar.status.error";

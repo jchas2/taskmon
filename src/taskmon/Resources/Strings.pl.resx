@@ -613,6 +613,165 @@ Zapisz go pod nową nazwą.</value>
   <data name="AboutVersion" xml:space="preserve">
     <value>Wersja {0}</value>
   </data>
+  <data name="ServiceNameCpu" xml:space="preserve">
+    <value>Próbnik CPU</value>
+  </data>
+  <data name="ServiceNameMemory" xml:space="preserve">
+    <value>Próbnik pamięci</value>
+  </data>
+  <data name="ServiceNameGpu" xml:space="preserve">
+    <value>Próbnik GPU</value>
+  </data>
+  <data name="ServiceNameDisk" xml:space="preserve">
+    <value>Próbnik dysku</value>
+  </data>
+  <data name="ServiceNameDiskSpace" xml:space="preserve">
+    <value>Próbnik użycia dysku</value>
+  </data>
+  <data name="ServiceNameNetwork" xml:space="preserve">
+    <value>Próbnik sieci</value>
+  </data>
+  <data name="ServiceNameProcess" xml:space="preserve">
+    <value>Próbnik procesów</value>
+  </data>
+  <data name="ServiceNameStartup" xml:space="preserve">
+    <value>Próbnik autostartu</value>
+  </data>
+  <data name="ServiceNameInstalledApps" xml:space="preserve">
+    <value>Próbnik zainstalowanych aplikacji</value>
+  </data>
+  <data name="ServiceNameWindowsServices" xml:space="preserve">
+    <value>Próbnik usług Windows</value>
+  </data>
+  <data name="ServiceNameLaunchdServices" xml:space="preserve">
+    <value>Próbnik usług launchd</value>
+  </data>
+  <data name="ServiceNameDrivers" xml:space="preserve">
+    <value>Próbnik sterowników</value>
+  </data>
+  <data name="ServiceNameSoc" xml:space="preserve">
+    <value>Próbnik SoC</value>
+  </data>
+  <data name="ServiceNameThermal" xml:space="preserve">
+    <value>Próbnik temperatur</value>
+  </data>
+  <data name="ServiceNamePower" xml:space="preserve">
+    <value>Próbnik zasilania</value>
+  </data>
+  <data name="ServiceNameHealth" xml:space="preserve">
+    <value>Próbnik kondycji</value>
+  </data>
+  <data name="ServiceStatus_None" xml:space="preserve">
+    <value>Nie uruchomiono</value>
+  </data>
+  <data name="ServiceStatus_Starting" xml:space="preserve">
+    <value>Uruchamianie</value>
+  </data>
+  <data name="ServiceStatus_Running" xml:space="preserve">
+    <value>Działa</value>
+  </data>
+  <data name="ServiceStatus_Stopping" xml:space="preserve">
+    <value>Zatrzymywanie</value>
+  </data>
+  <data name="ServiceStatus_Stopped" xml:space="preserve">
+    <value>Zatrzymano</value>
+  </data>
+  <data name="ServiceStatus_Errored" xml:space="preserve">
+    <value>Błąd</value>
+  </data>
+  <data name="AboutSamplingEngine" xml:space="preserve">
+    <value>Silnik próbkowania Task Monitor</value>
+  </data>
+  <data name="AboutSamplerStatus" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="AboutRunningAsAdministrator" xml:space="preserve">
+    <value>Uruchomiono jako administrator</value>
+  </data>
+  <data name="AboutRunningAsRoot" xml:space="preserve">
+    <value>Uruchomiono jako root</value>
+  </data>
+  <data name="AboutRunningAsStandardUser" xml:space="preserve">
+    <value>Uruchomiono jako zwykły użytkownik</value>
+  </data>
+  <data name="AboutKeyCopy" xml:space="preserve">
+    <value>Kopiuj szczegóły</value>
+  </data>
+  <data name="AboutCopied" xml:space="preserve">
+    <value>Szczegóły skopiowano do schowka</value>
+  </data>
+  <data name="AboutCopyFailed" xml:space="preserve">
+    <value>Nie udało się skopiować do schowka</value>
+  </data>
+  <data name="AboutSectionTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AboutSectionFiles" xml:space="preserve">
+    <value>Pliki</value>
+  </data>
+  <data name="AboutLabelVersion" xml:space="preserve">
+    <value>Wersja</value>
+  </data>
+  <data name="AboutLabelRuntime" xml:space="preserve">
+    <value>Środowisko uruchomieniowe</value>
+  </data>
+  <data name="AboutLabelSystem" xml:space="preserve">
+    <value>System operacyjny</value>
+  </data>
+  <data name="AboutLabelSize" xml:space="preserve">
+    <value>Rozmiar</value>
+  </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Kolory</value>
+  </data>
+  <data name="AboutLabelDrawing" xml:space="preserve">
+    <value>Rysowanie</value>
+  </data>
+  <data name="AboutLabelLanguage" xml:space="preserve">
+    <value>Język</value>
+  </data>
+  <data name="AboutColoursIndexed" xml:space="preserve">
+    <value>Indeksowane (paleta terminala)</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>Pełny kolor</value>
+  </data>
+  <data name="AboutColoursFromEnvironment" xml:space="preserve">
+    <value>{0}, ustawione przez {1}</value>
+  </data>
+  <data name="AboutDrawingFull" xml:space="preserve">
+    <value>Pełne</value>
+  </data>
+  <data name="AboutDrawingSquareCorners" xml:space="preserve">
+    <value>Starsza konsola: kwadratowe narożniki</value>
+  </data>
+  <data name="AboutDrawingWholeCells" xml:space="preserve">
+    <value>Bloki pełnych komórek</value>
+  </data>
+  <data name="AboutLabelUptime" xml:space="preserve">
+    <value>Działa od</value>
+  </data>
+  <data name="AboutLabelInterval" xml:space="preserve">
+    <value>Interwał próbkowania</value>
+  </data>
+  <data name="AboutLabelSamples" xml:space="preserve">
+    <value>Odebrane próbki</value>
+  </data>
+  <data name="AboutLabelLastSample" xml:space="preserve">
+    <value>Ostatnia próbka</value>
+  </data>
+  <data name="AboutAgo" xml:space="preserve">
+    <value>{0} temu</value>
+  </data>
+  <data name="AboutLabelSettings" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="AboutLabelHealthHistory" xml:space="preserve">
+    <value>Historia kondycji</value>
+  </data>
+  <data name="AboutLabelLogs" xml:space="preserve">
+    <value>Dzienniki</value>
+  </data>
   <data name="HeaderTitle" xml:space="preserve">
     <value>TASK MONITOR</value>
   </data>
@@ -693,6 +852,9 @@ Zapisz go pod nową nazwą.</value>
   </data>
   <data name="FooterKeyLayout" xml:space="preserve">
     <value>Układ</value>
+  </data>
+  <data name="FooterKeyAbout" xml:space="preserve">
+    <value>O programie</value>
   </data>
   <data name="FooterKeyNextTip" xml:space="preserve">
     <value>Następna</value>

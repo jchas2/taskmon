@@ -613,6 +613,165 @@ Speichern Sie es unter einem neuen Namen.</value>
   <data name="AboutVersion" xml:space="preserve">
     <value>Version {0}</value>
   </data>
+  <data name="ServiceNameCpu" xml:space="preserve">
+    <value>CPU-Erfassung</value>
+  </data>
+  <data name="ServiceNameMemory" xml:space="preserve">
+    <value>Speicher-Erfassung</value>
+  </data>
+  <data name="ServiceNameGpu" xml:space="preserve">
+    <value>GPU-Erfassung</value>
+  </data>
+  <data name="ServiceNameDisk" xml:space="preserve">
+    <value>Disk-Erfassung</value>
+  </data>
+  <data name="ServiceNameDiskSpace" xml:space="preserve">
+    <value>Speicherplatz-Erfassung</value>
+  </data>
+  <data name="ServiceNameNetwork" xml:space="preserve">
+    <value>Netzwerk-Erfassung</value>
+  </data>
+  <data name="ServiceNameProcess" xml:space="preserve">
+    <value>Prozess-Erfassung</value>
+  </data>
+  <data name="ServiceNameStartup" xml:space="preserve">
+    <value>Autostart-Erfassung</value>
+  </data>
+  <data name="ServiceNameInstalledApps" xml:space="preserve">
+    <value>Erfassung installierter Apps</value>
+  </data>
+  <data name="ServiceNameWindowsServices" xml:space="preserve">
+    <value>Erfassung der Windows-Dienste</value>
+  </data>
+  <data name="ServiceNameLaunchdServices" xml:space="preserve">
+    <value>Erfassung der launchd-Dienste</value>
+  </data>
+  <data name="ServiceNameDrivers" xml:space="preserve">
+    <value>Treiber-Erfassung</value>
+  </data>
+  <data name="ServiceNameSoc" xml:space="preserve">
+    <value>SoC-Erfassung</value>
+  </data>
+  <data name="ServiceNameThermal" xml:space="preserve">
+    <value>Temperatur-Erfassung</value>
+  </data>
+  <data name="ServiceNamePower" xml:space="preserve">
+    <value>Energie-Erfassung</value>
+  </data>
+  <data name="ServiceNameHealth" xml:space="preserve">
+    <value>Zustands-Erfassung</value>
+  </data>
+  <data name="ServiceStatus_None" xml:space="preserve">
+    <value>Nicht gestartet</value>
+  </data>
+  <data name="ServiceStatus_Starting" xml:space="preserve">
+    <value>Startet</value>
+  </data>
+  <data name="ServiceStatus_Running" xml:space="preserve">
+    <value>Läuft</value>
+  </data>
+  <data name="ServiceStatus_Stopping" xml:space="preserve">
+    <value>Wird beendet</value>
+  </data>
+  <data name="ServiceStatus_Stopped" xml:space="preserve">
+    <value>Beendet</value>
+  </data>
+  <data name="ServiceStatus_Errored" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="AboutSamplingEngine" xml:space="preserve">
+    <value>Messmodul von Task Monitor</value>
+  </data>
+  <data name="AboutSamplerStatus" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="AboutRunningAsAdministrator" xml:space="preserve">
+    <value>Als Administrator ausgeführt</value>
+  </data>
+  <data name="AboutRunningAsRoot" xml:space="preserve">
+    <value>Als root ausgeführt</value>
+  </data>
+  <data name="AboutRunningAsStandardUser" xml:space="preserve">
+    <value>Als Standardbenutzer ausgeführt</value>
+  </data>
+  <data name="AboutKeyCopy" xml:space="preserve">
+    <value>Details kopieren</value>
+  </data>
+  <data name="AboutCopied" xml:space="preserve">
+    <value>Details in die Zwischenablage kopiert</value>
+  </data>
+  <data name="AboutCopyFailed" xml:space="preserve">
+    <value>Kopieren in die Zwischenablage fehlgeschlagen</value>
+  </data>
+  <data name="AboutSectionTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AboutSectionFiles" xml:space="preserve">
+    <value>Dateien</value>
+  </data>
+  <data name="AboutLabelVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="AboutLabelRuntime" xml:space="preserve">
+    <value>Laufzeit</value>
+  </data>
+  <data name="AboutLabelSystem" xml:space="preserve">
+    <value>Betriebssystem</value>
+  </data>
+  <data name="AboutLabelSize" xml:space="preserve">
+    <value>Größe</value>
+  </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Farben</value>
+  </data>
+  <data name="AboutLabelDrawing" xml:space="preserve">
+    <value>Zeichnen</value>
+  </data>
+  <data name="AboutLabelLanguage" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="AboutColoursIndexed" xml:space="preserve">
+    <value>Indiziert (Terminalpalette)</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>True Color</value>
+  </data>
+  <data name="AboutColoursFromEnvironment" xml:space="preserve">
+    <value>{0}, festgelegt durch {1}</value>
+  </data>
+  <data name="AboutDrawingFull" xml:space="preserve">
+    <value>Vollständig</value>
+  </data>
+  <data name="AboutDrawingSquareCorners" xml:space="preserve">
+    <value>Alte Konsole: eckige Ecken</value>
+  </data>
+  <data name="AboutDrawingWholeCells" xml:space="preserve">
+    <value>Ganze Zellen</value>
+  </data>
+  <data name="AboutLabelUptime" xml:space="preserve">
+    <value>Läuft seit</value>
+  </data>
+  <data name="AboutLabelInterval" xml:space="preserve">
+    <value>Messintervall</value>
+  </data>
+  <data name="AboutLabelSamples" xml:space="preserve">
+    <value>Empfangene Messungen</value>
+  </data>
+  <data name="AboutLabelLastSample" xml:space="preserve">
+    <value>Letzte Messung</value>
+  </data>
+  <data name="AboutAgo" xml:space="preserve">
+    <value>vor {0}</value>
+  </data>
+  <data name="AboutLabelSettings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="AboutLabelHealthHistory" xml:space="preserve">
+    <value>Zustandsverlauf</value>
+  </data>
+  <data name="AboutLabelLogs" xml:space="preserve">
+    <value>Protokolle</value>
+  </data>
   <data name="HeaderTitle" xml:space="preserve">
     <value>TASK MONITOR</value>
   </data>
@@ -693,6 +852,9 @@ Speichern Sie es unter einem neuen Namen.</value>
   </data>
   <data name="FooterKeyLayout" xml:space="preserve">
     <value>Layout</value>
+  </data>
+  <data name="FooterKeyAbout" xml:space="preserve">
+    <value>Über</value>
   </data>
   <data name="FooterKeyNextTip" xml:space="preserve">
     <value>Weiter</value>

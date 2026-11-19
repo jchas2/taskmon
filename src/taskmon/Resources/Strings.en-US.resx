@@ -89,4 +89,10 @@
   <data name="LabelVirtualisation" xml:space="preserve">
     <value>Virtualization:</value>
   </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>True color</value>
+  </data>
 </root>

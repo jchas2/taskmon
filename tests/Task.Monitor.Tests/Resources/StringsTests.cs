@@ -7,6 +7,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Resources;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.LaunchdServices;
 using Task.Monitor.System.Services.Memory;
@@ -94,6 +95,7 @@ public sealed class StringsTests
         typeof(LaunchdDomain),
         typeof(MemoryPressure),
         typeof(MetreControlStyle),
+        typeof(ServiceStatus),
         typeof(ThermalComponent),
         typeof(ThermalPressure),
         typeof(UpdateInterval)
@@ -209,6 +211,21 @@ public sealed class StringsTests
             Exception? error = Record.Exception(() => string.Format(CultureInfo.InvariantCulture, text, args));
             Assert.True(error is null, $"{key}: {error?.Message}");
         }
+    }
+
+    // The About screen names each sampling service by its type, less "Service", e.g. ServiceNameDiskSpace.
+    [Fact]
+    public void Every_Sampling_Service_Has_A_Name_Entry()
+    {
+        Dictionary<string, string> defaults = Entries(CultureInfo.InvariantCulture);
+
+        string[] services = typeof(ServiceController).Assembly.GetTypes()
+            .Where(type => type.IsSubclassOf(typeof(WorkerService)) && type != typeof(ServiceController))
+            .Select(type => type.Name[..^"Service".Length])
+            .ToArray();
+
+        Assert.NotEmpty(services);
+        Assert.All(services, name => Assert.Contains($"ServiceName{name}", defaults.Keys));
     }
 
     [Theory]

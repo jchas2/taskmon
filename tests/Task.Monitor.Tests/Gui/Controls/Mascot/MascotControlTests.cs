@@ -58,6 +58,29 @@ public sealed class MascotControlTests
 
     private readonly RecordingTerminal terminal = new();
 
+    // On a screen too short for the robot, its caption shows on its own from the top, all at once,
+    // and nothing plays, so a key press isn't spent skipping an intro no one can see.
+    [Fact]
+    public void CaptionOnly_Draws_The_Whole_Caption_From_The_Top_Without_The_Sprite()
+    {
+        MascotControl ctrl = CreateControl();
+        ctrl.CaptionOnly = true;
+        ctrl.Height      = 2;
+
+        ctrl.Play();
+        bool introPlaying = ctrl.IsIntroPlaying;
+        ctrl.Draw();
+        ctrl.Stop();
+
+        AnsiScreen screen = new(terminal.Output);
+        int        left   = (ControlWidth - 2) / 2;
+
+        Assert.False(introPlaying);
+        Assert.Equal("Hi", $"{screen[left, 0].Glyph}{screen[left + 1, 0].Glyph}");
+        Assert.Equal("v1", $"{screen[left, 1].Glyph}{screen[left + 1, 1].Glyph}");
+        Assert.DoesNotContain(Red, terminal.Output);
+    }
+
     private MascotControl CreateControl(int width = ControlWidth, MascotAnimation? animation = null) =>
         new(terminal, animation ?? MascotAnimation.Parse(Animation), new Random(0)) {
             Caption          = ["Hi", "v1"],
@@ -278,6 +301,24 @@ public sealed class MascotControlTests
         Assert.Equal(1, ctrl.StateAt(IntroEnd + 22).CaptionChars);
         Assert.Equal(3, ctrl.StateAt(IntroEnd + 66).CaptionChars);
         Assert.Equal(4, ctrl.StateAt(CaptionEnd).CaptionChars);
+    }
+
+    // The About screen sets the product name apart: only the first line takes the title colour.
+    [Fact]
+    public void TitleColour_Colours_Only_The_First_Caption_Line()
+    {
+        Color title = Color.FromArgb(250, 20, 120);
+
+        MascotControl ctrl = CreateControl();
+        ctrl.TitleColour = title;
+
+        ctrl.DrawState(new State("rest", 0, 4));
+
+        AnsiScreen screen = new(terminal.Output);
+        int        left   = (ControlWidth - 2) / 2;
+
+        Assert.Equal(AnsiScreen.Key(title), screen[left, 3].Foreground);
+        Assert.Equal(AnsiScreen.Key(Color.FromArgb(200, 200, 200)), screen[left, 4].Foreground);
     }
 
     [Fact]

@@ -26,6 +26,22 @@ public sealed class ServiceControllerTests
 
     private sealed class DerivedCharlieService : FakeCharlieService { }
 
+    // Read straight from the services, so it works before the first snapshot and without one.
+    [Fact]
+    public void GetServiceHealth_Lists_Every_Registered_Service_Without_Starting_The_Controller()
+    {
+        ServiceController controller = new();
+
+        controller
+            .AddService(() => new FakeAlphaService())
+            .AddService(() => new FakeBravoService());
+
+        IReadOnlyList<ServiceHealth> services = controller.GetServiceHealth();
+
+        Assert.Equal(["FakeAlpha", "FakeBravo"], services.Select(service => service.Name));
+        Assert.All(services, service => Assert.Equal(ServiceStatus.None, service.Status));
+    }
+
     // Tests register a fake subclass in place of a real service (e.g. ProcessService), and the
     // controls still ask for it by the real service's type.
     [Fact]

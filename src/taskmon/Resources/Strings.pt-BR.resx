@@ -613,6 +613,165 @@ Salve-o com outro nome.</value>
   <data name="AboutVersion" xml:space="preserve">
     <value>Versão {0}</value>
   </data>
+  <data name="ServiceNameCpu" xml:space="preserve">
+    <value>Amostrador de CPU</value>
+  </data>
+  <data name="ServiceNameMemory" xml:space="preserve">
+    <value>Amostrador de memória</value>
+  </data>
+  <data name="ServiceNameGpu" xml:space="preserve">
+    <value>Amostrador de GPU</value>
+  </data>
+  <data name="ServiceNameDisk" xml:space="preserve">
+    <value>Amostrador de disco</value>
+  </data>
+  <data name="ServiceNameDiskSpace" xml:space="preserve">
+    <value>Amostrador de uso do disco</value>
+  </data>
+  <data name="ServiceNameNetwork" xml:space="preserve">
+    <value>Amostrador de rede</value>
+  </data>
+  <data name="ServiceNameProcess" xml:space="preserve">
+    <value>Amostrador de processos</value>
+  </data>
+  <data name="ServiceNameStartup" xml:space="preserve">
+    <value>Amostrador de inicialização</value>
+  </data>
+  <data name="ServiceNameInstalledApps" xml:space="preserve">
+    <value>Amostrador de aplicativos instalados</value>
+  </data>
+  <data name="ServiceNameWindowsServices" xml:space="preserve">
+    <value>Amostrador de serviços do Windows</value>
+  </data>
+  <data name="ServiceNameLaunchdServices" xml:space="preserve">
+    <value>Amostrador de serviços do launchd</value>
+  </data>
+  <data name="ServiceNameDrivers" xml:space="preserve">
+    <value>Amostrador de drivers</value>
+  </data>
+  <data name="ServiceNameSoc" xml:space="preserve">
+    <value>Amostrador de SoC</value>
+  </data>
+  <data name="ServiceNameThermal" xml:space="preserve">
+    <value>Amostrador de temperaturas</value>
+  </data>
+  <data name="ServiceNamePower" xml:space="preserve">
+    <value>Amostrador de energia</value>
+  </data>
+  <data name="ServiceNameHealth" xml:space="preserve">
+    <value>Amostrador de saúde</value>
+  </data>
+  <data name="ServiceStatus_None" xml:space="preserve">
+    <value>Não iniciado</value>
+  </data>
+  <data name="ServiceStatus_Starting" xml:space="preserve">
+    <value>Iniciando</value>
+  </data>
+  <data name="ServiceStatus_Running" xml:space="preserve">
+    <value>Em execução</value>
+  </data>
+  <data name="ServiceStatus_Stopping" xml:space="preserve">
+    <value>Parando</value>
+  </data>
+  <data name="ServiceStatus_Stopped" xml:space="preserve">
+    <value>Parado</value>
+  </data>
+  <data name="ServiceStatus_Errored" xml:space="preserve">
+    <value>Erro</value>
+  </data>
+  <data name="AboutSamplingEngine" xml:space="preserve">
+    <value>Mecanismo de amostragem do Task Monitor</value>
+  </data>
+  <data name="AboutSamplerStatus" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="AboutRunningAsAdministrator" xml:space="preserve">
+    <value>Executando como administrador</value>
+  </data>
+  <data name="AboutRunningAsRoot" xml:space="preserve">
+    <value>Executando como root</value>
+  </data>
+  <data name="AboutRunningAsStandardUser" xml:space="preserve">
+    <value>Executando como usuário padrão</value>
+  </data>
+  <data name="AboutKeyCopy" xml:space="preserve">
+    <value>Copiar detalhes</value>
+  </data>
+  <data name="AboutCopied" xml:space="preserve">
+    <value>Detalhes copiados para a área de transferência</value>
+  </data>
+  <data name="AboutCopyFailed" xml:space="preserve">
+    <value>Não foi possível copiar para a área de transferência</value>
+  </data>
+  <data name="AboutSectionTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AboutSectionFiles" xml:space="preserve">
+    <value>Arquivos</value>
+  </data>
+  <data name="AboutLabelVersion" xml:space="preserve">
+    <value>Versão</value>
+  </data>
+  <data name="AboutLabelRuntime" xml:space="preserve">
+    <value>Tempo de execução</value>
+  </data>
+  <data name="AboutLabelSystem" xml:space="preserve">
+    <value>Sistema operacional</value>
+  </data>
+  <data name="AboutLabelSize" xml:space="preserve">
+    <value>Tamanho</value>
+  </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Cores</value>
+  </data>
+  <data name="AboutLabelDrawing" xml:space="preserve">
+    <value>Desenho</value>
+  </data>
+  <data name="AboutLabelLanguage" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="AboutColoursIndexed" xml:space="preserve">
+    <value>Indexado (paleta do terminal)</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>Cor verdadeira</value>
+  </data>
+  <data name="AboutColoursFromEnvironment" xml:space="preserve">
+    <value>{0}, definido por {1}</value>
+  </data>
+  <data name="AboutDrawingFull" xml:space="preserve">
+    <value>Completo</value>
+  </data>
+  <data name="AboutDrawingSquareCorners" xml:space="preserve">
+    <value>Console legado: cantos quadrados</value>
+  </data>
+  <data name="AboutDrawingWholeCells" xml:space="preserve">
+    <value>Blocos de célula inteira</value>
+  </data>
+  <data name="AboutLabelUptime" xml:space="preserve">
+    <value>Em execução há</value>
+  </data>
+  <data name="AboutLabelInterval" xml:space="preserve">
+    <value>Intervalo de amostragem</value>
+  </data>
+  <data name="AboutLabelSamples" xml:space="preserve">
+    <value>Amostras recebidas</value>
+  </data>
+  <data name="AboutLabelLastSample" xml:space="preserve">
+    <value>Última amostra</value>
+  </data>
+  <data name="AboutAgo" xml:space="preserve">
+    <value>há {0}</value>
+  </data>
+  <data name="AboutLabelSettings" xml:space="preserve">
+    <value>Configurações</value>
+  </data>
+  <data name="AboutLabelHealthHistory" xml:space="preserve">
+    <value>Histórico de saúde</value>
+  </data>
+  <data name="AboutLabelLogs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
   <data name="HeaderTitle" xml:space="preserve">
     <value>TASK MONITOR</value>
   </data>
@@ -693,6 +852,9 @@ Salve-o com outro nome.</value>
   </data>
   <data name="FooterKeyLayout" xml:space="preserve">
     <value>Layout</value>
+  </data>
+  <data name="FooterKeyAbout" xml:space="preserve">
+    <value>Sobre</value>
   </data>
   <data name="FooterKeyNextTip" xml:space="preserve">
     <value>Próxima</value>

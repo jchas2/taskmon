@@ -613,6 +613,165 @@ Sla deze op onder een andere naam.</value>
   <data name="AboutVersion" xml:space="preserve">
     <value>Versie {0}</value>
   </data>
+  <data name="ServiceNameCpu" xml:space="preserve">
+    <value>CPU-meter</value>
+  </data>
+  <data name="ServiceNameMemory" xml:space="preserve">
+    <value>Geheugenmeter</value>
+  </data>
+  <data name="ServiceNameGpu" xml:space="preserve">
+    <value>GPU-meter</value>
+  </data>
+  <data name="ServiceNameDisk" xml:space="preserve">
+    <value>Schijfmeter</value>
+  </data>
+  <data name="ServiceNameDiskSpace" xml:space="preserve">
+    <value>Schijfruimtemeter</value>
+  </data>
+  <data name="ServiceNameNetwork" xml:space="preserve">
+    <value>Netwerkmeter</value>
+  </data>
+  <data name="ServiceNameProcess" xml:space="preserve">
+    <value>Processenmeter</value>
+  </data>
+  <data name="ServiceNameStartup" xml:space="preserve">
+    <value>Opstartmeter</value>
+  </data>
+  <data name="ServiceNameInstalledApps" xml:space="preserve">
+    <value>Meter voor geïnstalleerde apps</value>
+  </data>
+  <data name="ServiceNameWindowsServices" xml:space="preserve">
+    <value>Meter voor Windows-services</value>
+  </data>
+  <data name="ServiceNameLaunchdServices" xml:space="preserve">
+    <value>Meter voor launchd-services</value>
+  </data>
+  <data name="ServiceNameDrivers" xml:space="preserve">
+    <value>Driversmeter</value>
+  </data>
+  <data name="ServiceNameSoc" xml:space="preserve">
+    <value>SoC-meter</value>
+  </data>
+  <data name="ServiceNameThermal" xml:space="preserve">
+    <value>Temperatuurmeter</value>
+  </data>
+  <data name="ServiceNamePower" xml:space="preserve">
+    <value>Energiemeter</value>
+  </data>
+  <data name="ServiceNameHealth" xml:space="preserve">
+    <value>Gezondheidsmeter</value>
+  </data>
+  <data name="ServiceStatus_None" xml:space="preserve">
+    <value>Niet gestart</value>
+  </data>
+  <data name="ServiceStatus_Starting" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="ServiceStatus_Running" xml:space="preserve">
+    <value>Actief</value>
+  </data>
+  <data name="ServiceStatus_Stopping" xml:space="preserve">
+    <value>Stoppen</value>
+  </data>
+  <data name="ServiceStatus_Stopped" xml:space="preserve">
+    <value>Gestopt</value>
+  </data>
+  <data name="ServiceStatus_Errored" xml:space="preserve">
+    <value>Fout</value>
+  </data>
+  <data name="AboutSamplingEngine" xml:space="preserve">
+    <value>Meetmodule van Task Monitor</value>
+  </data>
+  <data name="AboutSamplerStatus" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="AboutRunningAsAdministrator" xml:space="preserve">
+    <value>Uitgevoerd als beheerder</value>
+  </data>
+  <data name="AboutRunningAsRoot" xml:space="preserve">
+    <value>Uitgevoerd als root</value>
+  </data>
+  <data name="AboutRunningAsStandardUser" xml:space="preserve">
+    <value>Uitgevoerd als standaardgebruiker</value>
+  </data>
+  <data name="AboutKeyCopy" xml:space="preserve">
+    <value>Details kopiëren</value>
+  </data>
+  <data name="AboutCopied" xml:space="preserve">
+    <value>Details gekopieerd naar het klembord</value>
+  </data>
+  <data name="AboutCopyFailed" xml:space="preserve">
+    <value>Kopiëren naar het klembord mislukt</value>
+  </data>
+  <data name="AboutSectionTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AboutSectionFiles" xml:space="preserve">
+    <value>Bestanden</value>
+  </data>
+  <data name="AboutLabelVersion" xml:space="preserve">
+    <value>Versie</value>
+  </data>
+  <data name="AboutLabelRuntime" xml:space="preserve">
+    <value>Runtime</value>
+  </data>
+  <data name="AboutLabelSystem" xml:space="preserve">
+    <value>Besturingssysteem</value>
+  </data>
+  <data name="AboutLabelSize" xml:space="preserve">
+    <value>Grootte</value>
+  </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Kleuren</value>
+  </data>
+  <data name="AboutLabelDrawing" xml:space="preserve">
+    <value>Tekenen</value>
+  </data>
+  <data name="AboutLabelLanguage" xml:space="preserve">
+    <value>Taal</value>
+  </data>
+  <data name="AboutColoursIndexed" xml:space="preserve">
+    <value>Geïndexeerd (terminalpalet)</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>True color</value>
+  </data>
+  <data name="AboutColoursFromEnvironment" xml:space="preserve">
+    <value>{0}, ingesteld door {1}</value>
+  </data>
+  <data name="AboutDrawingFull" xml:space="preserve">
+    <value>Volledig</value>
+  </data>
+  <data name="AboutDrawingSquareCorners" xml:space="preserve">
+    <value>Oude console: rechte hoeken</value>
+  </data>
+  <data name="AboutDrawingWholeCells" xml:space="preserve">
+    <value>Hele cellen</value>
+  </data>
+  <data name="AboutLabelUptime" xml:space="preserve">
+    <value>Actief gedurende</value>
+  </data>
+  <data name="AboutLabelInterval" xml:space="preserve">
+    <value>Meetinterval</value>
+  </data>
+  <data name="AboutLabelSamples" xml:space="preserve">
+    <value>Ontvangen metingen</value>
+  </data>
+  <data name="AboutLabelLastSample" xml:space="preserve">
+    <value>Laatste meting</value>
+  </data>
+  <data name="AboutAgo" xml:space="preserve">
+    <value>{0} geleden</value>
+  </data>
+  <data name="AboutLabelSettings" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
+  <data name="AboutLabelHealthHistory" xml:space="preserve">
+    <value>Gezondheidsgeschiedenis</value>
+  </data>
+  <data name="AboutLabelLogs" xml:space="preserve">
+    <value>Logboeken</value>
+  </data>
   <data name="HeaderTitle" xml:space="preserve">
     <value>TASK MONITOR</value>
   </data>
@@ -693,6 +852,9 @@ Sla deze op onder een andere naam.</value>
   </data>
   <data name="FooterKeyLayout" xml:space="preserve">
     <value>Indeling</value>
+  </data>
+  <data name="FooterKeyAbout" xml:space="preserve">
+    <value>Over</value>
   </data>
   <data name="FooterKeyNextTip" xml:space="preserve">
     <value>Volgende</value>

@@ -15,20 +15,9 @@ public sealed partial class HealthControl
 
     private static string Cell(string text) => string.IsNullOrEmpty(text) ? EmptyCell : text;
 
-    private static string DescribeDuration(TimeSpan duration)
-    {
-        if (duration.TotalMinutes < 1.0) {
-            return string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationSeconds, Math.Max(0, (int)duration.TotalSeconds));
-        }
-
-        return duration.TotalHours < 1.0
-            ? string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationMinutes, (int)duration.TotalMinutes)
-            : string.Format(CultureInfo.CurrentCulture, Strings.HealthDurationHoursMinutes, (int)duration.TotalHours, duration.Minutes);
-    }
-
     private static string DescribeEvent(HealthEvent healthEvent)
     {
-        string duration = healthEvent.EndUtc is { } end ? DescribeDuration(end - healthEvent.StartUtc)
+        string duration = healthEvent.EndUtc is { } end ? (end - healthEvent.StartUtc).ToDurationText()
                         : healthEvent.IsInterrupted     ? Strings.HealthEventInterrupted
                                                         : Strings.HealthEventOngoing;
 
@@ -63,9 +52,11 @@ public sealed partial class HealthControl
         DateTime time  = timeUtc.ToLocalTime();
         DateTime today = nowUtc.ToLocalTime().Date;
 
-        string format = time.Date == today                         ? "HH:mm:ss"
-                      : (today - time.Date).TotalDays < DaysPerWeek ? "ddd HH:mm"
-                                                                    : "dd MMM HH:mm";
+        string format = time.Date == today                          
+            ? "HH:mm:ss"
+            : (today - time.Date).TotalDays < DaysPerWeek 
+                ? "ddd HH:mm"
+                : "dd MMM HH:mm";
 
         return time.ToString(format, CultureInfo.CurrentCulture);
     }

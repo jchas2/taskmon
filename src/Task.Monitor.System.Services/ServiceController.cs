@@ -90,6 +90,8 @@ public sealed class ServiceController : WorkerService
     public T GetService<T>() where T : ISystemService =>
         allServices.OfType<T>().Single();
 
+    public IReadOnlyList<ServiceHealth> GetServiceHealth() => BuildServiceHealth();
+
     private void OnDeviceChanged(DeviceCategory category)
     {
         switch (category) {
@@ -152,7 +154,6 @@ public sealed class ServiceController : WorkerService
         deviceChangeNotifier.DeviceChanged += OnDeviceChanged;
         deviceChangeNotifier.Start();
 
-        // Each service logs its own start-up, from its worker, once it has actually started.
         foreach (ISystemService systemService in allServices) {
             systemService.Start();
         }

@@ -613,6 +613,165 @@ Gem det under et nyt navn.</value>
   <data name="AboutVersion" xml:space="preserve">
     <value>Version {0}</value>
   </data>
+  <data name="ServiceNameCpu" xml:space="preserve">
+    <value>CPU-måler</value>
+  </data>
+  <data name="ServiceNameMemory" xml:space="preserve">
+    <value>RAM-måler</value>
+  </data>
+  <data name="ServiceNameGpu" xml:space="preserve">
+    <value>GPU-måler</value>
+  </data>
+  <data name="ServiceNameDisk" xml:space="preserve">
+    <value>Diskmåler</value>
+  </data>
+  <data name="ServiceNameDiskSpace" xml:space="preserve">
+    <value>Diskpladsmåler</value>
+  </data>
+  <data name="ServiceNameNetwork" xml:space="preserve">
+    <value>Netværksmåler</value>
+  </data>
+  <data name="ServiceNameProcess" xml:space="preserve">
+    <value>Procesmåler</value>
+  </data>
+  <data name="ServiceNameStartup" xml:space="preserve">
+    <value>Opstartsmåler</value>
+  </data>
+  <data name="ServiceNameInstalledApps" xml:space="preserve">
+    <value>Måler for installerede apps</value>
+  </data>
+  <data name="ServiceNameWindowsServices" xml:space="preserve">
+    <value>Måler for Windows-tjenester</value>
+  </data>
+  <data name="ServiceNameLaunchdServices" xml:space="preserve">
+    <value>Måler for launchd-tjenester</value>
+  </data>
+  <data name="ServiceNameDrivers" xml:space="preserve">
+    <value>Drivermåler</value>
+  </data>
+  <data name="ServiceNameSoc" xml:space="preserve">
+    <value>SoC-måler</value>
+  </data>
+  <data name="ServiceNameThermal" xml:space="preserve">
+    <value>Temperaturmåler</value>
+  </data>
+  <data name="ServiceNamePower" xml:space="preserve">
+    <value>Strømmåler</value>
+  </data>
+  <data name="ServiceNameHealth" xml:space="preserve">
+    <value>Tilstandsmåler</value>
+  </data>
+  <data name="ServiceStatus_None" xml:space="preserve">
+    <value>Ikke startet</value>
+  </data>
+  <data name="ServiceStatus_Starting" xml:space="preserve">
+    <value>Starter</value>
+  </data>
+  <data name="ServiceStatus_Running" xml:space="preserve">
+    <value>Kører</value>
+  </data>
+  <data name="ServiceStatus_Stopping" xml:space="preserve">
+    <value>Stopper</value>
+  </data>
+  <data name="ServiceStatus_Stopped" xml:space="preserve">
+    <value>Stoppet</value>
+  </data>
+  <data name="ServiceStatus_Errored" xml:space="preserve">
+    <value>Fejl</value>
+  </data>
+  <data name="AboutSamplingEngine" xml:space="preserve">
+    <value>Task Monitors målemotor</value>
+  </data>
+  <data name="AboutSamplerStatus" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="AboutRunningAsAdministrator" xml:space="preserve">
+    <value>Kører som administrator</value>
+  </data>
+  <data name="AboutRunningAsRoot" xml:space="preserve">
+    <value>Kører som root</value>
+  </data>
+  <data name="AboutRunningAsStandardUser" xml:space="preserve">
+    <value>Kører som standardbruger</value>
+  </data>
+  <data name="AboutKeyCopy" xml:space="preserve">
+    <value>Kopiér detaljer</value>
+  </data>
+  <data name="AboutCopied" xml:space="preserve">
+    <value>Detaljer kopieret til udklipsholderen</value>
+  </data>
+  <data name="AboutCopyFailed" xml:space="preserve">
+    <value>Kunne ikke kopiere til udklipsholderen</value>
+  </data>
+  <data name="AboutSectionTerminal" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AboutSectionFiles" xml:space="preserve">
+    <value>Filer</value>
+  </data>
+  <data name="AboutLabelVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="AboutLabelRuntime" xml:space="preserve">
+    <value>Kørselsmiljø</value>
+  </data>
+  <data name="AboutLabelSystem" xml:space="preserve">
+    <value>Styresystem</value>
+  </data>
+  <data name="AboutLabelSize" xml:space="preserve">
+    <value>Størrelse</value>
+  </data>
+  <data name="AboutLabelColours" xml:space="preserve">
+    <value>Farver</value>
+  </data>
+  <data name="AboutLabelDrawing" xml:space="preserve">
+    <value>Tegning</value>
+  </data>
+  <data name="AboutLabelLanguage" xml:space="preserve">
+    <value>Sprog</value>
+  </data>
+  <data name="AboutColoursIndexed" xml:space="preserve">
+    <value>Indekseret (terminalens palet)</value>
+  </data>
+  <data name="AboutColoursTrue" xml:space="preserve">
+    <value>Fuld farve</value>
+  </data>
+  <data name="AboutColoursFromEnvironment" xml:space="preserve">
+    <value>{0}, sat af {1}</value>
+  </data>
+  <data name="AboutDrawingFull" xml:space="preserve">
+    <value>Fuld</value>
+  </data>
+  <data name="AboutDrawingSquareCorners" xml:space="preserve">
+    <value>Ældre konsol: firkantede hjørner</value>
+  </data>
+  <data name="AboutDrawingWholeCells" xml:space="preserve">
+    <value>Hele celler</value>
+  </data>
+  <data name="AboutLabelUptime" xml:space="preserve">
+    <value>Kørt i</value>
+  </data>
+  <data name="AboutLabelInterval" xml:space="preserve">
+    <value>Måleinterval</value>
+  </data>
+  <data name="AboutLabelSamples" xml:space="preserve">
+    <value>Modtagne målinger</value>
+  </data>
+  <data name="AboutLabelLastSample" xml:space="preserve">
+    <value>Seneste måling</value>
+  </data>
+  <data name="AboutAgo" xml:space="preserve">
+    <value>{0} siden</value>
+  </data>
+  <data name="AboutLabelSettings" xml:space="preserve">
+    <value>Indstillinger</value>
+  </data>
+  <data name="AboutLabelHealthHistory" xml:space="preserve">
+    <value>Tilstandshistorik</value>
+  </data>
+  <data name="AboutLabelLogs" xml:space="preserve">
+    <value>Logfiler</value>
+  </data>
   <data name="HeaderTitle" xml:space="preserve">
     <value>TASK MONITOR</value>
   </data>
@@ -693,6 +852,9 @@ Gem det under et nyt navn.</value>
   </data>
   <data name="FooterKeyLayout" xml:space="preserve">
     <value>Layout</value>
+  </data>
+  <data name="FooterKeyAbout" xml:space="preserve">
+    <value>Om</value>
   </data>
   <data name="FooterKeyNextTip" xml:space="preserve">
     <value>Næste</value>

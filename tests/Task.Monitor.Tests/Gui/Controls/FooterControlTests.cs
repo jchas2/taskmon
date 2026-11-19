@@ -21,7 +21,7 @@ public sealed class FooterControlTests : IDisposable
 
     private FooterControl? control;
 
-    private const string KeyHintsText = "F1 Help   F2 Setup   F3 Theme   F4 Layout   F10 Exit";
+    private const string KeyHintsText = "F1 Help   F2 Setup   F3 Theme   F4 Layout   F10 Exit   F12 About";
     private const string OrangeGlyph  = "38;2;255;165;0m  ●";
 
     public FooterControlTests(ITestOutputHelper outputHelper)
@@ -295,7 +295,6 @@ public sealed class FooterControlTests : IDisposable
 
         theme.StatusbarBannerBackground = Color.FromArgb(1, 1, 1);
         theme.StatusbarBannerForeground = Color.FromArgb(2, 2, 2);
-        theme.StatusbarStatusForeground = Color.FromArgb(3, 3, 3);
         theme.StatusbarStatusOk         = Color.FromArgb(4, 4, 4);
         theme.StatusbarStatusWarning    = Color.FromArgb(5, 5, 5);
         theme.StatusbarStatusError      = Color.FromArgb(6, 6, 6);
@@ -326,6 +325,7 @@ public sealed class FooterControlTests : IDisposable
         Assert.Contains("F1 Help   F2 Setup   F10 Exit", text);
         Assert.DoesNotContain("F3 Theme", text);
         Assert.DoesNotContain("F4 Layout", text);
+        Assert.DoesNotContain("F12 About", text);
         Assert.True(text.Length <= 95);
     }
 
