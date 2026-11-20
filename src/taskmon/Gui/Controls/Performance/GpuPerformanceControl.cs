@@ -25,8 +25,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 #endif
 
     private readonly AppConfig appConfig;
-
-    private readonly Lock @lock = new();
     
     private Chart    gpuChart;
     private Chart    gpuDedicatedMemChart;
@@ -37,15 +35,18 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     private double? temperature;
     private double? powerWatts;
-    private long?   scopedAdapterLuid;
 
 #if __APPLE__
     private SocMetrics? socMetrics;
 #endif
 
-    public GpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
+    public GpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig, long? adapterLuid = null) : base(terminal)
     {
         this.appConfig = appConfig;
+
+        AdapterLuid = adapterLuid;
+        Spark       = new Chart(terminal) { AutoScale = false, CustomYAxisScaleFormatter = Chart.FormatYScalePercentage };
+        Title       = Strings.PerformanceGpu;
 
         gpuChart             = new Chart(terminal);
         gpuDedicatedMemChart = new Chart(terminal);
@@ -89,70 +90,71 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
+    // Without an adapter it shows every GPU together.
+    public long? AdapterLuid { get; }
+
     protected override void OnDraw()
     {
-        lock (@lock) {
-            if (gpuInfo == null) {
-                return;
-            }
-
-            (GpuDeviceMetrics? device, GpuDevice? deviceSpec, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            string utilLabel = deviceSpec?.ToDisplayName() ?? Strings.PerformanceGpu;
-            string utilText  = device?.ToGpuPercentage() ?? gpuInfo.Metrics.ToGpuPercentage();
-
-            string dedicatedText = device != null
-                ? device.ToGpuMemoryPercentage()
-                : gpuInfo.Metrics.ToGpuMemoryPercentage();
-
-            string combinedText = device != null
-                ? device.ToCombinedGpuMemoryPercentage()
-                : gpuInfo.Metrics.ToCombinedGpuMemoryPercentage();
-
-            gpuChart.Text = temperature is { } gpuTemp
-                ? $"{utilLabel} {utilText}   ·   {gpuTemp.ToTemperatureText()}"
-                : $"{utilLabel} {utilText}";
-            
-            gpuChart.Draw();
-
-            gpuDedicatedMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDedicatedGpuMemoryChart, dedicatedText);
-            gpuDedicatedMemChart.Draw();
-
-            gpuMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuMemoryChart, combinedText);
-            gpuMemChart.Draw();
-
-            gpuMetricsListView.Items[0].SubItems[0].Text = utilText;
-            gpuMetricsListView.Items[0].SubItems[1].Text = device?.ToGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToGpuMemoryRatioFormattedBytes();
-            gpuMetricsListView.Items[0].SubItems[2].Text = device?.ToCombinedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatioFormattedBytes();
-            gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
-            gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
-#if __APPLE__
-            gpuMetricsListView.Items[0].SubItems[5].Text = socMetrics?.ToGpuFrequencyText() ?? Strings.CommonNotAvailable;
-            gpuMetricsListView.Items[0].SubItems[6].Text = socMetrics?.ToGpuLimitText() ?? Strings.CommonNotAvailable;
-#endif
-            gpuMetricsListView.Draw();
-
-            GpuDevice? specRows = scopedAdapterLuid is null
-                ? gpuInfo.Specs.Devices.FirstOrDefault()
-                : deviceSpec;
-
-            gpuSpecsListView.Items[0].SubItems[1].Text = specRows?.Vendor        ?? GpuDeviceParser.NotAvailable;
-            gpuSpecsListView.Items[1].SubItems[1].Text = specRows?.Description   ?? GpuDeviceParser.NotAvailable;
-            gpuSpecsListView.Items[2].SubItems[1].Text = specRows?.AdapterType   ?? GpuDeviceParser.NotAvailable;
-#if __APPLE__
-            gpuSpecsListView.Items[3].SubItems[1].Text = gpuInfo.Specs.GpuCores > 0 ? gpuInfo.Specs.GpuCores.ToString() : GpuDeviceParser.NotAvailable;
-            gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
-            gpuSpecsListView.Items[5].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
-#else
-            gpuSpecsListView.Items[3].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
-            gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
-#endif
-            gpuSpecsListView.Draw();
+        if (gpuInfo == null) {
+            return;
         }
+
+        (GpuDeviceMetrics? device, GpuDevice? deviceSpec, bool render) = ResolveScope();
+
+        if (!render) {
+            return;
+        }
+
+        string utilLabel = deviceSpec?.ToDisplayName() ?? Strings.PerformanceGpu;
+        string utilText  = device?.ToGpuPercentage() ?? gpuInfo.Metrics.ToGpuPercentage();
+
+        string dedicatedText = device != null
+            ? device.ToGpuMemoryPercentage()
+            : gpuInfo.Metrics.ToGpuMemoryPercentage();
+
+        string combinedText = device != null
+            ? device.ToCombinedGpuMemoryPercentage()
+            : gpuInfo.Metrics.ToCombinedGpuMemoryPercentage();
+
+        gpuChart.Text = temperature is { } gpuTemp
+            ? $"{utilLabel} {utilText}   ·   {gpuTemp.ToTemperatureText()}"
+            : $"{utilLabel} {utilText}";
+        
+        gpuChart.Draw();
+
+        gpuDedicatedMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDedicatedGpuMemoryChart, dedicatedText);
+        gpuDedicatedMemChart.Draw();
+
+        gpuMemChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuMemoryChart, combinedText);
+        gpuMemChart.Draw();
+
+        gpuMetricsListView.Items[0].SubItems[0].Text = utilText;
+        gpuMetricsListView.Items[0].SubItems[1].Text = device?.ToGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToGpuMemoryRatioFormattedBytes();
+        gpuMetricsListView.Items[0].SubItems[2].Text = device?.ToCombinedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatioFormattedBytes();
+        gpuMetricsListView.Items[0].SubItems[3].Text = device?.ToSharedGpuMemoryRatioFormattedBytes() ?? gpuInfo.Metrics.ToSharedGpuMemoryRatioFormattedBytes();
+        gpuMetricsListView.Items[0].SubItems[4].Text = powerWatts.ToWattText();
+#if __APPLE__
+        gpuMetricsListView.Items[0].SubItems[5].Text = socMetrics?.ToGpuFrequencyText() ?? Strings.CommonNotAvailable;
+        gpuMetricsListView.Items[0].SubItems[6].Text = socMetrics?.ToGpuLimitText() ?? Strings.CommonNotAvailable;
+#endif
+        gpuMetricsListView.Draw();
+
+        GpuDevice? specRows = AdapterLuid is null
+            ? gpuInfo.Specs.Devices.FirstOrDefault()
+            : deviceSpec;
+
+        gpuSpecsListView.Items[0].SubItems[1].Text = specRows?.Vendor        ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[1].SubItems[1].Text = specRows?.Description   ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[2].SubItems[1].Text = specRows?.AdapterType   ?? GpuDeviceParser.NotAvailable;
+#if __APPLE__
+        gpuSpecsListView.Items[3].SubItems[1].Text = gpuInfo.Specs.GpuCores > 0 ? gpuInfo.Specs.GpuCores.ToString() : GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[5].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+#else
+        gpuSpecsListView.Items[3].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+#endif
+        gpuSpecsListView.Draw();
     }
 
     protected override void OnLoad()
@@ -235,8 +237,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
         gpuMetricsListView.ColumnHeaders[3].Width = 22;
         gpuMetricsListView.ColumnHeaders[4].Width = 12;
 #if __APPLE__
-        // Unified memory: the dedicated and shared figures repeat GPU Memory, so they make way for
-        // the clock and throttling columns.
         gpuMetricsListView.ColumnHeaders[1].Width = 0;
         gpuMetricsListView.ColumnHeaders[3].Width = 0;
         gpuMetricsListView.ColumnHeaders[5].Width = 12;
@@ -273,7 +273,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             return null;
         }
 
-        if (scopedAdapterLuid is { } luid) {
+        if (AdapterLuid is { } luid) {
             return power.Metrics.GpuPower(luid);
         }
 
@@ -290,7 +290,7 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     private (GpuDeviceMetrics? device, GpuDevice? spec, bool render) ResolveScope()
     {
-        if (scopedAdapterLuid is not { } luid) {
+        if (AdapterLuid is not { } luid) {
             return (null, null, true);
         }
 
@@ -302,32 +302,45 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 
     public void Sample(SystemSnapshot snapshot)
     {
-        lock (@lock) {
-            if (snapshot.Gpu == null) {
-                return;
-            }
+        if (snapshot.Gpu == null) {
+            return;
+        }
 
-            gpuInfo = snapshot.Gpu;
-            
-            temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
-                ThermalComponent.Gpu, scopedAdapterLuid?.ToString());
-            
-            powerWatts = ResolvePower(snapshot);
+        gpuInfo = snapshot.Gpu;
+        
+        temperature = snapshot.Thermal?.Metrics.PrimaryTemperature(
+            ThermalComponent.Gpu, AdapterLuid?.ToString());
+        
+        powerWatts = ResolvePower(snapshot);
 #if __APPLE__
-            socMetrics = snapshot.Soc?.Metrics;
+        socMetrics = snapshot.Soc?.Metrics;
 #endif
 
-            (GpuDeviceMetrics? device, _, bool render) = ResolveScope();
+        (GpuDeviceMetrics? device, GpuDevice? spec, bool render) = ResolveScope();
 
-            if (!render) {
-                return;
-            }
-
-            gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
-            gpuDedicatedMemChart.AddData(device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
-            gpuMemChart.AddData(device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
+        if (!render) {
+            return;
         }
+
+        if (device is null) {
+            Summary = (gpuInfo.Metrics.ToGpuPercentage(),
+                       string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuCores, gpuInfo.Specs.GpuCores));
+        }
+        else {
+            Title   = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuPanel, device.Index);
+            Summary = (temperature is { } celsius ? $"{device.ToGpuPercentage()} ({celsius.ToTemperatureText()})" : device.ToGpuPercentage(),
+                       device.ToGpuMemoryRatioFormattedBytes());
+        }
+
+        gpuChart.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
+        gpuDedicatedMemChart.AddData(device?.ToGpuMemoryRatio() ?? gpuInfo.Metrics.ToGpuMemoryRatio());
+        gpuMemChart.AddData(device?.ToCombinedGpuMemoryRatio() ?? gpuInfo.Metrics.ToCombinedGpuMemoryRatio());
+        Spark.AddData(device?.GpuPercentTime ?? gpuInfo.Metrics.GpuPercentTime);
     }
 
-    public void SetScope(long? adapterLuid) => scopedAdapterLuid = adapterLuid;
+    public Chart Spark { get; }
+
+    public (string Top, string Bottom) Summary { get; private set; } = (string.Empty, string.Empty);
+
+    public string Title { get; private set; }
 }

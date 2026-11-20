@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.System.Configuration;
@@ -697,17 +698,19 @@ control.foreground=#abcdef
         AppConfig appConfig = new(fileSystem.Object);
         LayoutTree<SummaryPane> tree = appConfig.Layouts.Single(l => l.Name == "All Charts").ToTree();
 
-        LayoutRenderer renderer = new();
-        renderer.Layout(tree, new Dictionary<int, Task.Monitor.System.Controls.Control>(), 0, 0, 120, 40);
+        RunContext      runContext = new RunContextHelper().GetRunContext();
+        SummaryControl2 summary    = new(runContext.ServiceController, runContext.Terminal, appConfig, tree) { Width = 120, Height = 40 };
+
+        summary.Resize();
 
         List<Rectangle> charts = tree.Panes()
             .Where(p => p.Pane.ControlType != PaneControlType.Process)
-            .Select(p => renderer.PaneBounds[p.Id])
+            .Select(p => summary.PaneBounds[p.Id])
             .ToList();
 
         Assert.All(charts, r => Assert.Equal(new Size(30, 12), r.Size));
 
-        Rectangle process = renderer.PaneBounds[tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Id];
+        Rectangle process = summary.PaneBounds[tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Id];
         Assert.Equal(new Rectangle(0, 24, 120, 16), process);
     }
 

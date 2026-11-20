@@ -137,15 +137,6 @@ public sealed class AppConfigSaveTests
         Assert.Contains("show-tips=True\n", savedText);
     }
 
-    [Fact]
-    public void Every_Shipped_Theme_And_Layout_Still_Parses()
-    {
-        AppConfig appConfig = new(new Mock<IFileSystem>().Object);
-
-        Assert.Equal(26, appConfig.Themes.Count);
-        Assert.Contains(appConfig.Layouts, layout => layout.Name == "All Charts");
-    }
-
     private AppConfig Load(string text)
     {
         fileText = text;

@@ -7,11 +7,12 @@ namespace Task.Monitor.Gui.Controls.Mascot;
 
 public sealed class MascotAnimation
 {
-    internal const char TransparentPixel = '.';
+    private const char TransparentPixel = '.';
 
     private const string ResourceSuffix = ".Assets.Mascot.Mascot.anim";
 
-    private readonly Dictionary<string, MascotFrame>               frames;
+    private readonly Dictionary<string, string[]>                  frames;
+    private readonly Dictionary<char, Color>                       palette;
     private readonly Dictionary<string, IReadOnlyList<MascotStep>> timelines;
 
     private sealed class Section(int line)
@@ -20,22 +21,32 @@ public sealed class MascotAnimation
         public List<(string Text, int Line)>      Lines { get; } = [];
     }
 
+    private enum SectionKind
+    {
+        Palette,
+        Frame,
+        Timeline,
+        Idle
+    }
+
     private MascotAnimation(
-        Dictionary<string, MascotFrame>               frames,
+        Dictionary<string, string[]>                  frames,
+        Dictionary<char, Color>                       palette,
         Dictionary<string, IReadOnlyList<MascotStep>> timelines,
         MascotIdle?                                   idle)
     {
         this.frames    = frames;
+        this.palette   = palette;
         this.timelines = timelines;
         Idle           = idle;
 
-        MascotFrame first = frames.Values.First();
+        string[] first = frames.Values.First();
 
-        Width  = first.Width;
-        Height = first.Height;
+        Width  = first[0].Length;
+        Height = first.Length / 2;
     }
 
-    private static Dictionary<string, MascotFrame> BuildFrames(
+    private static Dictionary<string, string[]> BuildFrames(
         Dictionary<string, Section> frameSections,
         Dictionary<char, Color>     palette,
         int                         lastLine)
@@ -45,15 +56,18 @@ public sealed class MascotAnimation
         }
 
         Section sizing = frameSections.Values.First();
-        int     width  = sizing.Lines.Count > 0 ? sizing.Lines[0].Text.Length : 0;
-        int     height = sizing.Lines.Count;
+        
+        int width  = sizing.Lines.Count > 0 
+            ? sizing.Lines[0].Text.Length 
+            : 0;
+        
+        int height = sizing.Lines.Count;
 
-        Dictionary<string, MascotFrame> frames = new(StringComparer.Ordinal);
+        Dictionary<string, string[]> frames = new(StringComparer.Ordinal);
 
         foreach ((string name, Section section) in frameSections) {
             if (height == 0 || height % 2 != 0 || section.Lines.Count != height) {
-                throw Error(section.Line,
-                    $"frame '{name}' has {section.Lines.Count} pixel rows; every frame needs the same, even, non-zero number");
+                throw Error(section.Line, $"frame '{name}' has {section.Lines.Count} pixel rows; every frame needs the same, even, non-zero number");
             }
 
             foreach ((string row, int line) in section.Lines) {
@@ -68,14 +82,13 @@ public sealed class MascotAnimation
                 }
             }
 
-            frames[name] = MascotFrame.FromPixels(
-                section.Lines.Select(entry => entry.Text).ToList(), palette);
+            frames[name] = [.. section.Lines.Select(entry => entry.Text)];
         }
 
         return frames;
     }
 
-    private static List<MascotStep> BuildTimeline(string name, Section section, Dictionary<string, MascotFrame> frames)
+    private static List<MascotStep> BuildTimeline(string name, Section section, Dictionary<string, string[]> frames)
     {
         if (section.Lines.Count == 0) {
             throw Error(section.Line, $"timeline '{name}' has no steps");
@@ -131,7 +144,7 @@ public sealed class MascotAnimation
 
     public IReadOnlyCollection<string> FrameNames => frames.Keys;
 
-    public MascotFrame GetFrame(string name) => frames[name];
+    public IReadOnlyList<string> GetFrame(string name) => frames[name];
 
     public IReadOnlyList<MascotStep> GetTimeline(string name) => timelines[name];
 
@@ -150,9 +163,13 @@ public sealed class MascotAnimation
     }
 
     private static int Number(string field, int line, int minimum) =>
-        int.TryParse(field, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int value) && value >= minimum
-            ? value
-            : throw Error(line, $"'{field}' is not a valid number here");
+        int.TryParse(
+            field, 
+            NumberStyles.AllowLeadingSign, 
+            CultureInfo.InvariantCulture, 
+            out int value) && value >= minimum
+                ? value
+                : throw Error(line, $"'{field}' is not a valid number here");
 
     public static MascotAnimation Parse(string text)
     {
@@ -161,7 +178,7 @@ public sealed class MascotAnimation
         Dictionary<string, Section> timeline = new(StringComparer.Ordinal);
         Section?                    idle     = null;
         Section?                    current  = null;
-        string                      kind     = string.Empty;
+        SectionKind?                kind     = null;
         int                         line     = 0;
 
         foreach (string raw in text.Split('\n')) {
@@ -178,22 +195,22 @@ public sealed class MascotAnimation
                 (kind, string? name) = ParseHeader(content, line);
 
                 current = kind switch {
-                    "frame"    => frames.TryAdd(name!, new Section(line))
+                    SectionKind.Frame    => frames.TryAdd(name!, new Section(line))
                         ? frames[name!]
                         : throw Error(line, $"frame '{name}' is defined twice"),
-                    "timeline" => timeline.TryAdd(name!, new Section(line))
+                    SectionKind.Timeline => timeline.TryAdd(name!, new Section(line))
                         ? timeline[name!]
                         : throw Error(line, $"timeline '{name}' is defined twice"),
-                    "idle"     => idle is null
+                    SectionKind.Idle     => idle is null
                         ? idle = new Section(line)
                         : throw Error(line, "[idle] is defined twice"),
-                             _ => null
+                                       _ => null
                 };
 
                 continue;
             }
 
-            if (kind == "palette") {
+            if (kind == SectionKind.Palette) {
                 ParsePaletteEntry(content, line, palette);
             }
             else if (current is not null) {
@@ -204,40 +221,56 @@ public sealed class MascotAnimation
             }
         }
 
-        Dictionary<string, MascotFrame> built = BuildFrames(frames, palette, line);
+        Dictionary<string, string[]> built = BuildFrames(frames, palette, line);
 
         return new MascotAnimation(
             built,
+            palette,
             timeline.ToDictionary(
                 pair => pair.Key,
                 pair => (IReadOnlyList<MascotStep>)BuildTimeline(pair.Key, pair.Value, built),
                 StringComparer.Ordinal),
-            idle is null ? null : ParseIdle(idle, built));
+            idle is null 
+                ? null 
+                : ParseIdle(idle, built));
     }
 
-    private static (string Kind, string? Name) ParseHeader(string content, int line)
+    private static (SectionKind Kind, string? Name) ParseHeader(string content, int line)
     {
         if (content[^1] != ']') {
             throw Error(line, "section header is missing its ']'");
         }
 
         string[] parts = content[1..^1].Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        string   kind  = parts.Length > 0 ? parts[0] : string.Empty;
-        string?  name  = parts.Length > 1 ? parts[1] : null;
-        bool     named = kind is "frame" or "timeline";
 
-        if (kind is not ("palette" or "frame" or "timeline" or "idle")) {
-            throw Error(line, $"unknown section '[{kind}]'");
-        }
+        string word  = parts.Length > 0
+            ? parts[0]
+            : string.Empty;
+
+        string? name = parts.Length > 1
+            ? parts[1]
+            : null;
+
+        SectionKind kind = word switch {
+            "palette"  => SectionKind.Palette,
+            "frame"    => SectionKind.Frame,
+            "timeline" => SectionKind.Timeline,
+            "idle"     => SectionKind.Idle,
+                     _ => throw Error(line, $"unknown section '[{word}]'")
+        };
+
+        bool named = kind is SectionKind.Frame or SectionKind.Timeline;
 
         if (named != (name is not null)) {
-            throw Error(line, named ? $"[{kind}] needs a name" : $"[{kind}] doesn't take a name");
+            throw Error(line, named
+                ? $"[{word}] needs a name"
+                : $"[{word}] doesn't take a name");
         }
 
         return (kind, name);
     }
 
-    private static MascotIdle ParseIdle(Section section, Dictionary<string, MascotFrame> frames)
+    private static MascotIdle ParseIdle(Section section, Dictionary<string, string[]> frames)
     {
         if (section.Lines.Count != 1) {
             throw Error(section.Line, "[idle] takes a single line");
@@ -245,8 +278,13 @@ public sealed class MascotAnimation
 
         (string text, int line) = section.Lines[0];
 
-        string[]   fields = Fields(text, 4, line, "frame, ms, every and extra");
-        MascotIdle idle   = new(
+        string[] fields = Fields(
+            text, 
+            4, 
+            line, 
+            "frame, ms, every and extra");
+        
+        MascotIdle idle = new(
             fields[0],
             Number(fields[1], line, minimum: 1),
             Number(fields[2], line, minimum: 0),
@@ -276,5 +314,18 @@ public sealed class MascotAnimation
         }
     }
 
+    public Color PixelColour(char pixel) =>
+        pixel == TransparentPixel 
+            ? ConsolePalette.Transparent 
+            : palette[pixel];
+
     public int Width { get; }
 }
+
+public sealed record MascotStep(string Frame, int Milliseconds, int OffsetX);
+
+public sealed record MascotIdle(
+    string Frame, 
+    int    Milliseconds, 
+    int    Every, 
+    int    Extra);

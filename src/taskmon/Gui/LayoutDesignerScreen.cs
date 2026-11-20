@@ -3,6 +3,7 @@ using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Processes;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Resources;
 using Task.Monitor.System.Controls;
@@ -37,7 +38,6 @@ public sealed class LayoutDesignerScreen : Screen
         .Except(UnavailableControlTypes)
         .ToArray();
 
-    // TODO: Dup of SetupScreen's ToggleableColumns table. Need a CommonControl functions class.
     // Each label is the column's Statistics_<member> entry in Strings.resx.
     private static readonly Statistics[] ToggleableColumns =
     [
@@ -61,8 +61,7 @@ public sealed class LayoutDesignerScreen : Screen
     ];
 
     private readonly RunContext                 runContext;
-    private readonly LayoutRenderer             renderer           = new();
-    private readonly Dictionary<int, Control>   paneControls       = new();
+    private readonly SummaryControl2            summary;
     private readonly PickerBoxControl           controlTypePicker;
     private readonly PickerBoxControl           columnPicker;
     private readonly TextInputDialogControl     saveDialog;
@@ -98,26 +97,15 @@ public sealed class LayoutDesignerScreen : Screen
         CommonControl.Text(saveDialog);
         CommonControl.Text(messageBox);
 
-        RebuildPaneControls();
-    }
+        summary = new SummaryControl2(runContext.ServiceController, runContext.Terminal, runContext.AppConfig, tree);
+        Controls.Add(summary);
 
-    private void AddPaneControl(int paneId)
-    {
-        Control control = SummaryPaneControlFactory.Create(tree.Nodes[paneId].Pane!, runContext.ServiceController, Terminal, runContext.AppConfig);
-        control.TabStop = false;
-
-        paneControls[paneId] = control;
-        Controls.Add(control);
-        SummaryPaneTheme.Apply(control, runContext.AppConfig);
-
-        if (isLoaded) {
-            control.Load();
-        }
+        selectedNodeId = tree.Panes().First().Id;
     }
 
     private void AdjustSelectedRatio(float delta)
     {
-        if (LayoutRenderer.FindResizableSplit(tree, paneControls, selectedNodeId) is not { } split) {
+        if (summary.FindResizableSplit(selectedNodeId) is not { } split) {
             return;
         }
 
@@ -125,19 +113,13 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        Relayout();
+        summary.Resize();
         Draw();
     }
 
     internal void AssignSelectedPaneControlTypeForTests(PaneControlType newType) =>
         ReassignSelectedPaneControlType(newType);
 
-    private int ContentHeight => Math.Max(0, Height - BannerHeight - FooterHeight);
-
-    // private void ApplyTheme(Control control) =>
-    //     SummaryPaneTheme.Apply(control, runContext.AppConfig);
-
-    private int ContentY => Y + BannerHeight;
 
     private void DrawBanner()
     {
@@ -166,10 +148,48 @@ public sealed class LayoutDesignerScreen : Screen
         Terminal.WriteEmptyLineTo(Math.Max(0, Width - shown.Length));
     }
 
+    internal static int? FindNearest(IReadOnlyDictionary<int, Rectangle> paneBounds, int fromId, ConsoleKey arrow)
+    {
+        if (!paneBounds.TryGetValue(fromId, out Rectangle from)) {
+            return null;
+        }
+
+        int? bestId      = null;
+        long bestGap     = long.MaxValue;
+        long bestOverlap = 0;
+
+        foreach ((int id, Rectangle to) in paneBounds) {
+            long overlapX = Math.Min(from.Right, to.Right) - Math.Max(from.Left, to.Left);
+            long overlapY = Math.Min(from.Bottom, to.Bottom) - Math.Max(from.Top, to.Top);
+
+            (long gap, long overlap) = arrow switch {
+                ConsoleKey.LeftArrow  => ((long)from.Left - to.Right, overlapY),
+                ConsoleKey.RightArrow => ((long)to.Left - from.Right, overlapY),
+                ConsoleKey.UpArrow    => ((long)from.Top - to.Bottom, overlapX),
+                                    _ => ((long)to.Top - from.Bottom, overlapX)
+            };
+
+            if (id == fromId || gap < 0 || overlap <= 0) {
+                continue;
+            }
+
+            if (gap < bestGap || (gap == bestGap && overlap > bestOverlap)) {
+                bestId      = id;
+                bestGap     = gap;
+                bestOverlap = overlap;
+            }
+        }
+
+        return bestId;
+    }
+
     private int FirstPaneUnder(int nodeId)
     {
         LayoutNode<SummaryPane> node = tree.Nodes[nodeId];
-        return node.IsSplit ? FirstPaneUnder(node.FirstId) : nodeId;
+        
+        return node.IsSplit 
+            ? FirstPaneUnder(node.FirstId) 
+            : nodeId;
     }
 
     private void HighlightSubtree(Control control)
@@ -184,11 +204,9 @@ public sealed class LayoutDesignerScreen : Screen
 
     internal string? LayoutName => layoutName;
 
-    private void MoveSelection(SpatialDirection direction)
+    private void MoveSelection(ConsoleKey arrow)
     {
-        int? nextId = SpatialNavigation.FindNearest(renderer.PaneBounds, selectedNodeId, direction);
-
-        if (nextId is not { } id) {
+        if (FindNearest(summary.PaneBounds, selectedNodeId, arrow) is not { } id) {
             return;
         }
 
@@ -220,7 +238,7 @@ public sealed class LayoutDesignerScreen : Screen
 
             SelectedPane = SelectedPane with { ProcessColumns = columns };
 
-            if (paneControls[selectedNodeId] is ProcessControl processControl) {
+            if (summary.PaneControls[selectedNodeId] is ProcessControl processControl) {
                 processControl.VisibleColumnsOverride = columns;
                 processControl.Resize();
             }
@@ -253,11 +271,7 @@ public sealed class LayoutDesignerScreen : Screen
     protected override void OnDraw()
     {
         DrawBanner();
-
-        foreach (Control control in paneControls.Values) {
-            control.Draw();
-        }
-
+        summary.Draw();
         DrawFooter();
 
         if (controlTypePicker.Visible) {
@@ -302,7 +316,7 @@ public sealed class LayoutDesignerScreen : Screen
             return;
         }
 
-        // On macOS the unshifted +/= key arrives as '=' with no ConsoleKey.
+        // On macOS the unshifted +/= key is '=' with no ConsoleKey.
         if (keyInfo.KeyChar == '=') {
             AdjustSelectedRatio(RatioStep);
             handled = true;
@@ -311,22 +325,10 @@ public sealed class LayoutDesignerScreen : Screen
 
         switch (keyInfo.Key) {
             case ConsoleKey.LeftArrow:
-                MoveSelection(SpatialDirection.Left);
-                handled = true;
-                break;
-
             case ConsoleKey.RightArrow:
-                MoveSelection(SpatialDirection.Right);
-                handled = true;
-                break;
-
             case ConsoleKey.DownArrow:
-                MoveSelection(SpatialDirection.Down);
-                handled = true;
-                break;
-
             case ConsoleKey.UpArrow:
-                MoveSelection(SpatialDirection.Up);
+                MoveSelection(keyInfo.Key);
                 handled = true;
                 break;
 
@@ -390,12 +392,9 @@ public sealed class LayoutDesignerScreen : Screen
         saveDialog.Load();
         messageBox.Load();
 
-        foreach (Control control in paneControls.Values) {
-            SummaryPaneTheme.Apply(control, runContext.AppConfig);
-        }
-
         isLoaded = true;
 
+        // Loads and themes all panes.
         base.OnLoad();
         RefreshSelectionHighlight();
 
@@ -419,7 +418,11 @@ public sealed class LayoutDesignerScreen : Screen
 
     protected override void OnResize()
     {
-        Relayout();
+        summary.X      = X;
+        summary.Y      = Y + BannerHeight;
+        summary.Width  = Width;
+        summary.Height = Math.Max(0, Height - BannerHeight - FooterHeight);
+
         base.OnResize();
     }
 
@@ -448,12 +451,6 @@ public sealed class LayoutDesignerScreen : Screen
     {
         lock (DrawingLock) {
             RefreshSelectionHighlight();
-            
-            SummaryChartFeeder.Feed(
-                tree, 
-                paneControls, 
-                e.Snapshot, 
-                runContext.AppConfig);
         }
     }
     
@@ -476,10 +473,12 @@ public sealed class LayoutDesignerScreen : Screen
 
     public void Open(LayoutTree<SummaryPane> newTree, string? existingName)
     {
-        tree       = newTree;
-        layoutName = existingName;
-        
-        RebuildPaneControls();
+        tree           = newTree;
+        layoutName     = existingName;
+        selectedNodeId = tree.Panes().First().Id;
+
+        summary.Show(tree);
+        RefreshSelectionHighlight();
     }
 
     private void OpenColumnPicker()
@@ -533,30 +532,9 @@ public sealed class LayoutDesignerScreen : Screen
             ? SelectedPane with { ControlType = newType }
             : new SummaryPane(newType);
 
-        RemovePaneControl(selectedNodeId);
-        AddPaneControl(selectedNodeId);
+        summary.Show(tree);
         RefreshSelectionHighlight();
-        Relayout();
-    }
-
-    private void RebuildPaneControls()
-    {
-        if (isLoaded) {
-            foreach (Control control in paneControls.Values) {
-                control.Unload();
-            }
-        }
-
-        Controls.Clear();
-        paneControls.Clear();
-        highlightedBorders.Clear();
-
-        foreach ((int paneId, _) in tree.Panes()) {
-            AddPaneControl(paneId);
-        }
-
-        selectedNodeId = tree.Panes().First().Id;
-        RefreshSelectionHighlight();
+        summary.Resize();
     }
 
     private void RefreshSelectionHighlight()
@@ -567,65 +545,31 @@ public sealed class LayoutDesignerScreen : Screen
 
         highlightedBorders.Clear();
 
-        if (!isLoaded || !paneControls.TryGetValue(selectedNodeId, out Control? selected)) {
+        if (!isLoaded || !summary.PaneControls.TryGetValue(selectedNodeId, out Control? selected)) {
             return;
         }
 
         HighlightSubtree(selected);
     }
 
-    private void Relayout() =>
-        renderer.Layout(tree, paneControls, X, ContentY, Width, ContentHeight);
-
-    private void RemovePaneControl(int paneId)
-    {
-        if (!paneControls.Remove(paneId, out Control? control)) {
-            return;
-        }
-
-        if (isLoaded) {
-            control.Unload();
-        }
-
-        Controls.Remove(control);
-    }
-
     private void RemoveSelectedPane()
     {
         int? parentId = tree.FindParentSplitId(selectedNodeId);
 
+        // The selected pane is the root - nothing to merge into.
         if (parentId is not { } pid) {
-            // The selected pane is the root - nothing to merge into.
             return;
         }
-
-        LayoutNode<SummaryPane> parent = tree.Nodes[pid];
-        
-        int siblingId       = parent.FirstId == selectedNodeId ? parent.SecondId : parent.FirstId;
-        bool siblingWasLeaf = !tree.Nodes[siblingId].IsSplit;
-        
-        paneControls.TryGetValue(siblingId, out Control? siblingControl);
 
         if (!tree.Remove(selectedNodeId)) {
             return;
         }
 
-        RemovePaneControl(selectedNodeId);
-
-        if (siblingWasLeaf) {
-            paneControls.Remove(siblingId);
-
-            if (siblingControl != null) {
-                paneControls[pid] = siblingControl;
-            }
-            else {
-                AddPaneControl(pid);
-            }
-        }
+        summary.Show(tree);
 
         selectedNodeId = FirstPaneUnder(pid);
         RefreshSelectionHighlight();
-        Relayout();
+        summary.Resize();
         Draw();
     }
 
@@ -633,7 +577,7 @@ public sealed class LayoutDesignerScreen : Screen
     {
         Control.RedrawEnabled = false;
 
-        saveDialog.Width = Math.Clamp(Width - 4, 30, 50);
+        saveDialog.Width  = Math.Clamp(Width - 4, 30, 50);
         saveDialog.Height = TextInputDialogControl.PreferredHeight;
         saveDialog.X      = X + Math.Max(0, (Width - saveDialog.Width) / 2);
         saveDialog.Y      = Y + Math.Max(0, (Height - saveDialog.Height) / 2);
@@ -691,17 +635,15 @@ public sealed class LayoutDesignerScreen : Screen
 
     private void SplitSelectedPane(Orientation orientation)
     {
-        (int firstId, int secondId) = tree.Split(selectedNodeId, orientation, SummaryPane.Empty);
+        (_, int secondId) = tree.Split(selectedNodeId, orientation, SummaryPane.Empty);
 
-        RemovePaneControl(selectedNodeId);
-        AddPaneControl(firstId);
-        AddPaneControl(secondId);
+        summary.Show(tree);
 
         // The new empty pane, ready to be assigned straight away.
         selectedNodeId = secondId;
 
         RefreshSelectionHighlight();
-        Relayout();
+        summary.Resize();
         Draw();
     }
 

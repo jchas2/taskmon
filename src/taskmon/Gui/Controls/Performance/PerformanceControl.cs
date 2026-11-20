@@ -1,47 +1,30 @@
-using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
-using Task.Monitor.Extensions;
-using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Services;
-using Task.Monitor.System.Services.Disk;
-using Task.Monitor.System.Services.Gpu;
-using Task.Monitor.System.Services.Network;
 using Task.Monitor.System.Services.Npu;
 
 namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class PerformanceControl : Control
 {
+    private const int EntryHeight    = 7;
+    private const int MaxColumnWidth = 42;
+    private const int SparkWidth     = 14;
+
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
+    private readonly AnsiScreenBuffer  frame = new();
 
-    private readonly Dictionary<string, Chart>   chartCache  = new();
-    private readonly Dictionary<string, Control> detailCache = new();
-    private readonly AnsiScreenBuffer            scrollFrame = new();
+    private List<Control> details = [];
+    private Control       selected;
 
-    private List<PerformancePanelControl> panelControls;
-    private PerformancePanelControl       activeControl;
-    
-    private bool loaded;
-
-    private int scrollOffset      = 0;
-    private int panelColumnWidth  = 0;
-    private int visiblePanelCount = 0;
-
-    private const int    PanelHeight = 7;
-
-    private const string KeyCpu      = "cpu";
-    private const string KeyMemory   = "memory";
-    private const string KeyGpu      = "gpu";
-    private const string KeyNpu      = "npu";
-    private const string KeyDisk     = "disk";
-    private const string KeyNetwork  = "net";
+    private int columnWidth;
+    private int scrollOffset;
+    private int visibleCount;
 
     public PerformanceControl(
         ServiceController serviceController,
@@ -51,589 +34,289 @@ public sealed class PerformanceControl : Control
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
 
-        panelControls = AddAllPanels(snapshot: null);
-        AttachPanels();
+        details  = DetailsFor(snapshot: null);
+        selected = details[0];
 
-        activeControl = panelControls[0];
-        activeControl.IsSelected = true;
-    }
-
-    private List<PerformancePanelControl> AddAllPanels(SystemSnapshot? snapshot)
-    {
-        List<PerformancePanelControl> panels = new();
-
-        panels.Add(MakePanel(
-            KeyCpu, Strings.PerformanceCpuPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
-            (panel, s) => {
-                if (s.Cpu is not { } cpu) {
-                    return;
-                }
-
-                panel.Line1 = string.Empty;
-                panel.Line2 = $"{cpu.Metrics.ToCpuPercentage()} {cpu.Specs.ToCpuFrequencyGhz()}";
-                panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceLogicalProcessorsCount, cpu.Specs.CpuCores);
-                panel.Line4 = string.Empty;
-                panel.Chart.Add(cpu.Metrics.CpuTotalTime);
-            }));
-
-        panels.Add(MakePanel(
-            KeyMemory, Strings.PerformanceMemoryPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
-            (panel, s) => {
-                if (s.Memory is not { } memory) {
-                    return;
-                }
-
-                panel.Line1 = string.Empty;
-                panel.Line2 = memory.Metrics.ToMemoryRatioFormattedBytes();
-                panel.Line3 = memory.Metrics.ToMemoryPercentage();
-                panel.Line4 = string.Empty;
-                panel.Chart.Add(memory.Metrics.AvailablePhysicalRatio);
-            }));
-
-        AddGpuPanels(panels, snapshot);
-        AddNpuPanels(panels, snapshot);
-        AddDiskPanels(panels, snapshot);
-        AddNetworkPanels(panels, snapshot);
-
-        return panels;
-    }
-
-    private void AddDiskPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
-    {
-        List<DiskDeviceMetrics> devices = snapshot?.Disk?.Metrics.Devices ?? new();
-
-        if (devices.Count == 0) {
-            panels.Add(MakePanel(
-                KeyDisk, Strings.PerformanceDisksPanel, autoScaleChart: false, Chart.FormatYScalePercentage,
-                (panel, s) => {
-                    if (s.Disk is not { } disk) {
-                        return;
-                    }
-
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = disk.Metrics.ToDiskActiveTimePercentage();
-                    panel.Line3 = disk.Metrics.ToDiskTransferRate();
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(disk.Metrics.ToDiskActiveTimeRatio());
-                }));
-
-            return;
-        }
-
-        foreach (DiskDeviceMetrics device in devices) {
-            DiskDevice? spec  = snapshot?.Disk?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
-            string      title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceDiskPanel, device.Index);
-
-            panels.Add(MakePanel(
-                $"{KeyDisk}:{device.Index}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
-                (panel, s) => {
-                    DiskDeviceMetrics? match = s.Disk?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
-
-                    if (match == null) {
-                        return;
-                    }
-
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = AppendTemperature(match.ToDiskActiveTimePercentage(), s.Thermal?.Metrics.DiskTemperature(device.Index));
-                    panel.Line3 = match.ToDiskTransferRate();
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(match.ToDiskActiveTimeRatio());
-                }));
+        foreach (Control detail in details) {
+            Controls.Add(detail);
         }
     }
 
-    private void AddGpuPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
+    internal IReadOnlyList<Control> Details => details;
+
+    private List<Control> DetailsFor(SystemSnapshot? snapshot)
     {
-        List<GpuDeviceMetrics> devices = snapshot?.Gpu?.Metrics.Devices ?? new();
+        T Detail<T>(Func<T, bool> same, Func<T> create) where T : Control =>
+            details.OfType<T>().FirstOrDefault(same) ?? create();
 
-        if (devices.Count == 0) {
-            panels.Add(MakePanel(
-                KeyGpu, Strings.PerformanceGpu, autoScaleChart: false, Chart.FormatYScalePercentage,
-                (panel, s) => {
-                    if (s.Gpu is not { } gpu) {
-                        return;
-                    }
+        List<Control> wanted = [
+            Detail<CpuPerformanceControl>(_ => true, () => new(Terminal, appConfig)),
+            Detail<MemoryPerformanceControl>(_ => true, () => new(Terminal, appConfig))
+        ];
 
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = gpu.Metrics.ToGpuPercentage();
-                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuCores, gpu.Specs.GpuCores);
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(gpu.Metrics.GpuPercentTime);
-                }));
+        IEnumerable<long?>  gpus     = snapshot?.Gpu?.Metrics.Devices.Select(device => (long?)device.AdapterLuid) ?? [];
+        IEnumerable<int?>   disks    = snapshot?.Disk?.Metrics.Devices.Select(device => (int?)device.Index) ?? [];
+        IEnumerable<ulong?> adapters = snapshot?.Network?.Metrics.Devices.Select(device => (ulong?)device.InterfaceLuid) ?? [];
 
-            return;
+        foreach (long? luid in gpus.DefaultIfEmpty()) {
+            wanted.Add(
+                Detail<GpuPerformanceControl>(
+                    gpu => gpu.AdapterLuid == luid, 
+                    () => new(Terminal, appConfig, luid)));
         }
 
-        foreach (GpuDeviceMetrics device in devices) {
-            GpuDevice? spec  = snapshot?.Gpu?.Specs.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
-            string     title = spec?.ToDisplayName() ?? string.Format(CultureInfo.CurrentCulture, Strings.PerformanceGpuPanel, device.Index);
-
-            panels.Add(MakePanel(
-                $"{KeyGpu}:{device.AdapterLuid}", title, autoScaleChart: false, Chart.FormatYScalePercentage,
-                (panel, s) => {
-                    GpuDeviceMetrics? match = s.Gpu?.Metrics.Devices.FirstOrDefault(candidate => candidate.AdapterLuid == device.AdapterLuid);
-
-                    if (match == null) {
-                        return;
-                    }
-
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = AppendTemperature(match.ToGpuPercentage(), s.Thermal?.Metrics.GpuTemperature(device.AdapterLuid));
-                    panel.Line3 = match.ToGpuMemoryRatioFormattedBytes();
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(match.GpuPercentTime);
-                }));
+        foreach (NpuDevice npu in snapshot?.Npu?.Specs.Devices ?? []) {
+            wanted.Add(
+                Detail<NpuPerformanceControl>(
+                    detail => detail.Index == npu.Index, 
+                    () => new(Terminal, appConfig, npu.Index)));
         }
+
+        foreach (int? index in disks.DefaultIfEmpty()) {
+            wanted.Add(
+                Detail<DiskPerformanceControl>(
+                    disk => disk.DiskIndex == index, 
+                    () => new(Terminal, appConfig, index)));
+        }
+
+        foreach (ulong? luid in adapters.DefaultIfEmpty()) {
+            wanted.Add(
+                Detail<NetworkPerformanceControl>(
+                    network => network.InterfaceLuid == luid, 
+                    () => new(Terminal, appConfig, luid)));
+        }
+
+        return wanted;
     }
 
-    private void AddNetworkPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
+    private void LoadDetail(Control detail)
     {
-        List<NetworkDeviceMetrics> devices = snapshot?.Network?.Metrics.Devices ?? new();
+        detail.Load();
 
-        if (devices.Count == 0) {
-            panels.Add(MakePanel(
-                KeyNetwork, Strings.PerformanceNetworkPanel, autoScaleChart: true, Chart.FormatYScaleByteRate,
-                (panel, s) => {
-                    if (s.Network is not { } network) {
-                        return;
-                    }
+        Chart spark = ((IPerformanceDetail)detail).Spark;
 
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendShort, network.Metrics.ToNetworkSendRate());
-                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveShort, network.Metrics.ToNetworkReceiveRate());
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(network.Metrics.ToNetworkThroughputBytesPerSecond());
-                }));
+        CommonControl.Theme(spark, appConfig.Theme);
 
-            return;
-        }
-
-        foreach (NetworkDeviceMetrics device in devices) {
-            NetworkDevice? spec = snapshot?.Network?.Specs.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
-            string title = spec?.ToDisplayName() ?? device.ToDisplayName();
-
-            panels.Add(MakePanel(
-                $"{KeyNetwork}:{device.InterfaceLuid}", title, autoScaleChart: true, Chart.FormatYScaleByteRate,
-                (panel, s) => {
-                    NetworkDeviceMetrics? match = s.Network?.Metrics.Devices.FirstOrDefault(candidate => candidate.InterfaceLuid == device.InterfaceLuid);
-
-                    if (match == null) {
-                        return;
-                    }
-
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendShort, match.ToNetworkSendRate());
-                    panel.Line3 = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveShort, match.ToNetworkReceiveRate());
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(match.ToNetworkThroughputBytesPerSecond());
-                }));
-        }
+        spark.MetreStyle     = appConfig.MetreStyle;
+        spark.ShowGrid       = appConfig.ShowSmallMetreGrid;
+        spark.ShowYAxisScale = appConfig.ShowYAxisScale;
     }
 
-    private void AddNpuPanels(List<PerformancePanelControl> panels, SystemSnapshot? snapshot)
+    protected override void OnDraw()
     {
-        foreach (NpuDevice device in snapshot?.Npu?.Specs.Devices ?? []) {
-            panels.Add(MakePanel(
-                $"{KeyNpu}:{device.Index}", device.ToDisplayName(), autoScaleChart: false, Chart.FormatYScalePercentage,
-                (panel, s) => {
-                    NpuDeviceMetrics? match = s.Npu?.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == device.Index);
+        Theme theme     = appConfig.Theme;
+        int   textWidth = columnWidth - SparkWidth;
+        int   shown     = Math.Min(visibleCount, details.Count - scrollOffset);
+        Color border    = Focused ? FocusSelectionColour : theme.ChartBorderForeground;
 
-                    if (match == null) {
-                        return;
-                    }
+        for (int row = 0; row < shown; row++) {
+            Control            control = details[scrollOffset + row];
+            IPerformanceDetail detail  = (IPerformanceDetail)control;
+            int                y       = Y + row * EntryHeight;
 
-                    panel.Line1 = string.Empty;
-                    panel.Line2 = AppendPower(match.ToNpuPercentage(), s.Power?.Metrics.NeuralEnginePower());
-                    panel.Line3 = device.ToNpuCoresText();
-                    panel.Line4 = string.Empty;
-                    panel.Chart.Add(match.ActiveRatio);
-                }));
+            frame.Clear();
+
+            if (control == selected) {
+                Color foreground = Focused ? theme.ForegroundHighlight : theme.ForegroundHighlightInactive;
+                Color background = Focused ? theme.BackgroundHighlight : theme.BackgroundHighlightInactive;
+
+                DrawRectangleWithBevel(
+                    X, 
+                    y, 
+                    textWidth, 
+                    EntryHeight, background);
+
+                frame.SetColour(foreground, background);
+                frame.MoveTo(X + 1, y + 1);
+                frame.Append(detail.Title.PadOrTruncate(' ', textWidth - 2));
+            }
+            else {
+                Color strip = theme.PerformancePanelTitlebarBackground;
+
+                DrawRectangle(
+                    X, 
+                    y, 
+                    textWidth, 
+                    EntryHeight, 
+                    BackgroundColour);
+                
+                DrawHorizontalLine(
+                    y, 
+                    X, 
+                    X + textWidth, 
+                    ForegroundColour);
+                
+                DrawHorizontalLine(
+                    y + EntryHeight - 1, 
+                    X, 
+                    X + textWidth, 
+                    ForegroundColour);
+
+                frame.MoveTo(X, y + 1);
+                
+                AppendHalfBlock(
+                    frame, 
+                    left: BackgroundColour, 
+                    right: strip, 
+                    fallback: strip);
+                
+                frame.SetColour(theme.PerformancePanelTitlebarForeground, strip);
+                frame.Append(detail.Title.PadOrTruncate(' ', textWidth - 2));
+                
+                AppendHalfBlock(
+                    frame, 
+                    left: strip, 
+                    right: BackgroundColour, 
+                    fallback: strip);
+                
+                frame.SetColour(ForegroundColour, BackgroundColour);
+            }
+
+            frame.MoveTo(X + 1, y + 3);
+            frame.Append(detail.Summary.Top);
+            frame.MoveTo(X + 1, y + 4);
+            frame.Append(detail.Summary.Bottom);
+            frame.ResetColour();
+            Terminal.Write(frame.AsSpan());
+
+            detail.Spark.Draw();
         }
-    }
 
-    internal static void AppendDeviceKeys(List<string> keys, string prefix, IEnumerable<string>? deviceIds)
-    {
-        List<string> ids = deviceIds?.ToList() ?? new();
-
-        if (ids.Count == 0) {
-            keys.Add(prefix);
-            return;
-        }
-
-        foreach (string id in ids) {
-            keys.Add($"{prefix}:{id}");
-        }
-    }
-
-    private static string AppendPower(string line, double? watts) =>
-        watts is { } value
-            ? $"{line} ({value.ToWattText()})"
-            : line;
-
-    private static string AppendTemperature(string line, double? celsius) =>
-        celsius is { } value 
-            ? $"{line} ({value.ToTemperatureText()})" 
-            : line;
-
-    private void AttachPanels()
-    {
-        foreach (PerformancePanelControl panel in panelControls) {
-            Controls.Add(panel);
-        }
-    }
-
-    internal static int ClampScrollOffset(
-        int selectedIndex, 
-        int scrollOffset, 
-        int visibleCount, 
-        int total)
-    {
-        int maxOffset = Math.Max(0, total - visibleCount);
-
-        if (selectedIndex < scrollOffset) {
-            scrollOffset = selectedIndex;
-        }
-        else if (selectedIndex >= scrollOffset + visibleCount) {
-            scrollOffset = selectedIndex - visibleCount + 1;
-        }
-
-        return Math.Clamp(scrollOffset, 0, maxOffset);
-    }
-
-    private void ConfigureChart(Chart chart)
-    {
-        CommonControl.Theme(chart, appConfig.Theme);
+        DrawRectangle(
+            X, 
+            Y + shown * EntryHeight, 
+            columnWidth, 
+            Height - shown * EntryHeight, 
+            BackgroundColour);
         
-        chart.MetreStyle     = appConfig.MetreStyle;
-        chart.ShowGrid       = appConfig.ShowSmallMetreGrid;
-        chart.ShowYAxisScale = appConfig.ShowYAxisScale;
-    }
-
-    private void ConfigureColours(Control control)
-    {
-        control.BackgroundColour = appConfig.Theme.Background;
-        control.ForegroundColour = appConfig.Theme.Foreground;
-    }
-
-    private Control CreateDetail(string key)
-    {
-        if (key == KeyCpu) {
-            return new CpuPerformanceControl(Terminal, appConfig);
-        }
-
-        if (key == KeyMemory) {
-            return new MemoryPerformanceControl(Terminal, appConfig);
-        }
-
-        int separator = key.IndexOf(':');
-        string prefix = separator < 0 ? key : key[..separator];
-        string? id    = separator < 0 ? null : key[(separator + 1)..];
-
-        switch (prefix) {
-            case KeyGpu: {
-                GpuPerformanceControl control = new(Terminal, appConfig);
-                control.SetScope(id != null && long.TryParse(id, out long luid) 
-                    ? luid 
-                    : null);
-                return control;
-            }
-
-            case KeyNpu: {
-                NpuPerformanceControl control = new(Terminal, appConfig);
-                control.SetScope(id != null && int.TryParse(id, out int npuIndex) 
-                    ? npuIndex 
-                    : 0);
-                return control;
-            }
-
-            case KeyDisk: {
-                DiskPerformanceControl control = new(Terminal, appConfig);
-                control.SetScope(id != null && int.TryParse(id, out int index) 
-                    ? index 
-                    : null);
-                return control;
-            }
-
-            case KeyNetwork: {
-                NetworkPerformanceControl control = new(Terminal, appConfig);
-                control.SetScope(id != null && ulong.TryParse(id, out ulong luid) 
-                    ? luid 
-                    : null);
-                return control;
-            }
-
-            default:
-                throw new InvalidOperationException($"Unknown performance panel key '{key}'.");
-        }
-    }
-
-    internal static List<string> DesiredPanelKeys(SystemSnapshot? snapshot)
-    {
-        List<string> keys = new() { KeyCpu, KeyMemory };
-
-        AppendDeviceKeys(keys, KeyGpu,
-            snapshot?.Gpu?.Metrics.Devices.Select(device => device.AdapterLuid.ToString()));
-
-        keys.AddRange(snapshot?.Npu?.Specs.Devices.Select(device => $"{KeyNpu}:{device.Index}") ?? []);
-
-        AppendDeviceKeys(keys, KeyDisk,
-            snapshot?.Disk?.Metrics.Devices.Select(device => device.Index.ToString()));
-
-        AppendDeviceKeys(keys, KeyNetwork,
-            snapshot?.Network?.Metrics.Devices.Select(device => device.InterfaceLuid.ToString()));
-
-        return keys;
-    }
-
-    private void DetachPanels()
-    {
-        foreach (PerformancePanelControl panel in panelControls) {
-            Controls.Remove(panel);
-        }
-    }
-
-    private void DrawGlyph(int x, int y, char glyph)
-    {
-        scrollFrame.Clear();
-        scrollFrame.MoveTo(x, y);
-        scrollFrame.SetColour(PanelColumnBorderColour, BackgroundColour);
-        scrollFrame.Append(glyph);
-        scrollFrame.ResetColour();
-        Terminal.Write(scrollFrame.AsSpan());
-    }
-
-    private void DrawPanelColumnFiller()
-    {
-        int filledRows = visiblePanelCount * PanelHeight;
-
-        if (filledRows < Height) {
-            DrawRectangle(
-                X, 
-                Y + filledRows, 
-                panelColumnWidth, 
-                Height - filledRows, 
-                BackgroundColour);
-        }
-    }
-
-    private void DrawScrollIndicators()
-    {
-        if (scrollOffset > 0) {
-            DrawGlyph(X + panelColumnWidth, Y, '▲');
-        }
-
-        if (scrollOffset + visiblePanelCount < panelControls.Count) {
-            DrawGlyph(X + panelColumnWidth, Y + visiblePanelCount * PanelHeight - 1, '▼');
-        }
-    }
-
-    private Chart GetOrCreateChart(string key, bool autoScale, Func<double, string> formatter)
-    {
-        if (chartCache.TryGetValue(key, out Chart? chart)) {
-            chart.AutoScale                 = autoScale;
-            chart.CustomYAxisScaleFormatter = formatter;
-            return chart;
-        }
-
-        chart = new Chart(Terminal) {
-            Text           = string.Empty,
-            LabelSeries    = string.Empty,
-            ShowYAxisScale = false,
-            AutoScale      = autoScale,
-            CustomYAxisScaleFormatter = formatter,
-        };
-
-        ConfigureChart(chart);
-        chartCache[key] = chart;
-
-        return chart;
-    }
-
-    private Control GetOrCreateDetail(string key)
-    {
-        if (detailCache.TryGetValue(key, out Control? detail)) {
-            return detail;
-        }
-
-        detail = CreateDetail(key);
-        ConfigureColours(detail);
-        Controls.Add(detail);
-
-        if (loaded) {
-            detail.Load();
-        }
-
-        detailCache[key] = detail;
-
-        return detail;
-    }
-
-    private void LayoutPanelColumn()
-    {
-        panelColumnWidth  = Math.Min(42, (int)(Width * 0.3));
-        visiblePanelCount = Math.Max(1, Height / PanelHeight);
-
-        int selectedIndex = Math.Max(0, panelControls.IndexOf(activeControl));
-        
-        scrollOffset = ClampScrollOffset(
-            selectedIndex, 
-            scrollOffset, 
-            visiblePanelCount, 
-            panelControls.Count);
-
-        for (int i = 0; i < panelControls.Count; i++) {
-            PerformancePanelControl panelControl = panelControls[i];
-            bool visible = i >= scrollOffset && i < scrollOffset + visiblePanelCount;
-
-            panelControl.Visible       = visible;
-            panelControl.Chart.Visible = visible;
-            panelControl.X             = X;
-            panelControl.Width         = panelColumnWidth;
-            panelControl.Height        = PanelHeight;
-
-            if (visible) {
-                panelControl.Y = Y + (i - scrollOffset) * PanelHeight;
-                panelControl.Resize();
-            }
-        }
-    }
-
-    private PerformancePanelControl MakePanel(
-        string key,
-        string title,
-        bool   autoScaleChart,
-        Func<double, string> chartFormatter,
-        Action<PerformancePanelControl, SystemSnapshot> bind)
-    {
-        Chart chart    = GetOrCreateChart(key, autoScaleChart, chartFormatter);
-        Control detail = GetOrCreateDetail(key);
-
-        PerformancePanelControl panel = new(
-            Terminal, 
-            chart, 
-            detail, 
-            key, 
-            title, 
-            appConfig);
-
-        panel.Bind             = snapshot => bind(panel, snapshot);
-        panel.BackgroundColour = appConfig.Theme.PerformancePanelBackground;
-        panel.ForegroundColour = appConfig.Theme.PerformancePanelForeground;
-
-        return panel;
-    }
-
-    protected override void OnDraw() => OnDrawInternal();
-
-    private void OnDrawInternal()
-    {
-        int previousScrollOffset = scrollOffset;
-
-        LayoutPanelColumn();
-
-        if (scrollOffset != previousScrollOffset) {
-            DrawRectangle(
-                X, 
-                Y, 
-                panelColumnWidth, 
-                Height, 
-                BackgroundColour);
-        }
-
-        foreach (PerformancePanelControl panel in panelControls) {
-            panel.Draw();
-        }
-
-        foreach (PerformancePanelControl panel in panelControls) {
-            panel.Chart.Draw();
-        }
-
         DrawVerticalLine(
-            X + panelColumnWidth,
-            Y,
-            Y + Height,
-            PanelColumnBorderColour);
+            X + columnWidth, 
+            Y, 
+            Y + Height, 
+            border);
 
-        DrawPanelColumnFiller();
-        DrawScrollIndicators();
+        void Arrow(int y, char glyph)
+        {
+            frame.Clear();
+            frame.MoveTo(X + columnWidth, y);
+            frame.SetColour(border, BackgroundColour);
+            frame.Append(glyph);
+            frame.ResetColour();
+            Terminal.Write(frame.AsSpan());
+        }
 
-        activeControl.AssociatedControl.Draw();
+        if (scrollOffset > 0) {
+            Arrow(Y, '▲');
+        }
+
+        if (scrollOffset + visibleCount < details.Count) {
+            Arrow(Y + visibleCount * EntryHeight - 1, '▼');
+        }
+
+        selected.Draw();
     }
-
-    protected override void OnGotFocus() => activeControl.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
-        int index;
+        int current = details.IndexOf(selected);
+        
+        int next = keyInfo.Key switch {
+            ConsoleKey.UpArrow   => current - 1,
+            ConsoleKey.DownArrow => current + 1,
+                               _ => current
+        };
 
-        switch (keyInfo.Key) {
-            case ConsoleKey.UpArrow:
-                index = panelControls.IndexOf(activeControl);
-                if (index <= 0) {
-                    break;
-                }
-                SetActiveControl(panelControls[index - 1]);
-                handled = true;
-                break;
-
-            case ConsoleKey.DownArrow:
-                index = panelControls.IndexOf(activeControl);
-                if (index < 0 || index == panelControls.Count - 1) {
-                    break;
-                }
-                SetActiveControl(panelControls[index + 1]);
-                handled = true;
-                break;
+        if (next == current || next < 0 || next >= details.Count) {
+            return;
         }
+
+        selected = details[next];
+        selected.Clear();
+        handled = true;
+
+        Resize();
+        Draw();
     }
 
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
 
-        foreach (Control ctrl in Controls) {
-            CommonControl.ThemeDefaults(ctrl, appConfig.Theme);
+        BackgroundColour = appConfig.Theme.PerformancePanelBackground;
+        ForegroundColour = appConfig.Theme.PerformancePanelForeground;
+
+        foreach (Control detail in details) {
+            LoadDetail(detail);
         }
 
-        foreach (PerformancePanelControl panel in panelControls) {
-            ConfigureChart(panel.Chart);
-            panel.Visible    = true;
-            panel.IsSelected = false;
-            panel.Load();
-        }
-
-        foreach (Control detail in detailCache.Values) {
-            detail.Load();
-        }
-
-        loaded        = true;
-        activeControl = panelControls[0];
-        
-        activeControl.IsSelected = true;
+        selected     = details[0];
+        scrollOffset = 0;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
     }
 
     protected override void OnResize()
     {
-        LayoutPanelColumn();
-        SizeDetailControls();
+        columnWidth  = Math.Min(MaxColumnWidth, (int)(Width * 0.3));
+        visibleCount = Math.Max(1, Height / EntryHeight);
+
+        int index = details.IndexOf(selected);
+
+        scrollOffset = Math.Clamp(scrollOffset, index - visibleCount + 1, index);
+        scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, details.Count - visibleCount));
+
+        for (int i = 0; i < details.Count; i++) {
+            Chart spark = ((IPerformanceDetail)details[i]).Spark;
+
+            spark.Visible = i >= scrollOffset && i < scrollOffset + visibleCount;
+            spark.X       = X + columnWidth - SparkWidth;
+            spark.Y       = Y + (i - scrollOffset) * EntryHeight;
+            spark.Width   = SparkWidth;
+            spark.Height  = EntryHeight;
+            spark.Resize();
+
+            details[i].X      = X + columnWidth;
+            details[i].Y      = Y;
+            details[i].Width  = Width - columnWidth;
+            details[i].Height = Height;
+        }
+
+        base.OnResize();
     }
 
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
-        SystemSnapshot snapshot = e.Snapshot;
-        RebuildPanelsIfNeeded(snapshot);
+        lock (DrawingLock) {
+            List<Control> wanted = DetailsFor(e.Snapshot);
 
-        foreach (Control detail in detailCache.Values) {
-            ((IPerformanceDetail)detail).Sample(snapshot);
+            if (!wanted.SequenceEqual(details)) {
+                foreach (Control gone in details.Except(wanted)) {
+                    gone.Unload();
+                    Controls.Remove(gone);
+                }
+
+                foreach (Control added in wanted.Except(details)) {
+                    Controls.Add(added);
+                    LoadDetail(added);
+                }
+
+                selected = wanted.Contains(selected)
+                    ? selected
+                    : wanted.FirstOrDefault(detail => detail.GetType() == selected.GetType()) ?? wanted[0];
+
+                details      = wanted;
+                scrollOffset = 0;
+
+                Clear();
+                Resize();
+            }
+
+            foreach (Control detail in details) {
+                ((IPerformanceDetail)detail).Sample(e.Snapshot);
+            }
+
+            Draw();
         }
-
-        foreach (PerformancePanelControl panel in panelControls) {
-            panel.Update(snapshot);
-        }
-
-        Draw();
     }
 
     protected override void OnUnload()
@@ -642,104 +325,5 @@ public sealed class PerformanceControl : Control
         base.OnUnload();
     }
 
-    private Color PanelColumnBorderColour =>
-        activeControl.Focused
-            ? Control.FocusSelectionColour
-            : appConfig.Theme.ChartBorderForeground;
-
-    private void PruneCaches()
-    {
-        HashSet<string> live = panelControls.Select(panel => panel.Key).ToHashSet();
-
-        foreach (string stale in chartCache.Keys.Where(key => !live.Contains(key)).ToList()) {
-            chartCache.Remove(stale);
-        }
-
-        foreach (string stale in detailCache.Keys.Where(key => !live.Contains(key)).ToList()) {
-            Control detail = detailCache[stale];
-            detail.Unload();
-            Controls.Remove(detail);
-            detailCache.Remove(stale);
-        }
-    }
-
-    private void RebuildPanels(SystemSnapshot snapshot)
-    {
-        string previousKey = activeControl.Key;
-
-        activeControl.IsSelected = false;
-
-        DetachPanels();
-        panelControls = AddAllPanels(snapshot);
-        AttachPanels();
-        PruneCaches();
-
-        foreach (PerformancePanelControl panel in panelControls) {
-            ConfigureChart(panel.Chart);
-            panel.Visible = true;
-            panel.IsSelected = false;
-            panel.Load();
-        }
-
-        activeControl = panelControls.FirstOrDefault(panel => panel.Key == previousKey)
-            ?? panelControls.FirstOrDefault(panel => SamePrefix(panel.Key, previousKey))
-            ?? panelControls[0];
-
-        scrollOffset = 0;
-        activeControl.IsSelected = true;
-
-        DrawRectangle(
-            X, 
-            Y, 
-            Width, 
-            Height, 
-            BackgroundColour);
-        
-        LayoutPanelColumn();
-        SizeDetailControls();
-    }
-
-    private void RebuildPanelsIfNeeded(SystemSnapshot snapshot)
-    {
-        if (panelControls.Select(panel => panel.Key).SequenceEqual(DesiredPanelKeys(snapshot))) {
-            return;
-        }
-
-        RebuildPanels(snapshot);
-    }
-
-    private static bool SamePrefix(string left, string right)
-    {
-        static string Prefix(string key)
-        {
-            int separator = key.IndexOf(':');
-            return separator < 0 ? key : key[..separator];
-        }
-
-        return Prefix(left) == Prefix(right);
-    }
-
-    private void SetActiveControl(PerformancePanelControl nextControl)
-    {
-        Trace.WriteLine($"SetActiveControl {nextControl.AssociatedControl.GetType()}");
-        
-        activeControl.IsSelected = false;
-        activeControl = nextControl;
-        activeControl.AssociatedControl.Clear();
-        activeControl.IsSelected = true;
-        activeControl.SetFocus();
-
-        Draw();
-    }
-
-    private void SizeDetailControls()
-    {
-        foreach (Control detail in detailCache.Values) {
-            detail.X      = X + panelColumnWidth;
-            detail.Y      = Y;
-            detail.Width  = Width - panelColumnWidth;
-            detail.Height = Height;
-            detail.Resize();
-        }
-    }
+    internal Control Selected => selected;
 }

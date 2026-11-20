@@ -23,9 +23,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     private readonly List<Chart> coreCharts;
     private readonly AppConfig   appConfig;
-    
-    private readonly Lock @lock = new();
-    
+
     private Chart        cpuChart;
     private MetreControl cpuMetre;
     private ListView     cpuMetricsListView;
@@ -48,6 +46,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
         cpuChart = new Chart(terminal);
         cpuMetre = new MetreControl(terminal);
+        Spark    = new Chart(terminal) { AutoScale = false, CustomYAxisScaleFormatter = Chart.FormatYScalePercentage };
 
         cpuMetricsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -83,60 +82,59 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnDraw()
     {
-        lock (@lock) {
-            if (cpuInfo == null || cpuInfo.CoreMetrics.Length == 0) {
-                return;
-            }
-
-            if (Width < ChartWidth + 2 || Height < ChartHeight + 2) {
-                return;
-            }
-
-            Debug.Assert(Environment.ProcessorCount == cpuInfo.CoreMetrics.Length);
-            
-            int numCores = Math.Min(Environment.ProcessorCount, cpuInfo.CoreMetrics.Length);
-
-            for (int i = 0; i < numCores; i++) {
-                coreCharts[i].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCoreChart, cpuInfo.CoreMetrics[i].Name);
-                coreCharts[i].Draw();
-            }
-
-            cpuChart.Text = temperature is { } cpuTemp
-                ? $"{cpuInfo.Metrics.ToCpuKernelUserPercentage()}   ·   {cpuTemp.ToTemperatureText()}"
-                : cpuInfo.Metrics.ToCpuKernelUserPercentage();
-            
-            cpuChart.Draw();
-
-            double kernelTime = cpuInfo.Metrics.CpuPercentKernelTime;
-            double userTime   = cpuInfo.Metrics.CpuPercentUserTime;
-
-            cpuMetre.SetValues(kernelTime, userTime);
-
-            cpuMetricsListView.Items[0].SubItems[0].Text = cpuInfo.Metrics.ToCpuPercentage();
-            cpuMetricsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
-            cpuMetricsListView.Items[0].SubItems[2].Text = processMetrics?.ProcessCount.ToString() ?? "0";
-            cpuMetricsListView.Items[0].SubItems[3].Text = processMetrics?.ThreadCount.ToString() ?? "0";
-            cpuMetricsListView.Items[0].SubItems[4].Text = power.ToWattText();
-            cpuMetricsListView.Draw();
-
-            cpuSpecsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.CpuName;
-            cpuSpecsListView.Items[1].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
-            cpuSpecsListView.Items[2].SubItems[1].Text = cpuInfo.Specs.ToCpuSocketCount();
-            cpuSpecsListView.Items[3].SubItems[1].Text = cpuInfo.Specs.CpuCores.ToString();
-            cpuSpecsListView.Items[4].SubItems[1].Text = cpuInfo.Specs.ToCpuVirtualization();
-            cpuSpecsListView.Items[5].SubItems[1].Text = cpuInfo.Specs.ToCpuL1Cache();
-            cpuSpecsListView.Items[6].SubItems[1].Text = cpuInfo.Specs.ToCpuL2Cache();
-            cpuSpecsListView.Items[7].SubItems[1].Text = cpuInfo.Specs.ToCpuL3Cache();
-            cpuSpecsListView.Draw();
+        if (cpuInfo == null || cpuInfo.CoreMetrics.Length == 0) {
+            return;
         }
+
+        if (Width < ChartWidth + 2 || Height < ChartHeight + 2) {
+            return;
+        }
+
+        Debug.Assert(Environment.ProcessorCount == cpuInfo.CoreMetrics.Length);
+
+        int numCores = Math.Min(Environment.ProcessorCount, cpuInfo.CoreMetrics.Length);
+
+        for (int i = 0; i < numCores; i++) {
+            coreCharts[i].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCoreChart, cpuInfo.CoreMetrics[i].Name);
+            coreCharts[i].Draw();
+        }
+
+        cpuChart.Text = temperature is { } cpuTemp
+            ? $"{cpuInfo.Metrics.ToCpuKernelUserPercentage()}   ·   {cpuTemp.ToTemperatureText()}"
+            : cpuInfo.Metrics.ToCpuKernelUserPercentage();
+
+        cpuChart.Draw();
+
+        double kernelTime = cpuInfo.Metrics.CpuPercentKernelTime;
+        double userTime   = cpuInfo.Metrics.CpuPercentUserTime;
+
+        cpuMetre.SetValues(kernelTime, userTime);
+
+        cpuMetricsListView.Items[0].SubItems[0].Text = cpuInfo.Metrics.ToCpuPercentage();
+        cpuMetricsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
+        cpuMetricsListView.Items[0].SubItems[2].Text = processMetrics?.ProcessCount.ToString() ?? "0";
+        cpuMetricsListView.Items[0].SubItems[3].Text = processMetrics?.ThreadCount.ToString() ?? "0";
+        cpuMetricsListView.Items[0].SubItems[4].Text = power.ToWattText();
+        cpuMetricsListView.Draw();
+
+        cpuSpecsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.CpuName;
+        cpuSpecsListView.Items[1].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
+        cpuSpecsListView.Items[2].SubItems[1].Text = cpuInfo.Specs.ToCpuSocketCount();
+        cpuSpecsListView.Items[3].SubItems[1].Text = cpuInfo.Specs.CpuCores.ToString();
+        cpuSpecsListView.Items[4].SubItems[1].Text = cpuInfo.Specs.ToCpuVirtualization();
+        cpuSpecsListView.Items[5].SubItems[1].Text = cpuInfo.Specs.ToCpuL1Cache();
+        cpuSpecsListView.Items[6].SubItems[1].Text = cpuInfo.Specs.ToCpuL2Cache();
+        cpuSpecsListView.Items[7].SubItems[1].Text = cpuInfo.Specs.ToCpuL3Cache();
+        cpuSpecsListView.Draw();
     }
 
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
-        CommonControl.Theme(cpuMetre, appConfig.Theme);
+        
+        CommonControl.Theme(cpuMetre,           appConfig.Theme);
         CommonControl.Theme(cpuMetricsListView, appConfig.Theme);
-        CommonControl.Theme(cpuSpecsListView, appConfig.Theme);
+        CommonControl.Theme(cpuSpecsListView,   appConfig.Theme);
         
         foreach (Chart chart in coreCharts) {
             OnLoadChart(chart);
@@ -159,14 +157,14 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", Strings.CommonNotAvailable });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelName,                string.Empty, appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceBaseSpeed,          "0 GHz", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSockets,             "0", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceLogicalProcessors,  "0", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVirtualisation,      string.Empty, appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL1Cache,            "0 KB", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL2Cache,            "0 KB", appConfig.Theme));
-        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL3Cache,            "0 KB", appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelName,                    string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceBaseSpeed,         "0 GHz",      appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSockets,           "0",          appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceLogicalProcessors, "0",          appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVirtualisation,          string.Empty, appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL1Cache,           "0 KB",       appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL2Cache,           "0 KB",       appConfig.Theme));
+        cpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceL3Cache,           "0 KB",       appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)
@@ -248,10 +246,10 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetricsListView.Width  = Width - 1;
         cpuMetricsListView.Height = MetricsHeight;
 
-        cpuSpecsListView.X      = X + 1;
-        cpuSpecsListView.Y      = bottomY + MetricsHeight;
-        cpuSpecsListView.Width  = Width - 1;
-        cpuSpecsListView.Height = SpecsHeight;
+        cpuSpecsListView.X        = X + 1;
+        cpuSpecsListView.Y        = bottomY + MetricsHeight;
+        cpuSpecsListView.Width    = Width - 1;
+        cpuSpecsListView.Height   = SpecsHeight;
     }
 
     protected override void OnUnload()
@@ -264,26 +262,37 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     public void Sample(SystemSnapshot snapshot)
     {
-        lock (@lock) {
-            // There are no process counts until the process service's first sample, so the last
-            // ones are kept rather than dropping back to zero.
-            processMetrics = snapshot.Processes?.Metrics ?? processMetrics;
+        processMetrics = snapshot.Processes?.Metrics ?? processMetrics;
 
-            if (snapshot.Cpu is not { } cpu || cpu.CoreMetrics.Length == 0) {
-                return;
-            }
-
-            cpuInfo     = cpu;
-            power       = snapshot.Power?.Metrics.CpuPower();
-            temperature = snapshot.Thermal?.Metrics.CpuTemperature();
-
-            int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);
-
-            for (int i = 0; i < numCores; i++) {
-                coreCharts[i].AddData(cpu.CoreMetrics[i].Value);
-            }
-
-            cpuChart.AddData(cpu.Metrics.CpuTotalTime);
+        if (snapshot.Cpu is not { } cpu) {
+            return;
         }
+
+        Summary = ($"{cpu.Metrics.ToCpuPercentage()} {cpu.Specs.ToCpuFrequencyGhz()}",
+                   string.Format(CultureInfo.CurrentCulture, Strings.PerformanceLogicalProcessorsCount, cpu.Specs.CpuCores));
+        
+        Spark.AddData(cpu.Metrics.CpuTotalTime);
+
+        if (cpu.CoreMetrics.Length == 0) {
+            return;
+        }
+
+        cpuInfo     = cpu;
+        power       = snapshot.Power?.Metrics.CpuPower();
+        temperature = snapshot.Thermal?.Metrics.CpuTemperature();
+
+        int numCores = Math.Min(Environment.ProcessorCount, cpu.CoreMetrics.Length);
+
+        for (int i = 0; i < numCores; i++) {
+            coreCharts[i].AddData(cpu.CoreMetrics[i].Value);
+        }
+
+        cpuChart.AddData(cpu.Metrics.CpuTotalTime);
     }
+
+    public Chart Spark { get; }
+
+    public (string Top, string Bottom) Summary { get; private set; } = (string.Empty, string.Empty);
+
+    public string Title => Strings.PerformanceCpuPanel;
 }

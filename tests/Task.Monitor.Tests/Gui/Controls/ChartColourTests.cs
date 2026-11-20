@@ -36,9 +36,9 @@ public sealed class ChartColourTests
         Assert.NotEqual(runContext.AppConfig.Theme.Foreground, runContext.AppConfig.Theme.ChartBorderForeground);
     }
 
-    private static void AssertChartsUseChartColours(Control host)
+    private static void AssertChartsUseChartColours(Control host, Chart? except = null)
     {
-        List<Chart> charts = ControlTreeHelper.FindAll<Chart>(host);
+        List<Chart> charts = [.. ControlTreeHelper.FindAll<Chart>(host).Where(chart => chart != except)];
 
         Assert.NotEmpty(charts);
         Assert.All(charts, chart => {
@@ -100,7 +100,8 @@ public sealed class ChartColourTests
             _ => throw new ArgumentOutOfRangeException(nameof(panelName))
         };
 
-        AssertChartsUseChartColours(Loaded(panel));
+        // A detail's small chart for the Performance column is themed by PerformanceControl.
+        AssertChartsUseChartColours(Loaded(panel), except: ((IPerformanceDetail)panel).Spark);
     }
 
     [Fact]

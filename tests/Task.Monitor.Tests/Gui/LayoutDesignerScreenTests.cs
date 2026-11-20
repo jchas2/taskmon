@@ -6,6 +6,7 @@ using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
 using Task.Monitor.Resources;
@@ -49,7 +50,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
         Assert.Equal(2, screen.SelectedNodeId);
 
-        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
+        Chart cpuPane = Panes(screen).OfType<Chart>().Single();
 
         Assert.Equal(ConsolePalette.DarkRed, cpuPane.BorderForegroundColour);
 
@@ -68,7 +69,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Memory);
 
-        Assert.False(screen.Controls.OfType<Chart>().Single().ShowGrid);
+        Assert.False(Panes(screen).OfType<Chart>().Single().ShowGrid);
 
         screen.Unload();
     }
@@ -83,7 +84,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         Assert.Equal(PaneControlType.Empty, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
 
-        Control emptyPane = screen.Controls.Single(c => c is EmptyPaneControl);
+        Control emptyPane = Panes(screen).Single(c => c is EmptyPaneControl);
         Assert.Equal(Control.FocusSelectionColour, emptyPane.BorderColour);
         Assert.Contains("empty", CapturedOutput());
 
@@ -140,7 +141,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         LayoutDesignerScreen screen = CreateCpuProcessScreen();
 
-        Chart cpuPane = screen.Controls.OfType<Chart>().Single();
+        Chart cpuPane = Panes(screen).OfType<Chart>().Single();
 
         Assert.Equal(ConsolePalette.DarkMagenta, cpuPane.BackgroundColour);
         Assert.Equal(ConsolePalette.DarkBlue, cpuPane.BorderBackgroundColour);
@@ -550,7 +551,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     {
         LayoutDesignerScreen screen = CreateCpuProcessScreen();
 
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
+        Control processPane = Panes(screen).Single(c => c.GetType().Name == "ProcessControl");
         List<(Control Control, Color Colour)> unselected =
             Subtree(processPane).Select(c => (c, c.BorderColour)).ToList();
 
@@ -586,7 +587,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.Load();
         screen.Resize();
 
-        foreach (Control control in screen.Controls) {
+        foreach (Control control in Panes(screen)) {
             Assert.False(AnyDescendantFocused(control));
         }
 
@@ -607,6 +608,10 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         screen.Unload();
     }
+
+    // The panes sit in the summary control the designer hosts.
+    private static IEnumerable<Control> Panes(LayoutDesignerScreen screen) =>
+        screen.Controls.OfType<SummaryControl2>().Single().PaneControls.Values;
 
     [Fact]
     public void Plus_And_Minus_Adjust_The_Parent_Splits_Ratio()
@@ -993,7 +998,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
             },
         });
 
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
+        Control processPane = Panes(screen).Single(c => c.GetType().Name == "ProcessControl");
         Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
 
         screen.Unload();
@@ -1040,8 +1045,8 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
         Assert.Equal(2, screen.SelectedNodeId);
 
-        Control processPane = screen.Controls.Single(c => c.GetType().Name == "ProcessControl");
-        Control cpuPane = screen.Controls.Single(c => c.GetType().Name == "Chart");
+        Control processPane = Panes(screen).Single(c => c.GetType().Name == "ProcessControl");
+        Control cpuPane = Panes(screen).Single(c => c.GetType().Name == "Chart");
 
         Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
         Assert.Equal(runContext.AppConfig.Theme.ChartBorderForeground, cpuPane.BorderColour);

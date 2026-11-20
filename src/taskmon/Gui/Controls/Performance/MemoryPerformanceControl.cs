@@ -20,8 +20,6 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     private readonly AppConfig appConfig;
 
-    private readonly Lock @lock = new();
-
     private Chart        memoryChart;
     private Chart        pageFileChart;
     private MetreControl memoryMetre;
@@ -37,6 +35,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryChart   = new Chart(terminal);
         pageFileChart = new Chart(terminal);
         memoryMetre   = new MetreControl(terminal);
+        Spark         = new Chart(terminal) { AutoScale = false, CustomYAxisScaleFormatter = Chart.FormatYScalePercentage };
 
         memoryMetricsListView = new ListView(terminal) {
             EnableScroll      = false,
@@ -81,86 +80,85 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnDraw()
     {
-        lock (@lock) {
-            if (memoryInfo == null) {
-                return;
-            }
+        if (memoryInfo == null) {
+            return;
+        }
 
-            if (Width < ChartWidth + 2 || Height < ChartHeight + 2) {
-                return;
-            }
+        if (Width < ChartWidth + 2 || Height < ChartHeight + 2) {
+            return;
+        }
 
-            memoryChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceMemoryChart, memoryInfo.Metrics.ToMemoryPercentage());
-            
-            memoryChart.Draw();
+        memoryChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceMemoryChart, memoryInfo.Metrics.ToMemoryPercentage());
+        
+        memoryChart.Draw();
 
 #if __WIN32__
-            pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCommittedMemoryChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
+        pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceCommittedMemoryChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
 #elif __APPLE__
-            pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSwapFileChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
+        pageFileChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSwapFileChart, memoryInfo.Metrics.ToPageFileMemoryPercentage());
 #endif
-            pageFileChart.Draw();
+        pageFileChart.Draw();
 
-            memoryMetre.SetValues(
-                memoryInfo.Metrics.InUseBytesRatio,
-                memoryInfo.Metrics.ModifiedBytesRatio,
-                memoryInfo.Metrics.StandbyBytesRatio,
-                memoryInfo.Metrics.FreeBytesRatio);
+        memoryMetre.SetValues(
+            memoryInfo.Metrics.InUseBytesRatio,
+            memoryInfo.Metrics.ModifiedBytesRatio,
+            memoryInfo.Metrics.StandbyBytesRatio,
+            memoryInfo.Metrics.FreeBytesRatio);
 
-            memoryMetricsListView.Items[0].SubItems[0].Text = memoryInfo.Metrics.ToMemoryRatioFormattedBytes();
-            memoryMetricsListView.Items[0].SubItems[1].Text = memoryInfo.Metrics.ToMemoryAvailableFormattedBytes();
-            memoryMetricsListView.Items[0].SubItems[2].Text = memoryInfo.Metrics.ToPageFileMemoryRatioFormattedBytes();
-            memoryMetricsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.ToPageFileMemoryAvailableFormattedBytes();
+        memoryMetricsListView.Items[0].SubItems[0].Text = memoryInfo.Metrics.ToMemoryRatioFormattedBytes();
+        memoryMetricsListView.Items[0].SubItems[1].Text = memoryInfo.Metrics.ToMemoryAvailableFormattedBytes();
+        memoryMetricsListView.Items[0].SubItems[2].Text = memoryInfo.Metrics.ToPageFileMemoryRatioFormattedBytes();
+        memoryMetricsListView.Items[0].SubItems[3].Text = memoryInfo.Metrics.ToPageFileMemoryAvailableFormattedBytes();
 #if __APPLE__
-            memoryMetricsListView.Items[0].SubItems[4].Text = memoryInfo.Metrics.SwapInBytesPerSecond.ToFormattedByteRate();
-            memoryMetricsListView.Items[0].SubItems[5].Text = memoryInfo.Metrics.SwapOutBytesPerSecond.ToFormattedByteRate();
+        memoryMetricsListView.Items[0].SubItems[4].Text = memoryInfo.Metrics.SwapInBytesPerSecond.ToFormattedByteRate();
+        memoryMetricsListView.Items[0].SubItems[5].Text = memoryInfo.Metrics.SwapOutBytesPerSecond.ToFormattedByteRate();
 #endif
-            
-            memoryMetricsListView.Draw();
+        
+        memoryMetricsListView.Draw();
 
-            uint stickMemory             = 0;
-            int slotsUsed                = 0;
-            ushort memorySpeed           = 0;
-            ushort memoryConfiguredSpeed = 0;
-            
-            string? memorySummary = null;
-            string? formFactor    = null;
-                        
-            for (int i = 0; i < memoryInfo.Specs.Devices.Count; i++) {
-                MemoryDevice memoryDevice = memoryInfo.Specs.Devices[i];
+        uint stickMemory             = 0;
+        int slotsUsed                = 0;
+        ushort memorySpeed           = 0;
+        ushort memoryConfiguredSpeed = 0;
+        
+        string? memorySummary = null;
+        string? formFactor    = null;
                     
-                if (memoryDevice.SizeInMegabytes > 0) {
-                    memorySpeed           = memoryDevice.Speed;
-                    memoryConfiguredSpeed = memoryDevice.ConfiguredClockSpeed;
-                    
-                    stickMemory += memoryDevice.SizeInMegabytes;
-                    slotsUsed++;
-                    
-                    // Show the type and brand for the first discovered stick.
-                    if (string.IsNullOrEmpty(memorySummary)) {
-                        memorySummary = $"{memoryDevice.MemoryType} - {memoryDevice.Manufacturer}";
-                    }
+        for (int i = 0; i < memoryInfo.Specs.Devices.Count; i++) {
+            MemoryDevice memoryDevice = memoryInfo.Specs.Devices[i];
+                
+            if (memoryDevice.SizeInMegabytes > 0) {
+                memorySpeed           = memoryDevice.Speed;
+                memoryConfiguredSpeed = memoryDevice.ConfiguredClockSpeed;
+                
+                stickMemory += memoryDevice.SizeInMegabytes;
+                slotsUsed++;
+                
+                // Show the type and brand for the first discovered stick.
+                if (string.IsNullOrEmpty(memorySummary)) {
+                    memorySummary = $"{memoryDevice.MemoryType} - {memoryDevice.Manufacturer}";
+                }
 
-                    if (string.IsNullOrEmpty(formFactor)) {
-                        formFactor = memoryDevice.FormFactor;
-                    }
+                if (string.IsNullOrEmpty(formFactor)) {
+                    formFactor = memoryDevice.FormFactor;
                 }
             }
-
-            memorySpecsListView.Items[0].SubItems[1].Text = stickMemory > 0 && memorySummary != null
-                ? $"{stickMemory.ToMemoryCapacity()} {memorySummary}"
-                : Strings.CommonUnknown;
-            memorySpecsListView.Items[1].SubItems[1].Text = memorySpeed.ToMemorySpeed();
-            memorySpecsListView.Items[2].SubItems[1].Text = memoryConfiguredSpeed.ToMemoryConfiguredSpeed();
-            memorySpecsListView.Items[3].SubItems[1].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSlotsUsedValue, slotsUsed, memoryInfo.Specs.Devices.Count);
-            memorySpecsListView.Items[4].SubItems[1].Text = formFactor ?? Strings.CommonUnknown;
-            memorySpecsListView.Items[5].SubItems[1].Text = memoryInfo.Metrics.InUseBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[6].SubItems[1].Text = memoryInfo.Metrics.ModifiedBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[7].SubItems[1].Text = memoryInfo.Metrics.StandbyBytes.ToFormattedByteSize();
-            memorySpecsListView.Items[8].SubItems[1].Text = memoryInfo.Metrics.FreeBytes.ToFormattedByteSize();
-
-            memorySpecsListView.Draw();
         }
+
+        memorySpecsListView.Items[0].SubItems[1].Text = stickMemory > 0 && memorySummary != null
+            ? $"{stickMemory.ToMemoryCapacity()} {memorySummary}"
+            : Strings.CommonUnknown;
+        
+        memorySpecsListView.Items[1].SubItems[1].Text = memorySpeed.ToMemorySpeed();
+        memorySpecsListView.Items[2].SubItems[1].Text = memoryConfiguredSpeed.ToMemoryConfiguredSpeed();
+        memorySpecsListView.Items[3].SubItems[1].Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSlotsUsedValue, slotsUsed, memoryInfo.Specs.Devices.Count);
+        memorySpecsListView.Items[4].SubItems[1].Text = formFactor ?? Strings.CommonUnknown;
+        memorySpecsListView.Items[5].SubItems[1].Text = memoryInfo.Metrics.InUseBytes.ToFormattedByteSize();
+        memorySpecsListView.Items[6].SubItems[1].Text = memoryInfo.Metrics.ModifiedBytes.ToFormattedByteSize();
+        memorySpecsListView.Items[7].SubItems[1].Text = memoryInfo.Metrics.StandbyBytes.ToFormattedByteSize();
+        memorySpecsListView.Items[8].SubItems[1].Text = memoryInfo.Metrics.FreeBytes.ToFormattedByteSize();
+
+        memorySpecsListView.Draw();
     }
 
     protected override void OnLoad()
@@ -181,7 +179,7 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
         memoryMetre.Text                   = string.Empty;
         memoryMetre.ShowLegend             = true;
 
-        memoryMetre.AddSeries(Strings.PerformanceInUseSeries,   appConfig.Theme.PerformanceMemoryInUse);
+        memoryMetre.AddSeries(Strings.PerformanceInUseSeries,    appConfig.Theme.PerformanceMemoryInUse);
         memoryMetre.AddSeries(Strings.PerformanceModifiedSeries, appConfig.Theme.PerformanceMemoryModified);
         memoryMetre.AddSeries(Strings.PerformanceStandbySeries,  appConfig.Theme.PerformanceMemoryStandby);
         memoryMetre.AddSeries(Strings.PerformanceFreeSeries,     appConfig.Theme.PerformanceMemoryFree);
@@ -193,15 +191,15 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 #endif
         memoryMetricsListView.Items.Add(memoryMetricsItem);
         
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelMemory,            string.Empty, appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelSpeed,             "0 GHz", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceConfiguredSpeed,  "0 GHz", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSlotsUsed,        "0", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFormFactor,       string.Empty, appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceInUse,            "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceModified,          "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceStandbyCached,  "0 MB", appConfig.Theme));
-        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFree,              "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelMemory,                string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelSpeed,                 "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceConfiguredSpeed, "0 GHz", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceSlotsUsed,       "0", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFormFactor,      string.Empty, appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceInUse,           "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceModified,        "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceStandbyCached,   "0 MB", appConfig.Theme));
+        memorySpecsListView.Items.Add(CommonControl.PropertyRow(Strings.PerformanceFree,            "0 MB", appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)
@@ -285,15 +283,21 @@ public sealed class MemoryPerformanceControl : Control, IPerformanceDetail
 
     public void Sample(SystemSnapshot snapshot)
     {
-        lock (@lock) {
-            if (snapshot.Memory is not { } memory) {
-                return;
-            }
-
-            memoryInfo = memory;
-
-            memoryChart.AddData(memory.Metrics.ToMemoryRatio());
-            pageFileChart.AddData(memory.Metrics.ToPageFileMemoryRatio());
+        if (snapshot.Memory is not { } memory) {
+            return;
         }
+
+        memoryInfo = memory;
+        Summary    = (memory.Metrics.ToMemoryRatioFormattedBytes(), memory.Metrics.ToMemoryPercentage());
+
+        memoryChart.AddData(memory.Metrics.ToMemoryRatio());
+        pageFileChart.AddData(memory.Metrics.ToPageFileMemoryRatio());
+        Spark.AddData(memory.Metrics.AvailablePhysicalRatio);
     }
+
+    public Chart Spark { get; }
+
+    public (string Top, string Bottom) Summary { get; private set; } = (string.Empty, string.Empty);
+
+    public string Title => Strings.PerformanceMemoryPanel;
 }

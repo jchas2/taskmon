@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.DiskSpace;
@@ -26,9 +28,8 @@ public sealed class MainScreen2 : Screen
     private readonly RunContext        runContext;
     private readonly ScreenApplication screenApp;
 
-    private readonly MenuControl          menuControl;
-    private readonly BannerControl        menuBannerControl;
-    private readonly BannerControl        bannerControl;
+    private readonly AnsiScreenBuffer     frame = new();
+    private readonly ListView             menuView;
     private readonly HeaderControl2       headerControl;
     private readonly SummaryControl2      summaryControl;
     private readonly HealthControl        healthControl;
@@ -43,10 +44,10 @@ public sealed class MainScreen2 : Screen
     private readonly DiskSpaceControl     diskSpaceControl;
     private readonly FooterControl        footerControl;
     
-    private Control       activeControl;
-    private Control       focusedControl;
-    private List<Control> menuControls;
-    
+    private Control activeControl;
+    private Control focusedControl;
+    private string  bannerText = string.Empty;
+
     private const int HeaderHeight     = HeaderControl2.HeaderRows;
     private const int BannerHeight     = 1;
     private const int MenuWidth        = 16;
@@ -65,24 +66,14 @@ public sealed class MainScreen2 : Screen
             TabStop = false
         };
 
-        menuControl = new MenuControl(runContext.Terminal, runContext.AppConfig) {
-            Visible  = true,
-            TabStop  = true,
-            TabIndex = 1
+        menuView = new ListView(runContext.Terminal) {
+            ShowColumnHeaders = false,
+            TabStop           = true,
+            TabIndex          = 1
         };
 
-        menuBannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
-            Visible       = true,
-            TabStop       = false,
-            HalfCellEdges = true,
-            Text          = Strings.MainMenuTitle
-        };
-
-        bannerControl = new BannerControl(runContext.Terminal, runContext.AppConfig) {
-            Visible       = true,
-            TabStop       = false,
-            HalfCellEdges = true
-        };
+        menuView.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty));
+        menuView.ItemClicked += OnMenuItemClicked;
 
         summaryControl = new SummaryControl2(
             runContext.ServiceController,
@@ -185,9 +176,7 @@ public sealed class MainScreen2 : Screen
         };
 
         Controls
-            .Add(menuControl)
-            .Add(menuBannerControl)
-            .Add(bannerControl)
+            .Add(menuView)
             .Add(headerControl)
             .Add(summaryControl)
             .Add(healthControl)
@@ -202,23 +191,9 @@ public sealed class MainScreen2 : Screen
             .Add(diskSpaceControl)
             .Add(footerControl);
 
-        menuControls = new List<Control> {
-            summaryControl,
-            healthControl,
-            performanceControl,
-            processesControl,
-            thermalsControl,
-            systemInfoControl,
-            startupControl,
-            installedAppsControl,
-            servicesControl,
-            driversControl,
-            diskSpaceControl
-        };
-        
         activeControl  = summaryControl;
-        focusedControl = menuControl;
-    } 
+        focusedControl = menuView;
+    }
 
     private void ApplyThemeDefaults()
     {
@@ -227,6 +202,26 @@ public sealed class MainScreen2 : Screen
         foreach (Control ctrl in Controls) {
             CommonControl.ThemeDefaults(ctrl, runContext.AppConfig.Theme);
         }
+
+        CommonControl.Theme(menuView, runContext.AppConfig.Theme);
+    }
+
+    private void DrawBanner(int x, int width, string text)
+    {
+        if (width < 2) {
+            return;
+        }
+
+        Color background = runContext.AppConfig.Theme.MenubarBackground;
+
+        frame.Clear();
+        frame.MoveTo(x, ActiveControlTop);
+        AppendHalfBlock(frame, BackgroundColour, background, fallback: BackgroundColour);
+        frame.SetColour(runContext.AppConfig.Theme.MenubarForeground, background);
+        frame.Append(text.PadOrTruncate(' ', width - 2));
+        AppendHalfBlock(frame, background, BackgroundColour, fallback: BackgroundColour);
+        frame.ResetColour();
+        Terminal.Write(frame.AsSpan());
     }
 
     private int FooterHeight => footerControl.Rows;
@@ -234,24 +229,24 @@ public sealed class MainScreen2 : Screen
     internal Control? GetActiveControl => activeControl;
 
     internal T GetControl<T>() where T : Control => (T)Controls.Single(ctrl => ctrl is T);
-    
+
+    internal ListView MenuView => menuView;
+
     protected override void OnDraw()
     {
         Debug.Assert(activeControl != null);
 
         headerControl.Draw();
-        menuControl.Draw();
-        menuBannerControl.Draw();
-        bannerControl.Draw();
+        menuView.Draw();
+        DrawBanner(0, MenuWidth, Strings.MainMenuTitle);
+        DrawBanner(MenuWidth, Width - MenuWidth, bannerText);
         activeControl.Draw();
         footerControl.Draw();
     }
 
     private void OnHealthProcessRequested(object? sender, int pid)
     {
-        MenuListViewItem item = menuControl.Select(processesControl);
-
-        SetActiveControl(item);
+        SetActiveControl(SelectMenuItem(processesControl));
         focusedControl = processesControl;
         processesControl.SetFocus();
         processesControl.ProcessControl.SelectProcess(pid);
@@ -297,7 +292,7 @@ public sealed class MainScreen2 : Screen
                 handled = true;
                 break;
 
-            case ConsoleKey.RightArrow when focusedControl == menuControl:
+            case ConsoleKey.RightArrow when focusedControl == menuView:
                 focusedControl = activeControl;
                 activeControl.SetFocus();
                 Draw();
@@ -307,8 +302,8 @@ public sealed class MainScreen2 : Screen
                 activeControl.KeyPressed(keyInfo, ref handled);
 
                 if (!handled) {
-                    focusedControl = menuControl;
-                    menuControl.SetFocus();
+                    focusedControl = menuView;
+                    menuView.SetFocus();
                 }
 
                 Draw();
@@ -341,7 +336,9 @@ public sealed class MainScreen2 : Screen
 
         ApplyThemeDefaults();
 
-        menuControl.MenuItems = new() {
+        menuView.Items.Clear();
+
+        menuView.Items.AddRange(
             new MenuListViewItem(summaryControl,       Strings.MainMenuSummary),
             new MenuListViewItem(healthControl,        Strings.MainMenuHealth),
             new MenuListViewItem(performanceControl,   Strings.MainMenuPerformance),
@@ -352,29 +349,25 @@ public sealed class MainScreen2 : Screen
             new MenuListViewItem(installedAppsControl, Strings.MainMenuApps),
             new MenuListViewItem(servicesControl,      Strings.MainMenuServices),
             new MenuListViewItem(driversControl,       Strings.MainMenuDrivers),
-            new MenuListViewItem(systemInfoControl,    Strings.MainMenuSystemInfo),
-        };
-        
-        activeControl      = summaryControl;
-        bannerControl.Text = menuControl.MenuItems[0].Text;
-        focusedControl     = menuControl;
+            new MenuListViewItem(systemInfoControl,    Strings.MainMenuSystemInfo));
+
+        activeControl  = summaryControl;
+        bannerText     = Strings.MainMenuSummary;
+        focusedControl = menuView;
 
         foreach (Control control in ShownControls) {
             control.Load();
         }
 
-        menuControl.SetFocus();
-        menuControl.MenuItemClicked += OnMenuItemClicked;
+        menuView.SetFocus();
         healthControl.ProcessRequested += OnHealthProcessRequested;
     }
 
-    private void OnMenuItemClicked(object? sender, MenuItemEventArgs e)
+    private void OnMenuItemClicked(object? sender, ListViewItemEventArgs e)
     {
-        if (e.Item!.AssociatedControl == activeControl) {
-            return;
+        if (e.Item is MenuListViewItem item && item.AssociatedControl != activeControl) {
+            SetActiveControl(item);
         }
-
-        SetActiveControl(e.Item);
     }
 
     protected override void OnResize()
@@ -387,23 +380,12 @@ public sealed class MainScreen2 : Screen
         headerControl.Width = Width;
         headerControl.Resize();
 
-        menuControl.X      = 0;
-        menuControl.Y      = ActiveControlTop + 1;
-        menuControl.Width  = MenuWidth;
-        menuControl.Height = Height - ActiveControlTop - FooterHeight - 1;
-        menuControl.Resize();
-
-        menuBannerControl.X      = 0;
-        menuBannerControl.Y      = ActiveControlTop;
-        menuBannerControl.Width  = MenuWidth;
-        menuBannerControl.Height = BannerHeight;
-        menuBannerControl.Resize();
-
-        bannerControl.X      = MenuWidth;
-        bannerControl.Y      = ActiveControlTop;
-        bannerControl.Width  = Width - MenuWidth;
-        bannerControl.Height = BannerHeight;
-        bannerControl.Resize();
+        menuView.X      = 0;
+        menuView.Y      = ActiveControlTop + BannerHeight;
+        menuView.Width  = MenuWidth;
+        menuView.Height = Height - ActiveControlTop - FooterHeight - BannerHeight;
+        menuView.ColumnHeaders[0].Width = MenuWidth - 2;
+        menuView.Resize();
 
         SizeControl(activeControl);
         
@@ -419,29 +401,39 @@ public sealed class MainScreen2 : Screen
     protected override void OnUnload()
     {
         base.OnUnload();
-        menuControl.MenuItemClicked -= OnMenuItemClicked;
         healthControl.ProcessRequested -= OnHealthProcessRequested;
         Terminal.CursorVisible = true;
+    }
+
+    internal MenuListViewItem SelectMenuItem(Control control)
+    {
+        MenuListViewItem item = menuView.Items
+            .OfType<MenuListViewItem>()
+            .First(candidate => candidate.AssociatedControl == control);
+        
+        menuView.SelectedIndex = menuView.Items.IndexOf(item);
+
+        return item;
     }
 
     internal void SetActiveControl(MenuListViewItem item)
     {
         activeControl.Unload();
         activeControl = item.AssociatedControl;
-        
-        bannerControl.Text = item.Text;
-        bannerControl.Draw();
+
+        bannerText = item.Text;
+        DrawBanner(MenuWidth, Width - MenuWidth, bannerText);
 
         activeControl.Load();
         SizeControl(activeControl);
         activeControl.Clear();
         activeControl.Draw();
 
-        menuControl.SetFocus();
+        menuView.SetFocus();
     }
 
     private IEnumerable<Control> ShownControls =>
-        [headerControl, menuControl, menuBannerControl, bannerControl, activeControl, footerControl];
+        [headerControl, menuView, activeControl, footerControl];
 
     private void ShowNextLayout()
     {
@@ -461,7 +453,7 @@ public sealed class MainScreen2 : Screen
             summaryControl.Load();
         }
         else {
-            SetActiveControl(menuControl.Select(summaryControl));
+            SetActiveControl(SelectMenuItem(summaryControl));
         }
 
         if (viewHadFocus) {
@@ -469,7 +461,7 @@ public sealed class MainScreen2 : Screen
             summaryControl.SetFocus();
         }
         else {
-            menuControl.SetFocus();
+            menuView.SetFocus();
         }
 
         Clear();
@@ -497,7 +489,7 @@ public sealed class MainScreen2 : Screen
         }
 
         focus?.SetFocus();
-        menuControl.Select(activeControl);
+        SelectMenuItem(activeControl);
 
         Clear();
         Resize();
@@ -506,9 +498,9 @@ public sealed class MainScreen2 : Screen
 
     private void SizeControl(Control control)
     {
-        control.X      = menuControl.X + menuControl.Width;
+        control.X      = MenuWidth;
         control.Y      = ActiveControlTop + BannerHeight;
-        control.Width  = Width - menuControl.Width;
+        control.Width  = Width - MenuWidth;
         control.Height = Height - BannerHeight - ActiveControlTop - FooterHeight;
         control.Resize();
     }

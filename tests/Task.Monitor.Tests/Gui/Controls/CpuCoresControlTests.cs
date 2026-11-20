@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services;
@@ -151,11 +152,13 @@ public sealed class CpuCoresControlTests
     [Fact]
     public void Factory_Builds_The_Control_For_A_CpuCores_Pane()
     {
-        Control control = SummaryPaneControlFactory.Create(
-            new SummaryPane(PaneControlType.CpuCores),
+        SummaryControl2 summary = new(
             runContext.ServiceController,
             runContext.Terminal,
-            runContext.AppConfig);
+            runContext.AppConfig,
+            new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.CpuCores)));
+
+        Control control = summary.PaneControls.Values.Single();
 
         Assert.IsType<CpuCoresControl>(control);
         Assert.False(control.TabStop);

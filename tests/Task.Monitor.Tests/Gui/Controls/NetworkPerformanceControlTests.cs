@@ -114,12 +114,12 @@ public sealed class NetworkPerformanceControlTests
     {
         NetworkPerformanceControl ctrl = new(
             new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            222UL) {
             Width = 120,
             Height = 44
         };
 
-        ctrl.SetScope(222UL);
         ctrl.Load();
         ctrl.Resize();
         ctrl.Sample(new SystemSnapshot { Network = BuildNetworkInfoWithDevices() });

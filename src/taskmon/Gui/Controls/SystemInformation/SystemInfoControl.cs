@@ -28,7 +28,7 @@ public sealed partial class SystemInfoControl : Control
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
-    private readonly MenuControl       navMenu;
+    private readonly ListView          navView;
     private readonly ListView          systemInfoView;
     private readonly SystemLogoControl logoControl;
     private readonly ListView          systemSummaryView;
@@ -47,11 +47,14 @@ public sealed partial class SystemInfoControl : Control
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
 
-        navMenu = new MenuControl(terminal, appConfig) {
-            TabStop  = true,
-            TabIndex = 1,
-            Visible  = true
+        navView = new ListView(terminal) {
+            ShowColumnHeaders = false,
+            TabStop           = true,
+            TabIndex          = 1
         };
+
+        navView.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty));
+        navView.ItemClicked += (_, _) => SelectSection((Section)navView.SelectedIndex);
 
         systemInfoView = new ListView(terminal) {
             EnableScroll      = true,
@@ -89,7 +92,7 @@ public sealed partial class SystemInfoControl : Control
         Controls
             .Add(logoControl)
             .Add(systemSummaryView)
-            .Add(navMenu)
+            .Add(navView)
             .Add(systemInfoView);
     }
 
@@ -151,22 +154,22 @@ public sealed partial class SystemInfoControl : Control
 
         logoControl.Draw();
         systemSummaryView.Draw();
-        navMenu.Draw();
+        navView.Draw();
         systemInfoView.Draw();
     }
 
-    protected override void OnGotFocus() => navMenu.SetFocus();
+    protected override void OnGotFocus() => navView.SetFocus();
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         switch (keyInfo.Key) {
             case ConsoleKey.LeftArrow when GetFocusedControl == systemInfoView:
-                navMenu.SetFocus();
+                navView.SetFocus();
                 handled = true;
                 Draw();
                 break;
 
-            case ConsoleKey.RightArrow when GetFocusedControl == navMenu:
+            case ConsoleKey.RightArrow when GetFocusedControl == navView:
                 systemInfoView.SetFocus();
                 handled = true;
                 Draw();
@@ -181,19 +184,22 @@ public sealed partial class SystemInfoControl : Control
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
+        CommonControl.ThemeDefaults(navView, appConfig.Theme);
+        CommonControl.Theme(navView, appConfig.Theme);
 
-        navMenu.MenuItems = new() {
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuCpu)     { LoadItems = () => SelectSection(Section.Cpu)     },
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuMemory)  { LoadItems = () => SelectSection(Section.Memory)  },
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuGpu)     { LoadItems = () => SelectSection(Section.Gpu)     },
+        navView.Items.Clear();
+
+        navView.Items.AddRange(
+            new ListViewItem(Strings.SystemInfoMenuCpu),
+            new ListViewItem(Strings.SystemInfoMenuMemory),
+            new ListViewItem(Strings.SystemInfoMenuGpu),
 #if __APPLE__
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuNpu)     { LoadItems = () => SelectSection(Section.Npu)     },
+            new ListViewItem(Strings.SystemInfoMenuNpu),
 #endif
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuDisk)    { LoadItems = () => SelectSection(Section.Disk)    },
-            new MenuListViewItem(systemInfoView, Strings.SystemInfoMenuNetwork) { LoadItems = () => SelectSection(Section.Network) },
-        };
+            new ListViewItem(Strings.SystemInfoMenuDisk),
+            new ListViewItem(Strings.SystemInfoMenuNetwork));
 
-        CommonControl.Theme(systemInfoView, appConfig.Theme);
+        CommonControl.Theme(systemInfoView,    appConfig.Theme);
         CommonControl.Theme(systemSummaryView, appConfig.Theme);
 
         systemInfoView.FooterText = CommonControl.FooterText(appConfig.Theme, CommonControl.ScrollHotKey);
@@ -201,20 +207,17 @@ public sealed partial class SystemInfoControl : Control
         logoControl.BackgroundColour = appConfig.Theme.Background;
 
         serviceController.SystemSnapshotUpdated += OnSystemSnapshotUpdated;
-        navMenu.MenuItemClicked                 += OnNavItemClicked;
 
         base.OnLoad();
     }
 
-    private void OnNavItemClicked(object? sender, MenuItemEventArgs e) =>
-        e.Item?.LoadItems?.Invoke();
-
     protected override void OnResize()
     {
-        navMenu.X      = X;
-        navMenu.Y      = Y;
-        navMenu.Width  = NavWidth;
-        navMenu.Height = Height;
+        navView.X      = X;
+        navView.Y      = Y;
+        navView.Width  = NavWidth;
+        navView.Height = Height;
+        navView.ColumnHeaders[0].Width = NavWidth - 2;
 
         int contentX     = X + NavWidth;
         int contentWidth = Width - NavWidth;
@@ -254,8 +257,7 @@ public sealed partial class SystemInfoControl : Control
     protected override void OnUnload()
     {
         serviceController.SystemSnapshotUpdated -= OnSystemSnapshotUpdated;
-        navMenu.MenuItemClicked                 -= OnNavItemClicked;
-        
+
         systemInfoView.Items.Clear();
         systemSummaryView.Items.Clear();
         
@@ -283,8 +285,7 @@ public sealed partial class SystemInfoControl : Control
         Draw();
     }
 
-    internal void SelectSectionForTests(int navIndex) =>
-        navMenu.MenuItems?[navIndex].LoadItems?.Invoke();
+    internal void SelectSectionForTests(int navIndex) => SelectSection((Section)navIndex);
 
     internal ListViewItemCollection SummaryItemsForTests => systemSummaryView.Items;
 }

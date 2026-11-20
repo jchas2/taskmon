@@ -607,7 +607,7 @@ public class SetupScreen : Screen
 
         Preview?.Draw();
 
-        KeyBindControl.Draw(
+        CommonControl.DrawKeyBind(
             "F10",
             Strings.SetupDone,
             X,
@@ -845,8 +845,8 @@ public class SetupScreen : Screen
 
         return innerWidth switch {
             >= Base + ProcessControl.ColumnUserWidth + ProcessControl.ColumnCpuWidth + ProcessControl.ColumnMemoryWidth => Wide,
-            >= Base + ProcessControl.ColumnCpuWidth + ProcessControl.ColumnMemoryWidth                                    => Medium,
-                                                                                                                          _ => Narrow
+            >= Base + ProcessControl.ColumnCpuWidth + ProcessControl.ColumnMemoryWidth                                  => Medium,
+                                                                                                                      _ => Narrow
         };
     }
 

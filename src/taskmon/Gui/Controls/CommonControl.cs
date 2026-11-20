@@ -3,6 +3,7 @@ using System.Text;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Resources;
+using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.DriveInputBox;
@@ -20,7 +21,42 @@ public static class CommonControl
     public const string FooterSeparator = ListView.FooterItemGap;
 
     public static (string Key, string Label) ClearFilterHotKey => ("Esc", Strings.HotKeyClearFilter);
-    public static (string Key, string Label) FilterHotKey      => ("f", Strings.HotKeyFilter);
+
+    public static int DrawKeyBind(
+        string          key,
+        string          label,
+        int             x,
+        int             y,
+        int             width,
+        Theme           theme,
+        bool            enabled,
+        ISystemTerminal terminal)
+    {
+        width = Math.Max(width, label.Length + 2);
+
+        terminal.Write(AnsiConsoleStringExtensions.Reset);
+        terminal.SetCursorPosition(x, y);
+        terminal.BackgroundColor = theme.Background;
+        
+        terminal.ForegroundColor = enabled 
+            ? theme.Foreground 
+            : theme.CommandForegroundDisabled;
+        
+        terminal.Write(key + " ");
+        terminal.BackgroundColor = theme.CommandBackground;
+        
+        terminal.ForegroundColor = enabled 
+            ? theme.CommandForeground 
+            : theme.CommandForegroundDisabled;
+        
+        terminal.Write(label.CentreWithLength(width).ToBold());
+        terminal.BackgroundColor = theme.Background;
+        terminal.ForegroundColor = theme.Foreground;
+
+        return key.Length + 1 + width;
+    }
+
+    public static (string Key, string Label) FilterHotKey => ("f", Strings.HotKeyFilter);
 
     public static string FooterNote(Theme theme, string note) =>
         string.IsNullOrEmpty(note)
@@ -70,9 +106,9 @@ public static class CommonControl
             new ListViewSubItem(null!, value, theme.ListViewBackground, valueColour ?? theme.PropertyValue)
         ]);
 
-    public static (string Key, string Label) RefreshHotKey     => ("r", Strings.HotKeyRefresh);
-    public static (string Key, string Label) ScrollHotKey      => ("↑ ↓ PgUp PgDn", Strings.HotKeyScroll);
-    public static (string Key, string Label) SortHotKey        => ("s", Strings.HotKeySort);
+    public static (string Key, string Label) RefreshHotKey => ("r", Strings.HotKeyRefresh);
+    public static (string Key, string Label) ScrollHotKey  => ("↑ ↓ PgUp PgDn", Strings.HotKeyScroll);
+    public static (string Key, string Label) SortHotKey    => ("s", Strings.HotKeySort);
 
     public static void Text(DriveInputBox control)
     {

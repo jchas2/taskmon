@@ -19,8 +19,6 @@ using SysThreading = System.Threading;
 
 namespace Task.Monitor.Gui;
 
-// Top to bottom, centred in the height: the robot, the sampling engine's figures, and its samplers.
-// Each shows only when it fits whole, in that order; without room for the robot, its caption alone.
 public sealed class AboutScreen : Screen
 {
     private const int    ColumnGap    = 3;
@@ -76,15 +74,24 @@ public sealed class AboutScreen : Screen
         Controls.Add(samplersView);
     }
 
-    private ListViewSubItem Cell(string text, Color foreground) =>
-        new(null!, text, runContext.AppConfig.Theme.Background, foreground);
+    private ListViewSubItem Cell(string text, Color foreground) => new(
+        null!, 
+        text, 
+        runContext.AppConfig.Theme.Background, 
+        foreground);
 
     private static string ColoursText()
     {
-        string mode = ConsolePalette.PreferIndexedColours ? Strings.AboutColoursIndexed : Strings.AboutColoursTrue;
+        string mode = ConsolePalette.PreferIndexedColours 
+            ? Strings.AboutColoursIndexed 
+            : Strings.AboutColoursTrue;
 
         return TerminalCapabilities.IsColorModeOverriddenByEnvironment(Environment.GetEnvironmentVariable)
-            ? string.Format(CultureInfo.CurrentCulture, Strings.AboutColoursFromEnvironment, mode, TerminalCapabilities.ColourModeEnvVar)
+            ? string.Format(
+                CultureInfo.CurrentCulture, 
+                Strings.AboutColoursFromEnvironment, 
+                mode, 
+                TerminalCapabilities.ColourModeEnvVar)
             : mode;
     }
 
@@ -93,7 +100,6 @@ public sealed class AboutScreen : Screen
         AppConfig     appConfig = runContext.AppConfig;
         StringBuilder text      = new();
 
-        // A heading, then each row indented as "label: value", or just the value without a label.
         void Section(string heading, IEnumerable<(string Label, string Value)> rows)
         {
             text.Append(heading).Append('\n');
@@ -153,8 +159,25 @@ public sealed class AboutScreen : Screen
         int   y     = Y + Height - 1;
         int   x     = X;
 
-        x += KeyBindControl.Draw("ESC", Strings.KeyBindExit,  x, y, HintWidth, theme, enabled: true, Terminal) + 1;
-        x += KeyBindControl.Draw("C",   Strings.AboutKeyCopy, x, y, HintWidth, theme, enabled: true, Terminal) + 1;
+        x += CommonControl.DrawKeyBind(
+            "ESC", 
+            Strings.KeyBindExit,  
+            x, 
+            y, 
+            HintWidth, 
+            theme, 
+            enabled: true, 
+            Terminal) + 1;
+        
+        x += CommonControl.DrawKeyBind(
+            "C",   
+            Strings.AboutKeyCopy, 
+            x, 
+            y, 
+            HintWidth, 
+            theme, 
+            enabled: true, 
+            Terminal) + 1;
 
         int room = X + Width - x;
 
@@ -255,7 +278,8 @@ public sealed class AboutScreen : Screen
 
     private void FillStats()
     {
-        Theme                         theme = runContext.AppConfig.Theme;
+        Theme theme = runContext.AppConfig.Theme;
+        
         (string Label, string Value)[] rows = EngineRows();
 
         int labelWidth = rows.Max(row => row.Label.Length) + LabelGap;
@@ -289,11 +313,21 @@ public sealed class AboutScreen : Screen
     {
         Theme theme = runContext.AppConfig.Theme;
 
-        DrawLine(Y, Title, theme.MenubarForeground, theme.MenubarBackground);
+        DrawLine(
+            Y, 
+            Title, 
+            theme.MenubarForeground, 
+            theme.MenubarBackground);
+        
         mascot.Draw();
 
         if (statsView.Visible) {
-            DrawLine(headingY, Strings.AboutSamplingEngine, theme.PropertyKey, theme.Background);
+            DrawLine(
+                headingY, 
+                Strings.AboutSamplingEngine, 
+                theme.PropertyKey, 
+                theme.Background);
+            
             statsView.Draw();
         }
 
@@ -463,6 +497,7 @@ public sealed class AboutScreen : Screen
             return process.StartTime.ToUniversalTime();
         }
         catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or global::System.ComponentModel.Win32Exception) {
+            ExceptionHelper.LogException(ex);
             return DateTime.UtcNow;
         }
     }

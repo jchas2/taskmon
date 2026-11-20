@@ -1,16 +1,16 @@
 using System.Drawing;
-using Task.Monitor.Gui.Controls.Summary2.Layout;
+using Task.Monitor.Gui;
 
 namespace Task.Monitor.Tests.Gui.Controls.Summary2;
 
-// A 2x2 grid of panes, ids matching their screen position: TopLeft(1) TopRight(2) / BottomLeft(3)
+// The layout designer moves its selection with the arrow keys to the nearest pane that way. A 2x2 grid of panes, ids matching their screen position: TopLeft(1) TopRight(2) / BottomLeft(3)
 // BottomRight(4) - deliberately simple bounds so each direction's expected answer is unambiguous.
-public sealed class SpatialNavigationTests
+public sealed class LayoutDesignerNavigationTests
 {
     [Fact]
     public void Down_From_TopLeft_Finds_BottomLeft()
     {
-        Assert.Equal(3, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Down));
+        Assert.Equal(3, LayoutDesignerScreen.FindNearest(Grid(), 1, ConsoleKey.DownArrow));
     }
 
     private static Dictionary<int, Rectangle> Grid() => new() {
@@ -23,7 +23,7 @@ public sealed class SpatialNavigationTests
     [Fact]
     public void Left_From_BottomRight_Finds_BottomLeft()
     {
-        Assert.Equal(3, SpatialNavigation.FindNearest(Grid(), 4, SpatialDirection.Left));
+        Assert.Equal(3, LayoutDesignerScreen.FindNearest(Grid(), 4, ConsoleKey.LeftArrow));
     }
 
     [Fact]
@@ -35,26 +35,26 @@ public sealed class SpatialNavigationTests
             [3] = new Rectangle(40, 0, 20, 20),   // further right
         };
 
-        Assert.Equal(2, SpatialNavigation.FindNearest(bounds, 1, SpatialDirection.Right));
+        Assert.Equal(2, LayoutDesignerScreen.FindNearest(bounds, 1, ConsoleKey.RightArrow));
     }
 
     [Fact]
     public void Returns_Null_For_An_Unknown_Starting_Id()
     {
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 999, SpatialDirection.Right));
+        Assert.Null(LayoutDesignerScreen.FindNearest(Grid(), 999, ConsoleKey.RightArrow));
     }
 
     [Fact]
     public void Returns_Null_When_Nothing_Lies_In_That_Direction()
     {
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Left));
-        Assert.Null(SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Up));
+        Assert.Null(LayoutDesignerScreen.FindNearest(Grid(), 1, ConsoleKey.LeftArrow));
+        Assert.Null(LayoutDesignerScreen.FindNearest(Grid(), 1, ConsoleKey.UpArrow));
     }
 
     [Fact]
     public void Right_From_TopLeft_Finds_TopRight()
     {
-        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 1, SpatialDirection.Right));
+        Assert.Equal(2, LayoutDesignerScreen.FindNearest(Grid(), 1, ConsoleKey.RightArrow));
     }
 
     [Fact]
@@ -68,12 +68,12 @@ public sealed class SpatialNavigationTests
             [3] = new Rectangle(20, 0, 20, 30),    // y: 0-30  - overlap 30, wins
         };
 
-        Assert.Equal(3, SpatialNavigation.FindNearest(bounds, 1, SpatialDirection.Right));
+        Assert.Equal(3, LayoutDesignerScreen.FindNearest(bounds, 1, ConsoleKey.RightArrow));
     }
 
     [Fact]
     public void Up_From_BottomRight_Finds_TopRight()
     {
-        Assert.Equal(2, SpatialNavigation.FindNearest(Grid(), 4, SpatialDirection.Up));
+        Assert.Equal(2, LayoutDesignerScreen.FindNearest(Grid(), 4, ConsoleKey.UpArrow));
     }
 }

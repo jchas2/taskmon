@@ -5,13 +5,16 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
 using Task.Monitor.Gui.Controls;
 using Task.Monitor.Gui.Controls.Health;
+using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
+using Task.Monitor.Resources;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services.Health;
+using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
 using Task.Monitor.Tests.Process;
@@ -254,10 +257,10 @@ public sealed class MainScreen2Tests : IDisposable
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
-        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        ListView         menuControl      = mainScreen.MenuView;
         bool             handled          = false;
 
-        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(processesControl));
         Assert.True(menuControl.Focused);
 
         mainScreen.KeyPressed(Key(ConsoleKey.F3), ref handled);
@@ -271,10 +274,10 @@ public sealed class MainScreen2Tests : IDisposable
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
-        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        ListView         menuControl      = mainScreen.MenuView;
         bool             handled          = false;
 
-        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(processesControl));
         mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
         Assert.True(processesControl.ProcessControl.HasFocus);
 
@@ -283,7 +286,7 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.True(handled);
         Assert.Same(processesControl, mainScreen.GetActiveControl);
-        Assert.Same(processesControl, menuControl.SelectedItem?.AssociatedControl);
+        Assert.Same(processesControl, (menuControl.SelectedItem as MenuListViewItem)?.AssociatedControl);
         Assert.True(processesControl.ProcessControl.HasFocus);
         Assert.False(menuControl.Focused);
     }
@@ -349,7 +352,7 @@ public sealed class MainScreen2Tests : IDisposable
     public void F4_Keeps_Focus_On_The_Menu()
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
-        MenuControl menuControl = mainScreen.GetControl<MenuControl>();
+        ListView    menuControl = mainScreen.MenuView;
         bool        handled     = false;
 
         Assert.True(menuControl.Focused);
@@ -366,10 +369,10 @@ public sealed class MainScreen2Tests : IDisposable
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
         SummaryControl2  summaryControl   = mainScreen.GetControl<SummaryControl2>();
-        MenuControl      menuControl      = mainScreen.GetControl<MenuControl>();
+        ListView         menuControl      = mainScreen.MenuView;
         bool             handled          = false;
 
-        mainScreen.SetActiveControl(menuControl.Select(processesControl));
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(processesControl));
         mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
         Assert.True(processesControl.ProcessControl.HasFocus);
 
@@ -389,14 +392,14 @@ public sealed class MainScreen2Tests : IDisposable
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
-        MenuControl     menuControl    = mainScreen.GetControl<MenuControl>();
+        ListView        menuControl    = mainScreen.MenuView;
         bool            handled        = false;
 
-        mainScreen.SetActiveControl(menuControl.Select(mainScreen.GetControl<ProcessesControl>()));
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(mainScreen.GetControl<ProcessesControl>()));
         mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
 
         Assert.Same(summaryControl, mainScreen.GetActiveControl);
-        Assert.Same(summaryControl, menuControl.SelectedItem?.AssociatedControl);
+        Assert.Same(summaryControl, (menuControl.SelectedItem as MenuListViewItem)?.AssociatedControl);
         Assert.True(menuControl.Focused);
     }
 
@@ -439,7 +442,7 @@ public sealed class MainScreen2Tests : IDisposable
     {
         (MainScreen2 mainScreen, _) = ShowMainScreen();
 
-        List<MenuListViewItem> items = mainScreen.GetControl<MenuControl>().MenuItems!;
+        List<MenuListViewItem> items = [.. mainScreen.MenuView.Items.OfType<MenuListViewItem>()];
 
         Assert.Equal("SUMMARY", items[0].Text);
         Assert.Equal("HEALTH", items[1].Text);
@@ -487,7 +490,7 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.True(healthControl.CausesView.Focused);
 
         mainScreen.KeyPressed(Key(ConsoleKey.LeftArrow), ref handled);
-        Assert.True(mainScreen.GetControl<MenuControl>().Focused);
+        Assert.True(mainScreen.MenuView.Focused);
     }
 
     [Fact]
@@ -508,6 +511,40 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.Contains(SummaryChartScale, CapturedOutput());
     }
 
+    // Regression test: the selected detail took focus, and the screen redraws a control as it loses
+    // focus - so going back from Memory to CPU repainted the memory detail over the cleared area.
+    [Fact]
+    public void Performance_Moving_Back_To_A_Detail_Does_Not_Redraw_The_One_Left()
+    {
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        PerformanceControl performance = mainScreen.GetControl<PerformanceControl>();
+        bool               handled     = false;
+
+        // Room for the details to draw; the screen takes the small mock terminal's size when shown.
+        mainScreen.Width  = 160;
+        mainScreen.Height = 50;
+        mainScreen.Resize();
+
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(performance));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Memory = new MemoryInfo { Metrics = new MemoryMetrics { TotalPhysical = 16UL << 30, AvailablePhysical = 8UL << 30 } }
+        });
+
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        Assert.Contains(Strings.PerformanceSlotsUsed, CapturedOutput());
+
+        runContextHelper.terminal.Invocations.Clear();
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.UpArrow), ref handled);
+
+        Assert.DoesNotContain(Strings.PerformanceSlotsUsed, CapturedOutput());
+        Assert.True(performance.Focused);
+        Assert.DoesNotContain(performance.Details, detail => detail.Focused);
+    }
+
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
     {
         FieldInfo? field = typeof(ServiceController).GetField(
@@ -524,7 +561,7 @@ public sealed class MainScreen2Tests : IDisposable
     public void Returning_From_Setup_Shows_The_Focus_Colour_On_The_Menu()
     {
         (MainScreen2 mainScreen, SetupScreen setupScreen) = ShowMainScreen();
-        MenuControl menuControl = mainScreen.GetControl<MenuControl>();
+        ListView    menuControl = mainScreen.MenuView;
         Assert.True(ShowsFocusBorder(menuControl));
 
         bool handled = false;

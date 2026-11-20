@@ -96,8 +96,8 @@ public sealed class MascotControl : Control
             return;
         }
 
-        MascotFrame sprite = animation.GetFrame(state.Frame);
-        int         left   = (Width - animation.Width) / 2 + state.OffsetX;
+        IReadOnlyList<string> pixels = animation.GetFrame(state.Frame);
+        int                   left   = (Width - animation.Width) / 2 + state.OffsetX;
 
         frame.Clear();
 
@@ -105,21 +105,23 @@ public sealed class MascotControl : Control
             frame.MoveTo(X, Y + row);
 
             for (int col = 0; col < Width; col++) {
-                int x = col - left;
+                int   x      = col - left;
+                bool  inside = x >= 0 && x < animation.Width;
+                Color top    = inside ? animation.PixelColour(pixels[row * 2][x]) : ConsolePalette.Transparent;
+                Color bottom = inside ? animation.PixelColour(pixels[row * 2 + 1][x]) : ConsolePalette.Transparent;
 
-                if (x < 0 || x >= sprite.Width) {
+                if (!top.IsTransparent()) {
+                    frame.SetColour(top, bottom.IsTransparent() ? BackgroundColour : bottom);
+                    frame.Append('▀');
+                }
+                else if (!bottom.IsTransparent()) {
+                    frame.SetColour(bottom, BackgroundColour);
+                    frame.Append('▄');
+                }
+                else {
                     frame.SetColour(ForegroundColour, BackgroundColour);
                     frame.Append(' ');
-                    continue;
                 }
-
-                MascotCell cell = sprite[x, row];
-
-                frame.SetColour(
-                    cell.Glyph == ' ' ? ForegroundColour : Resolve(cell.Foreground),
-                    Resolve(cell.Background));
-                
-                frame.Append(cell.Glyph);
             }
         }
 
@@ -232,9 +234,9 @@ public sealed class MascotControl : Control
         }
     }
 
-    public int PreferredHeight => animation.Height + (Caption.Count > 0 ? CaptionGap + Caption.Count : 0);
-
-    private Color Resolve(Color colour) => colour.IsTransparent() ? BackgroundColour : colour;
+    public int PreferredHeight => animation.Height + (Caption.Count > 0 
+        ? CaptionGap + Caption.Count 
+        : 0);
 
     private State RestState => new(intro[^1].Frame, intro[^1].OffsetX, CaptionLength);
 

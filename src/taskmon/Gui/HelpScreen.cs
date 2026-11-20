@@ -33,13 +33,18 @@ public class HelpScreen : Screen
     {
         this.runContext = runContext;
 
-        chartView        = NewSection(Strings.HelpChartColoursSection, columns: 4);
+        chartView        = NewSection(Strings.HelpChartColoursSection,   columns: 4);
         processView      = NewSection(Strings.HelpProcessColoursSection, columns: 6);
-        keysView         = NewSection(Strings.HelpKeysSection, columns: 4);
-        functionKeysView = NewSection(Strings.HelpFunctionKeysSection, columns: 2);
-        otherKeysView    = NewSection(Strings.HelpOtherKeysSection, columns: 2);
+        keysView         = NewSection(Strings.HelpKeysSection,           columns: 4);
+        functionKeysView = NewSection(Strings.HelpFunctionKeysSection,   columns: 2);
+        otherKeysView    = NewSection(Strings.HelpOtherKeysSection,      columns: 2);
 
-        sections = [chartView, processView, keysView, functionKeysView, otherKeysView];
+        sections = [
+            chartView, 
+            processView, 
+            keysView, 
+            functionKeysView, 
+            otherKeysView];
 
         foreach (ListView section in sections) {
             Controls.Add(section);
@@ -96,7 +101,7 @@ public class HelpScreen : Screen
             section.Draw();
         }
 
-        KeyBindControl.Draw(
+        CommonControl.DrawKeyBind(
             "ESC",
             Strings.KeyBindExit,
             X,
@@ -137,19 +142,18 @@ public class HelpScreen : Screen
             Cell("",     listFg,                    listBg)
         ]));
 
-        // Process name colours down the left, and the User column's colours beside the first four.
         processView.Items.Add(ProcessRow(Strings.HelpNormalProcess,      theme.ColumnCommandNormalUserSpace, Strings.HelpUserCurrent, theme.ColumnUserCurrentNonRoot));
         processView.Items.Add(ProcessRow(Strings.HelpLowPriorityProcess, theme.ColumnCommandLowPriority,     Strings.HelpUserOther,   theme.ColumnUserOtherNonRoot));
         processView.Items.Add(ProcessRow(Strings.HelpHighCpuProcess,     theme.ColumnCommandHighCpu,         Strings.HelpUserSystem,  theme.ColumnUserSystem));
         processView.Items.Add(ProcessRow(Strings.HelpIoBoundProcess,     theme.ColumnCommandIoBound,         Strings.HelpUserRoot,    theme.ColumnUserRoot));
 
         processView.Items.Add(new ListViewItem([
-            Cell(Strings.HelpMetric, listFg,                    listBg),
+            Cell(Strings.HelpMetric,      listFg,                    listBg),
             Cell(Strings.HelpRangeLow,    theme.RangeLowForeground,  theme.RangeLowBackground),
             Cell(Strings.HelpRangeMid,    theme.RangeMidForeground,  theme.RangeMidBackground),
             Cell(Strings.HelpRangeHigh,   theme.RangeHighForeground, theme.RangeHighBackground),
-            Cell("",       listFg,                    listBg),
-            Cell("",       listFg,                    listBg)
+            Cell("",                      listFg,                    listBg),
+            Cell("",                      listFg,                    listBg)
         ]));
 
         processView.Items.Add(new ListViewItem([Cell(Strings.HelpMetricChanged, theme.DeltaHighlightColour, listBg)]));

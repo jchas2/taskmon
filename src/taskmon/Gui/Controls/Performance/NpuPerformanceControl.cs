@@ -13,12 +13,10 @@ namespace Task.Monitor.Gui.Controls.Performance;
 
 public sealed class NpuPerformanceControl : Control, IPerformanceDetail
 {
-    private const int    MetricsHeight = 4;
-    private const int    SpecsRowCount = 6;
+    private const int MetricsHeight = 4;
+    private const int SpecsRowCount = 6;
 
     private readonly AppConfig appConfig;
-
-    private readonly Lock @lock = new();
 
     private readonly Chart    activityChart;
     private readonly Chart    powerChart;
@@ -30,11 +28,13 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
     private string            chipName = NotAvailable;
     private double?           powerWatts;
     private double?           peakWatts;
-    private int               scopedIndex;
 
-    public NpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
+    public NpuPerformanceControl(ISystemTerminal terminal, AppConfig appConfig, int index = 0) : base(terminal)
     {
         this.appConfig = appConfig;
+
+        Index = index;
+        Spark = new Chart(terminal) { AutoScale = false, CustomYAxisScaleFormatter = Chart.FormatYScalePercentage };
 
         activityChart = new Chart(terminal);
         powerChart    = new Chart(terminal);
@@ -69,43 +69,44 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
+    public int Index { get; }
+
     private static string NotAvailable => Strings.CommonNotAvailable;
 
     protected override void OnDraw()
     {
-        lock (@lock) {
-            if (device == null) {
-                return;
-            }
-
-            string utilization = deviceMetrics?.ToNpuPercentage() ?? NotAvailable;
-
-            activityChart.Text = $"{device.ToDisplayName()} {utilization}";
-            activityChart.Draw();
-
-            powerChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformancePowerChart, powerWatts.ToWattText());
-            powerChart.Draw();
-
-            metricsListView.Items[0].SubItems[0].Text = utilization;
-            metricsListView.Items[0].SubItems[1].Text = powerWatts.ToWattText();
-            metricsListView.Items[0].SubItems[2].Text = peakWatts.ToWattText();
-            metricsListView.Draw();
-
-            specsListView.Items[0].SubItems[1].Text = device.Description;
-            specsListView.Items[1].SubItems[1].Text = device.Vendor;
-            specsListView.Items[2].SubItems[1].Text = chipName;
-            specsListView.Items[3].SubItems[1].Text = device.Cores.ToString();
-            specsListView.Items[4].SubItems[1].Text = device.Architecture is { Length: > 0 } architecture ? architecture : NotAvailable;
-            specsListView.Items[5].SubItems[1].Text = device.Version is { Length: > 0 } version ? version : NotAvailable;
-            specsListView.Draw();
+        if (device == null) {
+            return;
         }
+
+        string utilization = deviceMetrics?.ToNpuPercentage() ?? NotAvailable;
+
+        activityChart.Text = $"{device.ToDisplayName()} {utilization}";
+        activityChart.Draw();
+
+        powerChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformancePowerChart, powerWatts.ToWattText());
+        powerChart.Draw();
+
+        metricsListView.Items[0].SubItems[0].Text = utilization;
+        metricsListView.Items[0].SubItems[1].Text = powerWatts.ToWattText();
+        metricsListView.Items[0].SubItems[2].Text = peakWatts.ToWattText();
+        metricsListView.Draw();
+
+        specsListView.Items[0].SubItems[1].Text = device.Description;
+        specsListView.Items[1].SubItems[1].Text = device.Vendor;
+        specsListView.Items[2].SubItems[1].Text = chipName;
+        specsListView.Items[3].SubItems[1].Text = device.Cores.ToString();
+        specsListView.Items[4].SubItems[1].Text = device.Architecture is { Length: > 0 } architecture ? architecture : NotAvailable;
+        specsListView.Items[5].SubItems[1].Text = device.Version is { Length: > 0 } version ? version : NotAvailable;
+        specsListView.Draw();
     }
 
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
+        
         CommonControl.Theme(metricsListView, appConfig.Theme);
-        CommonControl.Theme(specsListView, appConfig.Theme);
+        CommonControl.Theme(specsListView,   appConfig.Theme);
 
         OnLoadChart(activityChart, autoScale: false, Chart.FormatYScalePercentage);
         OnLoadChart(powerChart, autoScale: true, watts => watts.ToWattText());
@@ -180,26 +181,33 @@ public sealed class NpuPerformanceControl : Control, IPerformanceDetail
 
     public void Sample(SystemSnapshot snapshot)
     {
-        lock (@lock) {
-            if (snapshot.Npu?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == scopedIndex) is not { } match) {
-                return;
-            }
+        if (snapshot.Npu?.Specs.Devices.FirstOrDefault(candidate => candidate.Index == Index) is not { } match) {
+            return;
+        }
 
-            device        = match;
-            deviceMetrics = snapshot.Npu.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == scopedIndex);
-            chipName      = snapshot.Cpu?.Specs.CpuName is { Length: > 0 } name ? name : NotAvailable;
-            powerWatts    = snapshot.Power?.Metrics.NeuralEnginePower();
-            peakWatts     = Peak(peakWatts, powerWatts);
+        device        = match;
+        deviceMetrics = snapshot.Npu.Metrics.Devices.FirstOrDefault(candidate => candidate.Index == Index);
+        chipName      = snapshot.Cpu?.Specs.CpuName is { Length: > 0 } name ? name : NotAvailable;
+        powerWatts    = snapshot.Power?.Metrics.NeuralEnginePower();
+        peakWatts     = Peak(peakWatts, powerWatts);
+        Title         = match.ToDisplayName();
 
-            if (deviceMetrics != null) {
-                activityChart.AddData(deviceMetrics.ActiveRatio);
-            }
+        if (deviceMetrics != null) {
+            Summary = (powerWatts is { } watts ? $"{deviceMetrics.ToNpuPercentage()} ({watts.ToWattText()})" : deviceMetrics.ToNpuPercentage(),
+                       match.ToNpuCoresText());
 
-            if (powerWatts is { } watts) {
-                powerChart.AddData(watts);
-            }
+            activityChart.AddData(deviceMetrics.ActiveRatio);
+            Spark.AddData(deviceMetrics.ActiveRatio);
+        }
+
+        if (powerWatts is { } power) {
+            powerChart.AddData(power);
         }
     }
 
-    public void SetScope(int index) => scopedIndex = index;
+    public Chart Spark { get; }
+
+    public (string Top, string Bottom) Summary { get; private set; } = (string.Empty, string.Empty);
+
+    public string Title { get; private set; } = string.Empty;
 }

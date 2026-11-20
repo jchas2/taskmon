@@ -1,48 +1,9 @@
-using System.Reflection;
-using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Processes;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
 public sealed class ColumnsEnumTests
 {
-    public static TheoryData<ProcessControl.Columns, string> ColumnPropertyData()
-        => new()
-        {
-            { ProcessControl.Columns.Process, "FileDescription" },
-            { ProcessControl.Columns.Pid, "Pid" },
-            { ProcessControl.Columns.User, "UserName" },
-            { ProcessControl.Columns.Priority, "BasePriority" },
-            { ProcessControl.Columns.Cpu, "CpuTimePercent" },
-            { ProcessControl.Columns.Threads, "ThreadCount" },
-            { ProcessControl.Columns.Memory, "UsedMemory" },
-            { ProcessControl.Columns.Disk, "DiskUsage" },
-            { ProcessControl.Columns.Power, "PowerBucket" },
-            { ProcessControl.Columns.CommandLine, "CmdLine" },
-            { ProcessControl.Columns.Count, "" }
-        };
-
-    public static TheoryData<ProcessControl.Columns, ConsoleKey> ColumnSortKeyData()
-        => new()
-        {
-            { ProcessControl.Columns.Pid, ConsoleKey.N },
-            { ProcessControl.Columns.User, ConsoleKey.U },
-            { ProcessControl.Columns.Cpu, ConsoleKey.P },
-            { ProcessControl.Columns.Memory, ConsoleKey.M },
-            { ProcessControl.Columns.Disk, ConsoleKey.D }
-        };
-
-    public static TheoryData<ProcessControl.Columns> ColumnsWithoutSortKeyData()
-        => new()
-        {
-            ProcessControl.Columns.Process,
-            ProcessControl.Columns.Priority,
-            ProcessControl.Columns.Threads,
-            ProcessControl.Columns.Power,
-            ProcessControl.Columns.CommandLine,
-            ProcessControl.Columns.Count
-        };
-
     public static TheoryData<ProcessControl.Columns, string> ColumnTitleData()
         => new()
         {
@@ -58,64 +19,21 @@ public sealed class ColumnsEnumTests
             { ProcessControl.Columns.Count, "" }
         };
 
-    [Theory]
-    [MemberData(nameof(ColumnsWithoutSortKeyData))]
-    public void Column_Does_Not_Have_ColumnSortKey_Attribute(ProcessControl.Columns column)
-    {
-        ProcessControl.ColumnSortKeyAttribute? attr = GetAttribute<ProcessControl.ColumnSortKeyAttribute>(column);
-
-        Assert.Null(attr);
-    }
-
-    [Theory]
-    [MemberData(nameof(ColumnPropertyData))]
-    public void Column_Has_ColumnProperty_Attribute_With_Expected_Value(
-        ProcessControl.Columns column,
-        string expectedProperty)
-    {
-        ProcessControl.ColumnPropertyAttribute? attr = GetAttribute<ProcessControl.ColumnPropertyAttribute>(column);
-
-        Assert.NotNull(attr);
-        Assert.Equal(expectedProperty, attr.Property);
-    }
-
-    [Theory]
-    [MemberData(nameof(ColumnSortKeyData))]
-    public void Column_Has_ColumnSortKey_Attribute_With_Expected_Value(
-        ProcessControl.Columns column,
-        ConsoleKey expectedKey)
-    {
-        ProcessControl.ColumnSortKeyAttribute? attr = GetAttribute<ProcessControl.ColumnSortKeyAttribute>(column);
-
-        Assert.NotNull(attr);
-        Assert.Equal(expectedKey, attr.Key);
-    }
-
+    // The titles are the British defaults of their Strings.resx entries.
     [Theory]
     [MemberData(nameof(ColumnTitleData))]
-    public void Column_Has_ColumnTitle_Attribute_With_Expected_Value(
-        ProcessControl.Columns column,
-        string expectedTitle)
-    {
-        ProcessControl.ColumnTitleAttribute? attr = GetAttribute<ProcessControl.ColumnTitleAttribute>(column);
+    public void Column_Has_The_Expected_Title(ProcessControl.Columns column, string expectedTitle) =>
+        Assert.Equal(expectedTitle, ProcessControl.Title(column));
 
-        // The attribute names a Strings.resx entry; the title is that entry's British default.
-        Assert.NotNull(attr);
-        Assert.Equal(expectedTitle, column.GetTitle());
-    }
-
-    private static T? GetAttribute<T>(ProcessControl.Columns column) where T : Attribute
+    [Fact]
+    public void Every_Column_Has_A_Title()
     {
-        MemberInfo memberInfo = typeof(ProcessControl.Columns).GetMember(column.ToString())[0];
-        return memberInfo.GetCustomAttribute<T>();
+        for (ProcessControl.Columns column = ProcessControl.Columns.Process; column < ProcessControl.Columns.Count; column++) {
+            Assert.False(string.IsNullOrEmpty(ProcessControl.Title(column)), column.ToString());
+        }
     }
 
     [Fact]
-    public void Priority_Has_ColumnTitle_Attribute()
-    {
-        ProcessControl.ColumnTitleAttribute? attr = GetAttribute<ProcessControl.ColumnTitleAttribute>(ProcessControl.Columns.Priority);
-
-        Assert.NotNull(attr);
-        Assert.True(ProcessControl.Columns.Priority.GetTitle() is "PRI" or "NI");
-    }
+    public void Priority_Has_The_Platform_Title() =>
+        Assert.True(ProcessControl.Title(ProcessControl.Columns.Priority) is "PRI" or "NI");
 }

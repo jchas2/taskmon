@@ -94,12 +94,12 @@ public sealed class DiskPerformanceControlTests
     {
         DiskPerformanceControl ctrl = new(
             new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            0) {
             Width = 120,
             Height = 36
         };
 
-        ctrl.SetScope(0);
         ctrl.Load();
         ctrl.Resize();
         ctrl.Sample(new SystemSnapshot {
@@ -130,12 +130,12 @@ public sealed class DiskPerformanceControlTests
     {
         DiskPerformanceControl ctrl = new(
             new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            1) {
             Width = 120,
             Height = 36
         };
 
-        ctrl.SetScope(1);
         ctrl.Load();
         ctrl.Resize();
         ctrl.Sample(new SystemSnapshot { Disk = BuildDiskInfoWithDevices() });

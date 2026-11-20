@@ -76,6 +76,15 @@ public sealed class AnsiScreen
                     bg = args["48;2;".Length..];
                     break;
 
+                // The 16 standard colours, sent as indexed codes when ConsolePalette prefers them.
+                case "m" when int.TryParse(args, out int code) && code is (>= 30 and <= 37) or (>= 90 and <= 97):
+                    fg = $"index {code}";
+                    break;
+
+                case "m" when int.TryParse(args, out int code) && code is (>= 40 and <= 47) or (>= 100 and <= 107):
+                    bg = $"index {code}";
+                    break;
+
                 default:
                     throw new InvalidOperationException($"Unexpected sequence ESC[{args}{token.Groups[2].Value}");
             }

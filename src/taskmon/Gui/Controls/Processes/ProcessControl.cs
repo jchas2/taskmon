@@ -87,26 +87,9 @@ public sealed partial class ProcessControl : Control
             TabIndex = 2
         };
 
-        processView.ColumnHeaders
-            .Add(new ListViewColumnHeader(Columns.Process.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Pid.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.User.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Priority.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Cpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.AvgCpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.MaxCpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Threads.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Gpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.AvgGpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.MaxGpu.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Memory.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.AvgMemory.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.MaxMemory.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Disk.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.AvgDisk.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.MaxDisk.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.Power.GetTitle()))
-            .Add(new ListViewColumnHeader(Columns.CommandLine.GetTitle()));
+        for (Columns column = Columns.Process; column < Columns.Count; column++) {
+            processView.ColumnHeaders.Add(new ListViewColumnHeader(Title(column)));
+        }
 
         filter = new ListFilter(this, terminal, Strings.ProcessesFilterTitle);
 
@@ -197,7 +180,7 @@ public sealed partial class ProcessControl : Control
 
         IEnumerable<string> columns = Enum.GetValues<Columns>()
             .Where(c => c != Columns.Count && IsColumnVisible(c))
-            .Select(c => c.GetTitle());
+            .Select(Title);
 
         foreach (var column in columns) {
             sortView.Items.Add(new ListViewItem(column));
@@ -245,7 +228,6 @@ public sealed partial class ProcessControl : Control
         }
 
         switch (keyInfo.Key) {
-            // Consume arrow keys when modal sort menu is active.
             case ConsoleKey.LeftArrow or ConsoleKey.RightArrow when mode == ControlMode.SortSelection:
                 handled = true;
                 return;
@@ -304,9 +286,11 @@ public sealed partial class ProcessControl : Control
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
-        CommonControl.Theme(sortView, appConfig.Theme);
-        CommonControl.Theme(processView, appConfig.Theme);
+        
+        CommonControl.Theme(sortView,      appConfig.Theme);
+        CommonControl.Theme(processView,   appConfig.Theme);
         CommonControl.Theme(endTaskDialog, appConfig.Theme);
+        
         filter.ApplyTheme(appConfig.Theme);
         
         UpdateColumnHeaderSort(decorate: true);
@@ -455,8 +439,6 @@ public sealed partial class ProcessControl : Control
         }
     }
 
-    // The selection stays on its process as the list re-sorts, not on its row, so a re-sort never
-    // moves it onto another process. 
     private void SelectFollowedProcess(int? selectedPid, int selectedIndex)
     {
         int index = IndexOfPid(pendingSelectionPid);
@@ -526,7 +508,7 @@ public sealed partial class ProcessControl : Control
 
     private void SortViewOnItemSelected(object? sender, ListViewItemEventArgs e)
     {
-        Columns column = Enum.GetValues<Columns>().Single(c => c.GetTitle() == e.Item.Text);
+        Columns column = Enum.GetValues<Columns>().Single(c => Title(c) == e.Item.Text);
         SortSelectionChanged(column);        
     }
     
@@ -570,15 +552,15 @@ public sealed partial class ProcessControl : Control
         if (!decorate) {
             processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.HeaderBackground;
             processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.HeaderForeground;
-            processView.ColumnHeaders[(int)sortColumn].Text             = sortColumn.GetTitle();
+            processView.ColumnHeaders[(int)sortColumn].Text             = Title(sortColumn);
         }
         else {
             processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.BackgroundHighlight;
             processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.ForegroundHighlight;
             
             processView.ColumnHeaders[(int)sortColumn].Text = appConfig.SortAscending
-                ? sortColumn.GetTitle() + "\u2191"
-                : sortColumn.GetTitle() + "\u2193";
+                ? Title(sortColumn) + "\u2191"
+                : Title(sortColumn) + "\u2193";
         }
     }
 

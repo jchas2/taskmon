@@ -72,7 +72,8 @@ public sealed class GpuPerformanceControlTests
     {
         GpuPerformanceControl ctrl = new(
             new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            111) {
             Width = 120,
             Height = 40
         };
@@ -130,7 +131,6 @@ public sealed class GpuPerformanceControlTests
             Height = 40
         };
 
-        ctrl.SetScope(111);
         ctrl.Load();
         ctrl.Resize();
         ctrl.Sample(new SystemSnapshot {
@@ -161,12 +161,12 @@ public sealed class GpuPerformanceControlTests
     {
         GpuPerformanceControl ctrl = new(
             new ForwardingTerminal(runContext.Terminal),
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            222) {
             Width = 120,
             Height = 40
         };
 
-        ctrl.SetScope(222);
         ctrl.Load();
         ctrl.Resize();
         ctrl.Sample(new SystemSnapshot { Gpu = BuildGpuInfoWithDevices() });

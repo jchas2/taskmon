@@ -124,7 +124,6 @@ public sealed class ListViewColourTests
         nameof(GpuPerformanceControl),
         nameof(InstalledAppsControl),
         nameof(MemoryPerformanceControl),
-        nameof(MenuControl),
         nameof(NetworkPerformanceControl),
         nameof(ProcessControl),
         nameof(ServicesControl),
@@ -146,9 +145,6 @@ public sealed class ListViewColourTests
             nameof(GpuPerformanceControl) => new GpuPerformanceControl(Terminal, runContext.AppConfig),
             nameof(InstalledAppsControl) => new InstalledAppsControl(runContext.ServiceController, Terminal, runContext.AppConfig),
             nameof(MemoryPerformanceControl) => new MemoryPerformanceControl(Terminal, runContext.AppConfig),
-            nameof(MenuControl) => new MenuControl(Terminal, runContext.AppConfig) {
-                MenuItems = [new MenuListViewItem(new Control(Terminal), "ITEM")]
-            },
             nameof(NetworkPerformanceControl) => new NetworkPerformanceControl(Terminal, runContext.AppConfig),
             nameof(ProcessControl) => new ProcessControl(runContext.ServiceController, Terminal, runContext.AppConfig),
             nameof(ServicesControl) => new ServicesControl(runContext.ServiceController, Terminal, runContext.AppConfig),
@@ -328,5 +324,20 @@ public sealed class ListViewColourTests
             .ToHashSet(ReferenceEqualityComparer.Instance as IEqualityComparer<ListView>);
 
         return ControlTreeHelper.FindAll<ListView>(host).Where(listView => !dialogLists.Contains(listView)).ToList();
+    }
+
+    // The main screen's menu is a plain ListView; its other views are only loaded when shown.
+    [Fact]
+    public void The_Main_Menu_Uses_The_ListView_Colours()
+    {
+        MainScreen2 screen = Loaded(new MainScreen2(runContext, new ScreenApplication(runContext.Terminal)));
+        ListView    menu   = screen.MenuView;
+
+        Assert.Equal(ListViewBackground, menu.BackgroundColour);
+        Assert.Equal(ListViewForeground, menu.ForegroundColour);
+        Assert.Equal(ListViewBorderForeground, menu.BorderForegroundColour);
+        Assert.Equal(ListViewBorderBackground, menu.BorderBackgroundColour);
+
+        screen.Unload();
     }
 }

@@ -1,7 +1,9 @@
 using System.Drawing;
+using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls;
+using Task.Monitor.System;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls.DriveInputBox;
 using Task.Monitor.System.Controls.TextInputDialog;
@@ -160,6 +162,40 @@ public sealed class CommonControlTests
         Assert.Equal("Cancel", textInputDialog.CancelText);
         Assert.Equal("Tab select button   ↵ confirm   Esc cancel", textInputDialog.HelpText);
     }
+
+    // A key that can't be used draws its key and label in the theme's disabled colour.
+    [Fact]
+    public void DrawKeyBind_Draws_A_Disabled_Key_In_The_Disabled_Colour()
+    {
+        Mock<ISystemTerminal> terminal = new();
+        List<Color>           written  = [];
+
+        terminal.SetupSet(t => t.ForegroundColor = It.IsAny<Color>()).Callback<Color>(written.Add);
+
+        Theme theme = new(new ConfigSection("theme-test")) { CommandForegroundDisabled = Color.FromArgb(1, 2, 3) };
+
+        CommonControl.DrawKeyBind("F5", "Refresh", x: 0, y: 0, width: 10, theme, enabled: false, terminal.Object);
+
+        Assert.Equal([Color.FromArgb(1, 2, 3), Color.FromArgb(1, 2, 3)], written.Take(2));
+    }
+
+    [Fact]
+    public void DrawKeyBind_Draws_The_Key_And_Its_Label()
+    {
+        Mock<ISystemTerminal> terminal = new();
+
+        int columns = CommonControl.DrawKeyBind("F10", "Exit", x: 0, y: 23, width: 10, new Theme(), enabled: true, terminal.Object);
+
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("F10"))), Times.Once);
+        terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Exit"))), Times.Once);
+        Assert.Equal("F10 ".Length + 10, columns);
+    }
+
+    // A label too long for the width widens the button instead of being cut.
+    [Fact]
+    public void DrawKeyBind_Widens_For_A_Long_Label() =>
+        Assert.Equal("F1 ".Length + "Configuration".Length + 2,
+            CommonControl.DrawKeyBind("F1", "Configuration", x: 0, y: 0, width: 6, new Theme(), enabled: true, new Mock<ISystemTerminal>().Object));
 
     [Fact]
     public void FooterText_Colours_Keys_And_Labels_From_The_Theme()

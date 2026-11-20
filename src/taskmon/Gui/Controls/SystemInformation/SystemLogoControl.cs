@@ -1,5 +1,4 @@
 using System.Drawing;
-using System.Linq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
@@ -13,25 +12,32 @@ public sealed class SystemLogoControl : Control
 
     private static readonly TimeSpan PulseInterval = TimeSpan.FromSeconds(1);
 
-    private static readonly int LogoArtWidth  = LogoArt.Lines.Max(line => line.Length);
-    private static readonly int LogoArtHeight = LogoArt.Lines.Length;
-    
-#if __WIN32__
-    private static readonly int[] SplitIndex =
-        { 21, 21, 21, 20, 20, 19, 18, 16, 17, 23, 16, 15, 15, 14, 14, 0 };
-
-    private static readonly string[] LeftHalves =
-        LogoArt.Lines.Select((line, i) => line[..SplitIndex[i]]).ToArray();
-
-    private static readonly string[] RightHalves =
-        LogoArt.Lines.Select((line, i) => line[SplitIndex[i]..]).ToArray();
-
-    private static readonly Color TopLeftColour     = ConsolePalette.FromHex("F25022", ConsolePalette.White);
-    private static readonly Color TopRightColour    = ConsolePalette.FromHex("7FBA00", ConsolePalette.White);
-    private static readonly Color BottomRightColour = ConsolePalette.FromHex("FFB900", ConsolePalette.White);
-    private static readonly Color BottomLeftColour  = ConsolePalette.FromHex("00A4EF", ConsolePalette.White);
-#endif
 #if __APPLE__
+    private static readonly string[] Lines =
+    {
+        "                  .,o",
+        "                 /gg,",
+        "              (dMMb",
+        "               .o,",
+        "    .gggMbgg.     .,ggMMg,",
+        "   dMMMMMMMMMMMMMMMMMMMMMMb",
+        "  dMMMMMMMMMMMMMMMMMMMMMMMMb",
+        " dMMMMMMMMMMMMMMMMMMMMMMMMMMb",
+        ".MMMMMMMMMMMMMMMMMMMMMMMMMb,",
+        "MMMMMMMMMMMMMMMMMMMMMMMMM`",
+        "MMMMMMMMMMMMMMMMMMMMMMMM`",
+        "MMMMMMMMMMMMMMMMMMMMMMMM,",
+        "MMMMMMMMMMMMMMMMMMMMMMMMM.",
+        ".MMMMMMMMMMMMMMMMMMMMMMMMMM'",
+        " `MMMMMMMMMMMMMMMMMMMMMMMMMMd'",
+        "  `bMMMMMMMMMMMMMMMMMMMMMMMMd'",
+        "   `bMMMMMMMMMTASKMMMMMMMMMd'",
+        "     `MbMMMMMMONITORMMMMMdM'",
+        "       `MMbgg,,,,,,,ggdMM'",
+        "         `''        ''`",
+    };
+
+    // One colour per row of the art, top to bottom.
     private static readonly string[] RowHex =
     {
         "3CC846", "3CC846", "3CC846", "3CC846", "3CC846",
@@ -44,11 +50,41 @@ public sealed class SystemLogoControl : Control
         "BE46C8", "BE46C8", "BE46C8",
     };
 #endif
-    
+#if __WIN32__
+    private static readonly string[] Lines =
+    {
+        "        ,.=:!!t3Z3z.,",
+        "       :tt:::tt333EE3",
+        "       Et:::ztt33EEEL @Ee.,      ..,",
+        "      ;tt:::tt333EE7 ;EEEEEEttttt33#",
+        "     :Et:::zt333EEQ. $EEEEEttttt33QL",
+        "     it::::tt333EEF @EEEEEEttttt33F",
+        "    ;3=*^```'*4EEV :EEEEEEttttt33@.",
+        "    ,.=::::it=., ` @EEEEEEtttz33QF",
+        "   ;::::::::zt33)   \"4EEEtttji3P*",
+        "  :t::::::::tt33.:Z3z..  `` ,..g.",
+        "  i::::::::zt33F ATASKttt::::ztF",
+        " ;:::::::::t33V ;MONITORt::::t3",
+        " E::::::::zt33L @EEEtttt::::z3F",
+        "{3=*^```'*4E3) ;EEEtttt:::::tZ`",
+        "             ` :EEEEtttt::::z7",
+        "                 \"VEzjt:;;z>*`",
+    };
+
+    // Where each row of the art splits between the left and right panes of the flag.
+    private static readonly int[] SplitIndex =
+        { 21, 21, 21, 20, 20, 19, 18, 16, 17, 23, 16, 15, 15, 14, 14, 0 };
+
+    private static readonly Color TopLeftColour     = ConsolePalette.FromHex("F25022", ConsolePalette.White);
+    private static readonly Color TopRightColour    = ConsolePalette.FromHex("7FBA00", ConsolePalette.White);
+    private static readonly Color BottomRightColour = ConsolePalette.FromHex("FFB900", ConsolePalette.White);
+    private static readonly Color BottomLeftColour  = ConsolePalette.FromHex("00A4EF", ConsolePalette.White);
+#endif
+
     private readonly AnsiScreenBuffer frame = new();
 
     private SysThreading::Timer? pulseTimer;
-    
+
     private volatile bool pulseBold;
     private volatile bool loaded;
 
@@ -58,31 +94,24 @@ public sealed class SystemLogoControl : Control
     private void DrawRow(int row)
     {
         frame.SetColour(ConsolePalette.FromHex(RowHex[row], ConsolePalette.White), BackgroundColour);
-        frame.Append(LogoArt.Lines[row]);
+        frame.Append(Lines[row]);
     }
 #endif
 #if __WIN32__
     private void DrawRow(int row)
     {
-        bool topHalf = row < LogoArt.Lines.Length / 2;
+        bool topHalf = row < Lines.Length / 2;
 
-        frame.SetColour(topHalf 
-            ? TopLeftColour 
-            : BottomLeftColour, BackgroundColour);
-        
-        frame.Append(LeftHalves[row]);
-        
-        frame.SetColour(topHalf 
-            ? TopRightColour 
-            : BottomRightColour, BackgroundColour);
-        
-        frame.Append(RightHalves[row]);
+        frame.SetColour(topHalf ? TopLeftColour : BottomLeftColour, BackgroundColour);
+        frame.Append(Lines[row].AsSpan(0, SplitIndex[row]));
+        frame.SetColour(topHalf ? TopRightColour : BottomRightColour, BackgroundColour);
+        frame.Append(Lines[row].AsSpan(SplitIndex[row]));
     }
 #endif
 
-    public int LogoHeight => LogoArtHeight + Margin * 2;
+    public int LogoHeight => Lines.Length + Margin * 2;
 
-    public int LogoWidth => LogoArtWidth + Margin * 2;
+    public int LogoWidth => Lines.Max(line => line.Length) + Margin * 2;
 
     protected override void OnDraw()
     {
@@ -96,18 +125,18 @@ public sealed class SystemLogoControl : Control
 
         frame.SetBold(pulseBold);
 
-        for (int row = 0; row < LogoArt.Lines.Length; row++) {
+        for (int row = 0; row < Lines.Length; row++) {
             frame.MoveTo(X, Y + Margin + row);
             frame.Append(' ', Margin);
             DrawRow(row);
-            frame.Append(' ', Math.Max(0, Width - Margin - LogoArt.Lines[row].Length));
+            frame.Append(' ', Math.Max(0, Width - Margin - Lines[row].Length));
         }
 
         frame.SetBold(false);
         frame.SetColour(ForegroundColour, BackgroundColour);
 
         for (int row = 0; row < Margin; row++) {
-            frame.MoveTo(X, Y + Margin + LogoArt.Lines.Length + row);
+            frame.MoveTo(X, Y + Margin + Lines.Length + row);
             frame.Append(' ', Width);
         }
 

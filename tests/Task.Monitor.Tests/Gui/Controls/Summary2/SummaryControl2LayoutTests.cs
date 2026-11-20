@@ -1,40 +1,35 @@
 using System.Drawing;
+using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
-using Task.Monitor.System;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.Tests.Gui.Controls.Summary2;
 
-// Confirms the renderer's recursive split math against TestLayouts.Example()'s shape:
-// a row of three panes (Cpu | Memory | Gpu) over one Process pane, nested as
-// Column(Row(Cpu, Row(Memory, Gpu)), Process).
-public sealed class LayoutRendererTests
+// The split math SummaryControl2 lays its panes out with. The metres here are GPU metres, three rows
+// high with their border; the other panes are empty ones, which take whatever they are given.
+public sealed class SummaryControl2LayoutTests
 {
     private const int MetreHeight = 3;
 
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
 
-    private sealed class FixedPane(ISystemTerminal terminal, int height) : Control(terminal), IFixedHeightPane
-    {
-        public int FixedHeight => height;
-    }
-
-    public LayoutRendererTests()
+    public SummaryControl2LayoutTests()
     {
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
     }
 
     private static void AssertBounds(
-        LayoutRenderer renderer,
+        SummaryControl2         summary,
         LayoutTree<SummaryPane> tree,
         PaneControlType controlType,
         int x, int y, int width, int height)
     {
         int paneId = tree.Panes().Single(p => p.Pane.ControlType == controlType).Id;
-        Rectangle bounds = renderer.PaneBounds[paneId];
+        Rectangle bounds = summary.PaneBounds[paneId];
 
         Assert.Equal(new Rectangle(x, y, width, height), bounds);
     }
@@ -89,6 +84,30 @@ public sealed class LayoutRendererTests
         Assert.Equal(new Rectangle(0, MetreHeight, 120, height - MetreHeight), bounds[2]);
     }
 
+    // Beside a taller pane a metre keeps its own height; the summary blanks the rest of its pane.
+    [Fact]
+    public void A_Metre_Given_More_Rows_Keeps_Its_Own_Height()
+    {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([Split(0, Orientation.Row, 0.5f, 1, 2), Pane(1), Pane(2)], rootId: 0);
+
+        SummaryControl2 summary = Laid(tree, [1]);
+        Control         metre   = summary.PaneControls[1];
+
+        Assert.Equal(40, summary.PaneBounds[1].Height);
+        Assert.Equal(MetreHeight, metre.Height);
+        Assert.True(metre.Visible);
+    }
+
+    [Fact]
+    public void A_Metre_Without_Room_For_Its_Rows_Is_Hidden()
+    {
+        LayoutTree<SummaryPane> tree    = new(SummaryPane.Empty);
+        SummaryControl2         summary = Laid(tree, [tree.RootId], height: MetreHeight - 1);
+
+        Assert.IsType<MetreControl>(summary.PaneControls[tree.RootId]);
+        Assert.False(summary.PaneControls[tree.RootId].Visible);
+    }
+
     [Fact]
     public void Clamps_Fixed_Panes_When_There_Is_Not_Enough_Room()
     {
@@ -108,19 +127,15 @@ public sealed class LayoutRendererTests
     {
         LayoutTree<SummaryPane> tree = TestLayouts.Example();
 
-        Dictionary<int, Control> paneControls = tree.Panes()
-            .ToDictionary(pane => pane.Id, _ => new Control(runContext.Terminal));
-
-        LayoutRenderer renderer = new();
-        renderer.Layout(tree, paneControls, x: 0, y: 0, width: 120, height: 40);
+        SummaryControl2 summary = Laid(tree, []);
 
         // Root Column split, ratio 0.6: top row gets 24 rows, Process gets the remaining 16.
         // Top row split (ratio 1/3): Cpu gets 40 cols, the Memory|Gpu row gets the remaining 80.
         // Memory|Gpu split 50/50 within that 80: 40 cols each.
-        AssertBounds(renderer, tree, PaneControlType.Cpu, 0, 0, 40, 24);
-        AssertBounds(renderer, tree, PaneControlType.Memory, 40, 0, 40, 24);
-        AssertBounds(renderer, tree, PaneControlType.Gpu, 80, 0, 40, 24);
-        AssertBounds(renderer, tree, PaneControlType.Process, 0, 24, 120, 16);
+        AssertBounds(summary, tree, PaneControlType.Cpu, 0, 0, 40, 24);
+        AssertBounds(summary, tree, PaneControlType.Memory, 40, 0, 40, 24);
+        AssertBounds(summary, tree, PaneControlType.Gpu, 80, 0, 40, 24);
+        AssertBounds(summary, tree, PaneControlType.Process, 0, 24, 120, 16);
     }
 
     [Fact]
@@ -131,10 +146,10 @@ public sealed class LayoutRendererTests
             Split(0, Orientation.Row, 0.5f, 1, 2), Pane(1),
             Split(2, Orientation.Column, 0.5f, 3, 4), Pane(3), Pane(4),
         ], rootId: 0);
-        Dictionary<int, Control> panes = PaneControls(tree, [3]);
+        SummaryControl2 summary = Laid(tree, [3]);
 
-        Assert.Equal((0, false), LayoutRenderer.FindResizableSplit(tree, panes, 3));
-        Assert.Equal((0, false), LayoutRenderer.FindResizableSplit(tree, panes, 4));
+        Assert.Equal((0, false), summary.FindResizableSplit(3));
+        Assert.Equal((0, false), summary.FindResizableSplit(4));
     }
 
     [Fact]
@@ -146,10 +161,10 @@ public sealed class LayoutRendererTests
             Split(2, Orientation.Column, 0.5f, 3, 4), Pane(3),
             Split(4, Orientation.Row,    0.5f, 5, 6), Pane(5), Pane(6),
         ], rootId: 0);
-        Dictionary<int, Control> panes = PaneControls(tree, [5, 6]);
+        SummaryControl2 summary = Laid(tree, [5, 6]);
 
-        Assert.Equal((0, false), LayoutRenderer.FindResizableSplit(tree, panes, 3));
-        Assert.Equal((4, true),  LayoutRenderer.FindResizableSplit(tree, panes, 5));
+        Assert.Equal((0, false), summary.FindResizableSplit(3));
+        Assert.Equal((4, true),  summary.FindResizableSplit(5));
     }
 
     [Fact]
@@ -161,53 +176,53 @@ public sealed class LayoutRendererTests
             Split(2, Orientation.Column, 0.1f,  3, 4), Pane(3),
             Split(4, Orientation.Column, 0.25f, 5, 6), Pane(5), Pane(6),
         ], rootId: 0);
-        Dictionary<int, Control> panes = PaneControls(tree, [3, 5]);
+        SummaryControl2 summary = Laid(tree, [3, 5]);
 
-        Assert.Equal((0, false), LayoutRenderer.FindResizableSplit(tree, panes, 6));
-        Assert.Equal((0, true),  LayoutRenderer.FindResizableSplit(tree, panes, 1));
-        Assert.Null(LayoutRenderer.FindResizableSplit(tree, panes, 3));
+        Assert.Equal((0, false), summary.FindResizableSplit(6));
+        Assert.Equal((0, true),  summary.FindResizableSplit(1));
+        Assert.Null(summary.FindResizableSplit(3));
     }
 
     [Fact]
     public void FindResizableSplit_Uses_The_Parent_Of_A_Plain_Split()
     {
         LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([Split(0, Orientation.Column, 0.5f, 1, 2), Pane(1), Pane(2)], rootId: 0);
-        Dictionary<int, Control> panes = PaneControls(tree, []);
+        SummaryControl2 summary = Laid(tree, []);
 
-        Assert.Equal((0, true),  LayoutRenderer.FindResizableSplit(tree, panes, 1));
-        Assert.Equal((0, false), LayoutRenderer.FindResizableSplit(tree, panes, 2));
+        Assert.Equal((0, true),  summary.FindResizableSplit(1));
+        Assert.Equal((0, false), summary.FindResizableSplit(2));
     }
 
-    private Dictionary<int, Rectangle> LayoutWithFixed(LayoutTree<SummaryPane> tree, int[] fixedIds, int height)
+    private SummaryControl2 Laid(LayoutTree<SummaryPane> tree, int[] metreIds, int height = 40)
     {
-        Dictionary<int, Control> paneControls = PaneControls(tree, fixedIds);
+        foreach (int id in metreIds) {
+            tree.Nodes[id].Pane = new SummaryPane(PaneControlType.GpuMetre);
+        }
 
-        LayoutRenderer renderer = new();
-        renderer.Layout(tree, paneControls, x: 0, y: 0, width: 120, height: height);
+        SummaryControl2 summary = new(runContext.ServiceController, runContext.Terminal, runContext.AppConfig, tree) {
+            Width  = 120,
+            Height = height
+        };
 
-        return renderer.PaneBounds.ToDictionary();
+        summary.Resize();
+
+        return summary;
     }
+
+    private Dictionary<int, Rectangle> LayoutWithFixed(LayoutTree<SummaryPane> tree, int[] metreIds, int height) =>
+        Laid(tree, metreIds, height).PaneBounds.ToDictionary();
 
     private static LayoutNode<SummaryPane> Pane(int id) => new() { Id = id, Pane = SummaryPane.Empty };
-
-    private Dictionary<int, Control> PaneControls(LayoutTree<SummaryPane> tree, int[] fixedIds) =>
-        tree.Panes().ToDictionary(
-            pane => pane.Id,
-            pane => fixedIds.Contains(pane.Id) ? new FixedPane(runContext.Terminal, MetreHeight) : new Control(runContext.Terminal));
 
     [Fact]
     public void Sets_The_Pane_Controls_Own_Bounds_To_Match()
     {
         LayoutTree<SummaryPane> tree = TestLayouts.Example();
 
-        Dictionary<int, Control> paneControls = tree.Panes()
-            .ToDictionary(pane => pane.Id, _ => new Control(runContext.Terminal));
-
-        LayoutRenderer renderer = new();
-        renderer.Layout(tree, paneControls, x: 0, y: 0, width: 120, height: 40);
+        SummaryControl2 summary = Laid(tree, []);
 
         int cpuPaneId = tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Cpu).Id;
-        Control cpuControl = paneControls[cpuPaneId];
+        Control cpuControl = summary.PaneControls[cpuPaneId];
 
         Assert.Equal(0, cpuControl.X);
         Assert.Equal(0, cpuControl.Y);

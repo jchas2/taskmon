@@ -8,6 +8,7 @@ using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
@@ -100,7 +101,7 @@ public sealed class SummaryControl2Tests
 
         ctrl.Load();
 
-        Assert.Single(ctrl.Controls.OfType<CpuMetreControl>());
+        Assert.Single(ctrl.Controls.OfType<MetreControl>());
         Assert.Single(ctrl.Controls.OfType<Task.Monitor.Gui.Controls.Processes.ProcessControl>());
         Assert.Equal(2, ctrl.PaneControls.Count);
 
@@ -124,7 +125,7 @@ public sealed class SummaryControl2Tests
 
         ctrl.Load();
 
-        Assert.Single(ctrl.Controls.OfType<CpuMetreControl>());
+        Assert.Single(ctrl.Controls.OfType<MetreControl>());
 
         ctrl.Unload();
     }
@@ -538,7 +539,7 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
         ctrl.Load();
 
-        Assert.StartsWith("CPU% 30", ctrl.Controls.OfType<CpuMetreControl>().Single().Metre.Text);
+        Assert.StartsWith("CPU% 30", ctrl.Controls.OfType<MetreControl>().Single().Text);
 
         ctrl.Unload();
     }

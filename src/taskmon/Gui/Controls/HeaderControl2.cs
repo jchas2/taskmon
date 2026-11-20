@@ -87,9 +87,7 @@ public sealed class HeaderControl2 : Control
         frame.Append('│');
     }
 
-    protected override void OnDraw() => OnDrawInternal();
-
-    private void OnDrawInternal()
+    protected override void OnDraw()
     {
         string MachineLabel = $"{Strings.HeaderMachineLabel} ";
         string OSLabel      = $" {Strings.HeaderOsLabel} ";

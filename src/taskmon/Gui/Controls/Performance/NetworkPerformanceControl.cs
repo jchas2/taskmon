@@ -15,8 +15,6 @@ namespace Task.Monitor.Gui.Controls.Performance;
 public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 {
     private const int SpecsRowCount = 15;
-
-    private readonly Lock @lock = new();
     
     private readonly Chart     sendChart;
     private readonly Chart     receiveChart;
@@ -25,12 +23,15 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     private readonly AppConfig appConfig;
     
     private NetworkInfo? networkInfo;
-    
-    private ulong? scopedInterfaceLuid;
 
-    public NetworkPerformanceControl(ISystemTerminal terminal, AppConfig appConfig) : base(terminal)
+    // Without an interface it shows every adapter together.
+    public NetworkPerformanceControl(ISystemTerminal terminal, AppConfig appConfig, ulong? interfaceLuid = null) : base(terminal)
     {
         this.appConfig = appConfig;
+
+        InterfaceLuid = interfaceLuid;
+        Spark         = new Chart(terminal) { CustomYAxisScaleFormatter = Chart.FormatYScaleByteRate };
+        Title         = Strings.PerformanceNetworkPanel;
 
         sendChart    = new Chart(terminal);
         receiveChart = new Chart(terminal);
@@ -64,69 +65,69 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
+    public ulong? InterfaceLuid { get; }
+
     protected override void OnDraw()
     {
-        lock (@lock) {
-            if (networkInfo == null) {
-                return;
-            }
-
-            NetworkMetrics metrics = networkInfo.Metrics;
-
-            (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            string sendText    = device?.ToNetworkSendRate() ?? metrics.ToNetworkSendRate();
-            string receiveText = device?.ToNetworkReceiveRate() ?? metrics.ToNetworkReceiveRate();
-
-            sendChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendChart, sendText);
-            sendChart.Draw();
-
-            receiveChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveChart, receiveText);
-            receiveChart.Draw();
-
-            networkMetricsListView.Items[0].SubItems[0].Text = sendText;
-            networkMetricsListView.Items[0].SubItems[1].Text = receiveText;
-            networkMetricsListView.Draw();
-
-            string totalBytesSent       = (device?.TotalBytesSent ?? metrics.TotalBytesSent).ToFormattedByteSize();
-            string totalBytesReceived   = (device?.TotalBytesReceived ?? metrics.TotalBytesReceived).ToFormattedByteSize();
-            string totalPacketsSent     = (device?.TotalPacketsSent ?? metrics.TotalPacketsSent).ToNetworkPacketCount();
-            string totalPacketsReceived = (device?.TotalPacketsReceived ?? metrics.TotalPacketsReceived).ToNetworkPacketCount();
-
-            if (device != null) {
-                SetSpecsRow(0,  Strings.LabelName,                   spec?.Name               ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(1,  Strings.PerformanceFriendlyName,          spec?.FriendlyName       ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(2,  Strings.LabelDescription,            spec?.Description        ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(3,  Strings.LabelConnectionType,        spec?.ConnectionType     ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(4,  Strings.LabelPhysicalMedium,        spec?.PhysicalMedium     ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(5,  Strings.LabelMacAddress,            spec?.MacAddress         ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(6,  Strings.LabelIpv4Addresses,         (spec?.IPv4Addresses     ?? []).ToAddressList());
-                SetSpecsRow(7,  Strings.LabelIpv6Addresses,         (spec?.IPv6Addresses     ?? []).ToAddressList());
-                SetSpecsRow(8,  Strings.LabelTransmitLinkSpeed,    (spec?.TransmitLinkSpeed ?? 0UL).ToLinkSpeed());
-                SetSpecsRow(9,  Strings.LabelReceiveLinkSpeed,     (spec?.ReceiveLinkSpeed  ?? 0UL).ToLinkSpeed());
-                SetSpecsRow(10, Strings.LabelOperationalStatus,     spec?.OperationalStatus  ?? NetworkDeviceParser.NotAvailable);
-                SetSpecsRow(11, Strings.PerformanceTotalBytesSent,       totalBytesSent);
-                SetSpecsRow(12, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
-                SetSpecsRow(13, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
-                SetSpecsRow(14, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
-            }
-            else {
-                SetSpecsRow(0, Strings.PerformanceTotalBytesSent,       totalBytesSent);
-                SetSpecsRow(1, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
-                SetSpecsRow(2, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
-                SetSpecsRow(3, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
-
-                for (int row = 4; row < networkSpecsListView.Items.Count; row++) {
-                    SetSpecsRow(row, string.Empty, string.Empty);
-                }
-            }
-
-            networkSpecsListView.Draw();
+        if (networkInfo == null) {
+            return;
         }
+
+        NetworkMetrics metrics = networkInfo.Metrics;
+
+        (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) = ResolveScope();
+
+        if (!render) {
+            return;
+        }
+
+        string sendText    = device?.ToNetworkSendRate() ?? metrics.ToNetworkSendRate();
+        string receiveText = device?.ToNetworkReceiveRate() ?? metrics.ToNetworkReceiveRate();
+
+        sendChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceSendChart, sendText);
+        sendChart.Draw();
+
+        receiveChart.Text = string.Format(CultureInfo.CurrentCulture, Strings.PerformanceReceiveChart, receiveText);
+        receiveChart.Draw();
+
+        networkMetricsListView.Items[0].SubItems[0].Text = sendText;
+        networkMetricsListView.Items[0].SubItems[1].Text = receiveText;
+        networkMetricsListView.Draw();
+
+        string totalBytesSent       = (device?.TotalBytesSent ?? metrics.TotalBytesSent).ToFormattedByteSize();
+        string totalBytesReceived   = (device?.TotalBytesReceived ?? metrics.TotalBytesReceived).ToFormattedByteSize();
+        string totalPacketsSent     = (device?.TotalPacketsSent ?? metrics.TotalPacketsSent).ToNetworkPacketCount();
+        string totalPacketsReceived = (device?.TotalPacketsReceived ?? metrics.TotalPacketsReceived).ToNetworkPacketCount();
+
+        if (device != null) {
+            SetSpecsRow(0,  Strings.LabelName,                       spec?.Name               ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(1,  Strings.PerformanceFriendlyName,         spec?.FriendlyName       ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(2,  Strings.LabelDescription,                spec?.Description        ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(3,  Strings.LabelConnectionType,             spec?.ConnectionType     ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(4,  Strings.LabelPhysicalMedium,             spec?.PhysicalMedium     ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(5,  Strings.LabelMacAddress,                 spec?.MacAddress         ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(6,  Strings.LabelIpv4Addresses,              (spec?.IPv4Addresses     ?? []).ToAddressList());
+            SetSpecsRow(7,  Strings.LabelIpv6Addresses,              (spec?.IPv6Addresses     ?? []).ToAddressList());
+            SetSpecsRow(8,  Strings.LabelTransmitLinkSpeed,          (spec?.TransmitLinkSpeed ?? 0UL).ToLinkSpeed());
+            SetSpecsRow(9,  Strings.LabelReceiveLinkSpeed,           (spec?.ReceiveLinkSpeed  ?? 0UL).ToLinkSpeed());
+            SetSpecsRow(10, Strings.LabelOperationalStatus,          spec?.OperationalStatus  ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(11, Strings.PerformanceTotalBytesSent,       totalBytesSent);
+            SetSpecsRow(12, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
+            SetSpecsRow(13, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
+            SetSpecsRow(14, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
+        }
+        else {
+            SetSpecsRow(0, Strings.PerformanceTotalBytesSent,       totalBytesSent);
+            SetSpecsRow(1, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
+            SetSpecsRow(2, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
+            SetSpecsRow(3, Strings.PerformanceTotalPacketsReceived, totalPacketsReceived);
+
+            for (int row = 4; row < networkSpecsListView.Items.Count; row++) {
+                SetSpecsRow(row, string.Empty, string.Empty);
+            }
+        }
+
+        networkSpecsListView.Draw();
     }
 
     protected override void OnLoad()
@@ -228,7 +229,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     private (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) ResolveScope()
     {
-        if (scopedInterfaceLuid is not { } luid) {
+        if (InterfaceLuid is not { } luid) {
             return (null, null, true);
         }
 
@@ -240,29 +241,45 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
 
     public void Sample(SystemSnapshot snapshot)
     {
-        lock (@lock) {
-            if (snapshot.Network == null) {
-                return;
-            }
-
-            networkInfo = snapshot.Network;
-
-            (NetworkDeviceMetrics? device, _, bool render) = ResolveScope();
-
-            if (!render) {
-                return;
-            }
-
-            sendChart.AddData(device?.SendBytesPerSecond ?? networkInfo.Metrics.SendBytesPerSecond);
-            receiveChart.AddData(device?.ReceiveBytesPerSecond ?? networkInfo.Metrics.ReceiveBytesPerSecond);
+        if (snapshot.Network == null) {
+            return;
         }
-    }
 
-    public void SetScope(ulong? interfaceLuid) => scopedInterfaceLuid = interfaceLuid;
+        networkInfo = snapshot.Network;
+
+        (NetworkDeviceMetrics? device, NetworkDevice? spec, bool render) = ResolveScope();
+
+        if (!render) {
+            return;
+        }
+
+        if (device is not null) {
+            Title = spec?.ToDisplayName() ?? device.ToDisplayName();
+        }
+
+        Summary = (string.Format(
+                CultureInfo.CurrentCulture, 
+                Strings.PerformanceSendShort, 
+                device?.ToNetworkSendRate() ?? networkInfo.Metrics.ToNetworkSendRate()),
+            string.Format(
+                CultureInfo.CurrentCulture, 
+                Strings.PerformanceReceiveShort, 
+                device?.ToNetworkReceiveRate() ?? networkInfo.Metrics.ToNetworkReceiveRate()));
+
+        sendChart.AddData(device?.SendBytesPerSecond ?? networkInfo.Metrics.SendBytesPerSecond);
+        receiveChart.AddData(device?.ReceiveBytesPerSecond ?? networkInfo.Metrics.ReceiveBytesPerSecond);
+        Spark.AddData(device?.ToNetworkThroughputBytesPerSecond() ?? networkInfo.Metrics.ToNetworkThroughputBytesPerSecond());
+    }
 
     private void SetSpecsRow(int index, string label, string value)
     {
         networkSpecsListView.Items[index].SubItems[0].Text = label;
         networkSpecsListView.Items[index].SubItems[1].Text = value;
     }
+
+    public Chart Spark { get; }
+
+    public (string Top, string Bottom) Summary { get; private set; } = (string.Empty, string.Empty);
+
+    public string Title { get; private set; }
 }

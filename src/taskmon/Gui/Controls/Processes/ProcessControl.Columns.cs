@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Task.Monitor.Resources;
 
 namespace Task.Monitor.Gui.Controls.Processes;
@@ -27,75 +26,52 @@ public partial class ProcessControl
 
     public enum Columns
     {
-        [ColumnTitle(nameof(Strings.ProcessColumnProcess))]
-        [ColumnProperty("FileDescription")]
         Process = 0,
-        [ColumnTitle(nameof(Strings.ProcessColumnPid))]
-        [ColumnProperty("Pid")]
-        [ColumnSortKey(ConsoleKey.N)]
         Pid,
-        [ColumnTitle(nameof(Strings.ProcessColumnUser))]
-        [ColumnProperty("UserName")]
-        [ColumnSortKey(ConsoleKey.U)]
         User,
-#if __WIN32__        
-        [ColumnTitle(nameof(Strings.ProcessColumnPriorityWindows))]
-#elif __APPLE__
-        [ColumnTitle(nameof(Strings.ProcessColumnPriorityMacOS))]
-#endif
-        [ColumnProperty("BasePriority")]
         Priority,
-        [ColumnTitle(nameof(Strings.ProcessColumnCpu))]
-        [ColumnProperty("CpuTimePercent")]
-        [ColumnSortKey(ConsoleKey.P)]
         Cpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnAvgCpu))]
-        [ColumnProperty("CpuTimePercentAvg")]
         AvgCpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnMaxCpu))]
-        [ColumnProperty("CpuTimePercentMax")]
         MaxCpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnThreads))]
-        [ColumnProperty("ThreadCount")]
         Threads,
-        [ColumnTitle(nameof(Strings.ProcessColumnGpu))]
-        [ColumnProperty("GpuTimePercent")]
-        [ColumnSortKey(ConsoleKey.G)]
         Gpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnAvgGpu))]
-        [ColumnProperty("GpuTimePercentAvg")]
         AvgGpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnMaxGpu))]
-        [ColumnProperty("GpuTimePercentMax")]
         MaxGpu,
-        [ColumnTitle(nameof(Strings.ProcessColumnMemory))]
-        [ColumnProperty("UsedMemory")]
-        [ColumnSortKey(ConsoleKey.M)]
         Memory,
-        [ColumnTitle(nameof(Strings.ProcessColumnAvgMemory))]
-        [ColumnProperty("UsedMemoryAvg")]
         AvgMemory,
-        [ColumnTitle(nameof(Strings.ProcessColumnMaxMemory))]
-        [ColumnProperty("UsedMemoryMax")]
         MaxMemory,
-        [ColumnTitle(nameof(Strings.ProcessColumnDisk))]
-        [ColumnProperty("DiskUsage")]
-        [ColumnSortKey(ConsoleKey.D)]
         Disk,
-        [ColumnTitle(nameof(Strings.ProcessColumnAvgDisk))]
-        [ColumnProperty("DiskUsageAvg")]
         AvgDisk,
-        [ColumnTitle(nameof(Strings.ProcessColumnMaxDisk))]
-        [ColumnProperty("DiskUsageMax")]
         MaxDisk,
-        [ColumnTitle(nameof(Strings.ProcessColumnPower))]
-        [ColumnProperty("PowerBucket")]
         Power,
-        [ColumnTitle(nameof(Strings.ProcessColumnPath))]
-        [ColumnProperty("CmdLine")]
         CommandLine,
-        [ColumnTitle("")]
-        [ColumnProperty("")]
         Count
     }
+
+    internal static string Title(Columns column) => column switch {
+        Columns.Process     => Strings.ProcessColumnProcess,
+        Columns.Pid         => Strings.ProcessColumnPid,
+        Columns.User        => Strings.ProcessColumnUser,
+#if __APPLE__
+        Columns.Priority    => Strings.ProcessColumnPriorityMacOS,
+#else
+        Columns.Priority    => Strings.ProcessColumnPriorityWindows,
+#endif
+        Columns.Cpu         => Strings.ProcessColumnCpu,
+        Columns.AvgCpu      => Strings.ProcessColumnAvgCpu,
+        Columns.MaxCpu      => Strings.ProcessColumnMaxCpu,
+        Columns.Threads     => Strings.ProcessColumnThreads,
+        Columns.Gpu         => Strings.ProcessColumnGpu,
+        Columns.AvgGpu      => Strings.ProcessColumnAvgGpu,
+        Columns.MaxGpu      => Strings.ProcessColumnMaxGpu,
+        Columns.Memory      => Strings.ProcessColumnMemory,
+        Columns.AvgMemory   => Strings.ProcessColumnAvgMemory,
+        Columns.MaxMemory   => Strings.ProcessColumnMaxMemory,
+        Columns.Disk        => Strings.ProcessColumnDisk,
+        Columns.AvgDisk     => Strings.ProcessColumnAvgDisk,
+        Columns.MaxDisk     => Strings.ProcessColumnMaxDisk,
+        Columns.Power       => Strings.ProcessColumnPower,
+        Columns.CommandLine => Strings.ProcessColumnPath,
+                          _ => string.Empty
+    };
 }

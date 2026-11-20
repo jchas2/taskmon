@@ -31,8 +31,6 @@ public sealed class NpuPerformanceControlTests
             Width  = 120,
             Height = 40
         };
-
-        ctrl.SetScope(0);
         ctrl.Load();
         ctrl.Resize();
         return ctrl;
@@ -43,7 +41,7 @@ public sealed class NpuPerformanceControlTests
     {
         NpuPerformanceControl ctrl = CreateControl();
 
-        ctrl.Sample(PerformanceControlNpuTests.SnapshotWithNpu() with {
+        ctrl.Sample(PerformanceControlTests.SnapshotWithNpu() with {
             Cpu = new CpuInfo { Specs = new CpuSpecs { CpuName = "Apple M3 Pro" } }
         });
         ctrl.Draw();
