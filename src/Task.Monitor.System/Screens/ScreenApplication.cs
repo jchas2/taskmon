@@ -90,8 +90,6 @@ public class ScreenApplication
                         bool           handled        = false;
                         
                         consoleKey = consoleKeyInfo.Key;
-                        
-                        Trace.WriteLine($"Terminal.ReadKey = {consoleKeyInfo.Key}");
                         currScreen.KeyPressed(consoleKeyInfo, ref handled);
 
                         if (!handled && consoleKey == ConsoleKey.Escape && screenStack.Count == 1) {

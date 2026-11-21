@@ -529,6 +529,26 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 #endif
 
     [Fact]
+    public void Health_Can_Be_Assigned_To_A_Pane()
+    {
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.Health);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.Health, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
+        Assert.Contains("RESOURCE", CapturedOutput());
+        Assert.DoesNotContain("LIKELY CAUSES", CapturedOutput());
+
+        screen.Unload();
+    }
+
+    [Fact]
     public void H_Splits_Column_Wise()
     {
         LayoutDesignerScreen screen = CreateScreen();

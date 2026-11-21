@@ -165,6 +165,9 @@
   <data name="PaneControlType_Npu" xml:space="preserve">
     <value>Npu</value>
   </data>
+  <data name="PaneControlType_Health" xml:space="preserve">
+    <value>Health</value>
+  </data>
 
   <!-- Dialogs and footer hotkeys -->
   <data name="DialogOk" xml:space="preserve">

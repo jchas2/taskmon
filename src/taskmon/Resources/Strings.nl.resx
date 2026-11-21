@@ -140,6 +140,9 @@
   <data name="PaneControlType_Npu" xml:space="preserve">
     <value>NPU</value>
   </data>
+  <data name="PaneControlType_Health" xml:space="preserve">
+    <value>Gezondheid</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>

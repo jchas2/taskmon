@@ -1,4 +1,5 @@
 using System.Drawing;
+using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.System.Controls;
@@ -82,6 +83,34 @@ public sealed class SummaryControl2LayoutTests
 
         Assert.Equal(new Rectangle(0, 0,           120, MetreHeight),          bounds[1]);
         Assert.Equal(new Rectangle(0, MetreHeight, 120, height - MetreHeight), bounds[2]);
+    }
+
+    [Theory]
+    [InlineData(0.2f)]
+    [InlineData(0.5f)]
+    [InlineData(0.8f)]
+    public void A_Health_Pane_On_Top_Takes_Exactly_Its_Resources_Rows_Whatever_The_Ratio(float ratio)
+    {
+        LayoutTree<SummaryPane> tree = LayoutTree<SummaryPane>.FromNodes([Split(0, Orientation.Column, ratio, 1, 2), Pane(1), Pane(2)], rootId: 0);
+        tree.Nodes[1].Pane = new SummaryPane(PaneControlType.Health);
+
+        SummaryControl2 summary = Laid(tree, []);
+        int             rows    = HealthControl.ResourcesViewHeight;
+
+        Assert.Equal(new Rectangle(0, 0,    120, rows),      summary.PaneBounds[1]);
+        Assert.Equal(new Rectangle(0, rows, 120, 40 - rows), summary.PaneBounds[2]);
+        Assert.Equal(rows, summary.PaneControls[1].Height);
+    }
+
+    [Fact]
+    public void A_Health_Pane_Without_Room_For_Its_Resources_Rows_Is_Hidden()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Health));
+
+        SummaryControl2 summary = Laid(tree, [], height: HealthControl.ResourcesViewHeight - 1);
+
+        Assert.IsType<HealthControl>(summary.PaneControls[tree.RootId]);
+        Assert.False(summary.PaneControls[tree.RootId].Visible);
     }
 
     // Beside a taller pane a metre keeps its own height; the summary blanks the rest of its pane.

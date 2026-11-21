@@ -2,6 +2,8 @@ using System.Drawing;
 using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.Gui.Controls.Health;
+using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Gui.Controls.Thermals;
@@ -126,6 +128,31 @@ public sealed class SummaryControl2Tests
         ctrl.Load();
 
         Assert.Single(ctrl.Controls.OfType<MetreControl>());
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Builds_A_Health_Pane_With_Only_The_Resources_List()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Health));
+
+        UseSummaryLayout(SummaryControlLayout.FromTree("Health Pane Test", tree));
+
+        SummaryControl2 ctrl = new(
+            runContext.ServiceController,
+            runContext.Terminal,
+            runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+
+        HealthControl health = Assert.Single(ctrl.Controls.OfType<HealthControl>());
+
+        Assert.False(health.ShowCausesAndEvents);
+        Assert.False(health.TabStop);
 
         ctrl.Unload();
     }
@@ -421,6 +448,46 @@ public sealed class SummaryControl2Tests
             "FindFocusedPane", BindingFlags.NonPublic | BindingFlags.Instance);
 
         return (Control?)method!.Invoke(ctrl, null);
+    }
+
+    // Left and Right can focus a pane that isn't a tab stop, and the Health pane's hidden lists must not take that focus.
+    [Fact]
+    public void Left_And_Right_Move_Focus_Through_A_Health_Pane()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Health));
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Process));
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 40 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig, tree) {
+            Width  = 120,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        HealthControl health = Assert.IsType<HealthControl>(GetFocusedPane(ctrl));
+
+        Assert.False(health.CausesView.Focused);
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.IsType<ProcessControl>(GetFocusedPane(ctrl));
+
+        handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Same(health, GetFocusedPane(ctrl));
+        Assert.False(health.CausesView.Focused);
+
+        ctrl.Unload();
     }
 
     [Fact]

@@ -32,4 +32,5 @@ public enum PaneControlType
     Fans,
     NpuMetre,
     Npu,
+    Health,
 }

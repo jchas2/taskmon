@@ -123,7 +123,9 @@ public sealed partial class HealthControl : Control
 
     private int FocusedPaneIndex => Array.FindIndex(panes, pane => pane.Focused);
 
-    public override bool HasFocus => GetFocusedControl?.HasFocus ?? false;
+    public override bool HasFocus => ShowCausesAndEvents
+        ? GetFocusedControl?.HasFocus ?? false
+        : Focused;
 
     private static string NoCausesText  => Strings.HealthNoCauses;
     private static string NoEventsText  => Strings.HealthNoEvents;
@@ -144,12 +146,20 @@ public sealed partial class HealthControl : Control
 
     protected override void OnGotFocus()
     {
+        if (!ShowCausesAndEvents) {
+            return;
+        }
+
         int index = Math.Max(0, FocusedPaneIndex);
         panes[index].SetFocus();
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        if (!ShowCausesAndEvents) {
+            return;
+        }
+
         int focused = FocusedPaneIndex;
 
         if (keyInfo.Key is ConsoleKey.LeftArrow or ConsoleKey.RightArrow) {
@@ -185,8 +195,8 @@ public sealed partial class HealthControl : Control
 
     protected override void OnResize()
     {
-        int resourcesHeight = Math.Min(Height, ResourcesViewHeight(Enum.GetValues<HealthResource>().Length));
-        int remaining       = Math.Max(0, Height - resourcesHeight);
+        int resourcesHeight = Math.Min(Height, ResourcesViewHeight);
+        int remaining       = ShowCausesAndEvents ? Math.Max(0, Height - resourcesHeight) : 0;
         int causesHeight    = Math.Min(remaining, Math.Max(MinPaneHeight, remaining / 2));
         int eventsHeight    = remaining - causesHeight;
 
@@ -231,7 +241,7 @@ public sealed partial class HealthControl : Control
         base.OnUnload();
     }
 
-    private static int ResourcesViewHeight(int rows) => rows + 3;  // border (2) + column headers (1)
+    internal static int ResourcesViewHeight => Enum.GetValues<HealthResource>().Length + 3;  // border (2) + column headers (1)
 
     public void Sample(SystemSnapshot snapshot)
     {
@@ -242,6 +252,9 @@ public sealed partial class HealthControl : Control
         health = snapshot.Health;
         Draw();
     }
+
+    // A summary pane shows only the resources list.
+    public bool ShowCausesAndEvents { get; init; } = true;
 
     private void SizeColumns()
     {

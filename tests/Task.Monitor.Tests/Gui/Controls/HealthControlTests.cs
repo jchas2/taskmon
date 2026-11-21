@@ -116,14 +116,15 @@ public sealed class HealthControlTests
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
 
-    private HealthControl CreateControl(int width = 140, int height = 40)
+    private HealthControl CreateControl(int width = 140, int height = 40, bool showCausesAndEvents = true)
     {
         HealthControl ctrl = new(
             runContext.ServiceController,
             new ForwardingTerminal(runContext.Terminal),
             runContext.AppConfig) {
-            Width  = width,
-            Height = height
+            Width               = width,
+            Height              = height,
+            ShowCausesAndEvents = showCausesAndEvents
         };
 
         ctrl.Load();
@@ -368,4 +369,20 @@ public sealed class HealthControlTests
 
     private string VisibleText() =>
         Regex.Replace(CapturedOutput(), @"\x1b\[[0-9;]*[A-Za-z]", string.Empty);
+
+    [Fact]
+    public void Without_Causes_And_Events_Only_The_Resources_Are_Drawn()
+    {
+        HealthControl ctrl = CreateControl(showCausesAndEvents: false);
+
+        ctrl.Sample(Snapshot(PressuredInfo()));
+
+        string text = VisibleText();
+
+        Assert.Contains("commit 93%", text);
+        Assert.DoesNotContain("LIKELY CAUSES", text);
+        Assert.DoesNotContain("RECENT EVENTS", text);
+        Assert.Empty(ctrl.CausesView.Items);
+        Assert.Empty(ctrl.EventsView.Items);
+    }
 }

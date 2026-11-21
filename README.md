@@ -471,7 +471,7 @@ node.4=pane,Memory
 | `node.0=split,Column,0.6,1,2` | A split: `Column` stacks node 1 above node 2, `Row` puts them side by side. `0.6` is the first node's share of the space, here 60%. |
 | `node.2=pane,Process` | A pane showing one control. The process list can name its own columns, joined with `+`, e.g. `pane,Process,Process+Pid+Cpu+Mem`. Without them it uses the columns chosen in Setup. |
 
-Pane controls are `Cpu`, `CpuCores`, `Memory`, `VirtualMemory`, `Gpu`, `GpuMemory`, `Disk`, `DiskSpace`, `NetworkSent`, `NetworkReceived`, `Power`, `Thermals`, `Fans`, `Npu`, the metres `CpuMetre`, `MemoryMetre`, `VirtualMemoryMetre`, `GpuMetre`, `GpuMemoryMetre`, `DiskMetre`, `NetworkSendMetre`, `NetworkReceiveMetre` and `NpuMetre`, the lists `Process`, `Services`, `Drivers`, `Startup`, `InstalledApps` and `SystemInfo`, and `Empty`. `Fans`, `Npu` and `NpuMetre` are macOS only, and are shown empty on Windows, as is a pane with a control name Task Monitor doesn't know.
+Pane controls are `Cpu`, `CpuCores`, `Memory`, `VirtualMemory`, `Gpu`, `GpuMemory`, `Disk`, `DiskSpace`, `NetworkSent`, `NetworkReceived`, `Power`, `Thermals`, `Fans`, `Npu`, `Health` (the resources list from `HEALTH`), the metres `CpuMetre`, `MemoryMetre`, `VirtualMemoryMetre`, `GpuMetre`, `GpuMemoryMetre`, `DiskMetre`, `NetworkSendMetre`, `NetworkReceiveMetre` and `NpuMetre`, the lists `Process`, `Services`, `Drivers`, `Startup`, `InstalledApps` and `SystemInfo`, and `Empty`. `Fans`, `Npu` and `NpuMetre` are macOS only, and are shown empty on Windows, as is a pane with a control name Task Monitor doesn't know.
 
 ## Development Guide
 

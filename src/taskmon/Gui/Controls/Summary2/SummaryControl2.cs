@@ -6,6 +6,7 @@ using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Drivers;
+using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.InstalledApps;
 using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Processes;
@@ -258,6 +259,7 @@ public sealed class SummaryControl2 : Control
             PaneControlType.Thermals      => (new ThermalsControl(serviceController, Terminal, appConfig)      { TabStop = true, ShowPowerPane = false }, null),
             PaneControlType.CpuCores      => (new CpuCoresControl(serviceController, Terminal, appConfig)      { TabStop = false }, null),
             PaneControlType.Power         => (new PowerControl(serviceController, Terminal, appConfig)         { TabStop = false }, null),
+            PaneControlType.Health        => (new HealthControl(serviceController, Terminal, appConfig)        { TabStop = false, ShowCausesAndEvents = false }, null),
 #if __APPLE__
             PaneControlType.Fans          => (new FansControl(serviceController, Terminal, appConfig)          { TabStop = false }, null),
 #endif
@@ -311,8 +313,8 @@ public sealed class SummaryControl2 : Control
         LayoutNode<SummaryPane> node = tree.Nodes[nodeId];
 
         if (!node.IsSplit) {
-            return panes.TryGetValue(nodeId, out var pane) && pane.Control is MetreControl metre
-                ? metre.RequiredHeight
+            return panes.TryGetValue(nodeId, out var pane)
+                ? RequiredHeight(pane.Control)
                 : null;
         }
 
@@ -386,8 +388,8 @@ public sealed class SummaryControl2 : Control
         foreach ((int id, (_, Control control, _)) in panes) {
             control.Draw();
 
-            if (control is MetreControl && 
-                control.Visible && 
+            if (RequiredHeight(control) is not null &&
+                control.Visible &&
                 paneBounds.TryGetValue(id, out Rectangle bounds) && bounds.Height > control.Height) {
                 
                 DrawRectangle(
@@ -482,7 +484,7 @@ public sealed class SummaryControl2 : Control
                 paneBounds[nodeId] = new Rectangle(x, y, width, height);
 
                 if (panes.TryGetValue(nodeId, out var pane)) {
-                    int? fixedHeight = (pane.Control as MetreControl)?.RequiredHeight;
+                    int? fixedHeight = RequiredHeight(pane.Control);
 
                     pane.Control.X       = x;
                     pane.Control.Y       = y;
@@ -577,6 +579,14 @@ public sealed class SummaryControl2 : Control
             Strings.SummaryTopProcesses, 
             sortColumn.ToString().ToUpperInvariant(), 
             processCount);
+
+    // These controls don't scroll or stretch, so they keep their content's height
+    // and the rest of a column split goes to the other pane.
+    private static int? RequiredHeight(Control control) => control switch {
+        MetreControl metre                           => metre.RequiredHeight,
+        HealthControl { ShowCausesAndEvents: false } => HealthControl.ResourcesViewHeight,
+                                                   _ => null
+    };
 
     internal void Show(LayoutTree<SummaryPane> newTree)
     {

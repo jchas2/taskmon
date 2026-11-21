@@ -102,20 +102,22 @@ public sealed class SummaryControlLayoutTests
         Assert.Equal("Custom Name", layout.Name);
     }
 
-    [Fact]
-    public void Power_Pane_Round_Trips()
+    [Theory]
+    [InlineData(PaneControlType.Power)]
+    [InlineData(PaneControlType.Health)]
+    public void Power_And_Health_Panes_Round_Trip(PaneControlType controlType)
     {
         LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(
-            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(PaneControlType.Power) }], rootId: 0);
+            [new LayoutNode<SummaryPane> { Id = 0, Pane = new(controlType) }], rootId: 0);
 
-        string iniText = SummaryControlLayout.FromTree("Power", original).ToString();
+        string iniText = SummaryControlLayout.FromTree(controlType.ToString(), original).ToString();
 
         ConfigParser parser = new(iniText);
         parser.Parse();
 
         LayoutTree<SummaryPane> tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
-        Assert.Equal(PaneControlType.Power, Assert.Single(tree.Panes()).Pane.ControlType);
+        Assert.Equal(controlType, Assert.Single(tree.Panes()).Pane.ControlType);
     }
 
     // Confirms the round trip survives an actual reparse of the written text, not just the

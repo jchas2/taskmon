@@ -188,8 +188,11 @@ public sealed partial class HealthControl
     private void RefreshRows(HealthInfo info)
     {
         RefreshResources(info);
-        RefreshCauses(info);
-        RefreshEvents(info);
+
+        if (ShowCausesAndEvents) {
+            RefreshCauses(info);
+            RefreshEvents(info);
+        }
     }
 
     private ListViewItem ReportRow(HealthReport report)
