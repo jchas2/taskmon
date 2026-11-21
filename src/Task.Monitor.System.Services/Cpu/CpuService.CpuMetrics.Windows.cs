@@ -1,8 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Cpu;
@@ -37,7 +37,7 @@ public partial class CpuService
         for (uint i = 0; i < itemCount; i++) {
             string name = Marshal.PtrToStringUni(items[i].szName) ?? string.Empty;
 
-            if (!Pdh.IsTotalInstance(name)) {
+            if (!PdhQuery.IsTotalInstance(name)) {
                 arrayBuilder.Add(new CpuInfo.CpuCoreMetric(name, items[i].doubleValue / 100));
             }
         }

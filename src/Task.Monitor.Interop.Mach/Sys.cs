@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.Interop.Mach;
 
@@ -15,7 +13,7 @@ public static unsafe class Sys
         CTL_NET  = 0x04,            /* Network */
         CTL_HW   = 0x06,            /* Hardware */
     }
-    
+
     public enum Hardware
     {
         HW_MODEL    = 0x02,         /* Cpu model */
@@ -29,7 +27,7 @@ public static unsafe class Sys
         NET_RT_IFLIST  = 0x03,      /* Get interface list */
         NET_RT_IFLIST2 = 0x06,      /* Enhanced interface list (macOS specific) */
     }
-    
+
     public const int VM_SWAPUSAGE = 5;
     public const int PF_ROUTE     = 17;     /* Protocol family for routing */
     public const int AF_UNSPEC    = 0;      /* Address family unspecified */
@@ -37,11 +35,8 @@ public static unsafe class Sys
 
     public const int KERN_ARGMAX    = 8;    /* Max bytes of exec arguments */
     public const int KERN_PROCARGS2 = 49;   /* A process's argc, exec path and arguments */
-    
-    private enum Error
-    {
-        ENOMEM = 0x10031,           /* Not enough space */
-    }
+
+    public const int ENOMEM = 12;           /* Not enough space */
 
     [StructLayout(LayoutKind.Sequential)]
     public struct XswUsage
@@ -101,238 +96,22 @@ public static unsafe class Sys
         public if_data64 ifm_data;         /* Interface statistics */
     }
 
-    [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Free")]
-    private static extern unsafe void Free(void* ptr);
-
-    public static unsafe void FreeMemory(void* ptr)
-    {
-        if ((nint)ptr == nint.Zero) {
-            return;
-        }
-
-        Sys.Free(ptr);
-    }
-
-    public static unsafe int? GetArgMax()
-    {
-        int*   name   = stackalloc int[] { (int)Selectors.CTL_KERN, KERN_ARGMAX };
-        int    value  = 0;
-        size_t length = sizeof(int);
-
-        return Sysctl(name, 2, &value, &length) == 0 && value > 0 ? value : null;
-    }
-
     [DllImport(Libraries.LibC)]
     public static extern int getloadavg([Out] double[] loadavg, int nelem);
 
-    public static unsafe string? GetProcessExecPath(int pid, byte[] buffer)
-    {
-        int*   name   = stackalloc int[] { (int)Selectors.CTL_KERN, KERN_PROCARGS2, pid };
-        size_t length = buffer.Length;
-
-        fixed (byte* value = buffer) {
-            if (Sysctl(name, 3, value, &length) != 0) {
-                return null;
-            }
-        }
-
-        return ParseExecPath(buffer.AsSpan(0, (int)length));
-    }
-
-    public static string? ParseExecPath(ReadOnlySpan<byte> procArgs)
-    {
-        if (procArgs.Length <= sizeof(int)) {
-            return null;
-        }
-
-        ReadOnlySpan<byte> path = procArgs[sizeof(int)..];
-        int                end  = path.IndexOf((byte)0);
-
-        return end > 0 
-            ? System.Text.Encoding.UTF8.GetString(path[..end]) 
-            : null;
-    }
-
     [DllImport(Libraries.LibSystemNative, EntryPoint = "SystemNative_Sysctl", SetLastError = true)]
-    private static extern unsafe int Sysctl(
+    public static extern int Sysctl(
         int*    name,
         int     namelen,
         void*   value,
         size_t* len);
 
-    public static unsafe bool Sysctl(ReadOnlySpan<int> name, ref byte* value, ref int len)
-    {
-        fixed (int* ptr = &MemoryMarshal.GetReference(name)) {
-            return Sysctl(
-                ptr, 
-                name.Length, 
-                ref value, 
-                ref len);
-        }
-    }
-    
-    private static unsafe bool Sysctl(
-        int*      name, 
-        int       name_len, 
-        ref byte* value, 
-        ref int   len)
-    {
-        nint bytesLength = len;
-        int ret          = -1;
-        bool autoSize    = (value == null && len == 0);
-
-        if (autoSize) {
-            ret = Sysctl(
-                name, 
-                name_len, 
-                value, 
-                &bytesLength);
-            
-            if (ret != 0) {
-                Trace.WriteLine($"Failed Sysctl() &bytesLength: {*name}");
-                return false;
-            }
-            
-            value = (byte*)Marshal.AllocHGlobal((int)bytesLength);
-        }
-
-        ret = Sysctl(
-            name, 
-            name_len, 
-            value, 
-            &bytesLength);
-        
-        int lastError = Marshal.GetLastPInvokeError();
-        
-        while (autoSize && ret != 0 && lastError == (int)Error.ENOMEM)
-        {
-            Marshal.FreeHGlobal((nint)value);
-            value = null;
-            
-            if ((int)bytesLength == int.MaxValue) {
-                Trace.WriteLine($"Failed Sysctl() &bytesLength Out of memory : {*name}");
-                throw new OutOfMemoryException();
-            }
-            
-            if ((int)bytesLength >= int.MaxValue / 2) {
-                bytesLength = int.MaxValue;
-            } 
-            else {
-                bytesLength = (int)bytesLength * 2;
-            }
-            
-            value = (byte*)Marshal.AllocHGlobal(bytesLength);
-            
-            ret = Sysctl(
-                name, 
-                name_len, 
-                value, 
-                &bytesLength);
-        }
-        
-        if (ret != 0) {
-            if (autoSize) {
-                Marshal.FreeHGlobal((nint)value);
-                value = null;
-            }
-            
-            return false;
-        }
-
-        len = (int)bytesLength;
-
-        return true;
-    }
-
     [DllImport(Libraries.LibC, EntryPoint = "sysctlbyname", SetLastError = true)]
-    private static extern unsafe int SysctlByName(
-        [MarshalAs(UnmanagedType.LPStr)] 
+    public static extern int SysctlByName(
+        [MarshalAs(UnmanagedType.LPStr)]
         string  name,
         void*   oldp,
         size_t* oldlenp,
         void*   newp,
         size_t  newlen);
-
-    public static unsafe bool SysctlByNameInt(string name, out int value)
-    {
-        value         = 0;
-        int    result = 0;
-        size_t len    = (nint)sizeof(int);
-
-        if (SysctlByName(name, &result, &len, null, nint.Zero) != 0) {
-            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
-            return false;
-        }
-
-        value = result;
-        return true;
-    }
-
-    public static unsafe bool SysctlByNameLong(string name, out long value)
-    {
-        value         = 0;
-        long   result = 0;
-        size_t len    = (nint)sizeof(long);
-
-        if (SysctlByName(
-            name, 
-            &result, 
-            &len, 
-            null, 
-            nint.Zero) != 0) {
-
-            Trace.WriteLine($"Failed SysctlByName() &result: {name}");
-            return false;
-        }
-
-        value = result;
-        return true;
-    }
-
-    public static unsafe string? SysctlByNameString(string name)
-    {
-        size_t len = nint.Zero;
-        
-        if (SysctlByName(
-            name, 
-            null, 
-            &len, 
-            null, 
-            nint.Zero) != 0) {
-
-            Trace.WriteLine($"Failed SysctlByName() &len: {name}");
-            return null;
-        }
-
-        int byteLen = (int)len;
-
-        if (byteLen <= 0) {
-            return null;
-        }
-
-        using HGlobalScope scope = HGlobalScope.Allocate(byteLen);
-        byte* buffer = (byte*)scope.Value;
-
-        size_t outLen = (nint)byteLen;
-
-        if (SysctlByName(
-            name, 
-            buffer, 
-            &outLen, 
-            null, 
-            nint.Zero) != 0) {
-            
-            Trace.WriteLine($"Failed SysctlByName() buffer: {name}");
-            return null;
-        }
-
-        int strLen = (int)outLen;
-
-        // sysctl strings are null terminated; drop the terminator.
-        if (strLen > 0 && buffer[strLen - 1] == 0) {
-            strLen--;
-        }
-
-        return System.Text.Encoding.UTF8.GetString(buffer, strLen);
-    }
 }

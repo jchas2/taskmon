@@ -208,8 +208,16 @@ native SDK names (`PDH_CSTATUS_NEW_DATA`), so they can be checked against the pl
 taskmon builds on macOS (Apple Silicon) and Windows. The symbols `__APPLE__` and `__WIN32__` are
 defined per OS in [`eng/Preprocessor.props`](../eng/Preprocessor.props).
 
-- Native calls live only in `Task.Monitor.Interop.Mach` (macOS) and `Task.Monitor.Interop.Win32`
-  (Windows).
+- Native calls are declared only in `Task.Monitor.Interop.Mach` (macOS) and
+  `Task.Monitor.Interop.Win32` (Windows): `[DllImport]` signatures, structs and enums that match
+  native layouts, and the constants passed to them. A COM or NVAPI method reached through a function
+  pointer is declared there as a one-line stub that makes the call. Nothing else goes in Interop: no
+  parsing, conversion, caching, retries, range checks, logging or diagnostic text.
+- Managed wrappers over those calls, such as `CFConvert`, `PropertyList` or `WmiClient`, live in
+  `Task.Monitor.System/Native`, namespace `Task.Monitor.System.Native`, with the platform suffixes.
+  The ownership scopes (`CFScope`, `KernelHandleScope` and the rest) and the error helpers
+  (`ErrorCodes`, `PInvokeErrorHelpers`) live there too. A wrapper with a single caller that encodes
+  that caller's own rules goes with the caller instead. `Task.Monitor.Cli.Utils` has no native code.
 - Platform implementations go in partial files suffixed `.MacOS.cs` or `.Windows.cs`, with the whole
   body wrapped in `#if __APPLE__` / `#if __WIN32__`.
 - Logic that two or more services share goes in `Task.Monitor.System.Services/Common`, namespace

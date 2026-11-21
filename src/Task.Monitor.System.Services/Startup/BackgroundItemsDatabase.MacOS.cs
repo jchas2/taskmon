@@ -1,7 +1,7 @@
 #if __APPLE__
 using System.Text.RegularExpressions;
 using Task.Monitor.Cli.Utils;
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Startup;
 

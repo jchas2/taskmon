@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
@@ -35,12 +36,12 @@ internal sealed class SmartBatteryPowerProvider : IReadingProvider<PowerReading>
             yield break;
         }
 
-        bool onAdapter = IOKit.SearchProperty(battery, "ExternalConnected") is true;
+        bool onAdapter = IOKitProperties.SearchProperty(battery, "ExternalConnected") is true;
 
         double? watts = SystemWatts(
-            IOKit.SearchProperty(battery, "PowerTelemetryData"),
-            IOKit.SearchProperty(battery, "Voltage"),
-            IOKit.SearchProperty(battery, "InstantAmperage"),
+            IOKitProperties.SearchProperty(battery, "PowerTelemetryData"),
+            IOKitProperties.SearchProperty(battery, "Voltage"),
+            IOKitProperties.SearchProperty(battery, "InstantAmperage"),
             onAdapter);
 
         if (watts is { } value) {

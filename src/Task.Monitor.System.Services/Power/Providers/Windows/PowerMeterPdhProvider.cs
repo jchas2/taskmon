@@ -1,7 +1,7 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
@@ -75,7 +75,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IReadingProvider<PowerReadi
 
             string? name = Marshal.PtrToStringUni(item.szName);
 
-            if (Pdh.IsTotalInstance(name)) {
+            if (PdhQuery.IsTotalInstance(name)) {
                 return Normalise(item.doubleValue);
             }
 

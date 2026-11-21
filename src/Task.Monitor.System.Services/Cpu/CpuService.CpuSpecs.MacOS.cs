@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Cpu;
 
@@ -46,7 +46,7 @@ public partial class CpuService
     }
 
     private static string GetCpuNameInternal() =>
-        Sys.SysctlByNameString("machdep.cpu.brand_string") ?? string.Empty;
+        Sysctl.GetString("machdep.cpu.brand_string") ?? string.Empty;
 
     private static double MaxDvfsFrequencyMhz(Dictionary<string, nint> props, string key)
     {
@@ -102,16 +102,16 @@ public partial class CpuService
 
     private static void PopulateCpuCaches(ref CpuSpecs specs)
     {
-        if (Sys.SysctlByNameLong("hw.l1dcachesize", out long l1) && l1 > 0) {
+        if (Sysctl.TryGetInt64("hw.l1dcachesize", out long l1) && l1 > 0) {
             specs.CpuL1CacheBytes = (ulong)l1;
         }
 
-        if (Sys.SysctlByNameLong("hw.l2cachesize", out long l2) && l2 > 0) {
+        if (Sysctl.TryGetInt64("hw.l2cachesize", out long l2) && l2 > 0) {
             specs.CpuL2CacheBytes = (ulong)l2;
         }
 
         // Level 3 is usually 0 on Apple silicon.
-        if (Sys.SysctlByNameLong("hw.l3cachesize", out long l3) && l3 > 0) {
+        if (Sysctl.TryGetInt64("hw.l3cachesize", out long l3) && l3 > 0) {
             specs.CpuL3CacheBytes = (ulong)l3;
         }
     }
@@ -135,7 +135,7 @@ public partial class CpuService
             return;
         }
 
-        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+        Dictionary<string, nint> props = CFConvert.ToDictionary(properties);
 
         specs.CpuPerformanceFrequency = MaxDvfsFrequencyMhz(props, "voltage-states5-sram");
         specs.CpuEfficiencyFrequency  = MaxDvfsFrequencyMhz(props, "voltage-states1-sram");
@@ -161,12 +161,12 @@ public partial class CpuService
         specs.CpuEfficiencyCores  = 0;
         specs.CpuSuperCores       = 0;
 
-        if (!Sys.SysctlByNameInt("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
-            if (Sys.SysctlByNameInt("hw.perflevel0.logicalcpu", out int pCount)) {
+        if (!Sysctl.TryGetInt32("hw.nperflevels", out int nperflevels) || nperflevels <= 0) {
+            if (Sysctl.TryGetInt32("hw.perflevel0.logicalcpu", out int pCount)) {
                 specs.CpuPerformanceCores = (ulong)pCount;
             }
 
-            if (Sys.SysctlByNameInt("hw.perflevel1.logicalcpu", out int eCount)) {
+            if (Sysctl.TryGetInt32("hw.perflevel1.logicalcpu", out int eCount)) {
                 specs.CpuEfficiencyCores = (ulong)eCount;
             }
 
@@ -174,10 +174,10 @@ public partial class CpuService
         }
 
         for (int i = 0; i < nperflevels; i++) {
-            string? name = Sys.SysctlByNameString($"hw.perflevel{i}.name");
+            string? name = Sysctl.GetString($"hw.perflevel{i}.name");
 
             if (string.IsNullOrEmpty(name) ||
-                !Sys.SysctlByNameInt($"hw.perflevel{i}.logicalcpu", out int count)) {
+                !Sysctl.TryGetInt32($"hw.perflevel{i}.logicalcpu", out int count)) {
                 continue;
             }
 

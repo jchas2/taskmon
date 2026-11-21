@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Gpu;
 
@@ -30,18 +31,18 @@ public sealed partial class GpuService
         }
 
         bool found = false;
-        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+        Dictionary<string, nint> props = CFConvert.ToDictionary(properties);
 
         if (props.TryGetValue("PerformanceStatistics", out nint perfStatsRef)) {
-            Dictionary<string, nint> perfStats = CoreFoundation.ToDictionary(perfStatsRef);
+            Dictionary<string, nint> perfStats = CFConvert.ToDictionary(perfStatsRef);
 
             if (perfStats.TryGetValue("Alloc system memory", out nint allocRef)) {
-                CoreFoundation.CFNumberGetValue(allocRef, out allocMemory);
+                allocMemory = CFConvert.GetInt64(allocRef);
                 found = true;
             }
 
             if (perfStats.TryGetValue("In use system memory", out nint inUseRef)) {
-                CoreFoundation.CFNumberGetValue(inUseRef, out inUseMemory);
+                inUseMemory = CFConvert.GetInt64(inUseRef);
                 found = true;
             }
         }

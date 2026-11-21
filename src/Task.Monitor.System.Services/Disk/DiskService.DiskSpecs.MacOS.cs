@@ -1,7 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Disk;
 
@@ -24,7 +24,7 @@ public partial class DiskService
         DiskDevice device = new();
         device.Index = index;
 
-        if (IOKit.SearchProperty(entry, "Size", IOKit.IterateRecursively) is long size) {
+        if (IOKitProperties.SearchProperty(entry, "Size", IOKit.IterateRecursively) is long size) {
             device.Capacity = size;
         }
 

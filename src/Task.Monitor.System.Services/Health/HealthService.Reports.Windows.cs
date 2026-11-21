@@ -1,7 +1,7 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Thermal;
 
@@ -51,7 +51,7 @@ public partial class HealthService
 
             byte[] log = new byte[HealthLogSize];
 
-            if (Nvme.TryQueryLogPage(disk.Index, WinIoCtl.NVMeLogPageHealthInfo, log) &&
+            if (NvmeDrive.TryQueryLogPage(disk.Index, WinIoCtl.NVMeLogPageHealthInfo, log) &&
                 NvmeHealthLog.CriticalWarning(log) is { } warning &&
                 NvmeHealthLog.PercentUsed(log) is { } percentUsed &&
                 NvmeHealthLog.MediaErrors(log) is { } mediaErrors) {
@@ -142,10 +142,10 @@ public partial class HealthService
     {
         HashSet<int> pids = [];
 
-        foreach (nint window in WinUser.GetTopLevelWindows()) {
+        foreach (nint window in DesktopWindows.GetTopLevel()) {
             if (WinUser.IsWindowVisible(window) && 
                 WinUser.IsHungAppWindow(window) && 
-                WinUser.GetWindowClassName(window) != GhostWindowClass) {
+                DesktopWindows.GetClassName(window) != GhostWindowClass) {
                 
                 WinUser.GetWindowThreadProcessId(window, out uint pid);
                 pids.Add((int)pid);

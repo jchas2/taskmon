@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Drivers;
@@ -41,7 +41,7 @@ internal static partial class DriverLookup
 
     internal static List<DriverInfo> GetDrivers(List<string>? notes = null)
     {
-        Dictionary<string, object?>? loadedInfo  = IOKit.GetLoadedKextInfo(LoadedInfoKeys);
+        Dictionary<string, object?>? loadedInfo  = IOKitProperties.GetLoadedKextInfo(LoadedInfoKeys);
         Dictionary<string, object?>  loadedKexts = loadedInfo ?? new();
 
         notes?.Add(loadedInfo is null

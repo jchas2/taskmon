@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Common;
 
@@ -17,14 +18,14 @@ public sealed class TargetUser
             euid,
             uid,
             Environment.GetEnvironmentVariable("SUDO_UID"),
-            euid == 0 ? SystemConfiguration.GetConsoleUserId() : null);
+            euid == 0 ? UserAccounts.GetConsoleUserId() : null);
 
         return new TargetUser {
             Uid            = targetUid,
             IsRoot         = euid == 0,
             IsSessionOwner = targetUid == uid,
             HomeDirectory  = GetHomeDirectory(targetUid) ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            Uuid           = Membership.GetUserUuid(targetUid)
+            Uuid           = UserAccounts.GetUserUuid(targetUid)
         };
     }
 

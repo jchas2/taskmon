@@ -1,7 +1,7 @@
+using Task.Monitor.System.Native;
 #if __WIN32__
 using Microsoft.Win32;
 #endif
-using Task.Monitor.Cli.Utils;
 
 namespace Task.Monitor.System.Services.InstalledApps;
 

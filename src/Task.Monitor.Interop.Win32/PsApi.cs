@@ -4,8 +4,6 @@ namespace Task.Monitor.Interop.Win32;
 
 public static class PsApi
 {
-    const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
-
     [StructLayout(LayoutKind.Sequential)]
     public struct PERFORMANCE_INFORMATION
     {

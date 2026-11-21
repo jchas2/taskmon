@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 #endif
 
@@ -15,7 +15,7 @@ public partial class InstalledAppsService
     private readonly Dictionary<string, (DateTime Stamp, string? Publisher)> publisherCache = new(StringComparer.Ordinal);
 
     private static DateTime ResolveInstallDate(string appPath) =>
-        Attr.GetAddedTime(appPath)?.ToLocalTime() ?? Directory.GetCreationTime(appPath);
+        FileDates.GetAddedTime(appPath)?.ToLocalTime() ?? Directory.GetCreationTime(appPath);
 
     // Reading a code signature is the slowest part of a scan, so publishers are cached against the
     // bundle's stamp and only re-read for apps that changed since the last scan.
@@ -27,7 +27,7 @@ public partial class InstalledAppsService
             return cached.Publisher;
         }
 
-        string? publisher = CodeSigningPublisher.Parse(CodeSigning.GetSigningCertificateSummary(appPath));
+        string? publisher = CodeSigningPublisher.Parse(CodeSignature.GetSigningCertificateSummary(appPath));
         publisherCache[appPath] = (stamp, publisher);
 
         return publisher;

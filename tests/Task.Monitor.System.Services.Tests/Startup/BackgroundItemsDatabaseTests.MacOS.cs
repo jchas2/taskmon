@@ -1,6 +1,7 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Startup;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.System.Services.Tests.Startup;
 

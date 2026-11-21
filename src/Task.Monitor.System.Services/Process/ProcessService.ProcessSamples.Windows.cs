@@ -4,6 +4,7 @@ using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.WindowsServices;
 using SysDiag = System.Diagnostics;

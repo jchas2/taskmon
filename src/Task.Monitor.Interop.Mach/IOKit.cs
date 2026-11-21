@@ -10,32 +10,7 @@ public static class IOKit
     public const uint IterateParents     = 0x00000002;
     public const uint IterateRecursively = 0x00000001;
 
-    private const string IOServicePlane = "IOService";
-
-    public static unsafe Dictionary<string, object?>? GetLoadedKextInfo(IReadOnlyList<string> infoKeys)
-    {
-        nint[] keys = new nint[infoKeys.Count];
-
-        try {
-            for (int i = 0; i < keys.Length; i++) {
-                keys[i] = CoreFoundation.CFStringCreate(infoKeys[i]);
-            }
-
-            fixed (nint* keysPtr = keys) {
-                using CFScope keyArray = new(CoreFoundation.CFArrayCreate(nint.Zero, keysPtr, keys.Length, nint.Zero));
-                using CFScope info     = new(KextManagerCopyLoadedKextInfo(nint.Zero, keyArray));
-
-                return PropertyList.ToManaged(info) as Dictionary<string, object?>;
-            }
-        }
-        finally {
-            foreach (nint key in keys) {
-                if (key != nint.Zero) {
-                    CoreFoundation.CFRelease(key);
-                }
-            }
-        }
-    }
+    public const string IOServicePlane = "IOService";
 
     [DllImport(Libraries.IOKit)]
     public static extern unsafe int IOConnectCallStructMethod(
@@ -132,13 +107,5 @@ public static class IOKit
         out uint connection);
 
     [DllImport(Libraries.IOKit)]
-    private static extern nint KextManagerCopyLoadedKextInfo(nint kextIdentifiers, nint infoKeys);
-
-    public static object? SearchProperty(uint entry, string key, uint options = 0)
-    {
-        using CFScope name  = new(CoreFoundation.CFStringCreate(key));
-        using CFScope value = new(IORegistryEntrySearchCFProperty(entry, IOServicePlane, name, nint.Zero, options));
-
-        return PropertyList.ToManaged(value);
-    }
+    public static extern nint KextManagerCopyLoadedKextInfo(nint kextIdentifiers, nint infoKeys);
 }

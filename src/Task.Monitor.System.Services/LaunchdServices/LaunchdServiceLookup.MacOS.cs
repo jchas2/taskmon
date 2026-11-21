@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.LaunchdServices;
@@ -54,8 +54,8 @@ internal static class LaunchdServiceLookup
     {
         TargetUser user = TargetUser.Current();
 
-        List<Dictionary<string, object?>>? systemJobs = ServiceManagement.GetSystemJobs();
-        List<Dictionary<string, object?>>? userJobs   = user.IsSessionOwner ? ServiceManagement.GetUserJobs() : null;
+        List<Dictionary<string, object?>>? systemJobs = LaunchdJobs.GetSystemJobs();
+        List<Dictionary<string, object?>>? userJobs   = user.IsSessionOwner ? LaunchdJobs.GetUserJobs() : null;
 
         notes?.Add(user.Describe());
         notes?.Add(JobsNote("system", systemJobs));

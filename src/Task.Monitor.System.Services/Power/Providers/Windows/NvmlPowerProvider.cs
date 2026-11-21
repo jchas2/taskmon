@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
@@ -15,7 +16,7 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
     public void Dispose()
     {
         if (initialised) {
-            Nvml.Shutdown();
+            NvmlLibrary.Shutdown();
             initialised = false;
         }
     }
@@ -29,16 +30,16 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
         }
 
         GpuDeviceMatcher matcher = new(getGpus());
-        int              count   = Nvml.DeviceCount();
+        int              count   = NvmlLibrary.DeviceCount();
 
         for (int i = 0; i < count; i++) {
-            if (!Nvml.TryGetHandle(i, out nint handle) || !Nvml.TryGetPowerWatts(handle, out double watts)) {
+            if (!NvmlLibrary.TryGetHandle(i, out nint handle) || !NvmlLibrary.TryGetPowerWatts(handle, out double watts)) {
                 continue;
             }
 
             string id = $"nvml{i}";
 
-            if (Nvml.TryGetPciIds(handle, out uint vendorId, out uint deviceId) &&
+            if (NvmlLibrary.TryGetPciIds(handle, out uint vendorId, out uint deviceId) &&
                 matcher.Match(vendorId, deviceId) is { } gpu) {
 
                 id = gpu.AdapterLuid.ToString();
@@ -56,7 +57,7 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
 
     public bool TryInitialise()
     {
-        initialised = Nvml.Initialize(out string diagnostic);
+        initialised = NvmlLibrary.Initialize(out string diagnostic);
         Diagnostic  = diagnostic;
 
         return initialised;

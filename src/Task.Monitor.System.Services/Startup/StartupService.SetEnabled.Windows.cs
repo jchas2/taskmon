@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Security;
 using Microsoft.Win32;
-using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Startup;
 
@@ -47,7 +47,7 @@ public partial class StartupService
 
     private static StartupToggleResult SetScheduledTaskEnabled(StartupEntry entry, bool enabled)
     {
-        int hr = ScheduledTasks.SetEnabled(entry.Origin, entry.Name, enabled);
+        int hr = TaskSchedulerClient.SetEnabled(entry.Origin, entry.Name, enabled);
 
         if (hr < 0) {
             Trace.WriteLine($"{nameof(SetScheduledTaskEnabled)} {entry.Origin}\\{entry.Name}: 0x{hr:X8}");

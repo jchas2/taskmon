@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Soc;
 
@@ -65,14 +66,14 @@ public partial class GpuService
                 continue;
             }
 
-            Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+            Dictionary<string, nint> props = CFConvert.ToDictionary(properties);
 
             if (!props.ContainsKey("IOUserClientCreator") || !props.ContainsKey("AppUsage")) {
                 continue;
             }
 
             // IOUserClientCreator returns "pid nnnn, processname".
-            string? creator = CoreFoundation.GetString(props["IOUserClientCreator"]);
+            string? creator = CFConvert.GetString(props["IOUserClientCreator"]);
 
             if (creator == null || !creator.StartsWith("pid ") || !creator.Contains(',')) {
                 continue;
@@ -96,11 +97,10 @@ public partial class GpuService
                 nint element = CoreFoundation.CFArrayGetValueAtIndex(appUsage, i);
 
                 if (CoreFoundation.CFGetTypeID(element) == typeIdCFDictionary) {
-                    Dictionary<string, nint> elemDict = CoreFoundation.ToDictionary(element);
+                    Dictionary<string, nint> elemDict = CFConvert.ToDictionary(element);
 
                     if (elemDict.TryGetValue("accumulatedGPUTime", out nint value)) {
-                        CoreFoundation.CFNumberGetValue(value, out long gpuTime);
-                        totalGpuTime += gpuTime;
+                        totalGpuTime += CFConvert.GetInt64(value);
                     }
                 }
             }

@@ -1,19 +1,19 @@
 namespace Task.Monitor.Interop.Mach;
 
-internal static class Libraries
+public static class Libraries
 {
-    internal const string CoreFoundation      = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
-    internal const string CoreServices        = "/System/Library/Frameworks/CoreServices.framework/CoreServices";
-    internal const string IOKit               = "/System/Library/Frameworks/IOKit.framework/IOKit";
-    internal const string IOReport            = "/usr/lib/libIOReport.dylib";
-    internal const string LibC                = "libc";
-    internal const string LibProc             = "libproc";
-    internal const string LibProcDyLib        = "libproc.dylib";
-    internal const string LibSystemDyLib      = "libSystem.dylib";
-    internal const string LibSystemNative     = "libSystem.Native";
-    internal const string Metal               = "/System/Library/Frameworks/Metal.framework/Metal";
-    internal const string ObjC                = "/usr/lib/libobjc.A.dylib";
-    internal const string Security            = "/System/Library/Frameworks/Security.framework/Security";
-    internal const string ServiceManagement   = "/System/Library/Frameworks/ServiceManagement.framework/ServiceManagement";
-    internal const string SystemConfiguration = "/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration";
+    public const string CoreFoundation      = "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation";
+    public const string CoreServices        = "/System/Library/Frameworks/CoreServices.framework/CoreServices";
+    public const string IOKit               = "/System/Library/Frameworks/IOKit.framework/IOKit";
+    public const string IOReport            = "/usr/lib/libIOReport.dylib";
+    public const string LibC                = "libc";
+    public const string LibProc             = "libproc";
+    public const string LibProcDyLib        = "libproc.dylib";
+    public const string LibSystemDyLib      = "libSystem.dylib";
+    public const string LibSystemNative     = "libSystem.Native";
+    public const string Metal               = "/System/Library/Frameworks/Metal.framework/Metal";
+    public const string ObjC                = "/usr/lib/libobjc.A.dylib";
+    public const string Security            = "/System/Library/Frameworks/Security.framework/Security";
+    public const string ServiceManagement   = "/System/Library/Frameworks/ServiceManagement.framework/ServiceManagement";
+    public const string SystemConfiguration = "/System/Library/Frameworks/SystemConfiguration.framework/SystemConfiguration";
 }

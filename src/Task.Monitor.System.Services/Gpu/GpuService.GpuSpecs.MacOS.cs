@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Gpu;
 
@@ -14,7 +15,7 @@ public partial class GpuService
     {
         using IOObjectScope service = new(IOKit.IOServiceGetMatchingService(0, IOKit.IOServiceMatching("AGXAccelerator")));
 
-        return !service.IsNull && IOKit.SearchProperty(service, "gpu-core-count", IOKit.IterateRecursively) is long cores
+        return !service.IsNull && IOKitProperties.SearchProperty(service, "gpu-core-count", IOKit.IterateRecursively) is long cores
             ? (int)cores
             : 0;
     }

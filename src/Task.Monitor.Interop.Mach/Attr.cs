@@ -6,14 +6,14 @@ namespace Task.Monitor.Interop.Mach;
 // folder - what Finder shows as "Date Added".
 public static unsafe class Attr
 {
-    private const ushort ATTR_BIT_MAP_COUNT      = 5;
-    private const uint   ATTR_CMN_ADDEDTIME      = 0x10000000;
-    private const uint   ATTR_CMN_RETURNED_ATTRS = 0x80000000;
-    private const uint   FSOPT_NOFOLLOW          = 0x00000001;
-    private const uint   FSOPT_PACK_INVAL_ATTRS  = 0x00000008;
+    public const ushort ATTR_BIT_MAP_COUNT      = 5;
+    public const uint   ATTR_CMN_ADDEDTIME      = 0x10000000;
+    public const uint   ATTR_CMN_RETURNED_ATTRS = 0x80000000;
+    public const uint   FSOPT_NOFOLLOW          = 0x00000001;
+    public const uint   FSOPT_PACK_INVAL_ATTRS  = 0x00000008;
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct AttrList
+    public struct AttrList
     {
         public ushort bitmapcount;
         public ushort reserved;
@@ -27,7 +27,7 @@ public static unsafe class Attr
     // The buffer getattrlist fills for ATTR_CMN_RETURNED_ATTRS | ATTR_CMN_ADDEDTIME: the length,
     // the attribute_set_t of attributes actually returned, then the added time as a timespec.
     [StructLayout(LayoutKind.Sequential)]
-    private struct AddedTimeBuffer
+    public struct AddedTimeBuffer
     {
         public uint length;
         public uint returnedCommonAttr;
@@ -39,32 +39,8 @@ public static unsafe class Attr
         public long tv_nsec;
     }
 
-    // Null when the file system doesn't record an added time for the item.
-    public static DateTime? GetAddedTime(string path)
-    {
-        AttrList request = new() {
-            bitmapcount = ATTR_BIT_MAP_COUNT,
-            commonattr  = ATTR_CMN_RETURNED_ATTRS | ATTR_CMN_ADDEDTIME
-        };
-
-        AddedTimeBuffer buffer = default;
-
-        int result = getattrlist(
-            path,
-            ref request,
-            &buffer,
-            (nuint)sizeof(AddedTimeBuffer),
-            FSOPT_NOFOLLOW | FSOPT_PACK_INVAL_ATTRS);
-
-        if (result != 0 || (buffer.returnedCommonAttr & ATTR_CMN_ADDEDTIME) == 0 || buffer.tv_sec <= 0) {
-            return null;
-        }
-
-        return DateTime.UnixEpoch.AddSeconds(buffer.tv_sec);
-    }
-
     [DllImport(Libraries.LibC, SetLastError = true)]
-    private static extern int getattrlist(
+    public static extern int getattrlist(
         string       path,
         ref AttrList attrList,
         void*        attrBuf,

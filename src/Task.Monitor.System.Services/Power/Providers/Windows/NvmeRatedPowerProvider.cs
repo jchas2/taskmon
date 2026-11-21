@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
@@ -41,7 +42,7 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
     {
         byte[] identify = new byte[WinIoCtl.NVMeIdentifyControllerSize];
 
-        return Nvme.TryQueryIdentify(physicalDriveIndex, WinIoCtl.NVMeIdentifyCnsController, identify)
+        return NvmeDrive.TryQueryIdentify(physicalDriveIndex, WinIoCtl.NVMeIdentifyCnsController, identify)
             ? NvmePowerState.PeakWatts(identify)
             : null;
     }

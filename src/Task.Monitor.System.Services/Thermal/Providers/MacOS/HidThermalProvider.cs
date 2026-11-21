@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
@@ -89,7 +90,7 @@ internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisk
 
     private static object? ReadProperty(nint service, string key)
     {
-        using CFScope name  = new(CoreFoundation.CFStringCreate(key));
+        using CFScope name  = new(CFConvert.CreateString(key));
         using CFScope value = new(IOHIDEventSystem.IOHIDServiceClientCopyProperty(service, name));
 
         return value.IsNull ? null : PropertyList.ToManaged(value);

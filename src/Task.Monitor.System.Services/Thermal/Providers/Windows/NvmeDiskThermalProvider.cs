@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
@@ -53,7 +54,7 @@ internal sealed class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> ge
     {
         byte[] log = new byte[LogSize];
 
-        return Nvme.TryQueryLogPage(physicalDriveIndex, WinIoCtl.NVMeLogPageHealthInfo, log)
+        return NvmeDrive.TryQueryLogPage(physicalDriveIndex, WinIoCtl.NVMeLogPageHealthInfo, log)
             ? log
             : null;
     }

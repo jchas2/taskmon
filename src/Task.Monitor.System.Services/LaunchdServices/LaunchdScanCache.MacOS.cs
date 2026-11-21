@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.LaunchdServices;

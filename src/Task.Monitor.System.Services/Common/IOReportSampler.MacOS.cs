@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Common;
 
@@ -59,8 +60,8 @@ internal sealed class IOReportSampler(string owner, params (string Group, string
             nint merged = nint.Zero;
 
             foreach ((string group, string? subGroup) in groups) {
-                using CFScope groupName    = new(CoreFoundation.CFStringCreate(group));
-                using CFScope subGroupName = new(subGroup is null ? nint.Zero : CoreFoundation.CFStringCreate(subGroup));
+                using CFScope groupName    = new(CFConvert.CreateString(group));
+                using CFScope subGroupName = new(subGroup is null ? nint.Zero : CFConvert.CreateString(subGroup));
                 using CFScope available    = new(IOReport.IOReportCopyChannelsInGroup(groupName, subGroupName, 0, 0, 0));
 
                 if (available.IsNull) {
@@ -101,7 +102,7 @@ internal sealed class IOReportSampler(string owner, params (string Group, string
     {
         List<IOReportChannelSample> samples = new();
 
-        if (!CoreFoundation.ToDictionary(delta).TryGetValue("IOReportChannels", out nint items)) {
+        if (!CFConvert.ToDictionary(delta).TryGetValue("IOReportChannels", out nint items)) {
             return samples;
         }
 
@@ -119,7 +120,7 @@ internal sealed class IOReportSampler(string owner, params (string Group, string
 
                 for (int state = 0; state < stateCount; state++) {
                     states.Add((
-                        CoreFoundation.GetString(IOReport.IOReportStateGetNameForIndex(item, state))?.Trim() ?? string.Empty,
+                        CFConvert.GetString(IOReport.IOReportStateGetNameForIndex(item, state))?.Trim() ?? string.Empty,
                         IOReport.IOReportStateGetResidency(item, state)));
                 }
             }
@@ -128,12 +129,12 @@ internal sealed class IOReportSampler(string owner, params (string Group, string
             }
 
             samples.Add(new IOReportChannelSample(
-                CoreFoundation.GetString(IOReport.IOReportChannelGetGroup(item)) ?? string.Empty,
-                CoreFoundation.GetString(IOReport.IOReportChannelGetSubGroup(item)) ?? string.Empty,
-                CoreFoundation.GetString(IOReport.IOReportChannelGetChannelName(item)) ?? string.Empty,
+                CFConvert.GetString(IOReport.IOReportChannelGetGroup(item)) ?? string.Empty,
+                CFConvert.GetString(IOReport.IOReportChannelGetSubGroup(item)) ?? string.Empty,
+                CFConvert.GetString(IOReport.IOReportChannelGetChannelName(item)) ?? string.Empty,
                 value,
                 states,
-                CoreFoundation.GetString(IOReport.IOReportChannelGetUnitLabel(item))));
+                CFConvert.GetString(IOReport.IOReportChannelGetUnitLabel(item))));
         }
 
         return samples;

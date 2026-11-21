@@ -1,6 +1,6 @@
 #if __APPLE__
 using System.Runtime.InteropServices;
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.MacOS;
 
@@ -13,9 +13,9 @@ internal sealed class SmcThermalSampler : IDisposable
 
     private readonly List<(string Key, SmcThermalKeys.Group Group)> temperatureKeys = new();
 
-    private Smc? smc;
-    private int  fanCount;
-    private bool openFailed;
+    private SmcConnection? smc;
+    private int            fanCount;
+    private bool           openFailed;
 
     public void Dispose()
     {
@@ -39,7 +39,7 @@ internal sealed class SmcThermalSampler : IDisposable
                 return false;
             }
 
-            smc            = Smc.Open(out string diagnostic);
+            smc            = SmcConnection.Open(out string diagnostic);
             OpenDiagnostic = diagnostic;
 
             if (smc is null) {

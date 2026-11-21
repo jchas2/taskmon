@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Gpu;
 
@@ -31,7 +32,7 @@ public partial class GpuService
         }
 
         if (!recommendedWorkingSetRead) {
-            recommendedWorkingSet     = Metal.RecommendedMaxWorkingSetSize();
+            recommendedWorkingSet     = MetalDevice.GetRecommendedMaxWorkingSetSize();
             recommendedWorkingSetRead = true;
 
             Trace.WriteLine(recommendedWorkingSet is { } workingSet
@@ -39,7 +40,7 @@ public partial class GpuService
                 : $"{ServiceName}: Metal recommendedMaxWorkingSetSize NOT FOUND, using the memory allocated so far");
         }
 
-        long wiredLimitMb = Sys.SysctlByNameInt(WiredLimitKey, out int limit) ? limit : 0;
+        long wiredLimitMb = Sysctl.TryGetInt32(WiredLimitKey, out int limit) ? limit : 0;
         long totalMemory  = Math.Max(GpuMemoryLimit(wiredLimitMb, recommendedWorkingSet, allocMemory), inUseMemory);
         long available    = totalMemory - inUseMemory;
 

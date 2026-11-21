@@ -47,13 +47,6 @@ public static unsafe class Dxgi
         public nuint SharedSystemMemory;
         public long  AdapterLuid;
         public uint  Flags;
-
-        public string GetDescription()
-        {
-            fixed (char* description = Description) {
-                return new string(description);
-            }
-        }
     }
 
     [DllImport(Libraries.Dxgi, ExactSpelling = true, PreserveSig = true)]
@@ -67,7 +60,7 @@ public static unsafe class Dxgi
 
         fixed (nint* ppAdapter = &adapter) {
             return ((delegate* unmanaged[Stdcall]<nint, uint, nint*, int>)
-                Vtbl(factory)[SlotEnumAdapters1])(factory, adapterIndex, ppAdapter);
+                Ole32.Vtbl(factory)[SlotEnumAdapters1])(factory, adapterIndex, ppAdapter);
         }
     }
 
@@ -77,7 +70,7 @@ public static unsafe class Dxgi
 
         fixed (DXGI_ADAPTER_DESC1* pDesc = &desc) {
             return ((delegate* unmanaged[Stdcall]<nint, DXGI_ADAPTER_DESC1*, int>)
-                Vtbl(adapter)[SlotGetDesc1])(adapter, pDesc);
+                Ole32.Vtbl(adapter)[SlotGetDesc1])(adapter, pDesc);
         }
     }
 
@@ -91,9 +84,7 @@ public static unsafe class Dxgi
 
         fixed (DXGI_QUERY_VIDEO_MEMORY_INFO* pInfo = &videoMemoryInfo) {
             return ((delegate* unmanaged[Stdcall]<nint, uint, int, DXGI_QUERY_VIDEO_MEMORY_INFO*, int>)
-                Vtbl(adapter3)[SlotQueryVideoMemoryInfo])(adapter3, nodeIndex, (int)segmentGroup, pInfo);
+                Ole32.Vtbl(adapter3)[SlotQueryVideoMemoryInfo])(adapter3, nodeIndex, (int)segmentGroup, pInfo);
         }
     }
-
-    private static void** Vtbl(nint pUnknown) => *(void***)pUnknown;
 }

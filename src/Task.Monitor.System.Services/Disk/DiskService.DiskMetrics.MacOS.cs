@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Disk;
@@ -95,14 +96,14 @@ public partial class DiskService
             return;
         }
 
-        Dictionary<string, nint> props = CoreFoundation.ToDictionary(properties);
+        Dictionary<string, nint> props = CFConvert.ToDictionary(properties);
 
         if (!props.TryGetValue("Statistics", out nint statsRef)) {
             return;
         }
 
         // Values below are borrowed from 'properties', which the scope keeps alive.
-        Dictionary<string, nint> stats = CoreFoundation.ToDictionary(statsRef);
+        Dictionary<string, nint> stats = CFConvert.ToDictionary(statsRef);
 
         live.Add(bsdName);
 
@@ -115,15 +116,8 @@ public partial class DiskService
             ReadStat(stats, "Operations (Read)") + ReadStat(stats, "Operations (Write)"));
     }
 
-    private static long ReadStat(Dictionary<string, nint> stats, string key)
-    {
-        if (stats.TryGetValue(key, out nint number)) {
-            CoreFoundation.CFNumberGetValue(number, out long value);
-            return value;
-        }
-
-        return 0;
-    }
+    private static long ReadStat(Dictionary<string, nint> stats, string key) =>
+        stats.TryGetValue(key, out nint number) ? CFConvert.GetInt64(number) : 0;
 
     private void UpdateDiskStates()
     {

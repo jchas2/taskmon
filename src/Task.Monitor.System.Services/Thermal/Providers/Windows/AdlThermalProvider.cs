@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
@@ -17,7 +18,7 @@ internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus)
     public string Name => "ADL";
 
     public IEnumerable<ThermalSensor> Read() =>
-        adapters.Read(getGpus(), Adl.GetTemperatureCelsius).Select(reading => new ThermalSensor {
+        adapters.Read(getGpus(), AdlLibrary.GetTemperatureCelsius).Select(reading => new ThermalSensor {
             Component   = ThermalComponent.Gpu,
             ComponentId = reading.ComponentId,
             SensorName  = "GPU",

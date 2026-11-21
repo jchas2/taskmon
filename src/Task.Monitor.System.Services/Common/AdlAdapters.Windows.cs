@@ -1,5 +1,5 @@
 #if __WIN32__
-using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Common;
@@ -16,7 +16,7 @@ internal sealed class AdlAdapters : IDisposable
     public void Dispose()
     {
         if (context != nint.Zero) {
-            Adl.Destroy(context);
+            AdlLibrary.Destroy(context);
             context = nint.Zero;
         }
     }
@@ -29,7 +29,7 @@ internal sealed class AdlAdapters : IDisposable
 
         GpuDeviceMatcher matcher = new(gpus);
 
-        foreach (Adl.Adapter adapter in Adl.GetAdapters(context)) {
+        foreach (AdlLibrary.Adapter adapter in AdlLibrary.GetAdapters(context)) {
             if (!read(context, adapter.AdapterIndex, out double value)) {
                 continue;
             }
@@ -42,7 +42,7 @@ internal sealed class AdlAdapters : IDisposable
 
     public bool TryOpen()
     {
-        bool opened = Adl.TryCreate(out context, out string diagnostic);
+        bool opened = AdlLibrary.TryCreate(out context, out string diagnostic);
 
         Diagnostic = diagnostic;
 

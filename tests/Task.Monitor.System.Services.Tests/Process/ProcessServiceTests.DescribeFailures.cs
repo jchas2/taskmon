@@ -1,4 +1,4 @@
-using Task.Monitor.Cli.Utils;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.System.Services.Tests.Process;

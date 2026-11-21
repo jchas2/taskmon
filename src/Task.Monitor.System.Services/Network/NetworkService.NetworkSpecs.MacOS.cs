@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using Task.Monitor.Cli.Utils;
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Network;
 
@@ -134,8 +134,8 @@ public partial class NetworkService
     {
         NetworkSpecs specs = new();
 
-        Dictionary<string, string> displayNames = SystemConfiguration.GetInterfaceDisplayNames();
-        string? primaryInterface                = SystemConfiguration.GetPrimaryInterface();
+        Dictionary<string, string> displayNames = NetworkConfiguration.GetInterfaceDisplayNames();
+        string? primaryInterface                = NetworkConfiguration.GetPrimaryInterface();
 
         try {
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces()) {

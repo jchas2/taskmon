@@ -1,4 +1,5 @@
 ﻿using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System;
 
@@ -10,7 +11,7 @@ public static partial class SystemInfo
 
     private static string GetOsVersionInternal()
     {
-        string? version = Sys.SysctlByNameString("kern.osproductversion");
+        string? version = Sysctl.GetString("kern.osproductversion");
 
         if (string.IsNullOrEmpty(version)) {
             return Environment.OSVersion.VersionString;

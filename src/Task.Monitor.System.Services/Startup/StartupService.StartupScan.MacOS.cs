@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.LaunchdServices;
 
@@ -60,7 +61,7 @@ public partial class StartupService
 
             BackgroundItems items = new();
             items.Records.AddRange(database.RecordsFor(user.Uuid));
-            items.Records.AddRange(database.RecordsFor(Membership.GetUserUuid(NobodyUid)));
+            items.Records.AddRange(database.RecordsFor(UserAccounts.GetUserUuid(NobodyUid)));
 
             foreach (BackgroundItemRecord record in items.Records) {
                 if (record.Identifier is { } identifier) {
@@ -195,7 +196,7 @@ public partial class StartupService
             return null;
         }
 
-        return ServiceManagement.GetLegacyStatus(plistPath) switch {
+        return LaunchdJobs.GetLegacyStatus(plistPath) switch {
             ServiceManagement.LegacyServiceStatus.Enabled          => true,
             ServiceManagement.LegacyServiceStatus.RequiresApproval => false,
             _                                                      => null
@@ -204,7 +205,7 @@ public partial class StartupService
 
     private static Func<string, bool> IsLoadedInUserDomain(TargetUser user) =>
         user.IsSessionOwner
-            ? ServiceManagement.IsLoadedInUserDomain
+            ? LaunchdJobs.IsLoadedInUserDomain
             : static _ => false;
 
     private static bool IsRegistered(string label, LaunchdOverrides overrides, Func<string, bool> isLoaded) =>
@@ -216,7 +217,7 @@ public partial class StartupService
             return cached;
         }
 
-        string? publisher = CodeSigningPublisher.Parse(CodeSigning.GetSigningCertificateSummary(path));
+        string? publisher = CodeSigningPublisher.Parse(CodeSignature.GetSigningCertificateSummary(path));
         publisherCache[path] = publisher;
 
         return publisher;
@@ -307,7 +308,7 @@ public partial class StartupService
             StartupEntryScope.Machine,
             user,
             systemOverrides,
-            ServiceManagement.IsLoadedInSystemDomain);
+            LaunchdJobs.IsLoadedInSystemDomain);
     }
 
     private void ScanLaunchdFolder(
@@ -402,7 +403,7 @@ public partial class StartupService
             return;
         }
 
-        foreach (LaunchServices.LoginItem item in LaunchServices.GetSessionLoginItems()) {
+        foreach (LoginItem item in LoginItems.GetSessionItems()) {
             specs.Entries.Add(item.Path is { Length: > 0 } path
                 ? CreateOpenAtLoginEntry(item.Name, path, null)
                 : new StartupEntry {

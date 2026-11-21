@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Npu;
 
@@ -80,7 +81,7 @@ public sealed class SocService : WorkerService
         }
 
         foreach (string key in GpuFrequencyKeys) {
-            if (IOKit.SearchProperty(pmgr, key) is byte[] data) {
+            if (IOKitProperties.SearchProperty(pmgr, key) is byte[] data) {
                 return SocMetricsCalculator.ParseFrequencyTable(data);
             }
         }
@@ -96,7 +97,7 @@ public sealed class SocService : WorkerService
             return null;
         }
 
-        return IOKit.SearchProperty(driver, NeuralEngineDetails) is Dictionary<string, object?> properties
+        return IOKitProperties.SearchProperty(driver, NeuralEngineDetails) is Dictionary<string, object?> properties
             ? NeuralEngineParser.Parse(properties)
             : null;
     }

@@ -1,7 +1,7 @@
 #if __APPLE__
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Network;
 
@@ -24,7 +24,7 @@ public partial class NetworkService
         byte* buffer = null;
         int length   = 0;
 
-        bool read = Sys.Sysctl(name, ref buffer, ref length);
+        bool read = Sysctl.TryRead(name, ref buffer, ref length);
         using HGlobalScope scope = new((nint)buffer);
 
         if (!read || buffer == null || length == 0) {

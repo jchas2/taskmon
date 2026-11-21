@@ -37,9 +37,6 @@ public static class Pdh
         public PDH_RAW_COUNTER RawValue;
     }
 
-    public static bool IsTotalInstance(string? instanceName) =>
-        string.Equals(instanceName, TotalInstanceName, StringComparison.OrdinalIgnoreCase);
-
     [DllImport(Libraries.Pdh, CharSet = CharSet.Unicode)]
     public static extern unsafe uint PdhAddEnglishCounter(
         nint   hQuery, 

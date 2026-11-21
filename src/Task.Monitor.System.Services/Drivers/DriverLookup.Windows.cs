@@ -1,4 +1,5 @@
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.WindowsServices;
 
@@ -54,7 +55,7 @@ internal static partial class DriverLookup
         }
 
         if (ImagePathResolver.Expand(driver.ImagePath) is { } expandedPath) {
-            driver.Version = WinVer.GetFileVersion(expandedPath);
+            driver.Version = VersionResource.GetFileVersion(expandedPath);
         }
     }
 #endif

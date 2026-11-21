@@ -19,7 +19,7 @@ public sealed class UsedMemoryPagesTests
             internal_page_count   = 995_968
         };
 
-        Assert.Equal(995_968UL - 56_031 + 289_811 + 443_580, MachHost.UsedMemoryPages(stats));
+        Assert.Equal(995_968UL - 56_031 + 289_811 + 443_580, MemoryService.UsedMemoryPages(stats));
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public sealed class UsedMemoryPagesTests
     {
         MachHost.VmStatistics64 stats = new() { internal_page_count = 10, purgeable_count = 20, wire_count = 5 };
 
-        Assert.Equal(5UL, MachHost.UsedMemoryPages(stats));
+        Assert.Equal(5UL, MemoryService.UsedMemoryPages(stats));
     }
 
     [Fact]

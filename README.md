@@ -607,7 +607,7 @@ or behaviors can't be reproduced in IDE consoles, or are specific to the termina
 
 ### Writing Code / Project Structure
 
-*   **Interop Layer**: All native OS calls are isolated in `Task.Monitor.Interop.Mach` (macOS) and `Task.Monitor.Interop.Win32` (Windows). If you need to add a new OS metric, define the P/Invoke signatures here.
+*   **Interop Layer**: All native OS calls are declared in `Task.Monitor.Interop.Mach` (macOS) and `Task.Monitor.Interop.Win32` (Windows): P/Invoke signatures, native structs and constants only. If you need to add a new OS metric, define the signatures here and put any managed wrapper over them in `Task.Monitor.System/Native`.
 *   **System Abstraction**: The `Task.Monitor.System` project consumes the Interop layer to provide cross-platform models (e.g., `SystemStatistics`, `ProcessInfo`). The TUI rendering framework also lives in this library.
 *   **UI/CLI**: The `taskmon` project contains the main application logic, rendering, and terminal UI layouts.
 *   **Themes/Layouts**: Custom terminal themes and layouts are stored as embedded resources in `src/taskmon/Assets/`.

@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
@@ -8,7 +9,7 @@ internal sealed class SmcPowerProvider : IReadingProvider<PowerReading>
 {
     private const string SystemTotalKey = "PSTR";
 
-    private Smc? smc;
+    private SmcConnection? smc;
 
     public string Diagnostic { get; private set; } = string.Empty;
 
@@ -39,7 +40,7 @@ internal sealed class SmcPowerProvider : IReadingProvider<PowerReading>
             return false;
         }
 
-        smc = Smc.Open(out string diagnostic);
+        smc = SmcConnection.Open(out string diagnostic);
 
         if (smc is null) {
             Diagnostic = diagnostic;

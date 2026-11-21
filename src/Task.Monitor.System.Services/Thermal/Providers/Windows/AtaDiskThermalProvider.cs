@@ -1,6 +1,7 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 

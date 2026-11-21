@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Common;
 
@@ -60,6 +61,9 @@ internal sealed unsafe class PdhQuery : IDisposable
             query = nint.Zero;
         }
     }
+
+    public static bool IsTotalInstance(string? instanceName) =>
+        string.Equals(instanceName, Pdh.TotalInstanceName, StringComparison.OrdinalIgnoreCase);
 
     public static PdhQuery? Open(string owner, out string failure, params string[] counterPaths)
     {

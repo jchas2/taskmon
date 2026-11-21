@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 #endif
 
 namespace Task.Monitor.System.Services.InstalledApps;
@@ -12,7 +13,7 @@ public sealed partial class InstalledAppSizeCache
 
     // Fast path is through Spotlight's metadata; otherwise fallback to slow path file size sums.
     private static partial long? MeasureBytes(string path, CancellationToken cancellationToken) =>
-        Metadata.GetLogicalSize(path) is { } indexed && indexed >= MinimumPlausibleBytes(path)
+        Spotlight.GetLogicalSize(path) is { } indexed && indexed >= MinimumPlausibleBytes(path)
             ? indexed
             : SumFileSizes(path, cancellationToken);
 

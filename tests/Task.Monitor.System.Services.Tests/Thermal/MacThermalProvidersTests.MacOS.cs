@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
@@ -92,7 +93,7 @@ public sealed class MacThermalProvidersTests(ITestOutputHelper output)
     [SkippableFact]
     public void ThermalService_Publishes_Cpu_Temperatures_Fans_And_Pressure()
     {
-        using (Smc? smc = Smc.Open()) {
+        using (SmcConnection? smc = SmcConnection.Open()) {
             Skip.If(smc is null, "AppleSMC is not available");
         }
 

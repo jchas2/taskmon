@@ -1,6 +1,6 @@
 #if __WIN32__
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Network;
 

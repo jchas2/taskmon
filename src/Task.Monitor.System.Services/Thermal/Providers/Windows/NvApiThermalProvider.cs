@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
@@ -19,7 +20,7 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
         }
 
         try {
-            NvApi.Unload();
+            NvApiLibrary.Unload();
         }
         catch (DllNotFoundException) {
             // Driver dropped.
@@ -40,7 +41,7 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
         int count;
 
         try {
-            count = NvApi.EnumPhysicalGpus(handles);
+            count = NvApiLibrary.EnumPhysicalGpus(handles);
         }
         catch (DllNotFoundException) {
             initialised = false;
@@ -50,7 +51,7 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
         GpuDeviceMatcher matcher = new(getGpus());
 
         for (int i = 0; i < count; i++) {
-            if (!NvApi.TryGetPciIds(handles[i], out uint vendorId, out uint deviceId)) {
+            if (!NvApiLibrary.TryGetPciIds(handles[i], out uint vendorId, out uint deviceId)) {
                 continue;
             }
 
@@ -58,7 +59,7 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 
             string componentId = gpu?.AdapterLuid.ToString() ?? $"nvapi{i}";
 
-            foreach (NvApi.ThermalReading reading in NvApi.GetThermalSettings(handles[i])) {
+            foreach (NvApiLibrary.ThermalReading reading in NvApiLibrary.GetThermalSettings(handles[i])) {
                 yield return new ThermalSensor {
                     Component   = ThermalComponent.Gpu,
                     ComponentId = componentId,
@@ -80,7 +81,7 @@ internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpu
 
     public bool TryInitialise()
     {
-        initialised = NvApi.Initialize(out string diagnostic);
+        initialised = NvApiLibrary.Initialize(out string diagnostic);
         Diagnostic  = diagnostic;
 
         return initialised;

@@ -1,5 +1,6 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Disk;
 
@@ -20,11 +21,11 @@ public partial class DiskService
             : -1;
 
     private static string? ReadBsdName(uint entry) =>
-        IOKit.SearchProperty(entry, "BSD Name", IOKit.IterateRecursively) as string;
+        IOKitProperties.SearchProperty(entry, "BSD Name", IOKit.IterateRecursively) as string;
 
     // A dictionary property of the entry or the nearest parent that has it.
     private static Dictionary<string, object?>? ReadCharacteristics(uint entry, string key) =>
-        IOKit.SearchProperty(entry, key, IOKit.IterateRecursively | IOKit.IterateParents) as Dictionary<string, object?>;
+        IOKitProperties.SearchProperty(entry, key, IOKit.IterateRecursively | IOKit.IterateParents) as Dictionary<string, object?>;
 
     private static string? ReadPhysicalInterconnect(uint entry) =>
         ReadCharacteristics(entry, "Protocol Characteristics") is { } protocol

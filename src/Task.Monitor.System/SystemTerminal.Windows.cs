@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System;
 
@@ -63,7 +63,7 @@ public partial class SystemTerminal
         nint window = ConsoleApi.GetConsoleWindow();
 
         return window != 0 &&
-               WinUser.GetWindowClassName(window) == LegacyConsoleWindowClass;
+               DesktopWindows.GetClassName(window) == LegacyConsoleWindowClass;
     }
 #endif
 }

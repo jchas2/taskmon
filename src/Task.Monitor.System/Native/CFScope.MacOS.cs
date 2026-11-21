@@ -1,0 +1,24 @@
+#if __APPLE__
+using Task.Monitor.Interop.Mach;
+
+namespace Task.Monitor.System.Native;
+
+// Simplifies CFRelease code for owned CoreFoundation references. 
+public readonly ref struct CFScope
+{
+    public CFScope(nint value) => Value = value;
+
+    public void Dispose()
+    {
+        if (Value != nint.Zero) {
+            CoreFoundation.CFRelease(Value);
+        }
+    }
+
+    public bool IsNull => Value == nint.Zero;
+
+    public static implicit operator nint(in CFScope scope) => scope.Value;
+
+    public nint Value { get; }
+}
+#endif

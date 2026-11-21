@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Process;
 
@@ -88,7 +88,7 @@ internal sealed class ProcessNameResolver
         }
 
         string? launchPath = executablePath.Length > 0
-            ? Sys.GetProcessExecPath(pid, argumentsBuffer ??= new byte[Sys.GetArgMax() ?? DefaultArgMax])
+            ? Sysctl.GetProcessExecPath(pid, argumentsBuffer ??= new byte[Sysctl.GetArgMax() ?? DefaultArgMax])
             : null;
 
         string name = ChooseName(executablePath, FindBundleName(executablePath), launchPath, kernelName);

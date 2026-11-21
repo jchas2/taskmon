@@ -1,5 +1,6 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
@@ -17,7 +18,7 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
     public string Name => "ADL power";
 
     public IEnumerable<PowerReading> Read() =>
-        adapters.Read(getGpus(), Adl.GetPowerWatts).Select(reading => new PowerReading {
+        adapters.Read(getGpus(), AdlLibrary.GetPowerWatts).Select(reading => new PowerReading {
             Component   = PowerComponent.Gpu,
             ComponentId = reading.ComponentId,
             Rail        = PowerRails.Gpu,

@@ -1,5 +1,5 @@
 #if __APPLE__
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Drivers;
 
 namespace Task.Monitor.System.Services.Tests.Drivers;
@@ -38,7 +38,7 @@ public sealed partial class DriverLookupTests
     [SkippableFact]
     public void GetDrivers_Lists_Every_Kext_Loaded_From_Outside_The_Extensions_Folders()
     {
-        Dictionary<string, object?> loaded = IOKit.GetLoadedKextInfo(["OSBundlePath"]) ?? new();
+        Dictionary<string, object?> loaded = IOKitProperties.GetLoadedKextInfo(["OSBundlePath"]) ?? new();
 
         string[] outside = loaded
             .Where(entry => entry.Value is IReadOnlyDictionary<string, object?> info &&

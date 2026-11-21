@@ -1,6 +1,6 @@
 #if __APPLE__
 using System.Text.RegularExpressions;
-using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Common;
 
@@ -45,7 +45,7 @@ public static partial class CodeSigningPublisher
 
     public static string? Resolve(string path)
     {
-        if (Parse(CodeSigning.GetSigningCertificateSummary(path)) is { } publisher) {
+        if (Parse(CodeSignature.GetSigningCertificateSummary(path)) is { } publisher) {
             return publisher;
         }
 

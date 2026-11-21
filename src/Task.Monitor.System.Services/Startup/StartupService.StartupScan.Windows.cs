@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 using Microsoft.Win32;
 #endif
 using Task.Monitor.Cli.Utils;
-using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Startup;
 
@@ -78,7 +78,7 @@ public partial class StartupService
 
     private void PopulateFromShortcut(StartupEntry entry, string shortcutPath)
     {
-        if (ShellLink.Resolve(shortcutPath, out ComFailure? failure) is not { } target) {
+        if (ShortcutFile.Resolve(shortcutPath, out ComFailure? failure) is not { } target) {
             scanNotes.Add($"shortcut {Path.GetFileName(shortcutPath)} not resolved, {failure}");
             entry.Command = shortcutPath;
             return;
@@ -120,7 +120,7 @@ public partial class StartupService
             return cached;
         }
 
-        string? publisher = WinVer.GetCompanyName(executablePath);
+        string? publisher = VersionResource.GetCompanyName(executablePath);
         publisherCache[executablePath] = publisher;
 
         return publisher;
@@ -261,13 +261,13 @@ public partial class StartupService
 
     private void ScanScheduledTasks(StartupSpecs specs)
     {
-        IReadOnlyList<ScheduledTasks.TaskRecord> records = ScheduledTasks.EnumerateTasks(out ComFailure? failure);
+        IReadOnlyList<TaskSchedulerClient.TaskRecord> records = TaskSchedulerClient.EnumerateTasks(out ComFailure? failure);
 
         scanNotes.Add(failure is { } failed
             ? $"Task Scheduler FAILED, {failed}"
             : $"Task Scheduler OK, {records.Count} tasks read");
 
-        foreach (ScheduledTasks.TaskRecord record in records) {
+        foreach (TaskSchedulerClient.TaskRecord record in records) {
             if (record.FolderPath.StartsWith(BuiltInWindowsTaskFolderPrefix, StringComparison.OrdinalIgnoreCase)) {
                 continue;
             }

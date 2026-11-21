@@ -5,104 +5,30 @@ namespace Task.Monitor.Interop.Win32;
 // NVIDIA Management Library, declaring the functions needed to read a GPU's power draw.
 public static unsafe class Nvml
 {
-    private const string NvmlDll = "nvml.dll";
+    public const string NvmlDll = "nvml.dll";
 
-    private const int NvmlSuccess = 0;
-    private const int PciInfoSize = 64;
-    private const int PciInfoDeviceIdOffset = 28;
-
-    public static int DeviceCount() =>
-        nvmlDeviceGetCount_v2(out uint count) == NvmlSuccess ? (int)count : 0;
-
-    public static bool Initialize() => Initialize(out _);
-
-    public static bool Initialize(out string diagnostic)
-    {
-        try {
-            int status = nvmlInit_v2();
-
-            diagnostic = status == NvmlSuccess
-                ? "OK"
-                : $"FAILED, {nameof(nvmlInit_v2)} returned NVML status {status}";
-
-            return status == NvmlSuccess;
-        }
-        catch (DllNotFoundException) {
-            diagnostic = $"NOT FOUND, {NvmlDll} is not installed";
-            return false;
-        }
-        catch (EntryPointNotFoundException) {
-            diagnostic = $"FAILED, {NvmlDll} has no {nameof(nvmlInit_v2)}";
-            return false;
-        }
-    }
+    public const int NvmlSuccess           = 0;
+    public const int PciInfoSize           = 64;
+    public const int PciInfoDeviceIdOffset = 28;
 
     [DllImport(NvmlDll, EntryPoint = "nvmlDeviceGetCount_v2")]
-    private static extern int nvmlDeviceGetCount_v2(out uint deviceCount);
+    public static extern int nvmlDeviceGetCount_v2(out uint deviceCount);
 
     [DllImport(NvmlDll, EntryPoint = "nvmlDeviceGetEnforcedPowerLimit")]
-    private static extern int nvmlDeviceGetEnforcedPowerLimit(nint device, out uint milliwatts);
+    public static extern int nvmlDeviceGetEnforcedPowerLimit(nint device, out uint milliwatts);
 
     [DllImport(NvmlDll, EntryPoint = "nvmlDeviceGetHandleByIndex_v2")]
-    private static extern int nvmlDeviceGetHandleByIndex_v2(uint index, out nint device);
+    public static extern int nvmlDeviceGetHandleByIndex_v2(uint index, out nint device);
 
     [DllImport(NvmlDll, EntryPoint = "nvmlDeviceGetPciInfo_v3")]
-    private static extern int nvmlDeviceGetPciInfo_v3(nint device, byte* pciInfo);
+    public static extern int nvmlDeviceGetPciInfo_v3(nint device, byte* pciInfo);
 
     [DllImport(NvmlDll, EntryPoint = "nvmlDeviceGetPowerUsage")]
-    private static extern int nvmlDeviceGetPowerUsage(nint device, out uint milliwatts);
+    public static extern int nvmlDeviceGetPowerUsage(nint device, out uint milliwatts);
 
     [DllImport(NvmlDll, EntryPoint = "nvmlInit_v2")]
-    private static extern int nvmlInit_v2();
+    public static extern int nvmlInit_v2();
 
     [DllImport(NvmlDll, EntryPoint = "nvmlShutdown")]
-    private static extern int nvmlShutdown();
-
-    public static double? PowerLimitWatts(nint handle) =>
-        nvmlDeviceGetEnforcedPowerLimit(handle, out uint milliwatts) == NvmlSuccess
-            ? milliwatts / 1000.0
-            : null;
-
-    public static void Shutdown()
-    {
-        try {
-            nvmlShutdown();
-        }
-        catch (DllNotFoundException) { /* Driver dropped */ }
-    }
-
-    public static bool TryGetHandle(int index, out nint handle) =>
-        nvmlDeviceGetHandleByIndex_v2((uint)index, out handle) == NvmlSuccess && handle != nint.Zero;
-
-    public static bool TryGetPciIds(nint handle, out uint vendorId, out uint deviceId)
-    {
-        vendorId = 0;
-        deviceId = 0;
-
-        byte* buffer = stackalloc byte[PciInfoSize];
-        new Span<byte>(buffer, PciInfoSize).Clear();
-
-        if (nvmlDeviceGetPciInfo_v3(handle, buffer) != NvmlSuccess) {
-            return false;
-        }
-
-        // pciDeviceId packs (deviceId << 16) | vendorId.
-        uint pciDeviceId = *(uint*)(buffer + PciInfoDeviceIdOffset);
-        vendorId = pciDeviceId & 0xFFFF;
-        deviceId = (pciDeviceId >> 16) & 0xFFFF;
-
-        return true;
-    }
-
-    public static bool TryGetPowerWatts(nint handle, out double watts)
-    {
-        watts = 0;
-
-        if (nvmlDeviceGetPowerUsage(handle, out uint milliwatts) != NvmlSuccess) {
-            return false;
-        }
-
-        watts = milliwatts / 1000.0;
-        return watts is >= 0 and < 2000;
-    }
+    public static extern int nvmlShutdown();
 }

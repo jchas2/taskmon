@@ -4,6 +4,7 @@ using Microsoft.Win32;
 #endif
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Gpu;
 
@@ -25,7 +26,7 @@ public partial class GpuService
         // Not inline declared to assist with debugging.
         device.Index                 = index;
         device.AdapterLuid           = desc.AdapterLuid;
-        device.Description           = NormaliseDescription(desc.GetDescription());
+        device.Description           = NormaliseDescription(GetDescription(desc));
         device.VendorId              = desc.VendorId;
         device.DeviceId              = desc.DeviceId;
         device.SubSysId              = desc.SubSysId;
@@ -70,7 +71,7 @@ public partial class GpuService
                 }
 
                 if ((desc.Flags & Dxgi.DXGI_ADAPTER_FLAG_SOFTWARE) != 0) {
-                    Trace.WriteLine($"{nameof(GpuService)}: adapter {adapterIndex} {desc.GetDescription().Trim()} SKIPPED, software");
+                    Trace.WriteLine($"{nameof(GpuService)}: adapter {adapterIndex} {GetDescription(desc).Trim()} SKIPPED, software");
                     continue;
                 }
 
@@ -81,6 +82,8 @@ public partial class GpuService
             Trace.WriteLine($"{nameof(GpuService)}: DXGI adapters FAILED with {ex.GetType().Name}: {ex.Message}");
         }
     }
+
+    private static unsafe string GetDescription(Dxgi.DXGI_ADAPTER_DESC1 desc) => new(desc.Description);
 
     private static string NormaliseDescription(string description)
     {

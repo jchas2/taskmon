@@ -1,5 +1,5 @@
 #if __WIN32__
-using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Native;
 using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
@@ -34,7 +34,7 @@ internal sealed class AcpiThermalZoneProvider : IReadingProvider<ThermalSensor>
         List<ThermalSensor> sensors = new();
 
         foreach (Dictionary<string, object?> row in 
-            Wbem.Query(
+            WmiClient.Query(
                 Namespace, 
                 Wql, 
                 "InstanceName", 
@@ -81,7 +81,7 @@ internal sealed class AcpiThermalZoneProvider : IReadingProvider<ThermalSensor>
     {
         // Many machines have no ACPI thermal zones, and reading them may need elevation.
         try {
-            int zones = Wbem.Query(Namespace, Wql, out ComFailure? failure, "InstanceName").Count;
+            int zones = WmiClient.Query(Namespace, Wql, out ComFailure? failure, "InstanceName").Count;
 
             available  = zones > 0;
             Diagnostic = failure is { } failed ? $"FAILED, {failed}"

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Native;
 
 namespace Task.Monitor.System.Services.Memory;
 
@@ -67,11 +68,11 @@ public partial class MemoryService
 
         pageSize = Environment.SystemPageSize;
         
-        totalPhysical = Sys.SysctlByNameLong("hw.memsize", out long memSize) && memSize > 0
+        totalPhysical = Sysctl.TryGetInt64("hw.memsize", out long memSize) && memSize > 0
             ? (ulong)memSize
             : 0;
 
-        ulong usedBytes = MachHost.UsedMemoryPages(vmStats) * (ulong)pageSize;
+        ulong usedBytes = UsedMemoryPages(vmStats) * (ulong)pageSize;
 
         memoryInfo.Metrics.TotalPhysical     = totalPhysical;
         memoryInfo.Metrics.AvailablePhysical = totalPhysical > usedBytes
@@ -105,7 +106,7 @@ public partial class MemoryService
 
     private void OnDoWorkPressureMetrics(MemoryInfo memoryInfo)
     {
-        bool read = Sys.SysctlByNameInt(MemoryPressureLevelKey, out int level);
+        bool read = Sysctl.TryGetInt32(MemoryPressureLevelKey, out int level);
 
         if (IsFirstCycle) {
             Trace.WriteLine(read
@@ -147,7 +148,7 @@ public partial class MemoryService
         
         byte* buffer = null;
         int   length = 0;
-        bool  read   = Sys.Sysctl(name, ref buffer, ref length);
+        bool  read   = Sysctl.TryRead(name, ref buffer, ref length);
         
         using HGlobalScope scope = new((nint)buffer);
 
@@ -187,5 +188,11 @@ public partial class MemoryService
         info = Marshal.PtrToStructure<MachHost.VmStatistics64>(buffer);
         return true;
     }
+
+    // Activity Monitor's "Memory Used"; the active and inactive lists also hold the reclaimable file cache.
+    internal static ulong UsedMemoryPages(in MachHost.VmStatistics64 stats) =>
+        (ulong)Math.Max(0L, (long)stats.internal_page_count - stats.purgeable_count) +
+        stats.wire_count +
+        stats.compressor_page_count;
 }
 #endif
