@@ -8,13 +8,13 @@ public sealed class ProcessServiceThreadsTests
 {
     [Fact]
     public void Should_Return_No_Threads_For_A_Negative_Pid() =>
-        Assert.Empty(new ProcessOperations().GetThreads(-1));
+        Assert.Empty(new ProcessService().Operations.GetThreads(-1));
 
     [Fact]
     public void Should_Return_Threads_For_Current_Process()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ThreadInfo> threads = new ProcessOperations().GetThreads(currentProcess.Id);
+        List<ThreadInfo> threads = new ProcessService().Operations.GetThreads(currentProcess.Id);
         Assert.True(threads.Count > 0);
     }
 
@@ -24,7 +24,7 @@ public sealed class ProcessServiceThreadsTests
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
 
-        List<ThreadInfo> threads = new ProcessOperations()
+        List<ThreadInfo> threads = new ProcessService().Operations
             .GetThreads(currentProcess.Id)
             .Where(t => t.ThreadState.Equals("Wait", StringComparison.CurrentCultureIgnoreCase)).ToList();
 

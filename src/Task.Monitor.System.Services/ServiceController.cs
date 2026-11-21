@@ -137,7 +137,7 @@ public sealed class ServiceController
         }
     }
 
-    private void RequestImmediateRefresh<T>() where T : ISystemService
+    internal void RequestImmediateRefresh<T>() where T : ISystemService
     {
         foreach (ISystemService systemService in allServices) {
             if (systemService is T && systemService is WorkerService workerService) {

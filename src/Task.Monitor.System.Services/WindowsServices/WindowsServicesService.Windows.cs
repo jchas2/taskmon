@@ -32,11 +32,11 @@ public partial class WindowsServicesService
             : new ServiceControlOutcome(result, error);
     }
 
-    private partial IReadOnlyList<(string ServiceName, WindowsServiceStatus Status)> QueryStatuses() =>
+    private partial IReadOnlyList<(string ServiceName, WindowsServiceStatus Status, int ProcessId)> QueryStatuses() =>
         ServiceControlManager.EnumerateServices(
             WinService.SERVICE_WIN32,
             nameof(QueryStatuses),
-            (_, entry) => (entry.ServiceName, entry.Status));
+            (_, entry) => (entry.ServiceName, entry.Status, entry.ProcessId));
 
     private partial WindowsServicesSpecs ScanServices()
     {

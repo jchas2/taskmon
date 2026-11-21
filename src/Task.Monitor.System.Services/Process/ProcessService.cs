@@ -1,8 +1,11 @@
 namespace Task.Monitor.System.Services.Process;
 
-public sealed partial class ProcessService(IProcessOperations? operations = null) : WorkerService
+public sealed partial class ProcessService : WorkerService
 {
     private readonly ProcessSpecs processSpecs = new();
+
+    public ProcessService(IProcessOperations? operations = null) =>
+        Operations = operations ?? new ProcessOperations(this);
 
     public bool IrixMode { get; set; }
 
@@ -18,5 +21,5 @@ public sealed partial class ProcessService(IProcessOperations? operations = null
 
     protected override void OnStop() => OnStopProcessMetrics();
 
-    public IProcessOperations Operations { get; } = operations ?? new ProcessOperations();
+    public IProcessOperations Operations { get; }
 }

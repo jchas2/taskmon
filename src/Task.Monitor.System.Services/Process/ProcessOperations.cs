@@ -15,7 +15,7 @@ public interface IProcessOperations
     public List<ThreadInfo> GetThreads(int pid);
 }
 
-internal sealed class ProcessOperations : IProcessOperations
+internal sealed class ProcessOperations(ProcessService service) : IProcessOperations
 {
     public bool EndTask(int pid, int timeoutMilliseconds)
     {
@@ -47,7 +47,7 @@ internal sealed class ProcessOperations : IProcessOperations
         }
     }
 
-    public ProcessSample? GetProcessSample(int pid) => ProcessService.GetProcessSampleInternal(pid);
+    public ProcessSample? GetProcessSample(int pid) => service.GetProcessSampleInternal(pid);
 
     public List<ThreadInfo> GetThreads(int pid)
     {

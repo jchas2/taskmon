@@ -24,7 +24,7 @@ public partial class ProcessService
 
     private void OnDoWorkProcessMetrics(ProcessMetrics metrics, ProcessSpecs specs)
     {
-        WindowsServiceLookup.RefreshIfDue();
+        MapServices();
 
         Dictionary<int, int>? openFailures = IsFirstCycle ? new() : null;
         List<ProcessSample>   samples      = GetProcessSamples(openFailures);
@@ -38,7 +38,7 @@ public partial class ProcessService
 
         BuildMetrics(metrics, specs, samples, gpuPercentByPid);
 
-        WindowsServiceLookup.RequestRefreshIfStale(sampleStates.Keys);
+        RescanServicesIfStale(sampleStates.Keys);
     }
 #endif
 }

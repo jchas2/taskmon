@@ -8,26 +8,6 @@ namespace Task.Monitor.System.Services.Tests.WindowsServices;
 public sealed class WindowsServiceEnumeratorTests
 {
     [Fact]
-    public void GetServiceProcesses_Reports_No_Process_Id_For_A_Stopped_Service()
-    {
-        Assert.All(
-            WindowsServiceEnumerator.GetServiceProcesses().Where(entry => entry.Service.Status == WindowsServiceStatus.Stopped),
-            entry => Assert.Equal(0, entry.ProcessId));
-    }
-
-    [Fact]
-    public void GetServiceProcesses_Reports_The_Process_Id_Of_A_Running_Service()
-    {
-        (int processId, WindowsServiceInfo eventLog) = Assert.Single(
-            WindowsServiceEnumerator.GetServiceProcesses(),
-            entry => string.Equals(entry.Service.ServiceName, "EventLog", StringComparison.OrdinalIgnoreCase));
-
-        Assert.Equal(WindowsServiceStatus.Running, eventLog.Status);
-        Assert.False(string.IsNullOrWhiteSpace(eventLog.DisplayName));
-        Assert.True(processId > 0);
-    }
-
-    [Fact]
     public void GetServices_Leaves_Out_Drivers()
     {
         Assert.DoesNotContain(
@@ -47,6 +27,26 @@ public sealed class WindowsServiceEnumeratorTests
         Assert.Equal(WindowsServiceStartType.AutomaticStart, eventLog.StartType);
         Assert.False(string.IsNullOrWhiteSpace(eventLog.DisplayName));
         Assert.False(string.IsNullOrWhiteSpace(eventLog.Description));
+    }
+
+    [Fact]
+    public void GetServices_Reports_No_Process_Id_For_A_Stopped_Service()
+    {
+        Assert.All(
+            WindowsServiceEnumerator.GetServices().Where(service => service.Status == WindowsServiceStatus.Stopped),
+            service => Assert.Equal(0, service.ProcessId));
+    }
+
+    [Fact]
+    public void GetServices_Reports_The_Process_And_Image_Of_A_Running_Service()
+    {
+        WindowsServiceInfo eventLog = Assert.Single(
+            WindowsServiceEnumerator.GetServices(),
+            service => string.Equals(service.ServiceName, "EventLog", StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(WindowsServiceStatus.Running, eventLog.Status);
+        Assert.True(eventLog.ProcessId > 0);
+        Assert.Contains("svchost", eventLog.ImagePath, StringComparison.OrdinalIgnoreCase);
     }
 }
 #endif

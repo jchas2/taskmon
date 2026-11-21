@@ -154,9 +154,14 @@ public sealed class ServiceControlQueueTests
         WindowsServiceInfo   audio   = Service("AudioSrv", WindowsServiceStatus.Running);
         WindowsServicesSpecs specs   = Specs(spooler, audio);
 
-        WindowsServicesService.UpdateStatuses(specs, [("SPOOLER", WindowsServiceStatus.Stopped)]);
+        spooler.ProcessId = 100;
+        audio.ProcessId   = 200;
+
+        WindowsServicesService.UpdateStatuses(specs, [("SPOOLER", WindowsServiceStatus.Stopped, 0)]);
 
         Assert.Equal(WindowsServiceStatus.Stopped, spooler.Status);
+        Assert.Equal(0, spooler.ProcessId);
         Assert.Equal(WindowsServiceStatus.Running, audio.Status);
+        Assert.Equal(200, audio.ProcessId);
     }
 }

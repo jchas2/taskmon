@@ -18,7 +18,7 @@ public partial class ProcessService
     private static readonly ConcurrentDictionary<string, string>  AccountNames     = new();
     private static readonly ConcurrentDictionary<string, string?> FileDescriptions = new(StringComparer.OrdinalIgnoreCase);
 
-    private static unsafe ProcessSample? CreateProcessSample(
+    private unsafe ProcessSample? CreateProcessSample(
         Kernel32.PROCESSENTRY32W* entry,
         Dictionary<int, int>?     openFailures)
     {
@@ -50,21 +50,20 @@ public partial class ProcessService
             ? exeFile.Substring(0, exeFile.Length - 4)
             : exeFile;
 
-        sample.FileName = GetProcessPath(hProcess);
+        WindowsServiceInfo? service = servicesByPid.GetValueOrDefault((int)entry->th32ProcessID);
 
-        sample.FileDescription = GetProcessProductName(
-            entry->th32ProcessID,
-            sample.FileName,
-            sample.ProcessName);
-
-        sample.ModuleName    = Path.GetFileName(exeFile);
-        sample.IsDaemon      = WindowsServiceLookup.GetService((int)entry->th32ProcessID, out WindowsServiceInfo? _);
-        sample.IsLowPriority = entry->pcPriClassBase < 8;
+        sample.FileName        = GetProcessPath(hProcess);
+        sample.FileDescription = service?.DisplayName ?? GetFileDescription(sample.FileName, sample.ProcessName);
+        sample.ModuleName      = Path.GetFileName(exeFile);
+        sample.IsDaemon        = service is not null;
+        sample.IsLowPriority   = entry->pcPriClassBase < 8;
         SecurityIdentifier? sid = GetProcessSecurityIdentifier(processHandle);
 
         sample.UserName      = sid == null ? string.Empty : GetAccountName(sid);
         sample.Account       = sid == null ? ProcessAccount.User : ProcessAccounts.FromSid(sid.Value);
-        sample.CmdLine       = GetProcessCommandLine((int)entry->th32ProcessID, sample.FileName);
+        sample.CmdLine       = service?.ImagePath is { } imagePath
+            ? ImagePathResolver.Expand(imagePath) ?? sample.FileName
+            : sample.FileName;
         sample.ThreadCount   = (int)entry->cntThreads;
         sample.HandleCount   = 0;
         sample.BasePriority  = entry->pcPriClassBase;
@@ -105,20 +104,23 @@ public partial class ProcessService
             }
         }, sid);
 
-    private static string GetProcessCommandLine(int pid, in string defaultValue)
+    private static string GetFileDescription(string processPath, string defaultValue)
     {
-        try {
-            if (WindowsServiceLookup.GetService(pid, out WindowsServiceInfo? serviceInfo)) {
-                string imagePath = WindowsServiceLookup.GetServiceImagePath(serviceInfo!.ServiceName) ?? defaultValue;
-                return ImagePathResolver.Expand(imagePath) ?? defaultValue;
-            }
+        if (string.IsNullOrWhiteSpace(processPath)) {
+            return defaultValue;
+        }
 
-            // TODO: Kernel PEB + Commandline offset.
-            return defaultValue;
-        }
-        catch {
-            return defaultValue;
-        }
+        string? description = FileDescriptions.GetOrAdd(processPath, static path => {
+            try {
+                string? text = SysDiag::FileVersionInfo.GetVersionInfo(path).FileDescription;
+                return string.IsNullOrWhiteSpace(text) ? null : text;
+            }
+            catch {
+                return null;
+            }
+        });
+
+        return description ?? defaultValue;
     }
 
     private static unsafe void GetProcessIoOperations(
@@ -200,36 +202,10 @@ public partial class ProcessService
         }
     }
 
-    private static string GetProcessProductName(
-        uint pid,
-        string processPath,
-        string defaultValue)
-    {
-        if (WindowsServiceLookup.GetService((int)pid, out WindowsServiceInfo? serviceInfo)) {
-            return serviceInfo?.DisplayName ?? defaultValue;
-        }
-
-        if (string.IsNullOrWhiteSpace(processPath)) {
-            return defaultValue;
-        }
-
-        string? description = FileDescriptions.GetOrAdd(processPath, static path => {
-            try {
-                string? text = SysDiag::FileVersionInfo.GetVersionInfo(path).FileDescription;
-                return string.IsNullOrWhiteSpace(text) ? null : text;
-            }
-            catch {
-                return null;
-            }
-        });
-
-        return description ?? defaultValue;
-    }
-
-    internal static ProcessSample? GetProcessSampleInternal(int pid) =>
+    internal ProcessSample? GetProcessSampleInternal(int pid) =>
         GetProcessSamples(openFailures: null, onlyPid: pid).FirstOrDefault();
 
-    private static unsafe List<ProcessSample> GetProcessSamples(Dictionary<int, int>? openFailures = null, int? onlyPid = null)
+    private unsafe List<ProcessSample> GetProcessSamples(Dictionary<int, int>? openFailures = null, int? onlyPid = null)
     {
         List<ProcessSample> samples = new();
 

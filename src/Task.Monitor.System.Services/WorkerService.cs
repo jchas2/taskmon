@@ -92,6 +92,9 @@ public class WorkerService : ISystemService
         wakeSignal.Set();
     }
 
+    protected void RequestRefreshOf<T>() where T : ISystemService =>
+        Controller?.RequestImmediateRefresh<T>();
+
     protected bool RescanDue(ref int cyclesSinceScan, int everyCycles)
     {
         if (!ConsumeRefreshRequest() && ++cyclesSinceScan < everyCycles) {

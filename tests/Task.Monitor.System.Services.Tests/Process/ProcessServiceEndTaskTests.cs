@@ -30,7 +30,7 @@ public partial class ProcessServiceEndTaskTests
         Assert.NotNull(process);
         Thread.Sleep(millisecondsTimeout: 200);
 
-        bool terminated = new ProcessOperations().EndTask(process.Id, timeoutMilliseconds: 500);
+        bool terminated = new ProcessService().Operations.EndTask(process.Id, timeoutMilliseconds: 500);
         Assert.True(terminated);
     }
 
@@ -57,7 +57,7 @@ public partial class ProcessServiceEndTaskTests
 
     [Fact]
     public void Should_Not_End_A_Task_For_A_Negative_Pid() =>
-        Assert.False(new ProcessOperations().EndTask(-1, timeoutMilliseconds: 0));
+        Assert.False(new ProcessService().Operations.EndTask(-1, timeoutMilliseconds: 0));
 
     [Fact]
     public void Should_Not_Get_Process_For_A_Negative_Pid()
