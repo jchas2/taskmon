@@ -2,27 +2,27 @@ using Task.Monitor.System.Services.Process;
 
 namespace Task.Monitor.Tests.Process;
 
-// Stands in for ProcessService's single-process lookups once registered in the ServiceController. It is
-// never started, so it samples nothing, and it ends no real processes.
-public sealed class ProcessServiceFake : ProcessService
+// Stands in for ProcessService's single-process calls, passed to a ProcessService registered in the
+// ServiceController. It reads nothing from the system and ends no real processes.
+public sealed class ProcessOperationsFake : IProcessOperations
 {
     private readonly List<ModuleInfo>    moduleInfos = [];
     private readonly List<ProcessSample> samples     = [];
     private readonly List<ThreadInfo>    threadInfos = [];
 
-    public ProcessServiceFake Add(ModuleInfo moduleInfo)
+    public ProcessOperationsFake Add(ModuleInfo moduleInfo)
     {
         moduleInfos.Add(moduleInfo);
         return this;
     }
 
-    public ProcessServiceFake Add(ProcessSample sample)
+    public ProcessOperationsFake Add(ProcessSample sample)
     {
         samples.Add(sample);
         return this;
     }
 
-    public ProcessServiceFake Add(ThreadInfo threadInfo)
+    public ProcessOperationsFake Add(ThreadInfo threadInfo)
     {
         threadInfos.Add(threadInfo);
         return this;
@@ -30,19 +30,19 @@ public sealed class ProcessServiceFake : ProcessService
 
     public List<int> EndedPids { get; } = [];
 
-    public override bool EndTask(int pid, int timeoutMilliseconds)
+    public bool EndTask(int pid, int timeoutMilliseconds)
     {
         EndedPids.Add(pid);
         return true;
     }
 
-    public override List<ModuleInfo> GetModules(int pid)
+    public List<ModuleInfo> GetModules(int pid)
     {
         ModuleRequestedPids.Add(pid);
         return moduleInfos;
     }
 
-    public override ProcessSample? GetProcessSample(int pid)
+    public ProcessSample? GetProcessSample(int pid)
     {
         SampleRequestedPids.Add(pid);
 
@@ -56,7 +56,7 @@ public sealed class ProcessServiceFake : ProcessService
     // When set, GetProcessSample throws it, as a failed lookup would.
     public Exception? GetProcessSampleException { get; set; }
 
-    public override List<ThreadInfo> GetThreads(int pid)
+    public List<ThreadInfo> GetThreads(int pid)
     {
         ThreadRequestedPids.Add(pid);
         return threadInfos;

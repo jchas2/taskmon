@@ -20,14 +20,14 @@ public partial class GpuService
         return recommendedWorkingSet is { } recommended ? (long)recommended : allocatedMemory;
     }
 
-    private bool OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
+    private void OnDoWorkGpuMemoryMetrics(GpuInfo gpuInfo)
     {
         if (!TryReadIOAcceleratorMemory(out long allocMemory, out long inUseMemory)) {
             if (IsFirstCycle) {
                 Trace.WriteLine($"{ServiceName}: GPU memory metrics SKIPPED, no IOAccelerator memory statistics");
             }
 
-            return false;
+            return;
         }
 
         if (!recommendedWorkingSetRead) {
@@ -62,8 +62,6 @@ public partial class GpuService
             TotalCombinedGpuMemory     = totalMemory,
             AvailableCombinedGpuMemory = available
         });
-
-        return true;
     }
 }
 #endif

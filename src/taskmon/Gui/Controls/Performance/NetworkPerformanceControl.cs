@@ -9,6 +9,7 @@ using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Network;
+using Constants = Task.Monitor.System.Services.Constants;
 
 namespace Task.Monitor.Gui.Controls.Performance;
 
@@ -24,7 +25,6 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
     
     private NetworkInfo? networkInfo;
 
-    // Without an interface it shows every adapter together.
     public NetworkPerformanceControl(ISystemTerminal terminal, AppConfig appConfig, ulong? interfaceLuid = null) : base(terminal)
     {
         this.appConfig = appConfig;
@@ -100,17 +100,17 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
         string totalPacketsReceived = (device?.TotalPacketsReceived ?? metrics.TotalPacketsReceived).ToNetworkPacketCount();
 
         if (device != null) {
-            SetSpecsRow(0,  Strings.LabelName,                       spec?.Name               ?? NetworkDeviceParser.NotAvailable);
-            SetSpecsRow(1,  Strings.PerformanceFriendlyName,         spec?.FriendlyName       ?? NetworkDeviceParser.NotAvailable);
-            SetSpecsRow(2,  Strings.LabelDescription,                spec?.Description        ?? NetworkDeviceParser.NotAvailable);
-            SetSpecsRow(3,  Strings.LabelConnectionType,             spec?.ConnectionType     ?? NetworkDeviceParser.NotAvailable);
-            SetSpecsRow(4,  Strings.LabelPhysicalMedium,             spec?.PhysicalMedium     ?? NetworkDeviceParser.NotAvailable);
-            SetSpecsRow(5,  Strings.LabelMacAddress,                 spec?.MacAddress         ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(0,  Strings.LabelName,                       spec?.Name               ?? Constants.NotAvailable);
+            SetSpecsRow(1,  Strings.PerformanceFriendlyName,         spec?.FriendlyName       ?? Constants.NotAvailable);
+            SetSpecsRow(2,  Strings.LabelDescription,                spec?.Description        ?? Constants.NotAvailable);
+            SetSpecsRow(3,  Strings.LabelConnectionType,             spec?.ConnectionType     ?? Constants.NotAvailable);
+            SetSpecsRow(4,  Strings.LabelPhysicalMedium,             spec?.PhysicalMedium     ?? Constants.NotAvailable);
+            SetSpecsRow(5,  Strings.LabelMacAddress,                 spec?.MacAddress         ?? Constants.NotAvailable);
             SetSpecsRow(6,  Strings.LabelIpv4Addresses,              (spec?.IPv4Addresses     ?? []).ToAddressList());
             SetSpecsRow(7,  Strings.LabelIpv6Addresses,              (spec?.IPv6Addresses     ?? []).ToAddressList());
             SetSpecsRow(8,  Strings.LabelTransmitLinkSpeed,          (spec?.TransmitLinkSpeed ?? 0UL).ToLinkSpeed());
             SetSpecsRow(9,  Strings.LabelReceiveLinkSpeed,           (spec?.ReceiveLinkSpeed  ?? 0UL).ToLinkSpeed());
-            SetSpecsRow(10, Strings.LabelOperationalStatus,          spec?.OperationalStatus  ?? NetworkDeviceParser.NotAvailable);
+            SetSpecsRow(10, Strings.LabelOperationalStatus,          spec?.OperationalStatus  ?? Constants.NotAvailable);
             SetSpecsRow(11, Strings.PerformanceTotalBytesSent,       totalBytesSent);
             SetSpecsRow(12, Strings.PerformanceTotalBytesReceived,   totalBytesReceived);
             SetSpecsRow(13, Strings.PerformanceTotalPacketsSent,     totalPacketsSent);
@@ -159,7 +159,7 @@ public sealed class NetworkPerformanceControl : Control, IPerformanceDetail
             Strings.PerformanceTotalPacketsSent, 
             Strings.PerformanceTotalPacketsReceived }) {
 
-            networkSpecsListView.Items.Add(CommonControl.PropertyRow(label, NetworkDeviceParser.NotAvailable, appConfig.Theme));
+            networkSpecsListView.Items.Add(CommonControl.PropertyRow(label, Constants.NotAvailable, appConfig.Theme));
         }
     }
 

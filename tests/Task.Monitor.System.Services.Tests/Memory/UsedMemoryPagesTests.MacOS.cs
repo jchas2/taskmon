@@ -36,7 +36,7 @@ public sealed class UsedMemoryPagesTests
         ServiceController controller = new() { Delay = WorkerService.MinimumDelayInMilliseconds };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new MemoryService());
+        controller.AddService(new MemoryService());
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Memory, count: 2);

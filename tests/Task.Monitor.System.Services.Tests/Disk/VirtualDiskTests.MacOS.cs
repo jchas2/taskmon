@@ -14,7 +14,7 @@ public sealed class VirtualDiskTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new DiskService { Delay = MinimumDelay });
+        controller.AddService(new DiskService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Disk, count: 3);

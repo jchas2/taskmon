@@ -38,19 +38,6 @@ public partial class CpuService
     private void OnStartCpuSpecs(ref CpuSpecs specs)
     {
         specs.CpuCores = (ulong)Environment.ProcessorCount;
-        specs.CpuFrequency            = 0;
-        specs.CpuName                 = string.Empty;
-        specs.CpuSockets              = 0;
-        specs.CpuL1CacheBytes         = 0;
-        specs.CpuL2CacheBytes         = 0;
-        specs.CpuL3CacheBytes         = 0;
-        specs.CpuEfficiencyCores      = 0;
-        specs.CpuEfficiencyFrequency  = 0.0;
-        specs.CpuPerformanceCores     = 0;
-        specs.CpuPerformanceFrequency = 0.0;
-        specs.CpuSuperCores           = 0;
-        specs.CpuSuperFrequency       = 0.0;
-        specs.CpuVirtualizationFirmwareEnabled = false;
 
         PopulateCpuSpecs(ref specs);
         PopulateCpuTopology(ref specs);

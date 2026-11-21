@@ -1,21 +1,21 @@
 #if __APPLE__
 using System.Diagnostics;
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Npu;
 
 namespace Task.Monitor.System.Services.Soc;
 
-// Apple Silicon GPU clocks, GPU limits and Neural Engine activity, from IOReport.
 public sealed class SocService : WorkerService
 {
     private const string NeuralEngineDriver  = "H11ANEIn";
     private const string NeuralEngineDetails = "DeviceProperties";
     private const string PowerManagerService = "pmgr";
-    private const string IOServicePlane      = "IOService";
 
     private static readonly string[] GpuFrequencyKeys = ["voltage-states9-sram", "voltage-states9"];
 
     private readonly IOReportSampler sampler = new(
+        nameof(SocService),
         ("GPU Stats", "GPU Performance States"),
         ("GPU Stats", "CLTM-induced GPU Performance States"),
         ("GPU Stats", "GPU Power Controller States"),
@@ -80,10 +80,7 @@ public sealed class SocService : WorkerService
         }
 
         foreach (string key in GpuFrequencyKeys) {
-            using CFScope name  = new(CoreFoundation.CFStringCreate(key));
-            using CFScope value = new(IOKit.IORegistryEntrySearchCFProperty(pmgr, IOServicePlane, name, nint.Zero, 0));
-
-            if (!value.IsNull && PropertyList.ToManaged(value) is byte[] data) {
+            if (IOKit.SearchProperty(pmgr, key) is byte[] data) {
                 return SocMetricsCalculator.ParseFrequencyTable(data);
             }
         }
@@ -99,10 +96,7 @@ public sealed class SocService : WorkerService
             return null;
         }
 
-        using CFScope name  = new(CoreFoundation.CFStringCreate(NeuralEngineDetails));
-        using CFScope value = new(IOKit.IORegistryEntrySearchCFProperty(driver, IOServicePlane, name, nint.Zero, 0));
-
-        return !value.IsNull && PropertyList.ToManaged(value) is Dictionary<string, object?> properties
+        return IOKit.SearchProperty(driver, NeuralEngineDetails) is Dictionary<string, object?> properties
             ? NeuralEngineParser.Parse(properties)
             : null;
     }

@@ -1,11 +1,12 @@
 #if __APPLE__
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
 
 internal sealed class IOReportEnergyPowerProvider(
-    IOReportEnergySampler          sampler,
-    Func<IReadOnlyList<GpuDevice>> getGpus) : IPowerProvider
+    IOReportSampler                sampler,
+    Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<PowerReading>
 {
     private static readonly (PowerComponent Component, string Rail)[] ReadingOrder = [
         (PowerComponent.Cpu,          PowerRails.Cpu),
@@ -18,8 +19,6 @@ internal sealed class IOReportEnergyPowerProvider(
     ];
 
     public string Diagnostic => sampler.Diagnostic;
-
-    public void Dispose() { }
 
     private static bool IsCluster(string channel, string prefix) =>
         channel.StartsWith(prefix, StringComparison.Ordinal) && channel.EndsWith("_CPU", StringComparison.Ordinal);
@@ -58,7 +57,7 @@ internal sealed class IOReportEnergyPowerProvider(
                    _ => null
     };
 
-    internal static List<PowerReading> ToReadings(IEnumerable<IOReportEnergySampler.Delta> deltas, double seconds, string gpuId)
+    internal static List<PowerReading> ToReadings(IEnumerable<IOReportChannelSample> deltas, double seconds, string gpuId)
     {
         List<PowerReading> readings = new();
 
@@ -68,8 +67,8 @@ internal sealed class IOReportEnergyPowerProvider(
 
         Dictionary<(PowerComponent, string), double> joules = new();
 
-        foreach (IOReportEnergySampler.Delta delta in deltas) {
-            if (MapChannel(delta.Channel) is { } key && ToJoules(delta.Value, delta.Unit) is { } energy) {
+        foreach (IOReportChannelSample delta in deltas) {
+            if (MapChannel(delta.Name) is { } key && ToJoules(delta.Value, delta.Unit) is { } energy) {
                 joules[key] = joules.GetValueOrDefault(key) + energy;
             }
         }

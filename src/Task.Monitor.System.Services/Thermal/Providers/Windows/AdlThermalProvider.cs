@@ -6,7 +6,7 @@ using Task.Monitor.System.Services.Gpu;
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
 // AMD GPUs via ADL's Overdrive temperature calls.
-internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IThermalProvider
+internal sealed class AdlThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<ThermalSensor>
 {
     private readonly AdlAdapters adapters = new();
 

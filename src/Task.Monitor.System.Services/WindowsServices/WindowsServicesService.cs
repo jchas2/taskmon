@@ -18,9 +18,7 @@ public sealed partial class WindowsServicesService : WorkerService
     {
         bool rescan = controlQueue.Apply(ApplyControl, servicesSpecs, DateTime.UtcNow);
 
-        rescan |= ConsumeRefreshRequest();
-
-        if (rescan || ++cyclesSinceScan >= RescanEveryCycles) {
+        if (RescanDue(ref cyclesSinceScan, RescanEveryCycles) || rescan) {
             servicesSpecs   = ScanServices();
             cyclesSinceScan = 0;
         }

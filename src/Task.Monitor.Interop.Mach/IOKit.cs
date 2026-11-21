@@ -7,6 +7,11 @@ public static class IOKit
     public const string FirstMatchNotification = "IOServiceFirstMatch";
     public const string TerminatedNotification = "IOServiceTerminate";
 
+    public const uint IterateParents     = 0x00000002;
+    public const uint IterateRecursively = 0x00000001;
+
+    private const string IOServicePlane = "IOService";
+
     public static unsafe Dictionary<string, object?>? GetLoadedKextInfo(IReadOnlyList<string> infoKeys)
     {
         nint[] keys = new nint[infoKeys.Count];
@@ -128,4 +133,12 @@ public static class IOKit
 
     [DllImport(Libraries.IOKit)]
     private static extern nint KextManagerCopyLoadedKextInfo(nint kextIdentifiers, nint infoKeys);
+
+    public static object? SearchProperty(uint entry, string key, uint options = 0)
+    {
+        using CFScope name  = new(CoreFoundation.CFStringCreate(key));
+        using CFScope value = new(IORegistryEntrySearchCFProperty(entry, IOServicePlane, name, nint.Zero, options));
+
+        return PropertyList.ToManaged(value);
+    }
 }

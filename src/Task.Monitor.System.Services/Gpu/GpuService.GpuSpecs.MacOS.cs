@@ -12,29 +12,11 @@ public partial class GpuService
 
     private static int GetGpuCoreCount()
     {
-        IntPtr matching = IOKit.IOServiceMatching("AGXAccelerator");
-        using IOObjectScope service = new(IOKit.IOServiceGetMatchingService(0, matching));
+        using IOObjectScope service = new(IOKit.IOServiceGetMatchingService(0, IOKit.IOServiceMatching("AGXAccelerator")));
 
-        if (service.IsNull) {
-            return 0;
-        }
-
-        int cores = 0;
-        using CFScope key = new(CoreFoundation.CFStringCreate("gpu-core-count"));
-
-        using CFScope coreCount = new(IOKit.IORegistryEntrySearchCFProperty(
-            service,
-            IOServicePlane,
-            key,
-            IntPtr.Zero,
-            RegistryIterateRecursively));
-
-        if (!coreCount.IsNull) {
-            CoreFoundation.CFNumberGetValue(coreCount, out long value);
-            cores = (int)value;
-        }
-
-        return cores;
+        return !service.IsNull && IOKit.SearchProperty(service, "gpu-core-count", IOKit.IterateRecursively) is long cores
+            ? (int)cores
+            : 0;
     }
 
     private void OnStartGpuSpecs(GpuSpecs specs)

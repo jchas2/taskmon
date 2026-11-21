@@ -11,7 +11,7 @@ public sealed class ProcessServiceModulesTests
     public void Should_Enumerate_Module_Properties_For_Current_Process()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessOperations().GetModules(currentProcess.Id);
 
         foreach (ModuleInfo moduleInfo in modules) {
             Assert.NotNull(moduleInfo.ModuleName);
@@ -27,7 +27,7 @@ public sealed class ProcessServiceModulesTests
     public void Should_Enumerate_Module_Properties_For_Current_Process_MacOS()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessOperations().GetModules(currentProcess.Id);
 
         foreach (ModuleInfo moduleInfo in modules) {
             Assert.NotEmpty(moduleInfo.FileName);
@@ -47,7 +47,7 @@ public sealed class ProcessServiceModulesTests
     public void Should_Return_Modules_For_Current_Process_MacOS()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessOperations().GetModules(currentProcess.Id);
 
         // The test host has the runtime dylibs mapped, so the walk must find some.
         Assert.InRange(modules.Count, 1, int.MaxValue);
@@ -58,14 +58,14 @@ public sealed class ProcessServiceModulesTests
     public void Should_Return_Modules_For_Current_Process_Windows()
     {
         using SysDiag::Process currentProcess = SysDiag::Process.GetCurrentProcess();
-        List<ModuleInfo> modules = new ProcessService().GetModules(currentProcess.Id);
+        List<ModuleInfo> modules = new ProcessOperations().GetModules(currentProcess.Id);
 
         Assert.InRange(modules.Count, 1, int.MaxValue);
     }
 
     [Fact]
     public void Should_Return_No_Modules_For_A_Negative_Pid() =>
-        Assert.Empty(new ProcessService().GetModules(-1));
+        Assert.Empty(new ProcessOperations().GetModules(-1));
 
     // Regression test: run as root, reading kernel_task's memory map logged an EXC_GUARD crash report.
     [SkippableFact]
@@ -74,6 +74,6 @@ public sealed class ProcessServiceModulesTests
     {
         Skip.IfNot(OperatingSystem.IsMacOS());
 
-        Assert.Empty(new ProcessService().GetModules(0));
+        Assert.Empty(new ProcessOperations().GetModules(0));
     }
 }

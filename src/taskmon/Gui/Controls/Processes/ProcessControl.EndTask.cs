@@ -57,7 +57,7 @@ public sealed partial class ProcessControl
         ProcessService processService = serviceController.GetService<ProcessService>();
 
         foreach (int pid in pids) {
-            processService.EndTask(pid, EndTaskTimeout);
+            processService.Operations.EndTask(pid, EndTaskTimeout);
         }
 
         processService.RequestImmediateRefresh();

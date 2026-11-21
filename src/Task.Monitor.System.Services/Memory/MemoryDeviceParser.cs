@@ -5,8 +5,7 @@ namespace Task.Monitor.System.Services.Memory;
 
 public static class MemoryDeviceParser
 {
-    private const string NotAvailable = "N/A";
-    private const string Unknown      = "Unknown";
+    private const string Unknown = "Unknown";
 
     private const int  StructureHeaderLength = 4;
     private const byte MemoryDeviceType      = 17;
@@ -113,13 +112,13 @@ public static class MemoryDeviceParser
     private static string GetString(ReadOnlySpan<byte> structure, int offset)
     {
         if (!HasField(structure, offset, sizeof(byte))) {
-            return NotAvailable;
+            return Constants.NotAvailable;
         }
 
         byte stringIndex = structure[offset];
 
         if (stringIndex == 0) {
-            return NotAvailable;
+            return Constants.NotAvailable;
         }
 
         ReadOnlySpan<byte> strings = structure[structure[1]..];
@@ -138,7 +137,7 @@ public static class MemoryDeviceParser
             strings = strings[(terminator + 1)..];
         }
 
-        return NotAvailable;
+        return Constants.NotAvailable;
     }
 
     private static bool HasField(ReadOnlySpan<byte> structure, int offset, int size) =>

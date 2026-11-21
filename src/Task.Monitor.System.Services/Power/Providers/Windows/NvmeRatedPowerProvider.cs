@@ -1,15 +1,14 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
 // The peak power of an NVMe drive's top power state.
-internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IPowerProvider
+internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IReadingProvider<PowerReading>
 {
     private readonly Dictionary<int, double?> cache = new();
-
-    public void Dispose() { }
 
     public string Name => "NVMe rated power";
 
@@ -29,7 +28,7 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
                 yield return new PowerReading {
                     Component   = PowerComponent.Disk,
                     ComponentId = disk.Index.ToString(),
-                    Rail        = "Drive",
+                    Rail        = PowerRails.Drive,
                     Watts       = value,
                     IsRated     = true,
                     Source      = PowerSource.NvmeRated
@@ -46,7 +45,5 @@ internal sealed class NvmeRatedPowerProvider(Func<IReadOnlyList<DiskDevice>> get
             ? NvmePowerState.PeakWatts(identify)
             : null;
     }
-
-    public bool TryInitialise() => true;
 }
 #endif

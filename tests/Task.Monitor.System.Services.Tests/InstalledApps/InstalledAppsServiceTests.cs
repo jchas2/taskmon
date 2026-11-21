@@ -17,7 +17,7 @@ public sealed class InstalledAppsServiceTests
         SystemSnapshot? latest = null;
 
         controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
-        controller.AddService(() => new InstalledAppsService { Delay = MinimumDelay });
+        controller.AddService(new InstalledAppsService { Delay = MinimumDelay });
         controller.Start();
 
         Stopwatch elapsed = Stopwatch.StartNew();

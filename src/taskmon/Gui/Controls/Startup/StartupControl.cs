@@ -43,7 +43,7 @@ public sealed partial class StartupControl : Control
         startupView = new ListView(terminal) {
             EnableScroll      = true,
             EnableRowSelect   = true,
-            ShowCheckboxes    = StartupService.SupportsSetEnabled,
+            ShowCheckboxes    = true,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = true,

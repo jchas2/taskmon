@@ -16,11 +16,14 @@ public partial class NetworkService
         IpHlpApi.GAA_FLAG_SKIP_MULTICAST |
         IpHlpApi.GAA_FLAG_SKIP_DNS_SERVER;
 
-    private static void ApplyPhysicalMediums(List<NetworkDevice> devices)
+    private static unsafe void ApplyPhysicalMediums(List<NetworkDevice> devices)
     {
         Dictionary<ulong, uint> mediums = new();
 
-        if (!TryReadPhysicalMediums(mediums)) {
+        if (!ReadInterfaceTable(nameof(ApplyPhysicalMediums), row =>
+                mediums[InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset)] =
+                    InteropHelper.ReadUInt32(row, NetIoApi.IfRow2PhysicalMediumTypeOffset))) {
+
             return;
         }
 
@@ -80,11 +83,9 @@ public partial class NetworkService
         }
 
         ApplyPhysicalMediums(devices);
+        devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
 
-        NetworkSpecs specs = new();
-        specs.Devices = devices;
-
-        return specs;
+        return new NetworkSpecs { Devices = devices };
     }
 
     private static unsafe List<NetworkDevice> ReadAdapters(byte* buffer)
@@ -97,39 +98,33 @@ public partial class NetworkService
 
             NetworkDevice device = new();
 
-            device.InterfaceIndex = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfIndexOffset);
-            device.InterfaceLuid  = InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesLuidOffset);
-            device.Name           = Marshal.PtrToStringAnsi(
-                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesAdapterNameOffset)) ?? string.Empty;
-            device.FriendlyName   = Marshal.PtrToStringUni(
-                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesFriendlyNameOffset)) ?? string.Empty;
-            device.Description    = Marshal.PtrToStringUni(
-                (nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesDescriptionOffset)) ?? string.Empty;
+            device.InterfaceIndex      = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfIndexOffset);
+            device.InterfaceLuid       = InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesLuidOffset);
+            device.Name                = Marshal.PtrToStringAnsi((nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesAdapterNameOffset)) ?? string.Empty;
+            device.FriendlyName        = Marshal.PtrToStringUni((nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesFriendlyNameOffset)) ?? string.Empty;
+            device.Description         = Marshal.PtrToStringUni((nint)InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesDescriptionOffset)) ?? string.Empty;
 
-            uint ifType           = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfTypeOffset);
-            uint operStatus       = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesOperStatusOffset);
+            uint ifType                = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesIfTypeOffset);
+            uint operStatus            = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesOperStatusOffset);
 
-            device.ConnectionType    = NetworkDeviceParser.DecodeConnectionType(ifType);
-            device.OperationalStatus = NetworkDeviceParser.DecodeOperationalStatus(operStatus);
+            device.ConnectionType      = NetworkDeviceParser.DecodeConnectionType(ifType);
+            device.OperationalStatus   = NetworkDeviceParser.DecodeOperationalStatus(operStatus);
 
-            device.TransmitLinkSpeed = NetworkDeviceParser.DecodeLinkSpeed(
-                InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesTransmitLinkSpeedOffset));
-            device.ReceiveLinkSpeed  = NetworkDeviceParser.DecodeLinkSpeed(
-                InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesReceiveLinkSpeedOffset));
+            device.TransmitLinkSpeed   = NetworkDeviceParser.DecodeLinkSpeed(InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesTransmitLinkSpeedOffset));
+            device.ReceiveLinkSpeed    = NetworkDeviceParser.DecodeLinkSpeed(InteropHelper.ReadUInt64(adapter, IpTypes.AdapterAddressesReceiveLinkSpeedOffset));
 
             uint physicalAddressLength = InteropHelper.ReadUInt32(adapter, IpTypes.AdapterAddressesPhysicalAddressLenOffset);
             int macLength              = (int)Math.Min(physicalAddressLength, (uint)IpTypes.MaxAdapterAddressLength);
 
-            device.MacAddress        = NetworkDeviceParser.FormatMacAddress(
-                new ReadOnlySpan<byte>(adapter + IpTypes.AdapterAddressesPhysicalAddressOffset, macLength));
+            device.MacAddress          = NetworkDeviceParser.FormatMacAddress(new ReadOnlySpan<byte>(adapter + IpTypes.AdapterAddressesPhysicalAddressOffset, macLength));
 
             ReadUnicastAddresses(
                 InteropHelper.ReadPointer(adapter, IpTypes.AdapterAddressesFirstUnicastAddressOffset),
                 out string[] ipv4Addresses,
                 out string[] ipv6Addresses);
 
-            device.IPv4Addresses = ipv4Addresses;
-            device.IPv6Addresses = ipv6Addresses;
+            device.IPv4Addresses       = ipv4Addresses;
+            device.IPv6Addresses       = ipv6Addresses;
 
             device.IsActive = NetworkDeviceParser.IsActiveAdapter(
                 ifType,

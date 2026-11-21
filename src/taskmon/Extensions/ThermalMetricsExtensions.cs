@@ -61,11 +61,9 @@ public static class ThermalMetricsExtensions
     }
 
     private static int SourceRank(ThermalSource source) => source switch {
-        ThermalSource.KernelMsr => 4,
-        ThermalSource.NvApi or ThermalSource.Adl or ThermalSource.Igcl => 3,
+        ThermalSource.NvApi or ThermalSource.Adl => 3,
         ThermalSource.NvmeHealthLog or ThermalSource.AtaSmart => 3,
         ThermalSource.Smc or ThermalSource.HidSensor => 3,
-        ThermalSource.Battery => 2,
         ThermalSource.AcpiThermalZone => 1,
         _ => 0
     };

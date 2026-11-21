@@ -12,13 +12,10 @@ public sealed partial class DriversService : WorkerService
 
     private readonly List<string> scanNotes = new();
 
-    private partial IEnumerable<DriverInfo> EnumerateDrivers();
-
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
-            driversSpecs    = ScanDrivers();
-            cyclesSinceScan = 0;
+        if (RescanDue(ref cyclesSinceScan, RescanEveryCycles)) {
+            driversSpecs = ScanDrivers();
         }
 
         Publish(new DriversInfo { Specs = driversSpecs });
@@ -42,15 +39,15 @@ public sealed partial class DriversService : WorkerService
         DriversSpecs specs = new();
 
         scanNotes.Clear();
-        specs.Drivers.AddRange(EnumerateDrivers());
+#if __APPLE__
+        specs.Drivers.AddRange(DriverLookup.GetDrivers(scanNotes));
+#else
+        specs.Drivers.AddRange(DriverLookup.GetDrivers());
+#endif
 
         specs.Drivers.Sort(static (left, right) =>
             string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
 
         return specs;
     }
-
-#if !__WIN32__ && !__APPLE__
-    private partial IEnumerable<DriverInfo> EnumerateDrivers() => [];
-#endif
 }

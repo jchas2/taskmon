@@ -7,9 +7,6 @@ namespace Task.Monitor.System.Services.Disk;
 
 public static class DiskDeviceParser
 {
-    // DiskDevice defaults to Constants.NotAvailable; share it so a bare device and a parsed one agree.
-    public const string NotAvailable = Constants.NotAvailable;
-
     public static string DecodeBusType(uint busType) => busType switch
     {
         WinIoCtl.BusTypeNvme              => "NVMe",
@@ -31,7 +28,7 @@ public static class DiskDeviceParser
         WinIoCtl.BusTypeSpaces            => "Storage Spaces",
         WinIoCtl.BusTypeSCM               => "SCM",
         WinIoCtl.BusTypeUfs               => "UFS",
-        _                                 => NotAvailable,
+        _                                 => Constants.NotAvailable,
     };
 
     public static string DecodeDriveType(uint driveType) => driveType switch
@@ -42,7 +39,7 @@ public static class DiskDeviceParser
         FileApi.DRIVE_REMOTE      => "Network",
         FileApi.DRIVE_RAMDISK     => "RAM Disk",
         FileApi.DRIVE_NO_ROOT_DIR => "No Root Directory",
-        _                         => NotAvailable,
+        _                         => Constants.NotAvailable,
     };
 
     public static string DecodeMediaType(
@@ -69,7 +66,7 @@ public static class DiskDeviceParser
 
         return isRemovable 
             ? "Removable" 
-            : NotAvailable;
+            : Constants.NotAvailable;
     }
 
     private static string GetString(ReadOnlySpan<byte> descriptor, int fieldOffset)
@@ -77,14 +74,14 @@ public static class DiskDeviceParser
         uint stringOffset = BinaryPrimitives.ReadUInt32LittleEndian(descriptor[fieldOffset..]);
 
         if (stringOffset == 0 || stringOffset >= (uint)descriptor.Length) {
-            return NotAvailable;
+            return Constants.NotAvailable;
         }
 
         string text = Win32StringHelper.FromNullTerminatedAnsi(descriptor[(int)stringOffset..]).Trim();
         
         return text.Length > 0 
             ? text 
-            : NotAvailable;
+            : Constants.NotAvailable;
     }
 
     // Decodes the fixed header of a STORAGE_DEVICE_DESCRIPTOR.

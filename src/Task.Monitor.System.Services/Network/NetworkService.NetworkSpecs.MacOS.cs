@@ -95,7 +95,7 @@ public partial class NetworkService
         NetworkInterfaceType.Loopback         => "Loopback",
         NetworkInterfaceType.Tunnel           => "Tunnel",
         NetworkInterfaceType.Ppp              => "PPP",
-        _                                     => NetworkDeviceParser.NotAvailable,
+        _                                     => Constants.NotAvailable,
     };
 
     private static uint GetInterfaceIndex(NetworkInterface nic)
@@ -130,60 +130,6 @@ public partial class NetworkService
 
     private static ulong NormaliseSpeed(long speed) => speed > 0 ? (ulong)speed : 0;
 
-    private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
-    {
-        Dictionary<uint, NetworkDevice> devices = new();
-
-        foreach (NetworkDevice device in specs.Devices) {
-            devices[device.InterfaceIndex] = device;
-        }
-
-        foreach ((uint index, NetworkInstanceState state) in instanceStates) {
-            if (!devices.TryGetValue(index, out NetworkDevice? device) || !device.IsActive) {
-                continue;
-            }
-
-            NetworkDeviceMetrics deviceMetrics = new();
-            // Not inline declared to assist with debugging.
-            deviceMetrics.InterfaceIndex            = device.InterfaceIndex;
-            deviceMetrics.InterfaceLuid             = device.InterfaceLuid;
-            deviceMetrics.FriendlyName              = device.FriendlyName;
-            deviceMetrics.TotalBytesSent            = state.TotalBytesSent;
-            deviceMetrics.TotalBytesReceived        = state.TotalBytesReceived;
-            deviceMetrics.TotalPacketsSent          = state.TotalPacketsSent;
-            deviceMetrics.TotalPacketsReceived      = state.TotalPacketsReceived;
-            deviceMetrics.SendBytesPerSecond        = state.SendBytesPerSecond;
-            deviceMetrics.ReceiveBytesPerSecond     = state.ReceiveBytesPerSecond;
-            deviceMetrics.SendPacketsPerSecond      = state.SendPacketsPerSecond;
-            deviceMetrics.ReceivePacketsPerSecond   = state.ReceivePacketsPerSecond;
-            deviceMetrics.SendMegabytesPerSecond    = state.SendBytesPerSecond / BytesPerMegabyte;
-            deviceMetrics.ReceiveMegabytesPerSecond = state.ReceiveBytesPerSecond / BytesPerMegabyte;
-            deviceMetrics.ErrorsPerSecond           = state.ErrorsPerSecond;
-            deviceMetrics.DiscardsPerSecond         = state.DiscardsPerSecond;
-
-            metrics.Devices.Add(deviceMetrics);
-
-            if (!device.CountsTowardAggregate) {
-                continue;
-            }
-
-            metrics.TotalBytesSent          += state.TotalBytesSent;
-            metrics.TotalBytesReceived      += state.TotalBytesReceived;
-            metrics.TotalPacketsSent        += state.TotalPacketsSent;
-            metrics.TotalPacketsReceived    += state.TotalPacketsReceived;
-            metrics.SendBytesPerSecond      += state.SendBytesPerSecond;
-            metrics.ReceiveBytesPerSecond   += state.ReceiveBytesPerSecond;
-            metrics.SendPacketsPerSecond    += state.SendPacketsPerSecond;
-            metrics.ReceivePacketsPerSecond += state.ReceivePacketsPerSecond;
-            metrics.ErrorsPerSecond         += state.ErrorsPerSecond;
-            metrics.DiscardsPerSecond       += state.DiscardsPerSecond;
-        }
-
-        metrics.Devices.Sort((left, right) => CompareAdapters(devices[left.InterfaceIndex], devices[right.InterfaceIndex]));
-        metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
-        metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
-    }
-
     private NetworkSpecs? OnStartNetworkSpecs()
     {
         NetworkSpecs specs = new();
@@ -216,22 +162,6 @@ public partial class NetworkService
 
         specs.Devices.Sort(CompareAdapters);
         return specs;
-    }
-
-    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
-    {
-        if (sawUnknownAdapter) {
-            sawUnknownAdapter = false;
-            cyclesSinceSpecsRefresh = 0;
-            return true;
-        }
-
-        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
-            return false;
-        }
-
-        cyclesSinceSpecsRefresh = 0;
-        return true;
     }
 }
 #endif

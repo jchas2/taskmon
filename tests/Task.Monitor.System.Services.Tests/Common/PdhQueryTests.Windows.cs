@@ -13,13 +13,13 @@ public sealed class PdhQueryTests
     [Fact]
     public void Open_Returns_Null_For_A_Counter_That_Does_Not_Exist()
     {
-        Assert.Null(PdhQuery.Open(nameof(PdhQueryTests), @"\No Such Object(*)\No Such Counter"));
+        Assert.Null(PdhQuery.Open(nameof(PdhQueryTests), out _, @"\No Such Object(*)\No Such Counter"));
     }
 
     [Fact]
     public unsafe void TryReadFormattedDoubles_Reads_Every_Instance_Into_The_Buffer()
     {
-        using PdhQuery? query = PdhQuery.Open(nameof(PdhQueryTests), ProcessorTimeCounterPath);
+        using PdhQuery? query = PdhQuery.Open(nameof(PdhQueryTests), out _, ProcessorTimeCounterPath);
 
         Assert.NotNull(query);
 
@@ -41,7 +41,7 @@ public sealed class PdhQueryTests
     [Fact]
     public void TryReadRaw_Reads_Every_Instance_Into_The_Buffer()
     {
-        using PdhQuery? query = PdhQuery.Open(nameof(PdhQueryTests), ProcessorTimeCounterPath);
+        using PdhQuery? query = PdhQuery.Open(nameof(PdhQueryTests), out _, ProcessorTimeCounterPath);
 
         Assert.NotNull(query);
         Assert.True(query.Collect());

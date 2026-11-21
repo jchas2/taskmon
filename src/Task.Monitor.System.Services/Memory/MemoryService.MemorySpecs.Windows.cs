@@ -97,10 +97,10 @@ public partial class MemoryService
         MemoryType           = "Unknown",
         FormFactor           = "Unknown",
         DeviceLocator        = "System Memory",
-        BankLocator          = "N/A",
-        Manufacturer         = "N/A",
-        SerialNumber         = "N/A",
-        PartNumber           = "N/A"
+        BankLocator          = Constants.NotAvailable,
+        Manufacturer         = Constants.NotAvailable,
+        SerialNumber         = Constants.NotAvailable,
+        PartNumber           = Constants.NotAvailable
     };
 
     private static unsafe bool TryGetTotalPhysicalMemory(out ulong totalBytes)

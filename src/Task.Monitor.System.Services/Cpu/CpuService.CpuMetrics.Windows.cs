@@ -10,12 +10,10 @@ namespace Task.Monitor.System.Services.Cpu;
 public partial class CpuService
 {
 #if __WIN32__
-    private CpuSystemTimes prevTimes  = new();
-    private CpuSystemTimes currTimes  = new();
-    private CpuSystemTimes deltaTimes = new();
-
+    private long previousIdle;
+    private long previousKernel;
+    private long previousUser;
     private long previousTimestamp;
-    private bool primed;
 
     private PdhQuery? pressureQuery;
     private PdhQuery? processorQuery;
@@ -23,7 +21,7 @@ public partial class CpuService
     private unsafe void OnDoWorkCpuCore(CpuInfo cpuInfo)
     {
         if (processorQuery is null || !processorQuery.Collect()) {
-            serviceStatus = ServiceStatus.Errored;
+            Status = ServiceStatus.Errored;
             return;
         }
 
@@ -61,44 +59,33 @@ public partial class CpuService
             
             PInvokeErrorHelpers.AssertOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
             PInvokeErrorHelpers.TraceOnceOnLastError(nameof(ProcessThreadsApi.GetSystemTimes));
-
-            cpuInfo.Metrics.CpuPercentIdleTime   = 0;
-            cpuInfo.Metrics.CpuPercentKernelTime = 0;
-            cpuInfo.Metrics.CpuPercentUserTime   = 0;
-            cpuInfo.Metrics.CpuPercentIdleTime   = 0;
             return;
         }
 
-        currTimes.Idle   = lpIdleFileTime.ToLong();
-        currTimes.Kernel = lpKernelFileTime.ToLong() - currTimes.Idle; // On Windows, Kernel time also includes Idle time.
-        currTimes.User   = lpUserFileTime.ToLong();
+        long idle   = lpIdleFileTime.ToLong();
+        long kernel = lpKernelFileTime.ToLong() - idle; // On Windows, kernel time also includes idle time.
+        long user   = lpUserFileTime.ToLong();
+        long now    = Stopwatch.GetTimestamp();
 
-        long now = Stopwatch.GetTimestamp();
+        if (previousTimestamp != 0) {
+            double totalSysTime = Environment.ProcessorCount *
+                                  Stopwatch.GetElapsedTime(previousTimestamp, now).TotalSeconds *
+                                  CounterRate.FileTimeTicksPerSecond;
 
-        if (!primed) {
-            Rebase(now);
-            primed = true;
-            return;
+            if (totalSysTime <= 0.0) {
+                return;
+            }
+
+            cpuInfo.Metrics.CpuPercentUserTime   = (user - previousUser) / totalSysTime;
+            cpuInfo.Metrics.CpuPercentKernelTime = (kernel - previousKernel) / totalSysTime;
+            cpuInfo.Metrics.CpuPercentIdleTime   = (idle - previousIdle) / totalSysTime;
+            cpuInfo.Metrics.CpuTotalTime         = cpuInfo.Metrics.CpuPercentKernelTime + cpuInfo.Metrics.CpuPercentUserTime;
         }
 
-        double elapsedSeconds = (now - previousTimestamp) / (double)Stopwatch.Frequency;
-
-        if (elapsedSeconds <= 0.0) {
-            return;
-        }
-
-        deltaTimes.Idle   = currTimes.Idle - prevTimes.Idle;
-        deltaTimes.Kernel = currTimes.Kernel - prevTimes.Kernel;
-        deltaTimes.User   = currTimes.User - prevTimes.User;
-
-        double totalSysTime = Environment.ProcessorCount * elapsedSeconds * CounterRate.FileTimeTicksPerSecond;
-
-        cpuInfo.Metrics.CpuPercentUserTime   = deltaTimes.User / totalSysTime;
-        cpuInfo.Metrics.CpuPercentKernelTime = deltaTimes.Kernel / totalSysTime;
-        cpuInfo.Metrics.CpuPercentIdleTime   = deltaTimes.Idle / totalSysTime;
-        cpuInfo.Metrics.CpuTotalTime         = cpuInfo.Metrics.CpuPercentKernelTime + cpuInfo.Metrics.CpuPercentUserTime;
-
-        Rebase(now);
+        previousIdle      = idle;
+        previousKernel    = kernel;
+        previousUser      = user;
+        previousTimestamp = now;
     }
 
     private void OnDoWorkPressureMetrics(CpuInfo cpuInfo)
@@ -129,7 +116,7 @@ public partial class CpuService
         processorQuery = PdhQuery.OpenAtStartup(ServiceName, ProcessorTimeCounterPath, ProcessorTimeCounterPath);
 
         if (processorQuery is null || !processorQuery.Collect()) {
-            serviceStatus = ServiceStatus.Errored;
+            Status = ServiceStatus.Errored;
         }
 
         pressureQuery = PdhQuery.OpenAtStartup(
@@ -150,14 +137,6 @@ public partial class CpuService
 
         pressureQuery?.Dispose();
         pressureQuery = null;
-    }
-
-    private void Rebase(long now)
-    {
-        prevTimes.Idle    = currTimes.Idle;
-        prevTimes.Kernel  = currTimes.Kernel;
-        prevTimes.User    = currTimes.User;
-        previousTimestamp = now;
     }
 #endif
 }

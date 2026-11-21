@@ -34,13 +34,12 @@ public sealed partial class StartupService : WorkerService
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
+        if (RescanDue(ref cyclesSinceScan, RescanEveryCycles)) {
             int          writesBefore = Volatile.Read(ref writeCount);
             StartupSpecs specs        = Scan();
 
             if (Volatile.Read(ref writeCount) == writesBefore) {
-                startupSpecs    = specs;
-                cyclesSinceScan = 0;
+                startupSpecs = specs;
             }
         }
 
@@ -94,18 +93,4 @@ public sealed partial class StartupService : WorkerService
 
         return result;
     }
-
-    public static bool SupportsSetEnabled { get; } =
-#if __WIN32__ || __APPLE__
-        true;
-#else
-        false;
-#endif
-
-#if !__WIN32__ && !__APPLE__
-    private partial StartupToggleResult ApplyEnabled(StartupEntry entry, bool enabled) =>
-        StartupToggleResult.NotSupported;
-
-    private partial StartupSpecs ScanStartup() => new();
-#endif
 }

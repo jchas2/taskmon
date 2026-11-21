@@ -67,7 +67,7 @@ public sealed class DiskDeviceParserTests
     [InlineData(FileApi.DRIVE_CDROM, "CD-ROM")]
     [InlineData(FileApi.DRIVE_REMOTE, "Network")]
     [InlineData(FileApi.DRIVE_RAMDISK, "RAM Disk")]
-    [InlineData(FileApi.DRIVE_UNKNOWN, DiskDeviceParser.NotAvailable)]
+    [InlineData(FileApi.DRIVE_UNKNOWN, Constants.NotAvailable)]
     public void Should_Decode_Drive_Type(uint driveType, string expected) =>
         Assert.Equal(expected, DiskDeviceParser.DecodeDriveType(driveType));
 
@@ -149,7 +149,7 @@ public sealed class DiskDeviceParserTests
 
         DiskDevice device = DiskDeviceParser.Parse(descriptor);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
+        Assert.Equal(Constants.NotAvailable, device.BusType);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public sealed class DiskDeviceParserTests
         DiskDevice device = DiskDeviceParser.Parse(descriptor);
 
         Assert.Equal("Kingston", device.Manufacturer);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Model);
+        Assert.Equal(Constants.NotAvailable, device.Model);
         Assert.Equal("USB", device.BusType);
         Assert.True(device.IsRemovable);
     }
@@ -190,10 +190,10 @@ public sealed class DiskDeviceParserTests
 
         DiskDevice device = DiskDeviceParser.Parse(descriptor);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
+        Assert.Equal(Constants.NotAvailable, device.Manufacturer);
         Assert.Equal("WD Blue SN580", device.Model);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.FirmwareRevision);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.SerialNumber);
+        Assert.Equal(Constants.NotAvailable, device.FirmwareRevision);
+        Assert.Equal(Constants.NotAvailable, device.SerialNumber);
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public sealed class DiskDeviceParserTests
             hasTrim: false,
             trimEnabled: false);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, mediaType);
+        Assert.Equal(Constants.NotAvailable, mediaType);
     }
 
     [Fact]
@@ -229,9 +229,9 @@ public sealed class DiskDeviceParserTests
     {
         DiskDevice device = DiskDeviceParser.Parse(new byte[8]);
 
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Manufacturer);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.Model);
-        Assert.Equal(DiskDeviceParser.NotAvailable, device.BusType);
+        Assert.Equal(Constants.NotAvailable, device.Manufacturer);
+        Assert.Equal(Constants.NotAvailable, device.Model);
+        Assert.Equal(Constants.NotAvailable, device.BusType);
     }
 
     [Fact]

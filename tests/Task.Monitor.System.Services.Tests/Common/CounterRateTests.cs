@@ -7,14 +7,14 @@ public sealed class CounterRateTests
     [Fact]
     public void Accumulate_Adds_The_Increase_To_The_Total_And_Moves_Previous_On()
     {
-        ulong previous = 1000;
+        long  previous = 1000;
         ulong total    = 50;
 
-        double rate = CounterRate.Accumulate(current: 3000UL, ref previous, ref total, elapsedSeconds: 2.0);
+        double rate = CounterRate.Accumulate(current: 3000L, ref previous, ref total, elapsedSeconds: 2.0);
 
         Assert.Equal(1000.0, rate);
         Assert.Equal(2050UL, total);
-        Assert.Equal(3000UL, previous);
+        Assert.Equal(3000L, previous);
     }
 
     [Fact]

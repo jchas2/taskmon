@@ -5,7 +5,7 @@ namespace Task.Monitor.System.Services.Process;
 public partial class ProcessService
 {
 #if __WIN32__
-    private static bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
+    internal static bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
     {
         moduleInfos = new List<ModuleInfo>();
 

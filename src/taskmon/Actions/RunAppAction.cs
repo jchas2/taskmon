@@ -31,27 +31,27 @@ public sealed class RunAppAction(RunContext runContext) : IAction
         Control.DrawingCapabilities  = SystemTerminal.DetectDrawingCapabilities();
 
         runContext.ServiceController
-            .AddService(() => new CpuService())
-            .AddService(() => new MemoryService())
-            .AddService(() => new GpuService())
-            .AddService(() => new DiskService())
-            .AddService(() => new DiskSpaceService())
-            .AddService(() => new NetworkService())
-            .AddService(() => new ProcessService())
-            .AddService(() => new StartupService())
-            .AddService(() => new InstalledAppsService())
+            .AddService(new CpuService())
+            .AddService(new MemoryService())
+            .AddService(new GpuService())
+            .AddService(new DiskService())
+            .AddService(new DiskSpaceService())
+            .AddService(new NetworkService())
+            .AddService(new ProcessService())
+            .AddService(new StartupService())
+            .AddService(new InstalledAppsService())
 #if __WIN32__
-            .AddService(() => new WindowsServicesService())
+            .AddService(new WindowsServicesService())
 #elif __APPLE__
-            .AddService(() => new LaunchdServicesService())
+            .AddService(new LaunchdServicesService())
 #endif
-            .AddService(() => new DriversService())
+            .AddService(new DriversService())
 #if __APPLE__
-            .AddService(() => new SocService())
+            .AddService(new SocService())
 #endif
-            .AddService(() => new ThermalService())
-            .AddService(() => new PowerService())
-            .AddService(() => new HealthService());
+            .AddService(new ThermalService())
+            .AddService(new PowerService())
+            .AddService(new HealthService());
 
         runContext.ServiceController.GetService<ProcessService>().IrixMode = runContext.AppConfig.UseIrixReporting;
         runContext.ServiceController.GetService<HealthService>().Thresholds = runContext.AppConfig.HealthThresholds;

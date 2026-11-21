@@ -35,7 +35,7 @@ public sealed class GpuDeviceParserTests
     [InlineData(0x8086u, "Intel")]
     [InlineData(0x1414u, "Microsoft")]
     [InlineData(0x15ADu, "VMware")]
-    [InlineData(0xBEEFu, GpuDeviceParser.NotAvailable)]
+    [InlineData(0xBEEFu, Constants.NotAvailable)]
     public void DecodeVendor_Maps_Known_Pci_Vendor_Ids(uint vendorId, string expected) =>
         Assert.Equal(expected, GpuDeviceParser.DecodeVendor(vendorId));
 

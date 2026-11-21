@@ -7,7 +7,7 @@ using Task.Monitor.System.Services.Common;
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
 // The ACPI / EMI power meter, present on laptops.
-internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
+internal sealed unsafe class PowerMeterPdhProvider : IReadingProvider<PowerReading>
 {
     private const string CounterPath = @"\Power Meter(*)\Power";
 
@@ -48,7 +48,7 @@ internal sealed unsafe class PowerMeterPdhProvider : IPowerProvider
         return [
             new PowerReading {
                 Component = PowerComponent.System,
-                Rail     = "System",
+                Rail     = PowerRails.System,
                 Watts    = watts,
                 Source   = PowerSource.PowerMeter
             }

@@ -6,12 +6,11 @@ namespace Task.Monitor.System.Services.Gpu;
 public static class GpuDeviceParser
 {
     public const string DiscreteAdapterType = "Discrete";
-    public const string NotAvailable        = "N/A";
 
     private const uint DxgiAdapterFlagSoftware = 2;
 
-    // An adapter reporting less dedicated VRAM than this is taken to be an integrated GPU carving a
-    // slice of system memory rather than a discrete card (not available through DXGI).
+    // An adapter reporting less dedicated VRAM than this is taken to be an integrated GPU
+    // rather than a discrete card (not available through DXGI).
     private const long IntegratedVramThreshold = 512L * 1024 * 1024;
 
     public static string DecodeAdapterType(uint dxgiFlags, uint vendorId, long dedicatedVideoMemory)
@@ -41,7 +40,7 @@ public static class GpuDeviceParser
         0x80EE => "VirtualBox",
         0x1234 => "QEMU",
         0x1D0F => "Amazon",
-        _      => NotAvailable,
+        _      => Constants.NotAvailable,
     };
 
     private static bool IsVirtualVendor(uint vendorId) => vendorId switch
@@ -92,8 +91,7 @@ public static class GpuDeviceParser
     }
 
     // The luid_0x{HighPart}_0x{LowPart} token carried by a \GPU Engine(*) or \GPU Adapter
-    // Memory(*) counter instance, packed the same way DXGI stores it in
-    // DXGI_ADAPTER_DESC1.AdapterLuid so the two compare equal.
+    // Memory(*) counter instance.1
     public static bool TryParseAdapterLuid(string instanceName, out long luid)
     {
         const string luidToken = "luid_";

@@ -16,12 +16,10 @@ public sealed partial class InstalledAppsService : WorkerService
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
+        if (RescanDue(ref cyclesSinceScan, RescanEveryCycles)) {
             installedAppsSpecs = ScanInstalledApps();
-            cyclesSinceScan = 0;
         }
         else {
-            // Only macOS scans leave sizes pending; elsewhere this returns the specs unchanged.
             installedAppsSpecs = sizeCache.ComputePending(installedAppsSpecs, SizeBudget, cancellationToken);
         }
 
@@ -37,8 +35,4 @@ public sealed partial class InstalledAppsService : WorkerService
     }
 
     private partial InstalledAppsSpecs ScanInstalledApps();
-
-#if !__WIN32__ && !__APPLE__
-    private partial InstalledAppsSpecs ScanInstalledApps() => new();
-#endif
 }

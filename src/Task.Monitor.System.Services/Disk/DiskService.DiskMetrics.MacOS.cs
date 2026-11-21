@@ -8,152 +8,51 @@ namespace Task.Monitor.System.Services.Disk;
 
 public partial class DiskService
 {
-    private const double BytesPerMegabyte          = 1024.0 * 1024.0;
     private const double NanosecondsPerMillisecond = 1_000_000.0;
     private const double NanosecondsPerSecond      = 1_000_000_000.0;
 
-    private sealed class DiskDeviceState : IMissedSampleCounter
-    {
-        public int    Index;
-        public long   PrevReadBytes;
-        public long   PrevWriteBytes;
-        public long   PrevReadTimeNanos;
-        public long   PrevWriteTimeNanos;
-        public long   PrevOperations;
-        public long   PrevTimestamp;
-        public bool   Primed;
-        public int    ConsecutiveMisses { get; set; }
-
-        public ulong  TotalBytesRead;
-        public ulong  TotalBytesWritten;
-        public double ReadBytesPerSecond;
-        public double WriteBytesPerSecond;
-        public double PercentActiveTime;
-        public double LatencyMs;
-    }
-
-    private readonly Dictionary<string, DiskDeviceState> diskStates         = new();
-    private readonly Dictionary<ulong, bool>             virtualDiskEntries = new();
+    private readonly Dictionary<ulong, bool> virtualDiskEntries = new();
 
     private void ApplyDiskSample(
         string bsdName,
         int    index,
         long   readBytes,
         long   writeBytes,
-        long   readTime,
-        long   writeTime,
+        long   busyNanos,
         long   operations)
     {
-        if (!diskStates.TryGetValue(bsdName, out DiskDeviceState? state)) {
-            state = new DiskDeviceState();
-            diskStates[bsdName] = state;
-        }
-
-        state.Index = index;
         long now = Stopwatch.GetTimestamp();
 
-        if (!state.Primed) {
-            RebaseDisk(
-                state, 
-                readBytes, 
-                writeBytes, 
-                readTime, 
-                writeTime,
-                operations,
-                now);
-            
-            state.Primed = true;
+        if (!states.TryGetValue(bsdName, out DiskState? state)) {
+            states[bsdName] = new DiskState {
+                Index              = index,
+                PreviousReadBytes  = readBytes,
+                PreviousWriteBytes = writeBytes,
+                PreviousTime       = busyNanos,
+                PreviousOperations = operations,
+                PreviousTimestamp  = now
+            };
+
             return;
         }
 
-        double elapsedSeconds = (now - state.PrevTimestamp) / (double)Stopwatch.Frequency;
+        double elapsedSeconds = Stopwatch.GetElapsedTime(state.PreviousTimestamp, now).TotalSeconds;
 
         if (elapsedSeconds <= 0.0) {
             return;
         }
 
-        long readTimeDelta  = readTime - state.PrevReadTimeNanos;
-        long writeTimeDelta = writeTime - state.PrevWriteTimeNanos;
+        double busy            = Math.Max(0, busyNanos - state.PreviousTime);
+        long   operationsDelta = operations - state.PreviousOperations;
 
-        state.ReadBytesPerSecond = CounterRate.Accumulate(
-            readBytes,
-            ref state.PrevReadBytes,
-            ref state.TotalBytesRead,
-            elapsedSeconds);
-
-        state.WriteBytesPerSecond = CounterRate.Accumulate(
-            writeBytes,
-            ref state.PrevWriteBytes,
-            ref state.TotalBytesWritten,
-            elapsedSeconds);
-
-        double busyNanos    = (readTimeDelta > 0 ? readTimeDelta : 0) + (writeTimeDelta > 0 ? writeTimeDelta : 0);
-        double elapsedNanos = elapsedSeconds * NanosecondsPerSecond;
-
-        state.PercentActiveTime = elapsedNanos > 0.0
-            ? Math.Clamp(100.0 * busyNanos / elapsedNanos, 0.0, 100.0)
-            : 0.0;
-
-        long operationsDelta = operations - state.PrevOperations;
-
-        state.LatencyMs = operationsDelta > 0
-            ? busyNanos / operationsDelta / NanosecondsPerMillisecond
-            : 0.0;
-
-        RebaseDisk(
-            state, 
-            readBytes, 
-            writeBytes, 
-            readTime, 
-            writeTime,
-            operations,
-            now);
-    }
-
-    private void BuildDiskMetrics(DiskMetrics metrics)
-    {
-        ulong  totalRead = 0;
-        ulong  totalWritten = 0;
-        double totalReadPerSec = 0.0;
-        double totalWritePerSec = 0.0;
-        double busiest = 0.0;
-        double slowest = 0.0;
-
-        foreach ((string name, DiskDeviceState state) in diskStates) {
-            DiskDeviceMetrics device = new();
-            // Not inline declared to assist with debugging.
-            device.Index                   = state.Index;
-            device.InstanceName            = name;
-            device.TotalBytesRead          = state.TotalBytesRead;
-            device.TotalBytesWritten       = state.TotalBytesWritten;
-            device.ReadBytesPerSecond      = state.ReadBytesPerSecond;
-            device.WriteBytesPerSecond     = state.WriteBytesPerSecond;
-            device.ReadMegabytesPerSecond  = state.ReadBytesPerSecond / BytesPerMegabyte;
-            device.WriteMegabytesPerSecond = state.WriteBytesPerSecond / BytesPerMegabyte;
-            device.PercentActiveTime       = state.PercentActiveTime;
-            device.LatencyMs               = state.LatencyMs;
-
-            metrics.Devices.Add(device);
-
-            totalRead        += state.TotalBytesRead;
-            totalWritten     += state.TotalBytesWritten;
-            totalReadPerSec  += state.ReadBytesPerSecond;
-            totalWritePerSec += state.WriteBytesPerSecond;
-            
-            busiest = Math.Max(busiest, state.PercentActiveTime);
-            slowest = Math.Max(slowest, state.LatencyMs);
-        }
-
-        metrics.Devices.Sort((left, right) => left.Index.CompareTo(right.Index));
-
-        metrics.TotalBytesRead          = totalRead;
-        metrics.TotalBytesWritten       = totalWritten;
-        metrics.ReadBytesPerSecond      = totalReadPerSec;
-        metrics.WriteBytesPerSecond     = totalWritePerSec;
-        metrics.ReadMegabytesPerSecond  = totalReadPerSec / BytesPerMegabyte;
-        metrics.WriteMegabytesPerSecond = totalWritePerSec / BytesPerMegabyte;
-        metrics.PercentActiveTime       = busiest;
-        metrics.LatencyMs               = slowest;
+        state.Index               = index;
+        state.ReadBytesPerSecond  = CounterRate.Accumulate(readBytes, ref state.PreviousReadBytes, ref state.TotalBytesRead, elapsedSeconds);
+        state.WriteBytesPerSecond = CounterRate.Accumulate(writeBytes, ref state.PreviousWriteBytes, ref state.TotalBytesWritten, elapsedSeconds);
+        state.PercentActiveTime   = Math.Clamp(100.0 * busy / (elapsedSeconds * NanosecondsPerSecond), 0.0, 100.0);
+        state.LatencyMs           = operationsDelta > 0 ? busy / operationsDelta / NanosecondsPerMillisecond : 0.0;
+        state.PreviousTime        = busyNanos;
+        state.PreviousOperations  = operations;
+        state.PreviousTimestamp   = now;
     }
 
     private bool IsVirtualDisk(uint entry, HashSet<ulong> seenEntries)
@@ -175,24 +74,14 @@ public partial class DiskService
     private void OnDoWorkDiskMetrics(DiskInfo diskInfo)
     {
         UpdateDiskStates();
-        BuildDiskMetrics(diskInfo.Metrics);
+        BuildMetrics(diskInfo.Metrics);
     }
 
-    private void OnStartDiskMetrics()
-    {
-        diskStates.Clear();
-        virtualDiskEntries.Clear();
-    }
-
-    private void OnStopDiskMetrics()
-    {
-        diskStates.Clear();
-        virtualDiskEntries.Clear();
-    }
+    private void OnStopDiskMetrics() => virtualDiskEntries.Clear();
 
     private void ReadDriverStatistics(uint entry, HashSet<string> live)
     {
-        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
+        string? bsdName = ReadBsdName(entry);
         int index = ParseDiskIndex(bsdName);
 
         if (index < 0 || bsdName == null) {
@@ -215,22 +104,15 @@ public partial class DiskService
         // Values below are borrowed from 'properties', which the scope keeps alive.
         Dictionary<string, nint> stats = CoreFoundation.ToDictionary(statsRef);
 
-        long readBytes  = ReadStat(stats, "Bytes (Read)");
-        long writeBytes = ReadStat(stats, "Bytes (Write)");
-        long readTime   = ReadStat(stats, "Total Time (Read)");
-        long writeTime  = ReadStat(stats, "Total Time (Write)");
-        long operations = ReadStat(stats, "Operations (Read)") + ReadStat(stats, "Operations (Write)");
-
         live.Add(bsdName);
-        
+
         ApplyDiskSample(
-            bsdName, 
-            index, 
-            readBytes, 
-            writeBytes, 
-            readTime, 
-            writeTime,
-            operations);
+            bsdName,
+            index,
+            ReadStat(stats, "Bytes (Read)"),
+            ReadStat(stats, "Bytes (Write)"),
+            ReadStat(stats, "Total Time (Read)") + ReadStat(stats, "Total Time (Write)"),
+            ReadStat(stats, "Operations (Read)") + ReadStat(stats, "Operations (Write)"));
     }
 
     private static long ReadStat(Dictionary<string, nint> stats, string key)
@@ -241,23 +123,6 @@ public partial class DiskService
         }
 
         return 0;
-    }
-
-    private static void RebaseDisk(
-        DiskDeviceState state,
-        long readBytes,
-        long writeBytes,
-        long readTime,
-        long writeTime,
-        long operations,
-        long now)
-    {
-        state.PrevReadBytes      = readBytes;
-        state.PrevWriteBytes     = writeBytes;
-        state.PrevReadTimeNanos  = readTime;
-        state.PrevWriteTimeNanos = writeTime;
-        state.PrevOperations     = operations;
-        state.PrevTimestamp      = now;
     }
 
     private void UpdateDiskStates()
@@ -294,7 +159,7 @@ public partial class DiskService
             Trace.WriteLine($"{ServiceName}: IOKit {BlockStorageDriverClass} statistics OK, {live.Count} disks read");
         }
 
-        PruneMissing(diskStates, live.Contains);
+        PruneMissing(live.Contains);
 
         foreach (ulong stale in virtualDiskEntries.Keys.Where(entryId => !seenEntries.Contains(entryId)).ToList()) {
             virtualDiskEntries.Remove(stale);

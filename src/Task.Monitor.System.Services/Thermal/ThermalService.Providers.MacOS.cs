@@ -1,5 +1,6 @@
 #if __APPLE__
 using System.Diagnostics;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Thermal.Providers.MacOS;
@@ -11,7 +12,7 @@ public partial class ThermalService
     private readonly SmcThermalSampler      smcSampler      = new();
     private readonly ThermalPressureMonitor pressureMonitor = new();
 
-    private partial IEnumerable<IThermalProvider> CreateProviders()
+    private partial IEnumerable<IReadingProvider<ThermalSensor>> CreateProviders()
     {
         IReadOnlyList<DiskDevice> Disks() => GetLatest<DiskInfo>()?.Specs.Devices ?? [];
         IReadOnlyList<GpuDevice> Gpus()   => GetLatest<GpuInfo>()?.Specs.Devices ?? [];

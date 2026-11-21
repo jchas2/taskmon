@@ -9,8 +9,7 @@ public partial class DiskService
 {
     private static DiskDevice? BuildDiskDevice(uint entry)
     {
-        string? bsdName = SearchStringProperty(entry, "BSD Name", IterateRecursively);
-        int index       = ParseDiskIndex(bsdName);
+        int index = ParseDiskIndex(ReadBsdName(entry));
 
         if (index < 0) {
             return null;
@@ -25,7 +24,7 @@ public partial class DiskService
         DiskDevice device = new();
         device.Index = index;
 
-        if (SearchNumberProperty(entry, "Size", IterateRecursively, out long size)) {
+        if (IOKit.SearchProperty(entry, "Size", IOKit.IterateRecursively) is long size) {
             device.Capacity = size;
         }
 
@@ -106,45 +105,21 @@ public partial class DiskService
 
     private static void ReadDeviceCharacteristics(uint entry, DiskDevice device)
     {
-        using CFScope cfKey = new(CoreFoundation.CFStringCreate("Device Characteristics"));
-        
-        using CFScope dictRef = new(IOKit.IORegistryEntrySearchCFProperty(
-            entry, 
-            IOServicePlane, 
-            cfKey, 
-            nint.Zero, 
-            IterateRecursively | IterateParents));
-
-        if (dictRef.IsNull) {
+        if (ReadCharacteristics(entry, "Device Characteristics") is not { } dict) {
             return;
         }
 
-        Dictionary<string, nint> dict = CoreFoundation.ToDictionary(dictRef);
+        device.Model            = TrimmedString(dict, "Product Name") ?? device.Model;
+        device.Manufacturer     = TrimmedString(dict, "Vendor Name") ?? device.Manufacturer;
+        device.FirmwareRevision = TrimmedString(dict, "Product Revision Level") ?? device.FirmwareRevision;
+        device.SerialNumber     = TrimmedString(dict, "Serial Number") ?? device.SerialNumber;
 
-        device.Model            = ReadTrimmedString(dict, "Product Name") ?? device.Model;
-        device.Manufacturer     = ReadTrimmedString(dict, "Vendor Name") ?? device.Manufacturer;
-        device.FirmwareRevision = ReadTrimmedString(dict, "Product Revision Level") ?? device.FirmwareRevision;
-        device.SerialNumber     = ReadTrimmedString(dict, "Serial Number") ?? device.SerialNumber;
-
-        if (dict.TryGetValue("Medium Type", out nint medium)) {
-            string? mediumType = CoreFoundation.GetString(medium);
-
-            device.MediaType = mediumType switch {
-                "Solid State" => "SSD",
-                "Rotational"  => "HDD",
-                _             => string.IsNullOrEmpty(mediumType) ? device.MediaType : mediumType
-            };
-        }
-    }
-
-    private static string? ReadTrimmedString(Dictionary<string, nint> dict, string key)
-    {
-        if (!dict.TryGetValue(key, out nint value)) {
-            return null;
-        }
-
-        string? text = CoreFoundation.GetString(value)?.Trim();
-        return string.IsNullOrEmpty(text) ? null : text;
+        device.MediaType = dict.GetValueOrDefault("Medium Type") switch {
+            "Solid State"                     => "SSD",
+            "Rotational"                      => "HDD",
+            string { Length: > 0 } mediumType => mediumType,
+                                            _ => device.MediaType
+        };
     }
 }
 #endif

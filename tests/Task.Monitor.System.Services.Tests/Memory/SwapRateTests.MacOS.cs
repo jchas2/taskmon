@@ -19,7 +19,7 @@ public sealed class SwapRateTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new MemoryService { Delay = MinimumDelay });
+        controller.AddService(new MemoryService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Memory, count: 3);

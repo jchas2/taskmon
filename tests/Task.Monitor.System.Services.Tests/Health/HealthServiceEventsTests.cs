@@ -29,7 +29,7 @@ public sealed class HealthServiceEventsTests : IDisposable
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new HealthService { Delay = MinimumDelay, EventStore = store });
+        controller.AddService(new HealthService { Delay = MinimumDelay, EventStore = store });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Health, count: 1);

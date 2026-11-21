@@ -34,7 +34,7 @@ public static class SystemSnapshotExtensions
     public static string ToAddressList(this string[] addresses) =>
         addresses.Length > 0
             ? string.Join(", ", addresses)
-            : NetworkDeviceParser.NotAvailable;
+            : Constants.NotAvailable;
 
     public static string ToCombinedGpuMemoryAvailableFormattedBytes(this GpuMetrics metrics) =>
         metrics.AvailableCombinedGpuMemory.ToFormattedByteSize();
@@ -245,7 +245,7 @@ public static class SystemSnapshotExtensions
     public static string ToLinkSpeed(this ulong bitsPerSecond)
     {
         if (bitsPerSecond == 0) {
-            return NetworkDeviceParser.NotAvailable;
+            return Constants.NotAvailable;
         }
 
         string[] units = ["bps", "Kbps", "Mbps", "Gbps", "Tbps"];

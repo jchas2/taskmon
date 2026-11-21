@@ -17,7 +17,7 @@ public sealed class CpuServiceTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new CpuService { Delay = MinimumDelay });
+        controller.AddService(new CpuService { Delay = MinimumDelay });
         controller.Start();
 
         CpuInfo? cpu = snapshots.WaitFor(published => published.Cpu != null)?.Cpu;

@@ -34,8 +34,6 @@ public sealed class DiskPerformanceControlTests
                 PercentActiveTime = 42.5,
                 ReadBytesPerSecond = 12.0 * 1024 * 1024,
                 WriteBytesPerSecond = 3.5 * 1024 * 1024,
-                ReadMegabytesPerSecond = 12.0,
-                WriteMegabytesPerSecond = 3.5,
                 TotalBytesRead = 98324528934,
                 TotalBytesWritten = 21983484324,
             },

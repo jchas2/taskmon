@@ -6,7 +6,7 @@ using Task.Monitor.System.Services.Gpu;
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
 // NVidia GPUs via NVML.
-internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IPowerProvider
+internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<PowerReading>
 {
     private bool initialised;
 
@@ -47,7 +47,7 @@ internal sealed class NvmlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) 
             yield return new PowerReading {
                 Component   = PowerComponent.Gpu,
                 ComponentId = id,
-                Rail        = "GPU",
+                Rail        = PowerRails.Gpu,
                 Watts       = watts,
                 Source      = PowerSource.Nvml
             };

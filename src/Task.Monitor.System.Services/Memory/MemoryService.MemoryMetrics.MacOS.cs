@@ -65,7 +65,7 @@ public partial class MemoryService
             return;
         }
 
-        pageSize      = Environment.SystemPageSize;
+        pageSize = Environment.SystemPageSize;
         
         totalPhysical = Sys.SysctlByNameLong("hw.memsize", out long memSize) && memSize > 0
             ? (ulong)memSize
@@ -117,10 +117,6 @@ public partial class MemoryService
             memoryInfo.Metrics.Pressure = ToMemoryPressure(level);
         }
     }
-
-    private void OnStartPressureMetrics() { }
-
-    private void OnStopPressureMetrics() { }
 
     internal static double? PagesPerSecondInBytes(ulong previous, ulong current, double seconds, long pageSize) =>
         seconds > 0 && current >= previous

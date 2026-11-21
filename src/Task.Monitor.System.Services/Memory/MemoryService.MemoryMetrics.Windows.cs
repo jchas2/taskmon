@@ -27,25 +27,16 @@ public partial class MemoryService
             return;
         }
 
-        SysInfoApi.MEMORYSTATUSEX memStatus = new();
-        memStatus.dwLength = (uint)sizeof(SysInfoApi.MEMORYSTATUSEX);
-        
-        if (!SysInfoApi.GlobalMemoryStatusEx(&memStatus)) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(
-                nameof(SysInfoApi.GlobalMemoryStatusEx), 
-                $"GlobalMemoryStatusEx failed. Error: {Marshal.GetLastWin32Error()}");
-            
+        ulong totalBytes = memoryInfo.Metrics.TotalPhysical;
+        nuint pageSize   = (nuint)Environment.SystemPageSize;
+
+        if (totalBytes == 0) {
             return;
         }
-
-        SysInfoApi.SYSTEM_INFO sysInfo = new();
-        SysInfoApi.GetSystemInfo(&sysInfo);
-        nuint pageSize = sysInfo.dwPageSize;
 
         ulong freeBytes     = (memListInfo.FreePageCount + memListInfo.ZeroedPageCount) * pageSize;
         ulong modifiedBytes = (memListInfo.ModifiedPageCount + memListInfo.ModifiedNoWritePageCount) * pageSize;
 
-        // Standby bytes across all 8 priority levels (0 to 7)
         nuint standbyPageCount = 0;
         
         for (int i = 0; i < 8; i++) {
@@ -54,7 +45,6 @@ public partial class MemoryService
         
         ulong standbyBytes = standbyPageCount * pageSize;
 
-        ulong totalBytes = memStatus.ullTotalPhys;
         ulong inUseBytes = totalBytes - (standbyBytes + freeBytes + modifiedBytes);
 
         memoryInfo.Metrics.InUseBytes    = inUseBytes;
@@ -62,12 +52,10 @@ public partial class MemoryService
         memoryInfo.Metrics.StandbyBytes  = standbyBytes;
         memoryInfo.Metrics.FreeBytes     = freeBytes;
 
-        if (totalBytes > 0) {
-            memoryInfo.Metrics.InUseBytesRatio    = (double)inUseBytes / (double)totalBytes;
-            memoryInfo.Metrics.ModifiedBytesRatio = (double)modifiedBytes / (double)totalBytes;
-            memoryInfo.Metrics.StandbyBytesRatio  = (double)standbyBytes / (double)totalBytes;
-            memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / (double)totalBytes;
-        }
+        memoryInfo.Metrics.InUseBytesRatio    = (double)inUseBytes / totalBytes;
+        memoryInfo.Metrics.ModifiedBytesRatio = (double)modifiedBytes / totalBytes;
+        memoryInfo.Metrics.StandbyBytesRatio  = (double)standbyBytes / totalBytes;
+        memoryInfo.Metrics.FreeBytesRatio     = (double)freeBytes / totalBytes;
     }
 
     private unsafe void OnDoWorkMemoryMetrics(MemoryInfo memoryInfo)
@@ -79,16 +67,7 @@ public partial class MemoryService
             PInvokeErrorHelpers.TraceOnceOnLastError(
                 nameof(SysInfoApi.GlobalMemoryStatusEx), 
                 $"Failed {nameof(OnDoWorkMemoryMetrics)}");
-            
-            memoryInfo.Metrics.AvailablePageFile      = 0;
-            memoryInfo.Metrics.AvailablePhysical      = 0;
-            memoryInfo.Metrics.AvailableVirtual       = 0;
-            memoryInfo.Metrics.TotalPageFile          = 0;
-            memoryInfo.Metrics.TotalPhysical          = 0;
-            memoryInfo.Metrics.TotalVirtual           = 0;
-            memoryInfo.Metrics.AvailablePageFileRatio = 0.0;
-            memoryInfo.Metrics.AvailablePhysicalRatio = 0.0;
-            memoryInfo.Metrics.AvailableVirtualRatio  = 0.0;
+
             return;
         }
 
@@ -118,7 +97,7 @@ public partial class MemoryService
         ReadPagingRates(memoryInfo);
     }
 
-    private void OnStartPressureMetrics()
+    partial void OnStartPressureMetrics()
     {
         pagingQuery = PdhQuery.OpenAtStartup(
             ServiceName,
@@ -130,7 +109,7 @@ public partial class MemoryService
         pagingQuery?.Collect();
     }
 
-    private void OnStopPressureMetrics()
+    partial void OnStopPressureMetrics()
     {
         pagingQuery?.Dispose();
         pagingQuery = null;

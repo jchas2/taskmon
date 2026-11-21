@@ -88,7 +88,7 @@ public partial class GpuService
         
         return trimmed.Length > 0 
             ? trimmed 
-            : GpuDeviceParser.NotAvailable;
+            : Constants.NotAvailable;
     }
 
     private void OnStartGpuSpecs(GpuSpecs specs)

@@ -19,20 +19,6 @@ public static class CounterRate
         return PerSecond(delta, elapsedSeconds);
     }
 
-    public static double Accumulate(
-        ulong     current,
-        ref ulong previous,
-        ref ulong total,
-        double    elapsedSeconds)
-    {
-        ulong delta = Delta(current, previous);
-
-        total    += delta;
-        previous  = current;
-
-        return PerSecond(delta, elapsedSeconds);
-    }
-
     public static ulong Delta(ulong current, ulong previous) =>
         current > previous
             ? current - previous

@@ -1,6 +1,7 @@
 #if __APPLE__
 using System.Buffers.Binary;
 using System.Runtime.InteropServices;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Npu;
 using Task.Monitor.System.Services.Soc;
 using Task.Monitor.Tests.Common;
@@ -124,7 +125,7 @@ public sealed class SocMetricsCalculatorTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new SocService { Delay = MinimumDelay });
+        controller.AddService(new SocService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Npu, count: 2);

@@ -1,15 +1,14 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
-internal sealed class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
+internal sealed class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IReadingProvider<ThermalSensor>
 {
     // The SMART / Health Information log page (0x02) is 512 bytes.
     private const int LogSize = 512;
-
-    public void Dispose() { }
 
     public string Name => "NVMe SMART";
 
@@ -58,7 +57,5 @@ internal sealed class NvmeDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> ge
             ? log
             : null;
     }
-
-    public bool TryInitialise() => true;
 }
 #endif

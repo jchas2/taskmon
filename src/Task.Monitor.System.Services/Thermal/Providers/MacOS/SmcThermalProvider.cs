@@ -1,15 +1,14 @@
 #if __APPLE__
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Gpu;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.MacOS;
 
-internal sealed class SmcThermalProvider(SmcThermalSampler sampler, Func<IReadOnlyList<GpuDevice>> getGpus) : IThermalProvider
+internal sealed class SmcThermalProvider(SmcThermalSampler sampler, Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<ThermalSensor>
 {
     private const string HottestSensor = "Hottest";
 
     public string Diagnostic { get; private set; } = string.Empty;
-
-    public void Dispose() { }
 
     public string Name => "SMC";
 

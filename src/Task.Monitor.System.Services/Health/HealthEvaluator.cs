@@ -4,23 +4,23 @@ namespace Task.Monitor.System.Services.Health;
 
 public sealed class HealthEvaluator
 {
-    private static readonly IHealthRule[] Rules = [
-        new CpuHealthRule(),
-        new MemoryHealthRule(),
-        new DiskHealthRule(),
-        new VolumesHealthRule(),
-        new GpuHealthRule(),
-        new NetworkHealthRule(),
-        new ThermalHealthRule(),
-        new AppsHealthRule()
+    private static readonly Func<HealthSample, HealthThresholds, HealthReading>[] Rules = [
+        HealthRules.Cpu,
+        HealthRules.Memory,
+        HealthRules.Disk,
+        HealthRules.Volumes,
+        HealthRules.Gpu,
+        HealthRules.Network,
+        HealthRules.Thermal,
+        HealthRules.Apps
     ];
 
     private readonly List<HealthEvent> changedEvents = new();
     private readonly List<HealthEvent> closedEvents = new();
     private readonly HealthCulpritFinder culprits = new();
 
-    private readonly Dictionary<HealthResource, HealthTracker> trackers = Rules.ToDictionary(
-        rule => rule.Resource,
+    private readonly Dictionary<HealthResource, HealthTracker> trackers = Enum.GetValues<HealthResource>().ToDictionary(
+        resource => resource,
         _ => new HealthTracker());
 
     private IReadOnlyList<HealthEvent> BuildEvents(HealthThresholds thresholds) =>
@@ -42,7 +42,7 @@ public sealed class HealthEvaluator
     {
         culprits.Update(sample.Processes, utcNow);
 
-        HealthReading[] readings = Rules.Select(rule => rule.Evaluate(sample, thresholds)).ToArray();
+        HealthReading[] readings = Rules.Select(rule => rule(sample, thresholds)).ToArray();
 
         HealthResource[] pressured = readings
             .Where(reading => reading.Level >= HealthLevel.Warning)

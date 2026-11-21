@@ -634,8 +634,8 @@ public sealed class MainScreen2Tests : IDisposable
     [Fact]
     public void Tab_And_F2_Reach_The_End_Task_Confirmation_Instead_Of_The_Screen()
     {
-        ProcessServiceFake processService = new();
-        runContext.ServiceController.AddService(() => processService);
+        ProcessOperationsFake processOperations = new();
+        runContext.ServiceController.AddService(new ProcessService(processOperations));
 
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         ProcessesControl processesControl = mainScreen.GetControl<ProcessesControl>();
@@ -665,7 +665,7 @@ public sealed class MainScreen2Tests : IDisposable
         mainScreen.KeyPressed(Key(ConsoleKey.Escape), ref handled);
 
         Assert.False(processControl.IsEndTaskDialogVisible);
-        Assert.Empty(processService.EndedPids);
+        Assert.Empty(processOperations.EndedPids);
     }
 
     private List<Theme> ThemesInSetupOrder() => runContext.AppConfig.Themes.OrderBy(t => t.Name).ToList();

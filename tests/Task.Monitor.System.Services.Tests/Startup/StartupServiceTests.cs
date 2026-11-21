@@ -12,7 +12,7 @@ public sealed partial class StartupServiceTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new StartupService { Delay = MinimumDelay });
+        controller.AddService(new StartupService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitFor(snapshot => snapshot.Startup is not null);

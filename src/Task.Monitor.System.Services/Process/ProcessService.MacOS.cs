@@ -149,7 +149,7 @@ public partial class ProcessService
         }
     }
 
-    private static bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
+    internal static bool GetModulesInternal(SysDiag::Process process, out List<ModuleInfo> moduleInfos)
     {
         moduleInfos = new List<ModuleInfo>();
 

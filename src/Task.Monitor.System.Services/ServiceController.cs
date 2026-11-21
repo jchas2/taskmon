@@ -21,19 +21,26 @@ using Task.Monitor.System.Services.WindowsServices;
 
 namespace Task.Monitor.System.Services;
 
-public sealed class ServiceController : WorkerService
+public sealed class ServiceController
 {
     private readonly List<ISystemService>               allServices          = new();
     private readonly ConcurrentDictionary<Type, object> systemMetrics        = new();
     private readonly DeviceChangeNotifier               deviceChangeNotifier = new();
+    private readonly SnapshotLoop                       snapshotLoop;
 
     private long sequence;
+
+    private sealed class SnapshotLoop(ServiceController controller) : WorkerService
+    {
+        protected override void OnDoWork(CancellationToken cancellationToken) => controller.PublishSnapshot();
+    }
+
     public event EventHandler<SystemSnapshotEventArgs>? SystemSnapshotUpdated;
 
-    public ServiceController AddService(Func<ISystemService> serviceFactory)
-    {
-        ISystemService service = serviceFactory();
+    public ServiceController() => snapshotLoop = new SnapshotLoop(this);
 
+    public ServiceController AddService(ISystemService service)
+    {
         if (allServices.Any(srv => srv.GetType() == service.GetType())) {
             throw new InvalidOperationException($"Service '{service.GetType()}' is already registered.");
         }
@@ -82,6 +89,12 @@ public sealed class ServiceController : WorkerService
             Services        = BuildServiceHealth()
         };
 
+    public int Delay
+    {
+        get => snapshotLoop.Delay;
+        set => snapshotLoop.Delay = value;
+    }
+
     internal T? GetLatestInfo<T>() where T : class =>
         systemMetrics.TryGetValue(typeof(T), out object? sample)
             ? sample as T
@@ -109,7 +122,7 @@ public sealed class ServiceController : WorkerService
         }
     }
 
-    protected override void OnDoWork(CancellationToken cancellationToken)
+    private void PublishSnapshot()
     {
         if (systemMetrics.IsEmpty) {
             return;
@@ -149,7 +162,7 @@ public sealed class ServiceController : WorkerService
             ? typeName[..^"Service".Length]
             : typeName;
 
-    public override void Start()
+    public void Start()
     {
         deviceChangeNotifier.DeviceChanged += OnDeviceChanged;
         deviceChangeNotifier.Start();
@@ -158,15 +171,15 @@ public sealed class ServiceController : WorkerService
             systemService.Start();
         }
 
-        base.Start();
+        snapshotLoop.Start();
     }
 
-    public override void Stop()
+    public void Stop()
     {
         deviceChangeNotifier.DeviceChanged -= OnDeviceChanged;
         deviceChangeNotifier.Dispose();
 
-        base.Stop();
+        snapshotLoop.Stop();
 
         foreach (ISystemService systemService in allServices) {
             systemService.Stop();

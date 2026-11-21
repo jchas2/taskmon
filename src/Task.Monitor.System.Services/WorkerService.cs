@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Task.Monitor.Cli.Utils;
 using WorkerTask = System.Threading.Tasks.Task;
 
@@ -10,17 +9,14 @@ public class WorkerService : ISystemService
     public const int DefaultDelayInMilliseconds = 1500;
     public const int MinimumDelayInMilliseconds = 500;
 
-    internal const int ExitIntervalInMilliseconds = 250;
-
     private WorkerTask? workerTask;
     private CancellationTokenSource? cancellationTokenSource;
 
     private readonly ManualResetEventSlim wakeSignal = new(initialState: false);
 
-    private volatile bool refreshRequested;
-    private volatile int  delayInMilliseconds = DefaultDelayInMilliseconds;
-
-    protected volatile ServiceStatus serviceStatus = ServiceStatus.None;
+    private volatile bool          refreshRequested;
+    private volatile int           delayInMilliseconds = DefaultDelayInMilliseconds;
+    private volatile ServiceStatus status              = ServiceStatus.None;
 
     protected bool ConsumeRefreshRequest()
     {
@@ -37,7 +33,14 @@ public class WorkerService : ISystemService
     public int Delay
     {
         get => delayInMilliseconds;
-        set => delayInMilliseconds = Math.Max(value, MinimumDelayInMilliseconds);
+        set {
+            int previous = delayInMilliseconds;
+            delayInMilliseconds = Math.Max(value, MinimumDelayInMilliseconds);
+
+            if (delayInMilliseconds < previous) {
+                wakeSignal.Set();
+            }
+        }
     }
 
     private void DoWork(CancellationToken cancellationToken)
@@ -58,10 +61,12 @@ public class WorkerService : ISystemService
 
                 Trace.WriteLine(
                     $"{ServiceName}: started in {Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds:0} ms, " +
-                    $"status {serviceStatus}");
+                    $"status {status}");
             }
 
-            ThreadSleep(cancellationToken);
+            if (wakeSignal.Wait(Delay)) {
+                wakeSignal.Reset();
+            }
         }
 
         OnStop();
@@ -87,75 +92,61 @@ public class WorkerService : ISystemService
         wakeSignal.Set();
     }
 
+    protected bool RescanDue(ref int cyclesSinceScan, int everyCycles)
+    {
+        if (!ConsumeRefreshRequest() && ++cyclesSinceScan < everyCycles) {
+            return false;
+        }
+
+        cyclesSinceScan = 0;
+        return true;
+    }
+
     protected string ServiceName => GetType().Name;
 
-    public virtual void Start()
+    public void Start()
     {
-        serviceStatus           = ServiceStatus.Starting;
+        status                  = ServiceStatus.Starting;
         cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Token.Register(wakeSignal.Set);
 
-        serviceStatus = ServiceStatus.Running;
+        status = ServiceStatus.Running;
 
         workerTask = WorkerTask.Run(() => {
             try {
                 DoWork(cancellationTokenSource.Token);
             }
             catch (Exception ex) {
-                serviceStatus = ServiceStatus.Errored;
+                status = ServiceStatus.Errored;
                 Trace.WriteLine($"{ServiceName}: FAILED with {ex.GetType().Name}, the service has stopped");
                 ExceptionHelper.LogException(ex, ServiceName);
             }
         });
     }
 
-    public ServiceStatus Status => serviceStatus;
+    public ServiceStatus Status
+    {
+        get           => status;
+        protected set => status = value;
+    }
 
-    public virtual void Stop()
+    public void Stop()
     {
         try {
-            serviceStatus = ServiceStatus.Stopping;
+            status = ServiceStatus.Stopping;
             cancellationTokenSource?.Cancel();
             workerTask?.Wait();
-            serviceStatus = ServiceStatus.Stopped;
+            status = ServiceStatus.Stopped;
         }
         catch (AggregateException aggEx) {
             ExceptionHelper.HandleWaitAllException(aggEx);
-            serviceStatus = ServiceStatus.Errored;
+            status = ServiceStatus.Errored;
         }
         catch (Exception ex) {
             ExceptionHelper.LogException(ex);
-            serviceStatus = ServiceStatus.Errored;
-        }
-    }
-    
-#if __APPLE__    
-    // Required for macOS Arm64, otherwise aggressively optimizes and pegs the CPU.                                                                                  
-    [MethodImpl(MethodImplOptions.NoOptimization)]
-#endif
-    private void ThreadSleep(CancellationToken cancellationToken)
-    {
-        // Sleeps in ExitIntervalInMilliseconds steps so a cancellation is noticed promptly rather
-        // than at the end of a long delay.
-        long startTicks = Stopwatch.GetTimestamp();
-
-        while (!cancellationToken.IsCancellationRequested) {
-            double elapsedMs = (Stopwatch.GetTimestamp() - startTicks) * 1000.0 / Stopwatch.Frequency;
-            double remainingMs = Delay - elapsedMs;
-
-            if (remainingMs <= 0.0) {
-                return;
-            }
-
-            int waitMs = (int)Math.Min(ExitIntervalInMilliseconds, remainingMs);
-
-             if (wakeSignal.Wait(waitMs)) {
-                wakeSignal.Reset();
-                return;
-            }
+            status = ServiceStatus.Errored;
         }
     }
 
-    // Runs the next cycle now, without asking it to refresh.
     protected void Wake() => wakeSignal.Set();
 }

@@ -1,9 +1,10 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
 
-internal sealed class SmcPowerProvider : IPowerProvider
+internal sealed class SmcPowerProvider : IReadingProvider<PowerReading>
 {
     private const string SystemTotalKey = "PSTR";
 

@@ -10,8 +10,6 @@ public sealed class DiskDeviceMetrics
 
     public double ReadBytesPerSecond      { get; set; }
     public double WriteBytesPerSecond     { get; set; }
-    public double ReadMegabytesPerSecond  { get; set; }
-    public double WriteMegabytesPerSecond { get; set; }
 
     public double PercentActiveTime       { get; set; }
     public double? LatencyMs              { get; set; }

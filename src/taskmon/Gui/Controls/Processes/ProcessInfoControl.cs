@@ -308,8 +308,8 @@ public partial class ProcessInfoControl : Control
     protected override void OnUnload()
     {
         lock (DrawingLock) {
-            // Just cancel the token and don't wait;
-            // it could deadlock under KeyPressed (which can call Unload).
+            // Just cancel the token and don't wait, this used to
+            // deadlock under KeyPressed (which can call Unload).
             cancellationTokenSource?.Cancel();
             cancellationTokenSource = null;
 
@@ -375,7 +375,7 @@ public partial class ProcessInfoControl : Control
         }
 
         try {
-            ProcessSample? sample = ProcessService.GetProcessSample(SelectedProcessId);
+            ProcessSample? sample = ProcessService.Operations.GetProcessSample(SelectedProcessId);
             if (sample == null) {
                 processInfoView.Items.Clear();
                 SetProcessTitle(string.Empty);
@@ -423,7 +423,7 @@ public partial class ProcessInfoControl : Control
                 modulesView.Items.Clear();
                 modulesView.Draw();
 
-                List<ModuleInfo> modules = ProcessService.GetModules(SelectedProcessId)
+                List<ModuleInfo> modules = ProcessService.Operations.GetModules(SelectedProcessId)
                     .OrderBy(m => m.ModuleName)
                     .ToList();
 
@@ -459,7 +459,7 @@ public partial class ProcessInfoControl : Control
             threadsView.EmptyListViewText = MsgThreadsNotLoaded;
 
             try {
-                List<ThreadInfo> threads = ProcessService.GetThreads(SelectedProcessId)
+                List<ThreadInfo> threads = ProcessService.Operations.GetThreads(SelectedProcessId)
                     .OrderByDescending(t => t.CpuTotalTime.Ticks)
                     .ToList();
 

@@ -220,7 +220,7 @@ public sealed class StringsTests
         Dictionary<string, string> defaults = Entries(CultureInfo.InvariantCulture);
 
         string[] services = typeof(ServiceController).Assembly.GetTypes()
-            .Where(type => type.IsSubclassOf(typeof(WorkerService)) && type != typeof(ServiceController))
+            .Where(type => type.IsSubclassOf(typeof(WorkerService)) && !type.IsNested)
             .Select(type => type.Name[..^"Service".Length])
             .ToArray();
 

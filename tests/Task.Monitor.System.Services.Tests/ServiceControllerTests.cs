@@ -33,8 +33,8 @@ public sealed class ServiceControllerTests
         ServiceController controller = new();
 
         controller
-            .AddService(() => new FakeAlphaService())
-            .AddService(() => new FakeBravoService());
+            .AddService(new FakeAlphaService())
+            .AddService(new FakeBravoService());
 
         IReadOnlyList<ServiceHealth> services = controller.GetServiceHealth();
 
@@ -42,15 +42,14 @@ public sealed class ServiceControllerTests
         Assert.All(services, service => Assert.Equal(ServiceStatus.None, service.Status));
     }
 
-    // Tests register a fake subclass in place of a real service (e.g. ProcessService), and the
-    // controls still ask for it by the real service's type.
+    // A service registered as a subclass is still found by its base type.
     [Fact]
     public void GetService_Finds_A_Registered_Subclass_By_Its_Base_Type()
     {
         ServiceController     controller = new();
         DerivedCharlieService derived    = new();
 
-        controller.AddService(() => derived);
+        controller.AddService(derived);
 
         Assert.Same(derived, controller.GetService<FakeCharlieService>());
         Assert.Same(derived, controller.GetService<DerivedCharlieService>());
@@ -63,8 +62,8 @@ public sealed class ServiceControllerTests
         using SnapshotRecorder snapshots = new(controller);
 
         controller
-            .AddService(() => new FakeAlphaService())
-            .AddService(() => new FakeBravoService());
+            .AddService(new FakeAlphaService())
+            .AddService(new FakeBravoService());
         controller.Start();
 
         // A service reports Starting until its worker is up, so wait for a snapshot with both running.
@@ -91,8 +90,8 @@ public sealed class ServiceControllerTests
         using SnapshotRecorder snapshots = new(controller);
 
         controller
-            .AddService(() => new FakeAlphaService())
-            .AddService(() => new FaultyService());
+            .AddService(new FakeAlphaService())
+            .AddService(new FaultyService());
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitFor(snapshot =>

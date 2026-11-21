@@ -1,6 +1,5 @@
 namespace Task.Monitor.System.Services.Network;
 
-// Throughput for a single adapter, matched to NetworkDevice.InterfaceLuid.
 public sealed class NetworkDeviceMetrics
 {
     public uint   InterfaceIndex             { get; set; }
@@ -16,8 +15,6 @@ public sealed class NetworkDeviceMetrics
     public double ReceiveBytesPerSecond      { get; set; }
     public double SendPacketsPerSecond       { get; set; }
     public double ReceivePacketsPerSecond    { get; set; }
-    public double SendMegabytesPerSecond     { get; set; }
-    public double ReceiveMegabytesPerSecond  { get; set; }
     public double ErrorsPerSecond            { get; set; }
     public double DiscardsPerSecond          { get; set; }
 }

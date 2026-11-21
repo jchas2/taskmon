@@ -99,10 +99,10 @@ public sealed class MacThermalProvidersTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new CpuService());
-        controller.AddService(() => new GpuService());
-        controller.AddService(() => new DiskService());
-        controller.AddService(() => new ThermalService { Delay = MinimumDelay });
+        controller.AddService(new CpuService());
+        controller.AddService(new GpuService());
+        controller.AddService(new DiskService());
+        controller.AddService(new ThermalService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Thermal, count: 3);

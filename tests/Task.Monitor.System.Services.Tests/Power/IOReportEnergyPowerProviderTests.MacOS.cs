@@ -1,4 +1,5 @@
 #if __APPLE__
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Power.Providers.MacOS;
 
@@ -6,8 +7,8 @@ namespace Task.Monitor.System.Services.Tests.Power;
 
 public sealed class IOReportEnergyPowerProviderTests
 {
-    private static IOReportEnergySampler.Delta Delta(string channel, long value, string unit = "mJ") =>
-        new(channel, unit, value);
+    private static IOReportChannelSample Delta(string channel, long value, string unit = "mJ") =>
+        new("Energy Model", string.Empty, channel, value, [], unit);
 
     [Theory]
     [InlineData("GPU")]
@@ -37,7 +38,7 @@ public sealed class IOReportEnergyPowerProviderTests
     [Fact]
     public void Read_Reports_Cpu_And_Gpu_Power_From_The_Second_Sample()
     {
-        using IOReportEnergySampler sampler = new();
+        using IOReportSampler sampler = new(nameof(IOReportEnergyPowerProviderTests), ("Energy Model", null));
         IOReportEnergyPowerProvider provider = new(sampler, () => []);
 
         Assert.True(provider.TryInitialise());

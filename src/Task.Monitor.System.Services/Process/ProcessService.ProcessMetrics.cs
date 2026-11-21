@@ -43,38 +43,22 @@ public partial class ProcessService
             entry.DiskBytesPerSecond = FirstDiskBytesPerSecond(
                 sample,
                 previousSampleUtc,
-                ProcessEntryCalculator.ElapsedSeconds(previousSampleTicks, now));
+                Stopwatch.GetElapsedTime(previousSampleTicks, now).TotalSeconds);
 
             Rebase(state, sample, now);
             state.Primed = true;
             return;
         }
 
-        double elapsedSeconds = ProcessEntryCalculator.ElapsedSeconds(state.TimestampTicks, now);
+        double elapsedSeconds = Stopwatch.GetElapsedTime(state.TimestampTicks, now).TotalSeconds;
 
         if (elapsedSeconds <= 0.0) {
             return;
         }
 
-        double totalSystemTime = ProcessEntryCalculator.TotalSystemTime(
-            elapsedSeconds,
-            specs.LogicalProcessorCount);
-
-        int irixFactor = ProcessEntryCalculator.IrixFactor(
-            specs.IrixMode,
-            specs.LogicalProcessorCount);
-
-        entry.CpuKernelTimePercent = ProcessEntryCalculator.CpuPercent(
-            sample.KernelTime - state.KernelTime,
-            totalSystemTime,
-            irixFactor);
-
-        entry.CpuUserTimePercent = ProcessEntryCalculator.CpuPercent(
-            sample.UserTime - state.UserTime,
-            totalSystemTime,
-            irixFactor);
-
-        entry.CpuTimePercent = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
+        entry.CpuKernelTimePercent = CpuPercent(sample.KernelTime - state.KernelTime, elapsedSeconds, specs);
+        entry.CpuUserTimePercent   = CpuPercent(sample.UserTime - state.UserTime, elapsedSeconds, specs);
+        entry.CpuTimePercent       = entry.CpuKernelTimePercent + entry.CpuUserTimePercent;
 
         ulong readDelta  = CounterRate.Delta(sample.DiskReadBytes, state.DiskReadBytes);
         ulong writeDelta = CounterRate.Delta(sample.DiskWriteBytes, state.DiskWriteBytes);
@@ -142,8 +126,9 @@ public partial class ProcessService
                 now,
                 specs);
 
-            double cpuFractionOfMachine = entry.CpuTimePercent /
-                ProcessEntryCalculator.IrixFactor(specs.IrixMode, specs.LogicalProcessorCount);
+            double cpuFractionOfMachine = specs.IrixMode
+                ? entry.CpuTimePercent / specs.LogicalProcessorCount
+                : entry.CpuTimePercent;
 
             entry.PowerBucket = ProcessPowerScore.Classify(
                 cpuFractionOfMachine,
@@ -177,6 +162,13 @@ public partial class ProcessService
             sampleStates.Remove(stalePids[i]);
         }
     }
+
+    // The share of the machine's CPU time a time delta (in 100ns ticks) took, or in Irix mode the
+    // share of one logical processor, so a process saturating one core reads 1.0.
+    internal static double CpuPercent(long timeDelta, double elapsedSeconds, ProcessSpecs specs) =>
+        elapsedSeconds > 0.0
+            ? timeDelta / (elapsedSeconds * CounterRate.FileTimeTicksPerSecond * (specs.IrixMode ? 1 : specs.LogicalProcessorCount))
+            : 0.0;
 
     internal static string DescribeFailures(IReadOnlyDictionary<int, int> failuresByError) =>
         string.Join(", ", failuresByError

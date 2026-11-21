@@ -1,276 +1,26 @@
-using System.Diagnostics;
+#if __WIN32__
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Win32;
-using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Network;
 
 public partial class NetworkService
 {
-#if __WIN32__
-    private const double BytesPerMegabyte    = 1024.0 * 1024.0;
-    private const int    SpecsRefreshCycles  = 10;
+    private const string InterfaceCounters        = nameof(IpHlpApi.GetIfTable2);
+    private const string InterfaceCountersFailure = "see the error above";
 
-    private readonly Dictionary<ulong, NetworkInstanceState> instanceStates = new();
+    private unsafe delegate void InterfaceRowReader(byte* row);
 
-    private long previousTimestamp;
-    private bool primed;
-    private int  cyclesSinceSpecsRefresh;
-    private bool sawUnknownAdapter;
-
-    private sealed class NetworkInstanceState
-    {
-        public uint   InterfaceIndex;
-        public ulong  PreviousBytesSent;
-        public ulong  PreviousBytesReceived;
-        public ulong  PreviousPacketsSent;
-        public ulong  PreviousPacketsReceived;
-        public ulong  PreviousErrors;
-        public ulong  PreviousDiscards;
-        public bool   Primed;
-
-        public ulong  TotalBytesSent;
-        public ulong  TotalBytesReceived;
-        public ulong  TotalPacketsSent;
-        public ulong  TotalPacketsReceived;
-        public ulong  TotalErrors;
-        public ulong  TotalDiscards;
-        public double SendBytesPerSecond;
-        public double ReceiveBytesPerSecond;
-        public double SendPacketsPerSecond;
-        public double ReceivePacketsPerSecond;
-        public double ErrorsPerSecond;
-        public double DiscardsPerSecond;
-    }
-
-    private readonly struct InterfaceSample
-    {
-        public InterfaceSample(
-            uint  interfaceIndex,
-            ulong bytesSent,
-            ulong bytesReceived,
-            ulong packetsSent,
-            ulong packetsReceived,
-            ulong errors,
-            ulong discards)
-        {
-            InterfaceIndex  = interfaceIndex;
-            BytesSent       = bytesSent;
-            BytesReceived   = bytesReceived;
-            PacketsSent     = packetsSent;
-            PacketsReceived = packetsReceived;
-            Errors          = errors;
-            Discards        = discards;
-        }
-
-        public uint  InterfaceIndex  { get; }
-        public ulong BytesSent       { get; }
-        public ulong BytesReceived   { get; }
-        public ulong PacketsSent     { get; }
-        public ulong PacketsReceived { get; }
-        public ulong Errors          { get; }
-        public ulong Discards        { get; }
-    }
-
-    private void OnBuildNetworkMetrics(NetworkMetrics metrics, NetworkSpecs specs)
-    {
-        Dictionary<ulong, NetworkDevice> devices = new();
-
-        foreach (NetworkDevice device in specs.Devices) {
-            devices[device.InterfaceLuid] = device;
-        }
-
-        foreach ((ulong luid, NetworkInstanceState state) in instanceStates) {
-            if (!devices.TryGetValue(luid, out NetworkDevice? device) || !device.IsActive) {
-                continue;
-            }
-
-            NetworkDeviceMetrics deviceMetrics = new();
-            // Not inline declared to assist with debugging.
-            deviceMetrics.InterfaceIndex            = device.InterfaceIndex;
-            deviceMetrics.InterfaceLuid             = luid;
-            deviceMetrics.FriendlyName              = device.FriendlyName;
-            deviceMetrics.TotalBytesSent            = state.TotalBytesSent;
-            deviceMetrics.TotalBytesReceived        = state.TotalBytesReceived;
-            deviceMetrics.TotalPacketsSent          = state.TotalPacketsSent;
-            deviceMetrics.TotalPacketsReceived      = state.TotalPacketsReceived;
-            deviceMetrics.SendBytesPerSecond        = state.SendBytesPerSecond;
-            deviceMetrics.ReceiveBytesPerSecond     = state.ReceiveBytesPerSecond;
-            deviceMetrics.SendPacketsPerSecond      = state.SendPacketsPerSecond;
-            deviceMetrics.ReceivePacketsPerSecond   = state.ReceivePacketsPerSecond;
-            deviceMetrics.SendMegabytesPerSecond    = state.SendBytesPerSecond / BytesPerMegabyte;
-            deviceMetrics.ReceiveMegabytesPerSecond = state.ReceiveBytesPerSecond / BytesPerMegabyte;
-            deviceMetrics.ErrorsPerSecond           = state.ErrorsPerSecond;
-            deviceMetrics.DiscardsPerSecond         = state.DiscardsPerSecond;
-
-            metrics.Devices.Add(deviceMetrics);
-
-            if (!device.CountsTowardAggregate) {
-                continue;
-            }
-
-            metrics.TotalBytesSent          += state.TotalBytesSent;
-            metrics.TotalBytesReceived      += state.TotalBytesReceived;
-            metrics.TotalPacketsSent        += state.TotalPacketsSent;
-            metrics.TotalPacketsReceived    += state.TotalPacketsReceived;
-            metrics.SendBytesPerSecond      += state.SendBytesPerSecond;
-            metrics.ReceiveBytesPerSecond   += state.ReceiveBytesPerSecond;
-            metrics.SendPacketsPerSecond    += state.SendPacketsPerSecond;
-            metrics.ReceivePacketsPerSecond += state.ReceivePacketsPerSecond;
-            metrics.ErrorsPerSecond         += state.ErrorsPerSecond;
-            metrics.DiscardsPerSecond       += state.DiscardsPerSecond;
-        }
-
-        metrics.Devices.Sort((left, right) => left.InterfaceIndex.CompareTo(right.InterfaceIndex));
-
-        metrics.SendMegabytesPerSecond    = metrics.SendBytesPerSecond / BytesPerMegabyte;
-        metrics.ReceiveMegabytesPerSecond = metrics.ReceiveBytesPerSecond / BytesPerMegabyte;
-    }
-
-    private void OnDoWorkNetworkSample()
-    {
-        Dictionary<ulong, InterfaceSample> samples = new();
-
-        bool read = TryReadInterfaceTable(samples);
-
-        if (IsFirstCycle) {
-            Trace.WriteLine(read
-                ? $"{ServiceName}: {nameof(IpHlpApi.GetIfTable2)} OK, {samples.Count} interfaces"
-                : $"{ServiceName}: {nameof(IpHlpApi.GetIfTable2)} FAILED, see the error above");
-        }
-
-        if (!read) {
-            return;
-        }
-
-        long timestamp = Stopwatch.GetTimestamp();
-        long elapsedTicks = timestamp - previousTimestamp;
-
-        if (!primed) {
-            foreach ((ulong luid, InterfaceSample sample) in samples) {
-                PrimeInstanceState(luid, sample);
-            }
-
-            previousTimestamp = timestamp;
-            primed = true;
-            return;
-        }
-
-        if (elapsedTicks <= 0) {
-            return;
-        }
-
-        double elapsedSeconds = elapsedTicks / (double)Stopwatch.Frequency;
-
-        foreach ((ulong luid, InterfaceSample sample) in samples) {
-            UpdateInstanceState(luid, sample, elapsedSeconds);
-        }
-
-        previousTimestamp = timestamp;
-    }
-
-    private void OnStopNetworkMetrics()
-    {
-        instanceStates.Clear();
-
-        previousTimestamp       = 0;
-        primed                  = false;
-        cyclesSinceSpecsRefresh = 0;
-        sawUnknownAdapter       = false;
-    }
-
-    private void PrimeInstanceState(ulong interfaceLuid, InterfaceSample sample)
-    {
-        NetworkInstanceState state = new();
-        state.InterfaceIndex          = sample.InterfaceIndex;
-        state.PreviousBytesSent       = sample.BytesSent;
-        state.PreviousBytesReceived   = sample.BytesReceived;
-        state.PreviousPacketsSent     = sample.PacketsSent;
-        state.PreviousPacketsReceived = sample.PacketsReceived;
-        state.PreviousErrors          = sample.Errors;
-        state.PreviousDiscards        = sample.Discards;
-        state.Primed                  = true;
-
-        instanceStates[interfaceLuid] = state;
-    }
-
-    private static unsafe ulong ReadDiscardCount(byte* row) =>
-        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InDiscardsOffset) +
-        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutDiscardsOffset);
-
-    private static unsafe ulong ReadErrorCount(byte* row) =>
-        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InErrorsOffset) +
-        InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutErrorsOffset);
-
-    private bool ShouldRefreshNetworkSpecs(NetworkSpecs specs)
-    {
-        if (sawUnknownAdapter) {
-            sawUnknownAdapter       = false;
-            cyclesSinceSpecsRefresh = 0;
-            return true;
-        }
-
-        if (++cyclesSinceSpecsRefresh < SpecsRefreshCycles) {
-            return false;
-        }
-
-        cyclesSinceSpecsRefresh = 0;
-        return true;
-    }
-
-    private static unsafe bool TryReadInterfaceTable(Dictionary<ulong, InterfaceSample> samples)
-    {
-        nint table  = nint.Zero;
-        uint result = IpHlpApi.GetIfTable2(&table);
-
-        if (result != IpHlpApi.ERROR_SUCCESS) {
-            PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                nameof(IpHlpApi.GetIfTable2),
-                $"Failed {nameof(TryReadInterfaceTable)}",
-                result);
-
-            return false;
-        }
-
-        if (table == nint.Zero) {
-            return false;
-        }
-
-        try {
-            byte* buffer = (byte*)table;
-            uint entryCount = InteropHelper.ReadUInt32(buffer, NetIoApi.IfTable2NumEntriesOffset);
-
-            for (uint entry = 0; entry < entryCount; entry++) {
-                byte* row = buffer + NetIoApi.IfTable2TableOffset + (entry * (uint)NetIoApi.IfRow2Size);
-
-                ulong interfaceLuid = InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset);
-
-                samples[interfaceLuid] = new InterfaceSample(
-                    InteropHelper.ReadUInt32(row, NetIoApi.IfRow2InterfaceIndexOffset),
-                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutOctetsOffset),
-                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InOctetsOffset),
-                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutUcastPktsOffset),
-                    InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InUcastPktsOffset),
-                    ReadErrorCount(row),
-                    ReadDiscardCount(row));
-            }
-            
-            return true;
-        }
-        finally {
-            IpHlpApi.FreeMibTable(table);
-        }
-    }
-
-    private static unsafe bool TryReadPhysicalMediums(Dictionary<ulong, uint> mediums)
+    // Calls read with each MIB_IF_ROW2 in the interface table.
+    private static unsafe bool ReadInterfaceTable(string caller, InterfaceRowReader read)
     {
         nint table  = nint.Zero;
         uint result = IpHlpApi.GetIfTable2(&table);
 
         if (result != IpHlpApi.ERROR_SUCCESS || table == nint.Zero) {
             PInvokeErrorHelpers.TraceOnceOnPInvokeError(
-                $"{nameof(IpHlpApi.GetIfTable2)} mediums",
-                $"Failed {nameof(TryReadPhysicalMediums)}",
+                $"{nameof(IpHlpApi.GetIfTable2)} {caller}",
+                $"Failed {caller}",
                 result);
 
             return false;
@@ -281,10 +31,7 @@ public partial class NetworkService
             uint entryCount = InteropHelper.ReadUInt32(buffer, NetIoApi.IfTable2NumEntriesOffset);
 
             for (uint entry = 0; entry < entryCount; entry++) {
-                byte* row = buffer + NetIoApi.IfTable2TableOffset + (entry * (uint)NetIoApi.IfRow2Size);
-
-                mediums[InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset)] =
-                    InteropHelper.ReadUInt32(row, NetIoApi.IfRow2PhysicalMediumTypeOffset);
+                read(buffer + NetIoApi.IfTable2TableOffset + entry * (uint)NetIoApi.IfRow2Size);
             }
 
             return true;
@@ -294,51 +41,16 @@ public partial class NetworkService
         }
     }
 
-    private void UpdateInstanceState(ulong interfaceLuid, InterfaceSample sample, double elapsedSeconds)
-    {
-        if (!instanceStates.TryGetValue(interfaceLuid, out NetworkInstanceState? state)) {
-            PrimeInstanceState(interfaceLuid, sample);
-            sawUnknownAdapter = true;
-            return;
-        }
-
-        state.InterfaceIndex = sample.InterfaceIndex;
-
-        state.SendBytesPerSecond = CounterRate.Accumulate(
-            sample.BytesSent, 
-            ref state.PreviousBytesSent, 
-            ref state.TotalBytesSent, 
-            elapsedSeconds);
-
-        state.ReceiveBytesPerSecond = CounterRate.Accumulate(
-            sample.BytesReceived, 
-            ref state.PreviousBytesReceived, 
-            ref state.TotalBytesReceived, 
-            elapsedSeconds);
-
-        state.SendPacketsPerSecond = CounterRate.Accumulate(
-            sample.PacketsSent, 
-            ref state.PreviousPacketsSent, 
-            ref state.TotalPacketsSent, 
-            elapsedSeconds);
-
-        state.ReceivePacketsPerSecond = CounterRate.Accumulate(
-            sample.PacketsReceived,
-            ref state.PreviousPacketsReceived,
-            ref state.TotalPacketsReceived,
-            elapsedSeconds);
-
-        state.ErrorsPerSecond = CounterRate.Accumulate(
-            sample.Errors,
-            ref state.PreviousErrors,
-            ref state.TotalErrors,
-            elapsedSeconds);
-
-        state.DiscardsPerSecond = CounterRate.Accumulate(
-            sample.Discards,
-            ref state.PreviousDiscards,
-            ref state.TotalDiscards,
-            elapsedSeconds);
-    }
-#endif
+    private static unsafe bool TryReadInterfaces(Dictionary<ulong, InterfaceSample> samples) =>
+        ReadInterfaceTable(nameof(TryReadInterfaces), row =>
+            samples[InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InterfaceLuidOffset)] = new InterfaceSample(
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutOctetsOffset),
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InOctetsOffset),
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutUcastPktsOffset),
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InUcastPktsOffset),
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InErrorsOffset) +
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutErrorsOffset),
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2InDiscardsOffset) +
+                InteropHelper.ReadUInt64(row, NetIoApi.IfRow2OutDiscardsOffset)));
 }
+#endif

@@ -7,9 +7,6 @@ namespace Task.Monitor.System.Services.Network;
 
 public static class NetworkDeviceParser
 {
-    public const string NotAvailable = "N/A";
-
-    // A disconnected adapter reports either zero or the all ones sentinel for link speed.
     private const ulong UnknownLinkSpeed = ulong.MaxValue;
 
     public static bool CountsTowardAggregate(uint ifType, bool isActive) =>
@@ -33,7 +30,7 @@ public static class NetworkDeviceParser
         NetIoApi.IF_TYPE_WWANPP             => "Mobile Broadband (GSM)",
         NetIoApi.IF_TYPE_WWANPP2            => "Mobile Broadband (CDMA)",
         NetIoApi.IF_TYPE_OTHER              => "Other",
-        _                                   => NotAvailable,
+        _                                   => Constants.NotAvailable,
     };
 
     public static ulong DecodeLinkSpeed(ulong linkSpeed) =>
@@ -48,7 +45,7 @@ public static class NetworkDeviceParser
         NetIoApi.IfOperStatusNotPresent     => "Not Present",
         NetIoApi.IfOperStatusLowerLayerDown => "Lower Layer Down",
         NetIoApi.IfOperStatusUnknown        => "Unknown",
-        _                                   => NotAvailable,
+        _                                   => Constants.NotAvailable,
     };
 
     public static string DecodePhysicalMedium(uint physicalMediumType) => physicalMediumType switch
@@ -72,7 +69,7 @@ public static class NetworkDeviceParser
         NetIoApi.NdisPhysicalMediumWiredWAN     => "Wired WAN",
         NetIoApi.NdisPhysicalMediumWiredCoWan   => "Wired CoWAN",
         NetIoApi.NdisPhysicalMediumOther        => "Other",
-        _                                       => NotAvailable,
+        _                                       => Constants.NotAvailable,
     };
 
     public static string FormatIPv4Address(ReadOnlySpan<byte> addressBytes) =>

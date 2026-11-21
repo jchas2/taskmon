@@ -61,17 +61,6 @@ internal sealed unsafe class PdhQuery : IDisposable
         }
     }
 
-    public static PdhQuery? Open(string owner, params string[] counterPaths)
-    {
-        PdhQuery? opened = Open(owner, out string failure, counterPaths);
-
-        if (opened is null) {
-            TraceEx.WriteLineOnce($"{nameof(PdhQuery)} {owner} {failure}", $"Failed {owner}: {failure}");
-        }
-
-        return opened;
-    }
-
     public static PdhQuery? Open(string owner, out string failure, params string[] counterPaths)
     {
         nint query = nint.Zero;
@@ -178,14 +167,23 @@ internal sealed unsafe class PdhQuery : IDisposable
             counter,
             nameof(Pdh.PdhGetFormattedCounterArrayW),
             static (counter, size, count, items) =>
-                unchecked((uint)Pdh.PdhGetFormattedCounterArrayW(counter, Pdh.PDH_FMT_DOUBLE, size, count, items)),
+                unchecked((uint)Pdh.PdhGetFormattedCounterArrayW(
+                    counter, 
+                    Pdh.PDH_FMT_DOUBLE, 
+                    size, 
+                    count, 
+                    items)),
             out itemCount);
 
     public bool TryReadRaw(nint counter, out uint itemCount) =>
         TryRead(
             counter,
             nameof(Pdh.PdhGetRawCounterArray),
-            static (counter, size, count, items) => Pdh.PdhGetRawCounterArray(counter, size, count, items),
+            static (counter, size, count, items) => Pdh.PdhGetRawCounterArray(
+                counter, 
+                size, 
+                count, 
+                items),
             out itemCount);
 }
 #endif

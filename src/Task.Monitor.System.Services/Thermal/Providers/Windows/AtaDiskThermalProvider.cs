@@ -1,12 +1,13 @@
 #if __WIN32__
 using System.Runtime.InteropServices;
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
 // SATA / ATA drives.
-internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
+internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IReadingProvider<ThermalSensor>
 {
     private const uint SMART_RCV_DRIVE_DATA = 0x0007C088;
     private const uint GENERIC_READ         = 0x80000000;
@@ -19,8 +20,6 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
 
     private bool accessDenied;
 
-    public void Dispose() { }
-
     private static bool IsAtaBus(string busType) =>
         busType is "SATA" or "ATA" or "ATAPI";
 
@@ -28,7 +27,6 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
 
     public IEnumerable<ThermalSensor> Read()
     {
-        // Always abandon if not running with the required elevated privileges.
         if (accessDenied) {
             yield break;
         }
@@ -116,7 +114,5 @@ internal sealed unsafe class AtaDiskThermalProvider(Func<IReadOnlyList<DiskDevic
 
         return SmartAttributeTable.TemperatureCelsius(attributeTable);
     }
-
-    public bool TryInitialise() => true;
 }
 #endif

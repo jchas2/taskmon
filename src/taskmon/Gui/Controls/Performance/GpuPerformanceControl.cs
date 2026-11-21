@@ -13,6 +13,7 @@ using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Soc;
 using Task.Monitor.System.Services.Thermal;
+using Constants = Task.Monitor.System.Services.Constants;
 
 namespace Task.Monitor.Gui.Controls.Performance;
 
@@ -90,7 +91,6 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             .Add(new ListViewColumnHeader(""));
     }
 
-    // Without an adapter it shows every GPU together.
     public long? AdapterLuid { get; }
 
     protected override void OnDraw()
@@ -143,16 +143,16 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
             ? gpuInfo.Specs.Devices.FirstOrDefault()
             : deviceSpec;
 
-        gpuSpecsListView.Items[0].SubItems[1].Text = specRows?.Vendor        ?? GpuDeviceParser.NotAvailable;
-        gpuSpecsListView.Items[1].SubItems[1].Text = specRows?.Description   ?? GpuDeviceParser.NotAvailable;
-        gpuSpecsListView.Items[2].SubItems[1].Text = specRows?.AdapterType   ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[0].SubItems[1].Text = specRows?.Vendor        ?? Constants.NotAvailable;
+        gpuSpecsListView.Items[1].SubItems[1].Text = specRows?.Description   ?? Constants.NotAvailable;
+        gpuSpecsListView.Items[2].SubItems[1].Text = specRows?.AdapterType   ?? Constants.NotAvailable;
 #if __APPLE__
-        gpuSpecsListView.Items[3].SubItems[1].Text = gpuInfo.Specs.GpuCores > 0 ? gpuInfo.Specs.GpuCores.ToString() : GpuDeviceParser.NotAvailable;
-        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
-        gpuSpecsListView.Items[5].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[3].SubItems[1].Text = gpuInfo.Specs.GpuCores > 0 ? gpuInfo.Specs.GpuCores.ToString() : Constants.NotAvailable;
+        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverVersion ?? Constants.NotAvailable;
+        gpuSpecsListView.Items[5].SubItems[1].Text = specRows?.DriverDate    ?? Constants.NotAvailable;
 #else
-        gpuSpecsListView.Items[3].SubItems[1].Text = specRows?.DriverVersion ?? GpuDeviceParser.NotAvailable;
-        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverDate    ?? GpuDeviceParser.NotAvailable;
+        gpuSpecsListView.Items[3].SubItems[1].Text = specRows?.DriverVersion ?? Constants.NotAvailable;
+        gpuSpecsListView.Items[4].SubItems[1].Text = specRows?.DriverDate    ?? Constants.NotAvailable;
 #endif
         gpuSpecsListView.Draw();
     }
@@ -174,14 +174,14 @@ public sealed class GpuPerformanceControl : Control, IPerformanceDetail
 #endif
         gpuMetricsListView.Items.Add(memoryMetricsItem);
         
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVendor,         GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDescription,    GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelAdapterType,   GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelVendor,         Constants.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDescription,    Constants.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelAdapterType,   Constants.NotAvailable, appConfig.Theme));
 #if __APPLE__
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelCores,          GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelCores,          Constants.NotAvailable, appConfig.Theme));
 #endif
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverVersion, GpuDeviceParser.NotAvailable, appConfig.Theme));
-        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverDate,    GpuDeviceParser.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverVersion, Constants.NotAvailable, appConfig.Theme));
+        gpuSpecsListView.Items.Add(CommonControl.PropertyRow(Strings.LabelDriverDate,    Constants.NotAvailable, appConfig.Theme));
     }
 
     private void OnLoadChart(Chart chart)

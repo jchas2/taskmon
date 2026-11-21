@@ -141,7 +141,7 @@ public partial class ProcessService
     }
 
     // Called from the UI thread, so it can't share the worker's nameResolver.
-    private static ProcessSample? GetProcessSampleInternal(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
+    internal static ProcessSample? GetProcessSampleInternal(int pid) => CreateProcessSample(pid, new ProcessNameResolver());
 
     private List<ProcessSample> GetProcessSamples(Dictionary<int, int>? readFailures, out bool listed)
     {

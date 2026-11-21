@@ -1,12 +1,12 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Power.Providers.MacOS;
 
-internal sealed class SmartBatteryPowerProvider : IPowerProvider
+internal sealed class SmartBatteryPowerProvider : IReadingProvider<PowerReading>
 {
-    private const string ServiceName    = "AppleSmartBattery";
-    private const string IOServicePlane = "IOService";
+    private const string ServiceName = "AppleSmartBattery";
 
     private uint battery;
 
@@ -35,12 +35,12 @@ internal sealed class SmartBatteryPowerProvider : IPowerProvider
             yield break;
         }
 
-        bool onAdapter = ReadProperty("ExternalConnected") is true;
+        bool onAdapter = IOKit.SearchProperty(battery, "ExternalConnected") is true;
 
         double? watts = SystemWatts(
-            ReadProperty("PowerTelemetryData"),
-            ReadProperty("Voltage"),
-            ReadProperty("InstantAmperage"),
+            IOKit.SearchProperty(battery, "PowerTelemetryData"),
+            IOKit.SearchProperty(battery, "Voltage"),
+            IOKit.SearchProperty(battery, "InstantAmperage"),
             onAdapter);
 
         if (watts is { } value) {
@@ -51,14 +51,6 @@ internal sealed class SmartBatteryPowerProvider : IPowerProvider
                 Source    = PowerSource.SmartBattery
             };
         }
-    }
-
-    private object? ReadProperty(string key)
-    {
-        using CFScope name  = new(CoreFoundation.CFStringCreate(key));
-        using CFScope value = new(IOKit.IORegistryEntrySearchCFProperty(battery, IOServicePlane, name, nint.Zero, 0));
-
-        return value.IsNull ? null : PropertyList.ToManaged(value);
     }
 
     internal static double? SystemWatts(object? telemetry, object? voltage, object? instantAmperage, bool onAdapter)

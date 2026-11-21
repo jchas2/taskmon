@@ -198,7 +198,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void Delay_Tab_Keeps_An_Unlisted_Delay_As_A_Selected_Custom_Row()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         runContext.AppConfig.DelayInMilliseconds = 2000;
 
         SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
@@ -368,7 +368,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void F10_Keeps_The_Screens_In_Their_Language_Until_The_Next_Start()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         string running = CultureInfo.CurrentUICulture.Name;
 
         SetupScreen setupScreen = new(runContext, screenApp);
@@ -387,7 +387,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void F10_Leaves_A_Language_Written_Another_Way_As_It_Is()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         runContext.AppConfig.UiLanguage = "it-IT";
 
         SetupScreen setupScreen = new(runContext, screenApp);
@@ -405,7 +405,7 @@ public sealed class SetupScreenTests
     public void F10_Makes_The_Highlighted_Layout_The_Summary_Default()
     {
         // F10 also pushes the sampling settings onto the running ProcessService (ApplySamplingSettings).
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
 
         SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
         setupScreen.Load();
@@ -423,7 +423,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void F10_Saves_And_Applies_The_Highlighted_Delay()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
 
         SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
         setupScreen.Load();
@@ -445,7 +445,7 @@ public sealed class SetupScreenTests
     [InlineData("Português (Brasil)",       "pt-BR")]
     public void F10_Saves_The_Highlighted_Language(string row, string expected)
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
 
         SetupScreen setupScreen = new(runContext, screenApp);
         setupScreen.Load();
@@ -461,7 +461,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void F10_That_Fails_To_Save_Shows_A_Message_Until_It_Is_Dismissed()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         runContextHelper.fileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
         runContextHelper.fileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>())).Throws(new IOException("Disk unavailable"));
 
@@ -499,7 +499,7 @@ public sealed class SetupScreenTests
     public void F10_With_New_Layout_Highlighted_Keeps_The_Current_Default()
     {
         // F10 also pushes the sampling settings onto the running ProcessService (ApplySamplingSettings).
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
 
         SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
         setupScreen.Load();
@@ -517,7 +517,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void F10_With_The_System_Default_Highlighted_Clears_The_Language()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         runContext.AppConfig.UiLanguage = "de";
 
         SetupScreen setupScreen = new(runContext, screenApp);
@@ -633,7 +633,7 @@ public sealed class SetupScreenTests
     [Fact]
     public void Language_Tab_Keeps_An_Unlisted_Language_As_A_Highlighted_Row()
     {
-        runContext.ServiceController.AddService(() => new Task.Monitor.System.Services.Process.ProcessService());
+        runContext.ServiceController.AddService(new Task.Monitor.System.Services.Process.ProcessService());
         runContext.AppConfig.UiLanguage = "en-AU";
 
         SetupScreen setupScreen = new(runContext, screenApp);

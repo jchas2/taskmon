@@ -1,9 +1,10 @@
 #if __WIN32__
 using Task.Monitor.Interop.Win32;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
-internal sealed class AcpiThermalZoneProvider : IThermalProvider
+internal sealed class AcpiThermalZoneProvider : IReadingProvider<ThermalSensor>
 {
     private const string Namespace = @"root\WMI";
     private const string Wql       = "SELECT InstanceName, CurrentTemperature, CriticalTripPoint FROM MSAcpi_ThermalZoneTemperature";
@@ -17,8 +18,6 @@ internal sealed class AcpiThermalZoneProvider : IThermalProvider
     private DateTime lastQueryUtc;
 
     public string Diagnostic { get; private set; } = string.Empty;
-
-    public void Dispose() { }
 
     public string Name => "ACPI Thermal Zones";
 

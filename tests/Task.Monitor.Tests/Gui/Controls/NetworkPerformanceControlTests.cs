@@ -38,8 +38,6 @@ public sealed class NetworkPerformanceControlTests
             Metrics = new NetworkMetrics {
                 SendBytesPerSecond = 512.0 * 1024,
                 ReceiveBytesPerSecond = 28.5 * 1024 * 1024,
-                SendMegabytesPerSecond = 0.5,
-                ReceiveMegabytesPerSecond = 28.5,
                 TotalBytesSent = 1782579,
                 TotalBytesReceived = 55037657,
                 TotalPacketsSent = 20050161,

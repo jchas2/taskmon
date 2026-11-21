@@ -178,12 +178,12 @@ public sealed class ListViewColourTests
 
     private ProcessInfoControl LoadedProcessInfoControl()
     {
-        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
+        ProcessSample? sample = new ProcessService().Operations.GetProcessSample(Environment.ProcessId);
         Assert.NotNull(sample);
 
-        ProcessServiceFake processServiceFake = new();
-        processServiceFake.Add(sample);
-        runContext.ServiceController.AddService(() => processServiceFake);
+        ProcessOperationsFake processOperations = new();
+        processOperations.Add(sample);
+        runContext.ServiceController.AddService(new ProcessService(processOperations));
 
         ProcessInfoControl control = new(
             runContext.ServiceController,

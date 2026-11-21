@@ -15,9 +15,9 @@ public sealed class PowerServiceTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new GpuService());
-        controller.AddService(() => new DiskService());
-        controller.AddService(() => new PowerService { Delay = MinimumDelay });
+        controller.AddService(new GpuService());
+        controller.AddService(new DiskService());
+        controller.AddService(new PowerService { Delay = MinimumDelay });
         controller.Start();
 
         // Several power cycles, so the providers that read the GPU and disk results have them.

@@ -4,6 +4,7 @@ public static class PowerRails
 {
     public const string Cpu              = "CPU";
     public const string Display          = "Display";
+    public const string Drive            = "Drive";
     public const string Dram             = "DRAM";
     public const string EfficiencyCores  = "E-Cores";
     public const string Gpu              = "GPU";

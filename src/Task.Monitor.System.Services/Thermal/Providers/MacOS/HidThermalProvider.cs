@@ -1,11 +1,12 @@
 #if __APPLE__
 using Task.Monitor.Interop.Mach;
+using Task.Monitor.System.Services.Common;
 using Task.Monitor.System.Services.Disk;
 
 namespace Task.Monitor.System.Services.Thermal.Providers.MacOS;
 
 // The internal SSD's NAND sensors, which the SMC does not name.
-internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IThermalProvider
+internal sealed class HidThermalProvider(Func<IReadOnlyList<DiskDevice>> getDisks) : IReadingProvider<ThermalSensor>
 {
     private const string InternalBusType = "Apple Fabric";
     private const string NandPrefix      = "NAND";

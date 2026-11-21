@@ -1,5 +1,6 @@
 #if __APPLE__
 using System.Buffers.Binary;
+using Task.Monitor.System.Services.Common;
 
 namespace Task.Monitor.System.Services.Soc;
 

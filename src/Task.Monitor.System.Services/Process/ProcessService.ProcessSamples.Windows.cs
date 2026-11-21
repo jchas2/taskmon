@@ -15,7 +15,8 @@ namespace Task.Monitor.System.Services.Process;
 public partial class ProcessService
 {
 #if __WIN32__
-    private static readonly ConcurrentDictionary<string, string> UserMap = new();
+    private static readonly ConcurrentDictionary<string, string>  AccountNames     = new();
+    private static readonly ConcurrentDictionary<string, string?> FileDescriptions = new(StringComparer.OrdinalIgnoreCase);
 
     private static unsafe ProcessSample? CreateProcessSample(
         Kernel32.PROCESSENTRY32W* entry,
@@ -92,33 +93,17 @@ public partial class ProcessService
         return sample;
     }
 
-    internal static string GetAccountName(SecurityIdentifier sid)
-    {
-        IdentityReference identityRef;
-
-        try {
-            identityRef = sid.Translate(typeof(NTAccount));
-        }
-        catch (IdentityNotMappedException) {
-            TraceEx.WriteLineOnce(nameof(GetAccountName), $"Failed to get account name for {sid}");
-            return sid.Value;
-        }
-
-        string userName = identityRef.ToString();
-
-        if (UserMap.TryGetValue(userName, out string? name)) {
-            return name;
-        }
-
-        int domainIndex = userName.IndexOf('\\');
-
-        if (domainIndex != -1) {
-            string abbrevUserName = userName.Substring(domainIndex + 1);
-            UserMap.TryAdd(userName, abbrevUserName);
-        }
-
-        return userName;
-    }
+    internal static string GetAccountName(SecurityIdentifier sid) =>
+        AccountNames.GetOrAdd(sid.Value, static (_, sid) => {
+            try {
+                string name = sid.Translate(typeof(NTAccount)).ToString();
+                return name[(name.IndexOf('\\') + 1)..];
+            }
+            catch (IdentityNotMappedException) {
+                TraceEx.WriteLineOnce(nameof(GetAccountName), $"Failed to get account name for {sid}");
+                return sid.Value;
+            }
+        }, sid);
 
     private static string GetProcessCommandLine(int pid, in string defaultValue)
     {
@@ -228,55 +213,23 @@ public partial class ProcessService
             return defaultValue;
         }
 
-        try {
-            SysDiag::FileVersionInfo versionInfo = SysDiag::FileVersionInfo.GetVersionInfo(processPath);
+        string? description = FileDescriptions.GetOrAdd(processPath, static path => {
+            try {
+                string? text = SysDiag::FileVersionInfo.GetVersionInfo(path).FileDescription;
+                return string.IsNullOrWhiteSpace(text) ? null : text;
+            }
+            catch {
+                return null;
+            }
+        });
 
-            return string.IsNullOrWhiteSpace(versionInfo.FileDescription)
-                ? defaultValue
-                : versionInfo.FileDescription;
-        }
-        catch {
-            return defaultValue;
-        }
+        return description ?? defaultValue;
     }
 
-    private static unsafe ProcessSample? GetProcessSampleInternal(int pid)
-    {
-        ProcessSample? sample = null;
+    internal static ProcessSample? GetProcessSampleInternal(int pid) =>
+        GetProcessSamples(openFailures: null, onlyPid: pid).FirstOrDefault();
 
-        using KernelHandleScope snapshot = new(Kernel32.CreateToolhelp32Snapshot(Kernel32.TH32CS_SNAPPROCESS, 0));
-
-        if (snapshot.IsInvalid) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.CreateToolhelp32Snapshot));
-            return null;
-        }
-
-        Kernel32.PROCESSENTRY32W entry = new() {
-            dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>()
-        };
-
-        if (!Kernel32.Process32FirstW(snapshot, &entry)) {
-            PInvokeErrorHelpers.TraceOnceOnLastError(nameof(Kernel32.Process32FirstW));
-            return null;
-        }
-
-        do {
-            if (entry.th32ProcessID != (uint)pid) {
-                continue;
-            }
-
-            sample = CreateProcessSample(&entry, openFailures: null);
-
-            if (sample != null) {
-                break;
-            }
-
-        } while (Kernel32.Process32NextW(snapshot, &entry));
-
-        return sample;
-    }
-
-    private static unsafe List<ProcessSample> GetProcessSamples(Dictionary<int, int>? openFailures = null)
+    private static unsafe List<ProcessSample> GetProcessSamples(Dictionary<int, int>? openFailures = null, int? onlyPid = null)
     {
         List<ProcessSample> samples = new();
 
@@ -297,15 +250,15 @@ public partial class ProcessService
         }
 
         do {
-            ProcessSample? sample = CreateProcessSample(&entry, openFailures);
+            if ((onlyPid is null || entry.th32ProcessID == (uint)onlyPid) &&
+                CreateProcessSample(&entry, openFailures) is { } sample) {
 
-            if (sample != null) {
                 samples.Add(sample);
             }
 
             entry.dwSize = (uint)Marshal.SizeOf<Kernel32.PROCESSENTRY32W>();
 
-        } while (Kernel32.Process32NextW(snapshot, &entry));
+        } while ((onlyPid is null || samples.Count == 0) && Kernel32.Process32NextW(snapshot, &entry));
 
         return samples;
     }
@@ -352,10 +305,7 @@ public partial class ProcessService
                 if (result) {
                     WinNt.TOKEN_USER* tokenUser = (WinNt.TOKEN_USER*)tokenInfo;
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                        uint* sidPtr = tokenUser->sidAndAttributes.Sid;
-                        sid = new SecurityIdentifier(new nint(sidPtr));
-                    }
+                    sid = new SecurityIdentifier(new nint(tokenUser->sidAndAttributes.Sid));
                 }
                 else {
                     PInvokeErrorHelpers.TraceOnceOnLastError(nameof(GetProcessTokenSid));

@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Task.Monitor.System.Services.Tests.Thermal;
 
-public sealed partial class ThermalServiceTests(ITestOutputHelper output)
+public sealed class ThermalServiceTests(ITestOutputHelper output)
 {
     private const int MinimumDelay = 500;
 
@@ -16,10 +16,10 @@ public sealed partial class ThermalServiceTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new CpuService());
-        controller.AddService(() => new GpuService());
-        controller.AddService(() => new DiskService());
-        controller.AddService(() => new ThermalService { Delay = MinimumDelay });
+        controller.AddService(new CpuService());
+        controller.AddService(new GpuService());
+        controller.AddService(new DiskService());
+        controller.AddService(new ThermalService { Delay = MinimumDelay });
         controller.Start();
 
         // Several thermal cycles, so the providers that read the CPU, GPU and disk results have them.

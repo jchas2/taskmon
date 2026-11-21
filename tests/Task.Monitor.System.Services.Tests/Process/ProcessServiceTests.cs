@@ -18,7 +18,7 @@ public sealed partial class ProcessServiceTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
+        controller.AddService(new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
         // Six process cycles apart.
@@ -41,7 +41,7 @@ public sealed partial class ProcessServiceTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
+        controller.AddService(new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
         // Several cycles: the first only primes the per pid baselines, so the second is the earliest
@@ -68,7 +68,7 @@ public sealed partial class ProcessServiceTests
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new ProcessService() { Delay = MinimumDelay });
+        controller.AddService(new ProcessService() { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Processes, count: 3);

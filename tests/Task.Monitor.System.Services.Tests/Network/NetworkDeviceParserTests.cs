@@ -26,7 +26,7 @@ public sealed class NetworkDeviceParserTests
     [InlineData(NetIoApi.IF_TYPE_PROP_VIRTUAL, "Virtual")]
     [InlineData(NetIoApi.IF_TYPE_PPP, "PPP")]
     [InlineData(NetIoApi.IF_TYPE_SOFTWARE_LOOPBACK, "Loopback")]
-    [InlineData(9999u, NetworkDeviceParser.NotAvailable)]
+    [InlineData(9999u, Constants.NotAvailable)]
     public void Should_Decode_Connection_Type(uint ifType, string expected) =>
         Assert.Equal(expected, NetworkDeviceParser.DecodeConnectionType(ifType));
 
@@ -41,7 +41,7 @@ public sealed class NetworkDeviceParserTests
     [InlineData(NetIoApi.NdisPhysicalMedium802_3, "802.3")]
     [InlineData(NetIoApi.NdisPhysicalMediumNative802_11, "Native 802.11")]
     [InlineData(NetIoApi.NdisPhysicalMediumBluetooth, "Bluetooth")]
-    [InlineData(NetIoApi.NdisPhysicalMediumUnspecified, NetworkDeviceParser.NotAvailable)]
+    [InlineData(NetIoApi.NdisPhysicalMediumUnspecified, Constants.NotAvailable)]
     public void Should_Decode_Physical_Medium(uint physicalMediumType, string expected) =>
         Assert.Equal(expected, NetworkDeviceParser.DecodePhysicalMedium(physicalMediumType));
 

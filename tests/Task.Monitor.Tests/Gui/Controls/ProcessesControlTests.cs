@@ -547,8 +547,8 @@ public sealed class ProcessesControlTests : IDisposable
     [Fact]
     public void Right_Arrow_With_The_Confirmation_Open_Stays_In_The_Dialog()
     {
-        ProcessServiceFake processService = new();
-        runContext.ServiceController.AddService(() => processService);
+        ProcessOperationsFake processOperations = new();
+        runContext.ServiceController.AddService(new ProcessService(processOperations));
 
         ProcessesControl ctrl = CreateFocusableControl();
         RaiseSnapshotUpdated(runContext.ServiceController, BuildSnapshot(1111, 2222));
@@ -562,7 +562,7 @@ public sealed class ProcessesControlTests : IDisposable
 
         Press(ctrl, ControlHelper.GetConsoleKeyInfo(ConsoleKey.Enter));
 
-        Assert.Empty(processService.EndedPids);
+        Assert.Empty(processOperations.EndedPids);
 
         ctrl.Unload();
     }

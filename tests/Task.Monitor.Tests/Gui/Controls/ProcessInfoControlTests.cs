@@ -16,14 +16,14 @@ public sealed class ProcessInfoControlTests
     private readonly RunContextHelper runContextHelper;
     private readonly RunContext runContext;
 
-    private readonly ProcessServiceFake processServiceFake = new();
+    private readonly ProcessOperationsFake processOperations = new();
 
     public ProcessInfoControlTests(ITestOutputHelper outputHelper)
     {
         this.outputHelper = outputHelper;
         runContextHelper = new RunContextHelper();
         runContext = runContextHelper.GetRunContext();
-        runContext.ServiceController.AddService(() => processServiceFake);
+        runContext.ServiceController.AddService(new ProcessService(processOperations));
     }
 
     // ProcessSample's setters are internal to Task.Monitor.System.Services, so these use the real
@@ -32,7 +32,7 @@ public sealed class ProcessInfoControlTests
     {
         ProcessSample sample = CurrentProcessSample();
 
-        processServiceFake.Add(sample);
+        processOperations.Add(sample);
 
         return (sample.Pid, sample.ProcessName);
     }
@@ -77,7 +77,7 @@ public sealed class ProcessInfoControlTests
 
     private static ProcessSample CurrentProcessSample()
     {
-        ProcessSample? sample = new ProcessService().GetProcessSample(Environment.ProcessId);
+        ProcessSample? sample = new ProcessService().Operations.GetProcessSample(Environment.ProcessId);
 
         Assert.NotNull(sample);
         Assert.False(string.IsNullOrWhiteSpace(sample.ProcessName));
@@ -93,8 +93,8 @@ public sealed class ProcessInfoControlTests
         ProcessInfoControl ctrl = CreateLoadedControl();
         ctrl.LoadProcess(pid);
 
-        Assert.Equal([pid], processServiceFake.SampleRequestedPids);
-        Assert.Equal([pid], processServiceFake.ThreadRequestedPids);
+        Assert.Equal([pid], processOperations.SampleRequestedPids);
+        Assert.Equal([pid], processOperations.ThreadRequestedPids);
         Assert.Equal($"{processName} ({pid})", ctrl.ProcessTitle);
     }
 
@@ -133,7 +133,7 @@ public sealed class ProcessInfoControlTests
     {
         Color errorColour = ColorTranslator.FromHtml("#c0ffee");
         runContext.AppConfig.Theme.Error = errorColour;
-        processServiceFake.GetProcessSampleException = new InvalidOperationException("Sample unavailable");
+        processOperations.GetProcessSampleException = new InvalidOperationException("Sample unavailable");
 
         ProcessInfoControl ctrl = CreateLoadedControl();
         runContextHelper.terminal.Invocations.Clear();
@@ -164,9 +164,9 @@ public sealed class ProcessInfoControlTests
 
         // PROCESSES opens before ProcessControl has selected a row. Asking for pid -1 threw and
         // logged an exception on every open.
-        Assert.Empty(processServiceFake.SampleRequestedPids);
-        Assert.Empty(processServiceFake.ThreadRequestedPids);
-        Assert.Empty(processServiceFake.ModuleRequestedPids);
+        Assert.Empty(processOperations.SampleRequestedPids);
+        Assert.Empty(processOperations.ThreadRequestedPids);
+        Assert.Empty(processOperations.ModuleRequestedPids);
         Assert.Equal(string.Empty, ctrl.ProcessTitle);
     }
 
@@ -223,7 +223,7 @@ public sealed class ProcessInfoControlTests
         ctrl.LoadProcess(pid);
         ctrl.SelectMenuItemForTests(2);
 
-        int callsAfterModulesShown = processServiceFake.ModuleRequestedPids.Count;
+        int callsAfterModulesShown = processOperations.ModuleRequestedPids.Count;
         Assert.True(callsAfterModulesShown > 0);
 
         ctrl.ResetToDetailPane();
@@ -231,7 +231,7 @@ public sealed class ProcessInfoControlTests
 
         Assert.True(ctrl.IsDetailActiveForTests);
         Assert.Equal(0, ctrl.SelectedMenuIndexForTests);
-        Assert.Equal(callsAfterModulesShown, processServiceFake.ModuleRequestedPids.Count);
+        Assert.Equal(callsAfterModulesShown, processOperations.ModuleRequestedPids.Count);
     }
 
     // DETAIL is the first menu item and the tab shown by default (no selection needed).
@@ -283,7 +283,7 @@ public sealed class ProcessInfoControlTests
     {
         (int pid, _) = AddCurrentProcess();
 
-        processServiceFake.Add(
+        processOperations.Add(
             new ThreadInfo {
                 CpuKernelTime = new TimeSpan(hours: 0, minutes: 2, seconds: 7),
                 CpuUserTime = new TimeSpan(hours: 0, minutes: 9, seconds: 41),
@@ -354,7 +354,7 @@ public sealed class ProcessInfoControlTests
     private int ThreadRequestCount()
     {
         lock (ProcessInfoControl.DrawingLockForTests) {
-            return processServiceFake.ThreadRequestedPids.Count;
+            return processOperations.ThreadRequestedPids.Count;
         }
     }
 

@@ -55,7 +55,7 @@ public sealed class AdapterVisibilityTests(ITestOutputHelper output)
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new NetworkService { Delay = MinimumDelay });
+        controller.AddService(new NetworkService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitForUpdates(snapshot => snapshot.Network, count: 3);

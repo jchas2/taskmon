@@ -12,13 +12,14 @@ public sealed partial class LaunchdServicesService : WorkerService
 
     private readonly List<string> scanNotes = new();
 
-    private partial IEnumerable<LaunchdServiceInfo> EnumerateServices();
+#if __APPLE__
+    private readonly LaunchdScanCache cache = new();
+#endif
 
     protected override void OnDoWork(CancellationToken cancellationToken)
     {
-        if (ConsumeRefreshRequest() || ++cyclesSinceScan >= RescanEveryCycles) {
-            servicesSpecs   = ScanServices();
-            cyclesSinceScan = 0;
+        if (RescanDue(ref cyclesSinceScan, RescanEveryCycles)) {
+            servicesSpecs = ScanServices();
         }
 
         Publish(new LaunchdServicesInfo { Specs = servicesSpecs });
@@ -42,7 +43,9 @@ public sealed partial class LaunchdServicesService : WorkerService
         LaunchdServicesSpecs specs = new();
 
         scanNotes.Clear();
-        specs.Services.AddRange(EnumerateServices());
+#if __APPLE__
+        specs.Services.AddRange(LaunchdServiceLookup.GetServices(cache, scanNotes));
+#endif
 
         specs.Services.Sort(static (left, right) => {
             int byGroup = string.Compare(left.Group, right.Group, StringComparison.OrdinalIgnoreCase);
@@ -54,8 +57,4 @@ public sealed partial class LaunchdServicesService : WorkerService
 
         return specs;
     }
-
-#if !__APPLE__
-    private partial IEnumerable<LaunchdServiceInfo> EnumerateServices() => [];
-#endif
 }

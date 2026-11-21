@@ -35,6 +35,10 @@ public sealed partial class MemoryService : WorkerService
         OnStartPressureMetrics();
     }
 
+    partial void OnStartPressureMetrics();
+
     protected override void OnStop() =>
         OnStopPressureMetrics();
+
+    partial void OnStopPressureMetrics();
 }

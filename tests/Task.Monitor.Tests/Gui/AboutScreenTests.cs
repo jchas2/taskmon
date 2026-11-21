@@ -21,7 +21,7 @@ public sealed class AboutScreenTests
     // Named for the sampler it stands in for: the list shows it as the CPU sampler.
     private sealed class CpuService : WorkerService
     {
-        public void SetStatus(ServiceStatus status) => serviceStatus = status;
+        public void SetStatus(ServiceStatus status) => Status = status;
     }
 
     public AboutScreenTests()
@@ -39,7 +39,7 @@ public sealed class AboutScreenTests
     public void A_Status_Change_Redraws_The_List_And_Other_Ticks_Only_The_Figures()
     {
         CpuService service = new();
-        runContext.ServiceController.AddService(() => service);
+        runContext.ServiceController.AddService(service);
 
         AboutScreen screen = Shown();
 
@@ -84,7 +84,7 @@ public sealed class AboutScreenTests
     [InlineData(false)]
     public void C_Copies_The_Details_And_Says_Whether_It_Worked(bool works)
     {
-        runContext.ServiceController.AddService(() => new CpuService());
+        runContext.ServiceController.AddService(new CpuService());
 
         AboutScreen screen = Shown();
         string?     copied = null;
@@ -155,7 +155,7 @@ public sealed class AboutScreenTests
         runContext.AppConfig.Theme.StatusbarStatusWarning = warning;
 
         CpuService service = new();
-        runContext.ServiceController.AddService(() => service);
+        runContext.ServiceController.AddService(service);
 
         AboutScreen screen = Shown();
         string notStarted = CapturedOutput();
@@ -245,7 +245,7 @@ public sealed class AboutScreenTests
     [InlineData(18, true,  false, false)]
     public void Sections_Show_Only_When_They_Fit_Whole(int height, bool captionOnly, bool figures, bool list)
     {
-        runContext.ServiceController.AddService(() => new CpuService());
+        runContext.ServiceController.AddService(new CpuService());
 
         AboutScreen screen = Shown(height: height);
         (MascotControl mascot, ListView stats, ListView samplers) = Parts(screen);
@@ -297,7 +297,7 @@ public sealed class AboutScreenTests
     [Fact]
     public void The_Sections_Shown_Are_Centred_In_The_Height()
     {
-        runContext.ServiceController.AddService(() => new CpuService());
+        runContext.ServiceController.AddService(new CpuService());
 
         AboutScreen screen = Shown(height: 40);
         (MascotControl mascot, ListView _, ListView samplers) = Parts(screen);

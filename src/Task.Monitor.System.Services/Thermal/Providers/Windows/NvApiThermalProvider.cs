@@ -6,7 +6,7 @@ using Task.Monitor.System.Services.Gpu;
 namespace Task.Monitor.System.Services.Thermal.Providers.Windows;
 
 // NVIDIA GPUs via NVAPI's GetThermalSettings.
-internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IThermalProvider
+internal sealed class NvApiThermalProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<ThermalSensor>
 {
     private bool initialised;
 

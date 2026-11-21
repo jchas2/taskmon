@@ -6,7 +6,7 @@ using Task.Monitor.System.Services.Gpu;
 namespace Task.Monitor.System.Services.Power.Providers.Windows;
 
 // AMD GPUs via ADL.
-internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IPowerProvider
+internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) : IReadingProvider<PowerReading>
 {
     private readonly AdlAdapters adapters = new();
 
@@ -20,7 +20,7 @@ internal sealed class AdlPowerProvider(Func<IReadOnlyList<GpuDevice>> getGpus) :
         adapters.Read(getGpus(), Adl.GetPowerWatts).Select(reading => new PowerReading {
             Component   = PowerComponent.Gpu,
             ComponentId = reading.ComponentId,
-            Rail        = "GPU",
+            Rail        = PowerRails.Gpu,
             Watts       = reading.Value,
             Source      = PowerSource.Adl
         });

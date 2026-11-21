@@ -31,14 +31,7 @@ public partial class DiskService
     {
         string devicePath = volumeName.TrimEnd('\\');
 
-        using KernelHandleScope handle = new(FileApi.CreateFileW(
-            devicePath,
-            DeviceQueryAccess,
-            DeviceShareMode,
-            nint.Zero,
-            FileApi.OPEN_EXISTING,
-            0,
-            nint.Zero));
+        using KernelHandleScope handle = OpenDevice(devicePath);
 
         if (handle.IsInvalid) {
             specs.UnattachedVolumes.Add(volume);
@@ -74,14 +67,7 @@ public partial class DiskService
         {
             string devicePath = $@"\\.\PhysicalDrive{index}";
 
-            using KernelHandleScope handle = new(FileApi.CreateFileW(
-                devicePath,
-                DeviceQueryAccess,
-                DeviceShareMode,
-                nint.Zero,
-                FileApi.OPEN_EXISTING,
-                0,
-                nint.Zero));
+            using KernelHandleScope handle = OpenDevice(devicePath);
 
             if (handle.IsInvalid) {
                 int error = Marshal.GetLastPInvokeError();
@@ -158,6 +144,16 @@ public partial class DiskService
         }
     }
 
+    private static KernelHandleScope OpenDevice(string devicePath) =>
+        new(FileApi.CreateFileW(
+            devicePath,
+            DeviceQueryAccess,
+            DeviceShareMode,
+            nint.Zero,
+            FileApi.OPEN_EXISTING,
+            0,
+            nint.Zero));
+
     private static unsafe long QueryCapacity(nint handle, string devicePath)
     {
         byte* buffer = stackalloc byte[WinIoCtl.DiskGeometryExBufferSize];
@@ -197,20 +193,10 @@ public partial class DiskService
             QueryType  = WinIoCtl.PropertyStandardQuery,
         };
 
-        WinIoCtl.STORAGE_DESCRIPTOR_HEADER header = new();
         uint returned = 0;
 
         // The descriptor is variable length, so the header is fetched first for its size.
-        if (!IoApiSet.DeviceIoControl(
-            handle,
-            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-            &query,
-            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
-            &header,
-            (uint)sizeof(WinIoCtl.STORAGE_DESCRIPTOR_HEADER),
-            &returned,
-            nint.Zero)) {
-
+        if (!TryQueryProperty(handle, WinIoCtl.StorageDeviceProperty, out WinIoCtl.STORAGE_DESCRIPTOR_HEADER header)) {
             PInvokeErrorHelpers.TraceOnceOnLastError(
                 $"{nameof(WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY)} {devicePath}",
                 $"Failed {nameof(QueryDeviceDescriptor)} header for {devicePath}");
@@ -323,16 +309,16 @@ public partial class DiskService
 
     private static string ResolveMediaType(nint handle, DiskDevice device)
     {
-        bool hasSeekPenalty = TryQuerySeekPenalty(handle, out bool incursSeekPenalty);
-        bool hasTrim = TryQueryTrim(handle, out bool trimEnabled);
+        bool hasSeekPenalty = TryQueryProperty(handle, WinIoCtl.StorageDeviceSeekPenaltyProperty, out WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR seekPenalty);
+        bool hasTrim        = TryQueryProperty(handle, WinIoCtl.StorageDeviceTrimProperty, out WinIoCtl.DEVICE_TRIM_DESCRIPTOR trim);
 
         return DiskDeviceParser.DecodeMediaType(
             device.BusType,
             device.IsRemovable,
             hasSeekPenalty,
-            incursSeekPenalty,
+            seekPenalty.IncursSeekPenalty != 0,
             hasTrim,
-            trimEnabled);
+            trim.TrimEnabled != 0);
     }
 
     private static unsafe bool TryQueryDiskExtents(nint handle, out uint[] diskNumbers)
@@ -397,62 +383,29 @@ public partial class DiskService
         return false;
     }
 
-    private static unsafe bool TryQuerySeekPenalty(nint handle, out bool incursSeekPenalty)
+    // An IOCTL_STORAGE_QUERY_PROPERTY standard query for a fixed-size descriptor.
+    private static unsafe bool TryQueryProperty<T>(nint handle, uint propertyId, out T descriptor) where T : unmanaged
     {
-        incursSeekPenalty = false;
-
         WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
-            PropertyId = WinIoCtl.StorageDeviceSeekPenaltyProperty,
+            PropertyId = propertyId,
             QueryType  = WinIoCtl.PropertyStandardQuery,
         };
 
-        WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR descriptor = new();
+        T    result   = default;
         uint returned = 0;
 
-        if (!IoApiSet.DeviceIoControl(
+        bool queried = IoApiSet.DeviceIoControl(
             handle,
             WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
             &query,
             (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
-            &descriptor,
-            (uint)sizeof(WinIoCtl.DEVICE_SEEK_PENALTY_DESCRIPTOR),
+            &result,
+            (uint)sizeof(T),
             &returned,
-            nint.Zero)) {
+            nint.Zero);
 
-            return false;
-        }
-
-        incursSeekPenalty = descriptor.IncursSeekPenalty != 0;
-        return true;
-    }
-
-    private static unsafe bool TryQueryTrim(nint handle, out bool trimEnabled)
-    {
-        trimEnabled = false;
-
-        WinIoCtl.STORAGE_PROPERTY_QUERY query = new() {
-            PropertyId = WinIoCtl.StorageDeviceTrimProperty,
-            QueryType  = WinIoCtl.PropertyStandardQuery,
-        };
-
-        WinIoCtl.DEVICE_TRIM_DESCRIPTOR descriptor = new();
-        uint returned = 0;
-
-        if (!IoApiSet.DeviceIoControl(
-            handle,
-            WinIoCtl.IOCTL_STORAGE_QUERY_PROPERTY,
-            &query,
-            (uint)sizeof(WinIoCtl.STORAGE_PROPERTY_QUERY),
-            &descriptor,
-            (uint)sizeof(WinIoCtl.DEVICE_TRIM_DESCRIPTOR),
-            &returned,
-            nint.Zero)) {
-
-            return false;
-        }
-
-        trimEnabled = descriptor.TrimEnabled != 0;
-        return true;
+        descriptor = result;
+        return queried;
     }
 
     private static unsafe bool TryQueryVolumeInformation(string volumeName, DiskVolume volume)

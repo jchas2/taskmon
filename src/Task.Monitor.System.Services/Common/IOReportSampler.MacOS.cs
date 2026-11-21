@@ -1,16 +1,26 @@
 #if __APPLE__
+using System.Diagnostics;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Interop.Mach;
 
-namespace Task.Monitor.System.Services.Soc;
+namespace Task.Monitor.System.Services.Common;
 
-internal sealed class IOReportSampler(params (string Group, string SubGroup)[] groups) : IDisposable
+internal sealed record IOReportChannelSample(
+    string                                       Group,
+    string                                       SubGroup,
+    string                                       Name,
+    long                                         Value,
+    IReadOnlyList<(string Name, long Residency)> States,
+    string?                                      Unit = null);
+
+internal sealed class IOReportSampler(string owner, params (string Group, string? SubGroup)[] groups) : IDisposable
 {
     private readonly Lock @lock = new();
 
     private nint channels;
     private nint subscription;
     private nint previousSample;
+    private long previousTimestamp;
     private bool subscribeFailed;
 
     public string Diagnostic { get; private set; } = string.Empty;
@@ -26,6 +36,8 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
                 CoreFoundation.CFRelease(channels);
             }
 
+            // The IOReportSubscriptionRef is private API and is not safely CFReleasable, so it is left
+            // to be reclaimed at process exit (one per service lifetime).
             previousSample  = nint.Zero;
             channels        = nint.Zero;
             subscription    = nint.Zero;
@@ -46,9 +58,9 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
 
             nint merged = nint.Zero;
 
-            foreach ((string group, string subGroup) in groups) {
+            foreach ((string group, string? subGroup) in groups) {
                 using CFScope groupName    = new(CoreFoundation.CFStringCreate(group));
-                using CFScope subGroupName = new(CoreFoundation.CFStringCreate(subGroup));
+                using CFScope subGroupName = new(subGroup is null ? nint.Zero : CoreFoundation.CFStringCreate(subGroup));
                 using CFScope available    = new(IOReport.IOReportCopyChannelsInGroup(groupName, subGroupName, 0, 0, 0));
 
                 if (available.IsNull) {
@@ -111,7 +123,7 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
                         IOReport.IOReportStateGetResidency(item, state)));
                 }
             }
-            else if (format == IOReport.FormatSimple) {
+            else {
                 value = IOReport.IOReportSimpleGetIntegerValue(item, 0);
             }
 
@@ -120,31 +132,38 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
                 CoreFoundation.GetString(IOReport.IOReportChannelGetSubGroup(item)) ?? string.Empty,
                 CoreFoundation.GetString(IOReport.IOReportChannelGetChannelName(item)) ?? string.Empty,
                 value,
-                states));
+                states,
+                CoreFoundation.GetString(IOReport.IOReportChannelGetUnitLabel(item))));
         }
 
         return samples;
     }
 
-    public List<IOReportChannelSample>? Sample()
+    public List<IOReportChannelSample>? Sample(out double seconds)
     {
+        seconds = 0;
+
         lock (@lock) {
             if (subscription == nint.Zero) {
                 return null;
             }
 
-            nint sample = IOReport.IOReportCreateSamples(subscription, channels, nint.Zero);
+            nint sample    = IOReport.IOReportCreateSamples(subscription, channels, nint.Zero);
+            long timestamp = Stopwatch.GetTimestamp();
 
             if (sample == nint.Zero) {
                 TraceEx.WriteLineOnce(
-                    $"{nameof(IOReportSampler)} IOReportCreateSamples",
-                    "SocService: IOReportCreateSamples returned no GPU and ANE sample");
+                    $"{nameof(IOReportSampler)} {owner}",
+                    $"{owner}: IOReportCreateSamples returned no sample");
 
                 return null;
             }
 
             nint previous = previousSample;
-            previousSample = sample;
+
+            previousSample    = sample;
+            seconds           = Stopwatch.GetElapsedTime(previousTimestamp, timestamp).TotalSeconds;
+            previousTimestamp = timestamp;
 
             if (previous == nint.Zero) {
                 return null;
@@ -156,5 +175,7 @@ internal sealed class IOReportSampler(params (string Group, string SubGroup)[] g
             return delta.IsNull ? null : ReadChannels(delta);
         }
     }
+
+    public List<IOReportChannelSample>? Sample() => Sample(out _);
 }
 #endif

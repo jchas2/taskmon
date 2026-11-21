@@ -38,7 +38,7 @@ public sealed class DiskSpaceServiceTests : IDisposable
         ServiceController controller = new() { Delay = MinimumDelay };
         using SnapshotRecorder snapshots = new(controller);
 
-        controller.AddService(() => new DiskSpaceService { Delay = MinimumDelay });
+        controller.AddService(new DiskSpaceService { Delay = MinimumDelay });
         controller.Start();
 
         SystemSnapshot? latest = snapshots.WaitFor(snapshot => snapshot.DiskSpace is not null);
@@ -64,7 +64,7 @@ public sealed class DiskSpaceServiceTests : IDisposable
         SystemSnapshot? latest = null;
 
         controller.SystemSnapshotUpdated += (_, e) => latest = e.Snapshot;
-        controller.AddService(() => new DiskSpaceService { Delay = MinimumDelay });
+        controller.AddService(new DiskSpaceService { Delay = MinimumDelay });
         controller.Start();
 
         controller.GetService<DiskSpaceService>().StartScan(root);
