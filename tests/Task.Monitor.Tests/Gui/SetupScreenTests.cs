@@ -532,6 +532,26 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
+    public void Highlighting_A_Layout_Outlines_Its_Panes()
+    {
+        SetupScreen setupScreen = ShowTab("layoutView", width: 130);
+        ListView layoutView     = TabView(setupScreen, "layoutView");
+
+        SelectRow(layoutView, "Cpu and Memory");
+        layoutView.SetFocus();
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
+
+        Assert.Equal(
+            new[] { "Cpu", "Memory", "Process" },
+            setupScreen.Preview!.PaneControls.Values.Cast<EmptyPaneControl>().Select(outline => outline.Label).Order());
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
     public void Highlighting_A_Metre_Style_Restyles_The_Preview_But_Not_The_Saved_Style()
     {
         MetreControlStyle saved = runContext.AppConfig.MetreStyle;
@@ -715,15 +735,27 @@ public sealed class SetupScreenTests
     }
 
     [Fact]
+    public void Layouts_Tab_Shares_Its_Width_With_An_Outline_Preview()
+    {
+        SetupScreen setupScreen = ShowTab("layoutView", width: 130);
+
+        Assert.NotNull(setupScreen.Preview);
+        Assert.All(setupScreen.Preview!.PaneControls.Values, pane => Assert.IsType<EmptyPaneControl>(pane));
+        Assert.Equal((130 - 23) / 2, TabView(setupScreen, "layoutView").Width);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
     public void Leaving_The_Themes_Tab_Unloads_The_Preview()
     {
         SetupScreen setupScreen = ShowThemesTab(width: 130);
 
         bool handled = false;
-        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
 
         Assert.Null(setupScreen.Preview);
-        Assert.True(TabView(setupScreen, "layoutView").Visible);
+        Assert.True(TabView(setupScreen, "columnsView").Visible);
 
         setupScreen.Unload();
     }
@@ -959,6 +991,24 @@ public sealed class SetupScreenTests
 
         Assert.Null(setupScreen.Preview);
         Assert.Equal(100 - 23, TabView(setupScreen, "themeView").Width);
+
+        setupScreen.Unload();
+    }
+
+    [Fact]
+    public void The_New_Layout_Row_Previews_One_Empty_Pane()
+    {
+        SetupScreen setupScreen = ShowTab("layoutView", width: 130);
+        ListView layoutView     = TabView(setupScreen, "layoutView");
+
+        SelectRow(layoutView, "All Charts");
+        layoutView.SetFocus();
+
+        bool handled = false;
+        setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
+
+        Assert.Equal("+ New Layout", layoutView.SelectedItem?.Text);
+        Assert.Equal("empty", Assert.IsType<EmptyPaneControl>(Assert.Single(setupScreen.Preview!.PaneControls.Values)).Label);
 
         setupScreen.Unload();
     }

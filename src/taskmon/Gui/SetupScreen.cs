@@ -218,7 +218,8 @@ public class SetupScreen : Screen
 
         previewLayouts = new() {
             [themeView] = ThemePreviewLayout,
-            [metreView] = MetrePreviewLayout
+            [metreView]  = MetrePreviewLayout,
+            [layoutView] = SelectedLayoutTree
         };
     }
 
@@ -226,6 +227,20 @@ public class SetupScreen : Screen
         runContext.AppConfig.DefaultConfigFilePath is { Length: > 0 } path
             ? Path.GetFullPath(path)
             : Strings.CommonNotAvailable;
+
+    private void LayoutViewOnItemClicked(object? sender, ListViewItemEventArgs e)
+    {
+        if (previewTab != layoutView || Preview is not { } preview) {
+            return;
+        }
+
+        lock (DrawingLock) {
+            preview.Show(SelectedLayoutTree());
+            ResizePreview();
+        }
+
+        preview.Draw();
+    }
 
     private void LoadColumnsSection()
     {
@@ -727,10 +742,11 @@ public class SetupScreen : Screen
             menuView.SetFocus();
         }
         
-        menuView.ItemClicked  += MenuViewOnItemClicked;
-        themeView.ItemClicked += ThemeViewOnItemClicked;
-        metreView.ItemClicked += MetreViewOnItemClicked;
-        
+        menuView.ItemClicked   += MenuViewOnItemClicked;
+        themeView.ItemClicked  += ThemeViewOnItemClicked;
+        metreView.ItemClicked  += MetreViewOnItemClicked;
+        layoutView.ItemClicked += LayoutViewOnItemClicked;
+
         base.OnLoad();
     }
 
@@ -798,9 +814,10 @@ public class SetupScreen : Screen
 
     protected override void OnUnload()
     {
-        menuView.ItemClicked  -= MenuViewOnItemClicked;
-        themeView.ItemClicked -= ThemeViewOnItemClicked;
-        metreView.ItemClicked -= MetreViewOnItemClicked;
+        menuView.ItemClicked   -= MenuViewOnItemClicked;
+        themeView.ItemClicked  -= ThemeViewOnItemClicked;
+        metreView.ItemClicked  -= MetreViewOnItemClicked;
+        layoutView.ItemClicked -= LayoutViewOnItemClicked;
 
         Preview?.Unload();
         previewTab = null;
@@ -909,6 +926,12 @@ public class SetupScreen : Screen
         return result;
     }
 
+    private LayoutTree<SummaryPane> SelectedLayoutTree() =>
+        runContext.AppConfig.Layouts
+            .FirstOrDefault(layout => layout.Name.Equals(layoutView.SelectedItem?.Text, StringComparison.CurrentCultureIgnoreCase))
+            ?.ToTree()
+        ?? new LayoutTree<SummaryPane>(SummaryPane.Empty);
+
     private void SelectMenuItemFor(ListView tab)
     {
         for (int i = 0; i < menuView.Items.Count; i++) {
@@ -938,13 +961,13 @@ public class SetupScreen : Screen
     private static LayoutTree<SummaryPane> ThemePreviewLayout() =>
         LayoutTree<SummaryPane>.FromNodes([
             new LayoutNode<SummaryPane> { Id = 0, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.2f, FirstId = 1, SecondId = 2 },
-            new LayoutNode<SummaryPane> { Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4 },
+            new LayoutNode<SummaryPane> { Id = 1, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 3, SecondId = 4    },
             new LayoutNode<SummaryPane> { Id = 2, IsSplit = true, Orientation = Orientation.Column, Ratio = 0.4f, FirstId = 5, SecondId = 8 },
-            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.CpuMetre) },
+            new LayoutNode<SummaryPane> { Id = 3, Pane = new(PaneControlType.CpuMetre)    },
             new LayoutNode<SummaryPane> { Id = 4, Pane = new(PaneControlType.MemoryMetre) },
-            new LayoutNode<SummaryPane> { Id = 5, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 6, SecondId = 7 },
-            new LayoutNode<SummaryPane> { Id = 6, Pane = new(PaneControlType.Cpu) },
-            new LayoutNode<SummaryPane> { Id = 7, Pane = new(PaneControlType.Memory) },
+            new LayoutNode<SummaryPane> { Id = 5, IsSplit = true, Orientation = Orientation.Row, Ratio = 0.5f, FirstId = 6, SecondId = 7    },
+            new LayoutNode<SummaryPane> { Id = 6, Pane = new(PaneControlType.Cpu)         },
+            new LayoutNode<SummaryPane> { Id = 7, Pane = new(PaneControlType.Memory)      },
             new LayoutNode<SummaryPane> { Id = 8, Pane = new(PaneControlType.Process, Statistics.Process | Statistics.Pid | Statistics.Cpu) },
         ], rootId: 0);
 
@@ -985,7 +1008,12 @@ public class SetupScreen : Screen
 
             if (wanted != null) {
                 if (!previews.TryGetValue(wanted, out SummaryControl2? preview)) {
-                    preview = new SummaryControl2(runContext.ServiceController, Terminal, previewConfig!, previewLayouts[wanted]());
+                    preview = new SummaryControl2(
+                        runContext.ServiceController,
+                        Terminal,
+                        previewConfig!,
+                        previewLayouts[wanted](),
+                        showOutlines: wanted == layoutView);
                     previews[wanted] = preview;
                 }
 

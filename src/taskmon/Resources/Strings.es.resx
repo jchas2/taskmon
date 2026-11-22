@@ -871,6 +871,9 @@ Guárdalo con otro nombre.</value>
   <data name="SummaryEmptyPane" xml:space="preserve">
     <value>vacío</value>
   </data>
+  <data name="SummaryPaneMacOSOnly" xml:space="preserve">
+    <value>{0} (solo macOS)</value>
+  </data>
   <data name="SummaryCpuChartLabel" xml:space="preserve">
     <value>{0:000.0%} Kernel {1:000.0%} Usuario {2:000.0%}</value>
   </data>

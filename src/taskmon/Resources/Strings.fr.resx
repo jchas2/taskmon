@@ -871,6 +871,9 @@ Enregistrez-la sous un autre nom.</value>
   <data name="SummaryEmptyPane" xml:space="preserve">
     <value>vide</value>
   </data>
+  <data name="SummaryPaneMacOSOnly" xml:space="preserve">
+    <value>{0} (macOS uniquement)</value>
+  </data>
   <data name="SummaryCpuChartLabel" xml:space="preserve">
     <value>{0:000.0%} Noyau {1:000.0%} Utilisateur {2:000.0%}</value>
   </data>

@@ -28,14 +28,8 @@ public sealed class LayoutDesignerScreen : Screen
     private const int   PickerPreferredWidth = 40;
     private const float RatioStep            = 0.05f;
 
-#if __APPLE__
-    private static readonly PaneControlType[] UnavailableControlTypes = [];
-#else
-    private static readonly PaneControlType[] UnavailableControlTypes = [PaneControlType.Fans, PaneControlType.NpuMetre, PaneControlType.Npu];
-#endif
-
     internal static readonly PaneControlType[] AssignableControlTypes = Enum.GetValues<PaneControlType>()
-        .Except(UnavailableControlTypes)
+        .Except(SummaryControl2.UnavailableControlTypes)
         .ToArray();
 
     // Each label is the column's Statistics_<member> entry in Strings.resx.
@@ -60,14 +54,16 @@ public sealed class LayoutDesignerScreen : Screen
         Statistics.Path,
     ];
 
-    private readonly RunContext                 runContext;
-    private readonly SummaryControl2            summary;
-    private readonly PickerBoxControl           controlTypePicker;
-    private readonly PickerBoxControl           columnPicker;
-    private readonly TextInputDialogControl     saveDialog;
-    private readonly MessageBoxControl          messageBox;
+    private readonly RunContext             runContext;
+    private readonly SummaryControl2        summary;
+    private readonly PickerBoxControl       controlTypePicker;
+    private readonly PickerBoxControl       columnPicker;
+    private readonly TextInputDialogControl saveDialog;
+    private readonly MessageBoxControl      messageBox;
+    
     private readonly Dictionary<Control, Color> highlightedBorders = new();
-    private LayoutTree<SummaryPane>             tree               = new(SummaryPane.Empty);
+
+    private LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
 
     private int     selectedNodeId;
     private string? layoutName;

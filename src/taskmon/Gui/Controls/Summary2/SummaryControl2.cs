@@ -29,9 +29,15 @@ public sealed class SummaryControl2 : Control
 {
     private const double MidLoadThreshold  = 0.5;
     private const double HighLoadThreshold = 0.85;
-
     private const int    NetworkPeakWindow = 60;
     private const double NetworkPeakFloor  = 64 * 1024;
+    private const int    MetrePaneHeight   = 3;
+
+#if __APPLE__
+    internal static readonly PaneControlType[] UnavailableControlTypes = [];
+#else
+    internal static readonly PaneControlType[] UnavailableControlTypes = [PaneControlType.Fans, PaneControlType.NpuMetre, PaneControlType.Npu];
+#endif
 
     private readonly Dictionary<int, Rectangle> paneBounds = new();
 
@@ -39,11 +45,11 @@ public sealed class SummaryControl2 : Control
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
+    private readonly bool              showOutlines;
 
     private LayoutTree<SummaryPane> tree;
-
-    private SummaryControlLayout? builtFrom;
-    private SystemSnapshot?       snapshot;
+    private SummaryControlLayout?   builtFrom;
+    private SystemSnapshot?         snapshot;
 
     private int? focusedPaneId;
     private bool isFixedTree;
@@ -62,10 +68,12 @@ public sealed class SummaryControl2 : Control
         ServiceController       serviceController,
         ISystemTerminal         terminal,
         AppConfig               appConfig,
-        LayoutTree<SummaryPane> fixedTree) : base(terminal)
+        LayoutTree<SummaryPane> fixedTree,
+        bool                    showOutlines = false) : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
+        this.showOutlines      = showOutlines;
 
         tree        = fixedTree;
         isFixedTree = true;
@@ -387,16 +395,16 @@ public sealed class SummaryControl2 : Control
 
         foreach ((int id, (_, Control control, _)) in panes) {
             control.Draw();
+            int shownHeight = control.Visible ? control.Height : 0;
 
             if (RequiredHeight(control) is not null &&
-                control.Visible &&
-                paneBounds.TryGetValue(id, out Rectangle bounds) && bounds.Height > control.Height) {
-                
+                paneBounds.TryGetValue(id, out Rectangle bounds) && bounds.Height > shownHeight) {
+
                 DrawRectangle(
-                    bounds.X, 
-                    bounds.Y + control.Height, 
-                    bounds.Width, 
-                    bounds.Height - control.Height, 
+                    bounds.X,
+                    bounds.Y + shownHeight,
+                    bounds.Width,
+                    bounds.Height - shownHeight,
                     BackgroundColour);
             }
         }
@@ -568,6 +576,46 @@ public sealed class SummaryControl2 : Control
         base.OnUnload();
     }
 
+    private EmptyPaneControl OutlinePane(SummaryPane pane)
+    {
+        PaneControlType type = pane.ControlType;
+
+        if (UnavailableControlTypes.Contains(type)) {
+            return new EmptyPaneControl(Terminal) {
+                Label = string.Format(CultureInfo.CurrentCulture, Strings.SummaryPaneMacOSOnly, type.ToDisplayText())
+            };
+        }
+
+        bool isMetre = type is PaneControlType.CpuMetre or PaneControlType.GpuMetre or PaneControlType.GpuMemoryMetre
+            or PaneControlType.MemoryMetre or PaneControlType.VirtualMemoryMetre or PaneControlType.DiskMetre
+            or PaneControlType.NetworkSendMetre or PaneControlType.NetworkReceiveMetre or PaneControlType.NpuMetre;
+
+        string columns = type == PaneControlType.Process && pane.ProcessColumns is { } chosen
+            ? string.Join(", ", Enum.GetValues<Statistics>()
+                .Where(column => column is not (Statistics.Process or Statistics.Pid) && chosen.HasFlag(column))
+                .Select(column => column.ToDisplayText()))
+            : string.Empty;
+
+        return new EmptyPaneControl(Terminal) {
+            Label = type == PaneControlType.Empty ? Strings.SummaryEmptyPane : type.ToDisplayText(),
+
+            Detail = columns.Length > 0 ? columns : null,
+
+            Hint = type switch {
+                PaneControlType.Empty => PaneHint.None,
+                PaneControlType.CpuCores => PaneHint.Metre,
+                PaneControlType.Cpu or PaneControlType.Memory or PaneControlType.VirtualMemory or PaneControlType.Disk
+                    or PaneControlType.Gpu or PaneControlType.GpuMemory or PaneControlType.NetworkSent
+                    or PaneControlType.NetworkReceived or PaneControlType.Npu or PaneControlType.Thermals => PaneHint.Chart,
+                _ => isMetre ? PaneHint.Metre : PaneHint.List
+            },
+
+            FixedHeight = isMetre                         ? MetrePaneHeight
+                        : type == PaneControlType.Health ? HealthControl.ResourcesViewHeight
+                                                          : null
+        };
+    }
+
     internal IReadOnlyDictionary<int, Rectangle> PaneBounds => paneBounds;
 
     internal IReadOnlyDictionary<int, Control> PaneControls =>
@@ -585,6 +633,7 @@ public sealed class SummaryControl2 : Control
     private static int? RequiredHeight(Control control) => control switch {
         MetreControl metre                           => metre.RequiredHeight,
         HealthControl { ShowCausesAndEvents: false } => HealthControl.ResourcesViewHeight,
+        EmptyPaneControl { FixedHeight: { } height } => height,
                                                    _ => null
     };
 
@@ -618,7 +667,9 @@ public sealed class SummaryControl2 : Control
                 continue;
             }
 
-            (Control control, Action<SystemSnapshot>? feed) = CreatePane(pane);
+            (Control control, Action<SystemSnapshot>? feed) = showOutlines
+                ? (OutlinePane(pane), null)
+                : CreatePane(pane);
 
             panes[id] = (pane, control, feed);
             Controls.Add(control);
@@ -649,7 +700,16 @@ public sealed class SummaryControl2 : Control
                 CommonControl.Theme(metre, theme);
                 break;
 
-            case EmptyPaneControl or CpuCoresControl:
+            case EmptyPaneControl outline:
+                (outline.BackgroundColour, outline.ForegroundColour, outline.BorderColour, outline.HintColour) = outline.Hint switch {
+                    PaneHint.Chart => (theme.ChartBackground,    theme.ChartTitle,         theme.ChartBorderForeground,    theme.RangeLowBackground),
+                    PaneHint.Metre => (theme.MetreBackground,    theme.MetreForeground,    theme.MetreBorderForeground,    theme.RangeLowBackground),
+                    PaneHint.List  => (theme.ListViewBackground, theme.ListViewForeground, theme.ListViewBorderForeground, theme.ListViewBorderForeground),
+                                 _ => (outline.BackgroundColour, outline.ForegroundColour, theme.ChartBorderForeground,    theme.ChartBorderForeground)
+                };
+                break;
+
+            case CpuCoresControl:
                 control.BorderColour = theme.ChartBorderForeground;
                 break;
         }

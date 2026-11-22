@@ -1133,6 +1133,10 @@ Save it under a new name.</value>
     <value>empty</value>
     <comment>Shown in a SUMMARY pane with nothing assigned to it.</comment>
   </data>
+  <data name="SummaryPaneMacOSOnly" xml:space="preserve">
+    <value>{0} (macOS only)</value>
+    <comment>Layout preview: a pane that only works on macOS, seen on Windows. {0} is the pane name, e.g. Fans.</comment>
+  </data>
   <data name="SummaryCpuChartLabel" xml:space="preserve">
     <value>{0:000.0%} Kernel {1:000.0%} User {2:000.0%}</value>
     <comment>CPU chart label. {0} is total CPU, {1} kernel time and {2} user time; keep the :000.0% formats.</comment>

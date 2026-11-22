@@ -871,6 +871,9 @@ Gem det under et nyt navn.</value>
   <data name="SummaryEmptyPane" xml:space="preserve">
     <value>tom</value>
   </data>
+  <data name="SummaryPaneMacOSOnly" xml:space="preserve">
+    <value>{0} (kun macOS)</value>
+  </data>
   <data name="SummaryCpuChartLabel" xml:space="preserve">
     <value>{0:000.0%} Kerne {1:000.0%} Bruger {2:000.0%}</value>
   </data>
