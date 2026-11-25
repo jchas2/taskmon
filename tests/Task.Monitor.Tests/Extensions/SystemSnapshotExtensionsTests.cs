@@ -26,6 +26,17 @@ public sealed class SystemSnapshotExtensionsTests
     }
 
     [Fact]
+    public void ToDiskName_Is_The_Model_Alone_Or_Empty()
+    {
+        Assert.Equal("APPLE SSD", Snapshot.ToDiskName("0"));
+        Assert.Equal(string.Empty, Snapshot.ToDiskName("3"));
+        Assert.Equal(string.Empty, ((SystemSnapshot?)null).ToDiskName("0"));
+        Assert.Equal(string.Empty, new SystemSnapshot {
+            Disk = new DiskInfo { Specs = new DiskSpecs { Devices = [new DiskDevice { Index = 1 }] } }
+        }.ToDiskName("1"));
+    }
+
+    [Fact]
     public void ToGpuLabel_Falls_Back_Without_A_Matching_Adapter()
     {
         Assert.Equal("GPU", Snapshot.ToGpuLabel("222"));
@@ -37,5 +48,16 @@ public sealed class SystemSnapshotExtensionsTests
     public void ToGpuLabel_Names_The_Matching_Adapter()
     {
         Assert.Equal("GPU · Apple GPU", Snapshot.ToGpuLabel("111"));
+    }
+
+    [Fact]
+    public void ToGpuName_Is_The_Description_Alone_Or_Empty()
+    {
+        Assert.Equal("Apple GPU", Snapshot.ToGpuName("111"));
+        Assert.Equal(string.Empty, Snapshot.ToGpuName("222"));
+        Assert.Equal(string.Empty, Snapshot.ToGpuName("nvml0"));
+        Assert.Equal(string.Empty, new SystemSnapshot {
+            Gpu = new GpuInfo { Specs = new GpuSpecs { Devices = [new GpuDevice { AdapterLuid = 333 }] } }
+        }.ToGpuName("333"));
     }
 }

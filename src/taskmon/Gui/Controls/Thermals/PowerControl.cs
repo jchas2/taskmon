@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.Resources;
@@ -13,18 +14,21 @@ namespace Task.Monitor.Gui.Controls.Thermals;
 
 public sealed class PowerControl : Control
 {
-    public const int PreferredWidth = 56;
+    public const int PreferredWidth = 72;
 
-    private const int ComponentColumnWidth = 20;
-    private const int RailColumnWidth      = 18;
-    private const int PowerColumnWidth     = 10;
-    private const int BorderAndGutters     = 3;
+    private const int    BorderAndGutters = 3;
+    private const int    ColumnSpacing    = 1;
+    private const double WidestWatts      = 888.8;
 
     private readonly ServiceController serviceController;
     private readonly AppConfig         appConfig;
     private readonly ListView          powerView;
 
     private SystemSnapshot? snapshot;
+
+    private int componentWidth;
+    private int railWidth;
+    private int powerWidth;
 
     public PowerControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
@@ -45,6 +49,7 @@ public sealed class PowerControl : Control
 
         powerView.ColumnHeaders
             .Add(new ListViewColumnHeader(Strings.PowerColumnComponent))
+            .Add(new ListViewColumnHeader(Strings.PowerColumnName))
             .Add(new ListViewColumnHeader(Strings.PowerColumnRail))
             .Add(new ListViewColumnHeader(Strings.PowerColumnPower));
 
@@ -53,13 +58,20 @@ public sealed class PowerControl : Control
 
     private string BuildComponentLabel(PowerReading reading) => reading.Component switch {
         PowerComponent.Cpu          => Strings.PowerCpu,
-        PowerComponent.Gpu          => snapshot.ToGpuLabel(reading.ComponentId),
-        PowerComponent.Disk         => snapshot.ToDiskLabel(reading.ComponentId),
+        PowerComponent.Gpu          => Strings.SnapshotGpu,
+        PowerComponent.Disk         => string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabelShort, reading.ComponentId),
         PowerComponent.Battery      => Strings.PowerBattery,
         PowerComponent.NeuralEngine => Strings.PowerNeuralEngine,
         PowerComponent.Memory       => Strings.PowerMemory,
         PowerComponent.Display      => Strings.PowerDisplay,
                                   _ => Strings.PowerSystem
+    };
+
+    private string BuildName(PowerReading reading) => reading.Component switch {
+        PowerComponent.Cpu  => snapshot?.Cpu?.Specs.CpuName ?? string.Empty,
+        PowerComponent.Gpu  => snapshot.ToGpuName(reading.ComponentId),
+        PowerComponent.Disk => snapshot.ToDiskName(reading.ComponentId),
+                          _ => string.Empty
     };
 
     private static int ComponentOrder(PowerComponent component) => component switch {
@@ -73,19 +85,33 @@ public sealed class PowerControl : Control
                                   _ => 7
     };
 
-    internal static (int Component, int Rail, int Power) ComputeColumnWidths(int width)
+    internal static (int Component, int Name, int Rail, int Power) ComputeColumnWidths(
+        int width, 
+        int component, 
+        int rail, 
+        int power)
     {
         int available = Math.Max(0, width - BorderAndGutters);
 
-        if (available >= ComponentColumnWidth + RailColumnWidth + PowerColumnWidth) {
-            return (ComponentColumnWidth, RailColumnWidth, available - ComponentColumnWidth - RailColumnWidth);
-        }
+        power     = Math.Min(power,     available);
+        component = Math.Min(component, available - power);
+        rail      = Math.Min(rail,      available - power - component);
 
-        int power     = Math.Min(PowerColumnWidth, available);
-        int remaining = available - power;
-        int component = remaining * ComponentColumnWidth / (ComponentColumnWidth + RailColumnWidth);
+        return (component, available - power - component - rail, rail, power);
+    }
 
-        return (component, remaining - component, power);
+    private void LayoutColumns()
+    {
+        (int component, int name, int rail, int power) = ComputeColumnWidths(
+            Width,
+            ColumnSpacing + 1 + Math.Max(componentWidth, Strings.PowerColumnComponent.TerminalWidth()),
+            ColumnSpacing + 1 + Math.Max(railWidth,      Strings.PowerColumnRail.TerminalWidth()),
+                            1 + Math.Max(powerWidth,     Strings.PowerColumnPower.TerminalWidth()));
+
+        powerView.ColumnHeaders[0].Width = component;
+        powerView.ColumnHeaders[1].Width = name;
+        powerView.ColumnHeaders[2].Width = rail;
+        powerView.ColumnHeaders[3].Width = Math.Max(1, power);
     }
 
     protected override void OnDraw()
@@ -110,11 +136,7 @@ public sealed class PowerControl : Control
         powerView.Width  = Width;
         powerView.Height = Height;
 
-        (int component, int rail, int power) = ComputeColumnWidths(Width);
-
-        powerView.ColumnHeaders[0].Width = component;
-        powerView.ColumnHeaders[1].Width = rail;
-        powerView.ColumnHeaders[2].Width = Math.Max(1, power);
+        LayoutColumns();
 
         base.OnResize();
     }
@@ -140,12 +162,28 @@ public sealed class PowerControl : Control
         Color background = appConfig.Theme.ListViewBackground;
         Color foreground = appConfig.Theme.ListViewForeground;
 
+        string Rated(string watts) => string.Format(CultureInfo.CurrentCulture, Strings.PowerRated, watts);
+
+        componentWidth = 0;
+        railWidth      = 0;
+        powerWidth     = 0;
+
         foreach (PowerReading reading in metrics.Readings.OrderBy(reading => ComponentOrder(reading.Component))) {
-            string watts = reading.IsRated
-                ? string.Format(CultureInfo.CurrentCulture, Strings.PowerRated, reading.Watts.ToWattText())
+            string component = BuildComponentLabel(reading);
+            
+            string watts = reading.IsRated 
+                ? Rated(reading.Watts.ToWattText()) 
                 : reading.Watts.ToWattText();
 
-            powerView.Items.Add(new ListViewItem([BuildComponentLabel(reading), reading.Rail, watts], background, foreground));
+            string widestWatts = reading.IsRated 
+                ? Rated(WidestWatts.ToWattText()) 
+                : WidestWatts.ToWattText();
+
+            componentWidth = Math.Max(componentWidth, component.TerminalWidth());
+            railWidth      = Math.Max(railWidth,      reading.Rail.TerminalWidth());
+            powerWidth     = Math.Max(powerWidth,     widestWatts.TerminalWidth());
+
+            powerView.Items.Add(new ListViewItem([component, BuildName(reading), reading.Rail, watts], background, foreground));
         }
     }
 
@@ -155,6 +193,7 @@ public sealed class PowerControl : Control
 
         if (snapshot.Power is { } power) {
             RebuildRows(power.Metrics);
+            LayoutColumns();
         }
 
         Draw();

@@ -49,6 +49,20 @@ public sealed class ThermalMetricsExtensionsTests
         Assert.Equal("N/A", ((double?)null).ToTemperatureText());
     }
 
+    [Theory]
+    [InlineData(ThermalComponent.Cpu,     "",        "CPU")]
+    [InlineData(ThermalComponent.Cpu,     "P-Cores", "CPU P-Cores")]
+    [InlineData(ThermalComponent.Gpu,     "111",     "GPU")]
+    [InlineData(ThermalComponent.Disk,    "0",       "Disk 0")]
+    [InlineData(ThermalComponent.Battery, "",        "Battery")]
+    [InlineData(ThermalComponent.Chipset, "",        "Chipset")]
+    [InlineData(ThermalComponent.Ambient, "",        "Ambient")]
+    [InlineData(ThermalComponent.Other,   "",        "System")]
+    public void Formats_The_Kind_Of_Component(ThermalComponent component, string componentId, string text)
+    {
+        Assert.Equal(text, component.ToComponentText(componentId));
+    }
+
     [Fact]
     public void GpuTemperature_Falls_Back_To_The_Hottest_When_No_Sensor_Is_Canonical()
     {

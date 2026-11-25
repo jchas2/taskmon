@@ -1,3 +1,4 @@
+using System.Globalization;
 using Task.Monitor.Resources;
 using Task.Monitor.System.Services.Thermal;
 
@@ -66,6 +67,16 @@ public static class ThermalMetricsExtensions
         ThermalSource.Smc or ThermalSource.HidSensor => 3,
         ThermalSource.AcpiThermalZone => 1,
         _ => 0
+    };
+
+    public static string ToComponentText(this ThermalComponent component, string componentId) => component switch {
+        ThermalComponent.Cpu     => string.IsNullOrEmpty(componentId) ? Strings.ThermalsCpu : string.Format(CultureInfo.CurrentCulture, Strings.ThermalsCpuNumbered, componentId),
+        ThermalComponent.Gpu     => Strings.SnapshotGpu,
+        ThermalComponent.Disk    => string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabelShort, componentId),
+        ThermalComponent.Battery => Strings.ThermalsBattery,
+        ThermalComponent.Chipset => Strings.ThermalsChipset,
+        ThermalComponent.Ambient => Strings.ThermalsAmbient,
+                               _ => Strings.ThermalsSystem
     };
 
     public static string ToDisplayName(this ThermalSensor sensor, string? componentLabel) =>

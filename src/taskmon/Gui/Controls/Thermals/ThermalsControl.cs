@@ -65,13 +65,9 @@ public sealed class ThermalsControl : Control
     }
 
     private string BuildTitle(ThermalComponent component, string componentId) => component switch {
-        ThermalComponent.Cpu     => string.IsNullOrEmpty(componentId) ? Strings.ThermalsCpu : string.Format(CultureInfo.CurrentCulture, Strings.ThermalsCpuNumbered, componentId),
-        ThermalComponent.Gpu     => snapshot.ToGpuLabel(componentId),
-        ThermalComponent.Disk    => snapshot.ToDiskLabel(componentId),
-        ThermalComponent.Battery => Strings.ThermalsBattery,
-        ThermalComponent.Chipset => Strings.ThermalsChipset,
-        ThermalComponent.Ambient => Strings.ThermalsAmbient,
-        _ => Strings.ThermalsSystem
+        ThermalComponent.Gpu  => snapshot.ToGpuLabel(componentId),
+        ThermalComponent.Disk => snapshot.ToDiskLabel(componentId),
+                            _ => component.ToComponentText(componentId)
     };
 
     internal IReadOnlyDictionary<string, Chart> Charts => chartCache;
@@ -419,7 +415,6 @@ public sealed class ThermalsControl : Control
 
         if (fansControl is not null && snapshot.Thermal?.Metrics.Fans.Count is { } count && count != fanCount) {
             fanCount = count;
-
             LayoutSidePanes();
             powerControl?.Resize();
             fansControl.Resize();
@@ -428,8 +423,7 @@ public sealed class ThermalsControl : Control
         Draw();
     }
 
-    internal Color ScrollBarColour =>
-        Focused
+    internal Color ScrollBarColour => Focused
             ? FocusSelectionColour
             : appConfig.Theme.ChartBorderForeground;
 

@@ -12,6 +12,16 @@ namespace Task.Monitor.Extensions;
 
 public static class SystemSnapshotExtensions
 {
+    private static DiskDevice? FindDisk(SystemSnapshot? snapshot, string componentId) =>
+        int.TryParse(componentId, out int index)
+            ? snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index)
+            : null;
+
+    private static GpuDevice? FindGpu(SystemSnapshot? snapshot, string componentId) =>
+        long.TryParse(componentId, out long luid)
+            ? snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid)
+            : null;
+
     private static string? FirstIPv4Address(NetworkSpecs specs, string connectionType)
     {
         foreach (NetworkDevice device in specs.Devices) {
@@ -100,16 +110,15 @@ public static class SystemSnapshotExtensions
     public static double ToDiskActiveTimeRatio(this DiskDeviceMetrics device) =>
         Math.Clamp(device.PercentActiveTime / 100.0, 0.0, 1.0);
 
-    public static string ToDiskLabel(this SystemSnapshot? snapshot, string componentId)
-    {
-        if (int.TryParse(componentId, out int index) &&
-            snapshot?.Disk?.Specs.Devices.FirstOrDefault(device => device.Index == index) is { } disk) {
+    public static string ToDiskLabel(this SystemSnapshot? snapshot, string componentId) =>
+        FindDisk(snapshot, componentId) is { } disk
+            ? string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabel, disk.Index, disk.Model)
+            : string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabelShort, componentId);
 
-            return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabel, index, disk.Model);
-        }
-
-        return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotDiskLabelShort, componentId);
-    }
+    public static string ToDiskName(this SystemSnapshot? snapshot, string componentId) =>
+        FindDisk(snapshot, componentId) is { Model: { Length: > 0 } and not Constants.NotAvailable } disk
+            ? disk.Model
+            : string.Empty;
 
     public static string ToDiskReadRate(this DiskMetrics metrics) =>
         metrics.ReadBytesPerSecond.ToFormattedByteRate();
@@ -198,16 +207,10 @@ public static class SystemSnapshotExtensions
         return $"{rate:0.0} {rateFormatters[index]}";
     }
 
-    public static string ToGpuLabel(this SystemSnapshot? snapshot, string componentId)
-    {
-        if (long.TryParse(componentId, out long luid) &&
-            snapshot?.Gpu?.Specs.Devices.FirstOrDefault(device => device.AdapterLuid == luid) is { } gpu) {
-
-            return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotGpuLabel, gpu.Description);
-        }
-
-        return Strings.SnapshotGpu;
-    }
+    public static string ToGpuLabel(this SystemSnapshot? snapshot, string componentId) =>
+        FindGpu(snapshot, componentId) is { } gpu
+            ? string.Format(CultureInfo.CurrentCulture, Strings.SnapshotGpuLabel, gpu.Description)
+            : Strings.SnapshotGpu;
 
     public static string ToGpuMemoryAvailableFormattedBytes(this GpuMetrics metrics) =>
         metrics.AvailableGpuMemory.ToFormattedByteSize();
@@ -235,6 +238,11 @@ public static class SystemSnapshotExtensions
 
     public static string ToGpuMemoryRatioFormattedBytes(this GpuDeviceMetrics device) =>
         UsedOverTotalBytes(device.TotalGpuMemory, device.AvailableGpuMemory);
+
+    public static string ToGpuName(this SystemSnapshot? snapshot, string componentId) =>
+        FindGpu(snapshot, componentId) is { Description: { Length: > 0 } and not Constants.NotAvailable } gpu
+            ? gpu.Description
+            : string.Empty;
 
     public static string ToGpuPercentage(this GpuMetrics metrics) =>
         $"{metrics.GpuPercentTime:000.0%}";

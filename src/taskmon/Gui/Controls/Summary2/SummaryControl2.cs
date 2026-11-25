@@ -258,6 +258,7 @@ public sealed class SummaryControl2 : Control
             PaneControlType.CpuCores      => (new CpuCoresControl(serviceController, Terminal, appConfig)      { TabStop = false }, null),
             PaneControlType.Power         => (new PowerControl(serviceController, Terminal, appConfig)         { TabStop = false }, null),
             PaneControlType.Health        => (new HealthControl(serviceController, Terminal, appConfig)        { TabStop = false, ShowCausesAndEvents = false }, null),
+            PaneControlType.ThermalList   => (new ThermalListControl(serviceController, Terminal, appConfig)   { TabStop = false }, null),
 #if __APPLE__
             PaneControlType.Fans          => (new FansControl(serviceController, Terminal, appConfig)          { TabStop = false }, null),
 #endif

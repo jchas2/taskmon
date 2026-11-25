@@ -27,4 +27,5 @@ public enum PaneControlType
     NpuMetre,
     Npu,
     Health,
+    ThermalList,
 }

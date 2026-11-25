@@ -125,6 +125,9 @@
   <data name="PaneControlType_Health" xml:space="preserve">
     <value>Gezondheid</value>
   </data>
+  <data name="PaneControlType_ThermalList" xml:space="preserve">
+    <value>Temperatuurlijst</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -1996,6 +1999,9 @@ Sla deze op onder een andere naam.</value>
   <data name="PowerColumnComponent" xml:space="preserve">
     <value>COMPONENT</value>
   </data>
+  <data name="PowerColumnName" xml:space="preserve">
+    <value>NAAM</value>
+  </data>
   <data name="PowerColumnRail" xml:space="preserve">
     <value>RAIL</value>
   </data>
@@ -2043,6 +2049,18 @@ Sla deze op onder een andere naam.</value>
   </data>
   <data name="FansColumnLoad" xml:space="preserve">
     <value>BELASTING</value>
+  </data>
+  <data name="ThermalListHeader" xml:space="preserve">
+    <value>TEMPERATUREN</value>
+  </data>
+  <data name="ThermalListColumnComponent" xml:space="preserve">
+    <value>COMPONENT</value>
+  </data>
+  <data name="ThermalListColumnName" xml:space="preserve">
+    <value>NAAM</value>
+  </data>
+  <data name="ThermalListColumnTemperature" xml:space="preserve">
+    <value>TEMP.</value>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Proces tonen</value>

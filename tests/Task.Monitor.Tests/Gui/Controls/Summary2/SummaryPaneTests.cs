@@ -9,6 +9,7 @@ using Task.Monitor.System;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
@@ -18,6 +19,7 @@ using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Network;
 using Task.Monitor.System.Services.Npu;
 using Task.Monitor.System.Services.Power;
+using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 using Keys = Task.Monitor.Configuration.Constants.Keys;
@@ -368,6 +370,27 @@ public sealed class SummaryPaneTests
     {
         (SummaryControl2 summary, Control pane) = Shown(type);
         return (summary, Assert.IsType<MetreControl>(pane));
+    }
+
+    [Fact]
+    public void Thermal_List_Pane_Lists_Each_Component_On_Every_Platform()
+    {
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.ThermalList, width: 60, height: 8);
+        ThermalListControl thermals = Assert.IsType<ThermalListControl>(pane);
+
+        Assert.False(thermals.TabStop);
+
+        Publish(new SystemSnapshot {
+            Disk    = new DiskInfo    { Specs   = new DiskSpecs { Devices = [new DiskDevice { Index = 0, Model = "KINGSTON SKC3000D2048G" }] } },
+            Thermal = new ThermalInfo { Metrics = new ThermalMetrics {
+                Sensors = [new ThermalSensor { Component = ThermalComponent.Disk, ComponentId = "0", SensorName = "Composite", Celsius = 38 }]
+            } }
+        });
+
+        ListViewItem row = Assert.Single(thermals.ThermalView.Items.Cast<ListViewItem>());
+        Assert.Equal(("Disk 0", "KINGSTON SKC3000D2048G", "38°C"), (row.SubItems[0].Text, row.SubItems[1].Text, row.SubItems[2].Text));
+
+        summary.Unload();
     }
 
     [Fact]

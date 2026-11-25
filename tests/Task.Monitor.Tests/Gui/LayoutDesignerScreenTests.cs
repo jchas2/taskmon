@@ -1140,6 +1140,27 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         screen.Unload();
     }
 
+    [Fact]
+    public void The_Thermal_List_Is_Offered_And_Can_Be_Assigned_To_A_Pane()
+    {
+        Assert.Contains(PaneControlType.ThermalList, LayoutDesignerScreen.AssignableControlTypes);
+
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.ThermalList);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.ThermalList, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
+        Assert.Contains("THERMALS", CapturedOutput());
+
+        screen.Unload();
+    }
+
     // Typed with each letter's real ConsoleKey (not a placeholder key) - so the 'S' in "My Stats"
     // arrives as ConsoleKey.S, the save key itself, proving the save-name prompt swallows it
     // rather than it re-triggering a save mid-typing.

@@ -1,6 +1,9 @@
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Controls;
+using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Disk;
+using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
@@ -25,17 +28,34 @@ public sealed class PowerControlTests
                 && invocation.Arguments[0] is string)
             .Select(invocation => (string)invocation.Arguments[0]!));
 
-    [Theory]
-    [InlineData(56, 20, 18, 15)]
-    [InlineData(80, 20, 18, 39)]
-    [InlineData(41, 14, 14, 10)]
-    [InlineData(30, 8,  9,  10)]
-    [InlineData(10, 0,  0,  7)]
-    public void ComputeColumnWidths_Keeps_The_Power_Column_In_A_Narrow_Pane(int width, int component, int rail, int power)
+    // The Windows readings at the THERMALS side pane's width: each sized column fits its widest entry
+    // ("COMPONENT", "Drive", "888.8 W (rated)") and its spacing, and the name takes the other 35,
+    // which shows the GPU's whole name.
+    [Fact]
+    public void Columns_Fit_Their_Widest_Entry_And_The_Name_Takes_The_Rest()
     {
-        (int Component, int Rail, int Power) widths = PowerControl.ComputeColumnWidths(width);
+        PowerControl ctrl = CreateControl();
 
-        Assert.Equal((component, rail, power), widths);
+        ctrl.Sample(WindowsSnapshot(22.8));
+
+        Assert.Equal([11, 35, 7, 16], ctrl.PowerView.ColumnHeaders.Select(column => column.Width));
+        Assert.Contains("NVIDIA GeForce RTX 4070 SUPER", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
+    [Theory]
+    [InlineData(60, 10, 6,  16, 10, 25, 6,  16)]
+    [InlineData(56, 14, 17, 8,  14, 14, 17, 8)]
+    [InlineData(40, 14, 17, 8,  14, 0,  15, 8)]
+    [InlineData(20, 14, 17, 8,  9,  0,  0,  8)]
+    [InlineData(8,  14, 17, 8,  0,  0,  0,  5)]
+    public void ComputeColumnWidths_Gives_Up_The_Name_Then_The_Rail_Then_The_Component(
+        int width, int fitComponent, int fitRail, int fitPower, int component, int name, int rail, int power)
+    {
+        (int Component, int Name, int Rail, int Power) widths = PowerControl.ComputeColumnWidths(width, fitComponent, fitRail, fitPower);
+
+        Assert.Equal((component, name, rail, power), widths);
     }
 
     [Fact]
@@ -132,4 +152,64 @@ public sealed class PowerControlTests
             Source      = PowerSource.IOReport
         };
 
+    private static (string Component, string Name, string Rail, string Power)[] Rows(PowerControl ctrl) =>
+        ctrl.PowerView.Items
+            .Cast<ListViewItem>()
+            .Select(row => (row.SubItems[0].Text, row.SubItems[1].Text, row.SubItems[2].Text, row.SubItems[3].Text))
+            .ToArray();
+
+    [Fact]
+    public void Separates_Each_Component_From_Its_Name()
+    {
+        PowerControl ctrl = CreateControl(width: 100);
+
+        ctrl.Sample(WindowsSnapshot(22.8));
+
+        Assert.Equal(
+            [
+                ("GPU",    "NVIDIA GeForce RTX 4070 SUPER", "GPU",   "22.8 W"),
+                ("Disk 0", "KINGSTON SKC3000D2048G",        "Drive", "8.8 W (rated)"),
+            ],
+            Rows(ctrl));
+
+        string output = CapturedOutput();
+
+        Assert.Contains("NAME", output);
+        Assert.Contains("NVIDIA GeForce RTX 4070 SUPER", output);
+        Assert.Contains("KINGSTON SKC3000D2048G", output);
+
+        ctrl.Unload();
+    }
+
+    // A reading that gains a digit mustn't widen the power column and shift the others.
+    [Fact]
+    public void The_Power_Column_Holds_Its_Width_As_Readings_Change()
+    {
+        PowerControl ctrl = CreateControl();
+
+        ctrl.Sample(new SystemSnapshot { Power = new PowerInfo { Metrics = new PowerMetrics { Readings = [Power(PowerComponent.Cpu, PowerRails.Cpu, 9.9)] } } });
+        int[] before = ctrl.PowerView.ColumnHeaders.Select(column => column.Width).ToArray();
+
+        ctrl.Sample(new SystemSnapshot { Power = new PowerInfo { Metrics = new PowerMetrics { Readings = [Power(PowerComponent.Cpu, PowerRails.Cpu, 123.4)] } } });
+
+        Assert.Equal(before, ctrl.PowerView.ColumnHeaders.Select(column => column.Width));
+        Assert.Equal(8, before[3]);
+
+        ctrl.Unload();
+    }
+
+    // A desktop with one GPU and one NVMe drive, as the Windows power and specs services report them.
+    private static SystemSnapshot WindowsSnapshot(double gpuWatts) =>
+        new() {
+            Gpu   = new GpuInfo  { Specs = new GpuSpecs  { Devices = [new GpuDevice  { AdapterLuid = 111, Description = "NVIDIA GeForce RTX 4070 SUPER" }] } },
+            Disk  = new DiskInfo { Specs = new DiskSpecs { Devices = [new DiskDevice { Index = 0, Model = "KINGSTON SKC3000D2048G" }] } },
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [
+                        Power(PowerComponent.Disk, PowerRails.Drive, 8.8,      componentId: "0", rated: true),
+                        Power(PowerComponent.Gpu,  PowerRails.Gpu,   gpuWatts, componentId: "111"),
+                    ]
+                }
+            }
+        };
 }

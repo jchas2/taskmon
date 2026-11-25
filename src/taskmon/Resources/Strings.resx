@@ -150,6 +150,9 @@
   <data name="PaneControlType_Health" xml:space="preserve">
     <value>Health</value>
   </data>
+  <data name="PaneControlType_ThermalList" xml:space="preserve">
+    <value>Thermal List</value>
+  </data>
 
   <!-- Dialogs and footer hotkeys -->
   <data name="DialogOk" xml:space="preserve">
@@ -2649,6 +2652,10 @@ Save it under a new name.</value>
     <value>COMPONENT</value>
     <comment>List column header, upper case. Max 19 characters.</comment>
   </data>
+  <data name="PowerColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case: the part&apos;s model name.</comment>
+  </data>
   <data name="PowerColumnRail" xml:space="preserve">
     <value>RAIL</value>
     <comment>List column header, upper case: the power rail measured. Max 17 characters.</comment>
@@ -2712,6 +2719,22 @@ Save it under a new name.</value>
   <data name="FansColumnLoad" xml:space="preserve">
     <value>LOAD</value>
     <comment>List column header: speed as a share of the range.</comment>
+  </data>
+  <data name="ThermalListHeader" xml:space="preserve">
+    <value>THERMALS</value>
+    <comment>Title of the temperature list, upper case.</comment>
+  </data>
+  <data name="ThermalListColumnComponent" xml:space="preserve">
+    <value>COMPONENT</value>
+    <comment>List column header, upper case: the kind of part, e.g. GPU or Disk 0. Max 14 characters.</comment>
+  </data>
+  <data name="ThermalListColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case: the part&apos;s model name.</comment>
+  </data>
+  <data name="ThermalListColumnTemperature" xml:space="preserve">
+    <value>TEMP</value>
+    <comment>List column header, upper case: the temperature, abbreviated. Max 6 characters.</comment>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Show Process</value>
