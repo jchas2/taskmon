@@ -157,6 +157,26 @@ public sealed class SummaryControlLayoutTests
         Assert.Equal(original, Assert.Single(new SummaryControlLayout(parser.Sections[0]).ToTree().Panes()).Pane);
     }
 
+    // These were pane controls during v2 development; a layout saved then still loads, with an empty pane.
+    [Theory]
+    [InlineData("pane,Drivers")]
+    [InlineData("pane,Services")]
+    [InlineData("pane,Startup")]
+    [InlineData("pane,InstalledApps")]
+    [InlineData("pane,SystemInfo")]
+    [InlineData("pane,Thermals")]
+    public void Removed_Pane_Controls_Load_As_Empty_Panes(string raw)
+    {
+        ConfigSection section = new ConfigSection("Removed")
+            .Add(Constants.Keys.Version, "2")
+            .Add(Constants.Keys.SummaryNodes, "0")
+            .Add($"{Constants.Keys.SummaryNodePrefix}0", raw);
+
+        SummaryPane pane = Assert.Single(new SummaryControlLayout(section).ToTree().Panes()).Pane;
+
+        Assert.Equal(PaneControlType.Empty, pane.ControlType);
+    }
+
     // Confirms the round trip survives an actual reparse of the written text, not just the
     // in-memory ConfigSection - ';' is a comment marker to ConfigParser, so this is what proves
     // the "," / "+" separator choice (see the class comment) actually holds up.

@@ -80,26 +80,8 @@
   <data name="PaneControlType_Process" xml:space="preserve">
     <value>Procesy</value>
   </data>
-  <data name="PaneControlType_Drivers" xml:space="preserve">
-    <value>Sterowniki</value>
-  </data>
-  <data name="PaneControlType_Services" xml:space="preserve">
-    <value>Usługi</value>
-  </data>
-  <data name="PaneControlType_Startup" xml:space="preserve">
-    <value>Autostart</value>
-  </data>
-  <data name="PaneControlType_InstalledApps" xml:space="preserve">
-    <value>Zainstalowane aplikacje</value>
-  </data>
-  <data name="PaneControlType_SystemInfo" xml:space="preserve">
-    <value>Informacje o systemie</value>
-  </data>
   <data name="PaneControlType_DiskSpace" xml:space="preserve">
     <value>Użycie dysku</value>
-  </data>
-  <data name="PaneControlType_Thermals" xml:space="preserve">
-    <value>Temperatury</value>
   </data>
   <data name="PaneControlType_CpuCores" xml:space="preserve">
     <value>Rdzenie CPU</value>

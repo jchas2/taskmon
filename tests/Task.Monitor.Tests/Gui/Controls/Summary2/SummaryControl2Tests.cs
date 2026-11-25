@@ -197,10 +197,9 @@ public sealed class SummaryControl2Tests
     }
 
     [Fact]
-    public void Builds_A_Power_Pane_And_A_Charts_Only_Thermals_Pane()
+    public void Builds_A_Power_Pane()
     {
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Power));
-        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Thermals));
 
         UseSummaryLayout(SummaryControlLayout.FromTree("Power Pane Test", tree));
 
@@ -214,12 +213,9 @@ public sealed class SummaryControl2Tests
 
         ctrl.Load();
 
-        Assert.Single(ctrl.Controls.OfType<PowerControl>());
+        PowerControl power = Assert.Single(ctrl.Controls.OfType<PowerControl>());
 
-        ThermalsControl thermals = Assert.Single(ctrl.Controls.OfType<ThermalsControl>());
-
-        Assert.False(thermals.ShowPowerPane);
-        Assert.Empty(thermals.Controls.OfType<PowerControl>());
+        Assert.False(power.TabStop);
 
         ctrl.Unload();
     }

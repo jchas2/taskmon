@@ -5,15 +5,9 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.DiskSpace;
-using Task.Monitor.Gui.Controls.Drivers;
 using Task.Monitor.Gui.Controls.Health;
-using Task.Monitor.Gui.Controls.InstalledApps;
-using Task.Monitor.Gui.Controls.LaunchdServices;
 using Task.Monitor.Gui.Controls.Processes;
-using Task.Monitor.Gui.Controls.Services;
-using Task.Monitor.Gui.Controls.Startup;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
-using Task.Monitor.Gui.Controls.SystemInformation;
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.Resources;
 using Task.Monitor.System;
@@ -260,17 +254,7 @@ public sealed class SummaryControl2 : Control
                 SortColumn             = pane.SortColumn ?? DefaultProcessSort,
                 SortAscending          = pane.SortAscending
             }, null),
-            PaneControlType.Drivers       => (new DriversControl(serviceController, Terminal, appConfig)       { TabStop = true }, null),
-#if __APPLE__
-            PaneControlType.Services      => (new LaunchdServicesControl(serviceController, Terminal, appConfig) { TabStop = true }, null),
-#else
-            PaneControlType.Services      => (new ServicesControl(serviceController, Terminal, appConfig)      { TabStop = true }, null),
-#endif
-            PaneControlType.Startup       => (new StartupControl(serviceController, Terminal, appConfig)       { TabStop = true }, null),
-            PaneControlType.InstalledApps => (new InstalledAppsControl(serviceController, Terminal, appConfig) { TabStop = true }, null),
-            PaneControlType.SystemInfo    => (new SystemInfoControl(serviceController, Terminal, appConfig)    { TabStop = true }, null),
             PaneControlType.DiskSpace     => (new DiskSpaceControl(serviceController, Terminal, appConfig)     { TabStop = true }, null),
-            PaneControlType.Thermals      => (new ThermalsControl(serviceController, Terminal, appConfig)      { TabStop = true, ShowPowerPane = false }, null),
             PaneControlType.CpuCores      => (new CpuCoresControl(serviceController, Terminal, appConfig)      { TabStop = false }, null),
             PaneControlType.Power         => (new PowerControl(serviceController, Terminal, appConfig)         { TabStop = false }, null),
             PaneControlType.Health        => (new HealthControl(serviceController, Terminal, appConfig)        { TabStop = false, ShowCausesAndEvents = false }, null),
@@ -616,7 +600,7 @@ public sealed class SummaryControl2 : Control
                 PaneControlType.CpuCores => PaneHint.Metre,
                 PaneControlType.Cpu or PaneControlType.Memory or PaneControlType.VirtualMemory or PaneControlType.Disk
                     or PaneControlType.Gpu or PaneControlType.GpuMemory or PaneControlType.NetworkSent
-                    or PaneControlType.NetworkReceived or PaneControlType.Npu or PaneControlType.Thermals => PaneHint.Chart,
+                    or PaneControlType.NetworkReceived or PaneControlType.Npu => PaneHint.Chart,
                 _ => isMetre ? PaneHint.Metre : PaneHint.List
             },
 

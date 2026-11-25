@@ -138,7 +138,6 @@ public sealed class SummaryOutlineTests
     [Theory]
     [InlineData(PaneControlType.Empty,     PaneHint.None)]
     [InlineData(PaneControlType.Cpu,       PaneHint.Chart)]
-    [InlineData(PaneControlType.Thermals,  PaneHint.Chart)]
     [InlineData(PaneControlType.CpuMetre,  PaneHint.Metre)]
     [InlineData(PaneControlType.CpuCores,  PaneHint.Metre)]
     [InlineData(PaneControlType.Process,   PaneHint.List)]

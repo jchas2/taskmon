@@ -105,26 +105,8 @@
   <data name="PaneControlType_Process" xml:space="preserve">
     <value>Process</value>
   </data>
-  <data name="PaneControlType_Drivers" xml:space="preserve">
-    <value>Drivers</value>
-  </data>
-  <data name="PaneControlType_Services" xml:space="preserve">
-    <value>Services</value>
-  </data>
-  <data name="PaneControlType_Startup" xml:space="preserve">
-    <value>Startup</value>
-  </data>
-  <data name="PaneControlType_InstalledApps" xml:space="preserve">
-    <value>Installed Apps</value>
-  </data>
-  <data name="PaneControlType_SystemInfo" xml:space="preserve">
-    <value>System Info</value>
-  </data>
   <data name="PaneControlType_DiskSpace" xml:space="preserve">
     <value>Disk Space</value>
-  </data>
-  <data name="PaneControlType_Thermals" xml:space="preserve">
-    <value>Thermals</value>
   </data>
   <data name="PaneControlType_CpuCores" xml:space="preserve">
     <value>Cpu Cores</value>
