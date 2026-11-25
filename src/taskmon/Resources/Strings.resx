@@ -493,12 +493,16 @@
     <comment>Name shown for a layout not saved yet.</comment>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Move  V/H Split  ↵ Assign  C Columns  +/- Resize  Del Remove  S Save  Esc Back</value>
-    <comment>Key help along the bottom. The arrows, V/H, ↵, C, +/-, Del, S and Esc are keys; keep two spaces between hints.</comment>
+    <value>←↑→↓ Move  V/H Split  ↵ Assign  C Columns  O Sort  +/- Resize  Del Remove  S Save  Esc Back</value>
+    <comment>Key help along the bottom. The arrows, V/H, ↵, C, O, +/-, Del, S and Esc are keys; keep two spaces between hints.</comment>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Columns</value>
     <comment>Title of the process column picker.</comment>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Sort by</value>
+    <comment>Title of the process sort picker.</comment>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Assign control</value>
@@ -3477,8 +3481,6 @@ Options:
      --pid PID            Monitor the given process PID
   -u --username &lt;NAME&gt;    Only show processes for the the given user NAME
   -p --process &lt;NAME&gt;     Only show processes with matching process NAME
-  -s --sort &lt;COLUMN&gt;      Sort by COLUMN in the process list view
-     --sort-help          Displays the list of columns available for the --sort option
   -d --delay &lt;DELAY&gt;      DELAY (in milliseconds) between process list view updates
   -t --theme &lt;NAME&gt;       Load theme NAME from the config file
      --theme-help         Displays the list of available theme names for the --theme option

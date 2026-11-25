@@ -384,10 +384,13 @@
     <value>Naamloos</value>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Verplaatsen  V/H Splitsen  ↵ Toewijzen  C Kolommen  +/- Grootte  Del Verwijderen  S Opslaan  Esc Terug</value>
+    <value>←↑→↓ Verplaatsen  V/H Splitsen  ↵ Toewijzen  C Kolommen  O Sorteren  +/- Grootte  Del Verwijderen  S Opslaan  Esc Terug</value>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Kolommen</value>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Sorteren op</value>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Inhoud toewijzen</value>
@@ -2620,8 +2623,6 @@ Opties:
      --pid PID            Bewaakt het proces met de opgegeven PID
   -u --username &lt;NAME&gt;    Toont alleen processen van gebruiker NAME
   -p --process &lt;NAME&gt;     Toont alleen processen waarvan de naam overeenkomt met NAME
-  -s --sort &lt;COLUMN&gt;      Sorteert de proceslijst op COLUMN
-     --sort-help          Toont de kolommen die beschikbaar zijn voor de optie --sort
   -d --delay &lt;DELAY&gt;      DELAY (in milliseconden) tussen updates van de proceslijst
   -t --theme &lt;NAME&gt;       Laadt thema NAME uit het configuratiebestand
      --theme-help         Toont de themanamen die beschikbaar zijn voor de optie --theme

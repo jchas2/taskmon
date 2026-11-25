@@ -15,7 +15,7 @@ public sealed class SummaryControlLayoutTests
     // A new pane setting has to be written to and read from the layout file too.
     [Fact]
     public void SummaryPane_Canary_Test() =>
-        Assert.Equal(2, CanaryTestHelper.GetPropertyCount<SummaryPane>());
+        Assert.Equal(4, CanaryTestHelper.GetPropertyCount<SummaryPane>());
 
     // A CpuCores pane is designer-only (no menu or screen builds one), so persistence is the only
     // thing that carries it between sessions.
@@ -118,6 +118,43 @@ public sealed class SummaryControlLayoutTests
         LayoutTree<SummaryPane> tree = new SummaryControlLayout(parser.Sections[0]).ToTree();
 
         Assert.Equal(controlType, Assert.Single(tree.Panes()).Pane.ControlType);
+    }
+
+    // A process pane's sort follows its columns: pane,Process,<columns>,<sort>,<Asc|Desc>. A sort
+    // column taskmon doesn't know is dropped, leaving SummaryControl2's default.
+    [Theory]
+    [InlineData("pane,Process,Process+Pid+Mem,Gpu,Asc",  Statistics.Process | Statistics.Pid | Statistics.Mem, Statistics.Gpu,  true)]
+    [InlineData("pane,Process,Process+Pid+Mem,Gpu,Desc", Statistics.Process | Statistics.Pid | Statistics.Mem, Statistics.Gpu,  false)]
+    [InlineData("pane,process,,disk",                    null,                                                 Statistics.Disk, false)]
+    [InlineData("pane,Process,Process+Pid,Bogus,asc",    Statistics.Process | Statistics.Pid,                  null,            true)]
+    [InlineData("pane,Process,Process+Pid",              Statistics.Process | Statistics.Pid,                  null,            false)]
+    public void Process_Pane_Reads_Its_Columns_And_Sort(string raw, Statistics? columns, Statistics? sort, bool ascending)
+    {
+        ConfigSection section = new ConfigSection("Sorted")
+            .Add(Constants.Keys.Version, "2")
+            .Add(Constants.Keys.SummaryNodes, "0")
+            .Add($"{Constants.Keys.SummaryNodePrefix}0", raw);
+
+        SummaryPane pane = Assert.Single(new SummaryControlLayout(section).ToTree().Panes()).Pane;
+
+        Assert.Equal(new SummaryPane(PaneControlType.Process, columns, sort, ascending), pane);
+    }
+
+    [Theory]
+    [InlineData(Statistics.Process | Statistics.Pid | Statistics.Mem, Statistics.Gpu, true,  "pane,Process,Process+Pid+Mem,Gpu,Asc")]
+    [InlineData(null,                                                 Statistics.Gpu, false, "pane,Process,,Gpu,Desc")]
+    [InlineData(Statistics.Process | Statistics.Pid | Statistics.Mem, null,           false, "pane,Process,Process+Pid+Mem")]
+    [InlineData(null,                                                 null,           false, "pane,Process")]
+    public void Process_Pane_Writes_Its_Columns_And_Sort(Statistics? columns, Statistics? sort, bool ascending, string expected)
+    {
+        SummaryPane original = new(PaneControlType.Process, columns, sort, ascending);
+        LayoutTree<SummaryPane> tree = new(original);
+
+        ConfigParser parser = new(SummaryControlLayout.FromTree("Sorted", tree).ToString());
+        parser.Parse();
+
+        Assert.Equal(expected, parser.Sections[0].GetString($"{Constants.Keys.SummaryNodePrefix}{tree.RootId}"));
+        Assert.Equal(original, Assert.Single(new SummaryControlLayout(parser.Sections[0]).ToTree().Panes()).Pane);
     }
 
     // Confirms the round trip survives an actual reparse of the written text, not just the

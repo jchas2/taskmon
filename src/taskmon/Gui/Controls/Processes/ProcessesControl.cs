@@ -26,8 +26,10 @@ public sealed class ProcessesControl : Control
             serviceController,
             terminal,
             appConfig) {
-            TabStop  = true,
-            TabIndex = 1
+            TabStop       = true,
+            TabIndex      = 1,
+            SortColumn    = appConfig.SortColumn,
+            SortAscending = appConfig.SortAscending
         };
 
         processInfoControl = new ProcessInfoControl(
@@ -90,6 +92,7 @@ public sealed class ProcessesControl : Control
         }
 
         processControl.SelectedProcessIdChanged += OnSelectedProcessIdChanged;
+        processControl.SortChanged              += OnSortChanged;
 
         base.OnLoad();
     }
@@ -124,9 +127,16 @@ public sealed class ProcessesControl : Control
         processInfoControl.LoadProcess(pid);
     }
 
+    private void OnSortChanged(object? sender, EventArgs e)
+    {
+        appConfig.SortColumn    = processControl.SortColumn;
+        appConfig.SortAscending = processControl.SortAscending;
+    }
+
     protected override void OnUnload()
     {
         processControl.SelectedProcessIdChanged -= OnSelectedProcessIdChanged;
+        processControl.SortChanged              -= OnSortChanged;
         base.OnUnload();
     }
 

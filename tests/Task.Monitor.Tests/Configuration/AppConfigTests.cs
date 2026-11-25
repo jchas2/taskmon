@@ -747,8 +747,32 @@ control.foreground=#abcdef
 
         Assert.Equal(expected, tree.Panes().Select(p => p.Pane.ControlType).ToArray());
 
-        // Like the old grid, the process list uses the app-wide columns - no per-pane override.
-        Assert.Null(tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane.ProcessColumns);
+        // The process list names its own columns, so none come from the PROCESSES view's settings.
+        Assert.NotNull(tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane.ProcessColumns);
+    }
+
+    // Each shipped layout sorts its process list by what its charts show, highest first. The
+    // network charts have no per-process column, so those layouts sort by Cpu.
+    [Theory]
+    [InlineData("All Charts",                           Statistics.Cpu)]
+    [InlineData("All Charts Large",                     Statistics.Cpu)]
+    [InlineData("Cpu and Memory",                       Statistics.Cpu)]
+    [InlineData("Cpu and Memory Large",                 Statistics.Cpu)]
+    [InlineData("Disk Read and Write Bytes",            Statistics.Disk)]
+    [InlineData("Disk Read and Write Bytes Large",      Statistics.Disk)]
+    [InlineData("Gpu and Gpu Memory",                   Statistics.Gpu)]
+    [InlineData("Gpu and Gpu Memory Large",             Statistics.Gpu)]
+    [InlineData("Network Send and Receive Bytes",       Statistics.Cpu)]
+    [InlineData("Network Send and Receive Bytes Large", Statistics.Cpu)]
+    public void Shipped_Layouts_Sort_Their_Process_List_By_Their_Charts(string name, Statistics sort)
+    {
+        AppConfig appConfig = new(fileSystem.Object);
+
+        SummaryPane processPane = appConfig.Layouts.Single(l => l.Name == name).ToTree()
+            .Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane;
+
+        Assert.Equal(sort, processPane.SortColumn);
+        Assert.False(processPane.SortAscending);
     }
 
     [Theory]

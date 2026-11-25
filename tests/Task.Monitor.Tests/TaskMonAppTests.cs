@@ -2,6 +2,7 @@ using System.Reflection;
 using Task.Monitor.Actions;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
 
 namespace Task.Monitor.Tests;
 
@@ -24,21 +25,19 @@ public class TaskMonAppTests
             .Where(t => t.IsClass && t.Assembly == taskmonLib)
             .Count(t => typeof(IAction).IsAssignableFrom(t));
 
-        Assert.Equal(4, count);
+        Assert.Equal(3, count);
     }
 
     public static TheoryData<string, Type> ActionArgData()
         => new() {
             { "-h", typeof(ShowUsageAction) },
             { "--help", typeof(ShowUsageAction) },
-            { "--sort-help", typeof(SortHelpAction) },
             { "--theme-help", typeof(ThemeHelpAction) }
         };
 
     public static TheoryData<string, string, string> InvalidArgData()
         => new() {
             { "--pid", "abc!@#", $"{Constants.AppName}: bad pid arg: abc!@#" },
-            { "--sort", "$bogus$column$", $"{Constants.AppName}: bad sort arg: $bogus$column$" },
             { "--delay", "!#@$%^#$@", $"{Constants.AppName}: bad delay arg: !#@$%^#$@" },
             { "--delay", "200", $"{Constants.AppName}: bad delay arg: 200" },
             { "--delay", "-1500", $"{Constants.AppName}: bad delay arg: -1500" },
@@ -94,8 +93,14 @@ public class TaskMonAppTests
 
         Assert.True(result);
         Assert.Equal(layoutName, runContext.AppConfig.DefaultLayout?.Name);
-        Assert.Equal(sortColumn, runContext.AppConfig.SortColumn);
         Assert.Equal(typeof(RunAppAction), actions[0].GetType());
+
+        // The layout sorts its own process list. The PROCESSES view's sort is left as it was.
+        SummaryPane processPane = runContext.AppConfig.DefaultLayout!.ToTree()
+            .Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane;
+
+        Assert.Equal(sortColumn, processPane.SortColumn);
+        Assert.Equal(Statistics.Cpu, runContext.AppConfig.SortColumn);
     }
 
     [Fact]
@@ -139,6 +144,21 @@ public class TaskMonAppTests
         Assert.True(result);
         Assert.Equal(Constants.Sections.ThemeTaskmonDefault, runContext.AppConfig.Theme.Name);
         Assert.Equal(typeof(RunAppAction), actions[0].GetType());
+    }
+
+    [Theory]
+    [InlineData("-s")]
+    [InlineData("--sort")]
+    [InlineData("--sort-help")]
+    public void Sort_Options_Are_No_Longer_Recognised(string arg)
+    {
+        RunContext runContext = new RunContextHelper().GetRunContext();
+        TaskMonApp app = new(runContext);
+        bool result = app.ProcessArgs(new[] { arg, "Mem" }, out List<IAction> actions);
+
+        Assert.True(result);
+        Assert.Equal(typeof(RunAppAction), Assert.Single(actions).GetType());
+        Assert.Equal(Statistics.Cpu, runContext.AppConfig.SortColumn);
     }
 
     public static TheoryData<string, string, Statistics> TargetedArgData()

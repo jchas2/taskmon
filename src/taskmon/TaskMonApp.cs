@@ -104,7 +104,6 @@ public sealed class TaskMonApp(RunContext runContext)
         string? pidArg     = ExtractArg(arg => arg == "--pid");
         string? userArg    = ExtractArg(arg => arg == "-u" || arg == "--username");
         string? processArg = ExtractArg(arg => arg == "-p" || arg == "--process");
-        string? sortArg    = ExtractArg(arg => arg == "-s" || arg == "--sort");
         string? delayArg   = ExtractArg(arg => arg == "-d" || arg == "--delay");
         string? themeArg   = ExtractArg(arg => arg == "-t" || arg == "--theme");
 
@@ -126,17 +125,6 @@ public sealed class TaskMonApp(RunContext runContext)
             runContext.AppConfig.FilterProcess = processArg;
         }
 
-        if (!string.IsNullOrEmpty(sortArg)) {
-            if (Enum.TryParse(sortArg, out Statistics sortCol)) {
-                runContext.AppConfig.SortColumn      = sortCol;
-                runContext.AppConfig.VisibleColumns |= sortCol;
-            }
-            else {
-                OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: bad sort arg: {sortArg}");
-                result = false;
-            }
-        }
-        
         if (!string.IsNullOrEmpty(delayArg)) {
             if (int.TryParse(delayArg, out int delay) && delay >= WorkerService.MinimumDelayInMilliseconds) {
                 runContext.AppConfig.DelayInMilliseconds = delay;
@@ -165,17 +153,17 @@ public sealed class TaskMonApp(RunContext runContext)
         bool isGpuOnly = args.Contains("--gpu-only");
         bool isCpuOnly = !isGpuOnly && args.Contains("--cpu-only");
         
+        // Each layout's process list sorts itself, by Gpu or Cpu.
         if (isGpuOnly || isCpuOnly) {
-            var (layoutName, sortCol) = isGpuOnly
-                ? (Configuration.Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu)
-                : (Configuration.Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu);
-            
+            string layoutName = isGpuOnly
+                ? Configuration.Constants.Sections.LayoutGpuAndGpuMemoryLarge
+                : Configuration.Constants.Sections.LayoutCpuAndMemoryLarge;
+
             SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
                     l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));
 
             if (layout != null) {
                 runContext.AppConfig.DefaultLayout = layout;
-                runContext.AppConfig.SortColumn    = sortCol;
             }
             else {
                 OutputWriter.Error.WriteLine($"{Configuration.Constants.AppName}: Layout {layoutName} not found");
@@ -186,10 +174,6 @@ public sealed class TaskMonApp(RunContext runContext)
         if (!result || args.Any(arg => arg == "-h" || arg == "--help")) {
             actions.Add(new ShowUsageAction());
             return result;
-        }
-
-        if (result && args.Any(arg => arg == "--sort-help")) {
-            actions.Add(new SortHelpAction());
         }
 
         if (result && args.Any(arg => arg == "--theme-help")) {

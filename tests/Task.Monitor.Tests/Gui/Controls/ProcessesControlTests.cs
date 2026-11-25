@@ -58,6 +58,21 @@ public sealed class ProcessesControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // The [sort] settings in taskmon.ini belong to the PROCESSES view, which keeps them in step.
+    [Fact]
+    public void A_And_D_Save_The_Sort_Direction_To_The_Settings()
+    {
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        Press(ctrl, new ConsoleKeyInfo('a', ConsoleKey.A, false, false, false));
+        Assert.True(runContext.AppConfig.SortAscending);
+
+        Press(ctrl, new ConsoleKeyInfo('d', ConsoleKey.D, false, false, false));
+        Assert.False(runContext.AppConfig.SortAscending);
+
+        ctrl.Unload();
+    }
+
     // Regression test: the selection was kept by row, so the next re-sort put another process in
     // the row a jump from HEALTH had selected.
     [Fact]
@@ -690,6 +705,20 @@ public sealed class ProcessesControlTests : IDisposable
     }
 
     private static ConsoleKeyInfo SortKey => new('s', ConsoleKey.S, false, false, false);
+
+    [Fact]
+    public void Starts_With_The_Sort_From_The_Settings()
+    {
+        runContext.AppConfig.SortColumn    = Statistics.Mem;
+        runContext.AppConfig.SortAscending = true;
+
+        ProcessesControl ctrl = CreateFocusableControl();
+
+        Assert.Equal(Statistics.Mem, ctrl.ProcessControl.SortColumn);
+        Assert.True(ctrl.ProcessControl.SortAscending);
+
+        ctrl.Unload();
+    }
 
     [Fact]
     public void S_Key_Toggles_Sort_Menu()

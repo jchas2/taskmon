@@ -384,10 +384,13 @@
     <value>Unbenannt</value>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Bewegen  V/H Teilen  ↵ Zuweisen  C Spalten  +/- Größe  Entf Entfernen  S Speichern  Esc Zurück</value>
+    <value>←↑→↓ Bewegen  V/H Teilen  ↵ Zuweisen  C Spalten  O Sortieren  +/- Größe  Entf Entfernen  S Speichern  Esc Zurück</value>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Spalten</value>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Sortieren nach</value>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Inhalt zuweisen</value>
@@ -2620,8 +2623,6 @@ Optionen:
      --pid PID            Den Prozess mit der angegebenen PID überwachen
   -u --username &lt;NAME&gt;    Nur Prozesse des Benutzers NAME anzeigen
   -p --process &lt;NAME&gt;     Nur Prozesse anzeigen, deren Name NAME entspricht
-  -s --sort &lt;COLUMN&gt;      Prozessliste nach COLUMN sortieren
-     --sort-help          Listet die für --sort verfügbaren Spalten auf
   -d --delay &lt;DELAY&gt;      DELAY (in Millisekunden) zwischen Aktualisierungen der Prozessliste
   -t --theme &lt;NAME&gt;       Design NAME aus der Konfigurationsdatei laden
      --theme-help         Listet die für --theme verfügbaren Designnamen auf

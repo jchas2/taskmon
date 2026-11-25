@@ -110,6 +110,45 @@ public sealed class SummaryControl2Tests
         ctrl.Unload();
     }
 
+    // A SUMMARY process list takes its columns and sort from the layout. The PROCESSES view's
+    // settings in taskmon.ini never apply to it.
+    [Fact]
+    public void A_Process_Pane_Takes_Its_Columns_And_Sort_From_The_Layout()
+    {
+        runContext.AppConfig.SortColumn     = Statistics.Pid;
+        runContext.AppConfig.SortAscending  = false;
+        runContext.AppConfig.VisibleColumns = Statistics.User;
+
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(
+            PaneControlType.Process, Statistics.Process | Statistics.Pid | Statistics.Mem, Statistics.Gpu, SortAscending: true));
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, runContext.Terminal, runContext.AppConfig, tree);
+        ProcessControl processes = Assert.IsType<ProcessControl>(ctrl.PaneControls.Values.Single());
+
+        Assert.Equal(Statistics.Gpu, processes.SortColumn);
+        Assert.True(processes.SortAscending);
+
+        // The sort column is shown even though the layout's columns leave it out.
+        Assert.Equal(Statistics.Process | Statistics.Pid | Statistics.Mem | Statistics.Gpu, processes.VisibleColumnsOverride);
+    }
+
+    [Fact]
+    public void A_Process_Pane_Without_Columns_Or_Sort_Uses_The_Summary_Defaults()
+    {
+        runContext.AppConfig.SortColumn     = Statistics.Pid;
+        runContext.AppConfig.SortAscending  = true;
+        runContext.AppConfig.VisibleColumns = Statistics.User;
+
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Process));
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, runContext.Terminal, runContext.AppConfig, tree);
+        ProcessControl processes = Assert.IsType<ProcessControl>(ctrl.PaneControls.Values.Single());
+
+        Assert.Equal(SummaryControl2.DefaultProcessSort, processes.SortColumn);
+        Assert.False(processes.SortAscending);
+        Assert.Equal(SummaryControl2.DefaultProcessColumns, processes.VisibleColumnsOverride);
+    }
+
     [Fact]
     public void Builds_A_Cpu_Metre_Pane()
     {
@@ -650,6 +689,44 @@ public sealed class SummaryControl2Tests
         handled = false;
         ctrl.KeyPressed(right, ref handled);
         Assert.False(handled);
+
+        ctrl.Unload();
+    }
+
+    // A sort chosen on SUMMARY lasts for the session only. The PROCESSES view's sort, which Setup
+    // saves to taskmon.ini, stays as it was, and the pane's header follows the pane's own sort.
+    [Fact]
+    public void Sorting_A_Process_Pane_Leaves_The_Processes_View_Sort_Alone()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Process));
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 40 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig, tree) {
+            Width  = 120,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('m', ConsoleKey.M, false, false, false), ref handled);
+        handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('a', ConsoleKey.A, false, false, false), ref handled);
+        ctrl.Draw();
+
+        ProcessControl processes = Assert.IsType<ProcessControl>(ctrl.PaneControls.Values.Single());
+
+        Assert.Equal(Statistics.Mem, processes.SortColumn);
+        Assert.True(processes.SortAscending);
+        Assert.StartsWith("Top MEM", processes.HeaderText);
+
+        Assert.Equal(Statistics.Cpu, runContext.AppConfig.SortColumn);
+        Assert.False(runContext.AppConfig.SortAscending);
 
         ctrl.Unload();
     }

@@ -93,11 +93,13 @@ public sealed class SummaryOutlineTests
         Assert.Contains("Cpu Metre ⣿", Written());
     }
 
+    // The sort column is marked with its direction, and is listed even when the columns leave it out.
     [Theory]
-    [InlineData(Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem, "CPU %, Memory")]
-    [InlineData(null, null)]
-    public void A_Process_Outline_Lists_Its_Own_Columns(Statistics? columns, string? detail) =>
-        Assert.Equal(detail, Outline(new SummaryPane(PaneControlType.Process, columns)).Detail);
+    [InlineData(Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem, null, false, "CPU % ↓, Memory")]
+    [InlineData(null, null, false, "CPU % ↓, Memory")]
+    [InlineData(Statistics.Process | Statistics.Pid | Statistics.Mem, Statistics.Gpu, true, "GPU % ↑, Memory")]
+    public void A_Process_Outline_Lists_Its_Own_Columns_And_Sort(Statistics? columns, Statistics? sort, bool ascending, string detail) =>
+        Assert.Equal(detail, Outline(new SummaryPane(PaneControlType.Process, columns, sort, ascending)).Detail);
 
     private EmptyPaneControl Outline(SummaryPane pane) =>
         Assert.IsType<EmptyPaneControl>(Summary(new LayoutTree<SummaryPane>(pane)).PaneControls.Values.Single());

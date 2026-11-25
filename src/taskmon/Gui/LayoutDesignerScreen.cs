@@ -58,6 +58,7 @@ public sealed class LayoutDesignerScreen : Screen
     private readonly SummaryControl2        summary;
     private readonly PickerBoxControl       controlTypePicker;
     private readonly PickerBoxControl       columnPicker;
+    private readonly PickerBoxControl       sortPicker;
     private readonly TextInputDialogControl saveDialog;
     private readonly MessageBoxControl      messageBox;
     
@@ -75,6 +76,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         controlTypePicker = new PickerBoxControl(runContext.Terminal) { Visible = false };
         columnPicker      = new PickerBoxControl(runContext.Terminal) { Visible = false, MultiSelect = true };
+        sortPicker        = new PickerBoxControl(runContext.Terminal) { Visible = false };
 
         saveDialog = new TextInputDialogControl(runContext.Terminal) {
             Visible = false,
@@ -90,6 +92,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         CommonControl.Text(controlTypePicker);
         CommonControl.Text(columnPicker);
+        CommonControl.Text(sortPicker);
         CommonControl.Text(saveDialog);
         CommonControl.Text(messageBox);
 
@@ -235,7 +238,7 @@ public sealed class LayoutDesignerScreen : Screen
             SelectedPane = SelectedPane with { ProcessColumns = columns };
 
             if (summary.PaneControls[selectedNodeId] is ProcessControl processControl) {
-                processControl.VisibleColumnsOverride = columns;
+                processControl.VisibleColumnsOverride = SummaryControl2.ShownProcessColumns(SelectedPane);
                 processControl.Resize();
             }
         }
@@ -276,6 +279,9 @@ public sealed class LayoutDesignerScreen : Screen
         else if (columnPicker.Visible) {
             columnPicker.Draw();
         }
+        else if (sortPicker.Visible) {
+            sortPicker.Draw();
+        }
         else if (saveDialog.Visible) {
             saveDialog.Draw();
         }
@@ -293,6 +299,11 @@ public sealed class LayoutDesignerScreen : Screen
 
         if (columnPicker.Visible) {
             OnColumnPickerKeyPressed(keyInfo, ref handled);
+            return;
+        }
+
+        if (sortPicker.Visible) {
+            OnSortPickerKeyPressed(keyInfo, ref handled);
             return;
         }
 
@@ -348,6 +359,11 @@ public sealed class LayoutDesignerScreen : Screen
                 handled = true;
                 break;
 
+            case ConsoleKey.O:
+                OpenSortPicker();
+                handled = true;
+                break;
+
             case ConsoleKey.Add:
             case ConsoleKey.OemPlus:
                 AdjustSelectedRatio(RatioStep);
@@ -380,11 +396,13 @@ public sealed class LayoutDesignerScreen : Screen
         CommonControl.ThemeDefaults(this, runContext.AppConfig.Theme);
         CommonControl.Theme(controlTypePicker, runContext.AppConfig.Theme);
         CommonControl.Theme(columnPicker, runContext.AppConfig.Theme);
+        CommonControl.Theme(sortPicker, runContext.AppConfig.Theme);
         CommonControl.Theme(saveDialog, runContext.AppConfig.Theme);
         CommonControl.Theme(messageBox, runContext.AppConfig.Theme);
 
         controlTypePicker.Load();
         columnPicker.Load();
+        sortPicker.Load();
         saveDialog.Load();
         messageBox.Load();
 
@@ -443,6 +461,35 @@ public sealed class LayoutDesignerScreen : Screen
         }
     }
 
+    private void OnSortPickerKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
+    {
+        sortPicker.KeyPressed(keyInfo, ref handled);
+
+        if (sortPicker.Result == PickerBoxResult.None) {
+            return;
+        }
+
+        PickerBoxResult result = sortPicker.Result;
+        int selectedIndex      = sortPicker.SelectedIndex;
+
+        List<(Statistics Column, bool Ascending)> choices = SortChoices(SelectedPane);
+
+        sortPicker.Visible    = false;
+        Control.RedrawEnabled = true;
+
+        if (result == PickerBoxResult.Ok && selectedIndex >= 0 && selectedIndex < choices.Count) {
+            (Statistics column, bool ascending) = choices[selectedIndex];
+
+            SelectedPane = SelectedPane with { SortColumn = column, SortAscending = ascending };
+
+            summary.Show(tree);
+            RefreshSelectionHighlight();
+            summary.Resize();
+        }
+
+        Draw();
+    }
+
     private void OnSystemSnapshotUpdated(object? sender, SystemSnapshotEventArgs e)
     {
         lock (DrawingLock) {
@@ -458,6 +505,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         controlTypePicker.Unload();
         columnPicker.Unload();
+        sortPicker.Unload();
         saveDialog.Unload();
         messageBox.Unload();
 
@@ -485,7 +533,7 @@ public sealed class LayoutDesignerScreen : Screen
 
         Control.RedrawEnabled = false;
 
-        Statistics current = SelectedPane.ProcessColumns ?? runContext.AppConfig.VisibleColumns;
+        Statistics current = SummaryControl2.ShownProcessColumns(SelectedPane);
         List<string> labels = ToggleableColumns.Select(c => c.ToDisplayText()).ToList();
         List<bool> initiallyChecked = ToggleableColumns.Select(c => (current & c) != 0).ToList();
 
@@ -516,6 +564,33 @@ public sealed class LayoutDesignerScreen : Screen
         controlTypePicker.SetItems(labels, initialSelectedIndex: Math.Max(0, currentIndex));
         controlTypePicker.Visible = true;
         controlTypePicker.ShowPickerBox();
+    }
+
+    private void OpenSortPicker()
+    {
+        if (SelectedPane.ControlType != PaneControlType.Process) {
+            return;
+        }
+
+        Control.RedrawEnabled = false;
+
+        List<(Statistics Column, bool Ascending)> choices = SortChoices(SelectedPane);
+
+        List<string> labels = choices
+            .Select(choice => $"{choice.Column.ToDisplayText()} {(choice.Ascending ? "↑" : "↓")}")
+            .ToList();
+
+        int current = choices.IndexOf((SelectedPane.SortColumn ?? SummaryControl2.DefaultProcessSort, SelectedPane.SortAscending));
+
+        sortPicker.Width  = PickerWidth(sortPicker);
+        sortPicker.Height = Math.Clamp(PickerBoxControl.GetPreferredHeight(labels.Count), 8, Math.Max(8, Height - 2));
+        sortPicker.X      = X + Math.Max(0, (Width - sortPicker.Width) / 2);
+        sortPicker.Y      = Y + Math.Max(0, (Height - sortPicker.Height) / 2);
+        sortPicker.Title  = Strings.LayoutDesignerSortTitle;
+
+        sortPicker.SetItems(labels, initialSelectedIndex: Math.Max(0, current));
+        sortPicker.Visible = true;
+        sortPicker.ShowPickerBox();
     }
 
     private int PickerWidth(PickerBoxControl picker) =>
@@ -628,6 +703,12 @@ public sealed class LayoutDesignerScreen : Screen
         messageBox.Visible = true;
         messageBox.ShowMessageBox();
     }
+
+    private static List<(Statistics Column, bool Ascending)> SortChoices(SummaryPane pane) =>
+        ToggleableColumns
+            .Where(column => SummaryControl2.ShownProcessColumns(pane).HasFlag(column))
+            .SelectMany(column => new[] { (column, false), (column, true) })
+            .ToList();
 
     private void SplitSelectedPane(Orientation orientation)
     {

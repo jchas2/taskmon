@@ -30,8 +30,9 @@ public sealed partial class ProcessControl : Control
     private List<ProcessEntry> allProcesses = [];
     private ControlMode        mode         = ControlMode.None;
     
-    private Columns sortColumn;
-    
+    private Columns sortColumn    = Columns.Cpu;
+    private bool    sortAscending = false;
+
     private bool freezeUpdates     = false;
     private int  filterMatchCount  = 0;
     private int  processTotalCount = 0;
@@ -41,37 +42,15 @@ public sealed partial class ProcessControl : Control
 
     public event EventHandler<ListViewItemEventArgs>? ProcessItemSelected;
     public event EventHandler<int>?                   SelectedProcessIdChanged;
+    public event EventHandler?                        SortChanged;
 
     public ProcessControl(ServiceController serviceController, ISystemTerminal terminal, AppConfig appConfig)
         : base(terminal)
     {
         this.serviceController = serviceController;
         this.appConfig         = appConfig;
-        
-        allProcessesLock = new Lock();
 
-        sortColumn = appConfig.SortColumn switch {
-            Statistics.Pid     => Columns.Pid,
-            Statistics.Process => Columns.Process,
-            Statistics.User    => Columns.User,
-            Statistics.Pri     => Columns.Priority,
-            Statistics.Cpu     => Columns.Cpu,
-            Statistics.AvgCpu  => Columns.AvgCpu,
-            Statistics.MaxCpu  => Columns.MaxCpu,
-            Statistics.Thrd    => Columns.Threads,
-            Statistics.Gpu     => Columns.Gpu,
-            Statistics.AvgGpu  => Columns.AvgGpu,
-            Statistics.MaxGpu  => Columns.MaxGpu,
-            Statistics.Mem     => Columns.Memory,
-            Statistics.AvgMem  => Columns.AvgMemory,
-            Statistics.MaxMem  => Columns.MaxMemory,
-            Statistics.Disk    => Columns.Disk,
-            Statistics.AvgDisk => Columns.AvgDisk,
-            Statistics.MaxDisk => Columns.MaxDisk,
-            Statistics.Power   => Columns.Power,
-            Statistics.Path    => Columns.CommandLine,
-                             _ => Columns.Cpu
-        };
+        allProcessesLock = new Lock();
 
         sortView = new ListView(terminal) {
             Visible  = mode == ControlMode.SortSelection,
@@ -237,7 +216,7 @@ public sealed partial class ProcessControl : Control
                 return;
             case ConsoleKey.A:
             case ConsoleKey.D:
-                appConfig.SortAscending = keyInfo.Key == ConsoleKey.A;
+                sortAscending = keyInfo.Key == ConsoleKey.A;
                 SortSelectionChanged(sortColumn);
                 handled = true;
                 return;
@@ -489,15 +468,27 @@ public sealed partial class ProcessControl : Control
         Draw();
     }
 
+    public bool SortAscending
+    {
+        get => sortAscending;
+        init => sortAscending = value;
+    }
+
+    public Statistics SortColumn
+    {
+        get => ToStatistic(sortColumn);
+        init => sortColumn = ToColumn(value);
+    }
+
     private void SortSelectionChanged(Columns column)
     {
         UpdateColumnHeaderSort(decorate: false);
         sortColumn = column;
         UpdateColumnHeaderSort(decorate: true);
-        
-        appConfig.SortColumn = ToStatistic(sortColumn);
-        Trace.WriteLine($"Sort selection = {sortColumn}.");
-        
+
+        Trace.WriteLine($"Sort selection = {sortColumn}, ascending = {sortAscending}.");
+        SortChanged?.Invoke(this, EventArgs.Empty);
+
         mode = ControlMode.None;
         processView.SetFocus();
 
@@ -512,6 +503,29 @@ public sealed partial class ProcessControl : Control
         SortSelectionChanged(column);        
     }
     
+    private static Columns ToColumn(Statistics statistic) => statistic switch {
+        Statistics.Process => Columns.Process,
+        Statistics.Pid     => Columns.Pid,
+        Statistics.User    => Columns.User,
+        Statistics.Pri     => Columns.Priority,
+        Statistics.Cpu     => Columns.Cpu,
+        Statistics.AvgCpu  => Columns.AvgCpu,
+        Statistics.MaxCpu  => Columns.MaxCpu,
+        Statistics.Thrd    => Columns.Threads,
+        Statistics.Gpu     => Columns.Gpu,
+        Statistics.AvgGpu  => Columns.AvgGpu,
+        Statistics.MaxGpu  => Columns.MaxGpu,
+        Statistics.Mem     => Columns.Memory,
+        Statistics.AvgMem  => Columns.AvgMemory,
+        Statistics.MaxMem  => Columns.MaxMemory,
+        Statistics.Disk    => Columns.Disk,
+        Statistics.AvgDisk => Columns.AvgDisk,
+        Statistics.MaxDisk => Columns.MaxDisk,
+        Statistics.Power   => Columns.Power,
+        Statistics.Path    => Columns.CommandLine,
+                         _ => Columns.Cpu
+    };
+
     private static Statistics ToStatistic(Columns column) => column switch {
         Columns.Process     => Statistics.Process,
         Columns.Pid         => Statistics.Pid,
@@ -558,7 +572,7 @@ public sealed partial class ProcessControl : Control
             processView.ColumnHeaders[(int)sortColumn].BackgroundColour = appConfig.Theme.BackgroundHighlight;
             processView.ColumnHeaders[(int)sortColumn].ForegroundColour = appConfig.Theme.ForegroundHighlight;
             
-            processView.ColumnHeaders[(int)sortColumn].Text = appConfig.SortAscending
+            processView.ColumnHeaders[(int)sortColumn].Text = sortAscending
                 ? Title(sortColumn) + "\u2191"
                 : Title(sortColumn) + "\u2193";
         }
@@ -598,7 +612,7 @@ public sealed partial class ProcessControl : Control
             }
 
             IOrderedEnumerable<ProcessEntry> Sort<TKey>(Func<ProcessEntry, TKey> key) =>
-                appConfig.SortAscending
+                sortAscending
                     ? filteredProcesses.OrderBy(key)
                     : filteredProcesses.OrderByDescending(key);
 

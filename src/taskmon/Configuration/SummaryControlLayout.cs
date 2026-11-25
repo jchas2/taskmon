@@ -8,10 +8,13 @@ public sealed class SummaryControlLayout
 {
     // The version of the layout file format, written as the file's version key. It changes only
     // when an older taskmon would misread a file, and a file at any other version isn't loaded.
-    public const int CurrentVersion = 2;
+    public const int     CurrentVersion  = 2;
 
-    private const char FieldSeparator  = ',';
-    private const char ColumnSeparator = '+';
+    private const char   FieldSeparator  = ',';
+    private const char   ColumnSeparator = '+';
+
+    private const string Ascending       = "Asc";
+    private const string Descending      = "Desc";
 
     private ConfigSection? layoutSection;
 
@@ -86,12 +89,19 @@ public sealed class SummaryControlLayout
                 Id   = id,
                 Pane = new SummaryPane(
                     Enum.TryParse(parts[1], ignoreCase: true, out PaneControlType controlType) ? controlType : PaneControlType.Empty,
-                    parts.Length >= 3 ? ParseColumns(parts[2]) : null),
+                    parts.Length >= 3 ? ParseColumns(parts[2]) : null,
+                    parts.Length >= 4 ? ParseSortColumn(parts[3]) : null,
+                    parts.Length >= 5 && parts[4].Trim().Equals(Ascending, StringComparison.OrdinalIgnoreCase)),
             };
         }
 
         return null;
     }
+
+    private static Statistics? ParseSortColumn(string raw) =>
+        Enum.TryParse(raw, ignoreCase: true, out Statistics column) && Enum.IsDefined(column)
+            ? column
+            : null;
 
     private static string SerializeColumns(Statistics columns) =>
         string.Join(ColumnSeparator, Enum.GetValues<Statistics>()
@@ -104,10 +114,24 @@ public sealed class SummaryControlLayout
                 node.Ratio.ToString(CultureInfo.InvariantCulture), node.FirstId, node.SecondId)
             : SerializePane(node.Pane!);
 
-    private static string SerializePane(SummaryPane pane) =>
-        pane.ProcessColumns is { } columns
-            ? string.Join(FieldSeparator, "pane", pane.ControlType.ToString(), SerializeColumns(columns))
-            : string.Join(FieldSeparator, "pane", pane.ControlType.ToString());
+    private static string SerializePane(SummaryPane pane)
+    {
+        List<string> fields = ["pane", pane.ControlType.ToString()];
+
+        string columns = pane.ProcessColumns is { } chosen ? SerializeColumns(chosen) : string.Empty;
+        bool   sorted  = pane.SortColumn is not null || pane.SortAscending;
+
+        if (columns.Length > 0 || sorted) {
+            fields.Add(columns);
+        }
+
+        if (sorted) {
+            fields.Add(pane.SortColumn?.ToString() ?? string.Empty);
+            fields.Add(pane.SortAscending ? Ascending : Descending);
+        }
+
+        return string.Join(FieldSeparator, fields);
+    }
 
     public override string ToString() => layoutSection?.ToString() ?? string.Empty;
 

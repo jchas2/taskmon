@@ -384,10 +384,13 @@
     <value>Sem título</value>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Mover  V/H Dividir  ↵ Atribuir  C Colunas  +/- Tamanho  Del Remover  S Salvar  Esc Voltar</value>
+    <value>←↑→↓ Mover  V/H Dividir  ↵ Atribuir  C Colunas  O Ordenar  +/- Tamanho  Del Remover  S Salvar  Esc Voltar</value>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Colunas</value>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Ordenar por</value>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Atribuir conteúdo</value>
@@ -2620,8 +2623,6 @@ Opções:
      --pid PID            Monitora o processo com o PID informado
   -u --username &lt;NAME&gt;    Mostra apenas os processos do usuário NAME
   -p --process &lt;NAME&gt;     Mostra apenas os processos cujo nome corresponde a NAME
-  -s --sort &lt;COLUMN&gt;      Ordena a lista de processos por COLUMN
-     --sort-help          Mostra as colunas disponíveis para a opção --sort
   -d --delay &lt;DELAY&gt;      DELAY (em milissegundos) entre as atualizações da lista de processos
   -t --theme &lt;NAME&gt;       Carrega o tema NAME do arquivo de configuração
      --theme-help         Mostra os nomes de temas disponíveis para a opção --theme

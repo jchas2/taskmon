@@ -384,10 +384,13 @@
     <value>Bez tytułu</value>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Ruch  V/H Podziel  ↵ Przypisz  C Kolumny  +/- Rozmiar  Del Usuń  S Zapisz  Esc Wstecz</value>
+    <value>←↑→↓ Ruch  V/H Podziel  ↵ Przypisz  C Kolumny  O Sortuj  +/- Rozmiar  Del Usuń  S Zapisz  Esc Wstecz</value>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Kolumny</value>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Sortuj według</value>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Przypisz zawartość</value>
@@ -2620,8 +2623,6 @@ Opcje:
      --pid PID            Monitoruje proces o podanym PID
   -u --username &lt;NAME&gt;    Pokazuje tylko procesy użytkownika NAME
   -p --process &lt;NAME&gt;     Pokazuje tylko procesy o nazwie pasującej do NAME
-  -s --sort &lt;COLUMN&gt;      Sortuje listę procesów według kolumny COLUMN
-     --sort-help          Wyświetla kolumny dostępne dla opcji --sort
   -d --delay &lt;DELAY&gt;      DELAY (w milisekundach) między odświeżeniami listy procesów
   -t --theme &lt;NAME&gt;       Wczytuje motyw NAME z pliku konfiguracji
      --theme-help         Wyświetla nazwy motywów dostępnych dla opcji --theme

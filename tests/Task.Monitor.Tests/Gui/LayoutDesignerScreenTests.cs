@@ -6,6 +6,7 @@ using Moq;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui;
+using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Internal.Abstractions;
@@ -293,6 +294,27 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         Assert.True((columns!.Value & Statistics.AvgCpu) != 0);
         Assert.True((columns.Value & Statistics.Process) != 0);
         Assert.True((columns.Value & Statistics.Pid) != 0);
+
+        screen.Unload();
+    }
+
+    // The column picker starts from the pane's own columns, or SUMMARY's defaults, never from the
+    // PROCESSES view's columns in taskmon.ini.
+    [Fact]
+    public void C_On_A_Process_Pane_Without_Columns_Starts_From_The_Summary_Defaults()
+    {
+        runContext.AppConfig.VisibleColumns = Statistics.User | Statistics.Thrd | Statistics.Path;
+
+        LayoutDesignerScreen screen = CreateScreen();
+        screen.Open(new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Process)), null);
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.C), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(
+            SummaryControl2.DefaultProcessColumns,
+            Assert.Single(screen.Tree.Panes()).Pane.ProcessColumns);
 
         screen.Unload();
     }
@@ -625,6 +647,50 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         Assert.Same(freshTree, screen.Tree);
         Assert.Equal("My Dashboard", screen.LayoutName);
         Assert.Equal(freshTree.Panes().First().Id, screen.SelectedNodeId);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void O_On_A_Pane_That_Is_Not_A_Process_List_Does_Nothing()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+        screen.Open(new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Cpu)), null);
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.O), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        Assert.Equal(new SummaryPane(PaneControlType.Cpu), Assert.Single(screen.Tree.Panes()).Pane);
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void O_On_A_Process_Pane_Opens_The_Sort_Picker_And_Enter_Applies_The_Choice()
+    {
+        LayoutDesignerScreen screen = CreateScreen();
+
+        // Shows Cpu (the default sort) and Mem, so the picker lists, sorted by label:
+        // "CPU % ↑", "CPU % ↓" (current), "Memory ↑", "Memory ↓".
+        screen.Open(
+            new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Process, Statistics.Process | Statistics.Pid | Statistics.Mem)),
+            null);
+
+        bool handled = false;
+        screen.KeyPressed(Key(ConsoleKey.O), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+        screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
+
+        (_, SummaryPane pane) = Assert.Single(screen.Tree.Panes());
+
+        Assert.Equal(Statistics.Mem, pane.SortColumn);
+        Assert.True(pane.SortAscending);
+
+        // The live preview pane is rebuilt with the new sort.
+        ProcessControl processes = Panes(screen).OfType<ProcessControl>().Single();
+        Assert.Equal(Statistics.Mem, processes.SortColumn);
+        Assert.True(processes.SortAscending);
 
         screen.Unload();
     }

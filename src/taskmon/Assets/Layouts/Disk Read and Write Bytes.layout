@@ -15,11 +15,12 @@
 ; A split tree (see SummaryControlLayout). Each node is one of:
 ;   split,<Row|Column>,<ratio>,<first>,<second>  - Row = side by side, Column = stacked,
 ;                                                   ratio = the first child's share
-;   pane,<control>[,<process columns joined with +>]
+;   pane,<control>[,<columns>,<sort>,<Asc|Desc>] - a Process pane can name its columns,
+;                                                   joined with +, and the column it sorts by
 ; The Disk chart over the process list, the chart taking 60% of the height.
 version=2
 root=0
 nodes=0,1,2
 node.0=split,Column,0.6,1,2
 node.1=pane,Disk
-node.2=pane,Process
+node.2=pane,Process,Process+Pid+User+Cpu+Mem+Disk+AvgDisk+Path,Disk,Desc

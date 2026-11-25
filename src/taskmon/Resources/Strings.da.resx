@@ -384,10 +384,13 @@
     <value>Uden navn</value>
   </data>
   <data name="LayoutDesignerHelp" xml:space="preserve">
-    <value>←↑→↓ Flyt  V/H Opdel  ↵ Tildel  C Kolonner  +/- Størrelse  Del Fjern  S Gem  Esc Tilbage</value>
+    <value>←↑→↓ Flyt  V/H Opdel  ↵ Tildel  C Kolonner  O Sorter  +/- Størrelse  Del Fjern  S Gem  Esc Tilbage</value>
   </data>
   <data name="LayoutDesignerColumnsTitle" xml:space="preserve">
     <value>Kolonner</value>
+  </data>
+  <data name="LayoutDesignerSortTitle" xml:space="preserve">
+    <value>Sorter efter</value>
   </data>
   <data name="LayoutDesignerAssignTitle" xml:space="preserve">
     <value>Tildel indhold</value>
@@ -2620,8 +2623,6 @@ Indstillinger:
      --pid PID            Overvåger processen med det angivne PID
   -u --username &lt;NAME&gt;    Viser kun processer for brugeren NAME
   -p --process &lt;NAME&gt;     Viser kun processer, hvis navn matcher NAME
-  -s --sort &lt;COLUMN&gt;      Sorterer proceslisten efter COLUMN
-     --sort-help          Viser de kolonner, der kan bruges med --sort
   -d --delay &lt;DELAY&gt;      DELAY (i millisekunder) mellem opdateringer af proceslisten
   -t --theme &lt;NAME&gt;       Indlæser temaet NAME fra konfigurationsfilen
      --theme-help         Viser de temanavne, der kan bruges med --theme

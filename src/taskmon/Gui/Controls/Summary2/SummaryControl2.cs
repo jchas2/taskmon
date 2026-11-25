@@ -33,6 +33,9 @@ public sealed class SummaryControl2 : Control
     private const double NetworkPeakFloor  = 64 * 1024;
     private const int    MetrePaneHeight   = 3;
 
+    internal const Statistics DefaultProcessColumns = Statistics.Process | Statistics.Pid | Statistics.Cpu | Statistics.Mem;
+    internal const Statistics DefaultProcessSort    = Statistics.Cpu;
+
 #if __APPLE__
     internal static readonly PaneControlType[] UnavailableControlTypes = [];
 #else
@@ -250,9 +253,12 @@ public sealed class SummaryControl2 : Control
                     : null),
 #endif
 
+            // A sort changed here lasts only as long as the pane, so SortChanged isn't kept.
             PaneControlType.Process => (new ProcessControl(serviceController, Terminal, appConfig) {
                 TabStop                = true,
-                VisibleColumnsOverride = pane.ProcessColumns
+                VisibleColumnsOverride = ShownProcessColumns(pane),
+                SortColumn             = pane.SortColumn ?? DefaultProcessSort,
+                SortAscending          = pane.SortAscending
             }, null),
             PaneControlType.Drivers       => (new DriversControl(serviceController, Terminal, appConfig)       { TabStop = true }, null),
 #if __APPLE__
@@ -415,7 +421,7 @@ public sealed class SummaryControl2 : Control
         int processCount = snapshot?.Processes?.Metrics.ProcessCount ?? 0;
 
         foreach (ProcessControl processControl in panes.Values.Select(pane => pane.Control).OfType<ProcessControl>()) {
-            processControl.HeaderText = ProcessHeaderText(appConfig.SortColumn, processCount);
+            processControl.HeaderText = ProcessHeaderText(processControl.SortColumn, processCount);
         }
     }
 
@@ -590,10 +596,14 @@ public sealed class SummaryControl2 : Control
             or PaneControlType.MemoryMetre or PaneControlType.VirtualMemoryMetre or PaneControlType.DiskMetre
             or PaneControlType.NetworkSendMetre or PaneControlType.NetworkReceiveMetre or PaneControlType.NpuMetre;
 
-        string columns = type == PaneControlType.Process && pane.ProcessColumns is { } chosen
+        Statistics shown = ShownProcessColumns(pane);
+        Statistics sort  = pane.SortColumn ?? DefaultProcessSort;
+        string     arrow = pane.SortAscending ? "↑" : "↓";
+
+        string columns = type == PaneControlType.Process
             ? string.Join(", ", Enum.GetValues<Statistics>()
-                .Where(column => column is not (Statistics.Process or Statistics.Pid) && chosen.HasFlag(column))
-                .Select(column => column.ToDisplayText()))
+                .Where(column => column is not (Statistics.Process or Statistics.Pid) && shown.HasFlag(column))
+                .Select(column => column == sort ? $"{column.ToDisplayText()} {arrow}" : column.ToDisplayText()))
             : string.Empty;
 
         return new EmptyPaneControl(Terminal) {
@@ -644,6 +654,9 @@ public sealed class SummaryControl2 : Control
 
         SyncPanes();
     }
+
+    internal static Statistics ShownProcessColumns(SummaryPane pane) =>
+        (pane.ProcessColumns ?? DefaultProcessColumns) | (pane.SortColumn ?? DefaultProcessSort);
 
     private void SyncPanes()
     {

@@ -124,8 +124,6 @@ Task Monitor supports the following commands on startup. Note these commands can
 | `taskmon --pid <pid>` | Automatically monitor the pid nnn on startup. |
 | `taskmon --username <username>` | Automatically monitor all processes running under user username on startup. |
 | `taskmon --process <processname>` | Automatically monitor all processes with matching processname on startup. |
-| `taskmon --sort <column>` | Automatically sort by <column> on startup. |
-| `taskmon --sort-help` | Show the list of columns available for the `--sort` option. |
 | `taskmon --delay <delay>` | Use <delay> in milliseconds between chart and process updates. |
 | `taskmon --theme <theme>` | Load a theme <theme> from the available themes. Eg: `taskmon --theme "Dracula Official"` |
 | `taskmon --theme-help` | Show the list of theme names available for the `--theme` option. |
@@ -457,7 +455,7 @@ root=0
 nodes=0,1,2,3,4
 node.0=split,Column,0.6,1,2
 node.1=split,Row,0.5,3,4
-node.2=pane,Process
+node.2=pane,Process,Process+Pid+User+Cpu+AvgCpu+Mem+AvgMem+Path,Cpu,Desc
 node.3=pane,Cpu
 node.4=pane,Memory
 ```
@@ -469,7 +467,8 @@ node.4=pane,Memory
 | `root=0` | The node that fills the whole SUMMARY screen. |
 | `nodes=0,1,2,3,4` | The ids of every node in the layout. |
 | `node.0=split,Column,0.6,1,2` | A split: `Column` stacks node 1 above node 2, `Row` puts them side by side. `0.6` is the first node's share of the space, here 60%. |
-| `node.2=pane,Process` | A pane showing one control. The process list can name its own columns, joined with `+`, e.g. `pane,Process,Process+Pid+Cpu+Mem`. Without them it uses the columns chosen in Setup. |
+| `node.3=pane,Cpu` | A pane showing one control. |
+| `node.2=pane,Process,Process+Pid+User+Cpu+AvgCpu+Mem+AvgMem+Path,Cpu,Desc` | A process list can follow its control name with its columns, joined with `+`, then the column it sorts by and `Desc` (highest first) or `Asc` (lowest first). Without columns it shows Process, Pid, Cpu and Mem, and without a sort it sorts by Cpu, highest first. The sort column is always shown. These are the layout's own: the PROCESSES view's columns and sort in `taskmon.ini` don't apply. Sorting a SUMMARY process list with `s`, `a`, `d`, `p`, `g` or `m` lasts until you switch layout or exit; to keep a sort, set it with `O` in the Layout Designer. |
 
 Pane controls are `Cpu`, `CpuCores`, `Memory`, `VirtualMemory`, `Gpu`, `GpuMemory`, `Disk`, `DiskSpace`, `NetworkSent`, `NetworkReceived`, `Power`, `Thermals`, `Fans`, `Npu`, `Health` (the resources list from `HEALTH`), the metres `CpuMetre`, `MemoryMetre`, `VirtualMemoryMetre`, `GpuMetre`, `GpuMemoryMetre`, `DiskMetre`, `NetworkSendMetre`, `NetworkReceiveMetre` and `NpuMetre`, the lists `Process`, `Services`, `Drivers`, `Startup`, `InstalledApps` and `SystemInfo`, and `Empty`. `Fans`, `Npu` and `NpuMetre` are macOS only, and are shown empty on Windows, as is a pane with a control name Task Monitor doesn't know.
 
