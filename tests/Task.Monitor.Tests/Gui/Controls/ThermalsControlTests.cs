@@ -2,7 +2,9 @@ using System.Reflection;
 using Task.Monitor.Gui.Controls.Thermals;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
+using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
@@ -113,6 +115,25 @@ public sealed class ThermalsControlTests
 
         ctrl.Load();
         ctrl.Resize();
+        return ctrl;
+    }
+
+    // SetFocus needs a screen to hold the focus.
+    private ThermalsControl CreateOnScreen(int height = 40)
+    {
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen             screen   = new(terminal) { Width = 120, Height = height };
+
+        ThermalsControl ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
+            Width  = 120,
+            Height = height
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
         return ctrl;
     }
 
@@ -313,6 +334,49 @@ public sealed class ThermalsControlTests
         ctrl.Unload();
     }
 
+    private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
+
+    // One chart fits, so Down would scroll the charts if it reached them.
+    [Fact]
+    public void Keys_Go_To_The_Focused_Side_Pane()
+    {
+        ThermalsControl ctrl  = CreateOnScreen(height: 9);
+        PowerControl    power = Assert.Single(ctrl.Controls.OfType<PowerControl>());
+
+        ctrl.Sample(SnapshotWith(
+            Sensor(ThermalComponent.Gpu,  "111", "GPU",       40),
+            Sensor(ThermalComponent.Disk, "0",   "Composite", 35, ThermalSource.NvmeHealthLog)));
+
+        power.Sample(new SystemSnapshot {
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [.. Enumerable.Range(0, 10).Select(i => new PowerReading {
+                        Component = PowerComponent.Disk, ComponentId = $"{i}", Rail = PowerRails.Drive, Watts = i
+                    })]
+                }
+            }
+        });
+
+        bool handled = false;
+        ctrl.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        Assert.True(power.Focused);
+
+        handled = false;
+        ctrl.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(1, power.PowerView.SelectedIndex);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Draw();
+
+        Assert.Contains("40°C", CapturedOutput());
+        Assert.DoesNotContain("35°C", CapturedOutput());
+
+        ctrl.Unload();
+    }
+
     // ServiceController only raises this from its worker loop, and the fans pane subscribes itself.
     private void RaiseSnapshotUpdated(SystemSnapshot snapshot)
     {
@@ -321,6 +385,48 @@ public sealed class ThermalsControlTests
             .GetValue(runContext.ServiceController);
 
         handler?.DynamicInvoke(runContext.ServiceController, new SystemSnapshotEventArgs(snapshot));
+    }
+
+    [Fact]
+    public void Right_And_Left_Move_Focus_Through_The_Charts_And_The_Side_Panes()
+    {
+        ThermalsControl ctrl  = CreateOnScreen();
+        PowerControl    power = Assert.Single(ctrl.Controls.OfType<PowerControl>());
+
+        bool Press(ConsoleKey key)
+        {
+            bool handled = false;
+            ctrl.KeyPressed(Key(key), ref handled);
+            return handled;
+        }
+
+        Assert.True(ctrl.Focused);
+
+        Assert.True(Press(ConsoleKey.RightArrow));
+        Assert.True(power.Focused);
+        Assert.False(ctrl.Focused);
+
+#if __APPLE__
+        FansControl fans = Assert.Single(ctrl.Controls.OfType<FansControl>());
+
+        Assert.True(Press(ConsoleKey.RightArrow));
+        Assert.True(fans.Focused);
+
+        Assert.True(Press(ConsoleKey.LeftArrow));
+        Assert.True(power.Focused);
+#else
+        Assert.False(Press(ConsoleKey.RightArrow));
+        Assert.True(power.Focused);
+#endif
+
+        Assert.True(Press(ConsoleKey.LeftArrow));
+        Assert.True(ctrl.Focused);
+
+        // Left from the charts is left to the main screen, which returns to the menu.
+        Assert.False(Press(ConsoleKey.LeftArrow));
+        Assert.True(ctrl.Focused);
+
+        ctrl.Unload();
     }
 
     [Fact]

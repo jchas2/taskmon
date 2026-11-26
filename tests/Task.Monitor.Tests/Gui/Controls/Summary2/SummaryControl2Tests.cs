@@ -14,6 +14,7 @@ using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
+using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
@@ -685,6 +686,58 @@ public sealed class SummaryControl2Tests
         handled = false;
         ctrl.KeyPressed(right, ref handled);
         Assert.False(handled);
+
+        ctrl.Unload();
+    }
+
+    // Ten readings in a Power pane that shows five rows: once Right reaches the pane, Down moves the
+    // selection in its list, and Left still moves focus back.
+    [Fact]
+    public void Right_Onto_A_Power_Pane_Then_Down_Moves_Its_Selection()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Cpu));
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Power));
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 8 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig, tree) {
+            Width  = 120,
+            Height = 8
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        PowerControl power = Assert.Single(ctrl.PaneControls.Values.OfType<PowerControl>());
+
+        power.Sample(new SystemSnapshot {
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [.. Enumerable.Range(0, 10).Select(i => new PowerReading {
+                        Component = PowerComponent.Disk, ComponentId = $"{i}", Rail = PowerRails.Drive, Watts = i
+                    })]
+                }
+            }
+        });
+
+        bool Press(ConsoleKey key)
+        {
+            bool handled = false;
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', key, false, false, false), ref handled);
+            return handled;
+        }
+
+        Assert.True(Press(ConsoleKey.RightArrow));
+        Assert.Same(power, GetFocusedPane(ctrl));
+
+        Assert.True(Press(ConsoleKey.DownArrow));
+        Assert.Equal(1, power.PowerView.SelectedIndex);
+
+        Assert.True(Press(ConsoleKey.LeftArrow));
+        Assert.IsType<Chart>(GetFocusedPane(ctrl));
 
         ctrl.Unload();
     }

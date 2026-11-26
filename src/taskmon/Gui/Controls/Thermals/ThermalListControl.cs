@@ -27,8 +27,8 @@ public sealed class ThermalListControl : Control
         this.appConfig         = appConfig;
 
         thermalView = new ListView(terminal) {
-            EnableScroll      = false,
-            EnableRowSelect   = false,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = false,
@@ -59,6 +59,9 @@ public sealed class ThermalListControl : Control
         thermalView.Focused = Focused;
         thermalView.Draw();
     }
+
+    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) =>
+        thermalView.KeyPressed(keyInfo, ref handled);
 
     protected override void OnLoad()
     {
@@ -102,6 +105,9 @@ public sealed class ThermalListControl : Control
             return;
         }
 
+        int top      = thermalView.TopIndex;
+        int selected = thermalView.SelectedIndex;
+
         thermalView.Items.Clear();
 
         Color background = appConfig.Theme.ListViewBackground;
@@ -130,6 +136,12 @@ public sealed class ThermalListControl : Control
                 ],
                 background,
                 foreground));
+        }
+
+        if (thermalView.Items.Count > 0) {
+            thermalView.TopIndex      = top;
+            thermalView.SelectedIndex = Math.Min(selected, thermalView.Items.Count - 1);
+            thermalView.ScrollSelectedIntoView();
         }
 
         Draw();

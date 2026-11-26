@@ -316,6 +316,25 @@ public sealed class ThermalsControl : Control
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
+        Control[] parts = new Control?[] { this, powerControl, fansControl }.OfType<Control>().ToArray();
+        int focused     = Math.Max(0, Array.FindIndex(parts, part => part.Focused));
+
+        if (keyInfo.Key is ConsoleKey.LeftArrow or ConsoleKey.RightArrow) {
+            int target = keyInfo.Key == ConsoleKey.RightArrow ? focused + 1 : focused - 1;
+
+            if (target >= 0 && target < parts.Length) {
+                parts[target].SetFocus();
+                handled = true;
+            }
+
+            return;
+        }
+
+        if (focused > 0) {
+            parts[focused].KeyPressed(keyInfo, ref handled);
+            return;
+        }
+
         int visibleCharts = Math.Max(1, Height / ChartHeight);
         int maxOffset     = Math.Max(0, rows.Count - visibleCharts);
 

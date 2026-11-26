@@ -231,8 +231,6 @@ public class ListView : Control
                     : '\u2502');
         }
 
-        // FooterText may carry SGR colour sequences, which take no columns: centre and truncate the
-        // label by its visible width rather than its length.
         string footerLabel    = string.IsNullOrEmpty(FooterText) ? string.Empty : $" {FooterText} ";
         int footerLabelLen    = FitFooterLabel(footerLabel, innerWidth, out int footerLabelWidth);
         int footerLeftDashes  = (innerWidth - footerLabelWidth) / 2;
@@ -432,9 +430,10 @@ public class ListView : Control
         int topRow    = viewPort.Bounds.Y;
         int bottomRow = viewPort.Bounds.Y + viewPort.RowCount - 1;
 
+        // A one-row list has a single indicator cell, which shows ▼ at the top as the full draw does.
         frame.MoveTo(x, topRow);
         SetBorderColour();
-        frame.Append(topRow == upRow ? '▲' : '│');
+        frame.Append(topRow == upRow ? '▲' : topRow == downRow ? '▼' : '│');
 
         if (bottomRow != topRow) {
             frame.MoveTo(x, bottomRow);

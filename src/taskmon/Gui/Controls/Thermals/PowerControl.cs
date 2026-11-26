@@ -37,8 +37,8 @@ public sealed class PowerControl : Control
         this.appConfig         = appConfig;
 
         powerView = new ListView(terminal) {
-            EnableScroll      = false,
-            EnableRowSelect   = false,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = false,
@@ -120,6 +120,9 @@ public sealed class PowerControl : Control
         powerView.Draw();
     }
 
+    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) =>
+        powerView.KeyPressed(keyInfo, ref handled);
+
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
@@ -157,6 +160,9 @@ public sealed class PowerControl : Control
 
     private void RebuildRows(PowerMetrics metrics)
     {
+        int top      = powerView.TopIndex;
+        int selected = powerView.SelectedIndex;
+
         powerView.Items.Clear();
 
         Color background = appConfig.Theme.ListViewBackground;
@@ -184,6 +190,12 @@ public sealed class PowerControl : Control
             powerWidth     = Math.Max(powerWidth,     widestWatts.TerminalWidth());
 
             powerView.Items.Add(new ListViewItem([component, BuildName(reading), reading.Rail, watts], background, foreground));
+        }
+
+        if (powerView.Items.Count > 0) {
+            powerView.TopIndex      = top;
+            powerView.SelectedIndex = Math.Min(selected, powerView.Items.Count - 1);
+            powerView.ScrollSelectedIntoView();
         }
     }
 

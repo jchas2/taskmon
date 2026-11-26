@@ -81,6 +81,34 @@ public sealed class ThermalListControlTests
         return ctrl;
     }
 
+    // Ten drives in a pane that shows two rows: the second Down moves the selection past the
+    // bottom, so the list scrolls a row.
+    [Fact]
+    public void Down_Moves_The_Selection_And_The_Next_Readings_Keep_It()
+    {
+        ThermalListControl ctrl = CreateControl(height: 5);
+
+        SystemSnapshot snapshot = SnapshotWith(
+            [.. Enumerable.Range(0, 10).Select(i => Sensor(ThermalComponent.Disk, $"{i}", "Composite", 30 + i, ThermalSource.NvmeHealthLog))]);
+
+        ctrl.Sample(snapshot);
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(2, ctrl.ThermalView.SelectedIndex);
+        Assert.Equal(1, ctrl.ThermalView.TopIndex);
+
+        ctrl.Sample(snapshot);
+
+        Assert.Equal(2, ctrl.ThermalView.SelectedIndex);
+        Assert.Equal(1, ctrl.ThermalView.TopIndex);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Draws_Each_Component_With_Its_Name_And_Temperature()
     {
@@ -141,6 +169,22 @@ public sealed class ThermalListControlTests
         ctrl.Sample(new SystemSnapshot());
 
         Assert.Equal([("GPU", "NVIDIA GeForce RTX 4070 SUPER", "45°C")], Rows(ctrl));
+
+        ctrl.Unload();
+    }
+
+    [Theory]
+    [InlineData(ConsoleKey.LeftArrow)]
+    [InlineData(ConsoleKey.RightArrow)]
+    public void Leaves_Left_And_Right_To_The_Host(ConsoleKey key)
+    {
+        ThermalListControl ctrl = CreateControl();
+        ctrl.Sample(SnapshotWith(Sensor(ThermalComponent.Gpu, $"{GpuLuid}", "GPU", 45)));
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', key, false, false, false), ref handled);
+
+        Assert.False(handled);
 
         ctrl.Unload();
     }

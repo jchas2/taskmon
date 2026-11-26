@@ -30,6 +30,50 @@ public sealed class FansControlTests
         Assert.Equal([4, 4, 4, 4, 6], FansControl.ComputeColumnWidths(25));
     }
 
+    // Ten fans in a pane that shows two rows: the second Down moves the selection past the bottom, so
+    // the list scrolls a row. Left and Right are left to the host.
+    [Fact]
+    public void Down_Moves_The_Selection_And_The_Next_Readings_Keep_It()
+    {
+        FansControl ctrl = new(runContext.ServiceController, new ForwardingTerminal(runContext.Terminal), runContext.AppConfig) {
+            Width  = 56,
+            Height = 5
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        SystemSnapshot snapshot = new() {
+            Thermal = new ThermalInfo {
+                Metrics = new ThermalMetrics {
+                    Fans = [.. Enumerable.Range(1, 10).Select(i => new FanReading { Name = $"Fan {i}", Rpm = 2000, MinRpm = 1000, MaxRpm = 5000 })]
+                }
+            }
+        };
+
+        ctrl.Sample(snapshot);
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(2, ctrl.FansView.SelectedIndex);
+        Assert.Equal(1, ctrl.FansView.TopIndex);
+
+        ctrl.Sample(snapshot);
+
+        Assert.Equal(2, ctrl.FansView.SelectedIndex);
+        Assert.Equal(1, ctrl.FansView.TopIndex);
+
+        handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+
+        Assert.False(handled);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void HeightFor_Fits_The_Header_Borders_And_One_Row_Per_Fan()
     {

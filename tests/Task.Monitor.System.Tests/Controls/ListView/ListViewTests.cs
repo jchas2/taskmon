@@ -109,6 +109,35 @@ public sealed class ListViewTests
         Assert.Contains("Item 7", terminal.Output);
     }
 
+    // A one-row list has one indicator cell, so paging back to the top must turn ▲ into ▼, not │.
+    [Fact]
+    public void A_One_Row_List_Shows_The_Down_Indicator_After_Paging_Back_To_The_Top()
+    {
+        ListViewControl listView = new(terminal) {
+            Width             = 20,
+            Height            = 3,
+            ShowColumnHeaders = false
+        };
+
+        listView.ColumnHeaders.Add(new ListViewColumnHeader(string.Empty) { Width = 18 });
+
+        for (int i = 0; i < 3; i++) {
+            listView.Items.Add(new ListViewItem($"Item {i}"));
+        }
+
+        listView.Draw();
+
+        bool handled = false;
+        listView.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.DownArrow), ref handled);
+
+        terminal.Reset();
+        listView.KeyPressed(ControlHelper.GetConsoleKeyInfo(ConsoleKey.UpArrow), ref handled);
+
+        Assert.Equal(0, listView.TopIndex);
+        Assert.Contains(Down, terminal.Output);
+        Assert.DoesNotContain(Up, terminal.Output);
+    }
+
     private static string Bg(Color c) => ConsolePalette.BackgroundSgr(c);
 
     [Fact]

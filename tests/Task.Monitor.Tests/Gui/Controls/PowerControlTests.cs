@@ -81,6 +81,50 @@ public sealed class PowerControlTests
         return ctrl;
     }
 
+    // Ten readings in a pane that shows two rows: the second Down moves the selection past the
+    // bottom, so the list scrolls a row.
+    [Fact]
+    public void Down_Moves_The_Selection_And_The_Next_Readings_Keep_It()
+    {
+        PowerControl ctrl = CreateControl(height: 5);
+
+        SystemSnapshot Readings(int count) => new() {
+            Power = new PowerInfo {
+                Metrics = new PowerMetrics {
+                    Readings = [.. Enumerable.Range(0, count).Select(i => Power(PowerComponent.Disk, PowerRails.Drive, i, componentId: $"{i}"))]
+                }
+            }
+        };
+
+        ctrl.Sample(Readings(10));
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Equal(2, ctrl.PowerView.SelectedIndex);
+        Assert.Equal(1, ctrl.PowerView.TopIndex);
+
+        runContextHelper.terminal.Invocations.Clear();
+        ctrl.Sample(Readings(10));
+
+        string output = CapturedOutput();
+
+        Assert.Equal(2, ctrl.PowerView.SelectedIndex);
+        Assert.Equal(1, ctrl.PowerView.TopIndex);
+        Assert.Contains("Disk 2", output);
+        Assert.DoesNotContain("Disk 0", output);
+
+        // Fewer readings keep the selection on the list.
+        ctrl.Sample(Readings(2));
+
+        Assert.Equal(1, ctrl.PowerView.SelectedIndex);
+        Assert.Equal(0, ctrl.PowerView.TopIndex);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Draws_Each_Reading_With_System_First()
     {
@@ -137,6 +181,22 @@ public sealed class PowerControlTests
         ctrl.Draw();
 
         Assert.False(ctrl.PowerView.Focused);
+
+        ctrl.Unload();
+    }
+
+    [Theory]
+    [InlineData(ConsoleKey.LeftArrow)]
+    [InlineData(ConsoleKey.RightArrow)]
+    public void Leaves_Left_And_Right_To_The_Host(ConsoleKey key)
+    {
+        PowerControl ctrl = CreateControl();
+        ctrl.Sample(WindowsSnapshot(22.8));
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', key, false, false, false), ref handled);
+
+        Assert.False(handled);
 
         ctrl.Unload();
     }

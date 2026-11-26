@@ -28,8 +28,8 @@ public sealed class FansControl : Control
         this.appConfig         = appConfig;
 
         fansView = new ListView(terminal) {
-            EnableScroll      = false,
-            EnableRowSelect   = false,
+            EnableScroll      = true,
+            EnableRowSelect   = true,
             ShowColumnHeaders = true,
             ShowBorder        = true,
             TabStop           = false,
@@ -73,6 +73,9 @@ public sealed class FansControl : Control
         fansView.Draw();
     }
 
+    protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled) =>
+        fansView.KeyPressed(keyInfo, ref handled);
+
     protected override void OnLoad()
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
@@ -115,6 +118,9 @@ public sealed class FansControl : Control
             return;
         }
 
+        int top      = fansView.TopIndex;
+        int selected = fansView.SelectedIndex;
+
         fansView.Items.Clear();
 
         Color background = appConfig.Theme.ListViewBackground;
@@ -125,6 +131,12 @@ public sealed class FansControl : Control
                 [fan.Name, fan.ToSpeedText(), fan.MinRpm.ToRpmText(), fan.MaxRpm.ToRpmText(), fan.ToLoadText()],
                 background,
                 foreground));
+        }
+
+        if (fansView.Items.Count > 0) {
+            fansView.TopIndex      = top;
+            fansView.SelectedIndex = Math.Min(selected, fansView.Items.Count - 1);
+            fansView.ScrollSelectedIntoView();
         }
 
         Draw();
