@@ -5,6 +5,7 @@ using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.DiskSpace;
+using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
@@ -259,6 +260,7 @@ public sealed class SummaryControl2 : Control
             PaneControlType.Power         => (new PowerControl(serviceController, Terminal, appConfig)         { TabStop = false }, null),
             PaneControlType.Health        => (new HealthControl(serviceController, Terminal, appConfig)        { TabStop = false, ShowCausesAndEvents = false }, null),
             PaneControlType.ThermalList   => (new ThermalListControl(serviceController, Terminal, appConfig)   { TabStop = false }, null),
+            PaneControlType.GpuStack      => (new GpuStackControl(serviceController, Terminal, appConfig)      { TabStop = false }, null),
 #if __APPLE__
             PaneControlType.Fans          => (new FansControl(serviceController, Terminal, appConfig)          { TabStop = false }, null),
 #endif

@@ -106,7 +106,8 @@ public sealed class SummaryControlLayoutTests
     [InlineData(PaneControlType.Power)]
     [InlineData(PaneControlType.Health)]
     [InlineData(PaneControlType.ThermalList)]
-    public void Power_Health_And_Thermal_List_Panes_Round_Trip(PaneControlType controlType)
+    [InlineData(PaneControlType.GpuStack)]
+    public void Power_Health_Thermal_List_And_Gpu_Stack_Panes_Round_Trip(PaneControlType controlType)
     {
         LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(
             [new LayoutNode<SummaryPane> { Id = 0, Pane = new(controlType) }], rootId: 0);

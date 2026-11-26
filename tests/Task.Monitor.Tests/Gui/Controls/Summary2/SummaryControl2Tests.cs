@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
@@ -14,6 +15,7 @@ using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Screens;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
+using Task.Monitor.System.Services.Gpu;
 using Task.Monitor.System.Services.Power;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.System.Tests.Controls;
@@ -686,6 +688,56 @@ public sealed class SummaryControl2Tests
         handled = false;
         ctrl.KeyPressed(right, ref handled);
         Assert.False(handled);
+
+        ctrl.Unload();
+    }
+
+    // Six GPUs in a GpuStack pane that shows three rows: once Right reaches the pane, Down moves the
+    // selection in its list, and Left still moves focus back.
+    [Fact]
+    public void Right_Onto_A_Gpu_Stack_Pane_Then_Down_Moves_Its_Selection()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Cpu));
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.GpuStack));
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 160, Height = 6 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig, tree) {
+            Width  = 160,
+            Height = 6
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        GpuStackControl stack = Assert.Single(ctrl.PaneControls.Values.OfType<GpuStackControl>());
+
+        stack.Sample(new SystemSnapshot {
+            Gpu = new GpuInfo {
+                Specs = new GpuSpecs {
+                    Devices = [.. Enumerable.Range(0, 6).Select(i => new GpuDevice { Index = i, AdapterLuid = 100 + i })]
+                }
+            }
+        });
+
+        bool Press(ConsoleKey key)
+        {
+            bool handled = false;
+            ctrl.KeyPressed(new ConsoleKeyInfo('\0', key, false, false, false), ref handled);
+            return handled;
+        }
+
+        Assert.True(Press(ConsoleKey.RightArrow));
+        Assert.Same(stack, GetFocusedPane(ctrl));
+
+        Assert.True(Press(ConsoleKey.DownArrow));
+        Assert.Equal(1, stack.GpuView.SelectedIndex);
+
+        Assert.True(Press(ConsoleKey.LeftArrow));
+        Assert.IsType<Chart>(GetFocusedPane(ctrl));
 
         ctrl.Unload();
     }

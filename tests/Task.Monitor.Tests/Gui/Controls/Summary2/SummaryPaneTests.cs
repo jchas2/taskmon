@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Gui.Controls.Thermals;
@@ -208,6 +209,27 @@ public sealed class SummaryPaneTests
         Assert.Equal("GPU% 90.0%", metre.Text);
         Assert.Equal(0.9, metre.Series[0].Value, precision: 9);
         Assert.Equal(runContext.AppConfig.Theme.RangeHighBackground, metre.Series[0].Colour);
+
+        summary.Unload();
+    }
+
+    [Fact]
+    public void Gpu_Stack_Pane_Lists_Each_Gpu_On_Every_Platform()
+    {
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.GpuStack, width: 90, height: 8);
+        GpuStackControl stack = Assert.IsType<GpuStackControl>(pane);
+
+        Assert.False(stack.TabStop);
+
+        Publish(new SystemSnapshot {
+            Gpu = new GpuInfo {
+                Specs   = new GpuSpecs   { Devices = [new GpuDevice { Index = 0, AdapterLuid = 7, Description = "NVIDIA GeForce RTX 4070 SUPER" }] },
+                Metrics = new GpuMetrics { Devices = [new GpuDeviceMetrics { Index = 0, AdapterLuid = 7, GpuPercentTime = 0.232 }] }
+            }
+        });
+
+        ListViewItem row = Assert.Single(stack.GpuView.Items.Cast<ListViewItem>());
+        Assert.Equal(("GPU 0", "NVIDIA GeForce RTX 4070 SUPER", "023.2%"), (row.SubItems[0].Text, row.SubItems[1].Text, row.SubItems[5].Text));
 
         summary.Unload();
     }

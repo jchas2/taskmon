@@ -1062,6 +1062,27 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         Assert.Equal(expected, LayoutDesignerScreen.ToDisplayLabel(PaneControlType.CpuMetre));
     }
 
+    [Fact]
+    public void The_Gpu_Stack_Is_Offered_And_Can_Be_Assigned_To_A_Pane()
+    {
+        Assert.Contains(PaneControlType.GpuStack, LayoutDesignerScreen.AssignableControlTypes);
+
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.GpuStack);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.GpuStack, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
+        Assert.Contains("GPUS", CapturedOutput());
+
+        screen.Unload();
+    }
+
     // The flicker the user saw happened on exactly this path: a tick redraws the Process pane by
     // itself. The highlight is a property the pane's own redraw reads, so it survives the tick.
     [Fact]

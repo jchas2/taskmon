@@ -153,6 +153,9 @@
   <data name="PaneControlType_ThermalList" xml:space="preserve">
     <value>Thermal List</value>
   </data>
+  <data name="PaneControlType_GpuStack" xml:space="preserve">
+    <value>Gpu Stack</value>
+  </data>
 
   <!-- Dialogs and footer hotkeys -->
   <data name="DialogOk" xml:space="preserve">
@@ -2735,6 +2738,46 @@ Save it under a new name.</value>
   <data name="ThermalListColumnTemperature" xml:space="preserve">
     <value>TEMP</value>
     <comment>List column header, upper case: the temperature, abbreviated. Max 6 characters.</comment>
+  </data>
+  <data name="GpuStackHeader" xml:space="preserve">
+    <value>GPUS</value>
+    <comment>Title of the GPU list, upper case.</comment>
+  </data>
+  <data name="GpuStackNoGpus" xml:space="preserve">
+    <value>No GPUs found.</value>
+    <comment>Shown in the GPU list when there is no GPU to show.</comment>
+  </data>
+  <data name="GpuStackColumnId" xml:space="preserve">
+    <value>ID</value>
+    <comment>List column header, upper case: the GPU&apos;s number, e.g. GPU 0. Max 6 characters.</comment>
+  </data>
+  <data name="GpuStackColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case: the GPU&apos;s model name.</comment>
+  </data>
+  <data name="GpuStackColumnTemperature" xml:space="preserve">
+    <value>TEMP</value>
+    <comment>List column header, upper case: the temperature, abbreviated. Max 6 characters.</comment>
+  </data>
+  <data name="GpuStackColumnPower" xml:space="preserve">
+    <value>POWER</value>
+    <comment>List column header, upper case: the GPU&apos;s power draw in watts. Max 9 characters.</comment>
+  </data>
+  <data name="GpuStackColumnGpu" xml:space="preserve">
+    <value>GPU</value>
+    <comment>List column header, upper case, over a bar showing the GPU&apos;s load. Max 10 characters.</comment>
+  </data>
+  <data name="GpuStackColumnGpuPercent" xml:space="preserve">
+    <value>GPU%</value>
+    <comment>List column header, upper case: the GPU&apos;s load as a percentage. Max 6 characters.</comment>
+  </data>
+  <data name="GpuStackColumnMemory" xml:space="preserve">
+    <value>MEM</value>
+    <comment>List column header, upper case, over a bar showing how much of the GPU&apos;s own memory is in use. Max 10 characters.</comment>
+  </data>
+  <data name="GpuStackColumnMemoryPercent" xml:space="preserve">
+    <value>MEM%</value>
+    <comment>List column header, upper case: how much of the GPU&apos;s own memory is in use, as a percentage. Max 6 characters.</comment>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Show Process</value>

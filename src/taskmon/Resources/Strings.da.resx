@@ -128,6 +128,9 @@
   <data name="PaneControlType_ThermalList" xml:space="preserve">
     <value>Temperaturliste</value>
   </data>
+  <data name="PaneControlType_GpuStack" xml:space="preserve">
+    <value>GPU-liste</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -2061,6 +2064,36 @@ Gem det under et nyt navn.</value>
   </data>
   <data name="ThermalListColumnTemperature" xml:space="preserve">
     <value>TEMP.</value>
+  </data>
+  <data name="GpuStackHeader" xml:space="preserve">
+    <value>GPU&apos;ER</value>
+  </data>
+  <data name="GpuStackNoGpus" xml:space="preserve">
+    <value>Ingen GPU&apos;er fundet.</value>
+  </data>
+  <data name="GpuStackColumnId" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="GpuStackColumnName" xml:space="preserve">
+    <value>NAVN</value>
+  </data>
+  <data name="GpuStackColumnTemperature" xml:space="preserve">
+    <value>TEMP.</value>
+  </data>
+  <data name="GpuStackColumnPower" xml:space="preserve">
+    <value>EFFEKT</value>
+  </data>
+  <data name="GpuStackColumnGpu" xml:space="preserve">
+    <value>GPU</value>
+  </data>
+  <data name="GpuStackColumnGpuPercent" xml:space="preserve">
+    <value>GPU%</value>
+  </data>
+  <data name="GpuStackColumnMemory" xml:space="preserve">
+    <value>VRAM</value>
+  </data>
+  <data name="GpuStackColumnMemoryPercent" xml:space="preserve">
+    <value>VRAM%</value>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Vis proces</value>

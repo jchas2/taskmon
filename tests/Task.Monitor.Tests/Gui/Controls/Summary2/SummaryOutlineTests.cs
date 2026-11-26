@@ -110,6 +110,7 @@ public sealed class SummaryOutlineTests
     [InlineData(PaneControlType.CpuCores,    "Cpu Cores")]
     [InlineData(PaneControlType.Health,      "Health")]
     [InlineData(PaneControlType.ThermalList, "Thermal List")]
+    [InlineData(PaneControlType.GpuStack,    "Gpu Stack")]
     public void Outlines_Are_Labelled_With_The_Pane_Name(PaneControlType type, string label) =>
         Assert.Equal(label, Outline(new SummaryPane(type)).Label);
 
@@ -144,6 +145,7 @@ public sealed class SummaryOutlineTests
     [InlineData(PaneControlType.Process,     PaneHint.List)]
     [InlineData(PaneControlType.Health,      PaneHint.List)]
     [InlineData(PaneControlType.ThermalList, PaneHint.List)]
+    [InlineData(PaneControlType.GpuStack,    PaneHint.List)]
     public void Outline_Hints_Follow_The_Kind_Of_Pane(PaneControlType type, PaneHint hint) =>
         Assert.Equal(hint, Outline(new SummaryPane(type)).Hint);
 
