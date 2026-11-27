@@ -450,7 +450,7 @@ public sealed class SummaryControl2Tests
 
         ctrl.Draw();
 
-        Assert.Contains("Kernel", CapturedOutput());
+        Assert.Contains("Cpu 30.0%", CapturedOutput());
 
         ctrl.Unload();
     }

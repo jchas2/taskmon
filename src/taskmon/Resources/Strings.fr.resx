@@ -871,9 +871,6 @@ Enregistrez-la sous un autre nom.</value>
   <data name="SummaryPaneMacOSOnly" xml:space="preserve">
     <value>{0} (macOS uniquement)</value>
   </data>
-  <data name="SummaryCpuChartLabel" xml:space="preserve">
-    <value>{0:000.0%} Noyau {1:000.0%} Utilisateur {2:000.0%}</value>
-  </data>
   <data name="ChartTitleCpu" xml:space="preserve">
     <value>CPU</value>
   </data>
@@ -2677,8 +2674,8 @@ Enregistrez-la sous un autre nom.</value>
   <data name="FanOff" xml:space="preserve">
     <value>Arrêt</value>
   </data>
-  <data name="SnapshotCpuKernelUser" xml:space="preserve">
-    <value>CPU {0:000.0%} Noyau {1:000.0%} Utilisateur {2:000.0%}</value>
+  <data name="SnapshotCpuTotal" xml:space="preserve">
+    <value>CPU {0:0.0%}</value>
   </data>
   <data name="SnapshotDiskLabel" xml:space="preserve">
     <value>Disque {0} · {1}</value>

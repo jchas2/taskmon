@@ -100,8 +100,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         }
 
         cpuChart.Text = temperature is { } cpuTemp
-            ? $"{cpuInfo.Metrics.ToCpuKernelUserPercentage()}   ·   {cpuTemp.ToTemperatureText()}"
-            : cpuInfo.Metrics.ToCpuKernelUserPercentage();
+            ? $"{cpuInfo.Metrics.ToCpuChartTitle()}   ·   {cpuTemp.ToTemperatureText()}"
+            : cpuInfo.Metrics.ToCpuChartTitle();
 
         cpuChart.Draw();
 

@@ -1,5 +1,6 @@
 using Task.Monitor.Extensions;
 using Task.Monitor.System.Services;
+using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Disk;
 using Task.Monitor.System.Services.Gpu;
 
@@ -11,6 +12,11 @@ public sealed class SystemSnapshotExtensionsTests
         Gpu  = new GpuInfo  { Specs = new GpuSpecs  { Devices = [new GpuDevice  { AdapterLuid = 111, Description = "Apple GPU" }] } },
         Disk = new DiskInfo { Specs = new DiskSpecs { Devices = [new DiskDevice { Index = 0, Model = "APPLE SSD" }] } }
     };
+
+    // The title shows the total as the CPU metre does, without the kernel and user split.
+    [Fact]
+    public void ToCpuChartTitle_Shows_The_Total_Only() =>
+        Assert.Equal("CPU 13.5%", new CpuMetrics { CpuPercentKernelTime = 0.05, CpuPercentUserTime = 0.085 }.ToCpuChartTitle());
 
     [Fact]
     public void ToDiskLabel_Falls_Back_To_The_Index_Without_A_Matching_Drive()

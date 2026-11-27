@@ -4,6 +4,7 @@ using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Process;
+using Task.Monitor.System.Services.Thermal;
 using Task.Monitor.System.Tests.Controls;
 using Task.Monitor.Tests.Common;
 
@@ -89,6 +90,37 @@ public sealed class CpuPerformanceControlTests
 
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Tasks"))), Times.AtLeastOnce);
         runContextHelper.terminal.Verify(t => t.Write(It.Is<string>(s => s.Contains("Processes"))), Times.Never);
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Titles_The_Cpu_Chart_With_The_Total_And_The_Temperature()
+    {
+        RecordingTerminal terminal = new();
+
+        CpuPerformanceControl ctrl = new(terminal, runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        CpuInfo cpu = BuildCpuInfo();
+        cpu.Metrics = new CpuMetrics { CpuPercentKernelTime = 0.05, CpuPercentUserTime = 0.085 };
+
+        ctrl.Sample(new SystemSnapshot {
+            Cpu     = cpu,
+            Thermal = new ThermalInfo {
+                Metrics = new ThermalMetrics {
+                    Sensors = [new ThermalSensor { Component = ThermalComponent.Cpu, SensorName = "Package", Celsius = 45, Source = ThermalSource.NvApi }]
+                }
+            }
+        });
+        ctrl.Draw();
+
+        Assert.Contains("CPU 13.5%   ·   45°C", terminal.Output);
 
         ctrl.Unload();
     }

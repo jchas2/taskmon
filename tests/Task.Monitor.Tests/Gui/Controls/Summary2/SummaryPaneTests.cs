@@ -120,6 +120,26 @@ public sealed class SummaryPaneTests
     }
 
     [Fact]
+    public void Cpu_Chart_Is_Labelled_With_The_Total_Like_The_Metre()
+    {
+        RecordingTerminal terminal = new();
+
+        runContext.AppConfig.ShowMetreCpuNumerically = true;
+
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.Cpu, height: 10, terminal: terminal);
+        Chart chart = Assert.IsType<Chart>(pane);
+
+        Publish(new SystemSnapshot {
+            Cpu = new CpuInfo { Metrics = new CpuMetrics { CpuPercentKernelTime = 0.05, CpuPercentUserTime = 0.085 } }
+        });
+
+        Assert.Equal("13.5%", chart.LabelSeries);
+        Assert.Contains("Cpu 13.5%", terminal.Output);
+
+        summary.Unload();
+    }
+
+    [Fact]
     public void Cpu_Metre_Keeps_Its_Two_Series_Across_Reloads()
     {
         (SummaryControl2 summary, MetreControl metre) = ShownMetre(PaneControlType.CpuMetre);

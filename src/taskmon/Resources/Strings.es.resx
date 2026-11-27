@@ -871,9 +871,6 @@ Guárdalo con otro nombre.</value>
   <data name="SummaryPaneMacOSOnly" xml:space="preserve">
     <value>{0} (solo macOS)</value>
   </data>
-  <data name="SummaryCpuChartLabel" xml:space="preserve">
-    <value>{0:000.0%} Kernel {1:000.0%} Usuario {2:000.0%}</value>
-  </data>
   <data name="ChartTitleCpu" xml:space="preserve">
     <value>CPU</value>
   </data>
@@ -2677,8 +2674,8 @@ Guárdalo con otro nombre.</value>
   <data name="FanOff" xml:space="preserve">
     <value>Apagado</value>
   </data>
-  <data name="SnapshotCpuKernelUser" xml:space="preserve">
-    <value>CPU {0:000.0%} Kernel {1:000.0%} Usuario {2:000.0%}</value>
+  <data name="SnapshotCpuTotal" xml:space="preserve">
+    <value>CPU {0:0.0%}</value>
   </data>
   <data name="SnapshotDiskLabel" xml:space="preserve">
     <value>Disco {0} · {1}</value>

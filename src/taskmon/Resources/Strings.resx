@@ -1135,10 +1135,6 @@ Save it under a new name.</value>
     <value>{0} (macOS only)</value>
     <comment>Layout preview: a pane that only works on macOS, seen on Windows. {0} is the pane name, e.g. Fans.</comment>
   </data>
-  <data name="SummaryCpuChartLabel" xml:space="preserve">
-    <value>{0:000.0%} Kernel {1:000.0%} User {2:000.0%}</value>
-    <comment>CPU chart label. {0} is total CPU, {1} kernel time and {2} user time; keep the :000.0% formats.</comment>
-  </data>
   <data name="ChartTitleCpu" xml:space="preserve">
     <value>Cpu</value>
     <comment>Chart title.</comment>
@@ -3557,9 +3553,9 @@ Save it under a new name.</value>
     <value>Off</value>
     <comment>Fan speed when the fan is stopped.</comment>
   </data>
-  <data name="SnapshotCpuKernelUser" xml:space="preserve">
-    <value>CPU {0:000.0%} Kernel {1:000.0%} User {2:000.0%}</value>
-    <comment>CPU chart title. {0} is total CPU, {1} kernel time and {2} user time; keep the :000.0% formats.</comment>
+  <data name="SnapshotCpuTotal" xml:space="preserve">
+    <value>CPU {0:0.0%}</value>
+    <comment>CPU chart title. {0} is total CPU; keep the :0.0% format, which the CPU metre uses too.</comment>
   </data>
   <data name="SnapshotDiskLabel" xml:space="preserve">
     <value>Disk {0} · {1}</value>

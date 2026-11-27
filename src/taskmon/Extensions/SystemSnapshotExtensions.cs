@@ -73,14 +73,11 @@ public static class SystemSnapshotExtensions
     public static string ToCombinedGpuMemoryRatioFormattedBytes(this GpuDeviceMetrics device) =>
         UsedOverTotalBytes(device.TotalCombinedGpuMemory, device.AvailableCombinedGpuMemory);
 
+    public static string ToCpuChartTitle(this CpuMetrics metrics) =>
+        string.Format(CultureInfo.CurrentCulture, Strings.SnapshotCpuTotal, metrics.CpuPercentKernelTime + metrics.CpuPercentUserTime);
+
     public static string ToCpuFrequencyGhz(this CpuSpecs specs) =>
         $"{specs.CpuFrequency / 1000.0:0.00} GHz";
-
-    public static string ToCpuKernelUserPercentage(this CpuMetrics metrics)
-    {
-        double totalCpu = metrics.CpuPercentKernelTime + metrics.CpuPercentUserTime;
-        return string.Format(CultureInfo.CurrentCulture, Strings.SnapshotCpuKernelUser, totalCpu, metrics.CpuPercentKernelTime, metrics.CpuPercentUserTime);
-    }
 
     public static string ToCpuL1Cache(this CpuSpecs specs) => specs.CpuL1CacheBytes.ToFormattedByteSize();
     public static string ToCpuL2Cache(this CpuSpecs specs) => specs.CpuL2CacheBytes.ToFormattedByteSize();

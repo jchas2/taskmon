@@ -121,8 +121,8 @@ public sealed class SummaryControl2 : Control
                 Chart.FormatYScalePercentage, 
                 () => appConfig.ShowMetreCpuNumerically,
                 s => s.Cpu?.Metrics is { } cpu
-                    ? (cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime, 
-                        string.Format(CultureInfo.CurrentCulture, Strings.SummaryCpuChartLabel, cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime, cpu.CpuPercentKernelTime, cpu.CpuPercentUserTime))
+                    ? (cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime,
+                        FormatPercentage(cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime))
                     : null),
             PaneControlType.Memory => ChartPane(
                 Strings.ChartTitleMemory, 

@@ -111,7 +111,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
             }
         });
 
-        Assert.Contains("Kernel", CapturedOutput());
+        Assert.Contains("Cpu 30.0%", CapturedOutput());
 
         screen.Unload();
     }
