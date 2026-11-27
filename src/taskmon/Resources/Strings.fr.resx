@@ -2314,8 +2314,11 @@ Enregistrez-la sous un autre nom.</value>
   <data name="DiskSpaceScanPath" xml:space="preserve">
     <value>Chemin à analyser :</value>
   </data>
-  <data name="DiskSpaceBorderHint" xml:space="preserve">
-    <value>s Lancer l&apos;analyse   c Annuler</value>
+  <data name="DiskSpaceStartScanHotKey" xml:space="preserve">
+    <value>Lancer l&apos;analyse</value>
+  </data>
+  <data name="DiskSpaceCancelScanHotKey" xml:space="preserve">
+    <value>Annuler</value>
   </data>
   <data name="CpuCoresTitle" xml:space="preserve">
     <value>Cœurs CPU</value>

@@ -148,16 +148,16 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // The footer is set when the control loads, so the keys show before the first snapshot arrives.
     [Fact]
-    public void Draws_The_Scan_Hint_In_The_Heat_Maps_Border_Before_Any_Scan_Has_Started()
+    public void Draws_The_Scan_Hot_Keys_In_The_File_List_Footer_Before_Any_Scan_Has_Started()
     {
         DiskSpaceControl ctrl = CreateControl();
         ctrl.Draw();
 
-        string output = CapturedOutput();
+        string output = AnsiTestHelper.StripColours(CapturedOutput());
 
-        Assert.Contains("Start scanning", output);
-        Assert.Contains("Cancel", output);
+        Assert.Contains("s Start Scanning   c Cancel   ↑ ↓ pgup pgdn Scroll", output);
         Assert.Contains("No files scanned yet", output);
 
         ctrl.Unload();
@@ -225,7 +225,7 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Sample(new SystemSnapshot());
         ctrl.Draw();
 
-        Assert.Contains("Start scanning", CapturedOutput());
+        Assert.Contains("Start Scanning", CapturedOutput());
 
         ctrl.Unload();
     }
@@ -410,7 +410,8 @@ public sealed class DiskSpaceControlTests : IDisposable
 
         string output = CapturedOutput();
 
-        foreach (string state in new[] { "Scanning", "Cancelling", "Completed", "Cancelled", "Failed" }) {
+        // Matched as the status row words them: the footer's "Start Scanning" isn't a status.
+        foreach (string state in new[] { "Scanning…", "Cancelling…", "Completed -", "Cancelled -", "Failed:" }) {
             Assert.DoesNotContain(state, output);
         }
 
@@ -553,8 +554,10 @@ public sealed class DiskSpaceControlTests : IDisposable
         ctrl.Unload();
     }
 
+    // The file list has the input focus, so the scan keys sit in its footer, and rebuilding its rows
+    // as the scan finds files keeps them there.
     [Fact]
-    public void The_Scan_Control_Hints_Live_On_The_Heat_Map_Border_Not_The_File_List_Footer()
+    public void The_Scan_Hot_Keys_Stay_In_The_File_List_Footer_While_Scanning()
     {
         DiskSpaceControl ctrl = CreateControl();
 
@@ -563,10 +566,7 @@ public sealed class DiskSpaceControlTests : IDisposable
 
         string output = AnsiTestHelper.StripColours(CapturedOutput());
 
-        // The heat map's own border carries these now (see the earlier "before any scan" test) -
-        // the file list's footer should be about the list itself only.
-        Assert.Contains("↑ ↓ pgup pgdn Scroll", output);
-        Assert.DoesNotContain("Start scanning   c Cancel   ↑ ↓ pgup pgdn Scroll", output);
+        Assert.Contains("s Start Scanning   c Cancel   ↑ ↓ pgup pgdn Scroll", output);
 
         ctrl.Unload();
     }

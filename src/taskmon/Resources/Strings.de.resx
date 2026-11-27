@@ -2314,8 +2314,11 @@ Speichern Sie es unter einem neuen Namen.</value>
   <data name="DiskSpaceScanPath" xml:space="preserve">
     <value>Scanpfad:</value>
   </data>
-  <data name="DiskSpaceBorderHint" xml:space="preserve">
-    <value>s Scan starten   c Abbrechen</value>
+  <data name="DiskSpaceStartScanHotKey" xml:space="preserve">
+    <value>Scan starten</value>
+  </data>
+  <data name="DiskSpaceCancelScanHotKey" xml:space="preserve">
+    <value>Abbrechen</value>
   </data>
   <data name="CpuCoresTitle" xml:space="preserve">
     <value>CPU-Kerne</value>

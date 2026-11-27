@@ -2,6 +2,7 @@ using System.Drawing;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.System.Services.DiskSpace;
 using Task.Monitor.System.Tests.Controls;
+using Task.Monitor.Tests.Common;
 
 namespace Task.Monitor.Tests.Gui.Controls;
 
@@ -73,6 +74,26 @@ public sealed class DiskSpaceHeatMapControlTests
         ctrl.Load();
         ctrl.Resize();
         return ctrl;
+    }
+
+    // The scan keys moved to the file list's footer, so the heat map's bottom border carries no label.
+    [Fact]
+    public void Draws_A_Plain_Bottom_Border()
+    {
+        RecordingTerminal terminal = new();
+
+        DiskSpaceHeatMapControl ctrl = new(terminal, runContext.AppConfig) {
+            Width  = 40,
+            Height = 5
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.Draw();
+
+        Assert.Contains($"╰{new string('─', 38)}╯", AnsiTestHelper.StripColours(terminal.Output));
+
+        ctrl.Unload();
     }
 
     [Fact]

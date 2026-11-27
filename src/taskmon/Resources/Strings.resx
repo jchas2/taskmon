@@ -3069,9 +3069,13 @@ Save it under a new name.</value>
     <value>Scan path:</value>
     <comment>Label of the typed scan path field.</comment>
   </data>
-  <data name="DiskSpaceBorderHint" xml:space="preserve">
-    <value>s Start scanning   c Cancel</value>
-    <comment>Key hints on the heat map border. s and c are keys; keep three spaces between hints.</comment>
+  <data name="DiskSpaceStartScanHotKey" xml:space="preserve">
+    <value>Start Scanning</value>
+    <comment>Footer label for the s key, which starts a disk space scan.</comment>
+  </data>
+  <data name="DiskSpaceCancelScanHotKey" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Footer label for the c key, which cancels a running disk space scan.</comment>
   </data>
   <data name="CpuCoresTitle" xml:space="preserve">
     <value>Cpu Cores</value>

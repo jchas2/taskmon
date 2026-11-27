@@ -36,7 +36,7 @@ public sealed partial class DiskSpaceControl
     {
         if (files.Count == 0) {
             filesView.Items.Clear();
-            SetFilesViewBorderText(files);
+            SetFilesViewHeaderText(files);
             return;
         }
 
@@ -72,12 +72,11 @@ public sealed partial class DiskSpaceControl
             }
         }
         
-        SetFilesViewBorderText(files);
+        SetFilesViewHeaderText(files);
     }
     
-    private void SetFilesViewBorderText(IReadOnlyList<DiskSpaceFileEntry> files)
+    private void SetFilesViewHeaderText(IReadOnlyList<DiskSpaceFileEntry> files)
     {
         filesView.HeaderText = string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceFilesHeader, FilesViewTitle, files.Count, DiskSpaceAccumulator.MaxTrackedFiles);
-        filesView.FooterText = CommonControl.FooterText(appConfig.Theme, CommonControl.ScrollHotKey);
     }
 }

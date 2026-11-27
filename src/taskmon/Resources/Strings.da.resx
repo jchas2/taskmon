@@ -2314,8 +2314,11 @@ Gem det under et nyt navn.</value>
   <data name="DiskSpaceScanPath" xml:space="preserve">
     <value>Sti at scanne:</value>
   </data>
-  <data name="DiskSpaceBorderHint" xml:space="preserve">
-    <value>s Start scanning   c Annuller</value>
+  <data name="DiskSpaceStartScanHotKey" xml:space="preserve">
+    <value>Start scanning</value>
+  </data>
+  <data name="DiskSpaceCancelScanHotKey" xml:space="preserve">
+    <value>Annuller</value>
   </data>
   <data name="CpuCoresTitle" xml:space="preserve">
     <value>CPU-kerner</value>

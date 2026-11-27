@@ -2314,8 +2314,11 @@ Guárdalo con otro nombre.</value>
   <data name="DiskSpaceScanPath" xml:space="preserve">
     <value>Ruta a analizar:</value>
   </data>
-  <data name="DiskSpaceBorderHint" xml:space="preserve">
-    <value>s Iniciar análisis   c Cancelar</value>
+  <data name="DiskSpaceStartScanHotKey" xml:space="preserve">
+    <value>Iniciar análisis</value>
+  </data>
+  <data name="DiskSpaceCancelScanHotKey" xml:space="preserve">
+    <value>Cancelar</value>
   </data>
   <data name="CpuCoresTitle" xml:space="preserve">
     <value>Núcleos de CPU</value>

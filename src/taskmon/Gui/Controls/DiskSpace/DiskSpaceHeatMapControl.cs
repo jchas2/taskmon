@@ -1,7 +1,6 @@
 using System.Drawing;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
-using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Services.DiskSpace;
@@ -37,8 +36,6 @@ public sealed class DiskSpaceHeatMapControl : Control
         
         return Lerp(BackgroundColour, targetColour, t);
     }
-
-    private static string BorderHint => Strings.DiskSpaceBorderHint;
 
     private void DrawCell(
         TreemapCell         cell, 
@@ -125,20 +122,10 @@ public sealed class DiskSpaceHeatMapControl : Control
             frame.Append('│');
         }
 
-        string footerLabel = $" {BorderHint} ";
-        
-        int footerLabelLen    = Math.Min(footerLabel.Length, innerWidth);
-        int footerLeftDashes  = (innerWidth - footerLabelLen) / 2;
-        int footerRightDashes = innerWidth - footerLabelLen - footerLeftDashes;
-
         frame.MoveTo(X, top + height - 1);
         frame.SetColour(borderForeground, borderBackground);
         frame.Append('╰');
-        frame.Append('─', footerLeftDashes);
-        frame.SetColour(ForegroundColour, borderBackground);
-        frame.Append(footerLabelLen < footerLabel.Length ? footerLabel[..footerLabelLen] : footerLabel);
-        frame.SetColour(borderForeground, borderBackground);
-        frame.Append('─', footerRightDashes);
+        frame.Append('─', innerWidth);
         frame.Append('╯');
 
         frame.ResetColour();

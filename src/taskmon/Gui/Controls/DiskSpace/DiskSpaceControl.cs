@@ -99,6 +99,8 @@ public sealed partial class DiskSpaceControl : Control
                                     _ => string.Empty
     };
 
+    private static (string Key, string Label) CancelScanHotKey => ("c", Strings.DiskSpaceCancelScanHotKey);
+
     private static string DescribeScanned(DiskSpaceSpecs specs) =>
         string.Format(CultureInfo.CurrentCulture, Strings.DiskSpaceScanned, specs.FilesScanned, specs.TotalBytesScanned.ToFormattedByteSize());
 
@@ -224,6 +226,8 @@ public sealed partial class DiskSpaceControl : Control
         CommonControl.Theme(filesView, appConfig.Theme);
         CommonControl.Theme(driveInputBox, appConfig.Theme);
         CommonControl.Text(driveInputBox);
+
+        filesView.FooterText = CommonControl.FooterText(appConfig.Theme, StartScanHotKey, CancelScanHotKey, CommonControl.ScrollHotKey);
 
         progressMetre.MetreStyle = appConfig.MetreStyle;
         rootFoldersSeries = progressMetre.AddSeries(Strings.DiskSpaceRootFolders, appConfig.Theme.RangeLowBackground);
@@ -359,6 +363,8 @@ public sealed partial class DiskSpaceControl : Control
         scanPathInputBox.SetText(defaultRoot);
         scanPathInputBox.ShowInputBox();
     }
+
+    private static (string Key, string Label) StartScanHotKey => ("s", Strings.DiskSpaceStartScanHotKey);
 
     private Color StatusColour(DiskSpaceScanState? state) => state switch {
         DiskSpaceScanState.Scanning or 
