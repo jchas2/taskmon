@@ -298,6 +298,9 @@ public static class SystemSnapshotExtensions
     public static string ToNetworkPacketCount(this ulong packets) =>
         packets.ToString("N0");
 
+    public static string ToNetworkPacketRate(this double packetsPerSecond) =>
+        $"{Math.Max(0.0, packetsPerSecond):N0}/s";
+
     public static string ToNetworkReceiveRate(this NetworkMetrics metrics) =>
         metrics.ReceiveBytesPerSecond.ToFormattedByteRate();
 

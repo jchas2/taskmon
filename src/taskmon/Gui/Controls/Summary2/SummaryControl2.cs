@@ -4,9 +4,11 @@ using System.Globalization;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
 using Task.Monitor.Gui.Controls.Cpu;
+using Task.Monitor.Gui.Controls.Disk;
 using Task.Monitor.Gui.Controls.DiskSpace;
 using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Health;
+using Task.Monitor.Gui.Controls.Network;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Gui.Controls.Thermals;
@@ -261,6 +263,8 @@ public sealed class SummaryControl2 : Control
             PaneControlType.Health        => (new HealthControl(serviceController, Terminal, appConfig)        { TabStop = false, ShowCausesAndEvents = false }, null),
             PaneControlType.ThermalList   => (new ThermalListControl(serviceController, Terminal, appConfig)   { TabStop = false }, null),
             PaneControlType.GpuStack      => (new GpuStackControl(serviceController, Terminal, appConfig)      { TabStop = false }, null),
+            PaneControlType.DiskStack     => (new DiskStackControl(serviceController, Terminal, appConfig)     { TabStop = false }, null),
+            PaneControlType.NetworkStack  => (new NetworkStackControl(serviceController, Terminal, appConfig)  { TabStop = false }, null),
 #if __APPLE__
             PaneControlType.Fans          => (new FansControl(serviceController, Terminal, appConfig)          { TabStop = false }, null),
 #endif
@@ -383,7 +387,7 @@ public sealed class SummaryControl2 : Control
 
     protected override void OnDraw()
     {
-        // Note: Charts are updated when a new snapshot arrives.
+        // Charts are updated when a new snapshot arrives.
         OnDrawProcesses();
 
         foreach ((int id, (_, Control control, _)) in panes) {

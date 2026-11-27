@@ -156,6 +156,12 @@
   <data name="PaneControlType_GpuStack" xml:space="preserve">
     <value>Gpu Stack</value>
   </data>
+  <data name="PaneControlType_DiskStack" xml:space="preserve">
+    <value>Disk Stack</value>
+  </data>
+  <data name="PaneControlType_NetworkStack" xml:space="preserve">
+    <value>Network Stack</value>
+  </data>
 
   <!-- Dialogs and footer hotkeys -->
   <data name="DialogOk" xml:space="preserve">
@@ -2778,6 +2784,90 @@ Save it under a new name.</value>
   <data name="GpuStackColumnMemoryPercent" xml:space="preserve">
     <value>MEM%</value>
     <comment>List column header, upper case: how much of the GPU&apos;s own memory is in use, as a percentage. Max 6 characters.</comment>
+  </data>
+  <data name="DiskStackHeader" xml:space="preserve">
+    <value>DISKS</value>
+    <comment>Title of the disk list, upper case.</comment>
+  </data>
+  <data name="DiskStackNoDisks" xml:space="preserve">
+    <value>No disks found.</value>
+    <comment>Shown in the disk list when there is no disk to show.</comment>
+  </data>
+  <data name="DiskStackColumnId" xml:space="preserve">
+    <value>ID</value>
+    <comment>List column header, upper case: the disk&apos;s number, e.g. Disk 0. Max 6 characters.</comment>
+  </data>
+  <data name="DiskStackColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case: the disk&apos;s model name.</comment>
+  </data>
+  <data name="DiskStackColumnTemperature" xml:space="preserve">
+    <value>TEMP</value>
+    <comment>List column header, upper case: the temperature, abbreviated. Max 6 characters.</comment>
+  </data>
+  <data name="DiskStackColumnActive" xml:space="preserve">
+    <value>ACTIVE</value>
+    <comment>List column header, upper case, over a bar showing the disk&apos;s active time. Max 10 characters.</comment>
+  </data>
+  <data name="DiskStackColumnActivePercent" xml:space="preserve">
+    <value>ACT%</value>
+    <comment>List column header, upper case: the disk&apos;s active time as a percentage, abbreviated. Max 6 characters.</comment>
+  </data>
+  <data name="DiskStackColumnRead" xml:space="preserve">
+    <value>READ</value>
+    <comment>List column header, upper case, over a bar showing the disk&apos;s read speed. Max 10 characters.</comment>
+  </data>
+  <data name="DiskStackColumnReadRate" xml:space="preserve">
+    <value>READ/S</value>
+    <comment>List column header, upper case: the disk&apos;s read speed, e.g. 245.1 MB/s. Max 11 characters.</comment>
+  </data>
+  <data name="DiskStackColumnWrite" xml:space="preserve">
+    <value>WRITE</value>
+    <comment>List column header, upper case, over a bar showing the disk&apos;s write speed. Max 10 characters.</comment>
+  </data>
+  <data name="DiskStackColumnWriteRate" xml:space="preserve">
+    <value>WRITE/S</value>
+    <comment>List column header, upper case: the disk&apos;s write speed, e.g. 3.2 MB/s. Max 11 characters.</comment>
+  </data>
+  <data name="NetworkStackHeader" xml:space="preserve">
+    <value>NETWORK</value>
+    <comment>Title of the network adapter list, upper case.</comment>
+  </data>
+  <data name="NetworkStackNoAdapters" xml:space="preserve">
+    <value>No active network adapters.</value>
+    <comment>Shown in the network adapter list when no adapter is connected.</comment>
+  </data>
+  <data name="NetworkStackColumnName" xml:space="preserve">
+    <value>NAME</value>
+    <comment>List column header, upper case: the connection&apos;s name, e.g. Ethernet or Wi-Fi.</comment>
+  </data>
+  <data name="NetworkStackColumnLink" xml:space="preserve">
+    <value>LINK</value>
+    <comment>List column header, upper case: the adapter&apos;s link speed, e.g. 2.5 Gbps. Max 10 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnSend" xml:space="preserve">
+    <value>SEND</value>
+    <comment>List column header, upper case, over a bar showing the adapter&apos;s send speed. Max 10 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnSendRate" xml:space="preserve">
+    <value>SEND/S</value>
+    <comment>List column header, upper case: the adapter&apos;s send speed, e.g. 245.1 KB/s. Max 11 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnReceive" xml:space="preserve">
+    <value>RECEIVE</value>
+    <comment>List column header, upper case, over a bar showing the adapter&apos;s receive speed. Max 10 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnReceiveRate" xml:space="preserve">
+    <value>RECEIVE/S</value>
+    <comment>List column header, upper case: the adapter&apos;s receive speed, e.g. 12.3 MB/s. Max 11 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnSendPackets" xml:space="preserve">
+    <value>SEND PKT/S</value>
+    <comment>List column header, upper case: packets the adapter sends a second, abbreviated. Max 11 characters.</comment>
+  </data>
+  <data name="NetworkStackColumnReceivePackets" xml:space="preserve">
+    <value>RECV PKT/S</value>
+    <comment>List column header, upper case: packets the adapter receives a second, abbreviated. Max 11 characters.</comment>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Show Process</value>

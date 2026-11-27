@@ -131,6 +131,12 @@
   <data name="PaneControlType_GpuStack" xml:space="preserve">
     <value>Liste des GPU</value>
   </data>
+  <data name="PaneControlType_DiskStack" xml:space="preserve">
+    <value>Liste des disques</value>
+  </data>
+  <data name="PaneControlType_NetworkStack" xml:space="preserve">
+    <value>Liste des réseaux</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -2094,6 +2100,69 @@ Enregistrez-la sous un autre nom.</value>
   </data>
   <data name="GpuStackColumnMemoryPercent" xml:space="preserve">
     <value>MÉM%</value>
+  </data>
+  <data name="DiskStackHeader" xml:space="preserve">
+    <value>DISQUES</value>
+  </data>
+  <data name="DiskStackNoDisks" xml:space="preserve">
+    <value>Aucun disque détecté.</value>
+  </data>
+  <data name="DiskStackColumnId" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="DiskStackColumnName" xml:space="preserve">
+    <value>NOM</value>
+  </data>
+  <data name="DiskStackColumnTemperature" xml:space="preserve">
+    <value>TEMP.</value>
+  </data>
+  <data name="DiskStackColumnActive" xml:space="preserve">
+    <value>ACTIF</value>
+  </data>
+  <data name="DiskStackColumnActivePercent" xml:space="preserve">
+    <value>ACT.%</value>
+  </data>
+  <data name="DiskStackColumnRead" xml:space="preserve">
+    <value>LECTURE</value>
+  </data>
+  <data name="DiskStackColumnReadRate" xml:space="preserve">
+    <value>LECTURE/S</value>
+  </data>
+  <data name="DiskStackColumnWrite" xml:space="preserve">
+    <value>ÉCRITURE</value>
+  </data>
+  <data name="DiskStackColumnWriteRate" xml:space="preserve">
+    <value>ÉCRITURE/S</value>
+  </data>
+  <data name="NetworkStackHeader" xml:space="preserve">
+    <value>RÉSEAU</value>
+  </data>
+  <data name="NetworkStackNoAdapters" xml:space="preserve">
+    <value>Aucune carte réseau active.</value>
+  </data>
+  <data name="NetworkStackColumnName" xml:space="preserve">
+    <value>NOM</value>
+  </data>
+  <data name="NetworkStackColumnLink" xml:space="preserve">
+    <value>LIAISON</value>
+  </data>
+  <data name="NetworkStackColumnSend" xml:space="preserve">
+    <value>ENVOI</value>
+  </data>
+  <data name="NetworkStackColumnSendRate" xml:space="preserve">
+    <value>ENVOI/S</value>
+  </data>
+  <data name="NetworkStackColumnReceive" xml:space="preserve">
+    <value>RÉCEPTION</value>
+  </data>
+  <data name="NetworkStackColumnReceiveRate" xml:space="preserve">
+    <value>RÉCEPTION/S</value>
+  </data>
+  <data name="NetworkStackColumnSendPackets" xml:space="preserve">
+    <value>PAQ. ENV./S</value>
+  </data>
+  <data name="NetworkStackColumnReceivePackets" xml:space="preserve">
+    <value>PAQ. RÉC./S</value>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Voir le processus</value>

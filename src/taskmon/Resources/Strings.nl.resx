@@ -131,6 +131,12 @@
   <data name="PaneControlType_GpuStack" xml:space="preserve">
     <value>GPU-lijst</value>
   </data>
+  <data name="PaneControlType_DiskStack" xml:space="preserve">
+    <value>Schijvenlijst</value>
+  </data>
+  <data name="PaneControlType_NetworkStack" xml:space="preserve">
+    <value>Netwerklijst</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -2094,6 +2100,69 @@ Sla deze op onder een andere naam.</value>
   </data>
   <data name="GpuStackColumnMemoryPercent" xml:space="preserve">
     <value>GEH.%</value>
+  </data>
+  <data name="DiskStackHeader" xml:space="preserve">
+    <value>SCHIJVEN</value>
+  </data>
+  <data name="DiskStackNoDisks" xml:space="preserve">
+    <value>Geen schijven gevonden.</value>
+  </data>
+  <data name="DiskStackColumnId" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="DiskStackColumnName" xml:space="preserve">
+    <value>NAAM</value>
+  </data>
+  <data name="DiskStackColumnTemperature" xml:space="preserve">
+    <value>TEMP.</value>
+  </data>
+  <data name="DiskStackColumnActive" xml:space="preserve">
+    <value>ACTIEF</value>
+  </data>
+  <data name="DiskStackColumnActivePercent" xml:space="preserve">
+    <value>ACT.%</value>
+  </data>
+  <data name="DiskStackColumnRead" xml:space="preserve">
+    <value>LEZEN</value>
+  </data>
+  <data name="DiskStackColumnReadRate" xml:space="preserve">
+    <value>LEZEN/S</value>
+  </data>
+  <data name="DiskStackColumnWrite" xml:space="preserve">
+    <value>SCHRIJVEN</value>
+  </data>
+  <data name="DiskStackColumnWriteRate" xml:space="preserve">
+    <value>SCHRIJVEN/S</value>
+  </data>
+  <data name="NetworkStackHeader" xml:space="preserve">
+    <value>NETWERK</value>
+  </data>
+  <data name="NetworkStackNoAdapters" xml:space="preserve">
+    <value>Geen actieve netwerkadapters.</value>
+  </data>
+  <data name="NetworkStackColumnName" xml:space="preserve">
+    <value>NAAM</value>
+  </data>
+  <data name="NetworkStackColumnLink" xml:space="preserve">
+    <value>LINK</value>
+  </data>
+  <data name="NetworkStackColumnSend" xml:space="preserve">
+    <value>VERZENDEN</value>
+  </data>
+  <data name="NetworkStackColumnSendRate" xml:space="preserve">
+    <value>VERZENDEN/S</value>
+  </data>
+  <data name="NetworkStackColumnReceive" xml:space="preserve">
+    <value>ONTVANGEN</value>
+  </data>
+  <data name="NetworkStackColumnReceiveRate" xml:space="preserve">
+    <value>ONTVANGEN/S</value>
+  </data>
+  <data name="NetworkStackColumnSendPackets" xml:space="preserve">
+    <value>PAK. VERZ/S</value>
+  </data>
+  <data name="NetworkStackColumnReceivePackets" xml:space="preserve">
+    <value>PAK. ONTV/S</value>
   </data>
   <data name="HealthShowProcessHotKey" xml:space="preserve">
     <value>Proces tonen</value>

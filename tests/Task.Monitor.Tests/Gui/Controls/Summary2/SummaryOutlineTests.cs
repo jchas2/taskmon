@@ -105,12 +105,14 @@ public sealed class SummaryOutlineTests
         Assert.IsType<EmptyPaneControl>(Summary(new LayoutTree<SummaryPane>(pane)).PaneControls.Values.Single());
 
     [Theory]
-    [InlineData(PaneControlType.Empty,       "empty")]
-    [InlineData(PaneControlType.Cpu,         "Cpu")]
-    [InlineData(PaneControlType.CpuCores,    "Cpu Cores")]
-    [InlineData(PaneControlType.Health,      "Health")]
-    [InlineData(PaneControlType.ThermalList, "Thermal List")]
-    [InlineData(PaneControlType.GpuStack,    "Gpu Stack")]
+    [InlineData(PaneControlType.Empty,        "empty")]
+    [InlineData(PaneControlType.Cpu,          "Cpu")]
+    [InlineData(PaneControlType.CpuCores,     "Cpu Cores")]
+    [InlineData(PaneControlType.Health,       "Health")]
+    [InlineData(PaneControlType.ThermalList,  "Thermal List")]
+    [InlineData(PaneControlType.GpuStack,     "Gpu Stack")]
+    [InlineData(PaneControlType.DiskStack,    "Disk Stack")]
+    [InlineData(PaneControlType.NetworkStack, "Network Stack")]
     public void Outlines_Are_Labelled_With_The_Pane_Name(PaneControlType type, string label) =>
         Assert.Equal(label, Outline(new SummaryPane(type)).Label);
 
@@ -138,14 +140,16 @@ public sealed class SummaryOutlineTests
     }
 
     [Theory]
-    [InlineData(PaneControlType.Empty,       PaneHint.None)]
-    [InlineData(PaneControlType.Cpu,         PaneHint.Chart)]
-    [InlineData(PaneControlType.CpuMetre,    PaneHint.Metre)]
-    [InlineData(PaneControlType.CpuCores,    PaneHint.Metre)]
-    [InlineData(PaneControlType.Process,     PaneHint.List)]
-    [InlineData(PaneControlType.Health,      PaneHint.List)]
-    [InlineData(PaneControlType.ThermalList, PaneHint.List)]
-    [InlineData(PaneControlType.GpuStack,    PaneHint.List)]
+    [InlineData(PaneControlType.Empty,        PaneHint.None)]
+    [InlineData(PaneControlType.Cpu,          PaneHint.Chart)]
+    [InlineData(PaneControlType.CpuMetre,     PaneHint.Metre)]
+    [InlineData(PaneControlType.CpuCores,     PaneHint.Metre)]
+    [InlineData(PaneControlType.Process,      PaneHint.List)]
+    [InlineData(PaneControlType.Health,       PaneHint.List)]
+    [InlineData(PaneControlType.ThermalList,  PaneHint.List)]
+    [InlineData(PaneControlType.GpuStack,     PaneHint.List)]
+    [InlineData(PaneControlType.DiskStack,    PaneHint.List)]
+    [InlineData(PaneControlType.NetworkStack, PaneHint.List)]
     public void Outline_Hints_Follow_The_Kind_Of_Pane(PaneControlType type, PaneHint hint) =>
         Assert.Equal(hint, Outline(new SummaryPane(type)).Hint);
 

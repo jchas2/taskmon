@@ -1063,6 +1063,27 @@ public sealed class LayoutDesignerScreenTests : IDisposable
     }
 
     [Fact]
+    public void The_Disk_Stack_Is_Offered_And_Can_Be_Assigned_To_A_Pane()
+    {
+        Assert.Contains(PaneControlType.DiskStack, LayoutDesignerScreen.AssignableControlTypes);
+
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.DiskStack);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.DiskStack, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
+        Assert.Contains("DISKS", CapturedOutput());
+
+        screen.Unload();
+    }
+
+    [Fact]
     public void The_Gpu_Stack_Is_Offered_And_Can_Be_Assigned_To_A_Pane()
     {
         Assert.Contains(PaneControlType.GpuStack, LayoutDesignerScreen.AssignableControlTypes);
@@ -1107,6 +1128,27 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
         Control processPane = Panes(screen).Single(c => c.GetType().Name == "ProcessControl");
         Assert.All(Subtree(processPane), c => Assert.Equal(Control.FocusSelectionColour, c.BorderColour));
+
+        screen.Unload();
+    }
+
+    [Fact]
+    public void The_Network_Stack_Is_Offered_And_Can_Be_Assigned_To_A_Pane()
+    {
+        Assert.Contains(PaneControlType.NetworkStack, LayoutDesignerScreen.AssignableControlTypes);
+
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+
+        LayoutDesignerScreen screen = new(runContext) { Width = 120, Height = 40 };
+        screen.Open(tree, null);
+        screen.Load();
+        screen.Resize();
+
+        screen.AssignSelectedPaneControlTypeForTests(PaneControlType.NetworkStack);
+        screen.Draw();
+
+        Assert.Equal(PaneControlType.NetworkStack, screen.Tree.Nodes[screen.SelectedNodeId].Pane!.ControlType);
+        Assert.Contains("RECEIVE/S", CapturedOutput());
 
         screen.Unload();
     }

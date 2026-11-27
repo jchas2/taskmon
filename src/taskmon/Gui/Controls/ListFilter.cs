@@ -70,7 +70,7 @@ internal sealed class ListFilter
 
     public bool IsDialogVisible => Dialog.Visible;
 
-    // Returns true when the owner must redraw: the dialog closed or the filter was cleared.
+    // Returns true when the owner must redraw.
     public bool KeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
     {
         if (Dialog.Visible) {

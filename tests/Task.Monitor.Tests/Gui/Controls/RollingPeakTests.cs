@@ -33,4 +33,26 @@ public sealed class RollingPeakTests
 
         Assert.Equal(0.0, peak.Add(-50));
     }
+
+    [Fact]
+    public void Scale_Before_Any_Sample_Measures_Against_The_Floor()
+    {
+        RollingPeak peak = new(window: 10, floor: 100);
+
+        Assert.Equal(0.5, peak.Scale(50), precision: 9);
+        Assert.Equal(1.0, peak.Scale(500), precision: 9);
+    }
+
+    // Scale reads the window without adding to it, so one peak can measure several values a sample.
+    [Fact]
+    public void Scale_Measures_Against_The_Peak_Without_Adding_To_The_Window()
+    {
+        RollingPeak peak = new(window: 10, floor: 1);
+
+        peak.Add(400);
+
+        Assert.Equal(0.25, peak.Scale(100), precision: 9);
+        Assert.Equal(1.0,  peak.Scale(800), precision: 9);
+        Assert.Equal(0.25, peak.Add(100),   precision: 9);
+    }
 }

@@ -29,4 +29,6 @@ public enum PaneControlType
     Health,
     ThermalList,
     GpuStack,
+    DiskStack,
+    NetworkStack,
 }

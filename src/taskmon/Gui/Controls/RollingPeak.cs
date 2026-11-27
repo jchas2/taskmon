@@ -12,8 +12,17 @@ internal sealed class RollingPeak(int window, double floor)
             samples.Dequeue();
         }
 
-        return Math.Clamp(Math.Max(0, value) / Math.Max(floor, samples.Max()), 0.0, 1.0);
+        return Scale(value);
     }
 
     public void Clear() => samples.Clear();
+
+    public double Scale(double value)
+    {
+        double peak = samples.Count > 0 
+            ? samples.Max() 
+            : 0;
+
+        return Math.Clamp(Math.Max(0, value) / Math.Max(floor, peak), 0.0, 1.0);
+    }
 }

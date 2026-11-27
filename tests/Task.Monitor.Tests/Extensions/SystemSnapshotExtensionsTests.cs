@@ -60,4 +60,15 @@ public sealed class SystemSnapshotExtensionsTests
             Gpu = new GpuInfo { Specs = new GpuSpecs { Devices = [new GpuDevice { AdapterLuid = 333 }] } }
         }.ToGpuName("333"));
     }
+
+    // A rate is averaged over the sample, so it can have a fraction. Like a byte rate, it never
+    // shows below zero.
+    [Theory]
+    [InlineData(0.0,       "0/s")]
+    [InlineData(0.4,       "0/s")]
+    [InlineData(312.6,     "313/s")]
+    [InlineData(1488095.0, "1,488,095/s")]
+    [InlineData(-5.0,      "0/s")]
+    public void ToNetworkPacketRate_Shows_Whole_Packets_A_Second(double packetsPerSecond, string expected) =>
+        Assert.Equal(expected, packetsPerSecond.ToNetworkPacketRate());
 }

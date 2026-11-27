@@ -2,7 +2,9 @@ using System.Drawing;
 using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Gui.Controls.Disk;
 using Task.Monitor.Gui.Controls.Gpu;
+using Task.Monitor.Gui.Controls.Network;
 using Task.Monitor.Gui.Controls.Summary2;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Gui.Controls.Thermals;
@@ -186,6 +188,27 @@ public sealed class SummaryPaneTests
     }
 
     [Fact]
+    public void Disk_Stack_Pane_Lists_Each_Disk_On_Every_Platform()
+    {
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.DiskStack, width: 120, height: 8);
+        DiskStackControl stack = Assert.IsType<DiskStackControl>(pane);
+
+        Assert.False(stack.TabStop);
+
+        Publish(new SystemSnapshot {
+            Disk = new DiskInfo {
+                Specs   = new DiskSpecs   { Devices = [new DiskDevice { Index = 0, Model = "KINGSTON SKC3000D2048G" }] },
+                Metrics = new DiskMetrics { Devices = [new DiskDeviceMetrics { Index = 0, PercentActiveTime = 12.0 }] }
+            }
+        });
+
+        ListViewItem row = Assert.Single(stack.DiskView.Items.Cast<ListViewItem>());
+        Assert.Equal(("Disk 0", "KINGSTON SKC3000D2048G", "012.0%"), (row.SubItems[0].Text, row.SubItems[1].Text, row.SubItems[4].Text));
+
+        summary.Unload();
+    }
+
+    [Fact]
     public void Gpu_Memory_Metre_Shows_The_Used_And_Total_Bytes()
     {
         (SummaryControl2 summary, MetreControl metre) = ShownMetre(PaneControlType.GpuMemoryMetre);
@@ -281,6 +304,27 @@ public sealed class SummaryPaneTests
         Assert.Equal(0.25, metre.Series[0].Value, precision: 9);
         Assert.StartsWith("Net Send ", metre.Text);
         Assert.Equal(runContext.AppConfig.Theme.RangeLowBackground, metre.Series[0].Colour);
+
+        summary.Unload();
+    }
+
+    [Fact]
+    public void Network_Stack_Pane_Lists_Each_Active_Adapter_On_Every_Platform()
+    {
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.NetworkStack, width: 120, height: 8);
+        NetworkStackControl stack = Assert.IsType<NetworkStackControl>(pane);
+
+        Assert.False(stack.TabStop);
+
+        Publish(new SystemSnapshot {
+            Network = new NetworkInfo {
+                Specs   = new NetworkSpecs   { Devices = [new NetworkDevice { InterfaceLuid = 4, FriendlyName = "Ethernet", ReceiveLinkSpeed = 1_000_000_000 }] },
+                Metrics = new NetworkMetrics { Devices = [new NetworkDeviceMetrics { InterfaceLuid = 4, ReceiveBytesPerSecond = 2048 }] }
+            }
+        });
+
+        ListViewItem row = Assert.Single(stack.NetworkView.Items.Cast<ListViewItem>());
+        Assert.Equal(("Ethernet", "1 Gbps", "2.0 KB/s"), (row.SubItems[0].Text, row.SubItems[1].Text, row.SubItems[5].Text));
 
         summary.Unload();
     }
