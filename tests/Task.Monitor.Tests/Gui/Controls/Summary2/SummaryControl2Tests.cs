@@ -161,7 +161,7 @@ public sealed class SummaryControl2Tests
     {
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.CpuMetre));
 
-        UseSummaryLayout(SummaryControlLayout.FromTree("Cpu Metre Pane Test", tree));
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("Cpu Metre Pane Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -183,7 +183,7 @@ public sealed class SummaryControl2Tests
     {
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Health));
 
-        UseSummaryLayout(SummaryControlLayout.FromTree("Health Pane Test", tree));
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("Health Pane Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -208,7 +208,7 @@ public sealed class SummaryControl2Tests
     {
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Power));
 
-        UseSummaryLayout(SummaryControlLayout.FromTree("Power Pane Test", tree));
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("Power Pane Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -234,7 +234,7 @@ public sealed class SummaryControl2Tests
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Gpu));
         tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Npu));
 
-        UseSummaryLayout(SummaryControlLayout.FromTree("Npu Chart Test", tree));
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("Npu Chart Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -314,7 +314,7 @@ public sealed class SummaryControl2Tests
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.CpuCores));
         tree.Split(tree.RootId, Orientation.Row, SummaryPane.Empty);
 
-        UseSummaryLayout(SummaryControlLayout.FromTree("CpuCores Border Test", tree));
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("CpuCores Border Test", tree));
 
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
@@ -529,6 +529,40 @@ public sealed class SummaryControl2Tests
         Assert.True(handled);
         Assert.Same(health, GetFocusedPane(ctrl));
         Assert.False(health.CausesView.Focused);
+
+        ctrl.Unload();
+    }
+
+    // Regression test: the pane last moved to was remembered by id across a new tree, so focusing
+    // the control looked up a pane the new tree didn't have.
+    [Fact]
+    public void Showing_A_Tree_Without_The_Focused_Pane_Focuses_Its_First_Pane()
+    {
+        LayoutTree<SummaryPane> twoPanes = new(new SummaryPane(PaneControlType.Cpu));
+        twoPanes.Split(twoPanes.RootId, Orientation.Row, new SummaryPane(PaneControlType.Memory));
+
+        ForwardingTerminal terminal = new(runContext.Terminal);
+        Screen screen = new(terminal) { Width = 120, Height = 40 };
+
+        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig, twoPanes) {
+            Width  = 120,
+            Height = 40
+        };
+
+        screen.Controls.Add(ctrl);
+        ctrl.Load();
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+        Assert.True(handled);
+
+        ctrl.Show(new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Gpu)));
+        ctrl.Resize();
+        ctrl.SetFocus();
+
+        Assert.Same(ctrl.PaneControls[0], GetFocusedPane(ctrl));
 
         ctrl.Unload();
     }
@@ -975,16 +1009,5 @@ public sealed class SummaryControl2Tests
         Assert.Same(focusedPaneBefore, GetFocusedPane(ctrl));
 
         ctrl.Unload();
-    }
-
-    // AppConfig only takes a default layout it already knows about, and SaveLayout needs a
-    // real config directory - so the layout is added to its list directly.
-    private void UseSummaryLayout(SummaryControlLayout layout)
-    {
-        FieldInfo? field = typeof(AppConfig).GetField(
-            "allLayouts", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        ((List<SummaryControlLayout>)field!.GetValue(runContext.AppConfig)!).Add(layout);
-        runContext.AppConfig.DefaultLayout = layout;
     }
 }

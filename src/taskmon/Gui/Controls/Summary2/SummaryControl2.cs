@@ -84,8 +84,9 @@ public sealed class SummaryControl2 : Control
     [MemberNotNull(nameof(tree))]
     private void BuildPanes()
     {
-        builtFrom = appConfig.DefaultLayout;
-        tree      = builtFrom?.ToTree() ?? SummaryControlLayout.Fallback();
+        builtFrom     = appConfig.DefaultLayout;
+        tree          = builtFrom?.ToTree() ?? SummaryControlLayout.Fallback();
+        focusedPaneId = null;
 
         Controls.Clear();
         panes.Clear();
@@ -678,6 +679,10 @@ public sealed class SummaryControl2 : Control
 
             Controls.Remove(control);
             panes.Remove(id);
+
+            if (id == focusedPaneId) {
+                focusedPaneId = null;
+            }
         }
 
         foreach ((int id, SummaryPane pane) in wanted) {

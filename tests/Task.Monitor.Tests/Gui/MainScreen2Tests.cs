@@ -9,6 +9,7 @@ using Task.Monitor.Gui.Controls.Health;
 using Task.Monitor.Gui.Controls.Performance;
 using Task.Monitor.Gui.Controls.Processes;
 using Task.Monitor.Gui.Controls.Summary2;
+using Task.Monitor.Gui.Controls.Summary2.Layout;
 using Task.Monitor.Resources;
 using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
@@ -19,6 +20,7 @@ using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Process;
 using Task.Monitor.Tests.Common;
+using Task.Monitor.Tests.Gui.Controls.Summary2;
 using Task.Monitor.Tests.Process;
 using ServiceController = Task.Monitor.System.Services.ServiceController;
 using SystemSnapshot = Task.Monitor.System.Services.SystemSnapshot;
@@ -439,6 +441,31 @@ public sealed class MainScreen2Tests : IDisposable
         Assert.Same(layouts[0], runContext.AppConfig.DefaultLayout);
     }
 
+    // Regression test: SUMMARY remembered the pane last moved to by id, and F4 then focused the
+    // pane with that id in the new layout - which had no such pane.
+    [Fact]
+    public void F4_With_A_Summary_Pane_Focused_Focuses_The_New_Layouts_First_Pane()
+    {
+        (SummaryControlLayout twoPanes, SummaryControlLayout onePane) = UseLayoutsWithDifferentPanes();
+        List<SummaryControlLayout> layouts = LayoutsInSetupOrder();
+
+        Assert.Same(onePane, layouts[layouts.IndexOf(twoPanes) + 1]);
+
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
+        bool            handled        = false;
+
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(handled);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Same(onePane, runContext.AppConfig.DefaultLayout);
+        Assert.True(summaryControl.PaneControls[0].Focused);
+    }
+
     [Fact]
     public void Health_Is_Listed_Directly_Under_Summary()
     {
@@ -473,6 +500,22 @@ public sealed class MainScreen2Tests : IDisposable
     private static ConsoleKeyInfo Key(ConsoleKey key) => new('\0', key, false, false, false);
 
     private List<SummaryControlLayout> LayoutsInSetupOrder() => runContext.AppConfig.Layouts.OrderBy(l => l.Name).ToList();
+
+    // Two layouts next to each other in Setup order, the first in use: CPU and memory side by
+    // side (panes 1 and 2), then a lone GPU chart (pane 0).
+    private (SummaryControlLayout TwoPanes, SummaryControlLayout OnePane) UseLayoutsWithDifferentPanes()
+    {
+        LayoutTree<SummaryPane> twoPanes = new(new SummaryPane(PaneControlType.Cpu));
+        twoPanes.Split(twoPanes.RootId, Orientation.Row, new SummaryPane(PaneControlType.Memory));
+
+        SummaryControlLayout first  = SummaryControlLayout.FromTree("Zz Focus Test 1", twoPanes);
+        SummaryControlLayout second = SummaryControlLayout.FromTree("Zz Focus Test 2", new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Gpu)));
+
+        TestLayouts.Register(runContext.AppConfig, second);
+        TestLayouts.Use(runContext.AppConfig, first);
+
+        return (first, second);
+    }
 
     [Fact]
     public void Left_And_Right_Move_Between_The_Health_Panes_Then_Back_To_The_Menu()
@@ -575,6 +618,36 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.True(menuControl.Focused);
         Assert.True(ShowsFocusBorder(menuControl));
+    }
+
+    // Regression test: SUMMARY remembered the pane last moved to by id while Setup changed the
+    // layout, so the Right arrow from the menu focused a pane the new layout didn't have.
+    [Fact]
+    public void Right_Onto_Summary_After_Setup_Changed_The_Layout_Focuses_Its_First_Pane()
+    {
+        (_, SummaryControlLayout onePane) = UseLayoutsWithDifferentPanes();
+
+        (MainScreen2 mainScreen, SetupScreen setupScreen) = ShowMainScreen();
+        SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
+        bool            handled        = false;
+
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(handled);
+
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.F2), ref handled);
+
+        // What saving a new default layout in Setup does, then ScreenApplication's loop on F10.
+        runContext.AppConfig.DefaultLayout = onePane;
+        setupScreen.Close();
+        mainScreen.Show();
+
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        Assert.True(summaryControl.PaneControls[0].Focused);
     }
 
     // Regression test: the screen kept hold of the control focused before Setup opened, and moving

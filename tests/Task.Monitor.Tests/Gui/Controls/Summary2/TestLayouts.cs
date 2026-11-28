@@ -1,3 +1,4 @@
+using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Gui.Controls.Summary2.Layout;
 
@@ -18,4 +19,20 @@ internal static class TestLayouts
             new LayoutNode<SummaryPane> { Id = 5, Pane = new(PaneControlType.Memory) },
             new LayoutNode<SummaryPane> { Id = 6, Pane = new(PaneControlType.Gpu) },
         ], rootId: 0);
+
+    // AppConfig only takes a default layout it already knows about, and SaveLayout needs a
+    // real config directory - so the layout is added to its list directly.
+    public static void Register(AppConfig appConfig, SummaryControlLayout layout)
+    {
+        FieldInfo? field = typeof(AppConfig).GetField(
+            "allLayouts", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        ((List<SummaryControlLayout>)field!.GetValue(appConfig)!).Add(layout);
+    }
+
+    public static void Use(AppConfig appConfig, SummaryControlLayout layout)
+    {
+        Register(appConfig, layout);
+        appConfig.DefaultLayout = layout;
+    }
 }
