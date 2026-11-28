@@ -1,0 +1,23 @@
+[Taskmon Essentials 4]
+version=2
+root=0
+nodes=0,1,2,19,20,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+node.0=split,Column,0.24999996,1,2
+node.1=split,Row,0.5,5,6
+node.2=split,Column,0.5,19,20
+node.19=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.20=pane,Health
+node.5=split,Row,0.5,7,8
+node.6=split,Row,0.5,13,14
+node.7=split,Row,0.5,9,10
+node.8=split,Row,0.5,11,12
+node.9=pane,Cpu
+node.10=pane,Memory
+node.11=pane,VirtualMemory
+node.12=pane,Gpu
+node.13=split,Row,0.5,17,18
+node.14=split,Row,0.5,15,16
+node.15=pane,NetworkReceived
+node.16=pane,NetworkSent
+node.17=pane,GpuMemory
+node.18=pane,Disk

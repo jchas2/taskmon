@@ -507,7 +507,7 @@ public sealed class AppConfig
         uxSection
             .AddIfMissing(Constants.Keys.ConfirmTaskDelete,           true.ToString())
             .AddIfMissing(Constants.Keys.DefaultTheme,                Constants.Sections.ThemeTaskmonDefault)
-            .AddIfMissing(Constants.Keys.DefaultSummaryLayout,        Constants.Sections.LayoutAllCharts)
+            .AddIfMissing(Constants.Keys.DefaultSummaryLayout,        Constants.Sections.LayoutDefault)
             .AddIfMissing(Constants.Keys.HighlightDaemons,            true.ToString())
             .AddIfMissing(Constants.Keys.HighlightStatsColUpdate,     true.ToString())
             .AddIfMissing(Constants.Keys.MetreStyle,                  MetreControlStyle.Dots.ToString())
@@ -707,7 +707,7 @@ public sealed class AppConfig
         }
         else if (allLayouts.Count > 0 && defaultLayout == null) {
             DefaultLayout = allLayouts.FirstOrDefault(
-                t => t.Name.Equals(Constants.Sections.LayoutAllCharts, StringComparison.CurrentCultureIgnoreCase))
+                t => t.Name.Equals(Constants.Sections.LayoutDefault, StringComparison.CurrentCultureIgnoreCase))
                 ?? allLayouts[0];
         }
     }

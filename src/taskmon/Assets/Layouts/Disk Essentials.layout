@@ -1,0 +1,17 @@
+[Disk Essentials]
+version=2
+root=0
+nodes=0,1,2,19,20,5,6,7,8,9,10,11,12
+node.0=split,Column,0.29999995,1,2
+node.1=split,Column,0.45,5,6
+node.2=split,Column,0.45,9,10
+node.19=pane,DiskStack
+node.20=pane,Process,Process+Pid+Cpu+Gpu+Mem+Path+Disk+Power,Disk,Desc
+node.5=pane,CpuMetre
+node.6=split,Column,0.45,7,8
+node.7=pane,MemoryMetre
+node.8=pane,VirtualMemoryMetre
+node.9=split,Column,0.24999996,11,12
+node.10=split,Column,0.29999995,19,20
+node.11=pane,DiskMetre
+node.12=pane,Disk

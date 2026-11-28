@@ -163,8 +163,8 @@ public class TaskMonAppTests
 
     public static TheoryData<string, string, Statistics> TargetedArgData()
         => new() {
-            { "--cpu-only", Constants.Sections.LayoutCpuAndMemoryLarge, Statistics.Cpu },
-            { "--gpu-only", Constants.Sections.LayoutGpuAndGpuMemoryLarge, Statistics.Gpu }
+            { "--cpu-only", Constants.Sections.LayoutCpuOnly, Statistics.Cpu },
+            { "--gpu-only", Constants.Sections.LayoutGpuOnly, Statistics.Gpu }
         };
 
     public static TheoryData<string, string, string> ValidStringFilterData()

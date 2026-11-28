@@ -1,0 +1,17 @@
+[Classic Monitoring 4]
+version=2
+root=0
+nodes=0,1,2,3,4,5,6,7,8,9,10,11,12
+node.0=split,Column,0.5,1,2
+node.1=split,Column,0.55,3,4
+node.2=split,Column,0.24999996,5,6
+node.3=split,Row,0.5,7,8
+node.4=split,Column,0.5,11,12
+node.5=pane,Disk
+node.6=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.7=pane,CpuCores
+node.8=split,Column,0.5,9,10
+node.9=pane,Cpu
+node.10=pane,Memory
+node.11=pane,NetworkReceived
+node.12=pane,NetworkSent

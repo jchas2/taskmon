@@ -24,6 +24,8 @@
       <!-- The fixed-width limits ("Max N characters.") live in the default file's comments, which
            aren't compiled into the assembly; StringsTests reads them from this copy. -->
       <None Include="..\..\src\taskmon\Resources\Strings.resx" Link="Resources\Strings.resx" CopyToOutputDirectory="PreserveNewest" />
+      <!-- Every layout file in the folder, so AppConfigTests can check each one is also embedded. -->
+      <None Include="..\..\src\taskmon\Assets\Layouts\*.layout" Link="Assets\Layouts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

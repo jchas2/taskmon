@@ -1,0 +1,5 @@
+[Classic Monitoring 3]
+version=2
+root=0
+nodes=0
+node.0=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+AvgCpu+AvgGpu+AvgMem+AvgDisk+MaxCpu+MaxGpu+MaxMem+MaxDisk+Power,Cpu,Desc

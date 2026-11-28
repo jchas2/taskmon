@@ -15,18 +15,18 @@ public sealed class Constants
 
     public sealed class Sections
     {
-        public const string Filter                     = "filter";
-        public const string Health                     = "health";
-        public const string UX                         = "ux";
-        public const string Stats                      = "stats";
-        public const string Sort                       = "sort";
+        public const string Filter              = "filter";
+        public const string Health              = "health";
+        public const string UX                  = "ux";
+        public const string Stats               = "stats";
+        public const string Sort                = "sort";
 
-        public const string ThemeTaskmonDefault        = "Taskmon Default";
-        public const string ThemeMsDos                 = "MS-DOS";
+        public const string ThemeTaskmonDefault = "Taskmon Default";
+        public const string ThemeMsDos          = "MS-DOS";
 
-        public const string LayoutAllCharts            = "All Charts";
-        public const string LayoutGpuAndGpuMemoryLarge = "Gpu and Gpu Memory Large";
-        public const string LayoutCpuAndMemoryLarge    = "Cpu and Memory Large";
+        public const string LayoutDefault       = "Taskmon Essentials 1";
+        public const string LayoutCpuOnly       = "Classic Monitoring 1";
+        public const string LayoutGpuOnly       = "GPU Essentials";
     }
 
     public sealed class Keys
@@ -165,7 +165,7 @@ public sealed class Constants
         public const string ColCmdLowPriority     = "process.list.lowpriority";
         public const string ColCmdHighCpu         = "process.list.highcpu";
         public const string ColCmdIoBound         = "process.list.iobound";
-        // Not used yet: kept for script process detection, to come.
+        // Not used yet: kept for script process detection.
         public const string ColCmdScript          = "process.list.script";
         public const string ColUserCurrentNonRoot = "process.list.user.currentnonroot";
         public const string ColUserOtherNonRoot   = "process.list.user.othernonroot";
@@ -211,10 +211,8 @@ public sealed class Constants
         public const string CommandForeground         = "command.foreground";
         public const string CommandForegroundDisabled = "command.foreground.disabled";
         
-        // Theme and layout file key: the version of the file's format.
         public const string Version = "version";
 
-        // SummaryControlLayout (recursive split-tree) keys.
         public const string SummaryRoot       = "root";
         public const string SummaryNodes      = "nodes";
         public const string SummaryNodePrefix = "node.";

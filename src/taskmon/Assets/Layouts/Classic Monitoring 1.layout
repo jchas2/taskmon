@@ -1,0 +1,11 @@
+[Classic Monitoring 1]
+version=2
+root=0
+nodes=0,1,2,9,10,11,12
+node.0=split,Column,0.15,1,2
+node.1=pane,CpuCores
+node.2=split,Column,0.5,9,10
+node.9=split,Column,0.5,11,12
+node.10=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.11=pane,MemoryMetre
+node.12=pane,VirtualMemoryMetre

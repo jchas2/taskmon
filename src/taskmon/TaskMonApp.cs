@@ -156,8 +156,8 @@ public sealed class TaskMonApp(RunContext runContext)
         // Each layout's process list sorts itself, by Gpu or Cpu.
         if (isGpuOnly || isCpuOnly) {
             string layoutName = isGpuOnly
-                ? Configuration.Constants.Sections.LayoutGpuAndGpuMemoryLarge
-                : Configuration.Constants.Sections.LayoutCpuAndMemoryLarge;
+                ? Configuration.Constants.Sections.LayoutGpuOnly
+                : Configuration.Constants.Sections.LayoutCpuOnly;
 
             SummaryControlLayout? layout = runContext.AppConfig.Layouts.FirstOrDefault(l =>
                     l.Name.Equals(layoutName, StringComparison.CurrentCultureIgnoreCase));

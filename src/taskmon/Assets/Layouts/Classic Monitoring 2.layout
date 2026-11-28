@@ -1,0 +1,17 @@
+[Classic Monitoring 2]
+version=2
+root=0
+nodes=0,1,2,3,4,5,6,7,8,9,10,11,12
+node.0=split,Column,0.29999995,1,2
+node.1=split,Column,0.29999995,5,6
+node.2=split,Column,0.5,3,4
+node.3=split,Column,0.5,9,10
+node.4=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.5=pane,CpuCores
+node.6=split,Column,0.5,7,8
+node.7=pane,MemoryMetre
+node.8=split,Column,0.5,11,12
+node.9=pane,NetworkReceiveMetre
+node.10=pane,NetworkSendMetre
+node.11=pane,VirtualMemoryMetre
+node.12=pane,DiskMetre

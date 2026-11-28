@@ -1,0 +1,21 @@
+[Taskmon Essentials 2]
+version=2
+root=0
+nodes=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+node.0=split,Column,0.6,1,2
+node.1=split,Column,0.5,3,4
+node.2=pane,Process,Process+Pid+User+Cpu+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.3=split,Row,0.25,5,6
+node.4=split,Row,0.25,11,12
+node.5=pane,Cpu
+node.6=split,Row,0.33333334,7,8
+node.7=pane,Gpu
+node.8=split,Row,0.5,9,10
+node.9=pane,Disk
+node.10=pane,NetworkSent
+node.11=pane,Memory
+node.12=split,Row,0.33333334,13,14
+node.13=pane,GpuMemory
+node.14=split,Row,0.5,15,16
+node.15=pane,VirtualMemory
+node.16=pane,NetworkReceived

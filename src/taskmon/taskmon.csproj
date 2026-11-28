@@ -35,6 +35,30 @@
       <None Remove="Assets\Themes\Winamp Classic.theme" />
       <EmbeddedResource Include="Assets\Themes\Winamp Classic.theme" />
       <None Remove="Assets\Themes\Fedora Light.theme" />
+      <None Remove="Assets\Layouts\Classic Monitoring 1.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 1.layout" />
+      <None Remove="Assets\Layouts\Classic Monitoring 2.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 2.layout" />
+      <None Remove="Assets\Layouts\Classic Monitoring 3.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 3.layout" />
+      <None Remove="Assets\Layouts\Classic Monitoring 4.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 4.layout" />
+      <None Remove="Assets\Layouts\Classic Monitoring 5.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 5.layout" />
+      <None Remove="Assets\Layouts\Disk Essentials.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Disk Essentials.layout" />
+      <None Remove="Assets\Layouts\GPU Essentials.layout" />
+      <EmbeddedResource Include="Assets\Layouts\GPU Essentials.layout" />
+      <None Remove="Assets\Layouts\Network Essentials.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Network Essentials.layout" />
+      <None Remove="Assets\Layouts\Taskmon Essentials 1.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Taskmon Essentials 1.layout" />
+      <None Remove="Assets\Layouts\Taskmon Essentials 2.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Taskmon Essentials 2.layout" />
+      <None Remove="Assets\Layouts\Taskmon Essentials 3.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Taskmon Essentials 3.layout" />
+      <None Remove="Assets\Layouts\Taskmon Essentials 4.layout" />
+      <EmbeddedResource Include="Assets\Layouts\Taskmon Essentials 4.layout" />
     </ItemGroup>
 
     <ItemGroup>
@@ -73,26 +97,6 @@
       <EmbeddedResource Include="Assets\Themes\Monochrome.theme" />
       <None Remove="Assets\Themes\Amber.theme" />
       <None Remove="Assets\Themes\Green.theme" />
-      <None Remove="Assets\Layouts\All Charts.layout" />
-      <EmbeddedResource Include="Assets\Layouts\All Charts.layout" />
-      <None Remove="Assets\Layouts\All Charts Large.layout" />
-      <EmbeddedResource Include="Assets\Layouts\All Charts Large.layout" />
-      <None Remove="Assets\Layouts\Cpu and Memory.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Cpu and Memory.layout" />
-      <None Remove="Assets\Layouts\Cpu and Memory Large.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Cpu and Memory Large.layout" />
-      <None Remove="Assets\Layouts\Disk Read and Write Bytes.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Disk Read and Write Bytes.layout" />
-      <None Remove="Assets\Layouts\Disk Read and Write Bytes Large.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Disk Read and Write Bytes Large.layout" />
-      <None Remove="Assets\Layouts\Gpu and Gpu Memory.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Gpu and Gpu Memory.layout" />
-      <None Remove="Assets\Layouts\Gpu and Gpu Memory Large.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Gpu and Gpu Memory Large.layout" />
-      <None Remove="Assets\Layouts\Network Send and Receive Bytes.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes.layout" />
-      <None Remove="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
-      <EmbeddedResource Include="Assets\Layouts\Network Send and Receive Bytes Large.layout" />
       <None Remove="Assets\Themes\Alien Blood.theme" />
       <EmbeddedResource Include="Assets\Themes\Alien Blood.theme" />
       <None Remove="Assets\Themes\macOS Classic Light" />

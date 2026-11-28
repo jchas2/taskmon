@@ -27,12 +27,12 @@ public sealed class AppConfigTests
         Assert.Equal(35, CanaryTestHelper.GetPropertyCount<AppConfig>());
 
     [Fact]
-    public void A_New_Config_Starts_With_All_Charts_As_The_Default_Layout()
+    public void A_New_Config_Starts_With_Taskmon_Essentials_1_As_The_Default_Layout()
     {
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.Contains("default-summary-layout=All Charts", appConfig.ToString());
-        Assert.Equal("All Charts", appConfig.DefaultLayout?.Name);
+        Assert.Contains("default-summary-layout=Taskmon Essentials 1", appConfig.ToString());
+        Assert.Equal("Taskmon Essentials 1", appConfig.DefaultLayout?.Name);
     }
 
     private static string ConfigTemplate()
@@ -223,11 +223,11 @@ use-irix-cpu-reporting=True
 ";
 
     [Fact]
-    public void DefaultLayout_Falls_Back_To_All_Charts_When_None_Is_Configured()
+    public void DefaultLayout_Falls_Back_To_Taskmon_Essentials_1_When_None_Is_Configured()
     {
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.Equal("All Charts", appConfig.DefaultLayout?.Name);
+        Assert.Equal("Taskmon Essentials 1", appConfig.DefaultLayout?.Name);
     }
 
     [Fact]
@@ -293,8 +293,8 @@ use-irix-cpu-reporting=True
         Path.GetFileName(Path.GetDirectoryName(path)) == parentFolder;
 
     [Theory]
-    [InlineData("All Charts", true)]
-    [InlineData("all charts", true)]
+    [InlineData("Taskmon Essentials 1", true)]
+    [InlineData("taskmon essentials 1", true)]
     [InlineData("My Dashboard", false)]
     public void IsBuiltInLayout_Matches_Only_Shipped_Layout_Names(string name, bool expected)
     {
@@ -324,16 +324,16 @@ use-irix-cpu-reporting=True
     public void LoadLayouts_Deletes_Files_In_The_Built_In_Folder_That_Are_Not_Built_Ins()
     {
         const string RetiredFile   = "/fake/path/layouts/built-in/Retired Layout.layout";
-        const string AllChartsFile = "/fake/path/layouts/built-in/all charts.layout";
+        const string ShippedFile   = "/fake/path/layouts/built-in/taskmon essentials 1.layout";
 
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
         fileSystem.Setup(fs => fs.GetFiles(It.Is<string>(p => IsBuiltInFolder(p, "layouts")), It.IsAny<string>()))
-            .Returns([AllChartsFile, RetiredFile]);
+            .Returns([ShippedFile, RetiredFile]);
 
         AppConfig appConfig = new(fileSystem.Object);
 
         fileSystem.Verify(fs => fs.DeleteFile(RetiredFile), Times.Once);
-        fileSystem.Verify(fs => fs.DeleteFile(AllChartsFile), Times.Never);
+        fileSystem.Verify(fs => fs.DeleteFile(ShippedFile), Times.Never);
         Assert.DoesNotContain(appConfig.Layouts, l => l.Name == "Retired Layout");
     }
 
@@ -342,12 +342,12 @@ use-irix-cpu-reporting=True
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
         fileSystem.Setup(fs => fs.FileExists(It.IsAny<string>())).Returns(true);
-        fileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>())).Returns("[All Charts]\nstale=true\n");
+        fileSystem.Setup(fs => fs.ReadAllText(It.IsAny<string>())).Returns("[Taskmon Essentials 1]\nstale=true\n");
 
         _ = new AppConfig(fileSystem.Object);
 
         fileSystem.Verify(fs => fs.WriteAllText(
-            It.Is<string>(p => p.EndsWith(Path.Combine("layouts", "built-in", $"All Charts{Constants.LayoutExtension}"))),
+            It.Is<string>(p => p.EndsWith(Path.Combine("layouts", "built-in", $"Taskmon Essentials 1{Constants.LayoutExtension}"))),
             It.IsAny<string>()), Times.Once);
     }
 
@@ -359,7 +359,7 @@ use-irix-cpu-reporting=True
 
         AppConfig appConfig = new(fileSystem.Object);
 
-        Assert.True(appConfig.Layouts.Single(l => l.Name == "All Charts").IsBuiltIn);
+        Assert.True(appConfig.Layouts.Single(l => l.Name == "Taskmon Essentials 1").IsBuiltIn);
         Assert.False(appConfig.Layouts.Single(l => l.Name == "My Dashboard").IsBuiltIn);
     }
 
@@ -425,25 +425,25 @@ charts=0,1,2,3,4,5,6,7
         AppConfig appConfig = new(fileSystem.Object);
 
         Assert.DoesNotContain(appConfig.Layouts, t => t.Name == "My Grid");
-        Assert.Contains(appConfig.Layouts, t => t.Name == "All Charts");
+        Assert.Contains(appConfig.Layouts, t => t.Name == "Taskmon Essentials 1");
     }
 
     // Built-in names are reserved: a file whose header names a built-in layout is skipped, whatever
     // the file is called, so the Layout Designer, which won't save under a built-in's name, and
     // the files on disk agree.
     [Theory]
-    [InlineData("All Charts.layout")]
+    [InlineData("Taskmon Essentials 1.layout")]
     [InlineData("Renamed File.layout")]
     public void LoadLayouts_The_Shipped_Layout_Wins_Over_A_File_On_Disk_With_Its_Name(string fileName)
     {
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
-        SetupUserFiles("layouts", (fileName, TreeLayoutIni("All Charts")));
+        SetupUserFiles("layouts", (fileName, TreeLayoutIni("Taskmon Essentials 1")));
 
         AppConfig appConfig = new(fileSystem.Object);
 
-        SummaryControlLayout allCharts = Assert.Single(appConfig.Layouts, l => l.Name == "All Charts");
-        Assert.True(allCharts.IsBuiltIn);
-        Assert.Equal(9, allCharts.ToTree().Panes().Count());
+        SummaryControlLayout shipped = Assert.Single(appConfig.Layouts, l => l.Name == "Taskmon Essentials 1");
+        Assert.True(shipped.IsBuiltIn);
+        Assert.Equal(8, shipped.ToTree().Panes().Count());
     }
 
     [Fact]
@@ -531,7 +531,7 @@ control.foreground=#abcdef
     }
 
     [Theory]
-    [InlineData("All Charts", Constants.LayoutExtension)]
+    [InlineData("Taskmon Essentials 1", Constants.LayoutExtension)]
     [InlineData("Taskmon Default", Constants.ThemeExtension)]
     public void Load_Does_Not_Rewrite_A_Shipped_File_Whose_Copy_On_Disk_Is_Unchanged(string name, string extension)
     {
@@ -602,13 +602,13 @@ control.foreground=#abcdef
         fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         AppConfig appConfig = new(fileSystem.Object);
-        SummaryControlLayout shipped = appConfig.Layouts.Single(l => l.Name == "All Charts");
+        SummaryControlLayout shipped = appConfig.Layouts.Single(l => l.Name == "Taskmon Essentials 1");
         fileSystem.Invocations.Clear();
 
-        bool saved = appConfig.SaveLayout(SummaryControlLayout.FromTree("all charts", new LayoutTree<SummaryPane>(SummaryPane.Empty)));
+        bool saved = appConfig.SaveLayout(SummaryControlLayout.FromTree("taskmon essentials 1", new LayoutTree<SummaryPane>(SummaryPane.Empty)));
 
         Assert.False(saved);
-        Assert.Same(shipped, appConfig.Layouts.Single(l => l.Name.Equals("All Charts", StringComparison.OrdinalIgnoreCase)));
+        Assert.Same(shipped, appConfig.Layouts.Single(l => l.Name.Equals("Taskmon Essentials 1", StringComparison.OrdinalIgnoreCase)));
         fileSystem.Verify(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -661,59 +661,6 @@ control.foreground=#abcdef
         }
     }
 
-    // Every shipped layout, and the charts each row held under the old grid format (row by row,
-    // left to right) - the trees they were converted to must reproduce exactly that order, with
-    // the process list last.
-    public static TheoryData<string, PaneControlType[]> ShippedLayouts()
-    {
-        PaneControlType[] allCharts = [
-            PaneControlType.Cpu, PaneControlType.Gpu, PaneControlType.Disk, PaneControlType.NetworkSent,
-            PaneControlType.Memory, PaneControlType.GpuMemory, PaneControlType.VirtualMemory, PaneControlType.NetworkReceived,
-            PaneControlType.Process
-        ];
-        PaneControlType[] cpuMemory = [PaneControlType.Cpu, PaneControlType.Memory, PaneControlType.Process];
-        PaneControlType[] gpuGpuMemory = [PaneControlType.Gpu, PaneControlType.GpuMemory, PaneControlType.Process];
-        PaneControlType[] network = [PaneControlType.NetworkSent, PaneControlType.NetworkReceived, PaneControlType.Process];
-        PaneControlType[] disk = [PaneControlType.Disk, PaneControlType.Process];
-
-        return new() {
-            { "All Charts", allCharts },
-            { "All Charts Large", allCharts },
-            { "Cpu and Memory", cpuMemory },
-            { "Cpu and Memory Large", cpuMemory },
-            { "Gpu and Gpu Memory", gpuGpuMemory },
-            { "Gpu and Gpu Memory Large", gpuGpuMemory },
-            { "Network Send and Receive Bytes", network },
-            { "Network Send and Receive Bytes Large", network },
-            { "Disk Read and Write Bytes", disk },
-            { "Disk Read and Write Bytes Large", disk },
-        };
-    }
-
-    // The 1/N, 1/(N-1), ... ratio chains that stand in for the old grid's equal cells: every
-    // chart in All Charts comes out the same size, and the charts keep the grid's 60% height.
-    [Fact]
-    public void Shipped_All_Charts_Reproduces_The_Grid_Geometry()
-    {
-        AppConfig appConfig = new(fileSystem.Object);
-        LayoutTree<SummaryPane> tree = appConfig.Layouts.Single(l => l.Name == "All Charts").ToTree();
-
-        RunContext      runContext = new RunContextHelper().GetRunContext();
-        SummaryControl2 summary    = new(runContext.ServiceController, runContext.Terminal, appConfig, tree) { Width = 120, Height = 40 };
-
-        summary.Resize();
-
-        List<Rectangle> charts = tree.Panes()
-            .Where(p => p.Pane.ControlType != PaneControlType.Process)
-            .Select(p => summary.PaneBounds[p.Id])
-            .ToList();
-
-        Assert.All(charts, r => Assert.Equal(new Size(30, 12), r.Size));
-
-        Rectangle process = summary.PaneBounds[tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Id];
-        Assert.Equal(new Rectangle(0, 24, 120, 16), process);
-    }
-
     [Fact]
     public void Shipped_Layouts_Are_At_The_Current_Version()
     {
@@ -735,44 +682,75 @@ control.foreground=#abcdef
         }
     }
 
-    [Theory]
-    [MemberData(nameof(ShippedLayouts))]
-    public void Shipped_Layouts_Load_As_Trees_With_The_Original_Chart_Order(string name, PaneControlType[] expected)
+    // A control name taskmon doesn't know loads as an empty pane, and a macOS-only one shows as
+    // empty on Windows, so either would leave a blank space in a shipped layout. Each also has one
+    // process list, which names its own columns rather than taking the PROCESSES view's.
+    [Fact]
+    public void Shipped_Layouts_Name_A_Known_Control_In_Every_Pane()
     {
         // No fileSystem setup - the on-disk scan is skipped, leaving only the embedded layouts.
         AppConfig appConfig = new(fileSystem.Object);
 
-        SummaryControlLayout layout = appConfig.Layouts.Single(l => l.Name == name);
-        LayoutTree<SummaryPane> tree = layout.ToTree();
+        List<SummaryControlLayout> shipped = appConfig.Layouts.Where(l => l.IsBuiltIn).ToList();
+        Assert.NotEmpty(shipped);
 
-        Assert.Equal(expected, tree.Panes().Select(p => p.Pane.ControlType).ToArray());
+        foreach (SummaryControlLayout layout in shipped) {
+            List<SummaryPane> panes = layout.ToTree().Panes().Select(p => p.Pane).ToList();
 
-        // The process list names its own columns, so none come from the PROCESSES view's settings.
-        Assert.NotNull(tree.Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane.ProcessColumns);
+            Assert.True(panes.All(pane => pane.ControlType != PaneControlType.Empty), $"{layout.Name} has an empty pane");
+            Assert.True(panes.All(pane => !SummaryControl2.UnavailableControlTypes.Contains(pane.ControlType)), $"{layout.Name} has a pane this platform can't show");
+            Assert.NotNull(Assert.Single(panes, pane => pane.ControlType == PaneControlType.Process).ProcessColumns);
+        }
     }
 
-    // Each shipped layout sorts its process list by what its charts show, highest first. The
-    // network charts have no per-process column, so those layouts sort by Cpu.
+    // Each shipped layout's process list is sorted by what the layout is about, highest first: the
+    // disk and GPU layouts by Disk and Gpu, the rest by Cpu. Network has no per-process column.
+    // Taskmon Essentials 3 names no sort, so it gets SUMMARY's default.
     [Theory]
-    [InlineData("All Charts",                           Statistics.Cpu)]
-    [InlineData("All Charts Large",                     Statistics.Cpu)]
-    [InlineData("Cpu and Memory",                       Statistics.Cpu)]
-    [InlineData("Cpu and Memory Large",                 Statistics.Cpu)]
-    [InlineData("Disk Read and Write Bytes",            Statistics.Disk)]
-    [InlineData("Disk Read and Write Bytes Large",      Statistics.Disk)]
-    [InlineData("Gpu and Gpu Memory",                   Statistics.Gpu)]
-    [InlineData("Gpu and Gpu Memory Large",             Statistics.Gpu)]
-    [InlineData("Network Send and Receive Bytes",       Statistics.Cpu)]
-    [InlineData("Network Send and Receive Bytes Large", Statistics.Cpu)]
-    public void Shipped_Layouts_Sort_Their_Process_List_By_Their_Charts(string name, Statistics sort)
+    [InlineData("Classic Monitoring 1", Statistics.Cpu)]
+    [InlineData("Classic Monitoring 2", Statistics.Cpu)]
+    [InlineData("Classic Monitoring 3", Statistics.Cpu)]
+    [InlineData("Classic Monitoring 4", Statistics.Cpu)]
+    [InlineData("Classic Monitoring 5", Statistics.Cpu)]
+    [InlineData("Disk Essentials",      Statistics.Disk)]
+    [InlineData("GPU Essentials",       Statistics.Gpu)]
+    [InlineData("Network Essentials",   Statistics.Cpu)]
+    [InlineData("Taskmon Essentials 1", Statistics.Cpu)]
+    [InlineData("Taskmon Essentials 2", Statistics.Cpu)]
+    [InlineData("Taskmon Essentials 3", Statistics.Cpu)]
+    [InlineData("Taskmon Essentials 4", Statistics.Cpu)]
+    public void Shipped_Layouts_Sort_Their_Process_List_By_What_They_Show(string name, Statistics sort)
     {
         AppConfig appConfig = new(fileSystem.Object);
 
         SummaryPane processPane = appConfig.Layouts.Single(l => l.Name == name).ToTree()
             .Panes().Single(p => p.Pane.ControlType == PaneControlType.Process).Pane;
 
-        Assert.Equal(sort, processPane.SortColumn);
+        Assert.Equal(sort, processPane.SortColumn ?? SummaryControl2.DefaultProcessSort);
         Assert.False(processPane.SortAscending);
+    }
+
+    // A layout file in Assets\Layouts that isn't an EmbeddedResource in taskmon.csproj never
+    // reaches the built-in folder. Setting the build action on several files at once in an IDE can
+    // miss some of them, so the folder and the embedded resources must match.
+    [Fact]
+    public void Ships_Every_Layout_In_The_Assets_Folder()
+    {
+        const string ResourcePrefix = "Task.Monitor.Assets.Layouts.";
+
+        string[] files = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "Assets", "Layouts"), $"*{Constants.LayoutExtension}")
+            .Select(path => Path.GetFileName(path))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        string[] embedded = typeof(AppConfig).Assembly.GetManifestResourceNames()
+            .Where(name => name.StartsWith(ResourcePrefix) && name.EndsWith(Constants.LayoutExtension))
+            .Select(name => name[ResourcePrefix.Length..])
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.NotEmpty(files);
+        Assert.Equal(files, embedded);
     }
 
     [Theory]
@@ -959,10 +937,19 @@ control.foreground=#abcdef
     [Fact]
     public void The_Default_Layout_Is_Read_From_The_Config()
     {
-        AppConfig appConfig = LoadFromIni("[ux]\ndefault-summary-layout=Cpu and Memory\n");
+        AppConfig appConfig = LoadFromIni("[ux]\ndefault-summary-layout=Classic Monitoring 1\n");
 
-        Assert.Equal("Cpu and Memory", appConfig.DefaultLayout?.Name);
+        Assert.Equal("Classic Monitoring 1", appConfig.DefaultLayout?.Name);
     }
+
+    // SUMMARY's default and the layouts --cpu-only and --gpu-only open are found by name, so a
+    // built-in that is renamed or dropped would leave them pointing at nothing.
+    [Theory]
+    [InlineData(Constants.Sections.LayoutDefault)]
+    [InlineData(Constants.Sections.LayoutCpuOnly)]
+    [InlineData(Constants.Sections.LayoutGpuOnly)]
+    public void The_Layouts_Named_In_Code_Are_Built_In(string name) =>
+        Assert.True(new AppConfig(fileSystem.Object).IsBuiltInLayout(name));
 
     private static string TreeLayoutIni(string name) => $@"
 [{name}]
@@ -1010,12 +997,12 @@ node.2=pane,memory
         AppConfig appConfig = new(fileSystem.Object);
         fileSystem.Invocations.Clear();
 
-        Assert.True(appConfig.TryLoad(Config.FromString("[ux]\ndefault-theme=Nord\ndefault-summary-layout=Cpu and Memory\n")!));
+        Assert.True(appConfig.TryLoad(Config.FromString("[ux]\ndefault-theme=Nord\ndefault-summary-layout=Classic Monitoring 1\n")!));
 
         fileSystem.Verify(fs => fs.GetFiles(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         fileSystem.Verify(fs => fs.WriteAllText(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         Assert.Equal("Nord", appConfig.Theme.Name);
-        Assert.Equal("Cpu and Memory", appConfig.DefaultLayout?.Name);
+        Assert.Equal("Classic Monitoring 1", appConfig.DefaultLayout?.Name);
     }
 
     [Fact]
@@ -1183,7 +1170,7 @@ node.2=pane,memory
 
         Assert.Contains("default-layout=My Grid", existing.ToString());
         Assert.Contains("use-large-charts=True", existing.ToString());
-        Assert.Equal("All Charts", existing.DefaultLayout?.Name);
+        Assert.Equal("Taskmon Essentials 1", existing.DefaultLayout?.Name);
 
         AppConfig fresh = new(fileSystem.Object);
 

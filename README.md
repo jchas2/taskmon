@@ -446,29 +446,31 @@ See [Built-in themes and layouts](#built-in-themes-and-layouts) for how the two 
 
 On the main screen, `F4` switches SUMMARY to the next layout, in the order Setup lists them, and opens SUMMARY if another view is showing. The change lasts until Task Monitor exits; to keep it, open Setup (`F2`), where it is already selected, and save.
 
-A layout is a tree. Each node either splits its space in two or holds one pane. Below is the built-in `Cpu and Memory` layout, without its comments:
+A layout is a tree. Each node either splits its space in two or holds one pane. Below is the built-in `Classic Monitoring 1` layout:
 
 ```
-[Cpu and Memory]
+[Classic Monitoring 1]
 version=2
 root=0
-nodes=0,1,2,3,4
-node.0=split,Column,0.6,1,2
-node.1=split,Row,0.5,3,4
-node.2=pane,Process,Process+Pid+User+Cpu+AvgCpu+Mem+AvgMem+Path,Cpu,Desc
-node.3=pane,Cpu
-node.4=pane,Memory
+nodes=0,1,2,9,10,11,12
+node.0=split,Column,0.15,1,2
+node.1=pane,CpuCores
+node.2=split,Column,0.5,9,10
+node.9=split,Column,0.5,11,12
+node.10=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.11=pane,MemoryMetre
+node.12=pane,VirtualMemoryMetre
 ```
 
 | Example Layout | Description |
 | :--- | :--- |
-| `[Cpu and Memory]` | Layout name, used to identify the layout. It can't be the name of a built-in layout. |
+| `[Classic Monitoring 1]` | Layout name, used to identify the layout. It can't be the name of a built-in layout. |
 | `version=2` | The version of the layout file format. A layout file without it, or with another version, is skipped. |
 | `root=0` | The node that fills the whole SUMMARY screen. |
-| `nodes=0,1,2,3,4` | The ids of every node in the layout. |
-| `node.0=split,Column,0.6,1,2` | A split: `Column` stacks node 1 above node 2, `Row` puts them side by side. `0.6` is the first node's share of the space, here 60%. |
-| `node.3=pane,Cpu` | A pane showing one control. |
-| `node.2=pane,Process,Process+Pid+User+Cpu+AvgCpu+Mem+AvgMem+Path,Cpu,Desc` | A process list can follow its control name with its columns, joined with `+`, then the column it sorts by and `Desc` (highest first) or `Asc` (lowest first). Without columns it shows Process, Pid, Cpu and Mem, and without a sort it sorts by Cpu, highest first. The sort column is always shown. These are the layout's own: the PROCESSES view's columns and sort in `taskmon.ini` don't apply. Sorting a SUMMARY process list with `s`, `a`, `d`, `p`, `g` or `m` lasts until you switch layout or exit; to keep a sort, set it with `O` in the Layout Designer. |
+| `nodes=0,1,2,9,10,11,12` | The ids of every node in the layout. They don't have to run in order: the Layout Designer numbers nodes as it splits them. |
+| `node.0=split,Column,0.15,1,2` | A split: `Column` stacks node 1 above node 2, `Row` puts them side by side. `0.15` is the first node's share of the space, here 15%. |
+| `node.1=pane,CpuCores` | A pane showing one control. |
+| `node.10=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc` | A process list can follow its control name with its columns, joined with `+`, then the column it sorts by and `Desc` (highest first) or `Asc` (lowest first). Without columns it shows Process, Pid, Cpu and Mem, and without a sort it sorts by Cpu, highest first. The sort column is always shown. These are the layout's own: the PROCESSES view's columns and sort in `taskmon.ini` don't apply. Sorting a SUMMARY process list with `s`, `a`, `d`, `p`, `g` or `m` lasts until you switch layout or exit; to keep a sort, set it with `O` in the Layout Designer. |
 
 Pane controls are `Cpu`, `CpuCores`, `Memory`, `VirtualMemory`, `Gpu`, `GpuMemory`, `Disk`, `DiskSpace`, `NetworkSent`, `NetworkReceived`, `Power`, `Fans`, `Npu`, `Health` (the resources list from `HEALTH`), `ThermalList` (each component's temperature, as a list), `GpuStack` (each GPU's temperature, power, and GPU and memory use, as a list), `DiskStack` (each disk's temperature, active time and read and write speeds, as a list), `NetworkStack` (each active adapter's link speed, send and receive speeds and packets a second, as a list), the metres `CpuMetre`, `MemoryMetre`, `VirtualMemoryMetre`, `GpuMetre`, `GpuMemoryMetre`, `DiskMetre`, `NetworkSendMetre`, `NetworkReceiveMetre` and `NpuMetre`, the process list `Process`, and `Empty`. `Fans`, `Npu` and `NpuMetre` are macOS only, and are shown empty on Windows, as is a pane with a control name Task Monitor doesn't know.
 

@@ -1,0 +1,19 @@
+[Classic Monitoring 5]
+version=2
+root=0
+nodes=0,28,27,30,29,18,17,22,21,24,23,26,25,20,19
+node.0=split,Column,0.24999996,17,18
+node.28=pane,Disk
+node.27=split,Column,0.5,29,30
+node.30=pane,VirtualMemory
+node.29=pane,Memory
+node.18=split,Row,0.39999998,21,22
+node.17=split,Row,0.70000005,19,20
+node.22=pane,Process,Process+Pid+User+Pri+Cpu+Thrd+Gpu+Mem+Path+Disk+Power,Cpu,Desc
+node.21=split,Column,0.6,23,24
+node.24=split,Column,0.5,25,26
+node.23=split,Row,0.5,27,28
+node.26=pane,NetworkSent
+node.25=pane,NetworkReceived
+node.20=pane,CpuCores
+node.19=pane,Cpu

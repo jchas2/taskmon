@@ -74,14 +74,14 @@ public sealed class SummaryControl2Tests
         };
 
         ctrl.Load();
-        Assert.Equal(9, ctrl.Controls.Count); // All Charts: 8 charts + the process list
+        Assert.Equal(8, ctrl.Controls.Count); // Taskmon Essentials 1, the default: 7 charts, metres and lists + the process list
         ctrl.Unload();
 
         runContext.AppConfig.DefaultLayout =
-            runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
+            runContext.AppConfig.Layouts.Single(l => l.Name == "Classic Monitoring 1");
 
         ctrl.Load();
-        Assert.Equal(3, ctrl.Controls.Count); // Cpu, Memory, the process list
+        Assert.Equal(4, ctrl.Controls.Count); // CpuCores, the process list, the memory and virtual memory metres
 
         // The new panes are live - exactly one ProcessControl subscription, none left from before.
         MulticastDelegate? handler = (MulticastDelegate?)typeof(ServiceController)
@@ -429,7 +429,8 @@ public sealed class SummaryControl2Tests
         SummaryControl2 ctrl = new(
             runContext.ServiceController,
             runContext.Terminal,
-            runContext.AppConfig) {
+            runContext.AppConfig,
+            new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Cpu))) {
             Width = 120,
             Height = 40
         };
@@ -662,7 +663,7 @@ public sealed class SummaryControl2Tests
     public void Right_Arrow_Cycles_Through_Every_Pane_In_Tree_Order_And_Then_Stops()
     {
         // The pane count below is the fallback layout's (Cpu, Memory, Gpu, Process) - clear
-        // the configured default so that's the tree loaded, not the shipped 9-pane "All Charts".
+        // the configured default so that's the tree loaded, not the shipped default layout.
         runContext.AppConfig.DefaultLayout = null;
 
         ForwardingTerminal terminal = new(runContext.Terminal);

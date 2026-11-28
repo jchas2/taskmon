@@ -306,15 +306,15 @@ public sealed class SetupScreenTests
         setupScreen.Load();
 
         ListView layoutView = ActivateLayoutsTab(setupScreen);
-        SelectRow(layoutView, "Cpu and Memory");
+        SelectRow(layoutView, "Classic Monitoring 1");
 
         bool handled = false;
         setupScreen.KeyPressed(new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false), ref handled);
 
         Assert.True(handled);
-        Assert.Equal("Cpu and Memory", designer.LayoutName);
+        Assert.Equal("Classic Monitoring 1", designer.LayoutName);
         Assert.Equal(
-            [PaneControlType.Cpu, PaneControlType.Memory, PaneControlType.Process],
+            [PaneControlType.CpuCores, PaneControlType.MemoryMetre, PaneControlType.VirtualMemoryMetre, PaneControlType.Process],
             designer.Tree.Panes().Select(p => p.Pane.ControlType));
     }
 
@@ -410,12 +410,12 @@ public sealed class SetupScreenTests
         SetupScreen setupScreen = new(runContext, screenApp) { Width = 100, Height = 30 };
         setupScreen.Load();
 
-        SelectRow(TabView(setupScreen, "layoutView"), "Disk Read and Write Bytes");
+        SelectRow(TabView(setupScreen, "layoutView"), "Disk Essentials");
 
         bool handled = false;
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
 
-        Assert.Equal("Disk Read and Write Bytes", runContext.AppConfig.DefaultLayout?.Name);
+        Assert.Equal("Disk Essentials", runContext.AppConfig.DefaultLayout?.Name);
 
         setupScreen.Unload();
     }
@@ -509,7 +509,7 @@ public sealed class SetupScreenTests
         bool handled = false;
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.F10, false, false, false), ref handled);
 
-        Assert.Equal("All Charts", runContext.AppConfig.DefaultLayout?.Name);
+        Assert.Equal("Taskmon Essentials 1", runContext.AppConfig.DefaultLayout?.Name);
 
         setupScreen.Unload();
     }
@@ -537,7 +537,7 @@ public sealed class SetupScreenTests
         SetupScreen setupScreen = ShowTab("layoutView", width: 130);
         ListView layoutView     = TabView(setupScreen, "layoutView");
 
-        SelectRow(layoutView, "Cpu and Memory");
+        SelectRow(layoutView, "Classic Monitoring 1");
         layoutView.SetFocus();
 
         bool handled = false;
@@ -545,7 +545,7 @@ public sealed class SetupScreenTests
         setupScreen.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.UpArrow, false, false, false), ref handled);
 
         Assert.Equal(
-            new[] { "Cpu", "Memory", "Process" },
+            new[] { "Cpu Cores", "Memory Metre", "Process", "Virtual Memory Metre" },
             setupScreen.Preview!.PaneControls.Values.Cast<EmptyPaneControl>().Select(outline => outline.Label).Order());
 
         setupScreen.Unload();
@@ -729,7 +729,7 @@ public sealed class SetupScreenTests
         Assert.Equal(
             runContext.AppConfig.Layouts.Select(l => l.Name).OrderBy(n => n),
             rows.Skip(1));
-        Assert.Equal("All Charts", layoutView.SelectedItem?.Text);
+        Assert.Equal("Taskmon Essentials 1", layoutView.SelectedItem?.Text);
 
         setupScreen.Unload();
     }
@@ -1001,7 +1001,7 @@ public sealed class SetupScreenTests
         SetupScreen setupScreen = ShowTab("layoutView", width: 130);
         ListView layoutView     = TabView(setupScreen, "layoutView");
 
-        SelectRow(layoutView, "All Charts");
+        SelectRow(layoutView, "Classic Monitoring 1");
         layoutView.SetFocus();
 
         bool handled = false;

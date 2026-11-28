@@ -870,12 +870,12 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         LayoutDesignerScreen screen = CreateScreen();
-        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "All Charts");
+        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "Disk Essentials");
 
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.S), ref handled);
 
-        foreach (char ch in "All Charts") {
+        foreach (char ch in "Disk Essentials") {
             screen.KeyPressed(Typed(ch), ref handled);
         }
 
@@ -887,7 +887,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
 
             Assert.Contains("is a built-in layout.", CapturedOutput());
             Assert.Null(screen.LayoutName);
-            Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "All Charts"));
+            Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "Disk Essentials"));
 
             // OK dismisses it, back to the designer.
             screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
@@ -919,7 +919,7 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         runContextHelper.fileSystem.Setup(fs => fs.DirectoryExists(It.IsAny<string>())).Returns(true);
 
         LayoutDesignerScreen screen = CreateScreen();
-        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory");
+        SummaryControlLayout builtIn = runContext.AppConfig.Layouts.Single(l => l.Name == "GPU Essentials");
         Assert.True(builtIn.IsBuiltIn);
 
         screen.Open(builtIn.ToTree(), builtIn.Name);
@@ -928,13 +928,13 @@ public sealed class LayoutDesignerScreenTests : IDisposable
         bool handled = false;
         screen.KeyPressed(Key(ConsoleKey.S), ref handled);
 
-        Assert.Contains("Cpu and Memory Copy", CapturedOutput());
+        Assert.Contains("GPU Essentials Copy", CapturedOutput());
 
         screen.KeyPressed(Key(ConsoleKey.Enter), ref handled);
 
-        Assert.Equal("Cpu and Memory Copy", screen.LayoutName);
-        Assert.False(runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory Copy").IsBuiltIn);
-        Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "Cpu and Memory"));
+        Assert.Equal("GPU Essentials Copy", screen.LayoutName);
+        Assert.False(runContext.AppConfig.Layouts.Single(l => l.Name == "GPU Essentials Copy").IsBuiltIn);
+        Assert.Same(builtIn, runContext.AppConfig.Layouts.Single(l => l.Name == "GPU Essentials"));
 
         screen.Unload();
     }
