@@ -712,6 +712,7 @@ control.foreground=#abcdef
     [InlineData("Classic Monitoring 3", Statistics.Cpu)]
     [InlineData("Classic Monitoring 4", Statistics.Cpu)]
     [InlineData("Classic Monitoring 5", Statistics.Cpu)]
+    [InlineData("CPU Essentials",       Statistics.Cpu)]
     [InlineData("Disk Essentials",      Statistics.Disk)]
     [InlineData("GPU Essentials",       Statistics.Gpu)]
     [InlineData("Network Essentials",   Statistics.Cpu)]

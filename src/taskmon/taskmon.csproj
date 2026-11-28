@@ -45,6 +45,8 @@
       <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 4.layout" />
       <None Remove="Assets\Layouts\Classic Monitoring 5.layout" />
       <EmbeddedResource Include="Assets\Layouts\Classic Monitoring 5.layout" />
+      <None Remove="Assets\Layouts\CPU Essentials.layout" />
+      <EmbeddedResource Include="Assets\Layouts\CPU Essentials.layout" />
       <None Remove="Assets\Layouts\Disk Essentials.layout" />
       <EmbeddedResource Include="Assets\Layouts\Disk Essentials.layout" />
       <None Remove="Assets\Layouts\GPU Essentials.layout" />

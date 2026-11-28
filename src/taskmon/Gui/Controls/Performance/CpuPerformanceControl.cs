@@ -3,12 +3,12 @@ using System.Globalization;
 using Task.Monitor.Cli.Utils;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Resources;
 using Task.Monitor.System;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.Chart;
 using Task.Monitor.System.Controls.ListView;
-using Task.Monitor.System.Controls.Metre;
 using Task.Monitor.System.Services;
 using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Process;
@@ -24,11 +24,11 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     private readonly List<Chart> coreCharts;
     private readonly AppConfig   appConfig;
 
-    private Chart        cpuChart;
-    private MetreControl cpuMetre;
-    private ListView     cpuMetricsListView;
-    private ListView     cpuSpecsListView;
-    private CpuInfo?     cpuInfo;
+    private Chart                     cpuChart;
+    private CpuKernelUserMetreControl cpuMetre;
+    private ListView                  cpuMetricsListView;
+    private ListView                  cpuSpecsListView;
+    private CpuInfo?                  cpuInfo;
     
     private ProcessMetrics? processMetrics;
     private double?         power;
@@ -45,7 +45,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         }
 
         cpuChart = new Chart(terminal);
-        cpuMetre = new MetreControl(terminal);
+        cpuMetre = new CpuKernelUserMetreControl(terminal, appConfig);
         Spark    = new Chart(terminal) { AutoScale = false, CustomYAxisScaleFormatter = Chart.FormatYScalePercentage };
 
         cpuMetricsListView = new ListView(terminal) {
@@ -105,10 +105,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
         cpuChart.Draw();
 
-        double kernelTime = cpuInfo.Metrics.CpuPercentKernelTime;
-        double userTime   = cpuInfo.Metrics.CpuPercentUserTime;
-
-        cpuMetre.SetValues(kernelTime, userTime);
+        cpuMetre.Sample(cpuInfo.Metrics);
 
         cpuMetricsListView.Items[0].SubItems[0].Text = cpuInfo.Metrics.ToCpuPercentage();
         cpuMetricsListView.Items[0].SubItems[1].Text = cpuInfo.Specs.ToCpuFrequencyGhz();
@@ -132,7 +129,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
     {
         CommonControl.ThemeDefaults(this, appConfig.Theme);
         
-        CommonControl.Theme(cpuMetre,           appConfig.Theme);
         CommonControl.Theme(cpuMetricsListView, appConfig.Theme);
         CommonControl.Theme(cpuSpecsListView,   appConfig.Theme);
         
@@ -145,15 +141,8 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuChart.ShowGrid       = appConfig.ShowLargeMetreGrid;
         cpuChart.ShowYAxisScale = appConfig.ShowYAxisScale;
 
-        cpuMetre.MetreStyle = appConfig.MetreStyle;
-        cpuMetre.Border     = true;
-        cpuMetre.Text       = string.Empty;
-        cpuMetre.ShowLegend = true;
-        cpuMetre.Rows       = 3;
-        
-        cpuMetre.AddSeries(Strings.CpuKernel, appConfig.Theme.PerformanceCpuKernel);
-        cpuMetre.AddSeries(Strings.CpuUser,   appConfig.Theme.PerformanceCpuUser);
-        
+        cpuMetre.Load();
+
         ListViewItem cpuMetricsItem = new(new[] { "0.0%", "0 GHz", "0", "0", Strings.CommonNotAvailable });
         cpuMetricsListView.Items.Add(cpuMetricsItem);
         
@@ -209,8 +198,6 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
             colCount++;
         }
         
-        cpuMetre.Rows = 3;
-        
         int metreHeight = cpuMetre.RequiredHeight;
         int bottomY     = Y + Height - (MetricsHeight + SpecsHeight);
         int height      = Math.Max(0, bottomY - yTop - metreHeight);
@@ -228,6 +215,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
         cpuMetre.Y      = yTop;
         cpuMetre.Width  = Width - 1;
         cpuMetre.Height = metreHeight;
+        cpuMetre.Resize();
 
         for (int i = 0; i < cpuMetricsListView.ColumnHeaders.Count(); i++) {
             cpuMetricsListView.ColumnHeaders[i].Width = i % 2 == 0
@@ -254,7 +242,7 @@ public sealed class CpuPerformanceControl : Control, IPerformanceDetail
 
     protected override void OnUnload()
     {
-        cpuMetre.ClearSeries();
+        cpuMetre.Unload();
 
         cpuMetricsListView.Items.Clear();
         cpuSpecsListView.Items.Clear();

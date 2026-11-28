@@ -31,4 +31,5 @@ public enum PaneControlType
     GpuStack,
     DiskStack,
     NetworkStack,
+    CpuKernelUserMetre,
 }

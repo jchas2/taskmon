@@ -137,6 +137,9 @@
   <data name="PaneControlType_NetworkStack" xml:space="preserve">
     <value>Lista de red</value>
   </data>
+  <data name="PaneControlType_CpuKernelUserMetre" xml:space="preserve">
+    <value>Medidor de CPU kernel/usuario</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>Aceptar</value>
   </data>

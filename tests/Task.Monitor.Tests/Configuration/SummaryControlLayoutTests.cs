@@ -79,6 +79,7 @@ public sealed class SummaryControlLayoutTests
     [InlineData(PaneControlType.DiskMetre)]
     [InlineData(PaneControlType.NetworkSendMetre)]
     [InlineData(PaneControlType.NetworkReceiveMetre)]
+    [InlineData(PaneControlType.CpuKernelUserMetre)]
     public void Metre_Panes_Round_Trip(PaneControlType type)
     {
         LayoutTree<SummaryPane> original = LayoutTree<SummaryPane>.FromNodes(

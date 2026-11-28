@@ -94,6 +94,34 @@ public sealed class CpuPerformanceControlTests
         ctrl.Unload();
     }
 
+    // The panel's metre is the same control as SUMMARY's Cpu Kernel User Metre pane.
+    [Fact]
+    public void Shows_Kernel_And_User_Time_In_Its_Metre()
+    {
+        RecordingTerminal terminal = new();
+
+        CpuPerformanceControl ctrl = new(terminal, runContext.AppConfig) {
+            Width  = 120,
+            Height = 40
+        };
+
+        ctrl.Load();
+        ctrl.Resize();
+
+        CpuInfo cpu = BuildCpuInfo();
+        cpu.Metrics = new CpuMetrics { CpuPercentKernelTime = 0.05, CpuPercentUserTime = 0.085 };
+
+        ctrl.Sample(new SystemSnapshot { Cpu = cpu });
+        ctrl.Draw();
+
+        string output = AnsiTestHelper.StripColours(terminal.Output);
+
+        Assert.Contains("Kernel 5.0%", output);
+        Assert.Contains("User 8.5%", output);
+
+        ctrl.Unload();
+    }
+
     [Fact]
     public void Titles_The_Cpu_Chart_With_The_Total_And_The_Temperature()
     {

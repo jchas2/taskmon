@@ -162,6 +162,9 @@
   <data name="PaneControlType_NetworkStack" xml:space="preserve">
     <value>Network Stack</value>
   </data>
+  <data name="PaneControlType_CpuKernelUserMetre" xml:space="preserve">
+    <value>Cpu Kernel User Metre</value>
+  </data>
 
   <!-- Dialogs and footer hotkeys -->
   <data name="DialogOk" xml:space="preserve">

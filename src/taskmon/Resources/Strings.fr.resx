@@ -137,6 +137,9 @@
   <data name="PaneControlType_NetworkStack" xml:space="preserve">
     <value>Liste des réseaux</value>
   </data>
+  <data name="PaneControlType_CpuKernelUserMetre" xml:space="preserve">
+    <value>Jauge CPU noyau/utilisateur</value>
+  </data>
   <data name="DialogOk" xml:space="preserve">
     <value>OK</value>
   </data>

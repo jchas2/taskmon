@@ -82,6 +82,9 @@
   <data name="PaneControlType_NpuMetre" xml:space="preserve">
     <value>Npu Meter</value>
   </data>
+  <data name="PaneControlType_CpuKernelUserMetre" xml:space="preserve">
+    <value>Cpu Kernel User Meter</value>
+  </data>
 
   <data name="PerformanceUtilisationColumn" xml:space="preserve">
     <value>Utilization</value>

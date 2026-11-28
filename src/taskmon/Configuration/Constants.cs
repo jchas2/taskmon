@@ -25,7 +25,7 @@ public sealed class Constants
         public const string ThemeMsDos          = "MS-DOS";
 
         public const string LayoutDefault       = "Taskmon Essentials 1";
-        public const string LayoutCpuOnly       = "Classic Monitoring 1";
+        public const string LayoutCpuOnly       = "CPU Essentials";
         public const string LayoutGpuOnly       = "GPU Essentials";
     }
 

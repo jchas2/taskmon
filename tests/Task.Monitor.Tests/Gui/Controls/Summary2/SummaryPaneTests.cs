@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Reflection;
 using Task.Monitor.Configuration;
 using Task.Monitor.Extensions;
+using Task.Monitor.Gui.Controls.Cpu;
 using Task.Monitor.Gui.Controls.Disk;
 using Task.Monitor.Gui.Controls.Gpu;
 using Task.Monitor.Gui.Controls.Network;
@@ -135,6 +136,26 @@ public sealed class SummaryPaneTests
 
         Assert.Equal("13.5%", chart.LabelSeries);
         Assert.Contains("Cpu 13.5%", terminal.Output);
+
+        summary.Unload();
+    }
+
+    // Like a metre, it keeps its own height, so a taller box leaves the rest to the next pane.
+    [Fact]
+    public void Cpu_Kernel_User_Metre_Pane_Keeps_Its_Height_And_Shows_Kernel_And_User_Time()
+    {
+        (SummaryControl2 summary, Control pane) = Shown(PaneControlType.CpuKernelUserMetre, width: 60, height: 10);
+        CpuKernelUserMetreControl metre = Assert.IsType<CpuKernelUserMetreControl>(pane);
+
+        Assert.False(metre.TabStop);
+        Assert.Equal(CpuKernelUserMetreControl.MetreHeight, metre.Height);
+
+        Publish(new SystemSnapshot {
+            Cpu = new CpuInfo { Metrics = new CpuMetrics { CpuPercentKernelTime = 0.05, CpuPercentUserTime = 0.085 } }
+        });
+
+        Assert.Equal(0.05,  metre.Metre.Series[0].Value);
+        Assert.Equal(0.085, metre.Metre.Series[1].Value);
 
         summary.Unload();
     }

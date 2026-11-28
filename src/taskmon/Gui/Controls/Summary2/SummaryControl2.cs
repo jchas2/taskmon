@@ -113,6 +113,17 @@ public sealed class SummaryControl2 : Control
         });
     }
 
+    private (Control, Action<SystemSnapshot>) CpuKernelUserPane()
+    {
+        CpuKernelUserMetreControl metre = new(Terminal, appConfig) { TabStop = false };
+
+        return (metre, snapshot => {
+            if (snapshot.Cpu?.Metrics is { } cpu) {
+                metre.Sample(cpu);
+            }
+        });
+    }
+
     private (Control Control, Action<SystemSnapshot>? Feed) CreatePane(SummaryPane pane) =>
         pane.ControlType switch {
             PaneControlType.Cpu => ChartPane(
@@ -205,6 +216,7 @@ public sealed class SummaryControl2 : Control
                     ? ([cpu.CpuPercentKernelTime, cpu.CpuPercentUserTime], FormatPercentage(cpu.CpuPercentKernelTime + cpu.CpuPercentUserTime))
                     : null,
                 theme => [theme.PerformanceCpuKernel, theme.PerformanceCpuUser]),
+            PaneControlType.CpuKernelUserMetre => CpuKernelUserPane(),
             PaneControlType.GpuMetre => MetrePane(
                 Strings.MetreTitleGpu,
                 s => s.Gpu?.Metrics is { } gpu 
@@ -470,7 +482,7 @@ public sealed class SummaryControl2 : Control
 
         if (snapshot != null) {
             foreach ((_, Control control, Action<SystemSnapshot>? feed) in panes.Values) {
-                if (control is MetreControl) {
+                if (control is MetreControl or CpuKernelUserMetreControl) {
                     feed?.Invoke(snapshot);
                 }
             }
@@ -604,16 +616,17 @@ public sealed class SummaryControl2 : Control
 
             Hint = type switch {
                 PaneControlType.Empty => PaneHint.None,
-                PaneControlType.CpuCores => PaneHint.Metre,
+                PaneControlType.CpuCores or PaneControlType.CpuKernelUserMetre => PaneHint.Metre,
                 PaneControlType.Cpu or PaneControlType.Memory or PaneControlType.VirtualMemory or PaneControlType.Disk
                     or PaneControlType.Gpu or PaneControlType.GpuMemory or PaneControlType.NetworkSent
                     or PaneControlType.NetworkReceived or PaneControlType.Npu => PaneHint.Chart,
                 _ => isMetre ? PaneHint.Metre : PaneHint.List
             },
 
-            FixedHeight = isMetre                         ? MetrePaneHeight
-                        : type == PaneControlType.Health ? HealthControl.ResourcesViewHeight
-                                                          : null
+            FixedHeight = isMetre                                     ? MetrePaneHeight
+                        : type == PaneControlType.CpuKernelUserMetre ? CpuKernelUserMetreControl.MetreHeight
+                        : type == PaneControlType.Health             ? HealthControl.ResourcesViewHeight
+                                                                      : null
         };
     }
 
@@ -633,6 +646,7 @@ public sealed class SummaryControl2 : Control
     // and the rest of a column split goes to the other pane.
     private static int? RequiredHeight(Control control) => control switch {
         MetreControl metre                           => metre.RequiredHeight,
+        CpuKernelUserMetreControl kernelUser         => kernelUser.RequiredHeight,
         HealthControl { ShowCausesAndEvents: false } => HealthControl.ResourcesViewHeight,
         EmptyPaneControl { FixedHeight: { } height } => height,
                                                    _ => null

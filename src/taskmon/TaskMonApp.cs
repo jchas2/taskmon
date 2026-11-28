@@ -153,7 +153,6 @@ public sealed class TaskMonApp(RunContext runContext)
         bool isGpuOnly = args.Contains("--gpu-only");
         bool isCpuOnly = !isGpuOnly && args.Contains("--cpu-only");
         
-        // Each layout's process list sorts itself, by Gpu or Cpu.
         if (isGpuOnly || isCpuOnly) {
             string layoutName = isGpuOnly
                 ? Configuration.Constants.Sections.LayoutGpuOnly
