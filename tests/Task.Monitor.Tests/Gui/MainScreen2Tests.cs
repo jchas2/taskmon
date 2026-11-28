@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reflection;
 using Moq;
 using Task.Monitor.Cli.Utils;
@@ -13,6 +14,7 @@ using Task.Monitor.System.Configuration;
 using Task.Monitor.System.Controls;
 using Task.Monitor.System.Controls.ListView;
 using Task.Monitor.System.Screens;
+using Task.Monitor.System.Services.Cpu;
 using Task.Monitor.System.Services.Health;
 using Task.Monitor.System.Services.Memory;
 using Task.Monitor.System.Services.Process;
@@ -573,6 +575,43 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.True(menuControl.Focused);
         Assert.True(ShowsFocusBorder(menuControl));
+    }
+
+    // Regression test: the screen kept hold of the control focused before Setup opened, and moving
+    // focus to the menu on return redrew it - unloaded, so the CPU detail indexed its emptied lists.
+    [Fact]
+    public void Returning_From_Setup_With_Performance_Focused_Leaves_Focus_On_The_Menu()
+    {
+        (MainScreen2 mainScreen, SetupScreen setupScreen) = ShowMainScreen();
+        PerformanceControl performance = mainScreen.GetControl<PerformanceControl>();
+        bool               handled     = false;
+
+        // Room for the CPU detail to draw; the screen takes the small mock terminal's size when shown.
+        mainScreen.Width  = 160;
+        mainScreen.Height = 50;
+        mainScreen.Resize();
+
+        mainScreen.SetActiveControl(mainScreen.SelectMenuItem(performance));
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        RaiseSnapshotUpdated(new SystemSnapshot {
+            Cpu = new CpuInfo {
+                CoreMetrics = Enumerable.Range(0, Environment.ProcessorCount)
+                    .Select(index => new CpuInfo.CpuCoreMetric(index.ToString(), 0.5))
+                    .ToImmutableArray()
+            }
+        });
+
+        Assert.True(performance.Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F2), ref handled);
+        setupScreen.Close();
+
+        Exception? exception = Record.Exception(mainScreen.Show);
+
+        Assert.Null(exception);
+        Assert.True(mainScreen.MenuView.Focused);
+        Assert.False(performance.Focused);
     }
 
     // Regression test: Setup re-applies its theme to every list on each draw, which used to

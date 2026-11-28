@@ -13,6 +13,12 @@ public partial class Screen : Control
     public void Close()
     {
         Unload();
+
+        if (focusedControl != null) {
+            focusedControl.Focused = false;
+            focusedControl         = null;
+        }
+
         IsActive = false;
     }
 
