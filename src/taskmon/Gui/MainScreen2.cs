@@ -293,6 +293,10 @@ public sealed class MainScreen2 : Screen
                 break;
 
             case ConsoleKey.RightArrow when focusedControl == menuView:
+                if (activeControl is SummaryControl2 { HasFocusablePane: false }) {
+                    break;
+                }
+
                 focusedControl = activeControl;
                 activeControl.SetFocus();
                 Draw();
@@ -456,11 +460,12 @@ public sealed class MainScreen2 : Screen
             SetActiveControl(SelectMenuItem(summaryControl));
         }
 
-        if (viewHadFocus) {
+        if (viewHadFocus && summaryControl.HasFocusablePane) {
             focusedControl = summaryControl;
             summaryControl.SetFocus();
         }
         else {
+            focusedControl = menuView;
             menuView.SetFocus();
         }
 

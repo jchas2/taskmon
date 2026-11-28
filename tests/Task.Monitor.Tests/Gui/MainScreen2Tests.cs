@@ -446,10 +446,7 @@ public sealed class MainScreen2Tests : IDisposable
     [Fact]
     public void F4_With_A_Summary_Pane_Focused_Focuses_The_New_Layouts_First_Pane()
     {
-        (SummaryControlLayout twoPanes, SummaryControlLayout onePane) = UseLayoutsWithDifferentPanes();
-        List<SummaryControlLayout> layouts = LayoutsInSetupOrder();
-
-        Assert.Same(onePane, layouts[layouts.IndexOf(twoPanes) + 1]);
+        (_, SummaryControlLayout onePane) = UseLayoutsWithDifferentPanes();
 
         (MainScreen2 mainScreen, _) = ShowMainScreen();
         SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
@@ -464,6 +461,26 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.Same(onePane, runContext.AppConfig.DefaultLayout);
         Assert.True(summaryControl.PaneControls[0].Focused);
+    }
+
+    [Fact]
+    public void F4_Onto_A_Layout_With_Nothing_To_Focus_Returns_Focus_To_The_Menu()
+    {
+        LayoutTree<SummaryPane> cpu = new(new SummaryPane(PaneControlType.Cpu));
+        (_, SummaryControlLayout nothingToFocus) = UseAdjacentLayouts(cpu, NothingToFocus());
+
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
+        bool            handled        = false;
+
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+        Assert.True(summaryControl.PaneControls[0].Focused);
+
+        mainScreen.KeyPressed(Key(ConsoleKey.F4), ref handled);
+
+        Assert.Same(nothingToFocus, runContext.AppConfig.DefaultLayout);
+        Assert.True(mainScreen.MenuView.Focused);
+        Assert.False(summaryControl.Focused);
     }
 
     [Fact]
@@ -501,20 +518,39 @@ public sealed class MainScreen2Tests : IDisposable
 
     private List<SummaryControlLayout> LayoutsInSetupOrder() => runContext.AppConfig.Layouts.OrderBy(l => l.Name).ToList();
 
-    // Two layouts next to each other in Setup order, the first in use: CPU and memory side by
-    // side (panes 1 and 2), then a lone GPU chart (pane 0).
+    // Two layouts next to each other in Setup order, the first in use.
+    private (SummaryControlLayout First, SummaryControlLayout Second) UseAdjacentLayouts(
+        LayoutTree<SummaryPane> first,
+        LayoutTree<SummaryPane> second)
+    {
+        SummaryControlLayout firstLayout  = SummaryControlLayout.FromTree("Zz Focus Test 1", first);
+        SummaryControlLayout secondLayout = SummaryControlLayout.FromTree("Zz Focus Test 2", second);
+
+        TestLayouts.Register(runContext.AppConfig, secondLayout);
+        TestLayouts.Use(runContext.AppConfig, firstLayout);
+
+        List<SummaryControlLayout> layouts = LayoutsInSetupOrder();
+        Assert.Same(secondLayout, layouts[layouts.IndexOf(firstLayout) + 1]);
+
+        return (firstLayout, secondLayout);
+    }
+
+    // CPU and memory side by side (panes 1 and 2), then a lone GPU chart (pane 0).
     private (SummaryControlLayout TwoPanes, SummaryControlLayout OnePane) UseLayoutsWithDifferentPanes()
     {
         LayoutTree<SummaryPane> twoPanes = new(new SummaryPane(PaneControlType.Cpu));
         twoPanes.Split(twoPanes.RootId, Orientation.Row, new SummaryPane(PaneControlType.Memory));
 
-        SummaryControlLayout first  = SummaryControlLayout.FromTree("Zz Focus Test 1", twoPanes);
-        SummaryControlLayout second = SummaryControlLayout.FromTree("Zz Focus Test 2", new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Gpu)));
+        return UseAdjacentLayouts(twoPanes, new LayoutTree<SummaryPane>(new SummaryPane(PaneControlType.Gpu)));
+    }
 
-        TestLayouts.Register(runContext.AppConfig, second);
-        TestLayouts.Use(runContext.AppConfig, first);
+    // An empty pane beside a Health pane showing only its resources: neither takes focus.
+    private static LayoutTree<SummaryPane> NothingToFocus()
+    {
+        LayoutTree<SummaryPane> tree = new(SummaryPane.Empty);
+        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Health));
 
-        return (first, second);
+        return tree;
     }
 
     [Fact]
@@ -618,6 +654,28 @@ public sealed class MainScreen2Tests : IDisposable
 
         Assert.True(menuControl.Focused);
         Assert.True(ShowsFocusBorder(menuControl));
+    }
+
+    [Fact]
+    public void Right_Leaves_Focus_On_The_Menu_When_No_Summary_Pane_Takes_Focus()
+    {
+        TestLayouts.Use(runContext.AppConfig, SummaryControlLayout.FromTree("Nothing To Focus", NothingToFocus()));
+
+        (MainScreen2 mainScreen, _) = ShowMainScreen();
+        SummaryControl2 summaryControl = mainScreen.GetControl<SummaryControl2>();
+        bool            handled        = false;
+
+        mainScreen.KeyPressed(Key(ConsoleKey.RightArrow), ref handled);
+
+        Assert.True(mainScreen.MenuView.Focused);
+        Assert.False(summaryControl.Focused);
+        Assert.DoesNotContain(summaryControl.PaneControls.Values, pane => pane.Focused);
+
+        // Still on the menu, so Down moves to the next item.
+        handled = false;
+        mainScreen.KeyPressed(Key(ConsoleKey.DownArrow), ref handled);
+
+        Assert.IsType<HealthControl>(mainScreen.GetActiveControl);
     }
 
     // Regression test: SUMMARY remembered the pane last moved to by id while Setup changed the

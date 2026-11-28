@@ -493,13 +493,79 @@ public sealed class SummaryControl2Tests
         return (Control?)method!.Invoke(ctrl, null);
     }
 
-    // Left and Right can focus a pane that isn't a tab stop, and the Health pane's hidden lists must not take that focus.
+    // Regression test: a Health pane showing only its resources took focus without drawing it.
+    // Its hidden lists must not take focus either.
     [Fact]
-    public void Left_And_Right_Move_Focus_Through_A_Health_Pane()
+    public void Focus_Skips_A_Health_Pane_Showing_Only_Its_Resources()
     {
         LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Health));
-        tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Process));
+        (int healthId, _) = tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Process));
 
+        SummaryControl2 ctrl   = FocusedSummary(tree);
+        HealthControl   health = Assert.IsType<HealthControl>(ctrl.PaneControls[healthId]);
+
+        Assert.IsType<ProcessControl>(GetFocusedPane(ctrl));
+
+        bool handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false), ref handled);
+
+        // Nothing to its left takes focus, so Left is left for the main screen to return to the menu.
+        Assert.False(handled);
+        Assert.IsType<ProcessControl>(GetFocusedPane(ctrl));
+        Assert.False(health.Focused);
+        Assert.False(health.CausesView.Focused);
+
+        ctrl.Unload();
+    }
+
+    // Regression test: Left and Right stopped on an empty pane, which has nothing in it to focus.
+    [Fact]
+    public void Left_And_Right_Skip_An_Empty_Pane()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Cpu));
+        (int cpuId, int rightId) = tree.Split(tree.RootId, Orientation.Row, SummaryPane.Empty);
+        (_, int memoryId)        = tree.Split(rightId, Orientation.Row, new SummaryPane(PaneControlType.Memory));
+
+        SummaryControl2 ctrl    = FocusedSummary(tree);
+        bool            handled = false;
+
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Same(ctrl.PaneControls[memoryId], GetFocusedPane(ctrl));
+
+        handled = false;
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Same(ctrl.PaneControls[cpuId], GetFocusedPane(ctrl));
+
+        ctrl.Unload();
+    }
+
+    [Fact]
+    public void Left_And_Right_Skip_A_Pane_Too_Short_To_Draw()
+    {
+        LayoutTree<SummaryPane> tree = new(new SummaryPane(PaneControlType.Cpu));
+        (_, int rightId)          = tree.Split(tree.RootId, Orientation.Row, new SummaryPane(PaneControlType.Gpu));
+        (int gpuId, int memoryId) = tree.Split(rightId, Orientation.Row, new SummaryPane(PaneControlType.Memory));
+
+        SummaryControl2 ctrl    = FocusedSummary(tree);
+        bool            handled = false;
+
+        // What resizing does to a pane given less height than its content needs.
+        ctrl.PaneControls[gpuId].Visible = false;
+
+        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
+
+        Assert.True(handled);
+        Assert.Same(ctrl.PaneControls[memoryId], GetFocusedPane(ctrl));
+
+        ctrl.Unload();
+    }
+
+    private SummaryControl2 FocusedSummary(LayoutTree<SummaryPane> tree)
+    {
         ForwardingTerminal terminal = new(runContext.Terminal);
         Screen screen = new(terminal) { Width = 120, Height = 40 };
 
@@ -513,24 +579,7 @@ public sealed class SummaryControl2Tests
         ctrl.Resize();
         ctrl.SetFocus();
 
-        HealthControl health = Assert.IsType<HealthControl>(GetFocusedPane(ctrl));
-
-        Assert.False(health.CausesView.Focused);
-
-        bool handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false), ref handled);
-
-        Assert.True(handled);
-        Assert.IsType<ProcessControl>(GetFocusedPane(ctrl));
-
-        handled = false;
-        ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false), ref handled);
-
-        Assert.True(handled);
-        Assert.Same(health, GetFocusedPane(ctrl));
-        Assert.False(health.CausesView.Focused);
-
-        ctrl.Unload();
+        return ctrl;
     }
 
     // Regression test: the pane last moved to was remembered by id across a new tree, so focusing
@@ -975,18 +1024,7 @@ public sealed class SummaryControl2Tests
     [Fact]
     public void Up_And_Down_Arrows_Never_Move_Focus_Between_Panes()
     {
-        ForwardingTerminal terminal = new(runContext.Terminal);
-        Screen screen = new(terminal) { Width = 120, Height = 40 };
-
-        SummaryControl2 ctrl = new(runContext.ServiceController, terminal, runContext.AppConfig) {
-            Width = 120,
-            Height = 40
-        };
-
-        screen.Controls.Add(ctrl);
-        ctrl.Load();
-        ctrl.Resize();
-        ctrl.SetFocus();
+        SummaryControl2 ctrl = FocusedSummary(TestLayouts.Example());
 
         // Move onto the Process pane, which does have its own internal use for Down (scrolling),
         // so it is the sharpest case for confirming Down never bubbles into pane-switching.
@@ -997,6 +1035,7 @@ public sealed class SummaryControl2Tests
         ctrl.KeyPressed(right, ref handled);
 
         Control? focusedPaneBefore = GetFocusedPane(ctrl);
+        Assert.IsType<ProcessControl>(focusedPaneBefore);
 
         handled = false;
         ctrl.KeyPressed(new ConsoleKeyInfo('\0', ConsoleKey.DownArrow, false, false, false), ref handled);

@@ -289,18 +289,23 @@ public sealed class SummaryControl2 : Control
         List<int> paneIds     = tree.Panes().Select(pane => pane.Id).ToList();
         Control?  focusedPane = FindFocusedPane();
 
-        int currentIndex = paneIds.FindIndex(paneId => panes[paneId].Control == focusedPane);
+        int index = paneIds.FindIndex(paneId => panes[paneId].Control == focusedPane);
 
-        if (currentIndex < 0) {
+        if (index < 0) {
             return null;
         }
 
-        int targetIndex = currentIndex + step;
+        for (index += step; index >= 0 && index < paneIds.Count; index += step) {
+            if (TakesFocus(panes[paneIds[index]].Control)) {
+                return paneIds[index];
+            }
+        }
 
-        return targetIndex >= 0 && targetIndex < paneIds.Count
-            ? paneIds[targetIndex]
-            : null;
+        return null;
     }
+
+    private IEnumerable<int> FocusablePaneIds() =>
+        tree.Panes().Select(pane => pane.Id).Where(paneId => TakesFocus(panes[paneId].Control));
 
     private Control? FindFocusedPane() =>
         panes.Values.Select(pane => pane.Control).FirstOrDefault(control => control.HasFocus);
@@ -431,8 +436,13 @@ public sealed class SummaryControl2 : Control
 
     protected override void OnGotFocus()
     {
-        int paneId = focusedPaneId ?? tree.Panes().First().Id;
-        panes[paneId].Control.SetFocus();
+        int? paneId = focusedPaneId is { } remembered && TakesFocus(panes[remembered].Control)
+            ? remembered
+            : FocusablePaneIds().Cast<int?>().FirstOrDefault();
+
+        if (paneId is { } id) {
+            panes[id].Control.SetFocus();
+        }
     }
 
     protected override void OnKeyPressed(ConsoleKeyInfo keyInfo, ref bool handled)
@@ -631,6 +641,8 @@ public sealed class SummaryControl2 : Control
         };
     }
 
+    internal bool HasFocusablePane => FocusablePaneIds().Any();
+
     internal IReadOnlyDictionary<int, Rectangle> PaneBounds => paneBounds;
 
     internal IReadOnlyDictionary<int, Control> PaneControls =>
@@ -642,6 +654,9 @@ public sealed class SummaryControl2 : Control
             Strings.SummaryTopProcesses, 
             sortColumn.ToString().ToUpperInvariant(), 
             processCount);
+
+    private static bool TakesFocus(Control pane) =>
+        pane.Visible && pane is not (EmptyPaneControl or HealthControl { ShowCausesAndEvents: false });
 
     // These controls don't scroll or stretch, so they keep their content's height
     // and the rest of a column split goes to the other pane.
